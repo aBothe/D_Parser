@@ -46,6 +46,7 @@
     <Compile Include="ParseTests.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ResolutionTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DParser2\DParser2.csproj">

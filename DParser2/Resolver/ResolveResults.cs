@@ -39,13 +39,10 @@ namespace D_Parser.Resolver
 		public INode Node;
 
 		/// <summary>
-		/// T!int t;
-		/// 
-		/// t. -- will be resolved to:
-		///		1) TypeResult T; TemplateParameter[0]= StaticType int
-		///		2) MemberResult t; MemberDefinition= 1)
+		/// Key: Type name
+		/// Value: Corresponding type
 		/// </summary>
-		public Dictionary<ITemplateParameter, ResolveResult[]> TemplateParameters;
+		public Dictionary<string, ResolveResult[]> DeducedTypes;
 	}
 
 	public class MemberResult : TemplateInstanceResult

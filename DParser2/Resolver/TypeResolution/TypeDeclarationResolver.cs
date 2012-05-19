@@ -38,23 +38,26 @@ namespace D_Parser.Resolver.TypeResolution
 			if (ModuleScope)
 				ctxt.Pop();
 
-			if (idObject is TemplateInstanceExpression)
-				return TemplateInstanceResolver.ResolveAndFilterTemplateResults(((TemplateInstanceExpression)idObject).Arguments, r, ctxt);
-
-			return TemplateInstanceResolver.ApplyDefaultTemplateParameters(r, ctxt);
+			return r;
 		}
-		
-		public static ResolveResult[] Resolve(IdentifierDeclaration id, ResolverContextStack ctxt, ResolveResult[] resultBases=null)
+
+		public static ResolveResult[] Resolve(IdentifierDeclaration id, ResolverContextStack ctxt, ResolveResult[] resultBases = null, bool filterForTemplateArgs = true)
 		{
-			if (id.InnerDeclaration == null && resultBases==null)
-				return ResolveIdentifier(id.Id, ctxt, id, id.ModuleScoped);
+			ResolveResult[] res = null;
 
-			var rbases = resultBases ?? Resolve(id.InnerDeclaration, ctxt);
+			if (id.InnerDeclaration == null && resultBases == null)
+				res= ResolveIdentifier(id.Id, ctxt, id, id.ModuleScoped);
+			else
+			{
+				var rbases = resultBases ?? Resolve(id.InnerDeclaration, ctxt);
 
-			if (rbases == null || rbases.Length == 0)
-				return null;
+				if (rbases == null || rbases.Length == 0)
+					return null;
 
-			return ResolveFurtherTypeIdentifier(id.Id,rbases,ctxt,id);
+				res= ResolveFurtherTypeIdentifier(id.Id, rbases, ctxt, id);
+			}
+
+			return filterForTemplateArgs ? TemplateInstanceHandler.EvalAndFilterOverloads(res, null, false, ctxt) : res;
 		}
 
 		/// <summary>
@@ -141,10 +144,7 @@ namespace D_Parser.Resolver.TypeResolution
 				while (scanResults != null);
 			}
 
-			if (typeIdObject is TemplateInstanceExpression)
-				return TemplateInstanceResolver.ResolveAndFilterTemplateResults(((TemplateInstanceExpression)typeIdObject).Arguments, r, ctxt);
-
-			return TemplateInstanceResolver.ApplyDefaultTemplateParameters(r, ctxt);
+			return r.Count == 0 ? null : r.ToArray();
 		}
 
 		public static ResolveResult[] Resolve(TypeOfDeclaration typeOf, ResolverContextStack ctxt)
@@ -393,8 +393,6 @@ namespace D_Parser.Resolver.TypeResolution
 						memberbaseTypes = GetForeachIteratorType(v, ctxt);
 				}
 
-				memberbaseTypes = TemplateInstanceResolver.SubstituteTemplateParameters(memberbaseTypes, resultBase);
-
 				// Note: Also works for aliases! In this case, we simply try to resolve the aliased type, otherwise the variable's base type
 				ret = new MemberResult()
 				{
@@ -406,9 +404,8 @@ namespace D_Parser.Resolver.TypeResolution
 			}
 			else if (m is DMethod)
 			{
-				memberbaseTypes = DoResolveBaseType ? GetMethodReturnType(m as DMethod, ctxt) : null;
-
-				memberbaseTypes = TemplateInstanceResolver.SubstituteTemplateParameters(memberbaseTypes, resultBase);
+				if (DoResolveBaseType)
+					memberbaseTypes = GetMethodReturnType(m as DMethod, ctxt);
 
 				ret = new MemberResult()
 				{
@@ -455,15 +452,15 @@ namespace D_Parser.Resolver.TypeResolution
 
 				//ResolveResult[] templateParameterType = null;
 
-				//FIXME: Resolve the specialization type correctly
-				var templateParameterType = TemplateInstanceResolver.ResolveTypeSpecialization(tmp, ctxt);
+				//TODO: Resolve the specialization type
+				//var templateParameterType = TemplateInstanceHandler.ResolveTypeSpecialization(tmp, ctxt);
 
 				ret = new MemberResult()
 				{
 					Node = m,
 					DeclarationOrExpressionBase = typeBase,
 					ResultBase = resultBase,
-					MemberBaseTypes = templateParameterType
+					//MemberBaseTypes = templateParameterType
 				};
 			}
 

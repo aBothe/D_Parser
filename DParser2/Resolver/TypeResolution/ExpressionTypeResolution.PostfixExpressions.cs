@@ -210,9 +210,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 			if (!(call.PostfixForeExpression is TemplateInstanceExpression))
 			{
-				var filteredMethods = TemplateInstanceResolver.ResolveAndFilterTemplateResults(
-					resolvedCallArguments.Count > 0 ? resolvedCallArguments.ToArray() : null,
-					methodContainingResultsToCheck, ctxt, false);
+				var filteredMethods = TemplateInstanceHandler.EvalAndFilterOverloads(methodContainingResultsToCheck,resolvedCallArguments.Count > 0 ? resolvedCallArguments.ToArray() : null, true,ctxt);
 
 				methodContainingResultsToCheck.Clear();
 				if(filteredMethods!=null)
@@ -313,10 +311,13 @@ namespace D_Parser.Resolver.TypeResolution
 			ResolverContextStack ctxt,
 			IEnumerable<ResolveResult> resultBases = null)
 		{
+			IEnumerable<ResolveResult> res = null;
 			if (resultBases == null)
-				return TypeDeclarationResolver.ResolveIdentifier(tix.TemplateIdentifier.Id, ctxt, tix, tix.TemplateIdentifier.ModuleScoped);
+				res= TypeDeclarationResolver.ResolveIdentifier(tix.TemplateIdentifier.Id, ctxt, tix, tix.TemplateIdentifier.ModuleScoped);
+			else
+				res= TypeDeclarationResolver.ResolveFurtherTypeIdentifier(tix.TemplateIdentifier.Id, resultBases, ctxt, tix);
 
-			return TypeDeclarationResolver.ResolveFurtherTypeIdentifier(tix.TemplateIdentifier.Id, resultBases, ctxt, tix);
+			return TemplateInstanceHandler.EvalAndFilterOverloads(res,tix, ctxt);
 		}
 	}
 }

@@ -18,7 +18,8 @@ namespace ParserTests
 		{
 			//FormatterTest.RunTests();
 			//ParseTests.TestSourcePackages(false);
-			EvaluationTests.Run();
+			//EvaluationTests.Run();
+			ResolutionTests.Run();
 
 			Console.WriteLine("~ Tests finished");
 			Console.ReadKey();

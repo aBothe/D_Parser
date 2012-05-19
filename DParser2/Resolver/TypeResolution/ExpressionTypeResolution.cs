@@ -61,12 +61,18 @@ namespace D_Parser.Resolver.TypeResolution
 				{
 					// http://www.d-programming-language.org/expression.html#NewExpression
 					var nex = ex as NewExpression;
+					ResolveResult[] possibleTypes = null;
 
 					/*
-					 * TODO: Determine argument types and select respective ctor method
+					 * TODO: Determine argument types
 					 */
 
-					return TypeDeclarationResolver.Resolve(nex.Type, ctxt);
+					if (nex.Type is IdentifierDeclaration)
+						possibleTypes = TypeDeclarationResolver.Resolve((IdentifierDeclaration)nex.Type, ctxt, filterForTemplateArgs: false);
+					else
+						possibleTypes = TypeDeclarationResolver.Resolve(nex.Type, ctxt);
+
+					return possibleTypes;
 				}
 
 
