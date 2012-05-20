@@ -55,6 +55,7 @@ namespace D_Parser.Resolver.Templates
 
 		public bool Handle(TemplateTypeParameter p, ResolveResult arg)
 		{
+			
 			return false;
 		}
 	}

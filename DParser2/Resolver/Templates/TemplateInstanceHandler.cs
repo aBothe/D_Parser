@@ -151,6 +151,17 @@ namespace D_Parser.Resolver.TypeResolution
 			return filteredOverloads.Count == 0 ? null : filteredOverloads.ToArray();
 		}
 
+		static bool HasDefaultType(ITemplateParameter p)
+		{
+			if (p is TemplateTypeParameter)
+				return ((TemplateTypeParameter)p).Default != null;
+			else if (p is TemplateThisParameter)
+				return HasDefaultType(((TemplateThisParameter)p).FollowParameter);
+			else if (p is TemplateValueParameter)
+				return ((TemplateValueParameter)p).DefaultExpression != null;
+			return false;
+		}
+
 		static bool CheckAndDeduceTypeAgainstTplParameter(ITemplateParameter handledParameter, ResolveResult argumentToCheck, Dictionary<string,ResolveResult[]> deducedTypes)
 		{
 			return new Templates.TemplateParameterDeduction(deducedTypes).Handle(handledParameter,argumentToCheck);
