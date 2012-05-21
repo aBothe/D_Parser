@@ -53,6 +53,23 @@ namespace D_Parser.Resolver.Templates
 			{
 				var ar = (ArrayResult)r;
 
+				// Handle key type
+				if((ad.KeyType != null || ad.KeyExpression!=null)&& (ar.KeyType == null || ar.KeyType.Length == 0))
+					return false;
+				bool result = false;
+
+				if (ad.KeyExpression != null)
+				{
+					if (ar.ArrayDeclaration.KeyExpression != null)
+						result = Evaluation.ExpressionEvaluator.IsEqual(ad.KeyExpression, ar.ArrayDeclaration.KeyExpression, ctxt);
+				}
+				else if(ad.KeyType!=null)
+					result = HandleDecl(ad.KeyType, ar.KeyType[0]);
+
+				if (!result)
+					return false;
+
+				// Handle inner type
 				return HandleDecl(ad.InnerDeclaration, ar.ResultBase);
 			}
 
@@ -68,7 +85,11 @@ namespace D_Parser.Resolver.Templates
 				return Set(id.Id, r);
 			}
 
-			return false;
+			/*
+			 * If not stand-alone identifier or is not required as template param, resolve the id and compare it against r
+			 */
+			var _r=TypeDeclarationResolver.Resolve(id, ctxt);
+			return _r==null|| _r.Length==0 || ResultComparer.IsEqual(_r[0],r);
 		}
 	}
 }

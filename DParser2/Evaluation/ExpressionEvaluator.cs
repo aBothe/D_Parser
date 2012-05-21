@@ -13,6 +13,18 @@ namespace D_Parser.Evaluation
 
 		private ExpressionEvaluator() { }
 
+		public static bool IsEqual(IExpression ex, IExpression ex2, ResolverContextStack ctxt)
+		{
+			var val_x1 = Evaluate(ex, ctxt);
+			var val_x2 = Evaluate(ex2, ctxt);
+
+			//TEMPORARILY: Remove the string comparison
+			if (val_x1 == null && val_x2 == null)
+				return ex.ToString() == ex2.ToString();
+
+			return val_x1!=null && val_x2 != null && val_x1.Value == val_x2.Value;
+		}
+
 		public static IExpressionValue Evaluate(IExpression expression, ResolverContextStack ctxt)
 		{
 			return new ExpressionEvaluator { ctxt = ctxt }.Evaluate(expression);
@@ -20,8 +32,8 @@ namespace D_Parser.Evaluation
 
 		public IExpressionValue Evaluate(IExpression x)
 		{
-			if (x is PrimaryExpression)
-				return Evaluate((PrimaryExpression)x);
+			//if (x is PrimaryExpression)
+				//return Evaluate((PrimaryExpression)x);
 
 			return null;
 		}

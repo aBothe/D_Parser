@@ -16,11 +16,13 @@ namespace ParserTests
 		{
 			Console.WriteLine("\tResolution tests...");
 
-			var code = @"void foo(T:T[])(T t) {}
+			var code = @"void foo(T:T[3])(T t) {}
 
 int foo(Y,T)(Y y, T t) {}
 
-class MyClass(U) {}";
+class MyClass(U) {}
+
+alias immutable(char)[] string;";
 
 			var ast = DParser.ParseString(code);
 
@@ -29,7 +31,7 @@ class MyClass(U) {}";
 				ScopedStatement = null
 			});
 
-			var instanceExpr = DParser.ParseExpression("foo!(int[])(3)");
+			var instanceExpr = DParser.ParseExpression("foo!(int[3])(3)");
 
 			var res = ExpressionTypeResolver.Resolve(instanceExpr, ctxt);
 		}
