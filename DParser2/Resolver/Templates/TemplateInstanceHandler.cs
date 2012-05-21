@@ -80,9 +80,9 @@ namespace D_Parser.Resolver.TypeResolution
 					continue;
 				}
 
-				tplResult.DeducedTypes = new Dictionary<string, ResolveResult[]>();
+				var deducedTypes = new Dictionary<string, List<ResolveResult>>();
 				foreach (var param in tplNode.TemplateParameters)
-					tplResult.DeducedTypes[param.Name] = null; // Init all params to null to let deduction functions know what params there are
+					deducedTypes[param.Name] = null; // Init all params to null to let deduction functions know what params there are
 
 				bool isLegitOverload = true;
 
@@ -95,7 +95,9 @@ namespace D_Parser.Resolver.TypeResolution
 					var argEnum = givenTemplateArguments.GetEnumerator();
 					foreach (var expectedParam in tplNode.TemplateParameters)
 					{
-						if (argEnum.MoveNext())
+						// Used when no argument but default arg given
+						bool useDefaultType = false;
+						if (argEnum.MoveNext() || (useDefaultType = HasDefaultType(expectedParam)))
 						{
 							bool isLegitArgument = true;
 
@@ -107,7 +109,7 @@ namespace D_Parser.Resolver.TypeResolution
 								while (argEnum.MoveNext())
 									tupleItems.Add(argEnum.Current);
 
-								if (!CheckAndDeduceTypeTuple((TemplateTupleParameter)expectedParam, tupleItems, tplResult.DeducedTypes))
+								if (!CheckAndDeduceTypeTuple((TemplateTupleParameter)expectedParam, tupleItems, deducedTypes,ctxt))
 									isLegitArgument = false;
 							}
 							else if (argEnum.Current!=null)
@@ -115,12 +117,16 @@ namespace D_Parser.Resolver.TypeResolution
 								// Should contain one result usually
 								foreach (var templateInstanceArg in argEnum.Current)
 								{
-									if (!CheckAndDeduceTypeAgainstTplParameter(expectedParam, templateInstanceArg, tplResult.DeducedTypes))
+									if (!CheckAndDeduceTypeAgainstTplParameter(expectedParam, templateInstanceArg,deducedTypes,ctxt))
 									{
 										isLegitArgument = false;
 										continue;
 									}
 								}
+							}
+							else if (useDefaultType && CheckAndDeduceTypeAgainstTplParameter(expectedParam,null,deducedTypes,ctxt))
+							{
+								// It's legit - just do nothing
 							}
 							else
 								isLegitArgument = false;
@@ -143,7 +149,14 @@ namespace D_Parser.Resolver.TypeResolution
 				}
 
 				if (isLegitOverload)
+				{
+					// Assign calculated types to final result
+					tplResult.DeducedTypes = new Dictionary<string, ResolveResult[]>();
+					foreach (var l in deducedTypes)
+						tplResult.DeducedTypes[l.Key] = l.Value.ToArray();
+
 					filteredOverloads.Add(overload);
+				}
 				else
 					tplResult.DeducedTypes = null;
 			}
@@ -162,14 +175,20 @@ namespace D_Parser.Resolver.TypeResolution
 			return false;
 		}
 
-		static bool CheckAndDeduceTypeAgainstTplParameter(ITemplateParameter handledParameter, ResolveResult argumentToCheck, Dictionary<string,ResolveResult[]> deducedTypes)
+		static bool CheckAndDeduceTypeAgainstTplParameter(ITemplateParameter handledParameter, 
+			ResolveResult argumentToCheck, 
+			Dictionary<string,List<ResolveResult>> deducedTypes,
+			ResolverContextStack ctxt)
 		{
-			return new Templates.TemplateParameterDeduction(deducedTypes).Handle(handledParameter,argumentToCheck);
+			return new Templates.TemplateParameterDeduction(deducedTypes,ctxt).Handle(handledParameter,argumentToCheck);
 		}
 
-		static bool CheckAndDeduceTypeTuple(TemplateTupleParameter tupleParameter, IEnumerable<ResolveResult[]> typeChain, Dictionary<string,ResolveResult[]> deducedTypes)
+		static bool CheckAndDeduceTypeTuple(TemplateTupleParameter tupleParameter, 
+			IEnumerable<ResolveResult[]> typeChain, 
+			Dictionary<string,List<ResolveResult>> deducedTypes,
+			ResolverContextStack ctxt)
 		{
-			return new Templates.TemplateParameterDeduction(deducedTypes).Handle(tupleParameter,typeChain);
+			return new Templates.TemplateParameterDeduction(deducedTypes,ctxt).Handle(tupleParameter,typeChain);
 		}
 	}
 }

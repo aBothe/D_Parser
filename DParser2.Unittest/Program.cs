@@ -22,7 +22,7 @@ namespace ParserTests
 			ResolutionTests.Run();
 
 			Console.WriteLine("~ Tests finished");
-			Console.ReadKey();
+			//Console.ReadKey();
 		}
 
 		static void a()
