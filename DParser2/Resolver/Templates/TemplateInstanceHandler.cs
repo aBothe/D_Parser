@@ -130,7 +130,8 @@ namespace D_Parser.Resolver.TypeResolution
 							if (!isLegitArgument)
 								isLegitOverload = false;
 						}
-						else
+						// There might be too few args - but that doesn't mean that it's not correct - it's only required that all parameters got satisfied with a type
+						else if(!AllParamatersSatisfied(deducedTypes))
 						{
 							// There's an insufficient number of arguments passed - discard this overload
 							isLegitOverload = false;
@@ -158,6 +159,15 @@ namespace D_Parser.Resolver.TypeResolution
 			}
 
 			return filteredOverloads.Count == 0 ? null : filteredOverloads.ToArray();
+		}
+
+		static bool AllParamatersSatisfied(Dictionary<string, List<ResolveResult>> deductions)
+		{
+			foreach (var kv in deductions)
+				if (kv.Value == null || kv.Value.Count == 0)
+					return false;
+
+			return true;
 		}
 
 		static bool HasDefaultType(ITemplateParameter p)

@@ -44,6 +44,37 @@ namespace D_Parser.Resolver.Templates
 				return HandleDecl((ArrayDecl)td, rr);
 			else if (td is IdentifierDeclaration)
 				return HandleDecl((IdentifierDeclaration)td, rr);
+			else if (td is DTokenDeclaration)
+				return HandleDecl((DTokenDeclaration)td, rr);
+			else if (td is DelegateDeclaration)
+				return HandleDecl((DelegateDeclaration)td, rr);
+			else if (td is PointerDecl)
+				return HandleDecl((PointerDecl)td,rr);
+			return false;
+		}
+
+		bool HandleDecl(IdentifierDeclaration id, ResolveResult r)
+		{
+			// Bottom-level reached
+			if (id.InnerDeclaration == null && Contains(id.Id) && !id.ModuleScoped)
+			{
+				// Associate template param with r
+				return Set(id.Id, r);
+			}
+
+			/*
+			 * If not stand-alone identifier or is not required as template param, resolve the id and compare it against r
+			 */
+			var _r = TypeDeclarationResolver.Resolve(id, ctxt);
+			return _r == null || _r.Length == 0 || 
+				ResultComparer.IsImplicitlyConvertible(_r[0], r);
+		}
+
+		bool HandleDecl(DTokenDeclaration tk, ResolveResult r)
+		{
+			if (r is StaticTypeResult && r.DeclarationOrExpressionBase is DTokenDeclaration)
+				return tk.Token == ((DTokenDeclaration)r.DeclarationOrExpressionBase).Token;
+
 			return false;
 		}
 
@@ -76,20 +107,90 @@ namespace D_Parser.Resolver.Templates
 			return false;
 		}
 
-		bool HandleDecl(IdentifierDeclaration id, ResolveResult r)
+		bool HandleDecl(DelegateDeclaration d, ResolveResult r)
 		{
-			// Bottom-level reached
-			if (id.InnerDeclaration== null && Contains(id.Id))
+			if (r is DelegateResult)
 			{
-				// Associate template param with r
-				return Set(id.Id, r);
+				var dr = (DelegateResult)r;
+
+				// Delegate literals or other expressions are not allowed
+				if(!dr.IsDelegateDeclaration)
+					return false;
+
+				var dr_decl = (DelegateDeclaration)dr.DeclarationOrExpressionBase;
+
+				// Compare return types
+				if(	d.IsFunction == dr_decl.IsFunction &&
+					dr.ReturnType!=null && 
+					dr.ReturnType.Length!=0 && 
+					HandleDecl(d.ReturnType,dr.ReturnType[0]))
+				{
+					// If no delegate args expected, it's valid
+					if ((d.Parameters == null || d.Parameters.Count == 0) &&
+						dr_decl.Parameters == null || dr_decl.Parameters.Count == 0)
+						return true;
+
+					// If parameter counts unequal, return false
+					else if (d.Parameters == null || dr_decl.Parameters == null || d.Parameters.Count != dr_decl.Parameters.Count)
+						return false;
+
+					// Compare & Evaluate each expected with given parameter
+					var dr_paramEnum = dr_decl.Parameters.GetEnumerator();
+					foreach (var p in d.Parameters)
+					{
+						// Compare attributes with each other
+						if (p is DNode)
+						{
+							if (!(dr_paramEnum.Current is DNode))
+								return false;
+
+							var dn = (DNode)p;
+							var dn_arg = (DNode)dr_paramEnum.Current;
+
+							if ((dn.Attributes == null || dn.Attributes.Count == 0) &&
+								(dn_arg.Attributes == null || dn_arg.Attributes.Count == 0))
+								return true;
+
+							else if (dn.Attributes == null || dn_arg.Attributes == null ||
+								dn.Attributes.Count != dn_arg.Attributes.Count)
+								return false;
+
+							foreach (var attr in dn.Attributes)
+							{
+								if (attr.IsProperty ?
+									!dn_arg.ContainsPropertyAttribute(attr.LiteralContent as string) :
+									!dn_arg.ContainsAttribute(attr.Token))
+									return false;
+							}
+						}
+
+						// Compare types
+						if (p.Type!=null && dr_paramEnum.MoveNext() && dr_paramEnum.Current.Type!=null)
+						{
+							var dr_resolvedParamType = TypeDeclarationResolver.Resolve(dr_paramEnum.Current.Type, ctxt);
+
+							if (dr_resolvedParamType == null ||
+								dr_resolvedParamType.Length == 0 ||
+								!HandleDecl(p.Type, dr_resolvedParamType[0]))
+								return false;
+						}
+						else
+							return false;
+					}
+				}
 			}
 
-			/*
-			 * If not stand-alone identifier or is not required as template param, resolve the id and compare it against r
-			 */
-			var _r=TypeDeclarationResolver.Resolve(id, ctxt);
-			return _r==null|| _r.Length==0 || ResultComparer.IsEqual(_r[0],r);
+			return false;
+		}
+
+		bool HandleDecl(PointerDecl p, ResolveResult r)
+		{
+			if (r is StaticTypeResult && r.DeclarationOrExpressionBase is PointerDecl)
+			{
+				return HandleDecl(p.InnerDeclaration, r.ResultBase);
+			}
+
+			return false;
 		}
 	}
 }
