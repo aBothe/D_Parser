@@ -35,7 +35,16 @@ namespace D_Parser.Resolver.Templates
 			if (p.Specialization == null)
 				return Set(p.Name, arg);
 
-			return HandleDecl(p.Specialization,arg);
+			bool handleResult= HandleDecl(p.Specialization,arg);
+
+			if (!handleResult)
+				return false;
+
+			// Apply the entire argument to parameter p if there hasn't been no explicit association yet
+			if (!TargetDictionary.ContainsKey(p.Name) || TargetDictionary[p.Name] == null || TargetDictionary[p.Name].Count == 0)
+				TargetDictionary[p.Name] = new List<ResolveResult>(new[]{arg});
+
+			return true;
 		}
 
 		bool HandleDecl(ITypeDeclaration td, ResolveResult rr)
