@@ -12,7 +12,7 @@ namespace D_Parser.Resolver
 			return true;
 		}
 
-		public static bool IsImplicitlyConvertible(ResolveResult r1, ResolveResult r2)
+		public static bool IsImplicitlyConvertible(ResolveResult resultToCheck, ResolveResult targetType)
 		{
 			return true;
 		}

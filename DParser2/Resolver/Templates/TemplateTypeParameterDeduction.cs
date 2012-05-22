@@ -5,6 +5,7 @@ using System.Text;
 using D_Parser.Dom;
 using D_Parser.Dom.Statements;
 using D_Parser.Resolver.TypeResolution;
+using D_Parser.Dom.Expressions;
 
 namespace D_Parser.Resolver.Templates
 {
@@ -58,7 +59,13 @@ namespace D_Parser.Resolver.Templates
 			else if (td is DelegateDeclaration)
 				return HandleDecl((DelegateDeclaration)td, rr);
 			else if (td is PointerDecl)
-				return HandleDecl((PointerDecl)td,rr);
+				return HandleDecl((PointerDecl)td, rr);
+			else if (td is MemberFunctionAttributeDecl)
+				return HandleDecl((MemberFunctionAttributeDecl)td, rr);
+			else if (td is TypeOfDeclaration)
+				return HandleDecl((TypeOfDeclaration)td, rr);
+			else if (td is VectorDeclaration)
+				return HandleDecl((VectorDeclaration)td, rr);
 			return false;
 		}
 
@@ -76,7 +83,12 @@ namespace D_Parser.Resolver.Templates
 			 */
 			var _r = TypeDeclarationResolver.Resolve(id, ctxt);
 			return _r == null || _r.Length == 0 || 
-				ResultComparer.IsImplicitlyConvertible(_r[0], r);
+				ResultComparer.IsImplicitlyConvertible(r,_r[0]);
+		}
+
+		bool HandleDecl(TemplateInstanceExpression tix, ResolveResult r)
+		{
+
 		}
 
 		bool HandleDecl(DTokenDeclaration tk, ResolveResult r)
@@ -199,6 +211,61 @@ namespace D_Parser.Resolver.Templates
 				return HandleDecl(p.InnerDeclaration, r.ResultBase);
 			}
 
+			return false;
+		}
+
+		bool HandleDecl(MemberFunctionAttributeDecl m, ResolveResult r)
+		{
+			if (r is StaticTypeResult && r.DeclarationOrExpressionBase is MemberFunctionAttributeDecl)
+			{
+				var r_m = (MemberFunctionAttributeDecl)r.DeclarationOrExpressionBase;
+
+				if (m.Modifier != r_m.Modifier ||
+					(m.InnerType == null && r_m.InnerType != null) ||
+					(m.InnerType != null && r_m.InnerType == null))
+					return false;
+
+				if (m.InnerType != null)
+				{
+					var r_m_innerTypeResult = TypeDeclarationResolver.Resolve(r_m.InnerType, ctxt);
+					if (r_m_innerTypeResult == null || r_m_innerTypeResult.Length == 0)
+						return false;
+
+					if (!HandleDecl(m.InnerType, r_m_innerTypeResult[0]))
+						return false;
+				}
+
+				return m.InnerDeclaration!=null ? HandleDecl(m.InnerDeclaration, r.ResultBase) : true;
+			}
+
+			return false;
+		}
+
+		bool HandleDecl(TypeOfDeclaration t, ResolveResult r)
+		{
+			// Can I enter some template parameter referencing id into a typeof specialization!?
+			// class Foo(T:typeof(1)) {} ?
+			var t_res = TypeDeclarationResolver.Resolve(t,ctxt);
+
+			if (t_res == null || t_res.Length == 0)
+				return false;
+
+			return ResultComparer.IsImplicitlyConvertible(r,t_res[0]);
+		}
+
+		bool HandleDecl(VectorDeclaration v, ResolveResult r)
+		{
+			if (r.DeclarationOrExpressionBase is VectorDeclaration)
+			{
+				var v_res = ExpressionTypeResolver.Resolve( v.Id,ctxt);
+				var r_res = ExpressionTypeResolver.Resolve(((VectorDeclaration)r.DeclarationOrExpressionBase).Id,ctxt);
+
+				if (v_res == null || v_res.Length == 0 || r_res == null || r_res.Length == 0)
+					return false;
+
+				else
+					return ResultComparer.IsImplicitlyConvertible(r_res[0], v_res[0]);
+			}
 			return false;
 		}
 	}

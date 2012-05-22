@@ -88,12 +88,12 @@ namespace D_Parser.Resolver.TypeResolution
 				}
 				else
 				{
-					var argEnum = givenTemplateArguments.GetEnumerator();
+					var argEnum = givenTemplateArguments!=null ? givenTemplateArguments.GetEnumerator() :null;
 					foreach (var expectedParam in tplNode.TemplateParameters)
 					{
 						// Used when no argument but default arg given
 						bool useDefaultType = false;
-						if (argEnum.MoveNext() || (useDefaultType = HasDefaultType(expectedParam)))
+						if ((argEnum!=null && argEnum.MoveNext()) || (useDefaultType = HasDefaultType(expectedParam)))
 						{
 							bool isLegitArgument = true;
 
