@@ -20,7 +20,6 @@ namespace D_Parser.Parser
 		protected DToken lookaheadToken = null;
 		protected DToken peekToken = null;
 
-		public readonly TrackerContainer TokenTracker;
 		protected StringBuilder sb = new StringBuilder();
 
 		protected bool stopLexing = false;
@@ -129,7 +128,6 @@ namespace D_Parser.Parser
 		protected AbstractLexer(TextReader reader)
 		{
 			this.reader = reader;
-			TokenTracker = new TrackerContainer(this);
 		}
 
 		#region System.IDisposable interface implementation
@@ -175,7 +173,6 @@ namespace D_Parser.Parser
 			if (lookaheadToken == null)
 			{
 				lookaheadToken = Next();
-				TokenTracker.InformToken(lookaheadToken.Kind);
 				return lookaheadToken;
 			}
 
@@ -184,11 +181,7 @@ namespace D_Parser.Parser
 			curToken = lookaheadToken;
 
 			if (lookaheadToken.next == null)
-			{
 				lookaheadToken.next = Next();
-				if (lookaheadToken.next != null)
-					TokenTracker.InformToken(lookaheadToken.next.Kind);
-			}
 
 			lookaheadToken = lookaheadToken.next;
 			StartPeek();
