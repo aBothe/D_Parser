@@ -66,6 +66,8 @@ namespace D_Parser.Resolver.Templates
 				return HandleDecl((TypeOfDeclaration)td, rr);
 			else if (td is VectorDeclaration)
 				return HandleDecl((VectorDeclaration)td, rr);
+			else if (td is TemplateInstanceExpression)
+				return HandleDecl((TemplateInstanceExpression)td,rr);
 			return false;
 		}
 
@@ -88,7 +90,62 @@ namespace D_Parser.Resolver.Templates
 
 		bool HandleDecl(TemplateInstanceExpression tix, ResolveResult r)
 		{
+			/*
+			 * This part is very tricky:
+			 * I still dunno what is allowed over here--
+			 * 
+			 * class Foo(T:Bar!E[],E) {}
+			 * ...
+			 * Foo!(Bar!string[]) f; -- E will be 'string' then
+			 */
+			if (r.DeclarationOrExpressionBase is TemplateInstanceExpression)
+			{
+				var tix_given = (TemplateInstanceExpression)r.DeclarationOrExpressionBase;
 
+				// Template type Ids must be equal (?)
+				if (tix.TemplateIdentifier.ToString() != tix_given.TemplateIdentifier.ToString())
+					return false;
+
+				var thHandler = new TemplateParameterDeduction(TargetDictionary, ctxt);
+
+				var argEnum_given = tix_given.Arguments.GetEnumerator();
+				foreach (var p in tix.Arguments)
+				{
+					if (!argEnum_given.MoveNext() || argEnum_given.Current == null)
+						return false;
+
+					// Convert p to type declaration
+					var param_Expected = ConvertToTypeDeclarationRoughly(p);
+
+					if (param_Expected == null)
+						return false;
+
+					var result_Given = ExpressionTypeResolver.Resolve(argEnum_given.Current as IExpression, ctxt);
+
+					if (result_Given == null || result_Given.Length == 0)
+						return false;
+
+					if (!HandleDecl(param_Expected, result_Given[0]))
+						return false;
+				}
+
+				// Too many params passed..
+				if (argEnum_given.MoveNext())
+					return false;
+
+				return true;
+			}
+
+			return false;
+		}
+
+		ITypeDeclaration ConvertToTypeDeclarationRoughly(IExpression p)
+		{
+			if (p is IdentifierExpression)
+				return new IdentifierDeclaration(((IdentifierExpression)p).Value as string) { Location = p.Location, EndLocation = p.EndLocation };
+			else if (p is TypeDeclarationExpression)
+				return ((TypeDeclarationExpression)p).Declaration;
+			return null;
 		}
 
 		bool HandleDecl(DTokenDeclaration tk, ResolveResult r)
