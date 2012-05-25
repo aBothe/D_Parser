@@ -4165,9 +4165,11 @@ namespace D_Parser.Parser
 					if(mye.Type == null)
 						mye.Type = Type();
 
-					Expect(Identifier);
-					mye.Name = t.Value;
-					mye.NameLocation = t.Location;
+					if (Expect(Identifier))
+					{
+						mye.Name = t.Value;
+						mye.NameLocation = t.Location;
+					}
 				}
 			}
 
@@ -4216,7 +4218,7 @@ namespace D_Parser.Parser
 
 					if (laKind == (Assign))
 					{
-						Step();
+						//Step(); -- expected by initializer
 						enumVar.Initializer = Initializer(); // Seems to be specified wrongly - theoretically there must be an AssignExpression();
 					}
 					enumVar.EndLocation = t.Location;
