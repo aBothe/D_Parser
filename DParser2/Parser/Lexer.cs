@@ -1149,6 +1149,9 @@ namespace D_Parser.Parser
 				case '\"':
 					ch = '\"';
 					break;
+				case '?':
+					ch='?';
+					return "\\?"; // Literal question mark
 				case '\\':
 					ch = '\\';
 					break;
@@ -1156,13 +1159,13 @@ namespace D_Parser.Parser
 					ch = '\0';
 					break;*/
 				case 'a':
-					ch = '\a';
+					ch = '\a'; // Bell (alert)
 					break;
 				case 'b':
-					ch = '\b';
+					ch = '\b'; // Backspace
 					break;
 				case 'f':
-					ch = '\f';
+					ch = '\f'; // Formfeed
 					break;
 				case 'n':
 					ch = '\n';
@@ -1174,7 +1177,7 @@ namespace D_Parser.Parser
 					ch = '\t';
 					break;
 				case 'v':
-					ch = '\v';
+					ch = '\v'; // Vertical tab
 					break;
 				case 'u':
 				case 'x':
