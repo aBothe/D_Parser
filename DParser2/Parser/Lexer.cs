@@ -661,6 +661,12 @@ namespace D_Parser.Parser
 					//token.prev = base.curToken;
 					return token;
 				}
+				else
+				{
+					OnError(Line, Col, "Invalid character");
+					StopLexing();
+					break;
+				}
 			}
 
 			return new DToken(DTokens.EOF, Col, Line, String.Empty);
