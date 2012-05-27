@@ -22,7 +22,13 @@ namespace D_Parser.Evaluation
 			if (val_x1 == null && val_x2 == null)
 				return ex.ToString() == ex2.ToString();
 
-			return val_x1!=null && val_x2 != null && val_x1.Value == val_x2.Value;
+			return IsEqual(val_x1, val_x2);
+		}
+
+		public static bool IsEqual(IExpressionValue val_x1, IExpressionValue val_x2)
+		{
+			//TODO
+			return val_x1 != null && val_x2 != null && val_x1.Value == val_x2.Value;
 		}
 
 		public static IExpressionValue Evaluate(IExpression expression, ResolverContextStack ctxt)

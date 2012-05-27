@@ -2,11 +2,9 @@
 
 namespace D_Parser.Dom
 {
-	public interface ITemplateParameter
+	public interface ITemplateParameter : ISyntaxRegion
 	{
 		string Name { get; }
-		CodeLocation Location { get; }
-		CodeLocation EndLocation { get; }
 	}
 
 	/// <summary>

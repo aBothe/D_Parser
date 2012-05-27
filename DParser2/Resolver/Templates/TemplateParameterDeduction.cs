@@ -41,24 +41,28 @@ namespace D_Parser.Resolver.Templates
 			return false;
 		}
 
-		public bool Handle(TemplateAliasParameter p, ResolveResult arg)
-		{
-			return false;
-		}
-
 		public bool Handle(TemplateThisParameter p, ResolveResult arg)
 		{
-			return false;
+			// Only special handling required for method calls
+			return Handle(p.FollowParameter,arg);
 		}
 
 		public bool Handle(TemplateTupleParameter p, IEnumerable<ResolveResult[]> arguments)
 		{
-			return false;
-		}
+			if (arguments == null)
+				return false;
 
-		public bool Handle(TemplateValueParameter p, ResolveResult arg)
-		{
-			return false;
+			var args= arguments.ToArray();
+
+			if (args.Length < 2)
+				return false;
+
+			Set(p.Name, new TypeTupleResult { 
+				TupleParameter=p,
+				TupleItems=args 
+			});
+
+			return true;
 		}
 
 		/// <summary>

@@ -31,7 +31,7 @@ alias immutable(char)[] string;";
 				ScopedStatement = null
 			});
 
-			var instanceExpr = DParser.ParseExpression("foo!(MyClass!(string[]))(3)");
+			var instanceExpr = DParser.ParseExpression("foo!(MyClass!(string[]))");
 
 			var res = ExpressionTypeResolver.Resolve(instanceExpr, ctxt);
 		}

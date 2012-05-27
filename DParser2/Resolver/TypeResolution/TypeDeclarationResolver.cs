@@ -359,7 +359,7 @@ namespace D_Parser.Resolver.TypeResolution
 					return null;
 				}
 
-				var alias = new MemberResult { 
+				var alias = new AliasResult { 
 					Node=m
 				};
 
@@ -394,13 +394,14 @@ namespace D_Parser.Resolver.TypeResolution
 				}
 
 				// Note: Also works for aliases! In this case, we simply try to resolve the aliased type, otherwise the variable's base type
-				ret = new MemberResult()
-				{
-					Node = m,
-					MemberBaseTypes = memberbaseTypes,
-					ResultBase = resultBase,
-					DeclarationOrExpressionBase = typeBase
-				};
+				var r=v.IsAlias ? new AliasResult() : new MemberResult();
+				ret = r;
+				
+				r.Node = m;
+				r.MemberBaseTypes = memberbaseTypes;
+				r.ResultBase = resultBase;
+				r.DeclarationOrExpressionBase = typeBase;
+				
 			}
 			else if (m is DMethod)
 			{

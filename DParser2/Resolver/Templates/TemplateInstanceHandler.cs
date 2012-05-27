@@ -174,6 +174,11 @@ namespace D_Parser.Resolver.TypeResolution
 		{
 			if (p is TemplateTypeParameter)
 				return ((TemplateTypeParameter)p).Default != null;
+			else if (p is TemplateAliasParameter)
+			{
+				var ap = (TemplateAliasParameter)p;
+				return ap.DefaultExpression != null || ap.DefaultType != null;
+			}
 			else if (p is TemplateThisParameter)
 				return HasDefaultType(((TemplateThisParameter)p).FollowParameter);
 			else if (p is TemplateValueParameter)
