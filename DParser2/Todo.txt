@@ -1,0 +1,26 @@
+﻿
+Everything that still needs to be handled by D_Parser comes right in here:
+
+
+Resolver:
+- Implement single-element aliasing
+	(when a template contains only one item that is called like the template, 
+	the template's name will be resolved to that member element instead of the template)
+
+Template parameter deduction:
+ - Handle __FILE__ and __LINE__ correctly concerning template values
+ - Implement a from-least-to-most-specified check
+
+	class Derp(int U) 
+	{ /* all values of U except 1234 */ } 
+	class Derp(int U : 1234) 
+	{ /* Derp for 1234 */ }
+
+	1) class A {}
+	2) class B : A {}
+
+	3) class C(T : A) {}
+	4) class C(T : B) {}
+
+	new C!B -> selects 4) because B is nearer related to B than to A though B can be A, too
+
