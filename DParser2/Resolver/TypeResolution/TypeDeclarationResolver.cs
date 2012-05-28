@@ -27,18 +27,24 @@ namespace D_Parser.Resolver.TypeResolution
 		public static ResolveResult[] ResolveIdentifier(string id, ResolverContextStack ctxt, object idObject, bool ModuleScope = false)
 		{
 			var loc = idObject is ISyntaxRegion ? ((ISyntaxRegion)idObject).Location:CodeLocation.Empty;
+			ResolveResult[] res = null;
 
 			if (ModuleScope)
 				ctxt.PushNewScope(ctxt.ScopedBlock.NodeRoot as IAbstractSyntaxTree);
 
+			// If there are symbols that must be preferred, take them instead of scanning the ast
+			else if (ctxt.CurrentContext.PreferredLocals!=null &&
+				ctxt.CurrentContext.PreferredLocals.TryGetValue(id,out res))
+				return res;
+
 			var matches = NameScan.SearchMatchesAlongNodeHierarchy(ctxt, loc, id);
 
-			var r= HandleNodeMatches(matches, ctxt, null, idObject);
+			res= HandleNodeMatches(matches, ctxt, null, idObject);
 
 			if (ModuleScope)
 				ctxt.Pop();
 
-			return r;
+			return res;
 		}
 
 		public static ResolveResult[] Resolve(IdentifierDeclaration id, ResolverContextStack ctxt, ResolveResult[] resultBases = null, bool filterForTemplateArgs = true)

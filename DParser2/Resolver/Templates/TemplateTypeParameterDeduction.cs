@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Linq;
 using D_Parser.Dom;
+using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
 using D_Parser.Resolver.TypeResolution;
-using D_Parser.Dom.Expressions;
 
 namespace D_Parser.Resolver.Templates
 {
@@ -42,8 +39,8 @@ namespace D_Parser.Resolver.Templates
 				return false;
 
 			// Apply the entire argument to parameter p if there hasn't been no explicit association yet
-			if (!TargetDictionary.ContainsKey(p.Name) || TargetDictionary[p.Name] == null || TargetDictionary[p.Name].Count == 0)
-				TargetDictionary[p.Name] = new List<ResolveResult>(new[]{arg});
+			if (!TargetDictionary.ContainsKey(p.Name) || TargetDictionary[p.Name] == null || TargetDictionary[p.Name].Length == 0)
+				TargetDictionary[p.Name] = new[]{ arg };
 
 			return true;
 		}

@@ -22,6 +22,8 @@ int foo(Y,T)(Y y, T t) {}
 
 class MyClass(U) {}
 
+class Derp(alias X) {}
+
 alias immutable(char)[] string;";
 
 			var ast = DParser.ParseString(code);
@@ -31,7 +33,7 @@ alias immutable(char)[] string;";
 				ScopedStatement = null
 			});
 
-			var instanceExpr = DParser.ParseExpression("foo!(MyClass!(string[]))");
+			var instanceExpr = DParser.ParseExpression("new Derp!string");
 
 			var res = ExpressionTypeResolver.Resolve(instanceExpr, ctxt);
 		}

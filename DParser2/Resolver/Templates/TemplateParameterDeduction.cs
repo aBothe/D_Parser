@@ -14,14 +14,14 @@ namespace D_Parser.Resolver.Templates
 		/// <summary>
 		/// The dictionary which stores all deduced results + their names
 		/// </summary>
-		Dictionary<string, List<ResolveResult>> TargetDictionary;
+		Dictionary<string, ResolveResult[]> TargetDictionary;
 		
 		/// <summary>
 		/// Needed for resolving default types
 		/// </summary>
 		ResolverContextStack ctxt;
 
-		public TemplateParameterDeduction(Dictionary<string, List<ResolveResult>> DeducedParameters, ResolverContextStack ctxt)
+		public TemplateParameterDeduction(Dictionary<string, ResolveResult[]> DeducedParameters, ResolverContextStack ctxt)
 		{
 			this.ctxt = ctxt;
 			this.TargetDictionary = DeducedParameters;
@@ -31,13 +31,13 @@ namespace D_Parser.Resolver.Templates
 		public bool Handle(ITemplateParameter parameter, ResolveResult argumentToAnalyze)
 		{
 			if (parameter is TemplateAliasParameter)
-				return Handle((TemplateAliasParameter)parameter, argumentToAnalyze);
+				return HandleWithAlreadyDeductedParamIntroduction(parameter, argumentToAnalyze);
 			else if (parameter is TemplateThisParameter)
 				return Handle((TemplateThisParameter)parameter, argumentToAnalyze);
 			else if(parameter is TemplateTypeParameter)
 				return Handle((TemplateTypeParameter)parameter,argumentToAnalyze);
 			else if(parameter is TemplateValueParameter)
-				return Handle((TemplateValueParameter)parameter,argumentToAnalyze);
+				return HandleWithAlreadyDeductedParamIntroduction(parameter,argumentToAnalyze);
 			return false;
 		}
 
@@ -82,30 +82,24 @@ namespace D_Parser.Resolver.Templates
 		/// </summary>
 		bool Set(string parameterName, ResolveResult r)
 		{
-			List<ResolveResult> rl=null;
+			ResolveResult[] rl=null;
 			if (!TargetDictionary.TryGetValue(parameterName, out rl) || rl == null)
-				rl = TargetDictionary[parameterName] = new List<ResolveResult>();
+			{
+				TargetDictionary[parameterName] = new[] { r };
+				return true;
+			}
 			else
 			{
-				if (rl.Count == 1)
-				{
-					if (ResultComparer.IsEqual(rl[0], r))
+				if (rl.Length == 1 && ResultComparer.IsEqual(rl[0], r))
 						return true;
-					else
-					{
-						rl.Add(r);
-						return false;
-					}
-				}
-				else if (rl.Count > 1)
-				{
-					rl.Add(r);
-					return false;
-				}
+
+				var newArr = new ResolveResult[rl.Length + 1];
+				rl.CopyTo(newArr, 0);
+				newArr[rl.Length] = r;
+
+				TargetDictionary[parameterName] = newArr;
+				return false;
 			}
-			
-			rl.Add(r);
-			return true;
 		}
 	}
 }

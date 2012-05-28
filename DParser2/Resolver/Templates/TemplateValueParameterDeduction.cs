@@ -1,22 +1,48 @@
 ﻿using D_Parser.Dom;
 using D_Parser.Evaluation;
 using D_Parser.Resolver.TypeResolution;
+using System.Collections.Generic;
 
 namespace D_Parser.Resolver.Templates
 {
 	partial class TemplateParameterDeduction
 	{
-		public bool Handle(TemplateValueParameter p, ResolveResult arg)
+		public bool HandleWithAlreadyDeductedParamIntroduction(ITemplateParameter p, ResolveResult arg)
 		{
-			//TODO: Introduce previously deduced parameters into current resolution context somehow 
-			// -- So add some further name->ResolveResult[] associations to the ResolverContext object
+			//TODO: Handle __FILE__ and __LINE__ correctly - so don't evaluate them at the template declaration but at the point of instantiation
 
+			/*
+			 * Introduce previously deduced parameters into current resolution context
+			 * to allow value parameter to be of e.g. type T whereas T is already set somewhere before 
+			 */
+			var _prefLocalsBackup = ctxt.CurrentContext.PreferredLocals;
+
+			var d = new Dictionary<string, ResolveResult[]>();
+			foreach (var kv in TargetDictionary)
+				if (kv.Value != null && kv.Value.Length != 0)
+					d[kv.Key] = kv.Value;
+			ctxt.CurrentContext.PreferredLocals = d;
+
+			bool res=false;
+
+			if (p is TemplateAliasParameter) // Test alias ones before value ones due to type hierarchy
+				res = Handle((TemplateAliasParameter)p, arg);
+			else if (p is TemplateValueParameter)
+				res = Handle((TemplateValueParameter)p, arg);
+
+			ctxt.CurrentContext.PreferredLocals = _prefLocalsBackup;
+
+			return res;
+		}
+
+		bool Handle(TemplateValueParameter p, ResolveResult arg)
+		{
 			// Handle default arg case
 			if (arg == null)
 			{
 				if (p.DefaultExpression != null)
 				{
-					Set(p.Name, new ExpressionValueResult
+					var b=Set(p.Name, new ExpressionValueResult
 					{
 						Value = ExpressionEvaluator.Evaluate(p.DefaultExpression, ctxt),
 						DeclarationOrExpressionBase = p.DefaultExpression

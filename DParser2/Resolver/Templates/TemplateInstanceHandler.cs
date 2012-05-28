@@ -76,7 +76,7 @@ namespace D_Parser.Resolver.TypeResolution
 					continue;
 				}
 
-				var deducedTypes = new Dictionary<string, List<ResolveResult>>();
+				var deducedTypes = new Dictionary<string, ResolveResult[]>();
 				foreach (var param in tplNode.TemplateParameters)
 					deducedTypes[param.Name] = null; // Init all params to null to let deduction functions know what params there are
 
@@ -136,6 +136,10 @@ namespace D_Parser.Resolver.TypeResolution
 							// There's an insufficient number of arguments passed - discard this overload
 							isLegitOverload = false;
 						}
+
+						// Don't check further params if mismatch has been found
+						if (!isLegitOverload)
+							break;
 					}
 
 					if (argEnum.MoveNext())
@@ -148,9 +152,7 @@ namespace D_Parser.Resolver.TypeResolution
 				if (isLegitOverload)
 				{
 					// Assign calculated types to final result
-					tplResult.DeducedTypes = new Dictionary<string, ResolveResult[]>();
-					foreach (var l in deducedTypes)
-						tplResult.DeducedTypes[l.Key] = l.Value.ToArray();
+					tplResult.DeducedTypes = deducedTypes;
 
 					filteredOverloads.Add(overload);
 				}
@@ -161,10 +163,10 @@ namespace D_Parser.Resolver.TypeResolution
 			return filteredOverloads.Count == 0 ? null : filteredOverloads.ToArray();
 		}
 
-		static bool AllParamatersSatisfied(Dictionary<string, List<ResolveResult>> deductions)
+		static bool AllParamatersSatisfied(Dictionary<string, ResolveResult[]> deductions)
 		{
 			foreach (var kv in deductions)
-				if (kv.Value == null || kv.Value.Count == 0)
+				if (kv.Value == null || kv.Value==null || kv.Value.Length == 0)
 					return false;
 
 			return true;
@@ -188,7 +190,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 		static bool CheckAndDeduceTypeAgainstTplParameter(ITemplateParameter handledParameter, 
 			ResolveResult argumentToCheck, 
-			Dictionary<string,List<ResolveResult>> deducedTypes,
+			Dictionary<string,ResolveResult[]> deducedTypes,
 			ResolverContextStack ctxt)
 		{
 			return new Templates.TemplateParameterDeduction(deducedTypes,ctxt).Handle(handledParameter,argumentToCheck);
@@ -196,7 +198,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 		static bool CheckAndDeduceTypeTuple(TemplateTupleParameter tupleParameter, 
 			IEnumerable<ResolveResult[]> typeChain, 
-			Dictionary<string,List<ResolveResult>> deducedTypes,
+			Dictionary<string,ResolveResult[]> deducedTypes,
 			ResolverContextStack ctxt)
 		{
 			return new Templates.TemplateParameterDeduction(deducedTypes,ctxt).Handle(tupleParameter,typeChain);
