@@ -68,7 +68,8 @@ namespace D_Parser.Resolver.Templates
 			#region Specialization check
 			if (p.SpecializationExpression != null)
 			{
-
+				// LANGUAGE ISSUE: Can't do anything here - won't let you MyClass!(2) though you have class MyClass(alias X:2)
+				return false;
 			}
 			else if (p.SpecializationType != null)
 			{
