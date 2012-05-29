@@ -20,7 +20,8 @@ namespace ParserTests
 
 int foo(Y,T)(Y y, T t) {}
 
-class MyClass(U) {}
+class MyClass(int U) {}
+class MyClass(int U:1234) {}
 
 class Derp(alias X) {}
 
@@ -33,7 +34,7 @@ alias immutable(char)[] string;";
 				ScopedStatement = null
 			});
 
-			var instanceExpr = DParser.ParseExpression("new Derp!string");
+			var instanceExpr = DParser.ParseExpression("new MyClass!(a)");
 
 			var res = ExpressionTypeResolver.Resolve(instanceExpr, ctxt);
 		}

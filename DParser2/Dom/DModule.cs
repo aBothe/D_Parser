@@ -222,6 +222,13 @@ namespace D_Parser.Dom
             return (IsAlias?"alias ":"")+base.ToString(Attributes,IncludePath)+(Initializer!=null?(" = "+Initializer.ToString()):"");
         }
 
+		public bool IsConst
+		{
+			get {
+				return ContainsAttribute(DTokens.Const, DTokens.Enum); // TODO: Are there more tokens that indicate a const value?
+			}
+		}
+
 		public override void AssignFrom(INode other)
 		{
 			if (other is DVariable)

@@ -10,11 +10,58 @@ namespace D_Parser.Resolver.TypeResolution
 			TemplateInstanceExpression templateInstanceExpr,
 			ResolverContextStack ctxt)
 		{
+			// Resolve given argument expressions
 			var templateArguments = new List<ResolveResult[]>();
 
 			if(templateInstanceExpr != null)
 				foreach (var arg in templateInstanceExpr.Arguments)
-					templateArguments.Add(ExpressionTypeResolver.Resolve(arg,ctxt));
+				{
+					// If this is the case, we just need to pass the actual type
+					if (arg is TypeDeclarationExpression)
+					{
+						var r = TypeDeclarationResolver.Resolve(((TypeDeclarationExpression)arg).Declaration, ctxt);
+
+						// Note: It's currently quite tricky concerning the following loops and names - it's mainly due to the fact that a declaration can return multiple symbol definitions..
+						var res_AddedToTemplateArgs = new List<ResolveResult>();
+						// But: If it's a variable that represents a const value..
+						var r_noAlias = DResolver.TryRemoveAliasesFromResult(r);
+						if (r_noAlias != null)
+						{
+							foreach (var r_ in r_noAlias)
+							{
+								if (r_ is MemberResult)
+								{
+									var n = ((MemberResult)r_).Node as DVariable;
+
+									if (n != null && n.IsConst)
+									{
+										// .. resolve it's pre-compile time value and make the returned value the given argument
+										var val = Evaluation.ExpressionEvaluator.Evaluate(n.Initializer, ctxt);
+
+										if (val != null && val.Value != null)
+										{
+											res_AddedToTemplateArgs.Add(new ExpressionValueResult {	
+												DeclarationOrExpressionBase = n.Initializer,
+												Value = val
+											});
+											continue;
+										}
+									}
+								}
+
+								res_AddedToTemplateArgs.Add(r_);
+							}
+
+							templateArguments.Add(res_AddedToTemplateArgs.ToArray());
+						}
+					}
+					else // If it's a (constant) expression, try to evaluate it 
+						templateArguments.Add(new[]{
+							new ExpressionValueResult{
+								DeclarationOrExpressionBase=arg,
+								Value=Evaluation.ExpressionEvaluator.Evaluate(arg, ctxt)}
+						});
+				}
 
 			return EvalAndFilterOverloads(rawOverloadList, templateArguments, false, ctxt);
 		}

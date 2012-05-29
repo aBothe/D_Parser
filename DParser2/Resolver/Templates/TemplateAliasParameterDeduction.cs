@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Linq;
 using D_Parser.Dom;
-using D_Parser.Dom.Statements;
 using D_Parser.Resolver.TypeResolution;
-using D_Parser.Dom.Expressions;
 
 namespace D_Parser.Resolver.Templates
 {
@@ -68,12 +63,13 @@ namespace D_Parser.Resolver.Templates
 			#region Specialization check
 			if (p.SpecializationExpression != null)
 			{
-				// LANGUAGE ISSUE: Can't do anything here - won't let you MyClass!(2) though you have class MyClass(alias X:2)
+				// LANGUAGE ISSUE: Can't do anything here - dmd won't let you use MyClass!(2) though you have class MyClass(alias X:2)
 				return false;
 			}
 			else if (p.SpecializationType != null)
 			{
-
+				// ditto
+				return false;
 			}
 			#endregion
 
