@@ -24,11 +24,12 @@ class A {}
 class B:A{}
 class C:B{}
 
-class MyClass(T:T) {}
-class MyClass(T:T*) {}
-class MyClass(T:T**) {}
+class MyClass(T) {}
+class MyClass(T:A) {}
+class MyClass(T:B) {}
 
-class Derp(alias X) {}
+class D(int u) {}
+class D(int u:1) {}
 
 const int a=3;
 int b=4;
@@ -42,7 +43,7 @@ alias immutable(char)[] string;";
 				ScopedStatement = null
 			});
 
-			var instanceExpr = DParser.ParseExpression("(new MyClass!(int*))");
+			var instanceExpr = DParser.ParseExpression("(new D!1)");
 
 			var res = ExpressionTypeResolver.Resolve(instanceExpr, ctxt);
 		}

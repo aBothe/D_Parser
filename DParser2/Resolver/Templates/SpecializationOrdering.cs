@@ -87,17 +87,52 @@ namespace D_Parser.Resolver.Templates
 			var tp2_enum = dn2.TemplateParameters.GetEnumerator();
 
 			while (tp1_enum.MoveNext() && tp2_enum.MoveNext())
-			{
-				if (tp1_enum.Current is TemplateTypeParameter && tp2_enum.Current is TemplateTypeParameter)
-				{
-					if (!IsMoreSpecialized((TemplateTypeParameter)tp1_enum.Current, (TemplateTypeParameter)tp2_enum.Current, dummyList))
-						return false;
-				}
-				else
+				if (!IsMoreSpecialized((ITemplateParameter)tp1_enum.Current, (ITemplateParameter)tp2_enum.Current, dummyList))
 					return false;
-			}
 
 			return true;
+		}
+
+		bool IsMoreSpecialized(ITemplateParameter t1, ITemplateParameter t2, Dictionary<string, ResolveResult[]> t1_dummyParameterList)
+		{
+			if (t1 is TemplateTypeParameter && t2 is TemplateTypeParameter &&
+				!IsMoreSpecialized((TemplateTypeParameter)t1, (TemplateTypeParameter)t2, t1_dummyParameterList))
+				return false;
+			else if (t1 is TemplateValueParameter && t2 is TemplateValueParameter &&
+				!IsMoreSpecialized((TemplateValueParameter)t1, (TemplateValueParameter)t2))
+				return false;
+			else if (t1 is TemplateAliasParameter && t2 is TemplateAliasParameter &&
+				!IsMoreSpecialized((TemplateAliasParameter)t1, (TemplateAliasParameter)t2, t1_dummyParameterList))
+				return false;
+
+			return false;
+		}
+
+		bool IsMoreSpecialized(TemplateAliasParameter t1, TemplateAliasParameter t2, Dictionary<string,ResolveResult[]> t1_DummyParamList)
+		{
+			if (t1.SpecializationExpression != null)
+			{
+				if(t2.SpecializationExpression == null)
+					return true;
+				// It's not needed to test both expressions for equality because they actually were equal to the given template instance argument
+				// à la  'a = b, a = c => b = c'
+				return false;
+			}
+			else if (t1.SpecializationType != null)
+			{
+				if (t2.SpecializationType == null)
+					return true;
+
+				return IsMoreSpecialized(t1.SpecializationType, t2, t1_DummyParamList);
+			}
+			return false;
+		}
+
+		bool IsMoreSpecialized(TemplateValueParameter t1, TemplateValueParameter t2)
+		{
+			if (t1.SpecializationExpression != null && t2.SpecializationExpression == null)
+				return true;
+			return false;
 		}
 
 		/// <summary>
@@ -111,17 +146,23 @@ namespace D_Parser.Resolver.Templates
 			else if (t1.Specialization == null) // Return false if t2 is more specialized or if t1 as well as t2 are not specialized
 				return false;
 
+			return IsMoreSpecialized(t1.Specialization, t2, t1_DummyParamList);
+		}
+
+		bool IsMoreSpecialized(ITypeDeclaration Spec, ITemplateParameter t2, Dictionary<string, ResolveResult[]> t1_DummyParamList)
+		{
 			// Make a type out of t1's specialization
-			var block=ctxt.ScopedBlock.NodeRoot as IBlockNode;
-			var frame=ctxt.PushNewScope(block);
+			var block = ctxt.ScopedBlock.NodeRoot as IBlockNode;
+			var frame = ctxt.PushNewScope(block);
 
 			// Make the T in e.g. T[] a virtual type so T will be replaced by it
-			var dummyType= new[]{ new TypeResult { Node = new DClassLike {	Name = "X" } }};
-			foreach(var kv in t1_DummyParamList)
+			// T** will be X** then - so a theoretically valid type instead of a template param
+			var dummyType = new[] { new TypeResult { Node = new DClassLike { Name = "X" } } };
+			foreach (var kv in t1_DummyParamList)
 				frame.PreferredLocals[kv.Key] = dummyType;
 
-			var t1_TypeResults = Resolver.TypeResolution.TypeDeclarationResolver.Resolve(t1.Specialization,ctxt);
-			if(t1_TypeResults== null || t1_TypeResults.Length == 0)
+			var t1_TypeResults = Resolver.TypeResolution.TypeDeclarationResolver.Resolve(Spec, ctxt);
+			if (t1_TypeResults == null || t1_TypeResults.Length == 0)
 				return true;
 
 			ctxt.Pop();

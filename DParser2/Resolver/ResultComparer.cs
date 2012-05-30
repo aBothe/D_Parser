@@ -20,6 +20,9 @@ namespace D_Parser.Resolver
 		/// </summary>
 		public static bool IsImplicitlyConvertible(ResolveResult resultToCheck, ResolveResult targetType)
 		{
+			if (IsEqual(resultToCheck, targetType))
+				return true;
+
 			return true;
 		}
 	}
