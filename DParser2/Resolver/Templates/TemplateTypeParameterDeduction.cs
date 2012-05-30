@@ -316,7 +316,6 @@ namespace D_Parser.Resolver.Templates
 
 				if (v_res == null || v_res.Length == 0 || r_res == null || r_res.Length == 0)
 					return false;
-
 				else
 					return ResultComparer.IsImplicitlyConvertible(r_res[0], v_res[0]);
 			}

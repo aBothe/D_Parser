@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using D_Parser.Dom;
-using D_Parser.Resolver.TypeResolution;
-using D_Parser.Dom.Statements;
 
 namespace D_Parser.Resolver.Templates
 {
@@ -15,7 +11,7 @@ namespace D_Parser.Resolver.Templates
 		/// The dictionary which stores all deduced results + their names
 		/// </summary>
 		Dictionary<string, ResolveResult[]> TargetDictionary;
-		
+
 		/// <summary>
 		/// Needed for resolving default types
 		/// </summary>
@@ -60,7 +56,7 @@ namespace D_Parser.Resolver.Templates
 			return res;
 		}
 
-		public bool Handle(TemplateThisParameter p, ResolveResult arg)
+		bool Handle(TemplateThisParameter p, ResolveResult arg)
 		{
 			// Only special handling required for method calls
 			return Handle(p.FollowParameter,arg);

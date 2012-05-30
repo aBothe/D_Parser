@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
+using D_Parser.Resolver.Templates;
 
 namespace D_Parser.Resolver.TypeResolution
 {
@@ -97,6 +99,7 @@ namespace D_Parser.Resolver.TypeResolution
 			}
 
 			var filteredOverloads = new List<ResolveResult>();
+
 			foreach (var overload in rawOverloadList)
 			{
 				var tplResult = overload as TemplateInstanceResult;
@@ -214,10 +217,11 @@ namespace D_Parser.Resolver.TypeResolution
 			// If there are >1 overloads, filter from most to least specialized template param
 			if (filteredOverloads.Count > 1)
 			{
-
+				var specFiltered = SpecializationOrdering.FilterFromMostToLeastSpecialized(filteredOverloads, ctxt);
+				return specFiltered == null ? null : specFiltered.ToArray();
 			}
-
-			return filteredOverloads.Count == 0 ? null : filteredOverloads.ToArray();
+			else
+				return filteredOverloads.Count == 0 ? null : filteredOverloads.ToArray();
 		}
 
 		static bool AllParamatersSatisfied(Dictionary<string, ResolveResult[]> deductions)
@@ -250,7 +254,7 @@ namespace D_Parser.Resolver.TypeResolution
 			Dictionary<string,ResolveResult[]> deducedTypes,
 			ResolverContextStack ctxt)
 		{
-			return new Templates.TemplateParameterDeduction(deducedTypes,ctxt).Handle(handledParameter,argumentToCheck);
+			return new Templates.TemplateParameterDeduction(deducedTypes, ctxt).Handle(handledParameter, argumentToCheck);
 		}
 
 		static bool CheckAndDeduceTypeTuple(TemplateTupleParameter tupleParameter, 
@@ -259,16 +263,6 @@ namespace D_Parser.Resolver.TypeResolution
 			ResolverContextStack ctxt)
 		{
 			return new Templates.TemplateParameterDeduction(deducedTypes,ctxt).Handle(tupleParameter,typeChain);
-		}
-
-		ResolveResult[] FilterFromMostToLeastSpecialized()
-		{
-			/*
-			 * 
-			 */
-
-
-			return null;
 		}
 	}
 }
