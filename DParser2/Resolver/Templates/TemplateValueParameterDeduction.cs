@@ -7,34 +7,6 @@ namespace D_Parser.Resolver.Templates
 {
 	partial class TemplateParameterDeduction
 	{
-		public bool HandleWithAlreadyDeductedParamIntroduction(ITemplateParameter p, ResolveResult arg)
-		{
-			//TODO: Handle __FILE__ and __LINE__ correctly - so don't evaluate them at the template declaration but at the point of instantiation
-
-			/*
-			 * Introduce previously deduced parameters into current resolution context
-			 * to allow value parameter to be of e.g. type T whereas T is already set somewhere before 
-			 */
-			var _prefLocalsBackup = ctxt.CurrentContext.PreferredLocals;
-
-			var d = new Dictionary<string, ResolveResult[]>();
-			foreach (var kv in TargetDictionary)
-				if (kv.Value != null && kv.Value.Length != 0)
-					d[kv.Key] = kv.Value;
-			ctxt.CurrentContext.PreferredLocals = d;
-
-			bool res=false;
-
-			if (p is TemplateAliasParameter) // Test alias ones before value ones due to type hierarchy
-				res = Handle((TemplateAliasParameter)p, arg);
-			else if (p is TemplateValueParameter)
-				res = Handle((TemplateValueParameter)p, arg);
-
-			ctxt.CurrentContext.PreferredLocals = _prefLocalsBackup;
-
-			return res;
-		}
-
 		bool Handle(TemplateValueParameter p, ResolveResult arg)
 		{
 			// Handle default arg case

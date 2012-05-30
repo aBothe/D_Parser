@@ -30,15 +30,34 @@ namespace D_Parser.Resolver.Templates
 
 		public bool Handle(ITemplateParameter parameter, ResolveResult argumentToAnalyze)
 		{
+			//TODO: Handle __FILE__ and __LINE__ correctly - so don't evaluate them at the template declaration but at the point of instantiation
+
+			/*
+			 * Introduce previously deduced parameters into current resolution context
+			 * to allow value parameter to be of e.g. type T whereas T is already set somewhere before 
+			 */
+			var _prefLocalsBackup = ctxt.CurrentContext.PreferredLocals;
+
+			var d = new Dictionary<string, ResolveResult[]>();
+			foreach (var kv in TargetDictionary)
+				if (kv.Value != null && kv.Value.Length != 0)
+					d[kv.Key] = kv.Value;
+			ctxt.CurrentContext.PreferredLocals = d;
+
+			bool res = false;
+
 			if (parameter is TemplateAliasParameter)
-				return HandleWithAlreadyDeductedParamIntroduction(parameter, argumentToAnalyze);
+				res = Handle((TemplateAliasParameter)parameter, argumentToAnalyze);
 			else if (parameter is TemplateThisParameter)
-				return Handle((TemplateThisParameter)parameter, argumentToAnalyze);
+				res= Handle((TemplateThisParameter)parameter, argumentToAnalyze);
 			else if(parameter is TemplateTypeParameter)
-				return Handle((TemplateTypeParameter)parameter,argumentToAnalyze);
+				res= Handle((TemplateTypeParameter)parameter,argumentToAnalyze);
 			else if(parameter is TemplateValueParameter)
-				return HandleWithAlreadyDeductedParamIntroduction(parameter,argumentToAnalyze);
-			return false;
+				res= Handle((TemplateValueParameter)parameter,argumentToAnalyze);
+
+			ctxt.CurrentContext.PreferredLocals = _prefLocalsBackup;
+
+			return res;
 		}
 
 		public bool Handle(TemplateThisParameter p, ResolveResult arg)

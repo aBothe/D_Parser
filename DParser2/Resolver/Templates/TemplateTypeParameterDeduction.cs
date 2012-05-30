@@ -8,7 +8,7 @@ namespace D_Parser.Resolver.Templates
 {
 	partial class TemplateParameterDeduction
 	{
-		public bool Handle(TemplateTypeParameter p, ResolveResult arg)
+		bool Handle(TemplateTypeParameter p, ResolveResult arg)
 		{
 			// if no argument given, try to handle default arguments
 			if (arg == null)
