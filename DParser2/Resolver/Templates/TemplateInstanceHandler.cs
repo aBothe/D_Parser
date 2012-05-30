@@ -131,10 +131,13 @@ namespace D_Parser.Resolver.TypeResolution
 
 				if (isMethodCall)
 				{
-					//TODO
+					#region Handle implicit deduction by only passing method arguments
+					// http://dlang.org/template.html#function-templates
+					#endregion
 				}
 				else
 				{
+					#region Handle regular template instantiating
 					var argEnum = givenTemplateArguments!=null ? givenTemplateArguments.GetEnumerator() :null;
 					foreach (var expectedParam in tplNode.TemplateParameters)
 					{
@@ -194,6 +197,7 @@ namespace D_Parser.Resolver.TypeResolution
 						// There are too many arguments passed - discard this overload
 						isLegitOverload = false;
 					}
+#endregion
 				}
 
 				if (isLegitOverload)
@@ -205,6 +209,12 @@ namespace D_Parser.Resolver.TypeResolution
 				}
 				else
 					tplResult.DeducedTypes = null;
+			}
+
+			// If there are >1 overloads, filter from most to least specialized template param
+			if (filteredOverloads.Count > 1)
+			{
+
 			}
 
 			return filteredOverloads.Count == 0 ? null : filteredOverloads.ToArray();
@@ -249,6 +259,16 @@ namespace D_Parser.Resolver.TypeResolution
 			ResolverContextStack ctxt)
 		{
 			return new Templates.TemplateParameterDeduction(deducedTypes,ctxt).Handle(tupleParameter,typeChain);
+		}
+
+		ResolveResult[] FilterFromMostToLeastSpecialized()
+		{
+			/*
+			 * 
+			 */
+
+
+			return null;
 		}
 	}
 }

@@ -25,6 +25,9 @@ class MyClass(int U:1234) {}
 
 class Derp(alias X) {}
 
+const int a=3;
+int b=4;
+
 alias immutable(char)[] string;";
 
 			var ast = DParser.ParseString(code);
@@ -34,7 +37,7 @@ alias immutable(char)[] string;";
 				ScopedStatement = null
 			});
 
-			var instanceExpr = DParser.ParseExpression("new MyClass!(a)");
+			var instanceExpr = DParser.ParseExpression("(new MyClass!(a))");
 
 			var res = ExpressionTypeResolver.Resolve(instanceExpr, ctxt);
 		}
