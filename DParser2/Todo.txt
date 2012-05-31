@@ -1,9 +1,14 @@
 ﻿
 Everything that still needs to be handled by D_Parser comes right in here:
 
+
+When template parameter deduction & completion-readyness has been implemented 
+	-> Release Mono-D 0.4.0!
+
+
+
+
 * Add Expression Value Resolution
-* Implement template parameter-argument check
-* Implement correct template instance type recognition / method overload recognition
 * Mixin support
 * UFCS -- assert("fdas" == "asdf".reverse()); and stuff -- very complex & time-intensive!
 * CTFE
@@ -14,10 +19,12 @@ Everything that still needs to be handled by D_Parser comes right in here:
 * Interface/Abstract class implementation
 
 Resolver:
-- Implement single-element aliasing
-	(when a template contains only one item that is called like the template, 
-	the template's name will be resolved to that member element instead of the template)
+	-	Implement single-element aliasing on templates(only !)
+		(when a template contains only one item that is called like the template, 
+		the template's name will be resolved to that member element instead of the template)
+	-	when typing new Foo(..., show up the ctors instead of the class definition
 
 Template parameter deduction:
  - Handle __FILE__ and __LINE__ correctly concerning template values
- - If there's a template parameter set to the type of the first argument
+ - TemplateThisParameters on template functions
+ - Fix ufcs handling & integrate it into type deduction
