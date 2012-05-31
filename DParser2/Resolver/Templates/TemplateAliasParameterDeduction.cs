@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using D_Parser.Dom;
 using D_Parser.Resolver.TypeResolution;
+using D_Parser.Evaluation;
 
 namespace D_Parser.Resolver.Templates
 {
@@ -13,15 +14,12 @@ namespace D_Parser.Resolver.Templates
 			{
 				if (p.DefaultExpression != null)
 				{
-					var eval = Evaluation.ExpressionEvaluator.Evaluate(p.DefaultExpression, ctxt);
+					var eval = ExpressionEvaluator.Resolve(p.DefaultExpression, ctxt);
 
 					if (eval == null)
 						return false;
 
-					return Set(p.Name, new ExpressionValueResult {
-						DeclarationOrExpressionBase=p.DefaultExpression,
-						Value=eval
-					});
+					return Set(p.Name, eval);
 				}
 				else if (p.DefaultType != null)
 				{

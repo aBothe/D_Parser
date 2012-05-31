@@ -2,71 +2,52 @@
 using System.Linq;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
+using D_Parser.Evaluation;
 using D_Parser.Resolver.Templates;
 
 namespace D_Parser.Resolver.TypeResolution
 {
 	public class TemplateInstanceHandler
 	{
-		public static ResolveResult[] EvalAndFilterOverloads(IEnumerable<ResolveResult> rawOverloadList,
-			TemplateInstanceExpression templateInstanceExpr,
-			ResolverContextStack ctxt)
+		public static List<ResolveResult[]> PreResolveTemplateArgs(TemplateInstanceExpression tix, ResolverContextStack ctxt)
 		{
 			// Resolve given argument expressions
 			var templateArguments = new List<ResolveResult[]>();
 
-			if(templateInstanceExpr != null)
-				foreach (var arg in templateInstanceExpr.Arguments)
+			if (tix != null && tix.Arguments!=null)
+				foreach (var arg in tix.Arguments)
 				{
-					// If this is the case, we just need to pass the actual type
 					if (arg is TypeDeclarationExpression)
 					{
-						var r = TypeDeclarationResolver.Resolve(((TypeDeclarationExpression)arg).Declaration, ctxt);
+						var tde = (TypeDeclarationExpression)arg;
 
-						// Note: It's currently quite tricky concerning the following loops and names - it's mainly due to the fact that a declaration can return multiple symbol definitions..
-						var res_AddedToTemplateArgs = new List<ResolveResult>();
-						// But: If it's a variable that represents a const value..
-						var r_noAlias = DResolver.TryRemoveAliasesFromResult(r);
-						if (r_noAlias != null)
-						{
-							foreach (var r_ in r_noAlias)
-							{
-								if (r_ is MemberResult)
-								{
-									var n = ((MemberResult)r_).Node as DVariable;
+						var r = TypeDeclarationResolver.Resolve(tde.Declaration, ctxt);
 
-									if (n != null && n.IsConst)
-									{
-										// .. resolve it's pre-compile time value and make the returned value the given argument
-										var val = Evaluation.ExpressionEvaluator.Evaluate(n.Initializer, ctxt);
+						var eval = ExpressionEvaluator.TryToEvaluateConstInitializer(r, ctxt);
 
-										if (val != null && val.Value != null)
-										{
-											res_AddedToTemplateArgs.Add(new ExpressionValueResult {	
-												DeclarationOrExpressionBase = n.Initializer,
-												Value = val
-											});
-											continue;
-										}
-									}
-								}
-
-								res_AddedToTemplateArgs.Add(r_);
-							}
-
-							templateArguments.Add(res_AddedToTemplateArgs.ToArray());
-						}
+						if (eval == null)
+							templateArguments.Add(r);
+						else
+							templateArguments.Add(new[] { new ExpressionValueResult{
+								DeclarationOrExpressionBase=eval.BaseExpression,
+								Value=eval
+							} });
 					}
-					else // If it's a (constant) expression, try to evaluate it 
-						templateArguments.Add(new[]{
-							new ExpressionValueResult{
-								DeclarationOrExpressionBase=arg,
-								Value=Evaluation.ExpressionEvaluator.Evaluate(arg, ctxt)}
-						});
+					else
+						templateArguments.Add(new[] { ExpressionEvaluator.Resolve(arg, ctxt) });
 				}
 
-			return EvalAndFilterOverloads(rawOverloadList, templateArguments, false, ctxt);
+			return templateArguments;
 		}
+
+		public static ResolveResult[] EvalAndFilterOverloads(IEnumerable<ResolveResult> rawOverloadList,
+			TemplateInstanceExpression templateInstanceExpr,
+			ResolverContextStack ctxt)
+		{
+			return EvalAndFilterOverloads(rawOverloadList, PreResolveTemplateArgs(templateInstanceExpr, ctxt), false, ctxt);
+		}
+
+
 
 		/// <summary>
 		/// Associates the given arguments with the template parameters specified in the type/method declarations 
@@ -77,7 +58,7 @@ namespace D_Parser.Resolver.TypeResolution
 		/// in the !(...) section of a template instantiation 
 		/// or call arguments given in the (...) appendix 
 		/// that follows a method identifier</param>
-		/// <param name="isMethodCall">True if the givenTemplateArguments shall be treated as types of normal arguments</param>
+		/// <param name="isMethodCall">If true, arguments that exceed the expected parameter count will be ignored as far as all parameters could be satisfied.</param>
 		/// <param name="ctxt"></param>
 		/// <returns>A filtered list of overloads which mostly fit to the specified arguments.
 		/// Usually contains only 1 element.
@@ -135,76 +116,68 @@ namespace D_Parser.Resolver.TypeResolution
 
 				bool isLegitOverload = true;
 
-				if (isMethodCall)
+				#region Deduction part
+				var argEnum = givenTemplateArguments!=null ? givenTemplateArguments.GetEnumerator() :null;
+				foreach (var expectedParam in tplNode.TemplateParameters)
 				{
-					#region Handle implicit deduction by only passing method arguments
-					// http://dlang.org/template.html#function-templates
-					#endregion
-				}
-				else
-				{
-					#region Handle regular template instantiating
-					var argEnum = givenTemplateArguments!=null ? givenTemplateArguments.GetEnumerator() :null;
-					foreach (var expectedParam in tplNode.TemplateParameters)
+					// Used when no argument but default arg given
+					bool useDefaultType = false;
+					if ((argEnum!=null && argEnum.MoveNext()) || (useDefaultType = HasDefaultType(expectedParam)))
 					{
-						// Used when no argument but default arg given
-						bool useDefaultType = false;
-						if ((argEnum!=null && argEnum.MoveNext()) || (useDefaultType = HasDefaultType(expectedParam)))
+						bool isLegitArgument = true;
+
+						// On tuples, take all following arguments and pass them to the check function
+						if (expectedParam is TemplateTupleParameter)
 						{
-							bool isLegitArgument = true;
-
-							// On tuples, take all following arguments and pass them to the check function
-							if (expectedParam is TemplateTupleParameter)
-							{
-								var tupleItems = new List<ResolveResult[]>();
+							var tupleItems = new List<ResolveResult[]>();
+							// A tuple must at least contain one item!
+							tupleItems.Add(argEnum.Current);
+							while (argEnum.MoveNext())
 								tupleItems.Add(argEnum.Current);
-								while (argEnum.MoveNext())
-									tupleItems.Add(argEnum.Current);
 
-								if (!CheckAndDeduceTypeTuple((TemplateTupleParameter)expectedParam, tupleItems, deducedTypes,ctxt))
-									isLegitArgument = false;
-							}
-							else if (argEnum.Current!=null)
+							if (!CheckAndDeduceTypeTuple((TemplateTupleParameter)expectedParam, tupleItems, deducedTypes,ctxt))
+								isLegitArgument = false;
+						}
+						else if (argEnum.Current!=null)
+						{
+							// Should contain one result usually
+							foreach (var templateInstanceArg in argEnum.Current)
 							{
-								// Should contain one result usually
-								foreach (var templateInstanceArg in argEnum.Current)
+								if (!CheckAndDeduceTypeAgainstTplParameter(expectedParam, templateInstanceArg,deducedTypes,ctxt))
 								{
-									if (!CheckAndDeduceTypeAgainstTplParameter(expectedParam, templateInstanceArg,deducedTypes,ctxt))
-									{
-										isLegitArgument = false;
-										continue;
-									}
+									isLegitArgument = false;
+									continue;
 								}
 							}
-							else if (useDefaultType && CheckAndDeduceTypeAgainstTplParameter(expectedParam,null,deducedTypes,ctxt))
-							{
-								// It's legit - just do nothing
-							}
-							else
-								isLegitArgument = false;
-
-							if (!isLegitArgument)
-								isLegitOverload = false;
 						}
-						// There might be too few args - but that doesn't mean that it's not correct - it's only required that all parameters got satisfied with a type
-						else if(!AllParamatersSatisfied(deducedTypes))
+						else if (useDefaultType && CheckAndDeduceTypeAgainstTplParameter(expectedParam,null,deducedTypes,ctxt))
 						{
-							// There's an insufficient number of arguments passed - discard this overload
-							isLegitOverload = false;
+							// It's legit - just do nothing
 						}
+						else
+							isLegitArgument = false;
 
-						// Don't check further params if mismatch has been found
-						if (!isLegitOverload)
-							break;
+						if (!isLegitArgument)
+							isLegitOverload = false;
 					}
-
-					if (argEnum.MoveNext())
+					// There might be too few args - but that doesn't mean that it's not correct - it's only required that all parameters got satisfied with a type
+					else if(!AllParamatersSatisfied(deducedTypes))
 					{
-						// There are too many arguments passed - discard this overload
+						// There's an insufficient number of arguments passed - discard this overload
 						isLegitOverload = false;
 					}
-#endregion
+
+					// Don't check further params if mismatch has been found
+					if (!isLegitOverload)
+						break;
 				}
+
+				if (!isMethodCall && argEnum.MoveNext())
+				{
+					// There are too many arguments passed - discard this overload
+					isLegitOverload = false;
+				}
+				#endregion
 
 				if (isLegitOverload)
 				{

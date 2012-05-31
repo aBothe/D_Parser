@@ -19,7 +19,7 @@ namespace ParserTests
 
 			var code = @"
 
-void foo(T:MyClass!E,E)(T t) {}
+//void foo(T:MyClass!E,E)(T t) {}
 int foo(Y,T)(Y y, T t) {}
 string[] foo(T)(T t, T u) {}
 
@@ -53,7 +53,7 @@ alias immutable(char)[] string;";
 				ScopedStatement = null
 			});
 
-			var instanceExpr = DParser.ParseExpression("foo!(int)(123,456)");
+			var instanceExpr = DParser.ParseExpression("foo(1,2)");
 
 			var res = ExpressionTypeResolver.Resolve(instanceExpr, ctxt);
 		}

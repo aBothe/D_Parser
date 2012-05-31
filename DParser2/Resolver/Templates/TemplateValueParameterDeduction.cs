@@ -14,12 +14,12 @@ namespace D_Parser.Resolver.Templates
 			{
 				if (p.DefaultExpression != null)
 				{
-					var b=Set(p.Name, new ExpressionValueResult
-					{
-						Value = ExpressionEvaluator.Evaluate(p.DefaultExpression, ctxt),
-						DeclarationOrExpressionBase = p.DefaultExpression
-					});
-					return true;
+					var eval = ExpressionEvaluator.Resolve(p.DefaultExpression, ctxt);
+
+					if (eval == null)
+						return false;
+
+					return Set(p.Name, eval);
 				}
 				else
 					return false;
