@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using D_Parser.Dom;
 
 namespace D_Parser.Resolver.Templates
@@ -11,7 +8,6 @@ namespace D_Parser.Resolver.Templates
 	/// </summary>
 	public class SpecializationOrdering
 	{
-		List<ResolveResult> templateOverloads;
 		ResolverContextStack ctxt;
 
 		public static ResolveResult[] FilterFromMostToLeastSpecialized(
@@ -103,6 +99,9 @@ namespace D_Parser.Resolver.Templates
 				return false;
 			else if (t1 is TemplateAliasParameter && t2 is TemplateAliasParameter &&
 				!IsMoreSpecialized((TemplateAliasParameter)t1, (TemplateAliasParameter)t2, t1_dummyParameterList))
+				return false;
+			else if (t1 is TemplateThisParameter && t2 is TemplateThisParameter && !
+				IsMoreSpecialized(((TemplateThisParameter)t1).FollowParameter, ((TemplateThisParameter)t2).FollowParameter, t1_dummyParameterList))
 				return false;
 
 			return false;
