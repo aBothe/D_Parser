@@ -17,7 +17,7 @@ namespace D_Parser.Resolver.Templates
 			if (templateOverloads == null)
 				return null;
 
-			var so = new SpecializationOrdering { ctxt = ctxt,  templateOverloads=templateOverloads };
+			var so = new SpecializationOrdering { ctxt = ctxt };
 
 			var currentlyMostSpecialized = templateOverloads[0] as TemplateInstanceResult;
 

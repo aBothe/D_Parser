@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace D_Parser.Resolver
 {
@@ -21,6 +18,11 @@ namespace D_Parser.Resolver
 		/// This will still resolve possible overloads but stops after leaving the overloads' scope.
 		/// </summary>
 		StopAfterFirstOverloads = StopAfterFirstMatch + 8,
+
+		/// <summary>
+		/// If set, the resolver won't filter out members by template parameter deduction.
+		/// </summary>
+		NoTemplateParameterDeduction= 16,
 
 		Default = ResolveAliases | ResolveBaseClasses
 	}

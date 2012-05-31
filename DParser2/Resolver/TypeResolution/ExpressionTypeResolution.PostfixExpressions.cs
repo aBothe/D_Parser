@@ -87,14 +87,19 @@ namespace D_Parser.Resolver.TypeResolution
 
 		public static ResolveResult[] Resolve(PostfixExpression_MethodCall call, ResolverContextStack ctxt)
 		{
-			var baseExpression = call.PostfixForeExpression is PostfixExpression_Access ? 
-				Resolve((PostfixExpression_Access)call.PostfixForeExpression,ctxt,null,call) :
-				Resolve(call.PostfixForeExpression, ctxt);
+			// Deduce template parameters later on
+			ResolveResult[] baseExpression = null;
 
+			if (call.PostfixForeExpression is PostfixExpression_Access)
+				baseExpression = Resolve((PostfixExpression_Access)call.PostfixForeExpression, ctxt, null, call);
+			else if (call.PostfixForeExpression is TemplateInstanceExpression)
+				baseExpression = Resolve((TemplateInstanceExpression)call.PostfixForeExpression, ctxt, null, false);
+			else
+				baseExpression = Resolve(call.PostfixForeExpression, ctxt);
+
+			var methodOverloads = new List<ResolveResult>();
 
 			#region Search possible methods, opCalls or delegates that could be called
-			var methodContainingResultsToCheck = new List<ResolveResult>();
-
 			bool requireStaticItems = true;
 			IEnumerable<ResolveResult> scanResults = DResolver.TryRemoveAliasesFromResult(baseExpression);
 			var nextResults = new List<ResolveResult>();
@@ -109,7 +114,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 						if (mr.Node is DMethod)
 						{
-							methodContainingResultsToCheck.Add(mr);
+							methodOverloads.Add(mr);
 							continue;
 						}
 
@@ -143,7 +148,7 @@ namespace D_Parser.Resolver.TypeResolution
 						 */
 
 						if (!dg.IsDelegateDeclaration)
-							methodContainingResultsToCheck.Add(dg);
+							methodOverloads.Add(dg);
 					}
 					else if (b is TypeResult)
 					{
@@ -157,7 +162,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 						foreach (var i in classDef)
 							if (i.Name == "opCall" && i is DMethod &&	(!requireStaticItems || (i as DNode).IsStatic))
-								methodContainingResultsToCheck.Add(TypeDeclarationResolver.HandleNodeMatch(i, ctxt, b, call));
+								methodOverloads.Add(TypeDeclarationResolver.HandleNodeMatch(i, ctxt, b, call));
 
 						/*
 						 * Every struct can contain a default ctor:
@@ -167,7 +172,7 @@ namespace D_Parser.Resolver.TypeResolution
 						 * auto s = S(1,true); -- ok
 						 * auto s2= new S(2,false); -- error, no constructor found!
 						 */
-						if (classDef.ClassType == DTokens.Struct && methodContainingResultsToCheck.Count == 0)
+						if (classDef.ClassType == DTokens.Struct && methodOverloads.Count == 0)
 						{
 							//TODO: Enable returning further results
 							return new[] { b };
@@ -180,7 +185,7 @@ namespace D_Parser.Resolver.TypeResolution
 			}
 			#endregion
 
-			if (methodContainingResultsToCheck.Count == 0)
+			if (methodOverloads.Count == 0)
 				return null;
 
 			#region Compare (template) parameters with given arguments to filter out unwanted overloads
@@ -210,17 +215,17 @@ namespace D_Parser.Resolver.TypeResolution
 
 			if (!(call.PostfixForeExpression is TemplateInstanceExpression))
 			{
-				var filteredMethods = TemplateInstanceHandler.EvalAndFilterOverloads(methodContainingResultsToCheck,resolvedCallArguments.Count > 0 ? resolvedCallArguments.ToArray() : null, true,ctxt);
+				var filteredMethods = TemplateInstanceHandler.EvalAndFilterOverloads(methodOverloads,resolvedCallArguments.Count > 0 ? resolvedCallArguments.ToArray() : null, true,ctxt);
 
-				methodContainingResultsToCheck.Clear();
+				methodOverloads.Clear();
 				if(filteredMethods!=null)
-					methodContainingResultsToCheck.AddRange(filteredMethods);
+					methodOverloads.AddRange(filteredMethods);
 			}
 			#endregion
 
 			var r = new List<ResolveResult>();
 
-			foreach (var rr in methodContainingResultsToCheck)
+			foreach (var rr in methodOverloads)
 			{
 				if (rr is MemberResult)
 				{
@@ -253,7 +258,9 @@ namespace D_Parser.Resolver.TypeResolution
 
 			if (acc.AccessExpression is TemplateInstanceExpression)
 			{
-				var res=Resolve((TemplateInstanceExpression)acc.AccessExpression, ctxt, baseExpression);
+				// Do not deduce and filter if superior expression is a method call since call arguments' types also count as template arguments!
+				var res=Resolve((TemplateInstanceExpression)acc.AccessExpression, ctxt, baseExpression, 
+					!(supExpression is PostfixExpression_MethodCall));
 
 				// Try to resolve ufcs(?)
 				if (res == null && baseExpression!=null && baseExpression.Length!=0)
@@ -309,15 +316,17 @@ namespace D_Parser.Resolver.TypeResolution
 		public static ResolveResult[] Resolve(
 			TemplateInstanceExpression tix,
 			ResolverContextStack ctxt,
-			IEnumerable<ResolveResult> resultBases = null)
+			IEnumerable<ResolveResult> resultBases = null,
+			bool deduceParameters = true)
 		{
-			IEnumerable<ResolveResult> res = null;
+			ResolveResult[] res = null;
 			if (resultBases == null)
 				res= TypeDeclarationResolver.ResolveIdentifier(tix.TemplateIdentifier.Id, ctxt, tix, tix.TemplateIdentifier.ModuleScoped);
 			else
 				res= TypeDeclarationResolver.ResolveFurtherTypeIdentifier(tix.TemplateIdentifier.Id, resultBases, ctxt, tix);
 
-			return TemplateInstanceHandler.EvalAndFilterOverloads(res,tix, ctxt);
+			return ctxt.CurrentContext.Options.HasFlag(ResolutionOptions.NoTemplateParameterDeduction) && !deduceParameters ?
+				res	: TemplateInstanceHandler.EvalAndFilterOverloads(res,tix, ctxt);
 		}
 	}
 }

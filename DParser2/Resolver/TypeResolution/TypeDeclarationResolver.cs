@@ -63,7 +63,8 @@ namespace D_Parser.Resolver.TypeResolution
 				res= ResolveFurtherTypeIdentifier(id.Id, rbases, ctxt, id);
 			}
 
-			return filterForTemplateArgs ? TemplateInstanceHandler.EvalAndFilterOverloads(res, null, false, ctxt) : res;
+			return (filterForTemplateArgs && !ctxt.CurrentContext.Options.HasFlag(ResolutionOptions.NoTemplateParameterDeduction)) ? 
+				TemplateInstanceHandler.EvalAndFilterOverloads(res, null, false, ctxt) : res;
 		}
 
 		/// <summary>

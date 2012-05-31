@@ -7,6 +7,7 @@ using D_Parser.Resolver;
 using D_Parser.Resolver.TypeResolution;
 using D_Parser.Dom;
 using D_Parser.Parser;
+using D_Parser.Misc;
 
 namespace ParserTests
 {
@@ -16,9 +17,11 @@ namespace ParserTests
 		{
 			Console.WriteLine("\tResolution tests...");
 
-			var code = @"void foo(T:MyClass!(E[]),E)(T t) {}
+			var code = @"
 
+void foo(T:MyClass!E,E)(T t) {}
 int foo(Y,T)(Y y, T t) {}
+string[] foo(T)(T t, T u) {}
 
 class A {}
 class B:A{}
@@ -37,13 +40,20 @@ int b=4;
 alias immutable(char)[] string;";
 
 			var ast = DParser.ParseString(code);
+			ast.ModuleName = "moduleA";
 
-			var ctxt = new ResolverContextStack(new D_Parser.Misc.ParseCacheList(), new ResolverContext { 
+			var pcl=new ParseCacheList();
+			var pc=new ParseCache();
+			pcl.Add(pc);
+			pc.AddOrUpdate(ast);
+			pc.UfcsCache.Update(pcl);
+
+			var ctxt = new ResolverContextStack(pcl, new ResolverContext{
 				ScopedBlock = ast,
 				ScopedStatement = null
 			});
 
-			var instanceExpr = DParser.ParseExpression("(new D!1)");
+			var instanceExpr = DParser.ParseExpression("foo!(int)(123,456)");
 
 			var res = ExpressionTypeResolver.Resolve(instanceExpr, ctxt);
 		}

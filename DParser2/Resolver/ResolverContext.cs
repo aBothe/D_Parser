@@ -1,6 +1,6 @@
-﻿using D_Parser.Dom;
+﻿using System.Collections.Generic;
+using D_Parser.Dom;
 using D_Parser.Dom.Statements;
-using System.Collections.Generic;
 
 namespace D_Parser.Resolver
 {

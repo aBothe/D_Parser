@@ -117,11 +117,11 @@ namespace D_Parser.Resolver.ASTScanner
 			}
 
 			// and template parameters
-			if (curScope is DNode && (curScope as DNode).TemplateParameters != null)
-				foreach (var ch in (curScope as DNode).TemplateParameters)
+			if (curScope is DNode && ((DNode)curScope).TemplateParameters != null)
+				foreach (var ch in ((DNode)curScope).TemplateParameters)
 				{
 					if (name == ch.Name)
-						matches.Add(new TemplateParameterNode(ch));
+						matches.Add(new TemplateParameterNode(ch) { Owner = (DNode)curScope });
 				}
 
 			return matches.Count > 0 ? matches.ToArray() : null;

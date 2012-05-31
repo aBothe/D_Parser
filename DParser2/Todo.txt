@@ -1,6 +1,17 @@
 ﻿
 Everything that still needs to be handled by D_Parser comes right in here:
 
+* Add Expression Value Resolution
+* Implement template parameter-argument check
+* Implement correct template instance type recognition / method overload recognition
+* Mixin support
+* UFCS -- assert("fdas" == "asdf".reverse()); and stuff -- very complex & time-intensive!
+* CTFE
+* Implement declaration condition checks
+	- omit debug/versioned declarations 
+	  if not fitting to environment dependencied 
+	  ([debug/release] or [Windows/Mac/Unix/BSD] etc.)
+* Interface/Abstract class implementation
 
 Resolver:
 - Implement single-element aliasing
@@ -9,18 +20,4 @@ Resolver:
 
 Template parameter deduction:
  - Handle __FILE__ and __LINE__ correctly concerning template values
- - Implement a from-least-to-most-specified check
-
-	class Derp(int U) 
-	{ /* all values of U except 1234 */ } 
-	class Derp(int U : 1234) 
-	{ /* Derp for 1234 */ }
-
-	1) class A {}
-	2) class B : A {}
-
-	3) class C(T : A) {}
-	4) class C(T : B) {}
-
-	new C!B -> selects 4) because B is nearer related to B than to A though B can be A, too
-
+ - If there's a template parameter set to the type of the first argument

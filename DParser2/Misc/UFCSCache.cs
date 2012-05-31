@@ -111,7 +111,8 @@ namespace D_Parser.Resolver.ASTScanner
 			foreach (var kv in CachedMethods)
 			{
 				// First test if arg is matching the parameter
-				if (kv.Value.Equals(firstArgument) && (dontUseNameFilter || kv.Key.Name==nameFilter))
+				if ((dontUseNameFilter || kv.Key.Name == nameFilter) &&
+					ResultComparer.IsImplicitlyConvertible(kv.Value, firstArgument))
 					preMatchList.Add(kv.Key);
 			}
 

@@ -114,9 +114,12 @@ namespace D_Parser.Resolver.TypeResolution
 
 				var tplNode = tplResult.Node as DNode;
 
-				// Generically, the node should never be null
+				// Generically, the node should never be null -- except for TemplateParameterNodes that encapsule such params
 				if (tplNode == null)
+				{
+					filteredOverloads.Add(overload);
 					continue;
+				}
 
 				// If the type or method has got no template parameters and if there were no args passed, keep it - it's legit.
 				if (tplNode.TemplateParameters == null)

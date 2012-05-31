@@ -68,7 +68,9 @@ namespace D_Parser.Resolver.TypeResolution
 					 */
 
 					if (nex.Type is IdentifierDeclaration)
+					{
 						possibleTypes = TypeDeclarationResolver.Resolve((IdentifierDeclaration)nex.Type, ctxt, filterForTemplateArgs: false);
+					}
 					else
 						possibleTypes = TypeDeclarationResolver.Resolve(nex.Type, ctxt);
 
