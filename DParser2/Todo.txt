@@ -27,4 +27,6 @@ Resolver:
 Template parameter deduction:
  - Handle __FILE__ and __LINE__ correctly concerning template values
  - TemplateThisParameters on template functions
- - Fix ufcs handling & integrate it into type deduction
+
+ Tests:
+  - Find out what features did change after it added the first expression as ResultBase to UFCS results

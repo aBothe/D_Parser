@@ -47,8 +47,6 @@ namespace D_Parser.Resolver.TypeResolution
 			return EvalAndFilterOverloads(rawOverloadList, PreResolveTemplateArgs(templateInstanceExpr, ctxt), false, ctxt);
 		}
 
-
-
 		/// <summary>
 		/// Associates the given arguments with the template parameters specified in the type/method declarations 
 		/// and filters out unmatching overloads.
@@ -71,6 +69,24 @@ namespace D_Parser.Resolver.TypeResolution
 			if (rawOverloadList == null)
 				return null;
 
+			var filteredOverloads = DeduceOverloads(rawOverloadList, givenTemplateArguments, isMethodCall, ctxt);
+
+			// If there are >1 overloads, filter from most to least specialized template param
+			if (filteredOverloads.Count > 1)
+			{
+				var specFiltered = SpecializationOrdering.FilterFromMostToLeastSpecialized(filteredOverloads, ctxt);
+				return specFiltered == null ? null : specFiltered.ToArray();
+			}
+			else
+				return filteredOverloads.Count == 0 ? null : filteredOverloads.ToArray();
+		}
+
+		private static List<ResolveResult> DeduceOverloads(
+			IEnumerable<ResolveResult> rawOverloadList, 
+			IEnumerable<ResolveResult[]> givenTemplateArguments, 
+			bool isMethodCall, 
+			ResolverContextStack ctxt)
+		{
 			bool hasTemplateArgsPassed = givenTemplateArguments != null;
 			if (hasTemplateArgsPassed)
 			{
@@ -114,90 +130,111 @@ namespace D_Parser.Resolver.TypeResolution
 				foreach (var param in tplNode.TemplateParameters)
 					deducedTypes[param.Name] = null; // Init all params to null to let deduction functions know what params there are
 
-				bool isLegitOverload = true;
-
-				#region Deduction part
-				var argEnum = givenTemplateArguments!=null ? givenTemplateArguments.GetEnumerator() :null;
-				foreach (var expectedParam in tplNode.TemplateParameters)
+				if (DeduceParams(givenTemplateArguments, isMethodCall, ctxt, overload, tplNode, deducedTypes))
 				{
-					// Used when no argument but default arg given
-					bool useDefaultType = false;
-					if ((argEnum!=null && argEnum.MoveNext()) || (useDefaultType = HasDefaultType(expectedParam)))
-					{
-						bool isLegitArgument = true;
-
-						// On tuples, take all following arguments and pass them to the check function
-						if (expectedParam is TemplateTupleParameter)
-						{
-							var tupleItems = new List<ResolveResult[]>();
-							// A tuple must at least contain one item!
-							tupleItems.Add(argEnum.Current);
-							while (argEnum.MoveNext())
-								tupleItems.Add(argEnum.Current);
-
-							if (!CheckAndDeduceTypeTuple((TemplateTupleParameter)expectedParam, tupleItems, deducedTypes,ctxt))
-								isLegitArgument = false;
-						}
-						else if (argEnum.Current!=null)
-						{
-							// Should contain one result usually
-							foreach (var templateInstanceArg in argEnum.Current)
-							{
-								if (!CheckAndDeduceTypeAgainstTplParameter(expectedParam, templateInstanceArg,deducedTypes,ctxt))
-								{
-									isLegitArgument = false;
-									continue;
-								}
-							}
-						}
-						else if (useDefaultType && CheckAndDeduceTypeAgainstTplParameter(expectedParam,null,deducedTypes,ctxt))
-						{
-							// It's legit - just do nothing
-						}
-						else
-							isLegitArgument = false;
-
-						if (!isLegitArgument)
-							isLegitOverload = false;
-					}
-					// There might be too few args - but that doesn't mean that it's not correct - it's only required that all parameters got satisfied with a type
-					else if(!AllParamatersSatisfied(deducedTypes))
-					{
-						// There's an insufficient number of arguments passed - discard this overload
-						isLegitOverload = false;
-					}
-
-					// Don't check further params if mismatch has been found
-					if (!isLegitOverload)
-						break;
-				}
-
-				if (!isMethodCall && argEnum.MoveNext())
-				{
-					// There are too many arguments passed - discard this overload
-					isLegitOverload = false;
-				}
-				#endregion
-
-				if (isLegitOverload)
-				{
-					// Assign calculated types to final result
-					tplResult.DeducedTypes = deducedTypes;
-
+					tplResult.DeducedTypes = deducedTypes; // Assign calculated types to final result
 					filteredOverloads.Add(overload);
 				}
 				else
 					tplResult.DeducedTypes = null;
 			}
+			return filteredOverloads;
+		}
 
-			// If there are >1 overloads, filter from most to least specialized template param
-			if (filteredOverloads.Count > 1)
+		private static bool DeduceParams(IEnumerable<ResolveResult[]> givenTemplateArguments, 
+			bool isMethodCall, 
+			ResolverContextStack ctxt, 
+			ResolveResult overload, 
+			DNode tplNode, 
+			Dictionary<string, ResolveResult[]> deducedTypes)
+		{
+			bool isLegitOverload = true;
+
+			var paramEnum = tplNode.TemplateParameters.GetEnumerator();
+
+			var args= givenTemplateArguments == null ? new List<ResolveResult[]>() : givenTemplateArguments;
+
+			if (overload is MemberResult && ((MemberResult)overload).IsUFCSResult)
+				args = args.Union(new[] { new[]{ overload.ResultBase} });
+
+			var argEnum = args.GetEnumerator();
+			foreach (var expectedParam in tplNode.TemplateParameters)
+				if (!DeduceParam(ctxt, overload, deducedTypes, argEnum, expectedParam))
+				{
+					isLegitOverload = false;
+					break; // Don't check further params if mismatch has been found
+				}
+
+			if (!isMethodCall && argEnum.MoveNext())
 			{
-				var specFiltered = SpecializationOrdering.FilterFromMostToLeastSpecialized(filteredOverloads, ctxt);
-				return specFiltered == null ? null : specFiltered.ToArray();
+				// There are too many arguments passed - discard this overload
+				isLegitOverload = false;
 			}
-			else
-				return filteredOverloads.Count == 0 ? null : filteredOverloads.ToArray();
+			return isLegitOverload;
+		}
+
+		private static bool DeduceParam(ResolverContextStack ctxt, 
+			ResolveResult overload, 
+			Dictionary<string, ResolveResult[]> deducedTypes,
+			IEnumerator<ResolveResult[]> argEnum, 
+			ITemplateParameter expectedParam)
+		{
+			if (expectedParam is TemplateThisParameter && overload.ResultBase != null)
+			{
+				var ttp = (TemplateThisParameter)expectedParam;
+
+				// Get the type of the type of 'this' - so of the result that is the overload's base
+				bool m = false;
+				var t = DResolver.ResolveMembersFromResult(new[] { overload.ResultBase }, out m);
+
+				if (t == null || t.Length == 0 || t[0].DeclarationOrExpressionBase == null)
+					return false;
+
+				//TODO: Still not sure if it's ok to pass a type result to it 
+				// - looking at things like typeof(T) that shall return e.g. const(A) instead of A only.
+
+				if (!CheckAndDeduceTypeAgainstTplParameter(ttp, t[0],
+					deducedTypes, ctxt))
+					return false;
+
+				return true;
+			}
+
+			// Used when no argument but default arg given
+			bool useDefaultType = false;
+			if (argEnum.MoveNext() || (useDefaultType = HasDefaultType(expectedParam)))
+			{
+				// On tuples, take all following arguments and pass them to the check function
+				if (expectedParam is TemplateTupleParameter)
+				{
+					var tupleItems = new List<ResolveResult[]>();
+					// A tuple must at least contain one item!
+					tupleItems.Add(argEnum.Current);
+					while (argEnum.MoveNext())
+						tupleItems.Add(argEnum.Current);
+
+					if (!CheckAndDeduceTypeTuple((TemplateTupleParameter)expectedParam, tupleItems, deducedTypes, ctxt))
+						return false;
+				}
+				else if (argEnum.Current != null)
+				{
+					// Should contain one result usually
+					foreach (var templateInstanceArg in argEnum.Current)
+						if (!CheckAndDeduceTypeAgainstTplParameter(expectedParam, templateInstanceArg, deducedTypes, ctxt))
+							return false;
+				}
+				else if (useDefaultType && CheckAndDeduceTypeAgainstTplParameter(expectedParam, null, deducedTypes, ctxt))
+				{
+					// It's legit - just do nothing
+				}
+				else
+					return false;
+			}
+			// There might be too few args - but that doesn't mean that it's not correct - it's only required that all parameters got satisfied with a type
+			else if (!AllParamatersSatisfied(deducedTypes))
+				return false;
+
+			return true;
 		}
 
 		static bool AllParamatersSatisfied(Dictionary<string, ResolveResult[]> deductions)

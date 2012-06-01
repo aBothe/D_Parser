@@ -200,12 +200,10 @@ namespace D_Parser.Resolver.TypeResolution
 
 			#region Deduce template parameters and filter out unmatching overloads
 
-			/*
-			 * Concerning UFCS: If baseExpression represents an UFCS result, take its baseexpression as first argument!
-			 */
+			// UFCS argument assignment will be done per-overload and in the EvalAndFilterOverloads method!
 
-			// http://dlang.org/template.html#function-templates
 			// First add optionally given template params
+			// http://dlang.org/template.html#function-templates
 			var resolvedCallArguments = tix==null ? 
 				new List<ResolveResult[]>() :
 				TemplateInstanceHandler.PreResolveTemplateArgs(tix, ctxt);
@@ -218,8 +216,7 @@ namespace D_Parser.Resolver.TypeResolution
 			var filteredMethods = TemplateInstanceHandler.EvalAndFilterOverloads(
 				methodOverloads,
 				resolvedCallArguments.Count > 0 ? resolvedCallArguments.ToArray() : null, 
-				true,
-				ctxt);
+				true, ctxt);
 
 			if (!returnBaseTypesOnly)
 				return filteredMethods !=null && filteredMethods.Length != 0 ? filteredMethods : null;

@@ -21,9 +21,11 @@ namespace ParserTests
 
 //void foo(T:MyClass!E,E)(T t) {}
 int foo(Y,T)(Y y, T t) {}
-string[] foo(T)(T t, T u) {}
+//string[] foo(T)(T t, T u) {}
 
-class A {}
+class A {
+	const void aBar(this T)() {}
+}
 class B:A{}
 class C:B{}
 
@@ -36,6 +38,7 @@ class D(int u:1) {}
 
 const int a=3;
 int b=4;
+
 
 alias immutable(char)[] string;";
 
@@ -53,7 +56,7 @@ alias immutable(char)[] string;";
 				ScopedStatement = null
 			});
 
-			var instanceExpr = DParser.ParseExpression("foo(1,2)");
+			var instanceExpr = DParser.ParseExpression("(1).foo(2)");
 
 			var res = ExpressionTypeResolver.Resolve(instanceExpr, ctxt);
 		}

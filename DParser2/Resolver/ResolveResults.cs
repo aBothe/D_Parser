@@ -64,6 +64,12 @@ namespace D_Parser.Resolver
 			}
 		}
 
+		/// <summary>
+		/// True if ucfs resolution was used to build up this result object.
+		/// Used for better semantic analysis.
+		/// </summary>
+		public bool IsUFCSResult;
+
 		public override string ToString()
 		{
 			return Node.ToString();

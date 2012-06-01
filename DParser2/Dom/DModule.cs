@@ -451,6 +451,14 @@ namespace D_Parser.Dom
 		{
 			additionalChildren.Clear();
 		}
+
+		public bool IsUFCSReady
+		{
+			get
+			{
+				return Parameters!=null && Parameters.Count != 0 && Parent is IAbstractSyntaxTree;
+			}
+		}
 	}
 
     public class DClassLike : DBlockNode
