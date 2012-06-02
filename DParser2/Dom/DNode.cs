@@ -93,9 +93,12 @@ namespace D_Parser.Dom
             return s.Trim();
         }
 
-		public bool IsClassMember()
+		public bool IsClassMember
 		{
-			return Parent is DClassLike && ((DClassLike)Parent).ClassType == DTokens.Class;
+			get
+			{
+				return Parent is DClassLike && ((DClassLike)Parent).ClassType == DTokens.Class;
+			}
 		}
 
         public bool IsPublic
