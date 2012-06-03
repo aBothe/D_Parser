@@ -109,7 +109,7 @@ namespace D_Parser.Resolver
 		/// theoretically, this should be marked as a precompile error then.
 		/// </summary>
 		public TypeResult[] BaseClass;
-		public TypeResult[] ImplementedInterfaces;
+		public TypeResult[][] ImplementedInterfaces;
 
 		public override string ToString()
 		{

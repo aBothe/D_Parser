@@ -4379,8 +4379,7 @@ namespace D_Parser.Parser
 			if (laKind == (If))
 				dc.TemplateConstraint=Constraint();
 
-			if (laKind == (Colon))
-				dc.BaseClasses = BaseClassList();
+			// [Must not contain a base class list]
 
 			ClassBody(dc);
 

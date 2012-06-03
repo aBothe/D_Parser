@@ -4,6 +4,7 @@ using System.IO;
 using D_Parser.Dom;
 using D_Parser.Resolver.ASTScanner;
 using System.Threading;
+using D_Parser.Resolver;
 
 namespace D_Parser.Misc
 {
@@ -30,6 +31,29 @@ namespace D_Parser.Misc
 		public List<string> ParsedDirectories = new List<string> ();
 
 		public Exception LastParseException { get; private set; }
+
+		public bool IsObjectClassDefined
+		{
+			get { return ObjectClass != null; }
+		}
+
+		/// <summary>
+		/// To improve resolution performance, the object class that can be defined only once will be stored over here.
+		/// </summary>
+		public DClassLike ObjectClass
+		{
+			get;
+			private set;
+		}
+
+		/// <summary>
+		/// See <see cref="ObjectClass"/>
+		/// </summary>
+		public TypeResult ObjectClassResult
+		{
+			get;
+			set;
+		}
 		#endregion
 
 		#region Parsing management
@@ -98,6 +122,9 @@ namespace D_Parser.Misc
 			ParsedDirectories = parsedDirs;
 			Root = newRoot;
 
+			// For performance boost, pre-resolve the object class
+			HandleObjectModule(GetModule("object"));			
+
 			if (FinishedParsing!=null)
 				FinishedParsing(tup.Item2.ToArray());
 
@@ -142,6 +169,23 @@ namespace D_Parser.Misc
 
 			Root = new RootPackage ();
 		}
+
+		void HandleObjectModule(IAbstractSyntaxTree objModule)
+		{
+			if (objModule != null)
+				foreach (var m in objModule)
+					if (m is DClassLike && m.Name == "Object")
+					{
+						ObjectClass = (DClassLike)m;
+
+						ObjectClassResult = new TypeResult
+						{
+							DeclarationOrExpressionBase = new IdentifierDeclaration("Object"),
+							Node = m
+						};
+						break;
+					}
+		}
 		#endregion
 
 		#region Tree management
@@ -158,6 +202,9 @@ namespace D_Parser.Misc
 
 			if (string.IsNullOrEmpty (packName)) {
 				Root.Modules [ast.ModuleName] = ast;
+
+				if (ast.ModuleName == "object")
+					HandleObjectModule(ast);
 				return;
 			}
 

@@ -198,17 +198,14 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 						return true;
 				}
 
-				// Stop adding if Object class level got reached
-				if (!string.IsNullOrEmpty(curWatchedClass.Name) && curWatchedClass.Name.ToLower() == "object")
-					return false;
-
 				// 3)
-				var baseclassDefs = DResolver.ResolveBaseClass(curWatchedClass, ctxt);
+				var tr = new TypeResult { Node = curWatchedClass };
+				DResolver.ResolveBaseClasses(tr, ctxt, true);
 
-				if (baseclassDefs == null || baseclassDefs.Length < 0 || curWatchedClass == baseclassDefs[0].Node)
+				if (tr.BaseClass==null || tr.BaseClass.Length == 0)
 					return false;
 
-				curWatchedClass = baseclassDefs[0].Node as DClassLike;
+				curWatchedClass = tr.BaseClass[0].Node as DClassLike;
 			}
 			return false;
 		}

@@ -204,15 +204,16 @@ namespace D_Parser.Resolver.TypeResolution
 
 					if (classDef != null)
 					{
-						var baseClassDefs = DResolver.ResolveBaseClass(classDef as DClassLike, ctxt);
+						var tr = new TypeResult { Node=classDef };
+						DResolver.ResolveBaseClasses(tr, ctxt,true);
 
-						if (baseClassDefs != null)
+						if (tr.BaseClass != null && tr.BaseClass.Length!=0)
 						{
 							// Important: Overwrite type decl base with 'super' token
-							foreach (var bc in baseClassDefs)
+							foreach (var bc in tr.BaseClass)
 								bc.DeclarationOrExpressionBase = ex;
 
-							return baseClassDefs;
+							return tr.BaseClass;
 						}
 					}
 				}

@@ -30,7 +30,6 @@ namespace D_Parser.Resolver
 			if (other == null)
 				return;
 
-			//foreach (var kv in other.PreferredLocals)	PreferredLocals.Add(kv.Key, kv.Value);
 			ScopedBlock = other.ScopedBlock;
 			ScopedStatement = other.ScopedStatement;
 			Options = other.Options;

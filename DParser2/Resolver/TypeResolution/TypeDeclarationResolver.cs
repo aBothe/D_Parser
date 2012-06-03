@@ -441,20 +441,21 @@ namespace D_Parser.Resolver.TypeResolution
 				};
 			}
 			else if (m is DClassLike)
-				ret = new TypeResult()
-				{
-					Node = (DClassLike)m,
-					BaseClass = DoResolveBaseType ? DResolver.ResolveBaseClass((DClassLike)m, ctxt) : null,
-					ResultBase = resultBase,
-					DeclarationOrExpressionBase = typeBase
+			{
+				var tr = new TypeResult() {
+					Node = m, ResultBase = resultBase, DeclarationOrExpressionBase = typeBase
 				};
+				DResolver.ResolveBaseClasses(tr, ctxt);
+
+				ret = tr;
+			}
 			else if (m is IAbstractSyntaxTree)
 			{
-				var mod=(IAbstractSyntaxTree)m;
+				var mod = (IAbstractSyntaxTree)m;
 				if (typeBase != null && typeBase.ToString() != mod.ModuleName)
 				{
 					var pack = ctxt.ParseCache.LookupPackage(typeBase.ToString()).First();
-					if(pack!=null)
+					if (pack != null)
 						ret = new ModulePackageResult(pack);
 				}
 				else
