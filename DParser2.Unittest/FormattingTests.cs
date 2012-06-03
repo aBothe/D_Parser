@@ -1,101 +1,100 @@
 ﻿using System;
+using System.Text;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using D_Parser.Resolver;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using D_Parser.Formatting;
-using D_Parser;
 
-namespace ParserTests
+namespace D_Parser.Unittest
 {
-	class FormatterTest
+	[TestClass]
+	public class FormattingTests
 	{
-		public static void RunTests()
+		[TestMethod]
+		public void TestFormatter()
 		{
-			Console.WriteLine("~ Indentation tests...");
-
 			TestLastLine("", 0);
 
 			TestLastLine(@"import
 std", 1);
 			TestLastLine(@"import std;
-",0);
+", 0);
 			TestLastLine(@"import
-",1);
+", 1);
 			TestLastLine(@"import std;
 import std;
-",0);
-			/* TODO
-			TestLastLine(@"import std.stdio,
+", 0);
+			// TODO
+			/*TestLastLine(@"import std.stdio,
 	std.conv;",1);*/
 			TestLastLine(@"import std;
 import
-",1);
+", 1);
 			TestLastLine(@"import std;
 import
-	std;",1);
+	std;", 1);
 
 			TestLastLine(@"class A{
 	void foo()
 	{
 	}
-	",1);
-			TestLastLine(@"foo();",0);
+	", 1);
+			TestLastLine(@"foo();", 0);
 
 			TestLastLine(@"foo();
-",0);
+", 0);
 
 			TestLastLine(@"foo(
-);",1);
+);", 1);
 			TestLastLine(@"foo(
-	a.lol",1);
+	a.lol", 1);
 			TestLastLine(@"foo(
 	a,
-	b",1);
+	b", 1);
 			TestLastLine(@"foo(a,
-	b);",1);
+	b);", 1);
 
 			TestLastLine(@"foo(
-	a)",1);
+	a)", 1);
 			TestLastLine(@"foo(
-	b())",1);
+	b())", 1);
 			TestLastLine(@"foo(
-",1);
+", 1);
 			TestLastLine(@"foo(
-)",1);
+)", 1);
 
 			TestLastLine(@"foo(asdf())
-{",0);
+{", 0);
 			TestLastLine(@"foo(asdf())
 ", 1);
 			TestLastLine(@"foo(asdf()=b)
-",1);
+", 1);
 			TestLastLine(@"foo(asdf)
-",1);
+", 1);
 			TestLastLine(@"writeln(34,
-	joLol);",1);
+	joLol);", 1);
 			/* TODO
 			TestLastLine(@"writeln,
 	lolSecondExpression();",1);*/
 			TestLastLine(@"std.stdio.
-	writeln(a)",1);
+	writeln(a)", 1);
 			TestLastLine(@"std.stdio.
-	writeln(a);",1);
+	writeln(a);", 1);
 			TestLastLine(@"writeln(
-	a());",1);
+	a());", 1);
 			TestLastLine(@"writeln(""Hello Word!""
-	);",1);
+	);", 1);
 			TestLastLine(@"writeln(
-	(162*2)%315==9);",1);
+	(162*2)%315==9);", 1);
 
 			TestLastLine(@"foo()
 {
 	asdf;
 }
-",0);
+", 0);
 			TestLastLine(@"foo()
 {
-	asdf();",1);
+	asdf();", 1);
 			TestLastLine(@"foo()
 {
 	asdf();
@@ -103,24 +102,24 @@ import
 			TestLastLine(@"foo()
 {
 	asdf;
-}",0);
+}", 0);
 			TestLastLine(@"foo()
 {
 	asdf;
 	asdf;}
-",0);
+", 0);
 			TestLastLine(@"foo()
 {
 	asdf;
-	asdf;}",1);
+	asdf;}", 1);
 			TestLastLine(@"foo(){
 	a;
-	bar();}",1);
+	bar();}", 1);
 			TestLastLine(@"foo(){
 lol(); ger++;
-} yeah;",0);
+} yeah;", 0);
 			TestLastLine(@"foo(){
-	lol(); } foo();",1);
+	lol(); } foo();", 1);
 			TestLastLine(@"foo(){
 	lol(); } foo();
 ", 0);
@@ -128,31 +127,31 @@ lol(); ger++;
 	asdf();
 	if(true){
 		whynot();
-		bar(); }} fooGer();",2);
+		bar(); }} fooGer();", 2);
 
 
 			TestLastLine(@"foo()
-	if(..)",1);
+	if(..)", 1);
 			TestLastLine(@"foo()
 	if(..)
-in",0);
+in", 0);
 			TestLastLine(@"foo()
-in",0);
+in", 0);
 			TestLastLine(@"foo()
-out",0);
+out", 0);
 			TestLastLine(@"foo()
-out(result)",0);
+out(result)", 0);
 			TestLastLine(@"foo()
 	if(true)
-out(result)",0);
+out(result)", 0);
 			TestLastLine(@"foo()
-out(result){",0);
+out(result){", 0);
 			TestLastLine(@"foo()
-body",0);
+body", 0);
 			TestLastLine(@"void foo(in
-",1);
+", 1);
 			TestLastLine(@"void foo(out
-",1);
+", 1);
 
 
 
@@ -167,61 +166,61 @@ body",0);
 	b({
 		nestedFoo();
 	});
-	",1);
+	", 1);
 
 			TestLastLine(@"foo()
 {
-	bar({asdfCall();});",1);
+	bar({asdfCall();});", 1);
 
 			TestLastLine(@"class A:B
-{",0);
+{", 0);
 			TestLastLine(@"class A:
-",1);
+", 1);
 			TestLastLine(@"class A:B
-",1);
-			
+", 1);
+
 
 			TestLastLine(@"enum A
-{",0);
+{", 0);
 			TestLastLine(@"enum A
 {
-",1);
+", 1);
 			TestLastLine(@"enum A
 {
 	a,
-	",1);
+	", 1);
 			TestLastLine(@"enum A
 {
 a= A+
-B",2);
+B", 2);
 			TestLastLine(@"enum A
 {
 a,
 b=A+B,
-c",1);
+c", 1);
 			TestLastLine(@"enum A
 {
 a,
 b=A+B,
 c,
-",1);
+", 1);
 			TestLastLine(@"enum A
 {
 a,
 b=A*B,
 c,
-d,",1);
+d,", 1);
 			TestLastLine(@"enum A
 {
 a,
 b
-,c",1);
+,c", 1);
 			TestLastLine(@"enum A
 {
 a
 b,
 c,
-}",0);
+}", 0);
 
 			TestLastLine(@"enum A
 {
@@ -230,31 +229,31 @@ c,
 
 void foo()
 {
-	",1);
+	", 1);
 
 
 			TestLastLine(@"if(a)
-{",0);
+{", 0);
 
 			TestLastLine(@"if(a)
-	a;",1);
+	a;", 1);
 			TestLastLine(@"if(asdf)
 ", 1);
 			TestLastLine(@"if(asdf())
 ", 1);
 			TestLastLine(@"if(asdf()==b)
-",1);
+", 1);
 			TestLastLine(@"if(
-",1);
+", 1);
 
 
 			TestLastLine(@"switch(a)
 {
-	case:",1);
+	case:", 1);
 			TestLastLine(@"switch(a)
 {
 	case 3:
-		lol;",2);
+		lol;", 2);
 			TestLastLine(@"switch(a)
 {
 	case 3:
@@ -294,22 +293,22 @@ void foo()
 
 
 			TestLastLine(@"private:
-	",1);
+	", 1);
 
 			TestLastLine(@"version(Windows):
-	",1);
-			TestLastLine(@"version(D):",0);
+	", 1);
+			TestLastLine(@"version(D):", 0);
 
 			TestLastLine(@"
 private foo()
 {
 	a;
-}",0);
+}", 0);
 
 			TestLastLine(@"
 private:
 	foo()
-{",0);
+{", 0);
 
 			TestLastLine(@"
 void main(string[] args)
@@ -385,42 +384,27 @@ void main(string[] args)
 	writeln();
 	
 }
-",5,1);
-
+", 5, 1);
 		}
 
-		static void TestLastLine(string code, int targetIndent)
+
+		void TestLastLine(string code, int targetIndent)
 		{
-			var newInd=GetLastLineIndent(code);
-			if (newInd != targetIndent)
-				OutputError(code, targetIndent, newInd);
-			/*
-			newInd = GetLastLineIndent(code, true, false);
-			if (newInd != targetIndent)
-				OutputError(code, targetIndent, newInd);
-			*/
+			var newInd = GetLastLineIndent(code);
+			Assert.AreEqual(newInd, targetIndent, code);
+
 			newInd = GetLastLineIndent(code, true, true);
-			if (newInd != targetIndent)
-				OutputError(code, targetIndent, newInd);
+			Assert.AreEqual(newInd, targetIndent, "[Additional Content]\n"+code);
 		}
 
-		static void TestLine(string code, int line, int targetIndent)
+		void TestLine(string code, int line, int targetIndent)
 		{
-			var newInd = GetLineIndent(code,line);
-			if (newInd != targetIndent)
-				OutputError(code,targetIndent,newInd);
+			var newInd = GetLineIndent(code, line);
+			Assert.AreEqual(newInd, targetIndent, code);
 		}
 
-		static void OutputError(string code,int expected, int calculated)
-		{
-			Console.WriteLine();
-			Console.WriteLine("---------------------------------------------------");
-			Console.WriteLine("\"" + code + "\"");
-			Console.WriteLine("Expected:\t" + expected);
-			Console.WriteLine("Calculated:\t" + calculated + " tabs");
-		}
 
-		static int GetLineIndent(string code,int line)
+		static int GetLineIndent(string code, int line)
 		{
 			var fmt = new DFormatter();
 

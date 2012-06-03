@@ -1,22 +1,22 @@
 ﻿using System;
+using System.Text;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using D_Parser;
-using D_Parser.Resolver;
-using D_Parser.Resolver.TypeResolution;
-using D_Parser.Dom;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using D_Parser.Parser;
 using D_Parser.Misc;
+using D_Parser.Resolver;
+using D_Parser.Resolver.TypeResolution;
+using D_Parser.Dom.Expressions;
 
-namespace ParserTests
+namespace D_Parser.Unittest
 {
-	class ResolutionTests
+	[TestClass]
+	public class ResolutionTests
 	{
-		public static void Run()
+		[TestInitialize]
+		public void Init()
 		{
-			Console.WriteLine("\tResolution tests...");
-
 			/*
 			* If the ActualClass is defined in an other module (so not in where the type resolution has been started),
 			* we have to enable access to the ActualClass's module's imports!
@@ -48,7 +48,11 @@ namespace ParserTests
 			* 
 			* }
 			*/
+		}
 
+		[TestMethod]
+		public void TestMethod1()
+		{
 			var code = @"
 
 //void foo(T:MyClass!E,E)(T t) {}
@@ -79,21 +83,39 @@ int b=4;
 alias immutable(char)[] string;
 class Object {}");
 
-			var pcl=new ParseCacheList();
-			var pc=new ParseCache();
+			var pcl = new ParseCacheList();
+			var pc = new ParseCache();
 			pcl.Add(pc);
 			pc.AddOrUpdate(objMod);
 			pc.AddOrUpdate(ast);
 			pc.UfcsCache.Update(pcl);
 
-			var ctxt = new ResolverContextStack(pcl, new ResolverContext{
+			var ctxt = new ResolverContextStack(pcl, new ResolverContext
+			{
 				ScopedBlock = ast,
 				ScopedStatement = null
 			});
 
-			var instanceExpr = DParser.ParseExpression("(new MyClass!int)");
+			var instanceExpr = DParser.ParseExpression("(new MyClass!int).tvar");
+
+			Assert.IsInstanceOfType(instanceExpr, typeof(PostfixExpression_Access));
 
 			var res = ExpressionTypeResolver.Resolve(instanceExpr, ctxt);
+
+			Assert.IsNotNull(res);
+			Assert.AreEqual(res.Length, 1);
+
+			var r1 = res[0];
+
+			Assert.IsInstanceOfType(r1,typeof(MemberResult));
+			var mr = r1 as MemberResult;
+
+			Assert.IsNotNull(mr.MemberBaseTypes);
+			Assert.AreEqual(mr.MemberBaseTypes.Length, 1);
+			Assert.IsInstanceOfType(mr.MemberBaseTypes[0], typeof(StaticTypeResult));
+			var sr = (StaticTypeResult)mr.MemberBaseTypes[0];
+
+			Assert.AreEqual(sr.BaseTypeToken, DTokens.Int);
 		}
 	}
 }
