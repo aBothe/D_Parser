@@ -11,14 +11,16 @@ namespace D_Parser.Resolver
 
 		public void IntroduceTemplateParameterTypes(TemplateInstanceResult tir)
 		{
-			foreach (var dt in tir.DeducedTypes)
-				DeducedTemplateParameters[dt.Key] = dt.Value;
+			if(tir!=null && tir.DeducedTypes != null)
+				foreach (var dt in tir.DeducedTypes)
+					DeducedTemplateParameters[dt.Key] = dt.Value;
 		}
 
 		public void RemoveParamTypesFromPreferredLocas(TemplateInstanceResult tir)
 		{
-			foreach (var dt in tir.DeducedTypes)
-				DeducedTemplateParameters.Remove(dt.Key);
+			if (tir != null && tir.DeducedTypes != null)
+				foreach (var dt in tir.DeducedTypes)
+					DeducedTemplateParameters.Remove(dt.Key);
 		}
 
 		public Dictionary<string, ResolveResult[]> DeducedTemplateParameters = new Dictionary<string,ResolveResult[]>();

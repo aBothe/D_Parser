@@ -92,6 +92,12 @@ namespace D_Parser.Misc
 			parseThread.Start(new Tuple<IEnumerable<string>,List<ParsePerformanceData>>(directoriesToParse, performanceLogs));
 		}
 
+		public void WaitForParserFinish()
+		{
+			if (parseThread != null && parseThread.IsAlive)
+				parseThread.Join();
+		}
+
 		public void AbortParsing()
 		{
 			if (parseThread != null && parseThread.IsAlive)

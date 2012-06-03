@@ -72,7 +72,7 @@ namespace D_Parser.Resolver.Templates
 			var dn1 = r1.Node as DNode;
 			var dn2 = r2.Node as DNode;
 
-			if (dn1 == null || dn2 == null)
+			if (dn1 == null || dn1.TemplateParameters == null || dn2 == null || dn2.TemplateParameters == null)
 				return false;
 
 			var dummyList = new Dictionary<string, ResolveResult[]>();
