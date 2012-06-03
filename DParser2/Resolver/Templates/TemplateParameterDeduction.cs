@@ -32,13 +32,13 @@ namespace D_Parser.Resolver.Templates
 			 * Introduce previously deduced parameters into current resolution context
 			 * to allow value parameter to be of e.g. type T whereas T is already set somewhere before 
 			 */
-			var _prefLocalsBackup = ctxt.CurrentContext.PreferredLocals;
+			var _prefLocalsBackup = ctxt.CurrentContext.DeducedTemplateParameters;
 
 			var d = new Dictionary<string, ResolveResult[]>();
 			foreach (var kv in TargetDictionary)
 				if (kv.Value != null && kv.Value.Length != 0)
 					d[kv.Key] = kv.Value;
-			ctxt.CurrentContext.PreferredLocals = d;
+			ctxt.CurrentContext.DeducedTemplateParameters = d;
 
 			bool res = false;
 
@@ -51,7 +51,7 @@ namespace D_Parser.Resolver.Templates
 			else if(parameter is TemplateValueParameter)
 				res= Handle((TemplateValueParameter)parameter,argumentToAnalyze);
 
-			ctxt.CurrentContext.PreferredLocals = _prefLocalsBackup;
+			ctxt.CurrentContext.DeducedTemplateParameters = _prefLocalsBackup;
 
 			return res;
 		}

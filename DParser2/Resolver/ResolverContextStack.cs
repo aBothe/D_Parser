@@ -88,6 +88,11 @@ namespace D_Parser.Resolver
 			return null;
 		}
 
+		public void Push(ResolverContext c)
+		{
+			stack.Push(c);
+		}
+
 		public ResolverContext PushNewScope(IBlockNode scope)
 		{
 			var ctxtOverride = new ResolverContext();
@@ -162,6 +167,26 @@ namespace D_Parser.Resolver
 			rc.ApplyFrom(CurrentContext);
 
 			return new ResolverContextStack(ParseCache, rc);
+		}
+
+		/// <summary>
+		/// Returns true if the the context that is stacked below the current context represents the parent item of the current block scope
+		/// </summary>
+		public bool PrevContextIsInSameHierarchy
+		{
+			get
+			{
+				if (stack.Count < 2)
+					return false;
+
+				var cur = stack.Pop();
+
+				bool IsParent = cur.ScopedBlock.Parent == stack.Peek().ScopedBlock;
+
+				stack.Push(cur);
+				return IsParent;
+
+			}
 		}
 	}
 }

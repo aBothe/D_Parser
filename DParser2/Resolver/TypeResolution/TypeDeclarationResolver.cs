@@ -33,9 +33,24 @@ namespace D_Parser.Resolver.TypeResolution
 				ctxt.PushNewScope(ctxt.ScopedBlock.NodeRoot as IAbstractSyntaxTree);
 
 			// If there are symbols that must be preferred, take them instead of scanning the ast
-			else if (ctxt.CurrentContext.PreferredLocals!=null &&
-				ctxt.CurrentContext.PreferredLocals.TryGetValue(id,out res))
-				return res;
+			else
+			{
+				var tstk = new Stack<ResolverContext>();
+
+				while (!ctxt.CurrentContext.DeducedTemplateParameters.TryGetValue(id, out res))
+				{
+					if (ctxt.PrevContextIsInSameHierarchy)
+						tstk.Push(ctxt.Pop());
+					else
+						break;
+				}
+
+				while (tstk.Count > 0)
+					ctxt.Push(tstk.Pop());
+
+				if (res != null)
+					return res;
+			}
 
 			var matches = NameScan.SearchMatchesAlongNodeHierarchy(ctxt, loc, id);
 
@@ -342,6 +357,10 @@ namespace D_Parser.Resolver.TypeResolution
 		{
 			stackNum_HandleNodeMatch++;
 
+			bool popAfterwards = false;
+			if (popAfterwards = (m.Parent != ctxt.ScopedBlock && m.Parent is IBlockNode))
+				ctxt.PushNewScope((IBlockNode)m.Parent);
+
 			//HACK: Really dirty stack overflow prevention via manually counting call depth
 			var DoResolveBaseType = 
 				!(m is DClassLike && m.Name == "Object") && 
@@ -355,37 +374,36 @@ namespace D_Parser.Resolver.TypeResolution
 			ResolveResult ret = null;
 			ResolveResult[] memberbaseTypes = null;
 
+			// To support resolving type parameters to concrete types if the context allows this, introduce all deduced parameters to the current context
+			if (DoResolveBaseType && resultBase is TemplateInstanceResult)
+				ctxt.CurrentContext.IntroduceTemplateParameterTypes((TemplateInstanceResult)resultBase);
+
 			// Only import symbol aliases are allowed to search in the parse cache
 			if (m is ImportSymbolAlias)
 			{
 				var isa = (ImportSymbolAlias)m;
 
-				if (isa.IsModuleAlias ? isa.Type == null : isa.Type.InnerDeclaration == null)
+				if (isa.IsModuleAlias ? isa.Type != null : isa.Type.InnerDeclaration != null)
 				{
-					stackNum_HandleNodeMatch--;
-					return null;
-				}
+					var alias = new AliasResult	{ Node = m };
 
-				var alias = new AliasResult { 
-					Node=m
-				};
-
-				var mods = new List<ResolveResult>();
-				foreach (var mod in ctxt.ParseCache.LookupModuleName(isa.IsModuleAlias ?
-					isa.Type.ToString() :
-					isa.Type.InnerDeclaration.ToString()))
+					var mods = new List<ResolveResult>();
+					foreach (var mod in ctxt.ParseCache.LookupModuleName(isa.IsModuleAlias ?
+						isa.Type.ToString() :
+						isa.Type.InnerDeclaration.ToString()))
 						mods.Add(new ModuleResult(mod));
 
-				if (isa.IsModuleAlias)
-					alias.MemberBaseTypes = mods.ToArray();
-				else
-					alias.MemberBaseTypes = ResolveFurtherTypeIdentifier(isa.Type.ToString(false), mods, ctxt, isa.Type);
+					if (isa.IsModuleAlias)
+						alias.MemberBaseTypes = mods.ToArray();
+					else
+						alias.MemberBaseTypes = ResolveFurtherTypeIdentifier(isa.Type.ToString(false), mods, ctxt, isa.Type);
 
-				ret = alias;
+					ret = alias;
+				}
 			}
 			else if (m is DVariable)
 			{
-				var v = m as DVariable;
+				var v = (DVariable)m;
 
 				if (DoResolveBaseType)
 				{
@@ -408,7 +426,6 @@ namespace D_Parser.Resolver.TypeResolution
 				r.MemberBaseTypes = memberbaseTypes;
 				r.ResultBase = resultBase;
 				r.DeclarationOrExpressionBase = typeBase;
-				
 			}
 			else if (m is DMethod)
 			{
@@ -471,6 +488,12 @@ namespace D_Parser.Resolver.TypeResolution
 					//MemberBaseTypes = templateParameterType
 				};
 			}
+
+			if (DoResolveBaseType && resultBase is TemplateInstanceResult)
+				ctxt.CurrentContext.RemoveParamTypesFromPreferredLocas((TemplateInstanceResult)resultBase);
+
+			if (popAfterwards)
+				ctxt.Pop();
 
 			stackNum_HandleNodeMatch--;
 			return ret;

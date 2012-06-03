@@ -14,7 +14,7 @@ When template parameter deduction & completion-readyness has been implemented
 * CTFE
 * Implement declaration condition checks
 	- omit debug/versioned declarations 
-	  if not fitting to environment dependencied 
+	  if not fitting to environment dependencies
 	  ([debug/release] or [Windows/Mac/Unix/BSD] etc.)
 * Interface/Abstract class implementation
 
@@ -26,7 +26,6 @@ Resolver:
 
 Template parameter deduction:
  - Handle __FILE__ and __LINE__ correctly concerning template values
- - TemplateThisParameters on template functions
 
  Tests:
   - Find out what features did change after it added the first expression as ResultBase to UFCS results

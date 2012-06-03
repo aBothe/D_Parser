@@ -151,14 +151,13 @@ namespace D_Parser.Resolver.Templates
 		bool IsMoreSpecialized(ITypeDeclaration Spec, ITemplateParameter t2, Dictionary<string, ResolveResult[]> t1_DummyParamList)
 		{
 			// Make a type out of t1's specialization
-			var block = ctxt.ScopedBlock.NodeRoot as IBlockNode;
-			var frame = ctxt.PushNewScope(block);
+			var frame = ctxt.PushNewScope(ctxt.ScopedBlock.Parent as IBlockNode);
 
 			// Make the T in e.g. T[] a virtual type so T will be replaced by it
 			// T** will be X** then - so a theoretically valid type instead of a template param
 			var dummyType = new[] { new TypeResult { Node = new DClassLike { Name = "X" } } };
 			foreach (var kv in t1_DummyParamList)
-				frame.PreferredLocals[kv.Key] = dummyType;
+				frame.DeducedTemplateParameters[kv.Key] = dummyType;
 
 			var t1_TypeResults = Resolver.TypeResolution.TypeDeclarationResolver.Resolve(Spec, ctxt);
 			if (t1_TypeResults == null || t1_TypeResults.Length == 0)

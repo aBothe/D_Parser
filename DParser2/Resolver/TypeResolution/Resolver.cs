@@ -185,11 +185,17 @@ namespace D_Parser.Resolver.TypeResolution
 			 * 
 			 * }
 			 */
-			ctxt.PushNewScope(ActualClass.Parent as IBlockNode);
+			var scopeBackup = ctxt.ScopedBlock;
+			var stmtBackup = ctxt.ScopedStatement;
+			ctxt.ScopedStatement = null;
+			ctxt.ScopedBlock = ActualClass.Parent as IBlockNode;
+			//ctxt.PushNewScope(ActualClass.Parent as IBlockNode);
 
 			var results = TypeDeclarationResolver.Resolve(type, ctxt);
 
-			ctxt.Pop();
+			ctxt.ScopedBlock = scopeBackup;
+			ctxt.ScopedStatement = stmtBackup;
+			//ctxt.Pop();
 
 			if (results != null)
 				foreach (var i in results)

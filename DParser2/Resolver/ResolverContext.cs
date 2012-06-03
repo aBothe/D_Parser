@@ -9,11 +9,19 @@ namespace D_Parser.Resolver
 		public IBlockNode ScopedBlock;
 		public IStatement ScopedStatement;
 
-		/// <summary>
-		/// This dictionary stores symbols that are absolutely preferred in any scope.
-		/// Used e.g. for template parameter deduction.
-		/// </summary>
-		public Dictionary<string, ResolveResult[]> PreferredLocals = new Dictionary<string, ResolveResult[]>();
+		public void IntroduceTemplateParameterTypes(TemplateInstanceResult tir)
+		{
+			foreach (var dt in tir.DeducedTypes)
+				DeducedTemplateParameters[dt.Key] = dt.Value;
+		}
+
+		public void RemoveParamTypesFromPreferredLocas(TemplateInstanceResult tir)
+		{
+			foreach (var dt in tir.DeducedTypes)
+				DeducedTemplateParameters.Remove(dt.Key);
+		}
+
+		public Dictionary<string, ResolveResult[]> DeducedTemplateParameters = new Dictionary<string,ResolveResult[]>();
 
 		public ResolutionOptions Options = ResolutionOptions.Default;
 

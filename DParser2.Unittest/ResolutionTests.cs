@@ -29,7 +29,7 @@ class A {
 class B:A{}
 class C:B{}
 
-class MyClass(T) {}
+class MyClass(T) { T tvar; }
 class MyClass(T:A) {}
 class MyClass(T:B) {}
 
@@ -56,7 +56,7 @@ alias immutable(char)[] string;";
 				ScopedStatement = null
 			});
 
-			var instanceExpr = DParser.ParseExpression("(1).foo(2)");
+			var instanceExpr = DParser.ParseExpression("(new MyClass!int).tvar");
 
 			var res = ExpressionTypeResolver.Resolve(instanceExpr, ctxt);
 		}
