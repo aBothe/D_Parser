@@ -25,6 +25,8 @@ Resolver:
 	-	when typing new Foo(..., show up the ctors instead of the class definition
 	- .tupleof for structs
 	- .offsetof for struct fields
+	- new MyClass() should return the ctor member instead - that has the actual class as its return type
+	- ensure that e.g. int is returned if T myBar(T)() {} gets called with !int
 
 Template parameter deduction:
  - Handle __FILE__ and __LINE__ correctly concerning template values

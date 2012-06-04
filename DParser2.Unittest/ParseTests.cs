@@ -6,13 +6,14 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using D_Parser.Misc;
 using D_Parser.Parser;
 using System.Diagnostics;
+using D_Parser.Resolver.ASTScanner;
 
 namespace DParser2.Unittest
 {
 	[TestClass]
 	public class ParseTests
 	{
-		[TestMethod]
+		//[TestMethod]
 		public void ParsePhobos()
 		{
 			var dmdBase = @"A:\D\dmd2\src";
@@ -23,11 +24,14 @@ namespace DParser2.Unittest
 			{
 				Trace.WriteLine(string.Format("Finished UFCS analysis: {0} resolutions in {1}s; ~{2}ms/resolution", pc.UfcsCache.CachedMethods.Count,
 					pc.UfcsCache.CachingDuration.TotalSeconds, Math.Round(pc.UfcsCache.CachingDuration.TotalMilliseconds/pc.UfcsCache.CachedMethods.Count,3)), "ParserTests");
+				//compareUfcsResults(pc.UfcsCache);
 			});
 
 			pc.BeginParse(new[] { 
+				dmdBase+@"\druntime\import",
 				dmdBase+@"\phobos",
-				dmdBase+@"\druntime\import"
+				//@"A:\Projects\fxLib\src"
+				//@"A:\D\tango-d2\tngo"
 			},dmdBase+@"\phobos");
 
 			pc.WaitForParserFinish();
@@ -43,5 +47,26 @@ namespace DParser2.Unittest
 			foreach (var ppd in PerformanceData)
 				Trace.WriteLine(string.Format("Parsed {0} files in {1}; {2}ms/file", ppd.AmountFiles, ppd.BaseDirectory, ppd.FileDuration), "ParserTests");
 		}
+
+		/*void compareUfcsResults(UFCSCache u)
+		{
+			var l1 = new List<string>();
+			var diff=new List<string>();
+
+
+			foreach (var m in u.CachedMethods)
+				l1.Add(m.Key.ToString(true));
+
+			var l2 = System.IO.File.ReadAllLines(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory) + "\\ufcs.txt");
+
+			foreach(var l in l2)
+				if(!l1.Remove(l) && !l.Contains("terminator") && l!=")")
+				{
+					Trace.WriteLine(l);
+					diff.Add(l);
+				}
+
+			
+		}*/
 	}
 }
