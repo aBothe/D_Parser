@@ -26,7 +26,7 @@ namespace D_Parser.Resolver.ASTScanner
             {
                 Matches.Add(n);
 
-                if (Context.CurrentContext.Options.HasFlag(ResolutionOptions.StopAfterFirstMatch))
+                if (Context.Options.HasFlag(ResolutionOptions.StopAfterFirstMatch))
                     return true;
             }
 
@@ -55,7 +55,7 @@ namespace D_Parser.Resolver.ASTScanner
                     {
                         Matches.Add(n);
 
-                        if (Context.CurrentContext.Options.HasFlag(ResolutionOptions.StopAfterFirstMatch))
+                        if (Context.Options.HasFlag(ResolutionOptions.StopAfterFirstMatch))
                             return true;
                     }
                 }

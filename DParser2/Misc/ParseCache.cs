@@ -241,6 +241,14 @@ namespace D_Parser.Misc
 		{
 			return GetModule (DModule.GetModuleName (baseDirectory, file));
 		}
+
+		public IAbstractSyntaxTree this[string ModuleName]
+		{
+			get
+			{
+				return GetModule(ModuleName);
+			}
+		}
 		#endregion
 
 		public IEnumerator<IAbstractSyntaxTree> GetEnumerator()

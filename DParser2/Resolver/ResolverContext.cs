@@ -25,7 +25,7 @@ namespace D_Parser.Resolver
 
 		public Dictionary<string, ResolveResult[]> DeducedTemplateParameters = new Dictionary<string,ResolveResult[]>();
 
-		public ResolutionOptions Options = ResolutionOptions.Default;
+		public ResolutionOptions ContextDependentOptions = 0;
 
 		public void ApplyFrom(ResolverContext other)
 		{
@@ -34,7 +34,6 @@ namespace D_Parser.Resolver
 
 			ScopedBlock = other.ScopedBlock;
 			ScopedStatement = other.ScopedStatement;
-			Options = other.Options;
 		}
 	}
 

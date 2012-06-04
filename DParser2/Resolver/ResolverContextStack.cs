@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
+using D_Parser.Completion;
 using D_Parser.Dom;
 using D_Parser.Dom.Statements;
 using D_Parser.Misc;
-using D_Parser.Completion;
 using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Resolver
@@ -11,6 +11,12 @@ namespace D_Parser.Resolver
 	{
 		#region Properties
 		protected Stack<ResolverContext> stack = new Stack<ResolverContext>();
+		public ResolutionOptions ContextIndependentOptions = ResolutionOptions.Default;
+
+		public ResolutionOptions Options
+		{
+			get { return ContextIndependentOptions | CurrentContext.ContextDependentOptions; }
+		}
 
 		public ParseCacheList ParseCache = new ParseCacheList();
 

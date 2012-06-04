@@ -78,7 +78,7 @@ namespace D_Parser.Resolver.TypeResolution
 				res= ResolveFurtherTypeIdentifier(id.Id, rbases, ctxt, id);
 			}
 
-			return (filterForTemplateArgs && !ctxt.CurrentContext.Options.HasFlag(ResolutionOptions.NoTemplateParameterDeduction)) ? 
+			return (filterForTemplateArgs && !ctxt.Options.HasFlag(ResolutionOptions.NoTemplateParameterDeduction)) ? 
 				TemplateInstanceHandler.EvalAndFilterOverloads(res, null, false, ctxt) : res;
 		}
 
@@ -284,7 +284,8 @@ namespace D_Parser.Resolver.TypeResolution
 		{
 			var r = new DelegateResult { DeclarationOrExpressionBase=dg };
 
-			r.ReturnType = Resolve(dg.ReturnType, ctxt);
+			if(!ctxt.Options.HasFlag(ResolutionOptions.DontResolveBaseTypes))
+				r.ReturnType = Resolve(dg.ReturnType, ctxt);
 
 			return new[] { r };
 		}
@@ -364,7 +365,7 @@ namespace D_Parser.Resolver.TypeResolution
 			//HACK: Really dirty stack overflow prevention via manually counting call depth
 			var DoResolveBaseType = 
 				!(m is DClassLike && m.Name == "Object") && 
-				ctxt.CurrentContext.Options.HasFlag(ResolutionOptions.ResolveBaseClasses) &&
+				!ctxt.Options.HasFlag(ResolutionOptions.DontResolveBaseClasses) &&
 				stackNum_HandleNodeMatch <= 5;
 
 			// Prevent infinite recursion if the type accidently equals the node's name
@@ -522,8 +523,37 @@ namespace D_Parser.Resolver.TypeResolution
 			return rl.ToArray();
 		}
 
+		public static void FillMethodReturnType(MemberResult mr, ResolverContextStack ctxt)
+		{
+			if (mr == null || ctxt == null)
+				return;
+
+			var dm = mr.Node as DMethod;
+
+			ctxt.CurrentContext.IntroduceTemplateParameterTypes(mr);
+
+			if (dm != null)
+				mr.MemberBaseTypes = GetMethodReturnType(dm, ctxt);
+
+			ctxt.CurrentContext.RemoveParamTypesFromPreferredLocas(mr);
+		}
+
+		public static void FillMethodReturnType(DelegateResult dg, ResolverContextStack ctxt)
+		{
+			if (dg == null || ctxt == null)
+				return;
+
+			if (dg.IsDelegateDeclaration)
+				dg.ReturnType = Resolve(((DelegateDeclaration)dg.DeclarationOrExpressionBase).ReturnType, ctxt);
+			else
+				dg.ReturnType = GetMethodReturnType(((FunctionLiteral)dg.DeclarationOrExpressionBase).AnonymousMethod,ctxt);
+		}
+
 		public static ResolveResult[] GetMethodReturnType(DMethod method, ResolverContextStack ctxt)
 		{
+			if (ctxt.Options.HasFlag(ResolutionOptions.DontResolveBaseTypes))
+				return null;
+			
 			ResolveResult[] returnType = null;
 
 			/*

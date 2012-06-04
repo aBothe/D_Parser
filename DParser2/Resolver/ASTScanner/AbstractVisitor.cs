@@ -62,15 +62,15 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
             return false;
 		}
 
-		bool breakImmediately { get { return ctxt.CurrentContext.Options == ResolutionOptions.StopAfterFirstMatch; } }
+		bool breakImmediately { get { return ctxt.Options == ResolutionOptions.StopAfterFirstMatch; } }
 
 		public virtual void IterateThroughScopeLayers(CodeLocation Caret, MemberFilter VisibleMembers= MemberFilter.All)
 		{
 			// 1)
 			if (ctxt.ScopedStatement != null && 
 				IterateThroughItemHierarchy(ctxt.ScopedStatement, Caret, VisibleMembers) &&
-					(ctxt.CurrentContext.Options.HasFlag(ResolutionOptions.StopAfterFirstOverloads) || 
-					ctxt.CurrentContext.Options.HasFlag(ResolutionOptions.StopAfterFirstMatch)))
+					(ctxt.Options.HasFlag(ResolutionOptions.StopAfterFirstOverloads) || 
+					ctxt.Options.HasFlag(ResolutionOptions.StopAfterFirstMatch)))
 					return;
 
 			var curScope = ctxt.ScopedBlock;
@@ -160,7 +160,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
                     if ((breakOnNextScope = HandleDBlockNode((DBlockNode)curScope, VisibleMembers)) && breakImmediately)
                         return;
 
-				if (breakOnNextScope && ctxt.CurrentContext.Options.HasFlag(ResolutionOptions.StopAfterFirstOverloads))
+				if (breakOnNextScope && ctxt.Options.HasFlag(ResolutionOptions.StopAfterFirstOverloads))
 					return;
 
 				curScope = curScope.Parent as IBlockNode;

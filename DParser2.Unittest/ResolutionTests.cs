@@ -9,59 +9,63 @@ using D_Parser.Resolver;
 using D_Parser.Resolver.TypeResolution;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom;
+using D_Parser.Dom.Statements;
 
 namespace D_Parser.Unittest
 {
 	[TestClass]
 	public class ResolutionTests
 	{
-		IAbstractSyntaxTree objMod;
+		static IAbstractSyntaxTree objMod = DParser.ParseString(@"module object;
+						alias immutable(char)[] string;
+						class Object {}");
 
-		[TestInitialize]
-		public void Init()
+		static ParseCacheList CreateCache(params string[] moduleCodes)
 		{
-			objMod = DParser.ParseString(@"module object;
-alias immutable(char)[] string;
-class Object {}");
+			var pcl = new ParseCacheList();
+			var pc = new ParseCache();
+			pcl.Add(pc);
+
+			pc.AddOrUpdate(objMod);
+
+			foreach (var code in moduleCodes)
+				pc.AddOrUpdate(DParser.ParseString(code));
+
+			pc.UfcsCache.Update(pcl, pc);
+
+			return pcl;
 		}
 
 		[TestMethod]
 		public void TestMultiModuleResolution1()
 		{
-			var pcl = new ParseCacheList();
-			var pc = new ParseCache();
-			pcl.Add(pc);
-			pc.AddOrUpdate(objMod);
+			var pcl = CreateCache(
+				@"module modC;
+				class C { void fooC(); }",
 
-			var modC = DParser.ParseString(@"module modC;
-class C { void fooC(); }");
-			pc.AddOrUpdate(modC);
+				@"module modB;
+				import modC;
+				class B:C{}",
 
-			var modB = DParser.ParseString(@"module modB;
-import modC;
-class B:C{}");
-			pc.AddOrUpdate(modB);
-
-			var modA = DParser.ParseString(@"module modA;
-import modB;
+				@"module modA;
+				import modB;
 			
-class A:B{	
-		void bar() {
-			fooC(); // Note that modC wasn't imported publically! Anyway, we're still able to access this method!
-			// So, the resolver must know that there is a class C.
-		}
-}");
-			pc.AddOrUpdate(modA);
+				class A:B{	
+						void bar() {
+							fooC(); // Note that modC wasn't imported publically! Anyway, we're still able to access this method!
+							// So, the resolver must know that there is a class C.
+						}
+				}");
 
-			var A=modA["A"] as DClassLike;
+			var A=pcl[0]["modA"]["A"] as DClassLike;
 			var bar = A["bar"] as DMethod;
 			var call_fooC = bar.Body.SubStatements[0];
 
-			Assert.IsInstanceOfType(call_fooC, typeof(Dom.Statements.ExpressionStatement));
+			Assert.IsInstanceOfType(call_fooC, typeof(ExpressionStatement));
 
 			var ctxt=new ResolverContextStack(pcl, new ResolverContext{ ScopedBlock=bar, ScopedStatement=call_fooC });
 
-			var call = ((Dom.Statements.ExpressionStatement)call_fooC).Expression;
+			var call = ((ExpressionStatement)call_fooC).Expression;
 			var methodName = ((PostfixExpression_MethodCall)call).PostfixForeExpression;
 
 			var res=ExpressionTypeResolver.Resolve(methodName,ctxt);
@@ -78,7 +82,7 @@ class A:B{
 		[TestMethod]
 		public void TestMethodParamDeduction1()
 		{
-			var code = @"
+			var pcl=CreateCache(@"module modA;
 
 //void foo(T:MyClass!E,E)(T t) {}
 int foo(Y,T)(Y y, T t) {}
@@ -99,22 +103,10 @@ class D(int u:1) {}
 
 const int a=3;
 int b=4;
-";
+");
 
-			var ast = DParser.ParseString(code);
-			ast.ModuleName = "moduleA";
-
-			var pcl = new ParseCacheList();
-			var pc = new ParseCache();
-			pcl.Add(pc);
-			pc.AddOrUpdate(objMod);
-			pc.AddOrUpdate(ast);
-			pc.UfcsCache.Update(pcl);
-
-			var ctxt = new ResolverContextStack(pcl, new ResolverContext
-			{
-				ScopedBlock = ast,
-				ScopedStatement = null
+			var ctxt = new ResolverContextStack(pcl, new ResolverContext {
+				ScopedBlock = pcl[0]["modA"]
 			});
 
 			var instanceExpr = DParser.ParseExpression("(new MyClass!int).tvar");
@@ -137,6 +129,25 @@ int b=4;
 			var sr = (StaticTypeResult)mr.MemberBaseTypes[0];
 
 			Assert.AreEqual(sr.BaseTypeToken, DTokens.Int);
+		}
+
+		[TestMethod]
+		public void TestMethodParamDeduction2()
+		{
+			var pcl = CreateCache(@"
+module modA;
+T foo(T)() {}
+");
+
+			var ctxt = new ResolverContextStack(pcl, new ResolverContext { ScopedBlock=pcl[0]["modA"] });
+
+			var call = DParser.ParseExpression("foo!int()");
+			var bt = ExpressionTypeResolver.Resolve(call, ctxt);
+
+			Assert.IsTrue(bt!=null && bt.Length == 1, "Resolution returned empty result instead of 'int'");
+			var st = bt[0] as StaticTypeResult;
+			Assert.IsNotNull(st, "Result must be Static type int");
+			Assert.AreEqual(st.BaseTypeToken, DTokens.Int, "Static type must be int");
 		}
 	}
 }

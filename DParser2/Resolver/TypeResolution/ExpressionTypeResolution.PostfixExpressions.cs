@@ -91,6 +91,10 @@ namespace D_Parser.Resolver.TypeResolution
 			ResolveResult[] baseExpression = null;
 			TemplateInstanceExpression tix=null;
 
+			// Explicitly don't resolve the methods' return types - it'll be done after filtering to e.g. resolve template types to the deduced one
+			var optBackup = ctxt.CurrentContext.ContextDependentOptions;
+			ctxt.CurrentContext.ContextDependentOptions = ResolutionOptions.DontResolveBaseTypes;
+
 			if (call.PostfixForeExpression is PostfixExpression_Access)
 			{
 				var pac=(PostfixExpression_Access)call.PostfixForeExpression;
@@ -106,6 +110,8 @@ namespace D_Parser.Resolver.TypeResolution
 			}
 			else
 				baseExpression = Resolve(call.PostfixForeExpression, ctxt);
+
+			ctxt.CurrentContext.ContextDependentOptions = optBackup;
 
 			var methodOverloads = new List<ResolveResult>();
 
@@ -219,7 +225,18 @@ namespace D_Parser.Resolver.TypeResolution
 				true, ctxt);
 
 			if (!returnBaseTypesOnly)
-				return filteredMethods !=null && filteredMethods.Length != 0 ? filteredMethods : null;
+			{
+				if (filteredMethods == null || filteredMethods.Length == 0)
+					return null;
+
+				foreach (var m in filteredMethods)
+				{
+					var mr = m as MemberResult;
+					mr.MemberBaseTypes = TypeDeclarationResolver.GetMethodReturnType(mr.Node as DMethod, ctxt);
+				}
+
+				return filteredMethods;
+			}
 
 			methodOverloads.Clear();
 			if(filteredMethods!=null)
@@ -233,6 +250,7 @@ namespace D_Parser.Resolver.TypeResolution
 				if (rr is MemberResult)
 				{
 					var mr = (MemberResult)rr;
+					TypeDeclarationResolver.FillMethodReturnType(mr, ctxt);
 
 					if (mr.MemberBaseTypes != null)
 						r.AddRange(mr.MemberBaseTypes);
@@ -240,6 +258,7 @@ namespace D_Parser.Resolver.TypeResolution
 				else if (rr is DelegateResult)
 				{
 					var dg = (DelegateResult)rr;
+					TypeDeclarationResolver.FillMethodReturnType(dg, ctxt);
 
 					if (dg.ReturnType != null)
 						r.AddRange(dg.ReturnType);
@@ -328,7 +347,7 @@ namespace D_Parser.Resolver.TypeResolution
 			else
 				res= TypeDeclarationResolver.ResolveFurtherTypeIdentifier(tix.TemplateIdentifier.Id, resultBases, ctxt, tix);
 
-			return !ctxt.CurrentContext.Options.HasFlag(ResolutionOptions.NoTemplateParameterDeduction) && deduceParameters ?
+			return !ctxt.Options.HasFlag(ResolutionOptions.NoTemplateParameterDeduction) && deduceParameters ?
 				TemplateInstanceHandler.EvalAndFilterOverloads(res,tix, ctxt) : res;
 		}
 	}
