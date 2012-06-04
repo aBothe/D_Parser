@@ -13,6 +13,14 @@ namespace DParser2.Unittest
 	[TestClass]
 	public class ParseTests
 	{
+		[TestMethod]
+		public void ParseEscapeLiterals()
+		{
+			var e = DParser.ParseExpression(@"`a`\n""lolol""");
+
+			Assert.AreEqual((e as D_Parser.Dom.Expressions.IdentifierExpression).Value, "a\nlolol");
+		}
+
 		//[TestMethod]
 		public void ParsePhobos()
 		{
