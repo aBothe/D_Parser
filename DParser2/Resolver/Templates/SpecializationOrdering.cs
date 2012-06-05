@@ -38,7 +38,7 @@ namespace D_Parser.Resolver.Templates
 					 * all template parameters of Type 1 are equal to those of Type 2)
 					 */
 
-					// Ambigious result -- ERROR!
+					// Ambiguous result -- ERROR!
 					return new[] { currentlyMostSpecialized, templateOverloads[i] };
 				}
 			}
