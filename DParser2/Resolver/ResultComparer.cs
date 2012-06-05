@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using D_Parser.Dom;
 using D_Parser.Parser;
+using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Resolver
 {
@@ -28,6 +29,17 @@ namespace D_Parser.Resolver
 		/// </summary>
 		public static bool IsImplicitlyConvertible(ResolveResult resultToCheck, ResolveResult targetType)
 		{
+			// Initially remove aliases from results
+			var _r=DResolver.TryRemoveAliasesFromResult(new[]{resultToCheck});
+			if(_r==null || _r.Length==0)
+				return IsEqual(resultToCheck,targetType);
+			resultToCheck = _r[0];
+
+			_r=DResolver.TryRemoveAliasesFromResult(new[]{targetType});
+			if(_r==null || _r.Length == 0)
+				return false;
+			targetType = _r[0];
+
 			if (resultToCheck is MemberResult && targetType is MemberResult)
 			{
 				var mr1 = (MemberResult)resultToCheck;
@@ -37,10 +49,37 @@ namespace D_Parser.Resolver
 					mr2.MemberBaseTypes != null && mr2.MemberBaseTypes.Length != 0)
 					return IsImplicitlyConvertible(mr1.MemberBaseTypes[0], mr2.MemberBaseTypes[0]);
 			}
+			
+			else if (resultToCheck is StaticTypeResult && targetType is StaticTypeResult)
+			{
+
+			}
 			else if (resultToCheck is TypeResult && targetType is TypeResult)
 				return IsImplicitlyConvertible((TypeResult)resultToCheck, (TypeResult)targetType);
+			else if (resultToCheck is DelegateResult && targetType is DelegateResult)
+			{
+
+			}
+			else if (resultToCheck is ArrayResult && targetType is ArrayResult)
+			{
+
+			}
+
+			else if (resultToCheck is TypeTupleResult && targetType is TypeTupleResult)
+			{
+
+			}
+			else if (resultToCheck is ExpressionTupleResult && targetType is ExpressionTupleResult)
+			{
+
+			}
+			else if (resultToCheck is ExpressionValueResult && targetType is ExpressionValueResult)
+			{
+
+			}
 
 			// http://dlang.org/type.html
+			//TODO: Pointer to non-pointer / vice-versa checkability
 
 			return false;
 		}

@@ -12,6 +12,11 @@ namespace DParser2.Unittest
 	[TestClass]
 	public class ImplicitConversionTests
 	{
+		public static TypeResult GetType(string name, ResolverContextStack ctxt)
+		{
+			return (TypeResult)TypeDeclarationResolver.ResolveIdentifier(name, ctxt, null)[0];
+		}
+
 		[TestMethod]
 		public void ClassInheritanceTest()
 		{
@@ -22,10 +27,10 @@ namespace DParser2.Unittest
 				class D:C {}");
 			var ctxt=new ResolverContextStack(pcl, new ResolverContext{ ScopedBlock=pcl[0]["modA"] });
 
-			var A = TypeDeclarationResolver.ResolveIdentifier("A", ctxt, null)[0];
-			var B = TypeDeclarationResolver.ResolveIdentifier("B", ctxt, null)[0];
-			var C = TypeDeclarationResolver.ResolveIdentifier("C", ctxt, null)[0];
-			var D = TypeDeclarationResolver.ResolveIdentifier("D", ctxt, null)[0];
+			var A = GetType("A",ctxt);
+			var B = GetType("B", ctxt);
+			var C = GetType("C", ctxt);
+			var D = GetType("D", ctxt);
 
 			Assert.IsTrue(ResultComparer.IsEqual(A, A));
 			Assert.IsTrue(ResultComparer.IsEqual(B, B));
@@ -44,6 +49,65 @@ namespace DParser2.Unittest
 			Assert.IsTrue(ResultComparer.IsImplicitlyConvertible(C, A));
 			Assert.IsTrue(ResultComparer.IsImplicitlyConvertible(D, C));
 			Assert.IsTrue(ResultComparer.IsImplicitlyConvertible(D, A));
+		}
+
+		[TestMethod]
+		public void InterfaceInheritanceTest()
+		{
+			var pcl = ResolutionTests.CreateCache(@"module modA;
+				class A {}
+				class B {}
+
+				interface IA {}
+				interface IB {}
+
+				interface IC : IA {}
+				interface ID : IC {}
+
+				class E : A, IA {}
+				class F : B, IA {}
+
+				class G : A, IC {}
+				class H : B, ID {}");
+			var ctxt = new ResolverContextStack(pcl, new ResolverContext { ScopedBlock = pcl[0]["modA"] });
+
+			var A = GetType("A", ctxt);
+			var B = GetType("B", ctxt);
+			var IA = GetType("IA", ctxt);
+			var IB = GetType("IB", ctxt);
+			var IC = GetType("IC", ctxt);
+			var ID = GetType("ID", ctxt);
+			var E = GetType("E", ctxt);
+			var F = GetType("F", ctxt);
+			var G = GetType("G", ctxt);
+			var H = GetType("H", ctxt);
+
+			Assert.IsTrue(ResultComparer.IsImplicitlyConvertible(IC, IA));
+			Assert.IsTrue(ResultComparer.IsImplicitlyConvertible(ID, IC));
+			Assert.IsTrue(ResultComparer.IsImplicitlyConvertible(ID, IA));
+
+			Assert.IsFalse(ResultComparer.IsImplicitlyConvertible(IA, IC));
+			Assert.IsFalse(ResultComparer.IsImplicitlyConvertible(IA, ID));
+			Assert.IsFalse(ResultComparer.IsImplicitlyConvertible(IC, IB));
+
+			Assert.IsTrue(ResultComparer.IsImplicitlyConvertible(E, A));
+			Assert.IsTrue(ResultComparer.IsImplicitlyConvertible(E, IA));
+
+			Assert.IsFalse(ResultComparer.IsImplicitlyConvertible(E, F));
+			Assert.IsFalse(ResultComparer.IsImplicitlyConvertible(F, E));
+			
+			Assert.IsTrue(ResultComparer.IsImplicitlyConvertible(F, B));
+			Assert.IsTrue(ResultComparer.IsImplicitlyConvertible(F, IA));
+
+			Assert.IsTrue(ResultComparer.IsImplicitlyConvertible(G, A));
+			Assert.IsTrue(ResultComparer.IsImplicitlyConvertible(G, IC));
+			Assert.IsTrue(ResultComparer.IsImplicitlyConvertible(G, IA));
+
+			Assert.IsTrue(ResultComparer.IsImplicitlyConvertible(H, B));
+			Assert.IsTrue(ResultComparer.IsImplicitlyConvertible(H, ID));
+			Assert.IsTrue(ResultComparer.IsImplicitlyConvertible(H, IC));
+			Assert.IsTrue(ResultComparer.IsImplicitlyConvertible(H, IA));
+			
 		}
 	}
 }
