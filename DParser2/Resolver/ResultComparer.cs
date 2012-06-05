@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using D_Parser.Dom;
+using D_Parser.Parser;
 
 namespace D_Parser.Resolver
 {
@@ -12,7 +14,13 @@ namespace D_Parser.Resolver
 		/// </summary>
 		public static bool IsEqual(ResolveResult r1, ResolveResult r2)
 		{
-			return true;
+			if (r1 is TemplateInstanceResult && r2 is TemplateInstanceResult)
+				return ((TemplateInstanceResult)r1).Node == ((TemplateInstanceResult)r2).Node;
+			else if (r1 is StaticTypeResult && r2 is StaticTypeResult)
+				return ((StaticTypeResult)r1).BaseTypeToken == ((StaticTypeResult)r2).BaseTypeToken;
+
+
+			return false;
 		}
 
 		/// <summary>
@@ -20,10 +28,45 @@ namespace D_Parser.Resolver
 		/// </summary>
 		public static bool IsImplicitlyConvertible(ResolveResult resultToCheck, ResolveResult targetType)
 		{
-			if (IsEqual(resultToCheck, targetType))
+			if (resultToCheck is MemberResult && targetType is MemberResult)
+			{
+				var mr1 = (MemberResult)resultToCheck;
+				var mr2 = (MemberResult)targetType;
+
+				if (mr1.MemberBaseTypes != null && mr1.MemberBaseTypes.Length != 0 &&
+					mr2.MemberBaseTypes != null && mr2.MemberBaseTypes.Length != 0)
+					return IsImplicitlyConvertible(mr1.MemberBaseTypes[0], mr2.MemberBaseTypes[0]);
+			}
+			else if (resultToCheck is TypeResult && targetType is TypeResult)
+				return IsImplicitlyConvertible((TypeResult)resultToCheck, (TypeResult)targetType);
+
+			// http://dlang.org/type.html
+
+			return false;
+		}
+
+		public static bool IsImplicitlyConvertible(TypeResult r, TypeResult target)
+		{
+			if (r.Node == target.Node)
 				return true;
 
-			return true;
+			if (r.BaseClass != null && r.BaseClass.Length != 0)
+			{
+				if (IsImplicitlyConvertible(r.BaseClass[0], target))
+					return true;
+			}
+
+			if (r.ImplementedInterfaces != null && 
+				r.ImplementedInterfaces.Length != 0 &&
+				target.Node is DClassLike &&
+				((DClassLike)target.Node).ClassType == DTokens.Interface)
+			{
+				foreach(var I in r.ImplementedInterfaces)
+					if(IsImplicitlyConvertible(I[0], target))
+						return true;
+			}
+
+			return false;
 		}
 	}
 }

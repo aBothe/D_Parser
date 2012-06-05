@@ -16,11 +16,11 @@ namespace D_Parser.Unittest
 	[TestClass]
 	public class ResolutionTests
 	{
-		static IAbstractSyntaxTree objMod = DParser.ParseString(@"module object;
+		public static IAbstractSyntaxTree objMod = DParser.ParseString(@"module object;
 						alias immutable(char)[] string;
 						class Object {}");
 
-		static ParseCacheList CreateCache(params string[] moduleCodes)
+		public static ParseCacheList CreateCache(params string[] moduleCodes)
 		{
 			var pcl = new ParseCacheList();
 			var pc = new ParseCache();
@@ -148,6 +148,23 @@ T foo(T)() {}
 			var st = bt[0] as StaticTypeResult;
 			Assert.IsNotNull(st, "Result must be Static type int");
 			Assert.AreEqual(st.BaseTypeToken, DTokens.Int, "Static type must be int");
+		}
+
+		[TestMethod]
+		public void TestMethodParamDeduction3()
+		{
+			var pcl = CreateCache(@"module modA;
+
+class A {}
+class A2 {}
+
+class B(T){
+	class C(T2) : T {} 
+}");
+
+			var ctxt = new ResolverContextStack(pcl, new ResolverContext { ScopedBlock=pcl[0]["modA"] });
+
+			var inst = DParser.ParseExpression("(new B!A).new C!A2"); // TODO
 		}
 	}
 }

@@ -46,6 +46,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="FormattingTests.cs" />
+    <Compile Include="ImplicitConversionTests.cs" />
     <Compile Include="ParseTests.cs">
       <SubType>Code</SubType>
     </Compile>
