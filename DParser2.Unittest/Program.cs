@@ -17,11 +17,13 @@ namespace ParserTests
 		public static void Main(string[] args)
 		{
 			//FormatterTest.RunTests();
+			//ParserTests.ParseTests.TestCode(@"enum real j0modulusn[] = [ 1,2,3 ];");
 			//ParseTests.TestSourcePackages(false);
-			EvaluationTests.Run();
+			//EvaluationTests.Run();
+			ResolutionTests.Run();
 
 			Console.WriteLine("~ Tests finished");
-			Console.ReadKey();
+			//Console.ReadKey();
 		}
 
 		static void a()

@@ -118,12 +118,9 @@ namespace D_Parser.Parser
             Module.AssignFrom(m);
         }
 
-        public static DParser Create(TextReader tr, params TokenTracker[] trackers)
+        public static DParser Create(TextReader tr)
         {
-			var lx = new Lexer(tr);
-			if(trackers!=null && trackers.Length>0)
-				lx.TokenTracker.Trackers.AddRange(trackers);
-			return new DParser(lx);
+			return new DParser(new Lexer(tr));
         }
 
         /// <summary>
@@ -352,7 +349,7 @@ namespace D_Parser.Parser
 
         bool IsEOF
         {
-            get { return la == null || laKind == EOF || laKind == __EOF__; }
+            get { return Lexer.IsEOF; }
         }
 
 		int laKind = 0;
@@ -388,14 +385,23 @@ namespace D_Parser.Parser
         
         #region Error handlers
 		public IList<ParserError> ParseErrors = new List<ParserError>();
+		public const int MaxParseErrorsBeforeFailure = 100;
 
         void SynErr(int n, string msg)
         {
+			if (ParseErrors.Count > MaxParseErrorsBeforeFailure)
+			{
+				Lexer.StopLexing();
+				return;
+			}
+			else if (ParseErrors.Count == MaxParseErrorsBeforeFailure)
+				msg = "Too many errors - stop parsing";
+
 			ParseErrors.Add(new ParserError(false,msg,n,t==null?la.Location:t.EndLocation));
         }
         void SynErr(int n)
 		{
-			ParseErrors.Add(new ParserError(false, DTokens.GetTokenString(n) + " expected" + (t!=null?(", "+DTokens.GetTokenString(t.Kind)+" found"):""), n, t == null ? la.Location : t.EndLocation));
+			SynErr(n, DTokens.GetTokenString(n) + " expected" + (t!=null?(", "+DTokens.GetTokenString(t.Kind)+" found"):""));
         }
 
         void SemErr(int n, string msg)

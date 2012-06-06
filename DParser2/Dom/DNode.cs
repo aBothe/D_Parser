@@ -24,7 +24,7 @@ namespace D_Parser.Dom
 			get {
 				if (TemplateParameters != null)
 					foreach (var p in TemplateParameters)
-						yield return new TemplateParameterNode(p);
+						yield return new TemplateParameterNode(p) { Owner=this };
 			}
 		}
 		
@@ -92,6 +92,14 @@ namespace D_Parser.Dom
             
             return s.Trim();
         }
+
+		public bool IsClassMember
+		{
+			get
+			{
+				return Parent is DClassLike && ((DClassLike)Parent).ClassType == DTokens.Class;
+			}
+		}
 
         public bool IsPublic
         {

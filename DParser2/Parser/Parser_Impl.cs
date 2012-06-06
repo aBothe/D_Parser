@@ -820,7 +820,13 @@ namespace D_Parser.Parser
 
 		bool IsBasicType()
 		{
-			return BasicTypes[laKind] || laKind == (Typeof) || MemberFunctionAttribute[laKind] || (laKind == (Dot) && Lexer.CurrentPeekToken.Kind == (Identifier) || BasicTypes[Lexer.CurrentPeekToken.Kind]) || laKind == (Identifier);
+			return 
+				BasicTypes[laKind] || 
+				laKind == (Typeof) || 
+				MemberFunctionAttribute[laKind] || 
+				(laKind == (Dot) && Lexer.CurrentPeekToken.Kind == (Identifier)) || 
+				//BasicTypes[Lexer.CurrentPeekToken.Kind] || 
+				laKind == (Identifier);
 		}
 
 		/// <summary>
@@ -1302,9 +1308,8 @@ namespace D_Parser.Parser
 			{
 				var ttd = Declarator2();
 				if (ttd != null)
-					ttd.InnerDeclaration = td;
-					td = ttd;
-				
+					ttd.InnerMost.InnerDeclaration = td;
+				td = ttd;
 			}
 
 			return td;
@@ -3826,11 +3831,22 @@ namespace D_Parser.Parser
 					laKind = la.Kind;
 				}
 				else
+				{
 					while (!IsEOF && laKind != (CloseCurlyBrace))
 					{
+						var prevLocation = la.Location;
 						var s = Statement(Scope: ParentNode as IBlockNode);
+
+						// Avoid infinite loops -- hacky?
+						if (prevLocation == la.Location)
+						{
+							Step();
+							break;
+						}
+
 						bs.Add(s);
 					}
+				}
 				if (Expect(CloseCurlyBrace))
 					LastParsedObject = null;
 
@@ -4134,7 +4150,10 @@ namespace D_Parser.Parser
 			if (laKind == (Identifier))
 			{
 				// Normal enum identifier
-				if (Lexer.CurrentPeekToken.Kind == (Assign) || Lexer.CurrentPeekToken.Kind == (OpenCurlyBrace) || Lexer.CurrentPeekToken.Kind == (Semicolon) || Lexer.CurrentPeekToken.Kind == Colon)
+				if (Lexer.CurrentPeekToken.Kind == (Assign) || // enum e = 1234;
+					Lexer.CurrentPeekToken.Kind == (OpenCurlyBrace) || // enum e { A,B,C, }
+					Lexer.CurrentPeekToken.Kind == (Semicolon) || // enum e;
+					Lexer.CurrentPeekToken.Kind == Colon) // enum e : uint {..}
 				{
 					Step();
 					mye.Name = t.Value;
@@ -4142,11 +4161,14 @@ namespace D_Parser.Parser
 				}
 				else
 				{
-					mye.Type = Type();
+					if(mye.Type == null)
+						mye.Type = Type();
 
-					Expect(Identifier);
-					mye.Name = t.Value;
-					mye.NameLocation = t.Location;
+					if (Expect(Identifier))
+					{
+						mye.Name = t.Value;
+						mye.NameLocation = t.Location;
+					}
 				}
 			}
 
@@ -4195,8 +4217,8 @@ namespace D_Parser.Parser
 
 					if (laKind == (Assign))
 					{
-						Step();
-						enumVar.Initializer = AssignExpression();
+						//Step(); -- expected by initializer
+						enumVar.Initializer = Initializer(); // Seems to be specified wrongly - theoretically there must be an AssignExpression();
 					}
 					enumVar.EndLocation = t.Location;
 					ret.Add(enumVar);
@@ -4357,8 +4379,7 @@ namespace D_Parser.Parser
 			if (laKind == (If))
 				dc.TemplateConstraint=Constraint();
 
-			if (laKind == (Colon))
-				dc.BaseClasses = BaseClassList();
+			// [Must not contain a base class list]
 
 			ClassBody(dc);
 
@@ -4549,13 +4570,13 @@ namespace D_Parser.Parser
 
 				tt.Name = t.Value;
 
-				if (laKind == (Colon))
+				if (laKind == Colon)
 				{
 					Step();
 					tt.Specialization = Type();
 				}
 
-				if (laKind == (Assign))
+				if (laKind == Assign)
 				{
 					Step();
 					tt.Default = Type();

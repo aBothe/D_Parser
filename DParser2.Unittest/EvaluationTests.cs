@@ -9,7 +9,7 @@ namespace ParserTests
 	{
 		public static void Run()
 		{
-			Console.WriteLine("~ Evaluation tests...");
+			Console.WriteLine("\tEvaluation tests...");
 
 			var dic = new Dictionary<string, object>
 			{

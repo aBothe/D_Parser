@@ -20,8 +20,13 @@ namespace D_Parser.Parser
 		protected DToken lookaheadToken = null;
 		protected DToken peekToken = null;
 
-		public readonly TrackerContainer TokenTracker;
 		protected StringBuilder sb = new StringBuilder();
+
+		protected bool stopLexing = false;
+		public void StopLexing()
+		{
+			stopLexing = true;
+		}
 
 		/// <summary>
 		/// used for the original value of strings (with escape sequences).
@@ -123,7 +128,6 @@ namespace D_Parser.Parser
 		protected AbstractLexer(TextReader reader)
 		{
 			this.reader = reader;
-			TokenTracker = new TrackerContainer(this);
 		}
 
 		#region System.IDisposable interface implementation
@@ -163,10 +167,12 @@ namespace D_Parser.Parser
 		/// <returns>An <see cref="CurrentToken"/> object.</returns>
 		public virtual DToken NextToken()
 		{
+			if (stopLexing)
+				return null;
+
 			if (lookaheadToken == null)
 			{
 				lookaheadToken = Next();
-				TokenTracker.InformToken(lookaheadToken.Kind);
 				return lookaheadToken;
 			}
 
@@ -175,11 +181,7 @@ namespace D_Parser.Parser
 			curToken = lookaheadToken;
 
 			if (lookaheadToken.next == null)
-			{
 				lookaheadToken.next = Next();
-				if (lookaheadToken.next != null)
-					TokenTracker.InformToken(lookaheadToken.next.Kind);
-			}
 
 			lookaheadToken = lookaheadToken.next;
 			StartPeek();
@@ -373,7 +375,10 @@ namespace D_Parser.Parser
 
 		public bool IsEOF
 		{
-			get { return lookaheadToken == null || lookaheadToken.Kind == DTokens.EOF || lookaheadToken.Kind == DTokens.__EOF__; }
+			get { return stopLexing ||
+				lookaheadToken == null || 
+				lookaheadToken.Kind == DTokens.EOF || 
+				lookaheadToken.Kind == DTokens.__EOF__; }
 		}
 
 		#region Abstract Lexer Props & Methods
@@ -401,6 +406,8 @@ namespace D_Parser.Parser
 			int nextChar;
 			char ch;
 			bool hadLineEnd = false;
+			int x = Col - 1;
+			int y = Line;
 			if (Line == 1 && Col == 1) hadLineEnd = true; // beginning of document
 
 			while ((nextChar = ReaderRead()) != -1)
@@ -451,6 +458,16 @@ namespace D_Parser.Parser
 					case '"':
 						token = ReadString(nextChar);
 						break;
+					case '\\':
+						// http://digitalmars.com/d/1.0/lex.html#EscapeSequence
+						// - It's actually deprecated, but parse such literals anyway
+						string surr = "";
+						x=Col-1;
+						y=Line;
+						var lit=ReadEscapeSequence(out ch, out surr);
+						token = new DToken(DTokens.Literal, x,y, lit, ch.ToString(), LiteralFormat.StringLiteral);
+						OnError(y, x, "Escape sequence strings are deprecated!");
+						break;
 					case '\'':
 						token = ReadChar();
 						break;
@@ -463,8 +480,8 @@ namespace D_Parser.Parser
 						}
 						else
 						{
-							int x = Col - 1;
-							int y = Line;
+							x = Col - 1;
+							y = Line;
 							ch = (char)next;
 							if (Char.IsLetterOrDigit(ch) || ch == '_')
 							{
@@ -510,8 +527,8 @@ namespace D_Parser.Parser
 							peek = ReaderPeek();
 							if (peek == '{'/*q{ ... }*/ || peek == '"'/* q"{{ ...}}   }}"*/)
 							{
-								int x = Col - 1;
-								int y = Line;
+								x = Col - 1;
+								y = Line;
 								string initDelim = "";
 								string endDelim = "";
 								string tokenString = "";
@@ -596,8 +613,8 @@ namespace D_Parser.Parser
 
 						if (Char.IsLetter(ch) || ch == '_' || ch == '\\')
 						{
-							int x = Col - 1; // Col was incremented above, but we want the start of the identifier
-							int y = Line;
+							x = Col - 1; // Col was incremented above, but we want the start of the identifier
+							y = Line;
 							bool canBeKeyword;
 							string s = ReadIdent(ch, out canBeKeyword);
 							if (canBeKeyword)
@@ -655,6 +672,12 @@ namespace D_Parser.Parser
 				{
 					//token.prev = base.curToken;
 					return token;
+				}
+				else
+				{
+					OnError(Line, Col, "Invalid character");
+					StopLexing();
+					break;
 				}
 			}
 
@@ -1144,6 +1167,9 @@ namespace D_Parser.Parser
 				case '\"':
 					ch = '\"';
 					break;
+				case '?':
+					ch='?';
+					return "\\?"; // Literal question mark
 				case '\\':
 					ch = '\\';
 					break;
@@ -1151,13 +1177,13 @@ namespace D_Parser.Parser
 					ch = '\0';
 					break;*/
 				case 'a':
-					ch = '\a';
+					ch = '\a'; // Bell (alert)
 					break;
 				case 'b':
-					ch = '\b';
+					ch = '\b'; // Backspace
 					break;
 				case 'f':
-					ch = '\f';
+					ch = '\f'; // Formfeed
 					break;
 				case 'n':
 					ch = '\n';
@@ -1169,7 +1195,7 @@ namespace D_Parser.Parser
 					ch = '\t';
 					break;
 				case 'v':
-					ch = '\v';
+					ch = '\v'; // Vertical tab
 					break;
 				case 'u':
 				case 'x':
