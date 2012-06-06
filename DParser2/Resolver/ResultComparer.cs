@@ -76,7 +76,7 @@ namespace D_Parser.Resolver
 					foreach(var tp in tpn.Owner.TemplateParameters)
 						dedParam[tp.Name]=null;
 
-					return new TemplateParameterDeduction(dedParam, ctxt).Handle(tpn.TemplateParameter, targetType);
+					return new TemplateParameterDeduction(dedParam, ctxt).Handle(tpn.TemplateParameter, resultToCheck);
 				}
 			}
 
@@ -115,7 +115,7 @@ namespace D_Parser.Resolver
 				if (ar1_n != ar2_n)
 					return false;
 
-				if(ar1_n || IsImplicitlyConvertible(ar1.KeyType[0], ar2.KeyType[0]))
+				if(ar1_n || IsImplicitlyConvertible(ar1.KeyType[0], ar2.KeyType[0], ctxt))
 					return IsImplicitlyConvertible(ar1.ResultBase, ar2.ResultBase, ctxt);
 			}
 
