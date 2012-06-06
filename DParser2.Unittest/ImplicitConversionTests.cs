@@ -6,6 +6,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using D_Parser.Unittest;
 using D_Parser.Resolver;
 using D_Parser.Resolver.TypeResolution;
+using D_Parser.Parser;
+using D_Parser.Dom;
 
 namespace DParser2.Unittest
 {
@@ -108,6 +110,26 @@ namespace DParser2.Unittest
 			Assert.IsTrue(ResultComparer.IsImplicitlyConvertible(H, IC));
 			Assert.IsTrue(ResultComparer.IsImplicitlyConvertible(H, IA));
 			
+		}
+
+		[TestMethod]
+		public void TestTemplateDeductionAsConversion()
+		{
+			var pcl = ResolutionTests.CreateCache(@"module modA;
+void foo(T:T)(T[] t) {}
+
+int[] p=[1,2,3,4,5];
+");
+			var ctxt = new ResolverContextStack(pcl, new ResolverContext { ScopedBlock = pcl[0]["modA"] });
+
+			var foo = pcl[0]["modA"]["foo"] as DMethod;
+			ctxt.PushNewScope(foo);
+			var foo_firstArg= TypeDeclarationResolver.Resolve(foo.Parameters[0].Type, ctxt);
+			
+			var p = TypeDeclarationResolver.ResolveIdentifier("p", ctxt, null)[0] as MemberResult;
+			
+			Assert.IsTrue(ResultComparer.IsImplicitlyConvertible(p,foo_firstArg[0], ctxt));
+			ctxt.Pop();
 		}
 	}
 }

@@ -45,11 +45,13 @@ namespace D_Parser.Resolver.Templates
 			if (parameter is TemplateAliasParameter)
 				res = Handle((TemplateAliasParameter)parameter, argumentToAnalyze);
 			else if (parameter is TemplateThisParameter)
-				res= Handle((TemplateThisParameter)parameter, argumentToAnalyze);
-			else if(parameter is TemplateTypeParameter)
-				res= Handle((TemplateTypeParameter)parameter,argumentToAnalyze);
-			else if(parameter is TemplateValueParameter)
-				res= Handle((TemplateValueParameter)parameter,argumentToAnalyze);
+				res = Handle((TemplateThisParameter)parameter, argumentToAnalyze);
+			else if (parameter is TemplateTypeParameter)
+				res = Handle((TemplateTypeParameter)parameter, argumentToAnalyze);
+			else if (parameter is TemplateValueParameter)
+				res = Handle((TemplateValueParameter)parameter, argumentToAnalyze);
+			else if (parameter is TemplateTupleParameter)
+				res = Handle((TemplateTupleParameter)parameter,new[]{new[]{argumentToAnalyze}});
 
 			ctxt.CurrentContext.DeducedTemplateParameters = _prefLocalsBackup;
 
@@ -69,15 +71,13 @@ namespace D_Parser.Resolver.Templates
 
 			var args= arguments.ToArray();
 
-			if (args.Length < 2)
+			if (args.Length < 1)
 				return false;
 
-			Set(p.Name, new TypeTupleResult { 
+			return Set(p.Name, new TypeTupleResult { 
 				TupleParameter=p,
 				TupleItems=args 
 			});
-
-			return true;
 		}
 
 		/// <summary>

@@ -2,12 +2,6 @@
 Everything that still needs to be handled by D_Parser comes right in here:
 
 
-When template parameter deduction & completion-readyness has been implemented 
-	-> Release Mono-D 0.4.0!
-
-
-
-
 * Add Expression Value Resolution
 * Mixin support
 * UFCS -- assert("fdas" == "asdf".reverse()); and stuff -- very complex & time-intensive!
@@ -26,7 +20,7 @@ Resolver:
 	- .tupleof for structs
 	- .offsetof for struct fields
 	- new MyClass() should return the ctor member instead - that has the actual class as its return type
-	- ensure that e.g. int is returned if T myBar(T)() {} gets called with !int
+	- Handle argument-parameter match
 
 Template parameter deduction:
  - Handle __FILE__ and __LINE__ correctly concerning template values

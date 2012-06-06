@@ -101,7 +101,7 @@ namespace D_Parser.Resolver.ASTScanner
 			{
 				// First test if arg is matching the parameter
 				if ((dontUseNameFilter || kv.Key.Name == nameFilter) &&
-					ResultComparer.IsImplicitlyConvertible(kv.Value, firstArgument))
+					ResultComparer.IsImplicitlyConvertible(firstArgument, kv.Value, ctxt))
 					preMatchList.Add(kv.Key);
 			}
 
