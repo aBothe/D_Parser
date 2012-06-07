@@ -44,6 +44,15 @@ namespace D_Parser.Resolver.Templates
 				ctxt.CurrentContext.DeducedTemplateParameters = d;
 			}
 
+			// Packages aren't allowed at all
+			if(argumentToAnalyze is ModulePackageResult)
+				return false;
+
+			// Module symbols can be used as alias only
+			if (argumentToAnalyze is ModuleResult &&
+				!(parameter is TemplateAliasParameter))
+				return false;
+
 			bool res = false;
 
 			if (parameter is TemplateAliasParameter)
