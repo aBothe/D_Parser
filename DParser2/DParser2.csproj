@@ -76,7 +76,8 @@
     <Compile Include="Evaluation\ExpressionEvaluator.cs" />
     <Compile Include="Evaluation\ExpressionEvaluator.PrimaryExpression.cs" />
     <Compile Include="Evaluation\IExpressionValue.cs" />
-    <Compile Include="Evaluation\IVariableStorage.cs" />
+    <Compile Include="Evaluation\ISymbolValueProvider.cs" />
+    <Compile Include="Evaluation\MathOperationEvaluation.cs" />
     <Compile Include="Evaluation\PrimitiveValue.cs" />
     <Compile Include="Misc\CompletionOptions.cs" />
     <Compile Include="Misc\ModuleNameHelper.cs" />
