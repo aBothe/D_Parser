@@ -15,7 +15,7 @@ namespace D_Parser.Misc
 	public class ThreadedDirectoryParser
 	{
 		#region Properties
-		static int numThreads = Environment.ProcessorCount;
+		public static int numThreads = Environment.ProcessorCount;
 
 		public Exception LastException;
 		string baseDirectory;
