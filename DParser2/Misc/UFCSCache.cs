@@ -28,14 +28,14 @@ namespace D_Parser.Resolver.ASTScanner
 
 		public void Clear()
 		{
-			if(!IsProcessing)
+			if (!IsProcessing)
 				CachedMethods.Clear();
 		}
 
 		/// <summary>
 		/// Returns false if cache is already updating.
 		/// </summary>
-		public bool Update(ParseCacheList pcList, ParseCache subCacheToUpdate=null)
+		public bool Update(ParseCacheList pcList, ParseCache subCacheToUpdate = null)
 		{
 			if (IsProcessing)
 				return false;
@@ -43,7 +43,7 @@ namespace D_Parser.Resolver.ASTScanner
 			try
 			{
 				IsProcessing = true;
-				
+
 				var ctxt = new ResolverContextStack(pcList, new ResolverContext()) { ContextIndependentOptions = ResolutionOptions.StopAfterFirstOverloads };
 
 				queue.Clear();
@@ -63,7 +63,12 @@ namespace D_Parser.Resolver.ASTScanner
 				var threads = new Thread[ThreadedDirectoryParser.numThreads];
 				for (int i = 0; i < ThreadedDirectoryParser.numThreads; i++)
 				{
-					var th = threads[i] = new Thread(parseThread);
+					var th = threads[i] = new Thread(parseThread)
+					{
+						IsBackground = true,
+						Priority = ThreadPriority.Lowest,
+						Name = "UFCS Analysis thread #" + i
+					};
 					th.Start(pcList);
 				}
 
@@ -98,8 +103,6 @@ namespace D_Parser.Resolver.ASTScanner
 
 		void parseThread(object pcl_shared)
 		{
-			Thread.CurrentThread.IsBackground = true;
-
 			DMethod dm = null;
 			var pcl = (ParseCacheList)pcl_shared;
 			var ctxt = new ResolverContextStack(pcl, new ResolverContext());
@@ -120,7 +123,8 @@ namespace D_Parser.Resolver.ASTScanner
 				var firstArg_result = TypeDeclarationResolver.Resolve(dm.Parameters[0].Type, ctxt);
 
 				if (firstArg_result != null && firstArg_result.Length != 0)
-					CachedMethods[dm] = firstArg_result[0];
+					lock (CachedMethods)
+						CachedMethods[dm] = firstArg_result[0];
 			}
 		}
 
@@ -140,10 +144,29 @@ namespace D_Parser.Resolver.ASTScanner
 					remList.Add(kv.Key);
 
 			foreach (var i in remList)
-				CachedMethods.Remove(i);
+				lock (CachedMethods)
+					CachedMethods.Remove(i);
 		}
 
-		public IEnumerable<DMethod> FindFitting(ResolverContextStack ctxt, CodeLocation currentLocation,ResolveResult firstArgument,string nameFilter=null)
+		public void CacheModuleMethods(IAbstractSyntaxTree ast, ResolverContextStack ctxt)
+		{
+			foreach (var m in ast)
+				if (m is DMethod)
+				{
+					var dm = (DMethod)m;
+
+					if (dm.Parameters == null || dm.Parameters.Count == 0 || dm.Parameters[0].Type == null)
+						continue;
+
+					var firstArg_result = TypeDeclarationResolver.Resolve(dm.Parameters[0].Type, ctxt);
+
+					if (firstArg_result != null && firstArg_result.Length != 0)
+						lock (CachedMethods)
+							CachedMethods[dm] = firstArg_result[0];
+				}
+		}
+
+		public IEnumerable<DMethod> FindFitting(ResolverContextStack ctxt, CodeLocation currentLocation, ResolveResult firstArgument, string nameFilter = null)
 		{
 			if (IsProcessing)
 				return null;
@@ -162,8 +185,9 @@ namespace D_Parser.Resolver.ASTScanner
 
 			// Then filter out methods which cannot be accessed in the current context 
 			// (like when the method is defined in a module that has not been imported)
-			var mv = new MatchFilterVisitor<DMethod>(ctxt) {
-				rawList=preMatchList
+			var mv = new MatchFilterVisitor<DMethod>(ctxt)
+			{
+				rawList = preMatchList
 			};
 
 			mv.IterateThroughScopeLayers(currentLocation);

@@ -50,7 +50,11 @@ namespace D_Parser.Misc
 			var threads = new Thread[numThreads];
 			for (int i = 0; i < numThreads; i++)
 			{
-				var th=threads[i]=new Thread(tpd.ParseThread);
+				var th = threads[i] = new Thread(tpd.ParseThread) {
+					IsBackground = true,
+					Priority= ThreadPriority.Lowest,
+					Name = "Parser thread #"+i+" ("+directory+")"
+				};
 				th.Start();
 			}
 
@@ -103,8 +107,6 @@ namespace D_Parser.Misc
 
 		void ParseThread()
 		{
-			Thread.CurrentThread.IsBackground = true;
-
 			var file = "";
 			ModulePackage pack = null;
 
