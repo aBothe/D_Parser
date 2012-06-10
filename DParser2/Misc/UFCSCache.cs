@@ -118,7 +118,7 @@ namespace D_Parser.Resolver.ASTScanner
 					dm = queue.Pop();
 				}
 
-				ctxt.CurrentContext.ScopedBlock = dm.Parent as IBlockNode;
+				ctxt.CurrentContext.ScopedBlock = dm;
 
 				var firstArg_result = TypeDeclarationResolver.Resolve(dm.Parameters[0].Type, ctxt);
 

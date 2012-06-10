@@ -1,51 +1,28 @@
 ﻿using System;
+using System.Text;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using D_Parser.Dom.Expressions;
+using D_Parser.Evaluation;
+using D_Parser.Parser;
 
-namespace ParserTests
+namespace DParser2.Unittest
 {
+	[TestClass]
 	public class EvaluationTests
 	{
-		public static void Run()
+		[TestMethod]
+		public void TestPrimitives()
 		{
-			Console.WriteLine("\tEvaluation tests...");
+			var ex=DParser.ParseExpression("1");
+			var v = ExpressionEvaluator.Evaluate(ex, null);
 
-			var dic = new Dictionary<string, object>
-			{
-				// Primary expressions
-				{"null",null},
-				{"1",(int)1},
-				{"-1",-1},
-				{"1.2",1.2},
-				{"'a'",'a'},
-				{"\"derp\"","derp"},
-				{"true",true},
-				{"false",false},
-			};
+			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
+			var pv = (PrimitiveValue)v;
 
-			foreach (var kv in dic)
-				Check(kv.Key, kv.Value);
-		}
-
-		public static void Check(string code, object compValue)
-		{
-			var x = D_Parser.Parser.DParser.ParseExpression(code);
-
-			var v = D_Parser.Evaluation.ExpressionEvaluator.Evaluate(x, null);
-			
-			if (v == null || v.Value == null)
-			{
-				Console.WriteLine();
-				Console.WriteLine(code + "  returned null");
-			}
-			else if (!v.Value.Equals(compValue))
-			{
-				Console.WriteLine();
-				Console.WriteLine(code + "  -->");
-				Console.WriteLine(v.Value + " [evaluated]");
-				Console.WriteLine(compValue.ToString() + " [target value]");
-			}
+			Assert.AreEqual(pv.BaseTypeToken, DTokens.Int);
+			Assert.AreEqual(pv.Value, (int)1);
 		}
 	}
 }
