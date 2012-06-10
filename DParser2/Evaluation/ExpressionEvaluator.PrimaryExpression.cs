@@ -10,7 +10,7 @@ namespace D_Parser.Evaluation
 {
 	public partial class ExpressionEvaluator
 	{
-		public IExpressionValue Evaluate(PrimaryExpression x)
+		public ISymbolValue Evaluate(PrimaryExpression x)
 		{
 			if (x is TemplateInstanceExpression)
 			{
@@ -35,7 +35,7 @@ namespace D_Parser.Evaluation
 						return new PrimitiveValue(DTokens.Int, id.Value, x);
 					case Parser.LiteralFormat.StringLiteral:
 					case Parser.LiteralFormat.VerbatimStringLiteral:
-						// TODO
+						
 						break;
 				}
 			}

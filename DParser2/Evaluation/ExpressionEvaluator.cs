@@ -12,33 +12,15 @@ namespace D_Parser.Evaluation
 	public partial class ExpressionEvaluator
 	{
 		#region Properties / Ctor
-		ResolverContextStack ctxt;
+		ISymbolValueProvider vp;
 
 		private ExpressionEvaluator() { }
 		#endregion
 
 		#region Outer interaction
-		public static bool IsEqual(IExpression ex, IExpression ex2, ResolverContextStack ctxt)
-		{
-			var val_x1 = Evaluate(ex, ctxt);
-			var val_x2 = Evaluate(ex2, ctxt);
-
-			//TEMPORARILY: Remove the string comparison
-			if (val_x1 == null && val_x2 == null)
-				return ex.ToString() == ex2.ToString();
-
-			return IsEqual(val_x1, val_x2);
-		}
-
-		public static bool IsEqual(IExpressionValue val_x1, IExpressionValue val_x2)
-		{
-			//TODO
-			return val_x1 != null && val_x2 != null && val_x1.Value == val_x2.Value;
-		}
-
 		public static ResolveResult Resolve(IExpression arg, ResolverContextStack ctxt)
 		{
-			var ev=Evaluate(arg, ctxt);
+			var ev=Evaluate(arg, new StandardValueProvider(ctxt));
 
 			if (ev == null)
 				return null;
@@ -49,16 +31,16 @@ namespace D_Parser.Evaluation
 			};
 		}
 
-		public static IExpressionValue Evaluate(IExpression expression, ResolverContextStack ctxt)
+		public static ISymbolValue Evaluate(IExpression expression, ISymbolValueProvider vp)
 		{
-			return new ExpressionEvaluator { ctxt = ctxt }.Evaluate(expression);
+			return new ExpressionEvaluator { vp=vp }.Evaluate(expression);
 		}
 		
 		/// <summary>
 		/// Tries to evaluate a const initializer of the const/enum variable passed in by r
 		/// </summary>
 		/// <param name="r">Contains a member result that holds a const'ed variable with a static initializer</param>
-		public static IExpressionValue TryToEvaluateConstInitializer(
+		public static ISymbolValue TryToEvaluateConstInitializer(
 			IEnumerable<ResolveResult> r,
 			ResolverContextStack ctxt)
 		{
@@ -74,9 +56,9 @@ namespace D_Parser.Evaluation
 						if (n != null && n.IsConst)
 						{
 							// .. resolve it's pre-compile time value and make the returned value the given argument
-							var val = Evaluate(n.Initializer, ctxt);
+							var val = Evaluate(n.Initializer, new StandardValueProvider(ctxt));
 
-							if (val != null && val.Value != null)
+							if (val != null)
 								return val;
 						}
 					}
@@ -85,7 +67,7 @@ namespace D_Parser.Evaluation
 		}
 		#endregion
 
-		public IExpressionValue Evaluate(IExpression x)
+		public ISymbolValue Evaluate(IExpression x)
 		{
 			if (x is PrimaryExpression)
 				return Evaluate((PrimaryExpression)x);
@@ -95,12 +77,12 @@ namespace D_Parser.Evaluation
 			return null;
 		}
 
-		public IExpressionValue Evaluate(TypeDeclarationExpression x)
+		public ISymbolValue Evaluate(TypeDeclarationExpression x)
 		{
-			var r=TypeDeclarationResolver.Resolve(x.Declaration, ctxt);
+			var r=TypeDeclarationResolver.Resolve(x.Declaration, vp.ResolutionContext);
 
 			if(r!=null)
-				return TryToEvaluateConstInitializer(r,ctxt);
+				return TryToEvaluateConstInitializer(r, vp.ResolutionContext);
 			return null;
 		}
 

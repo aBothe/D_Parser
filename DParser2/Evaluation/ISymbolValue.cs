@@ -1,34 +1,32 @@
 ﻿using D_Parser.Dom.Expressions;
 using D_Parser.Dom;
 using D_Parser.Resolver;
+using System;
 
 namespace D_Parser.Evaluation
 {
-	public interface IExpressionValue
+	public interface ISymbolValue : IEquatable<ISymbolValue>
 	{
 		ExpressionValueType Type { get; }
+
 		ResolveResult RepresentedType { get; }
-		object Value { get; }
 		IExpression BaseExpression { get; }
 	}
 
-	public abstract class ExpressionValue : IExpressionValue
+	public abstract class ExpressionValue : ISymbolValue
 	{
 		IExpression _baseExpression;
 
 		public ExpressionValue(ExpressionValueType Type,
-			ResolveResult RepresentedType,
-			object Value)
+			ResolveResult RepresentedType)
 		{
 			this.Type = Type;
 			this.RepresentedType = RepresentedType;
-			this.Value = Value;
 		}
 
 		public ExpressionValue(ExpressionValueType Type,
 			ResolveResult RepresentedType,
-			object Value,
-			IExpression BaseExpression) : this(Type, RepresentedType, Value)
+			IExpression BaseExpression) : this(Type, RepresentedType)
 		{
 			this._baseExpression = BaseExpression;
 		}
@@ -45,18 +43,17 @@ namespace D_Parser.Evaluation
 			private set;
 		}
 
-		public object Value
-		{
-			get;
-			private set;
-		}
-
 		public IExpression BaseExpression
 		{
 			get { return _baseExpression!=null || RepresentedType == null ? _baseExpression : RepresentedType.DeclarationOrExpressionBase as IExpression; }
 			private set {
 				_baseExpression = value;
 			}
+		}
+
+		public bool Equals(ISymbolValue other)
+		{
+			return SymbolValueComparer.IsEqual(this, other);
 		}
 	}
 

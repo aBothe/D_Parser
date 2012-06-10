@@ -3,6 +3,7 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Dom;
 using D_Parser.Parser;
 using D_Parser.Resolver;
+using System.Collections.Generic;
 
 namespace D_Parser.Evaluation
 {
@@ -10,10 +11,10 @@ namespace D_Parser.Evaluation
 	{
 		public readonly int BaseTypeToken;
 
-		public PrimitiveValue(int BaseTypeToken, object Value, IExpression Expression)
-			: base(ExpressionValueType.Primitive, new StaticTypeResult{ BaseTypeToken=BaseTypeToken, DeclarationOrExpressionBase=Expression }, Value)
+		public object Value
 		{
-			this.BaseTypeToken = BaseTypeToken;
+			get;
+			private set;
 		}
 
 		/// <summary>
@@ -21,7 +22,8 @@ namespace D_Parser.Evaluation
 		/// </summary>
 		public bool IsNullFalseOrEmpty
 		{
-			get {
+			get
+			{
 				if (Value == null)
 					return true;
 
@@ -37,10 +39,57 @@ namespace D_Parser.Evaluation
 							return c == '\0';
 					}
 				}
-				catch {}
+				catch { }
 				return false;
 			}
 		}
+
+		public PrimitiveValue(int BaseTypeToken, object Value, IExpression Expression)
+			: base(ExpressionValueType.Primitive, new StaticTypeResult{ BaseTypeToken=BaseTypeToken, DeclarationOrExpressionBase=Expression })
+		{
+			this.BaseTypeToken = BaseTypeToken;
+			this.Value = Value;
+		}
+	}
+
+	public class ArrayValue : ExpressionValue
+	{
+		#region Properties
+		public bool IsString { get { return StringValue != null; } }
+
+		/// <summary>
+		/// If this represents a string, the string will be returned. Otherwise null.
+		/// </summary>
+		public string StringValue { get; private set; }
+
+		//List<ISymbolValue> elements;
+		/// <summary>
+		/// If not a string, the evaluated elements will be returned. Otherwise null.
+		/// </summary>
+		public ISymbolValue[] Elements
+		{
+			get;// { return elements != null ? elements.ToArray() : null; }
+			private set;
+		}
+		#endregion
+
+		#region Ctor
+		/// <summary>
+		/// String constructor.
+		/// Given result stores both type and idenfitierexpression whose Value is used as content
+		/// </summary>
+		public ArrayValue(ResolveResult stringLiteralResult)
+			: base(ExpressionValueType.Array, stringLiteralResult)
+		{
+			StringValue = (stringLiteralResult.DeclarationOrExpressionBase as IdentifierExpression).Value as string;
+		}
+
+		public ArrayValue(ResolveResult resolvedArrayType, params ISymbolValue[] elements)
+			: base(ExpressionValueType.Array, resolvedArrayType)
+		{
+			Elements = elements;
+		}
+		#endregion
 	}
 
 	public class InstanceReference //: ExpressionValue

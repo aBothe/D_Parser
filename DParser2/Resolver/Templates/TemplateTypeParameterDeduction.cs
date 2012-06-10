@@ -3,6 +3,7 @@ using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
 using D_Parser.Resolver.TypeResolution;
+using D_Parser.Evaluation;
 
 namespace D_Parser.Resolver.Templates
 {
@@ -167,7 +168,7 @@ namespace D_Parser.Resolver.Templates
 				if (ad.KeyExpression != null)
 				{
 					if (ar.ArrayDeclaration.KeyExpression != null)
-						result = Evaluation.ExpressionEvaluator.IsEqual(ad.KeyExpression, ar.ArrayDeclaration.KeyExpression, ctxt);
+						result = Evaluation.SymbolValueComparer.IsEqual(ad.KeyExpression, ar.ArrayDeclaration.KeyExpression, new StandardValueProvider(ctxt));
 				}
 				else if(ad.KeyType!=null)
 					result = HandleDecl(ad.KeyType, ar.KeyType[0]);

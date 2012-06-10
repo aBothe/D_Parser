@@ -44,10 +44,9 @@ namespace D_Parser.Resolver.Templates
 			// If spec given, test for equality (only ?)
 			if (p.SpecializationExpression != null) 
 			{
-				var specVal = ExpressionEvaluator.Evaluate(p.SpecializationExpression, ctxt);
+				var specVal = ExpressionEvaluator.Evaluate(p.SpecializationExpression, new StandardValueProvider(ctxt));
 
-				if (specVal == null || specVal.Value == null ||
-					!ExpressionEvaluator.IsEqual(specVal, valResult.Value))
+				if (specVal == null || !SymbolValueComparer.IsEqual(specVal, valResult.Value))
 					return false;
 			}
 

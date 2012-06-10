@@ -257,7 +257,7 @@ namespace D_Parser.Resolver
 
 	public class ExpressionValueResult : ResolveResult
 	{
-		public Evaluation.IExpressionValue Value;
+		public Evaluation.ISymbolValue Value;
 
 		public override string ToString()
 		{
