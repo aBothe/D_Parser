@@ -28,14 +28,15 @@ namespace D_Parser.Evaluation
 				switch (id.Format)
 				{
 					case Parser.LiteralFormat.CharLiteral:
-						return new PrimitiveValue(PrimitiveType.Char, id.Value, x);
+						return new PrimitiveValue(DTokens.Char, id.Value, x);
 					case Parser.LiteralFormat.FloatingPoint:
-						return new PrimitiveValue(PrimitiveType.Float, id.Value, x);
+						return new PrimitiveValue(DTokens.Float, id.Value, x);
 					case Parser.LiteralFormat.Scalar:
-						return new PrimitiveValue(PrimitiveType.Int, id.Value, x);
+						return new PrimitiveValue(DTokens.Int, id.Value, x);
 					case Parser.LiteralFormat.StringLiteral:
 					case Parser.LiteralFormat.VerbatimStringLiteral:
-						return new PrimitiveValue(PrimitiveType.String, id.Value, x);
+						// TODO
+						break;
 				}
 			}
 			else if (x is TokenExpression)
@@ -50,19 +51,21 @@ namespace D_Parser.Evaluation
 					case DTokens.Super:
 						break;
 					case DTokens.Null:
-						return new PrimitiveValue(PrimitiveType.Reference, null, x);
+						break;
+						//return new PrimitiveValue(ExpressionValueType.Class, null, x);
 					case DTokens.Dollar:
 						//TODO
 						break;
 					case DTokens.True:
-						return new PrimitiveValue(PrimitiveType.Bool, true, x);
+						return new PrimitiveValue(DTokens.Bool, true, x);
 					case DTokens.False:
-						return new PrimitiveValue(PrimitiveType.Bool, false, x);
+						return new PrimitiveValue(DTokens.Bool, false, x);
 					case DTokens.__FILE__:
-						return new PrimitiveValue(PrimitiveType.String, 
-							ctxt==null?"":((IAbstractSyntaxTree)ctxt.ScopedBlock.NodeRoot).FileName,x);
+						break;
+						/*return new PrimitiveValue(ExpressionValueType.String, 
+							ctxt==null?"":((IAbstractSyntaxTree)ctxt.ScopedBlock.NodeRoot).FileName,x);*/
 					case DTokens.__LINE__:
-						return new PrimitiveValue(PrimitiveType.Int, x.Location.Line, x);
+						return new PrimitiveValue(DTokens.Int, x.Location.Line, x);
 				}
 			}
 			else if (x is TypeDeclarationExpression)

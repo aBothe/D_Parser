@@ -5,8 +5,6 @@ using D_Parser.Dom.Statements;
 
 namespace D_Parser.Dom.Expressions
 {
-	public delegate INode[] ResolveTypeHandler(string identifier);
-
 	public interface IExpression : ISyntaxRegion
 	{
 	}

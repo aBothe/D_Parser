@@ -37,11 +37,8 @@ namespace D_Parser.Resolver.Templates
 			if (paramType == null || paramType.Length == 0)
 				return false;
 
-			var argType = TypeDeclarationResolver.Resolve(valResult.Value.RepresentedType, ctxt);
-
-			if (argType == null ||
-				argType.Length == 0 ||
-				!ResultComparer.IsImplicitlyConvertible(paramType[0], argType[0]))
+			if (valResult.Value.RepresentedType == null ||
+				!ResultComparer.IsImplicitlyConvertible(paramType[0], valResult.Value.RepresentedType))
 				return false;
 
 			// If spec given, test for equality (only ?)

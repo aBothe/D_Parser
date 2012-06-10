@@ -11,10 +11,13 @@ namespace D_Parser.Evaluation
 {
 	public partial class ExpressionEvaluator
 	{
+		#region Properties / Ctor
 		ResolverContextStack ctxt;
 
 		private ExpressionEvaluator() { }
+		#endregion
 
+		#region Outer interaction
 		public static bool IsEqual(IExpression ex, IExpression ex2, ResolverContextStack ctxt)
 		{
 			var val_x1 = Evaluate(ex, ctxt);
@@ -50,7 +53,7 @@ namespace D_Parser.Evaluation
 		{
 			return new ExpressionEvaluator { ctxt = ctxt }.Evaluate(expression);
 		}
-
+		
 		/// <summary>
 		/// Tries to evaluate a const initializer of the const/enum variable passed in by r
 		/// </summary>
@@ -80,11 +83,12 @@ namespace D_Parser.Evaluation
 				}
 			return null;
 		}
+		#endregion
 
 		public IExpressionValue Evaluate(IExpression x)
 		{
-			//if (x is PrimaryExpression)
-				//return Evaluate((PrimaryExpression)x);
+			if (x is PrimaryExpression)
+				return Evaluate((PrimaryExpression)x);
 			if (x is TypeDeclarationExpression)
 				return Evaluate((TypeDeclarationExpression)x);
 
