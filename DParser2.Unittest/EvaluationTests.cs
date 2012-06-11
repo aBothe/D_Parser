@@ -99,6 +99,25 @@ namespace DParser2.Unittest
 			TestString("\"asdf\"c", "asdf", false);
 			TestString("\"asdf\"w", "asdf", false);
 			TestString("\"asdf\"d", "asdf", false);
+
+			var ex = DParser.ParseExpression("['a','s','d','f']");
+			var v = ExpressionEvaluator.Evaluate(ex, null);
+
+			Assert.IsInstanceOfType(v, typeof(ArrayValue));
+			var ar = (ArrayValue)v;
+			Assert.AreEqual(ar.Elements.Length, 4);
+
+			foreach (var ev in ar.Elements)
+				Assert.IsInstanceOfType(ev,typeof(PrimitiveValue));
+
+
+			ex = DParser.ParseExpression("[\"KeyA\":12, \"KeyB\":33, \"KeyC\":44]");
+			v = ExpressionEvaluator.Evaluate(ex, new StandardValueProvider(null));
+
+			Assert.IsInstanceOfType(v, typeof(AssociativeArrayValue));
+			var aa = (AssociativeArrayValue)v;
+			Assert.AreEqual(aa.Elements.Count, 3);
+			
 		}
 	}
 }

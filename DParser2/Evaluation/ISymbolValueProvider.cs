@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using D_Parser.Resolver;
+using D_Parser.Dom;
 
 namespace D_Parser.Evaluation
 {
@@ -11,6 +12,9 @@ namespace D_Parser.Evaluation
 		ResolverContextStack ResolutionContext { get; }
 		bool IsSet(string name);
 		ISymbolValue this[string LocalName] { get;set; }
+
+		bool ConstantOnly { get; }
+		void LogError(ISyntaxRegion involvedSyntaxObject, string msg, bool isWarning=false);
 	}
 
 	/// <summary>
@@ -48,6 +52,18 @@ namespace D_Parser.Evaluation
 		public StandardValueProvider(ResolverContextStack ctxt)
 		{
 			ResolutionContext = ctxt;
+		}
+
+
+
+		public bool ConstantOnly
+		{
+			get { return true; }
+		}
+
+		public void LogError(ISyntaxRegion involvedSyntaxObject, string msg, bool isWarning = false)
+		{
+			//TODO: Handle semantic errors that occur during analysis
 		}
 	}
 }

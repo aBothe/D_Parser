@@ -4,6 +4,7 @@ using D_Parser.Dom;
 using D_Parser.Parser;
 using D_Parser.Resolver;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace D_Parser.Evaluation
 {
@@ -62,7 +63,6 @@ namespace D_Parser.Evaluation
 		/// </summary>
 		public string StringValue { get; private set; }
 
-		//List<ISymbolValue> elements;
 		/// <summary>
 		/// If not a string, the evaluated elements will be returned. Otherwise null.
 		/// </summary>
@@ -95,8 +95,18 @@ namespace D_Parser.Evaluation
 		#endregion
 	}
 
-	public class InstanceReference //: ExpressionValue
+	public class AssociativeArrayValue : ExpressionValue
 	{
+		public ReadOnlyCollection<KeyValuePair<ISymbolValue, ISymbolValue>> Elements
+		{
+			get;
+			private set;
+		}
 
+		public AssociativeArrayValue(ResolveResult baseType, IExpression baseExpression,IList<KeyValuePair<ISymbolValue,ISymbolValue>> Elements)
+			: base(ExpressionValueType.AssocArray, baseType, baseExpression)
+		{
+			this.Elements = new ReadOnlyCollection<KeyValuePair<ISymbolValue, ISymbolValue>>(Elements);
+		}
 	}
 }

@@ -157,18 +157,72 @@ namespace D_Parser.Resolver.TypeResolution
 			else if (ex is IdentifierExpression)
 			{
 				var id = ex as IdentifierExpression;
+				int tt=0;
 
 				if (id.IsIdentifier)
 					return TypeDeclarationResolver.ResolveIdentifier(id.Value as string, ctxt, id, id.ModuleScoped);
-				//TODO: Recognize correct scalar format, i.e. 0.5 => double; 0.5f => float; char, wchar, dchar
-				else if (id.Format == LiteralFormat.CharLiteral)
-					return new[] { TypeDeclarationResolver.Resolve(new DTokenDeclaration(DTokens.Char)) };
-				else if (id.Format.HasFlag(LiteralFormat.FloatingPoint))
-					return new[] { TypeDeclarationResolver.Resolve(new DTokenDeclaration(DTokens.Float)) };
-				else if (id.Format == LiteralFormat.Scalar)
-					return new[] { TypeDeclarationResolver.Resolve(new DTokenDeclaration(DTokens.Int)) };
-				else if (id.Format == LiteralFormat.StringLiteral || id.Format.HasFlag(LiteralFormat.VerbatimStringLiteral))
-					return TypeDeclarationResolver.ResolveIdentifier("string", ctxt, ex);
+				
+				switch (id.Format)
+				{
+					case Parser.LiteralFormat.CharLiteral:
+						return new[] { TypeDeclarationResolver.Resolve(new DTokenDeclaration(DTokens.Char)) };
+
+					case LiteralFormat.FloatingPoint | LiteralFormat.Scalar:
+						var im = id.Subformat.HasFlag(LiteralSubformat.Imaginary);
+						
+						tt = im ? DTokens.Idouble : DTokens.Double;
+
+						if (id.Subformat.HasFlag(LiteralSubformat.Float))
+							tt = im ? DTokens.Ifloat : DTokens.Float;
+						else if (id.Subformat.HasFlag(LiteralSubformat.Real))
+							tt = im ? DTokens.Ireal : DTokens.Real;
+
+						return new[] { TypeDeclarationResolver.Resolve(new DTokenDeclaration(tt)) };
+
+					case Parser.LiteralFormat.Scalar:
+						var unsigned = id.Subformat.HasFlag(LiteralSubformat.Unsigned);
+
+						if (id.Subformat.HasFlag(LiteralSubformat.Long))
+							tt = unsigned ? DTokens.Ulong : DTokens.Long;
+						else
+							tt = unsigned ? DTokens.Uint : DTokens.Int;
+
+						return new[] { TypeDeclarationResolver.Resolve(new DTokenDeclaration(tt)) };
+
+					case Parser.LiteralFormat.StringLiteral:
+					case Parser.LiteralFormat.VerbatimStringLiteral:
+						ResolveResult _t = null;
+
+						if (ctxt != null)
+						{
+							var obj = ctxt.ParseCache.LookupModuleName("object").First();
+
+							string strType = id.Subformat == LiteralSubformat.Utf32 ? "dstring" :
+								id.Subformat == LiteralSubformat.Utf16 ? "wstring" :
+								"string";
+
+							var strNode = obj[strType];
+
+							if (strNode != null)
+								_t = TypeDeclarationResolver.HandleNodeMatch(strNode, ctxt, null, id);
+						}
+						
+						if(_t==null)
+						{
+							var ch=new DTokenDeclaration(id.Subformat == LiteralSubformat.Utf32 ? DTokens.Dchar :
+								id.Subformat == LiteralSubformat.Utf16 ? DTokens.Wchar : DTokens.Char);
+
+							var immutable = new MemberFunctionAttributeDecl(DTokens.Immutable) {
+								InnerType=ch,
+								Location=id.Location,
+								EndLocation= id.EndLocation
+							};
+
+							_t=TypeDeclarationResolver.Resolve(new ArrayDecl { ValueType = immutable }, null)[0];
+						}
+
+						return new[]{ _t };
+				}
 			}
 
 			else if (ex is TemplateInstanceExpression)
@@ -246,39 +300,7 @@ namespace D_Parser.Resolver.TypeResolution
 			}
 
 			else if (ex is AssocArrayExpression)
-			{
-				var aa = (AssocArrayExpression)ex;
-
-				if (aa.Elements != null && aa.Elements.Count > 0)
-				{
-					var firstElement = aa.Elements[0].Key;
-					var firstElementValue = aa.Elements[0].Value;
-
-					var keyType = Resolve(firstElement, ctxt);
-					var valueType = Resolve(firstElementValue, ctxt);
-
-					if (valueType != null && valueType.Length > 0)
-					{
-						var r = new List<ResolveResult>(valueType.Length);
-
-						// If there are multiple results, return one array result per value type result
-						foreach (var vt in valueType)
-							r.Add(new ArrayResult
-							{
-								DeclarationOrExpressionBase = ex,
-								ResultBase = vt,
-								KeyType = keyType,
-								ArrayDeclaration = new ArrayDecl { 
-									KeyExpression=firstElement, 
-									KeyType=null, 
-									ClampsEmpty=false
-								}
-							});
-
-						return r.ToArray();
-					}
-				}
-			}
+				return Resolve((AssocArrayExpression)ex, ctxt);
 
 			else if (ex is FunctionLiteral)
 			{
@@ -322,6 +344,50 @@ namespace D_Parser.Resolver.TypeResolution
 			else if (ex is TypeDeclarationExpression)
 				return TypeDeclarationResolver.Resolve((ex as TypeDeclarationExpression).Declaration, ctxt);
 
+			return null;
+		}
+
+		public static ArrayResult[] Resolve(AssocArrayExpression aa, ResolverContextStack ctxt)
+		{
+			if (aa.Elements != null && aa.Elements.Count > 0)
+			{
+				var firstElement = aa.Elements[0].Key;
+				var firstElementValue = aa.Elements[0].Value;
+
+				var keyType = Resolve(firstElement, ctxt);
+				var valueType = Resolve(firstElementValue, ctxt);
+
+				return Resolve(aa, keyType, valueType);
+			}
+			return null;
+		}
+
+		public static ArrayResult[] Resolve(AssocArrayExpression aa, ResolveResult[] firstKey, ResolveResult[] firstValue)
+		{
+			if (aa.Elements != null && aa.Elements.Count > 0)
+			{
+				if (firstValue != null && firstValue.Length > 0)
+				{
+					var r = new List<ArrayResult>(firstValue.Length);
+
+					// If there are multiple results, return one array result per value type result
+					foreach (var vt in firstValue)
+						r.Add(new ArrayResult
+						{
+							DeclarationOrExpressionBase = aa,
+							ResultBase = vt,
+							KeyType = firstKey,
+							ArrayDeclaration = new ArrayDecl
+							{
+								KeyExpression = firstKey[0].DeclarationOrExpressionBase as IExpression,
+								KeyType = null,
+								ClampsEmpty = false
+							}
+						});
+
+					return r.ToArray();
+				}
+			}
 			return null;
 		}
 	}

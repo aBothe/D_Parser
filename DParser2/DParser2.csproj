@@ -75,6 +75,7 @@
     <Compile Include="Dom\TemplateParameters.cs" />
     <Compile Include="Evaluation\ExpressionEvaluator.cs" />
     <Compile Include="Evaluation\ExpressionEvaluator.PrimaryExpression.cs" />
+    <Compile Include="Evaluation\ExpressionEvaluator.Traits.cs" />
     <Compile Include="Evaluation\ISymbolValue.cs" />
     <Compile Include="Evaluation\ISymbolValueProvider.cs" />
     <Compile Include="Evaluation\MathOperationEvaluation.cs" />

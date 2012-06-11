@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using D_Parser.Dom.Expressions;
 using D_Parser.Misc;
 using System;
+using D_Parser.Parser;
 
 namespace D_Parser.Resolver
 {
@@ -90,7 +91,9 @@ namespace D_Parser.Resolver
 
 		public override string ToString()
 		{
-			return DeclarationOrExpressionBase.ToString();
+			return DeclarationOrExpressionBase is IExpression ? 
+				DTokens.GetTokenString(BaseTypeToken) : 
+				DeclarationOrExpressionBase.ToString();
 		}
 
 		public override string ResultPath
