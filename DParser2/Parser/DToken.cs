@@ -17,18 +17,20 @@ namespace D_Parser.Parser
 	[Flags]
 	public enum LiteralSubformat
 	{
-		Integer = 0,
-		Unsigned = 1,
-		Long = 2,
+		None = 0,
 
-		Double = 4,
-		Float = 8,
-		Real = 16,
-		Imaginary = 32,
+		Integer = 1,
+		Unsigned = 2,
+		Long = 4,
 
-		Utf8=64,
-		Utf16=128,
-		Utf32=256,
+		Double = 8,
+		Float = 16,
+		Real = 32,
+		Imaginary = 64,
+
+		Utf8=128,
+		Utf16=256,
+		Utf32=512,
 	}
 
     public class DToken

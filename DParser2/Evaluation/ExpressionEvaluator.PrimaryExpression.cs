@@ -12,6 +12,8 @@ namespace D_Parser.Evaluation
 	{
 		public ISymbolValue Evaluate(PrimaryExpression x)
 		{
+			int tt = 0;
+
 			if (x is TemplateInstanceExpression)
 			{
 				//TODO
@@ -29,10 +31,29 @@ namespace D_Parser.Evaluation
 				{
 					case Parser.LiteralFormat.CharLiteral:
 						return new PrimitiveValue(DTokens.Char, id.Value, x);
+
 					case Parser.LiteralFormat.FloatingPoint:
-						return new PrimitiveValue(DTokens.Float, id.Value, x);
+						var im = id.Subformat.HasFlag(LiteralSubformat.Imaginary);
+						
+						tt = im ? DTokens.Idouble : DTokens.Double;
+
+						if (id.Subformat.HasFlag(LiteralSubformat.Float))
+							tt = im ? DTokens.Ifloat : DTokens.Float;
+						else if (id.Subformat.HasFlag(LiteralSubformat.Real))
+							tt = im ? DTokens.Ireal : DTokens.Real;
+
+						return new PrimitiveValue(tt, id.Value, x);
+
 					case Parser.LiteralFormat.Scalar:
+						var unsigned = id.Subformat.HasFlag(LiteralSubformat.Unsigned);
+
+						if (id.Subformat.HasFlag(LiteralSubformat.Long))
+							tt = unsigned ? DTokens.Ulong : DTokens.Long;
+						else
+							tt = unsigned ? DTokens.Uint : DTokens.Int;
+
 						return new PrimitiveValue(DTokens.Int, id.Value, x);
+
 					case Parser.LiteralFormat.StringLiteral:
 					case Parser.LiteralFormat.VerbatimStringLiteral:
 						

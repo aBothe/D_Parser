@@ -1007,7 +1007,8 @@ namespace D_Parser.Parser
 				#endregion
 
 				token = new DToken(DTokens.Literal, new CodeLocation(x, y), new CodeLocation(x + stringValue.Length, y), stringValue, val, 
-					subFmt.HasFlag(LiteralSubformat.Float) || HasDot ? (LiteralFormat.FloatingPoint | LiteralFormat.Scalar) : LiteralFormat.Scalar,
+					subFmt.HasFlag(LiteralSubformat.Float) || subFmt.HasFlag(LiteralSubformat.Imaginary) || HasDot ? 
+						(LiteralFormat.FloatingPoint | LiteralFormat.Scalar) : LiteralFormat.Scalar,
 					subFmt);
 
 				if (token != null) 

@@ -867,10 +867,11 @@ namespace D_Parser.Dom.Expressions
 
 		public readonly object Value;
 		public readonly LiteralFormat Format;
+		public readonly LiteralSubformat Subformat;
 
 		//public IdentifierExpression() { }
 		public IdentifierExpression(object Val) { Value = Val; Format = LiteralFormat.None; }
-		public IdentifierExpression(object Val, LiteralFormat LiteralFormat) { Value = Val; this.Format = LiteralFormat; }
+		public IdentifierExpression(object Val, LiteralFormat LiteralFormat, LiteralSubformat Subformat = 0) { Value = Val; this.Format = LiteralFormat; this.Subformat = Subformat; }
 
 		public override string ToString()
 		{

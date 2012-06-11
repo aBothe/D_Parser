@@ -2537,10 +2537,10 @@ namespace D_Parser.Parser
 						Step();
 						a += t.LiteralValue as string;
 					}
-					return new IdentifierExpression(a, t.LiteralFormat) { Location = startLoc, EndLocation = t.EndLocation };
+					return new IdentifierExpression(a, t.LiteralFormat, t.Subformat) { Location = startLoc, EndLocation = t.EndLocation };
 				}
 				//else if (t.LiteralFormat == LiteralFormat.CharLiteral)return new IdentifierExpression(t.LiteralValue) { LiteralFormat=t.LiteralFormat,Location = startLoc, EndLocation = t.EndLocation };
-				return new IdentifierExpression(t.LiteralValue, t.LiteralFormat) { Location = startLoc, EndLocation = t.EndLocation };
+				return new IdentifierExpression(t.LiteralValue, t.LiteralFormat, t.Subformat) { Location = startLoc, EndLocation = t.EndLocation };
 			}
 			#endregion
 
