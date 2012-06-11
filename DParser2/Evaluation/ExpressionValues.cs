@@ -78,10 +78,13 @@ namespace D_Parser.Evaluation
 		/// String constructor.
 		/// Given result stores both type and idenfitierexpression whose Value is used as content
 		/// </summary>
-		public ArrayValue(ResolveResult stringLiteralResult)
-			: base(ExpressionValueType.Array, stringLiteralResult)
+		public ArrayValue(ResolveResult stringLiteralResult, IdentifierExpression stringLiteral=null)
+			: base(ExpressionValueType.Array, stringLiteralResult, stringLiteral)
 		{
-			StringValue = (stringLiteralResult.DeclarationOrExpressionBase as IdentifierExpression).Value as string;
+			if (stringLiteralResult.DeclarationOrExpressionBase is IdentifierExpression)
+				StringValue = ((IdentifierExpression)stringLiteralResult.DeclarationOrExpressionBase).Value as string;
+			else
+				StringValue = stringLiteral.Value as string;
 		}
 
 		public ArrayValue(ResolveResult resolvedArrayType, params ISymbolValue[] elements)

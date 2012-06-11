@@ -5,6 +5,8 @@ using System.Text;
 using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
 using D_Parser.Dom;
+using D_Parser.Resolver;
+using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Evaluation
 {
@@ -32,7 +34,7 @@ namespace D_Parser.Evaluation
 					case Parser.LiteralFormat.CharLiteral:
 						return new PrimitiveValue(DTokens.Char, id.Value, x);
 
-					case Parser.LiteralFormat.FloatingPoint:
+					case LiteralFormat.FloatingPoint | LiteralFormat.Scalar:
 						var im = id.Subformat.HasFlag(LiteralSubformat.Imaginary);
 						
 						tt = im ? DTokens.Idouble : DTokens.Double;
@@ -56,8 +58,37 @@ namespace D_Parser.Evaluation
 
 					case Parser.LiteralFormat.StringLiteral:
 					case Parser.LiteralFormat.VerbatimStringLiteral:
+						ResolveResult _t = null;
+
+						if (vp.ResolutionContext != null)
+						{
+							var obj = vp.ResolutionContext.ParseCache.LookupModuleName("object").First();
+
+							string strType = id.Subformat == LiteralSubformat.Utf32 ? "dstring" :
+								id.Subformat == LiteralSubformat.Utf16 ? "wstring" :
+								"string";
+
+							var strNode = obj[strType];
+
+							if (strNode != null)
+								_t = TypeDeclarationResolver.HandleNodeMatch(strNode, vp.ResolutionContext, null, id);
+						}
 						
-						break;
+						if(_t==null)
+						{
+							var ch=new DTokenDeclaration(id.Subformat == LiteralSubformat.Utf32 ? DTokens.Dchar :
+								id.Subformat == LiteralSubformat.Utf16 ? DTokens.Wchar : DTokens.Char);
+
+							var immutable = new MemberFunctionAttributeDecl(DTokens.Immutable) {
+								InnerType=ch,
+								Location=id.Location,
+								EndLocation= id.EndLocation
+							};
+
+							_t=TypeDeclarationResolver.Resolve(new ArrayDecl { ValueType = immutable }, null)[0];
+						}
+
+						return new ArrayValue(_t, id);
 				}
 			}
 			else if (x is TokenExpression)
