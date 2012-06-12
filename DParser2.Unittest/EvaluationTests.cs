@@ -153,6 +153,7 @@ class C : A {}
 			Assert.IsFalse(EvalIsExpression("C == A", vp));
 			Assert.IsTrue(EvalIsExpression("immutable(char) == immutable", vp));
 			Assert.IsFalse(EvalIsExpression("string == immutable", vp));
+			Assert.IsTrue(EvalIsExpression("A == class", vp));
 		}
 	}
 }
