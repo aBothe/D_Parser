@@ -7,6 +7,7 @@ using D_Parser.Parser;
 using D_Parser.Dom;
 using D_Parser.Resolver;
 using D_Parser.Resolver.TypeResolution;
+using D_Parser.Dom.Statements;
 
 namespace D_Parser.Evaluation
 {
@@ -200,25 +201,124 @@ namespace D_Parser.Evaluation
 		/// </summary>
 		public ISymbolValue Evaluate(IsExpression isExpression)
 		{
-			/*
-			 * Note: It's needed to let the abstract ast scanner also scan through IsExpressions etc.
-			 * in order to find aliases and/or specified template parameters!
-			 */
-			/*
-			 * To handle semantic tokens like "return" or "super" it's just needed to 
-			 * look into the current resolver context -
-			 * then, we'll be able to gather either the parent method or the currently scoped class definition.
-			 */
-
-			// The probably most frequented usage of this expression
-			if (string.IsNullOrEmpty(isExpression.TypeAliasIdentifier))
+			if (isExpression.TestedType != null)
 			{
-				if (isExpression.TypeSpecialization == null && isExpression.TypeSpecializationToken == 0)
+				var typeToCheck_ = DResolver.TryRemoveAliasesFromResult(TypeDeclarationResolver.Resolve(isExpression.TestedType, vp.ResolutionContext));
+
+				if (typeToCheck_ != null && typeToCheck_.Length != 0)
 				{
-					//TODO Find out in which cases expressions are allowed!
+					var typeToCheck = typeToCheck_[0];
+
+					// The probably most frequented usage of this expression
+					if (string.IsNullOrEmpty(isExpression.TypeAliasIdentifier))
+					{
+						if (isExpression.TypeSpecialization == null && isExpression.TypeSpecializationToken == 0)
+							return new PrimitiveValue(DTokens.Bool, typeToCheck != null, isExpression);
+
+						ResolveResult spec = null;
+						bool retTrue = false;
+
+						if (isExpression.TypeSpecialization != null)
+						{
+							var _spec = DResolver.TryRemoveAliasesFromResult(TypeDeclarationResolver.Resolve(isExpression.TypeSpecialization, vp.ResolutionContext));
+
+							if (_spec != null && _spec.Length != 0)
+								spec = _spec[0];
+						}
+						else if (isExpression.EqualityTest)
+							switch (isExpression.TypeSpecializationToken)
+							{
+								/*
+								 * To handle semantic tokens like "return" or "super" it's just needed to 
+								 * look into the current resolver context -
+								 * then, we'll be able to gather either the parent method or the currently scoped class definition.
+								 */
+								case DTokens.Struct:
+								case DTokens.Union:
+								case DTokens.Class:
+								case DTokens.Interface:
+									retTrue = typeToCheck is TypeResult && 
+										((TypeResult)typeToCheck).Node is DClassLike &&
+										((DClassLike)((TypeResult)typeToCheck).Node).ClassType == isExpression.TypeSpecializationToken;
+									break;
+
+								case DTokens.Enum:
+									retTrue = typeToCheck is TypeResult &&
+										((TypeResult)typeToCheck).Node is DEnum;
+									break;
+
+								case DTokens.Function:
+								case DTokens.Delegate:
+									if (typeToCheck is DelegateResult)
+									{
+										var dgr = (DelegateResult)typeToCheck;
+										if (dgr.IsDelegateDeclaration)
+											retTrue = isExpression.TypeSpecializationToken == (
+												((DelegateDeclaration)dgr.DeclarationOrExpressionBase).IsFunction
+												? DTokens.Function : DTokens.Delegate);
+										else // Must be a delegate otherwise
+											retTrue = isExpression.TypeSpecializationToken == DTokens.Delegate;
+									}
+									else
+										retTrue = isExpression.TypeSpecializationToken==DTokens.Delegate &&
+											typeToCheck is MemberResult && 
+											((MemberResult)typeToCheck).Node is DMethod;
+									break;
+
+								case DTokens.Super: //TODO: Test this
+									var dc = DResolver.SearchClassLikeAt(vp.ResolutionContext.ScopedBlock, isExpression.Location) as DClassLike;
+
+									if (dc == null)
+										break;
+									
+									var tr = new TypeResult { Node = dc };
+									DResolver.ResolveBaseClasses(tr, vp.ResolutionContext, true);
+
+									if (tr.BaseClass == null || tr.BaseClass.Length == 0)
+										break;
+
+									retTrue = ResultComparer.IsEqual(typeToCheck, tr.BaseClass[0]);
+									break;
+
+								case DTokens.Const:
+								case DTokens.Immutable:
+								case DTokens.InOut: // TODO?
+								case DTokens.Shared:
+									retTrue = typeToCheck.DeclarationOrExpressionBase is MemberFunctionAttributeDecl &&
+										((MemberFunctionAttributeDecl)typeToCheck.DeclarationOrExpressionBase).Modifier == isExpression.TypeSpecializationToken;
+									break;
+
+								case DTokens.Return: // TODO: Test
+									IStatement _u=null;
+									var dm = DResolver.SearchBlockAt(vp.ResolutionContext.ScopedBlock, isExpression.Location, out _u) as DMethod;
+
+									if (dm == null)
+										break;
+
+									var retType_ = TypeDeclarationResolver.GetMethodReturnType(dm, vp.ResolutionContext);
+
+									if (retType_ == null || retType_.Length == 0)
+										break;
+
+									retTrue = ResultComparer.IsEqual(typeToCheck, retType_[0]);
+									break;
+							}
+
+						return new PrimitiveValue(DTokens.Bool, retTrue || (isExpression.EqualityTest ?
+							ResultComparer.IsEqual(typeToCheck, spec) :
+							ResultComparer.IsImplicitlyConvertible(typeToCheck, spec, vp.ResolutionContext)), isExpression);
+					}
+					else
+					{
+						/*
+						 * Note: It's needed to let the abstract ast scanner also scan through IsExpressions etc.
+						 * in order to find aliases and/or specified template parameters!
+						 */
+					}
 				}
 			}
-			return null;
+
+			return new PrimitiveValue(DTokens.Bool, false, isExpression);
 		}
 	}
 }

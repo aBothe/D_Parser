@@ -2762,11 +2762,8 @@ namespace D_Parser.Parser
 				LastParsedObject = ce;
 				Expect(OpenParenthesis);
 
-				var LookAheadBackup = la;
-
-				AllowWeakTypeParsing = true;
-				ce.TestedType = Type();
-				AllowWeakTypeParsing = false;
+				if((ce.TestedType = Type())==null)
+					SynErr(laKind, "In an IsExpression, either a type or an expression is required!");
 
 				if (ce.TestedType!=null && laKind == Identifier && (Lexer.CurrentPeekToken.Kind == CloseParenthesis || Lexer.CurrentPeekToken.Kind == Equal
 					|| Lexer.CurrentPeekToken.Kind == Colon))
@@ -2774,20 +2771,7 @@ namespace D_Parser.Parser
 					Step();
 					ce.TypeAliasIdentifier = strVal;
 				}
-				else 
-				// D Language specs mistake: In an IsExpression there also can be expressions!
-				if(ce.TestedType==null || !(laKind==CloseParenthesis || laKind==Equal||laKind==Colon))
-				{
-					// Reset lookahead token to prior position
-					la = LookAheadBackup;
-					// Reset wrongly parsed type declaration
-					ce.TestedType = null;
-					ce.TestedExpression = ConditionalExpression();
-				}
 
-				if(ce.TestedExpression==null && ce.TestedType==null)
-					SynErr(laKind,"In an IsExpression, either a type or an expression is required!");
-				
 				if (laKind == CloseParenthesis)
 				{
 					Step();
@@ -2826,7 +2810,9 @@ namespace D_Parser.Parser
 				*/
 
 				if (ClassLike[laKind] || laKind==Typedef || // typedef is possible although it's not yet documented in the syntax docs
-					laKind==Enum || laKind==Delegate || laKind==Function || laKind==Super || laKind==Return)
+					laKind==Enum || laKind==Delegate || laKind==Function || laKind==Super || laKind==Return ||
+					((laKind==Const || laKind == Immutable || laKind == InOut || laKind == Shared) && 
+					(Peek(1).Kind==CloseParenthesis || Lexer.CurrentPeekToken.Kind==Comma)))
 				{
 					Step();
 					ce.TypeSpecializationToken = t.Kind;

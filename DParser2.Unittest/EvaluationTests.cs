@@ -117,7 +117,42 @@ namespace DParser2.Unittest
 			Assert.IsInstanceOfType(v, typeof(AssociativeArrayValue));
 			var aa = (AssociativeArrayValue)v;
 			Assert.AreEqual(aa.Elements.Count, 3);
-			
+		}
+
+		public static bool EvalIsExpression(string IsExpressionCode, ISymbolValueProvider vp)
+		{
+			var e = DParser.ParseExpression("is("+IsExpressionCode+")");
+
+			var v = ExpressionEvaluator.Evaluate(e, vp);
+
+			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
+			var pv = (PrimitiveValue)v;
+			Assert.AreEqual(pv.BaseTypeToken, DTokens.Bool, "Type of 'is()' result must be bool");
+			Assert.IsInstanceOfType(pv.Value, typeof(bool));
+
+			return (bool)pv.Value;
+		}
+
+		[TestMethod]
+		public void TestIsExpression()
+		{
+			var pcl = ResolutionTests.CreateCache(@"module modA;
+
+class A {}
+class B : A {}
+class C : A {}
+
+");
+
+			var vp = new StandardValueProvider(new ResolverContextStack(pcl, new ResolverContext { ScopedBlock=pcl[0]["modA"] }));
+
+			Assert.IsTrue(EvalIsExpression("bool : bool", vp));
+			Assert.IsTrue(EvalIsExpression("bool == bool", vp));
+			Assert.IsTrue(EvalIsExpression("C : A", vp));
+			Assert.IsTrue(EvalIsExpression("C : C", vp));
+			Assert.IsFalse(EvalIsExpression("C == A", vp));
+			Assert.IsTrue(EvalIsExpression("immutable(char) == immutable", vp));
+			Assert.IsFalse(EvalIsExpression("string == immutable", vp));
 		}
 	}
 }

@@ -1220,7 +1220,6 @@ namespace D_Parser.Dom.Expressions
 
 	public class IsExpression : PrimaryExpression,ContainerExpression
 	{
-		public IExpression TestedExpression;
 		public ITypeDeclaration TestedType;
 		public string TypeAliasIdentifier;
 
@@ -1240,8 +1239,6 @@ namespace D_Parser.Dom.Expressions
 
 			if (TestedType != null)
 				ret += TestedType.ToString();
-			else if (TestedExpression != null)
-				ret += TestedExpression.ToString();
 
 			if (TypeAliasIdentifier != null)
 				ret += ' ' + TypeAliasIdentifier;
@@ -1276,9 +1273,6 @@ namespace D_Parser.Dom.Expressions
 		public IExpression[] SubExpressions
 		{
 			get { 
-				if(TestedExpression!=null)
-				return new[]{TestedExpression};
-
 				if (TestedType != null)
 					return new[] { new TypeDeclarationExpression(TestedType)};
 
