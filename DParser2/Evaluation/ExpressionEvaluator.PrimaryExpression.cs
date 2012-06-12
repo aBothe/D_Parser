@@ -200,7 +200,24 @@ namespace D_Parser.Evaluation
 		/// </summary>
 		public ISymbolValue Evaluate(IsExpression isExpression)
 		{
-			// TODO
+			/*
+			 * Note: It's needed to let the abstract ast scanner also scan through IsExpressions etc.
+			 * in order to find aliases and/or specified template parameters!
+			 */
+			/*
+			 * To handle semantic tokens like "return" or "super" it's just needed to 
+			 * look into the current resolver context -
+			 * then, we'll be able to gather either the parent method or the currently scoped class definition.
+			 */
+
+			// The probably most frequented usage of this expression
+			if (string.IsNullOrEmpty(isExpression.TypeAliasIdentifier))
+			{
+				if (isExpression.TypeSpecialization == null && isExpression.TypeSpecializationToken == 0)
+				{
+					//TODO Find out in which cases expressions are allowed!
+				}
+			}
 			return null;
 		}
 	}
