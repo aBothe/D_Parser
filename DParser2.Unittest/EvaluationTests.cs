@@ -146,6 +146,10 @@ class C : A {}
 
 			var vp = new StandardValueProvider(new ResolverContextStack(pcl, new ResolverContext { ScopedBlock=pcl[0]["modA"] }));
 
+			Assert.IsTrue(EvalIsExpression("char*[] T : U[], U : V*, V", vp));
+			Assert.IsTrue(EvalIsExpression("string T : U[], U : immutable(V), V : char", vp));
+			Assert.IsFalse(EvalIsExpression("int[10] X : X[Y], int Y : 5",vp));
+
 			Assert.IsTrue(EvalIsExpression("bool : bool", vp));
 			Assert.IsTrue(EvalIsExpression("bool == bool", vp));
 			Assert.IsTrue(EvalIsExpression("C : A", vp));

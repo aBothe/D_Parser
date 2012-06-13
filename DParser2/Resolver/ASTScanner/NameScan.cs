@@ -95,10 +95,10 @@ namespace D_Parser.Resolver.ASTScanner
 				if (tr.BaseClass != null)
 					foreach (var i in tr.BaseClass)
 					{
-						if (i == null)
+						if (!(i is TemplateInstanceResult))
 							continue;
 						// Search for items called name in the base class(es)
-						var r = ScanNodeForIdentifier((IBlockNode)i.Node, name, ctxt);
+						var r = ScanNodeForIdentifier((IBlockNode)((TemplateInstanceResult)i).Node, name, ctxt);
 
 						if (r != null)
 							matches.AddRange(r);

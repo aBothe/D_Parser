@@ -2809,10 +2809,10 @@ namespace D_Parser.Parser
 						return
 				*/
 
-				if (ClassLike[laKind] || laKind==Typedef || // typedef is possible although it's not yet documented in the syntax docs
+				if (ce.EqualityTest && (ClassLike[laKind] || laKind==Typedef || // typedef is possible although it's not yet documented in the syntax docs
 					laKind==Enum || laKind==Delegate || laKind==Function || laKind==Super || laKind==Return ||
 					((laKind==Const || laKind == Immutable || laKind == InOut || laKind == Shared) && 
-					(Peek(1).Kind==CloseParenthesis || Lexer.CurrentPeekToken.Kind==Comma)))
+					(Peek(1).Kind==CloseParenthesis || Lexer.CurrentPeekToken.Kind==Comma))))
 				{
 					Step();
 					ce.TypeSpecializationToken = t.Kind;

@@ -1223,6 +1223,24 @@ namespace D_Parser.Dom.Expressions
 		public ITypeDeclaration TestedType;
 		public string TypeAliasIdentifier;
 
+		private TemplateTypeParameter ptp;
+		/// <summary>
+		/// Persistent parameter object that keeps information about the first specialization 
+		/// </summary>
+		public TemplateTypeParameter ArtificialFirstSpecParam
+		{
+			get {
+				if (ptp == null)
+				{
+					return ptp = new TemplateTypeParameter { 
+						Specialization = TypeSpecialization,
+						Name=TypeAliasIdentifier
+					};
+				}
+				return ptp;
+			}
+		}
+
 		/// <summary>
 		/// True if Type == TypeSpecialization instead of Type : TypeSpecialization
 		/// </summary>

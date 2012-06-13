@@ -8,6 +8,7 @@ using D_Parser.Dom;
 using D_Parser.Resolver;
 using D_Parser.Resolver.TypeResolution;
 using D_Parser.Dom.Statements;
+using D_Parser.Resolver.Templates;
 
 namespace D_Parser.Evaluation
 {
@@ -30,11 +31,13 @@ namespace D_Parser.Evaluation
 				switch (tkx.Token)
 				{
 					case DTokens.This:
-						//TODO
+						//TODO; Non-constant!
 						break;
 					case DTokens.Super:
+						//TODO; Non-const!
 						break;
 					case DTokens.Null:
+						//TODO; Non-const!
 						break;
 					//return new PrimitiveValue(ExpressionValueType.Class, null, x);
 					case DTokens.Dollar:
@@ -164,14 +167,7 @@ namespace D_Parser.Evaluation
 
 					if (vp.ResolutionContext != null)
 					{
-						var obj = vp.ResolutionContext.ParseCache.LookupModuleName("object").First();
-
-						string strType = id.Subformat == LiteralSubformat.Utf32 ? "dstring" :
-							id.Subformat == LiteralSubformat.Utf16 ? "wstring" :
-							"string";
-
-						var strNode = obj[strType];
-
+						var strNode = TryGetStringDefinition(id.Subformat);
 						if (strNode != null)
 							_t = TypeDeclarationResolver.HandleNodeMatch(strNode, vp.ResolutionContext, null, id);
 					}
@@ -196,11 +192,25 @@ namespace D_Parser.Evaluation
 			return null;
 		}
 
+		INode TryGetStringDefinition(LiteralSubformat fmt)
+		{
+			var obj = vp.ResolutionContext.ParseCache.LookupModuleName("object").First();
+
+			string strType = fmt == LiteralSubformat.Utf32 ? "dstring" :
+				fmt == LiteralSubformat.Utf16 ? "wstring" :
+				"string";
+
+			return obj==null ? null : obj[strType];
+		}
+
+		#region IsExpression
 		/// <summary>
 		/// http://dlang.org/expression.html#IsExpression
 		/// </summary>
 		public ISymbolValue Evaluate(IsExpression isExpression)
 		{
+			bool retTrue = false;
+
 			if (isExpression.TestedType != null)
 			{
 				var typeToCheck_ = DResolver.TryRemoveAliasesFromResult(TypeDeclarationResolver.Resolve(isExpression.TestedType, vp.ResolutionContext));
@@ -209,116 +219,199 @@ namespace D_Parser.Evaluation
 				{
 					var typeToCheck = typeToCheck_[0];
 
+					// case 1, 4
+					if (isExpression.TypeSpecialization == null && isExpression.TypeSpecializationToken == 0)
+						retTrue = typeToCheck != null;
+
 					// The probably most frequented usage of this expression
-					if (string.IsNullOrEmpty(isExpression.TypeAliasIdentifier))
-					{
-						if (isExpression.TypeSpecialization == null && isExpression.TypeSpecializationToken == 0)
-							return new PrimitiveValue(DTokens.Bool, typeToCheck != null, isExpression);
-
-						ResolveResult spec = null;
-						bool retTrue = false;
-
-						if (isExpression.TypeSpecialization != null)
-						{
-							var _spec = DResolver.TryRemoveAliasesFromResult(TypeDeclarationResolver.Resolve(isExpression.TypeSpecialization, vp.ResolutionContext));
-
-							if (_spec != null && _spec.Length != 0)
-								spec = _spec[0];
-						}
-						else if (isExpression.EqualityTest)
-							switch (isExpression.TypeSpecializationToken)
-							{
-								/*
-								 * To handle semantic tokens like "return" or "super" it's just needed to 
-								 * look into the current resolver context -
-								 * then, we'll be able to gather either the parent method or the currently scoped class definition.
-								 */
-								case DTokens.Struct:
-								case DTokens.Union:
-								case DTokens.Class:
-								case DTokens.Interface:
-									retTrue = typeToCheck is TypeResult && 
-										((TypeResult)typeToCheck).Node is DClassLike &&
-										((DClassLike)((TypeResult)typeToCheck).Node).ClassType == isExpression.TypeSpecializationToken;
-									break;
-
-								case DTokens.Enum:
-									retTrue = typeToCheck is TypeResult &&
-										((TypeResult)typeToCheck).Node is DEnum;
-									break;
-
-								case DTokens.Function:
-								case DTokens.Delegate:
-									if (typeToCheck is DelegateResult)
-									{
-										var dgr = (DelegateResult)typeToCheck;
-										if (dgr.IsDelegateDeclaration)
-											retTrue = isExpression.TypeSpecializationToken == (
-												((DelegateDeclaration)dgr.DeclarationOrExpressionBase).IsFunction
-												? DTokens.Function : DTokens.Delegate);
-										else // Must be a delegate otherwise
-											retTrue = isExpression.TypeSpecializationToken == DTokens.Delegate;
-									}
-									else
-										retTrue = isExpression.TypeSpecializationToken==DTokens.Delegate &&
-											typeToCheck is MemberResult && 
-											((MemberResult)typeToCheck).Node is DMethod;
-									break;
-
-								case DTokens.Super: //TODO: Test this
-									var dc = DResolver.SearchClassLikeAt(vp.ResolutionContext.ScopedBlock, isExpression.Location) as DClassLike;
-
-									if (dc == null)
-										break;
-									
-									var tr = new TypeResult { Node = dc };
-									DResolver.ResolveBaseClasses(tr, vp.ResolutionContext, true);
-
-									if (tr.BaseClass == null || tr.BaseClass.Length == 0)
-										break;
-
-									retTrue = ResultComparer.IsEqual(typeToCheck, tr.BaseClass[0]);
-									break;
-
-								case DTokens.Const:
-								case DTokens.Immutable:
-								case DTokens.InOut: // TODO?
-								case DTokens.Shared:
-									retTrue = typeToCheck.DeclarationOrExpressionBase is MemberFunctionAttributeDecl &&
-										((MemberFunctionAttributeDecl)typeToCheck.DeclarationOrExpressionBase).Modifier == isExpression.TypeSpecializationToken;
-									break;
-
-								case DTokens.Return: // TODO: Test
-									IStatement _u=null;
-									var dm = DResolver.SearchBlockAt(vp.ResolutionContext.ScopedBlock, isExpression.Location, out _u) as DMethod;
-
-									if (dm == null)
-										break;
-
-									var retType_ = TypeDeclarationResolver.GetMethodReturnType(dm, vp.ResolutionContext);
-
-									if (retType_ == null || retType_.Length == 0)
-										break;
-
-									retTrue = ResultComparer.IsEqual(typeToCheck, retType_[0]);
-									break;
-							}
-
-						return new PrimitiveValue(DTokens.Bool, retTrue || (isExpression.EqualityTest ?
-							ResultComparer.IsEqual(typeToCheck, spec) :
-							ResultComparer.IsImplicitlyConvertible(typeToCheck, spec, vp.ResolutionContext)), isExpression);
-					}
+					else if (string.IsNullOrEmpty(isExpression.TypeAliasIdentifier))
+						retTrue= evalIsExpression_NoAlias(isExpression, typeToCheck);
 					else
-					{
-						/*
-						 * Note: It's needed to let the abstract ast scanner also scan through IsExpressions etc.
-						 * in order to find aliases and/or specified template parameters!
-						 */
-					}
+						retTrue= evalIsExpression_WithAliases(isExpression, typeToCheck);
 				}
 			}
 
-			return new PrimitiveValue(DTokens.Bool, false, isExpression);
+			return new PrimitiveValue(DTokens.Bool, retTrue, isExpression);
 		}
+
+		private bool evalIsExpression_WithAliases(IsExpression isExpression, ResolveResult typeToCheck)
+		{
+			/*
+			 * Note: It's needed to let the abstract ast scanner also scan through IsExpressions etc.
+			 * in order to find aliases and/or specified template parameters!
+			 */
+
+			var tpl_params = new Dictionary<string, ResolveResult[]>();
+			tpl_params[isExpression.TypeAliasIdentifier] = null;
+			if (isExpression.TemplateParameterList != null)
+				foreach (var p in isExpression.TemplateParameterList)
+					tpl_params[p.Name] = null;
+
+			var tpd = new TemplateParameterDeduction(tpl_params, vp.ResolutionContext);
+			bool retTrue = false;
+
+			if (isExpression.EqualityTest) // 6.
+			{
+				// a)
+				if (isExpression.TypeSpecialization != null)
+				{
+					tpd.EnforceTypeEqualityWhenDeducing = true;
+					retTrue = tpd.Handle(isExpression.ArtificialFirstSpecParam, typeToCheck);
+					tpd.EnforceTypeEqualityWhenDeducing = false;
+				}
+				else // b)
+				{
+					var r = evalIsExpression_EvalSpecToken(isExpression, typeToCheck, true);
+					retTrue = r.Item1;
+					tpl_params[isExpression.TypeAliasIdentifier] = new[]{ r.Item2 };
+				}
+			}
+			else // 5.
+				retTrue = tpd.Handle(isExpression.ArtificialFirstSpecParam, typeToCheck);
+
+			if (retTrue && isExpression.TemplateParameterList != null)
+				foreach (var p in isExpression.TemplateParameterList)
+					if (!tpd.Handle(p, tpl_params[p.Name] != null ? tpl_params[p.Name].First() : null))
+						return false;
+
+			//TODO: Put all tpl_params results into the resolver context or make a new scope or something! 
+
+			return retTrue;
+		}
+
+		private bool evalIsExpression_NoAlias(IsExpression isExpression, ResolveResult typeToCheck)
+		{
+			if (isExpression.TypeSpecialization != null)
+			{
+				var spec = DResolver.TryRemoveAliasesFromResult(TypeDeclarationResolver.Resolve(isExpression.TypeSpecialization, vp.ResolutionContext));
+
+				return spec != null && spec.Length != 0 && (isExpression.EqualityTest ? 
+					ResultComparer.IsEqual(typeToCheck, spec[0]) : 
+					ResultComparer.IsImplicitlyConvertible(typeToCheck, spec[0], vp.ResolutionContext));
+			}
+
+			return isExpression.EqualityTest && evalIsExpression_EvalSpecToken(isExpression, typeToCheck).Item1;
+		}
+
+		private Tuple<bool,ResolveResult> evalIsExpression_EvalSpecToken(IsExpression isExpression, ResolveResult typeToCheck, bool DoAliasHandling=false)
+		{
+			bool r = false;
+			ResolveResult res = null;
+
+			switch (isExpression.TypeSpecializationToken)
+			{
+				/*
+				 * To handle semantic tokens like "return" or "super" it's just needed to 
+				 * look into the current resolver context -
+				 * then, we'll be able to gather either the parent method or the currently scoped class definition.
+				 */
+				case DTokens.Struct:
+				case DTokens.Union:
+				case DTokens.Class:
+				case DTokens.Interface:
+					r = typeToCheck is TypeResult &&
+						((TypeResult)typeToCheck).Node is DClassLike &&
+						((DClassLike)((TypeResult)typeToCheck).Node).ClassType == isExpression.TypeSpecializationToken;
+
+					if (r)
+						res = typeToCheck;
+					break;
+
+				case DTokens.Enum:
+					if(!(typeToCheck is TypeResult))
+						break;
+
+					var tr=(TypeResult)typeToCheck;
+					if (r= tr.Node is DEnum && tr.BaseClass != null && tr.BaseClass.Length != 0)
+						res =  tr.BaseClass[0];
+					break;
+
+				case DTokens.Function:
+				case DTokens.Delegate:
+					if (typeToCheck is DelegateResult)
+					{
+						var isFun = false;
+						var dgr = (DelegateResult)typeToCheck;
+						if (dgr.IsDelegateDeclaration)
+							r = isExpression.TypeSpecializationToken == (
+								(isFun = ((DelegateDeclaration)dgr.DeclarationOrExpressionBase).IsFunction) ? DTokens.Function : DTokens.Delegate);
+						// Must be a delegate otherwise
+						else
+							isFun = !(r = isExpression.TypeSpecializationToken == DTokens.Delegate);
+
+						if (r)
+						{
+							//TODO
+							if (isFun)
+							{
+								// TypeTuple of the function parameter types. For C- and D-style variadic functions, only the non-variadic parameters are included. 
+								// For typesafe variadic functions, the ... is ignored.
+							}
+							else
+							{
+								// the function type of the delegate
+							}
+						}
+					}
+					else
+					{
+						r= isExpression.TypeSpecializationToken == DTokens.Delegate &&
+							typeToCheck is MemberResult &&
+							((MemberResult)typeToCheck).Node is DMethod;
+
+						//TODO: Alias handling, same as couple of lines above
+					}
+					break;
+
+				case DTokens.Super: //TODO: Test this
+					var dc = DResolver.SearchClassLikeAt(vp.ResolutionContext.ScopedBlock, isExpression.Location) as DClassLike;
+
+					if (dc != null)
+					{
+						tr = new TypeResult { Node = dc };
+						DResolver.ResolveBaseClasses(tr, vp.ResolutionContext, true);
+
+						if (r = tr.BaseClass != null && tr.BaseClass.Length == 0 && ResultComparer.IsEqual(typeToCheck, tr.BaseClass[0]))
+						{
+							var l = new List<ResolveResult[]>();
+							if (tr.BaseClass != null)
+								l.Add(tr.BaseClass);
+							if (tr.ImplementedInterfaces != null && tr.ImplementedInterfaces.Length != 0)
+								l.AddRange(tr.ImplementedInterfaces);
+
+							res = new TypeTupleResult { 
+								TupleItems=l.ToArray(),
+								DeclarationOrExpressionBase=isExpression,
+							};
+						}
+					}
+					break;
+
+				case DTokens.Const:
+				case DTokens.Immutable:
+				case DTokens.InOut: // TODO?
+				case DTokens.Shared:
+					if (r = typeToCheck.DeclarationOrExpressionBase is MemberFunctionAttributeDecl &&
+						((MemberFunctionAttributeDecl)typeToCheck.DeclarationOrExpressionBase).Modifier == isExpression.TypeSpecializationToken)
+						res = typeToCheck;
+					break;
+
+				case DTokens.Return: // TODO: Test
+					IStatement _u = null;
+					var dm = DResolver.SearchBlockAt(vp.ResolutionContext.ScopedBlock, isExpression.Location, out _u) as DMethod;
+
+					if (dm != null)
+					{
+						var retType_ = TypeDeclarationResolver.GetMethodReturnType(dm, vp.ResolutionContext);
+
+						if(r = retType_ != null || retType_.Length != 0 && ResultComparer.IsEqual(typeToCheck, retType_[0]))
+							res = retType_[0];
+					}
+					break;
+			}
+
+			return new Tuple<bool,ResolveResult>(r, res);
+		}
+		#endregion
 	}
 }

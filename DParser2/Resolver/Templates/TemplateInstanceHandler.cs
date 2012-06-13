@@ -237,7 +237,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return true;
 		}
 
-		static bool AllParamatersSatisfied(Dictionary<string, ResolveResult[]> deductions)
+		public static bool AllParamatersSatisfied(Dictionary<string, ResolveResult[]> deductions)
 		{
 			foreach (var kv in deductions)
 				if (kv.Value == null || kv.Value==null || kv.Value.Length == 0)
@@ -246,7 +246,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return true;
 		}
 
-		static bool HasDefaultType(ITemplateParameter p)
+		public static bool HasDefaultType(ITemplateParameter p)
 		{
 			if (p is TemplateTypeParameter)
 				return ((TemplateTypeParameter)p).Default != null;

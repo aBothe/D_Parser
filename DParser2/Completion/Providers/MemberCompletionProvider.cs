@@ -330,7 +330,7 @@ namespace D_Parser.Completion
 							}
 						}
 					}
-					curlevel = curlevel.BaseClass != null ? curlevel.BaseClass[0] : null;
+					curlevel = (curlevel.BaseClass != null && curlevel.BaseClass.Length!=0) ? curlevel.BaseClass[0] as TypeResult : null;
 
 					// After having shown all items on the current node level,
 					// allow showing public (static) and/or protected items in the more basic levels then

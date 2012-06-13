@@ -202,10 +202,10 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				var tr = new TypeResult { Node = curWatchedClass };
 				DResolver.ResolveBaseClasses(tr, ctxt, true);
 
-				if (tr.BaseClass==null || tr.BaseClass.Length == 0)
+				if (tr.BaseClass==null || tr.BaseClass.Length == 0 || !(tr.BaseClass[0] is TypeResult))
 					return false;
 
-				curWatchedClass = tr.BaseClass[0].Node as DClassLike;
+				curWatchedClass = ((TypeResult)tr.BaseClass[0]).Node as DClassLike;
 			}
 			return false;
 		}

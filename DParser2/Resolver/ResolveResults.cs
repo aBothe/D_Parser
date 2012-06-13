@@ -111,7 +111,7 @@ namespace D_Parser.Resolver
 		/// Only will have two or more items if there are multiple definitions of its base class - 
 		/// theoretically, this should be marked as a precompile error then.
 		/// </summary>
-		public TypeResult[] BaseClass;
+		public ResolveResult[] BaseClass;
 		public TypeResult[][] ImplementedInterfaces;
 
 		public override string ToString()
