@@ -15,7 +15,7 @@ Everything that still needs to be handled by D_Parser comes right in here:
 * Make Mixin analysis etc. multi-threaded!
 
 * Pre-resolve constant values (such as const/enum literals) from least to most dependent(?)
-* Handle semantic errors that occur during analysis/resolution/evaluation etc.
+* Handle semantic errors that occur during analysis/resolution/evaluation etc. -> Implement own Exceptions for that!
 
 Resolver:
 	-	Implement single-element aliasing on templates(only !)

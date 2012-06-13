@@ -74,6 +74,7 @@
     <Compile Include="Dom\ModulePackage.cs" />
     <Compile Include="Dom\TemplateParameters.cs" />
     <Compile Include="Evaluation\ExpressionEvaluator.cs" />
+    <Compile Include="Evaluation\ExpressionEvaluator.PostfixExpression.cs" />
     <Compile Include="Evaluation\ExpressionEvaluator.PrimaryExpression.cs" />
     <Compile Include="Evaluation\ExpressionEvaluator.Traits.cs" />
     <Compile Include="Evaluation\ISymbolValue.cs" />

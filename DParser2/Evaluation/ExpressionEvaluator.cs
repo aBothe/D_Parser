@@ -69,10 +69,12 @@ namespace D_Parser.Evaluation
 
 		public ISymbolValue Evaluate(IExpression x)
 		{
-			if (x is PrimaryExpression)
-				return Evaluate((PrimaryExpression)x);
 			if (x is TypeDeclarationExpression)
 				return Evaluate((TypeDeclarationExpression)x);
+			else if (x is PrimaryExpression)
+				return Evaluate((PrimaryExpression)x);
+			else if (x is PostfixExpression)
+				return Evaluate((PostfixExpression)x);
 
 			return null;
 		}
