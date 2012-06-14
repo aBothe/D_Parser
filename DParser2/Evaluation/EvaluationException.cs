@@ -5,7 +5,7 @@ using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Resolver;
 
-namespace D_Parser.Evaluation
+namespace D_Parser.Evaluation.Exceptions
 {
 	public class DParserException : Exception {
 		public DParserException() { }
@@ -45,5 +45,20 @@ namespace D_Parser.Evaluation
 		public EvaluationException(IExpression EvaluatedExpression, string Message, params ResolveResult[] LastSubresults)
 			: base(EvaluatedExpression, Message, LastSubresults)
 		{ }
+	}
+
+	public class NoConstException : EvaluationException
+	{
+		public NoConstException(IExpression x) : base(x, "Expression must resolve to constant value") { }
+	}
+
+	public class InvalidStringException : EvaluationException
+	{
+		public InvalidStringException(IExpression x) : base(x, "Expression must be a valid string") { }
+	}
+
+	public class AssertException : EvaluationException
+	{
+		public AssertException(AssertExpression ae, string optAssertMessage="") : base(ae, "Assert returned false. "+optAssertMessage) { }
 	}
 }
