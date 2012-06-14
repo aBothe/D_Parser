@@ -53,6 +53,12 @@ namespace D_Parser.Evaluation
 		}
 	}
 
+	#region Derived data types
+	public class PointerValue : ExpressionValue
+	{
+
+	}
+
 	public class ArrayValue : ExpressionValue
 	{
 		#region Properties
@@ -109,4 +115,55 @@ namespace D_Parser.Evaluation
 			this.Elements = new ReadOnlyCollection<KeyValuePair<ISymbolValue, ISymbolValue>>(Elements);
 		}
 	}
+
+	/// <summary>
+	/// Used for both delegates and function references.
+	/// </summary>
+	public class DelegateValue : ExpressionValue
+	{
+		public ResolveResult Definition { get; private set; }
+		public bool IsFunction { get { return base.Type == ExpressionValueType.Function; } }
+
+		public DMethod Method
+		{
+			get
+			{
+				return Definition is TemplateInstanceResult ? ((TemplateInstanceResult)Definition).Node as DMethod : null;
+			}
+		}
+
+		public DelegateValue(ResolveResult Definition, ResolveResult ReturnType, bool IsFunction = false)
+			: base(IsFunction ? ExpressionValueType.Function : ExpressionValueType.Delegate, ReturnType, Definition.DeclarationOrExpressionBase as IExpression)
+		{
+			this.Definition = Definition;
+		}
+	}
+	#endregion
+
+	#region User data types
+	public class AliasValue : ExpressionValue
+	{
+
+	}
+
+	public class StructInstanceValue : ExpressionValue
+	{
+
+	}
+
+	public class UnionInstanceValue : ExpressionValue
+	{
+
+	}
+
+	public class EnumInstanceValue : ExpressionValue
+	{
+
+	}
+
+	public class ClassInstanceValue : ExpressionValue
+	{
+
+	}
+	#endregion
 }

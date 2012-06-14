@@ -1,7 +1,6 @@
-﻿using D_Parser.Dom.Expressions;
-using D_Parser.Dom;
+﻿using System;
+using D_Parser.Dom.Expressions;
 using D_Parser.Resolver;
-using System;
 
 namespace D_Parser.Evaluation
 {
@@ -51,7 +50,7 @@ namespace D_Parser.Evaluation
 			}
 		}
 
-		public bool Equals(ISymbolValue other)
+		public virtual bool Equals(ISymbolValue other)
 		{
 			return SymbolValueComparer.IsEqual(this, other);
 		}
