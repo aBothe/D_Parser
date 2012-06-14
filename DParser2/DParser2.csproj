@@ -78,6 +78,7 @@
     <Compile Include="Evaluation\ExpressionEvaluator.PostfixExpression.cs" />
     <Compile Include="Evaluation\ExpressionEvaluator.PrimaryExpression.cs" />
     <Compile Include="Evaluation\ExpressionEvaluator.Traits.cs" />
+    <Compile Include="Evaluation\ExpressionEvaluator.TypeId.cs" />
     <Compile Include="Evaluation\ISymbolValue.cs" />
     <Compile Include="Evaluation\ISymbolValueProvider.cs" />
     <Compile Include="Evaluation\MathOperationEvaluation.cs" />
