@@ -110,7 +110,7 @@ namespace D_Parser.Evaluation
 			{
 				var ase = (AssertExpression)x;
 
-				var assertVal = Evaluate(ase.AssignExpressions[0);
+				var assertVal = Evaluate(ase.AssignExpressions[0]);
 				/*TODO
 				// If it evaluates to a non-null class reference, the class invariant is run. 
 				if(assertVal is ClassInstanceValue)
