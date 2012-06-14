@@ -9,6 +9,8 @@ using D_Parser.Resolver;
 using D_Parser.Resolver.TypeResolution;
 using D_Parser.Dom.Statements;
 using D_Parser.Resolver.Templates;
+using System.IO;
+using D_Parser.Evaluation.Exceptions;
 
 namespace D_Parser.Evaluation
 {
@@ -31,18 +33,22 @@ namespace D_Parser.Evaluation
 				switch (tkx.Token)
 				{
 					case DTokens.This:
+						if (Const) throw new NoConstException(x);
 						//TODO; Non-constant!
 						break;
 					case DTokens.Super:
+						if (Const) throw new NoConstException(x);
 						//TODO; Non-const!
 						break;
 					case DTokens.Null:
+						if (Const) throw new NoConstException(x);
 						//TODO; Non-const!
 						break;
 					//return new PrimitiveValue(ExpressionValueType.Class, null, x);
 					case DTokens.Dollar:
-						//TODO
-						break;
+						// It's only allowed if the evaluation stack contains an array value
+						throw new EvaluationException(x, "Dollar not allowed here!");
+
 					case DTokens.True:
 						return new PrimitiveValue(DTokens.Bool, true, x);
 					case DTokens.False:
@@ -98,24 +104,88 @@ namespace D_Parser.Evaluation
 			}
 			else if (x is FunctionLiteral)
 			{
-
+				// return function/delegate value
 			}
 			else if (x is AssertExpression)
 			{
+				var ase = (AssertExpression)x;
 
+				var assertVal = Evaluate(ase.AssignExpressions[0);
+				/*TODO
+				// If it evaluates to a non-null class reference, the class invariant is run. 
+				if(assertVal is ClassInstanceValue)
+				{
+				}
+
+				// Otherwise, if it evaluates to a non-null pointer to a struct, the struct invariant is run.
+				*/
+
+				// Otherwise, if the result is false, an AssertError is thrown
+				if(IsFalseZeroOrNull(assertVal))
+				{
+					string assertMsg= "";
+
+					if(ase.AssignExpressions.Length > 1)
+					{
+						var assertMsg_v=Evaluate(ase.AssignExpressions[1]) as ArrayValue;
+
+						if(assertMsg_v == null || !assertMsg_v.IsString)
+							throw new InvalidStringException(ase.AssignExpressions[1]);
+
+						assertMsg=assertMsg_v.StringValue;
+					}
+
+					throw new AssertException(ase, assertMsg);
+				}
+
+				return null;
 			}
 			else if (x is MixinExpression)
 			{
+				var mx = (MixinExpression)x;
 
+				var cnst = Const;
+				Const = true;
+				var v = Evaluate(mx.AssignExpression);
+				Const = cnst;
+				var av = v as ArrayValue;
+
+				if (av == null || !av.IsString)
+					throw new InvalidStringException(x);
+				
+				var ex = DParser.ParseAssignExpression(av.StringValue);
+
+				if (ex == null)
+					throw new EvaluationException(x, "Invalid expression code given");
+
+				return Evaluate(ex);
 			}
 			else if (x is ImportExpression)
 			{
+				var imp = (ImportExpression)x;
 
+				var cnst = Const;
+				Const = true;
+				var v=Evaluate(imp.AssignExpression);
+				Const = cnst;
+				var av = v as ArrayValue;
+
+				if (av == null || !av.IsString)
+					throw new InvalidStringException(x);
+
+				var fn = Path.IsPathRooted(av.StringValue) ? 
+							av.StringValue :
+							Path.Combine(Path.GetDirectoryName((vp.ResolutionContext.ScopedBlock.NodeRoot as IAbstractSyntaxTree).FileName), av.StringValue);
+
+				if (!File.Exists(fn))
+					throw new EvaluationException(x, "Could not find \"" + fn + "\"");
+
+				var text = File.ReadAllText(fn);
+
+				return new ArrayValue(TryGetStringDefinition(LiteralSubformat.Utf8,x), x, text);
 			}
 			else if (x is TypeidExpression)
-			{
-
-			}
+				return Evaluate((TypeidExpression)x);
 			else if (x is IsExpression)
 				return Evaluate((IsExpression)x);
 			else if (x is TraitsExpression)
@@ -163,44 +233,43 @@ namespace D_Parser.Evaluation
 
 				case Parser.LiteralFormat.StringLiteral:
 				case Parser.LiteralFormat.VerbatimStringLiteral:
-					ResolveResult _t = null;
-
-					if (vp.ResolutionContext != null)
-					{
-						var strNode = TryGetStringDefinition(id.Subformat);
-						if (strNode != null)
-							_t = TypeDeclarationResolver.HandleNodeMatch(strNode, vp.ResolutionContext, null, id);
-					}
-
-					if (_t == null)
-					{
-						var ch = new DTokenDeclaration(id.Subformat == LiteralSubformat.Utf32 ? DTokens.Dchar :
-							id.Subformat == LiteralSubformat.Utf16 ? DTokens.Wchar : DTokens.Char);
-
-						var immutable = new MemberFunctionAttributeDecl(DTokens.Immutable)
-						{
-							InnerType = ch,
-							Location = id.Location,
-							EndLocation = id.EndLocation
-						};
-
-						_t = TypeDeclarationResolver.Resolve(new ArrayDecl { ValueType = immutable }, null)[0];
-					}
-
-					return new ArrayValue(_t, id);
+					return new ArrayValue(TryGetStringDefinition(id), id);
 			}
 			return null;
 		}
 
-		INode TryGetStringDefinition(LiteralSubformat fmt)
+		ResolveResult TryGetStringDefinition(IdentifierExpression id)
 		{
-			var obj = vp.ResolutionContext.ParseCache.LookupModuleName("object").First();
+			return TryGetStringDefinition(id.Subformat, id);
+		}
 
-			string strType = fmt == LiteralSubformat.Utf32 ? "dstring" :
-				fmt == LiteralSubformat.Utf16 ? "wstring" :
-				"string";
+		ResolveResult TryGetStringDefinition(LiteralSubformat stringFmt, IExpression x)
+		{
+			if (vp.ResolutionContext != null)
+			{
+				var obj = vp.ResolutionContext.ParseCache.LookupModuleName("object").First();
 
-			return obj==null ? null : obj[strType];
+				string strType = stringFmt == LiteralSubformat.Utf32 ? "dstring" :
+					stringFmt == LiteralSubformat.Utf16 ? "wstring" :
+					"string";
+
+				var strDef = obj[strType];
+
+				if(strDef!=null)
+					return TypeDeclarationResolver.HandleNodeMatch(strDef, vp.ResolutionContext, null, x);
+			}
+			
+			var ch = new DTokenDeclaration(stringFmt == LiteralSubformat.Utf32 ? DTokens.Dchar :
+				stringFmt == LiteralSubformat.Utf16 ? DTokens.Wchar : DTokens.Char);
+
+			var immutable = new MemberFunctionAttributeDecl(DTokens.Immutable)
+			{
+				InnerType = ch,
+				Location = x.Location,
+				EndLocation = x.EndLocation
+			};
+
+			return TypeDeclarationResolver.Resolve(new ArrayDecl { ValueType = immutable }, null)[0];
 		}
 
 		#region IsExpression

@@ -13,6 +13,7 @@ namespace D_Parser.Evaluation
 	{
 		#region Properties / Ctor
 		ISymbolValueProvider vp;
+		bool Const { get { return vp.ConstantOnly; } set { vp.ConstantOnly = value; } }
 
 		private ExpressionEvaluator() { }
 		#endregion
@@ -86,6 +87,21 @@ namespace D_Parser.Evaluation
 			if(r!=null)
 				return TryToEvaluateConstInitializer(r, vp.ResolutionContext);
 			return null;
+		}
+
+		public static bool IsFalseZeroOrNull(ISymbolValue v)
+		{
+			var pv = v as PrimitiveValue;
+			if (pv != null)
+				try
+				{
+					return !Convert.ToBoolean(pv.Value);
+				}
+				catch { }
+			else
+				return v is NullValue;
+
+			return v != null;
 		}
 
 		#region Helpers

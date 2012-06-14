@@ -53,11 +53,18 @@ namespace D_Parser.Evaluation
 		}
 	}
 
+	public class VoidValue : PrimitiveValue
+	{
+		public VoidValue(IExpression x)
+			: base(DTokens.Void, null, x)
+		{ }
+	}
+
 	#region Derived data types
-	public class PointerValue : ExpressionValue
+	/*public class PointerValue : ExpressionValue
 	{
 
-	}
+	}*/
 
 	public class ArrayValue : ExpressionValue
 	{
@@ -91,6 +98,16 @@ namespace D_Parser.Evaluation
 				StringValue = ((IdentifierExpression)stringLiteralResult.DeclarationOrExpressionBase).Value as string;
 			else
 				StringValue = stringLiteral.Value as string;
+		}
+
+		/// <summary>
+		/// String constructor.
+		/// Used for generating string results 'internally'.
+		/// </summary>
+		public ArrayValue(ResolveResult stringTypeResult, IExpression baseExpression, string content)
+			: base(ExpressionValueType.Array, stringTypeResult, baseExpression)
+		{
+			StringValue = content;
 		}
 
 		public ArrayValue(ResolveResult resolvedArrayType, params ISymbolValue[] elements)
@@ -141,9 +158,16 @@ namespace D_Parser.Evaluation
 	#endregion
 
 	#region User data types
+	/*
 	public class AliasValue : ExpressionValue
 	{
+		public AliasValue(IExpression x, MemberResult AliasResult)
+			: base(ExpressionValueType.Alias, AliasResult, x) { }
+	}
 
+	public class InstanceValue : ExpressionValue
+	{
+		
 	}
 
 	public class StructInstanceValue : ExpressionValue
@@ -164,6 +188,12 @@ namespace D_Parser.Evaluation
 	public class ClassInstanceValue : ExpressionValue
 	{
 
+	}
+	*/
+
+	public class NullValue : ExpressionValue
+	{
+		public NullValue(IExpression x) : base(ExpressionValueType.Class, null, x) { }
 	}
 	#endregion
 }

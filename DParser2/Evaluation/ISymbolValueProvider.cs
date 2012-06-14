@@ -13,8 +13,16 @@ namespace D_Parser.Evaluation
 		bool IsSet(string name);
 		ISymbolValue this[string LocalName] { get;set; }
 
-		bool ConstantOnly { get; }
+		bool ConstantOnly { get; set; }
 		void LogError(ISyntaxRegion involvedSyntaxObject, string msg, bool isWarning=false);
+
+		/*
+		 * TODO:
+		 * -- Execution stack and model
+		 * -- Virtual memory allocation
+		 *		(e.g. class instance will contain a dictionary with class properties etc.)
+		 *		-- when executing a class' member method, the instance will be passed as 'this' reference etc.
+		 */
 	}
 
 	/// <summary>
@@ -59,6 +67,7 @@ namespace D_Parser.Evaluation
 		public bool ConstantOnly
 		{
 			get { return true; }
+			set { }
 		}
 
 		public void LogError(ISyntaxRegion involvedSyntaxObject, string msg, bool isWarning = false)
