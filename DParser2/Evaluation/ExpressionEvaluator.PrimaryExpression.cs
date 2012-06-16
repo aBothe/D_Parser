@@ -104,7 +104,17 @@ namespace D_Parser.Evaluation
 			}
 			else if (x is FunctionLiteral)
 			{
-				// return function/delegate value
+				var fl = (FunctionLiteral)x;
+
+				var r = ExpressionTypeResolver.Resolve(fl, vp.ResolutionContext);
+
+				if (r == null || r.Length == 0)
+					throw new EvaluationException(x, "Delegate could not be resolved");
+
+				if (!(r[0] is DelegateResult))
+					throw new EvaluationException(x, "Wrong result type", r);
+
+				return new DelegateValue((DelegateResult)r[0]);
 			}
 			else if (x is AssertExpression)
 			{

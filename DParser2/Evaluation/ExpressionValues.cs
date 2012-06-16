@@ -149,6 +149,12 @@ namespace D_Parser.Evaluation
 			}
 		}
 
+		public DelegateValue(DelegateResult Dg)
+			: base(ExpressionValueType.Delegate, Dg)
+		{
+			this.Definition = Dg;
+		}
+
 		public DelegateValue(ResolveResult Definition, ResolveResult ReturnType, bool IsFunction = false)
 			: base(IsFunction ? ExpressionValueType.Function : ExpressionValueType.Delegate, ReturnType, Definition.DeclarationOrExpressionBase as IExpression)
 		{
