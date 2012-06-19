@@ -23,6 +23,11 @@ namespace D_Parser.Evaluation
 		 *		(e.g. class instance will contain a dictionary with class properties etc.)
 		 *		-- when executing a class' member method, the instance will be passed as 'this' reference etc.
 		 */
+
+		/// <summary>
+		/// Used for $ operands inside index/slice expressions.
+		/// </summary>
+		int CurrentArrayLength { get; set; }
 	}
 
 	/// <summary>
@@ -73,6 +78,13 @@ namespace D_Parser.Evaluation
 		public void LogError(ISyntaxRegion involvedSyntaxObject, string msg, bool isWarning = false)
 		{
 			//TODO: Handle semantic errors that occur during analysis
+		}
+
+
+		public int CurrentArrayLength
+		{
+			get;
+			set;
 		}
 	}
 }

@@ -141,6 +141,16 @@ enum int d=126;
 
 		}
 
+		[TestMethod]
+		public void TestArrays()
+		{
+			var vp = new StandardValueProvider(null);
+
+			var v = E("[11,22,33,43][1]", vp);
+			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
+			Assert.AreEqual(((PrimitiveValue)v).Value, 22);
+		}
+
 		public static bool EvalIsExpression(string IsExpressionCode, ISymbolValueProvider vp)
 		{
 			var e = DParser.ParseExpression("is("+IsExpressionCode+")");

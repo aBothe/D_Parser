@@ -45,6 +45,9 @@ namespace D_Parser.Evaluation
 					//return new PrimitiveValue(ExpressionValueType.Class, null, x);
 					case DTokens.Dollar:
 						// It's only allowed if the evaluation stack contains an array value
+						if (vp.CurrentArrayLength != -1)
+							return new PrimitiveValue(DTokens.Int, vp.CurrentArrayLength, x);
+
 						throw new EvaluationException(x, "Dollar not allowed here!");
 
 					case DTokens.True:
