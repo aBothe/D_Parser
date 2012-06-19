@@ -21,9 +21,7 @@ namespace D_Parser.Evaluation
 			int tt = 0;
 
 			if (x is TemplateInstanceExpression)
-			{
-				//TODO
-			}
+				return EvaluateConstant(x);
 			else if (x is IdentifierExpression)
 				return Evaluate((IdentifierExpression)x);
 			else if (x is TokenExpression)
@@ -131,18 +129,18 @@ namespace D_Parser.Evaluation
 				*/
 
 				// Otherwise, if the result is false, an AssertError is thrown
-				if(IsFalseZeroOrNull(assertVal))
+				if (IsFalseZeroOrNull(assertVal))
 				{
-					string assertMsg= "";
+					string assertMsg = "";
 
-					if(ase.AssignExpressions.Length > 1)
+					if (ase.AssignExpressions.Length > 1)
 					{
-						var assertMsg_v=Evaluate(ase.AssignExpressions[1]) as ArrayValue;
+						var assertMsg_v = Evaluate(ase.AssignExpressions[1]) as ArrayValue;
 
-						if(assertMsg_v == null || !assertMsg_v.IsString)
+						if (assertMsg_v == null || !assertMsg_v.IsString)
 							throw new InvalidStringException(ase.AssignExpressions[1]);
 
-						assertMsg=assertMsg_v.StringValue;
+						assertMsg = assertMsg_v.StringValue;
 					}
 
 					throw new AssertException(ase, assertMsg);
@@ -162,7 +160,7 @@ namespace D_Parser.Evaluation
 
 				if (av == null || !av.IsString)
 					throw new InvalidStringException(x);
-				
+
 				var ex = DParser.ParseAssignExpression(av.StringValue);
 
 				if (ex == null)
@@ -176,14 +174,14 @@ namespace D_Parser.Evaluation
 
 				var cnst = Const;
 				Const = true;
-				var v=Evaluate(imp.AssignExpression);
+				var v = Evaluate(imp.AssignExpression);
 				Const = cnst;
 				var av = v as ArrayValue;
 
 				if (av == null || !av.IsString)
 					throw new InvalidStringException(x);
 
-				var fn = Path.IsPathRooted(av.StringValue) ? 
+				var fn = Path.IsPathRooted(av.StringValue) ?
 							av.StringValue :
 							Path.Combine(Path.GetDirectoryName((vp.ResolutionContext.ScopedBlock.NodeRoot as IAbstractSyntaxTree).FileName), av.StringValue);
 
@@ -192,7 +190,7 @@ namespace D_Parser.Evaluation
 
 				var text = File.ReadAllText(fn);
 
-				return new ArrayValue(TryGetStringDefinition(LiteralSubformat.Utf8,x), x, text);
+				return new ArrayValue(TryGetStringDefinition(LiteralSubformat.Utf8, x), x, text);
 			}
 			else if (x is TypeidExpression)
 				return Evaluate((TypeidExpression)x);
@@ -209,9 +207,7 @@ namespace D_Parser.Evaluation
 		public ISymbolValue Evaluate(IdentifierExpression id)
 		{
 			if (id.IsIdentifier)
-			{
-				return vp[(string)id.Value];
-			}
+				return EvaluateConstant(id);
 
 			int tt = 0;
 			switch (id.Format)
@@ -246,6 +242,29 @@ namespace D_Parser.Evaluation
 					return new ArrayValue(TryGetStringDefinition(id), id);
 			}
 			return null;
+		}
+
+		ISymbolValue EvaluateConstant(IExpression idOrTemplateExpression)
+		{
+			if (vp == null)
+				return null;
+
+			ResolveResult[] res = null;
+
+			if (idOrTemplateExpression is IdentifierExpression)
+			{
+				var id = (IdentifierExpression)idOrTemplateExpression;
+
+				if (vp.ResolutionContext != null)
+					res = ExpressionTypeResolver.Resolve(idOrTemplateExpression, vp.ResolutionContext);
+
+				if (res == null) // If no resolution context given or if simply no result was found, try to use the symbol value provider - like it's needed when debugging
+					return vp[id.Value as string];
+			}
+			else if (idOrTemplateExpression is TemplateInstanceExpression) // Could be a constant that is e.g. created by a template alias.
+				res = ExpressionTypeResolver.Resolve(idOrTemplateExpression, vp.ResolutionContext);
+
+			return ExpressionEvaluator.TryToEvaluateConstInitializer(res, vp.ResolutionContext);
 		}
 
 		ResolveResult TryGetStringDefinition(IdentifierExpression id)

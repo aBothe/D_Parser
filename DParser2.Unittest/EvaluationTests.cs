@@ -14,18 +14,22 @@ namespace DParser2.Unittest
 	[TestClass]
 	public class EvaluationTests
 	{
-		public static PrimitiveValue GetPrimitiveValue(string literalCode)
+		public static ISymbolValue E(string expression, ISymbolValueProvider vp=null)
 		{
-			var ex = DParser.ParseExpression(literalCode);
-			var v = ExpressionEvaluator.Evaluate(ex, null);
+			return ExpressionEvaluator.Evaluate(DParser.ParseExpression(expression), vp);
+		}
+
+		public static PrimitiveValue GetPrimitiveValue(string literalCode,ISymbolValueProvider vp=null)
+		{
+			var v = E(literalCode,vp);
 
 			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
 			return (PrimitiveValue)v;
 		}
 
-		public static void TestPrimitive(string literal, int btToken, object val)
+		public static void TestPrimitive(string literal, int btToken, object val, ISymbolValueProvider vp=null)
 		{
-			var pv = GetPrimitiveValue(literal);
+			var pv = GetPrimitiveValue(literal,vp);
 
 			Assert.AreEqual(pv.BaseTypeToken, btToken);
 			Assert.AreEqual(pv.Value, val);
@@ -119,6 +123,24 @@ namespace DParser2.Unittest
 			Assert.AreEqual(aa.Elements.Count, 3);
 		}
 
+		[TestMethod]
+		public void TestConstEval()
+		{
+			var pcl = ResolutionTests.CreateCache(@"module modA;
+const a= 234;
+enum b=123;
+const int c=125;
+enum int d=126;
+");
+			var vp = new StandardValueProvider(new ResolverContextStack(pcl, new ResolverContext { ScopedBlock=pcl[0]["modA"] }));
+
+			TestPrimitive("a", DTokens.Int, 234, vp);
+			TestPrimitive("b", DTokens.Int, 123, vp);
+			TestPrimitive("c", DTokens.Int, 125, vp);
+			TestPrimitive("d", DTokens.Int, 126, vp);
+
+		}
+
 		public static bool EvalIsExpression(string IsExpressionCode, ISymbolValueProvider vp)
 		{
 			var e = DParser.ParseExpression("is("+IsExpressionCode+")");
@@ -137,11 +159,9 @@ namespace DParser2.Unittest
 		public void TestIsExpression()
 		{
 			var pcl = ResolutionTests.CreateCache(@"module modA;
-
 class A {}
 class B : A {}
 class C : A {}
-
 ");
 
 			var vp = new StandardValueProvider(new ResolverContextStack(pcl, new ResolverContext { ScopedBlock=pcl[0]["modA"] }));
