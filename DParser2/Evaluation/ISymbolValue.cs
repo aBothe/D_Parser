@@ -78,6 +78,12 @@ namespace D_Parser.Evaluation
 		/// <summary>
 		/// The expression returns a class instance
 		/// </summary>
-		Class
+		Class,
+
+		/// <summary>
+		/// The expression isn't an expression but a type representation.
+		/// Used when resolving static members of e.g. classes.
+		/// </summary>
+		Type
 	}
 }

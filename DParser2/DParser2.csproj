@@ -83,6 +83,7 @@
     <Compile Include="Evaluation\ISymbolValueProvider.cs" />
     <Compile Include="Evaluation\MathOperationEvaluation.cs" />
     <Compile Include="Evaluation\ExpressionValues.cs" />
+    <Compile Include="Evaluation\StaticPropertyEvaluator.cs" />
     <Compile Include="Evaluation\SymbolValueComparer.cs" />
     <Compile Include="Misc\CompletionOptions.cs" />
     <Compile Include="Misc\ModuleNameHelper.cs" />

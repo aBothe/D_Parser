@@ -28,6 +28,39 @@ namespace D_Parser.Evaluation
 
 				if (Const && acc.AccessExpression is NewExpression)
 					throw new NoConstException(x);
+
+				if (acc.AccessExpression is IdentifierExpression)
+				{
+					var id = ((IdentifierExpression)acc.AccessExpression).Value as string;
+
+					var results = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(id, new[] {foreExpression.RepresentedType}, vp.ResolutionContext, acc);
+
+					var init= ExpressionEvaluator.TryToEvaluateConstInitializer(results,vp.ResolutionContext);
+
+					if (Const || init != null)
+						return init;
+
+					//TODO: Get the variable content from the value provider
+				}
+				else if (acc.AccessExpression is TemplateInstanceExpression)
+				{
+					var tix = (TemplateInstanceExpression)acc.AccessExpression;
+
+					var results = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(tix.TemplateIdentifier.Id, new[] { foreExpression.RepresentedType }, vp.ResolutionContext, acc);
+
+					var init = ExpressionEvaluator.TryToEvaluateConstInitializer(results, vp.ResolutionContext);
+
+					if (Const || init != null)
+						return init;
+
+					//TODO: See what's also possible in this case - throw an exception otherwise
+				}
+				else if (acc.AccessExpression is NewExpression)
+				{
+					var nx = (NewExpression)acc.AccessExpression;
+
+
+				}
 			}
 			else if (x is PostfixExpression_Increment)
 			{
@@ -49,7 +82,7 @@ namespace D_Parser.Evaluation
 
 			//TODO: opIndex & opSlice overloads -- will be handled in ctfe
 
-			if (x is PostfixExpression_Index)
+			else if (x is PostfixExpression_Index)
 			{
 				var pfi = (PostfixExpression_Index)x;
 				if (foreExpression is ArrayValue)
@@ -141,7 +174,7 @@ namespace D_Parser.Evaluation
 
 				var rawArraySlice=new ISymbolValue[upper-lower];
 				int j=0;
-				for(int i=lower; i <= upper ; i++)
+				for(int i=lower; i < upper ; i++)
 					rawArraySlice[j++]=ar.Elements[i];
 				
 				return new ArrayValue(ar.RepresentedType, rawArraySlice);

@@ -164,6 +164,25 @@ namespace D_Parser.Evaluation
 	#endregion
 
 	#region User data types
+
+	/// <summary>
+	/// Stores a type. Used e.g. as foreexpressions for PostfixExpressions.
+	/// </summary>
+	public class TypeValue : ExpressionValue
+	{
+		public TypeValue(ResolveResult r, IExpression x)
+			: base(ExpressionValueType.Type, r, x) { }
+	}
+
+	public abstract class ReferenceValue : ExpressionValue
+	{
+		INode referencedNode;
+
+		public ReferenceValue(ExpressionValueType vt, ResolveResult type, IExpression x)
+			: base(vt, type, x)
+		{
+		}
+	}
 	/*
 	public class AliasValue : ExpressionValue
 	{
@@ -197,7 +216,7 @@ namespace D_Parser.Evaluation
 	}
 	*/
 
-	public class NullValue : ExpressionValue
+	public class NullValue : ReferenceValue
 	{
 		public NullValue(IExpression x) : base(ExpressionValueType.Class, null, x) { }
 	}

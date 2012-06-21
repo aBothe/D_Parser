@@ -149,6 +149,36 @@ enum int d=126;
 			var v = E("[11,22,33,43][1]", vp);
 			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
 			Assert.AreEqual(((PrimitiveValue)v).Value, 22);
+
+			v = E("[11,22,33,44,55,66,77,88,99,100][1..3]", vp);
+
+			Assert.IsInstanceOfType(v, typeof(ArrayValue));
+			var av=(ArrayValue)v;
+			Assert.AreEqual(av.Elements.Length,2);
+			Assert.AreEqual((av.Elements[0] as PrimitiveValue).Value,22);
+		}
+
+		[TestMethod]
+		public void TestAccessExpression()
+		{
+			var pcl = ResolutionTests.CreateCache(@"module modA;
+
+class A
+{
+	const int someProp=3;
+}
+
+A a;");
+
+			var vp = new StandardValueProvider(new ResolverContextStack(pcl, new ResolverContext{ ScopedBlock = pcl[0]["modA"] }));
+			/*
+			var v = E("a.someProp", vp);
+			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
+			Assert.AreEqual(((PrimitiveValue)v).Value,3);
+			*/
+			var v = E("A.someProp", vp);
+			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
+			Assert.AreEqual(((PrimitiveValue)v).Value, 3);
 		}
 
 		public static bool EvalIsExpression(string IsExpressionCode, ISymbolValueProvider vp)

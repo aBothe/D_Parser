@@ -38,7 +38,8 @@ namespace D_Parser.Evaluation
 		}
 		
 		/// <summary>
-		/// Tries to evaluate a const initializer of the const/enum variable passed in by r
+		/// Tries to evaluate a const initializer of the const/enum variable passed in by r.
+		/// If not a variable but a type, a TypeValue will be returned instead.
 		/// </summary>
 		/// <param name="r">Contains a member result that holds a const'ed variable with a static initializer</param>
 		public static ISymbolValue TryToEvaluateConstInitializer(
@@ -62,6 +63,12 @@ namespace D_Parser.Evaluation
 							if (val != null)
 								return val;
 						}
+
+						// Otherwise, a reference to the member must be returned - or if it's a property getter method, it must be executed
+					}
+					else if (r_ is TypeResult)
+					{
+						return new TypeValue(r_, r_.DeclarationOrExpressionBase as IExpression);
 					}
 				}
 			return null;
