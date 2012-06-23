@@ -21,7 +21,7 @@ namespace D_Parser.Evaluation
 			int tt = 0;
 
 			if (x is TemplateInstanceExpression)
-				return EvaluateConstant(x);
+				return EvalPrimaryId(x);
 			else if (x is IdentifierExpression)
 				return Evaluate((IdentifierExpression)x);
 			else if (x is TokenExpression)
@@ -210,7 +210,7 @@ namespace D_Parser.Evaluation
 		public ISymbolValue Evaluate(IdentifierExpression id)
 		{
 			if (id.IsIdentifier)
-				return EvaluateConstant(id);
+				return EvalPrimaryId(id);
 
 			int tt = 0;
 			switch (id.Format)
@@ -247,7 +247,7 @@ namespace D_Parser.Evaluation
 			return null;
 		}
 
-		ISymbolValue EvaluateConstant(IExpression idOrTemplateExpression)
+		ISymbolValue EvalPrimaryId(IExpression idOrTemplateExpression)
 		{
 			if (vp == null)
 				return null;

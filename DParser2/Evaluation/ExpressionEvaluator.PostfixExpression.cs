@@ -40,6 +40,9 @@ namespace D_Parser.Evaluation
 					if (Const || init != null)
 						return init;
 
+					//UFCS
+					//Static properties
+
 					//TODO: Get the variable content from the value provider
 				}
 				else if (acc.AccessExpression is TemplateInstanceExpression)
