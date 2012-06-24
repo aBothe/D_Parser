@@ -4,14 +4,17 @@ using System.Linq;
 using System.Text;
 using D_Parser.Resolver;
 using D_Parser.Dom;
+using D_Parser.Evaluation.Exceptions;
+using D_Parser.Resolver.TypeResolution;
+using D_Parser.Dom.Expressions;
 
 namespace D_Parser.Evaluation
 {
 	public interface ISymbolValueProvider
 	{
 		ResolverContextStack ResolutionContext { get; }
-		bool IsSet(string name);
-		ISymbolValue this[string LocalName] { get;set; }
+		ISymbolValue this[string LocalName] { get; set; }
+		ISymbolValue this[DVariable variable] { get; set; }
 
 		bool ConstantOnly { get; set; }
 		void LogError(ISyntaxRegion involvedSyntaxObject, string msg, bool isWarning=false);
@@ -42,26 +45,6 @@ namespace D_Parser.Evaluation
 			private set;
 		}
 
-		public bool IsSet(string name)
-		{
-			// Search along the resolution context to find locals/template parameters/(constant/enum) literals
-			return false;
-			//throw new NotImplementedException();
-		}
-
-		public ISymbolValue this[string LocalName]
-		{
-			get
-			{
-				return null;
-				//throw new NotImplementedException();
-			}
-			set
-			{
-				// Shouldn't be supported since consts are theoretically immutable
-			}
-		}
-
 		public StandardValueProvider(ResolverContextStack ctxt)
 		{
 			ResolutionContext = ctxt;
@@ -85,6 +68,61 @@ namespace D_Parser.Evaluation
 		{
 			get;
 			set;
+		}
+
+		public ISymbolValue this[string LocalName]
+		{
+			get
+			{
+				var res = TypeDeclarationResolver.ResolveIdentifier(LocalName, ResolutionContext, null);
+
+				if (res == null || res.Length == 0)
+					return null;
+
+				var r = res[0];
+
+				if (r is MemberResult)
+				{
+					var mr = (MemberResult)r;
+
+					if (mr.Node is DVariable)
+						return this[(DVariable)mr.Node];
+				}
+				else if (r is TypeResult)
+					return new TypeValue(r, new IdentifierExpression(LocalName, Parser.LiteralFormat.None));
+
+				return null;
+			}
+			set
+			{
+				throw new NotImplementedException();
+				// Shouldn't be supported since consts are theoretically immutable
+			}
+		}
+
+		public ISymbolValue this[DVariable n]
+		{
+			get
+			{
+				if (n != null && n.IsConst)
+				{
+					// .. resolve it's pre-compile time value and make the returned value the given argument
+					var val = ExpressionEvaluator.Evaluate(n.Initializer, this);
+
+					// If it's null, then the initializer is null - which is equal to e.g. 0 or null !;
+
+					if (val != null)
+						return val;
+
+					throw new EvaluationException(n.Initializer, "Initializer must be constant");
+				}
+
+				throw new EvaluationException(n.Initializer, "Variable must be constant.");
+			}
+			set
+			{
+				throw new NotImplementedException();
+			}
 		}
 	}
 }

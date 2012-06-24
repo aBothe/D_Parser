@@ -18,10 +18,8 @@ namespace D_Parser.Evaluation
 	{
 		public ISymbolValue Evaluate(PrimaryExpression x)
 		{
-			int tt = 0;
-
 			if (x is TemplateInstanceExpression)
-				return EvalPrimaryId(x);
+				return EvalId(x);
 			else if (x is IdentifierExpression)
 				return Evaluate((IdentifierExpression)x);
 			else if (x is TokenExpression)
@@ -210,7 +208,7 @@ namespace D_Parser.Evaluation
 		public ISymbolValue Evaluate(IdentifierExpression id)
 		{
 			if (id.IsIdentifier)
-				return EvalPrimaryId(id);
+				return EvalId(id);
 
 			int tt = 0;
 			switch (id.Format)
@@ -245,29 +243,6 @@ namespace D_Parser.Evaluation
 					return new ArrayValue(TryGetStringDefinition(id), id);
 			}
 			return null;
-		}
-
-		ISymbolValue EvalPrimaryId(IExpression idOrTemplateExpression)
-		{
-			if (vp == null)
-				return null;
-
-			ResolveResult[] res = null;
-
-			if (idOrTemplateExpression is IdentifierExpression)
-			{
-				var id = (IdentifierExpression)idOrTemplateExpression;
-
-				if (vp.ResolutionContext != null)
-					res = ExpressionTypeResolver.Resolve(idOrTemplateExpression, vp.ResolutionContext);
-
-				if (res == null) // If no resolution context given or if simply no result was found, try to use the symbol value provider - like it's needed when debugging
-					return vp[id.Value as string];
-			}
-			else if (idOrTemplateExpression is TemplateInstanceExpression) // Could be a constant that is e.g. created by a template alias.
-				res = ExpressionTypeResolver.Resolve(idOrTemplateExpression, vp.ResolutionContext);
-
-			return ExpressionEvaluator.TryToEvaluateConstInitializer(res, vp.ResolutionContext);
 		}
 
 		ResolveResult TryGetStringDefinition(IdentifierExpression id)

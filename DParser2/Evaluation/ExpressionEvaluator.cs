@@ -36,43 +36,6 @@ namespace D_Parser.Evaluation
 		{
 			return new ExpressionEvaluator { vp=vp }.Evaluate(expression);
 		}
-		
-		/// <summary>
-		/// Tries to evaluate a const initializer of the const/enum variable passed in by r.
-		/// If not a variable but a type, a TypeValue will be returned instead.
-		/// </summary>
-		/// <param name="r">Contains a member result that holds a const'ed variable with a static initializer</param>
-		public static ISymbolValue TryToEvaluateConstInitializer(
-			IEnumerable<ResolveResult> r,
-			ResolverContextStack ctxt)
-		{
-			// But: If it's a variable that represents a const value..
-			var r_noAlias = DResolver.TryRemoveAliasesFromResult(r);
-			if (r_noAlias != null)
-				foreach (var r_ in r_noAlias)
-				{
-					if (r_ is MemberResult)
-					{
-						var n = ((MemberResult)r_).Node as DVariable;
-
-						if (n != null && n.IsConst)
-						{
-							// .. resolve it's pre-compile time value and make the returned value the given argument
-							var val = Evaluate(n.Initializer, new StandardValueProvider(ctxt));
-
-							if (val != null)
-								return val;
-						}
-
-						// Otherwise, a reference to the member must be returned - or if it's a property getter method, it must be executed
-					}
-					else if (r_ is TypeResult)
-					{
-						return new TypeValue(r_, r_.DeclarationOrExpressionBase as IExpression);
-					}
-				}
-			return null;
-		}
 		#endregion
 
 		public ISymbolValue Evaluate(IExpression x)
@@ -90,7 +53,7 @@ namespace D_Parser.Evaluation
 		public ISymbolValue Evaluate(TypeDeclarationExpression x)
 		{
 			var r=TypeDeclarationResolver.Resolve(x.Declaration, vp.ResolutionContext);
-
+			
 			if(r!=null)
 				return TryToEvaluateConstInitializer(r, vp.ResolutionContext);
 			return null;
