@@ -17,54 +17,16 @@ namespace D_Parser.Evaluation
 	{
 		public ISymbolValue Evaluate(PostfixExpression x)
 		{
+			if (x is PostfixExpression_MethodCall)
+				return Evaluate((PostfixExpression_MethodCall)x);
+
 			var foreExpression = Evaluate(x.PostfixForeExpression);
 
 			if (foreExpression == null)
 				throw new EvaluationException(x.PostfixForeExpression, "Evaluation returned invalid result");
 
 			if (x is PostfixExpression_Access)
-			{
-				var acc = (PostfixExpression_Access)x;
-
-				if (Const && acc.AccessExpression is NewExpression)
-					throw new NoConstException(x);
-
-				if (acc.AccessExpression is IdentifierExpression)
-				{
-					var id = ((IdentifierExpression)acc.AccessExpression).Value as string;
-
-					var results = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(id, new[] {foreExpression.RepresentedType}, vp.ResolutionContext, acc);
-
-					var init= ExpressionEvaluator.TryToEvaluateConstInitializer(results,vp.ResolutionContext);
-
-					if (Const || init != null)
-						return init;
-
-					//UFCS
-					//Static properties
-
-					//TODO: Get the variable content from the value provider
-				}
-				else if (acc.AccessExpression is TemplateInstanceExpression)
-				{
-					var tix = (TemplateInstanceExpression)acc.AccessExpression;
-
-					var results = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(tix.TemplateIdentifier.Id, new[] { foreExpression.RepresentedType }, vp.ResolutionContext, acc);
-
-					var init = ExpressionEvaluator.TryToEvaluateConstInitializer(results, vp.ResolutionContext);
-
-					if (Const || init != null)
-						return init;
-
-					//TODO: See what's also possible in this case - throw an exception otherwise
-				}
-				else if (acc.AccessExpression is NewExpression)
-				{
-					var nx = (NewExpression)acc.AccessExpression;
-
-
-				}
-			}
+				return Evaluate((PostfixExpression_Access)x, foreExpression, true);
 			else if (x is PostfixExpression_Increment)
 			{
 				if (Const)
@@ -75,12 +37,6 @@ namespace D_Parser.Evaluation
 			{
 				if (Const)
 					throw new NoConstException(x);
-			}
-			else if (x is PostfixExpression_MethodCall)
-			{
-				if (Const)
-					throw new NoConstException(x);
-				// At this point, CTFE will happen later on.
 			}
 
 			//TODO: opIndex & opSlice overloads -- will be handled in ctfe
@@ -103,7 +59,7 @@ namespace D_Parser.Evaluation
 					if (n == null)
 						throw new EvaluationException(pfi.Arguments[0], "Returned no value");
 
-					int i=0;
+					int i = 0;
 					try
 					{
 						i = Convert.ToInt32(n.Value);
@@ -130,7 +86,7 @@ namespace D_Parser.Evaluation
 						if (kv.Key.Equals(key))
 							return kv.Value;
 
-					throw new EvaluationException(x,"Could not find key '"+val+"'");
+					throw new EvaluationException(x, "Could not find key '" + val + "'");
 				}
 			}
 			else if (x is PostfixExpression_Slice)
@@ -142,7 +98,7 @@ namespace D_Parser.Evaluation
 				var sl = (PostfixExpression_Slice)x;
 
 				// If the [ ] form is used, the slice is of the entire array.
-				if (sl.FromExpression == null && sl.ToExpression==null)
+				if (sl.FromExpression == null && sl.ToExpression == null)
 					return foreExpression;
 
 				// Make $ operand available
@@ -154,10 +110,10 @@ namespace D_Parser.Evaluation
 
 				vp.CurrentArrayLength = arrLen_Backup;
 
-				if (bound_lower == null || bound_upper==null)
-					throw new EvaluationException(bound_lower==null ? sl.FromExpression : sl.ToExpression, "Must be of an integral type");
+				if (bound_lower == null || bound_upper == null)
+					throw new EvaluationException(bound_lower == null ? sl.FromExpression : sl.ToExpression, "Must be of an integral type");
 
-				int lower=-1,upper=-1;
+				int lower = -1, upper = -1;
 				try
 				{
 					lower = Convert.ToInt32(bound_lower.Value);
@@ -168,20 +124,125 @@ namespace D_Parser.Evaluation
 				if (lower < 0)
 					throw new EvaluationException(sl.FromExpression, "Lower boundary must be greater than 0");
 				if (lower >= ar.Elements.Length)
-					throw new EvaluationException(sl.FromExpression, "Lower boundary must be smaller than "+ar.Elements.Length);
+					throw new EvaluationException(sl.FromExpression, "Lower boundary must be smaller than " + ar.Elements.Length);
 				if (upper < lower)
 					throw new EvaluationException(sl.ToExpression, "Upper boundary must be greater than " + lower);
 				if (upper >= ar.Elements.Length)
-					throw new EvaluationException(sl.ToExpression, "Upper boundary must be smaller than "+ar.Elements.Length);
+					throw new EvaluationException(sl.ToExpression, "Upper boundary must be smaller than " + ar.Elements.Length);
 
 
-				var rawArraySlice=new ISymbolValue[upper-lower];
-				int j=0;
-				for(int i=lower; i < upper ; i++)
-					rawArraySlice[j++]=ar.Elements[i];
-				
+				var rawArraySlice = new ISymbolValue[upper - lower];
+				int j = 0;
+				for (int i = lower; i < upper; i++)
+					rawArraySlice[j++] = ar.Elements[i];
+
 				return new ArrayValue(ar.RepresentedType, rawArraySlice);
 			}
+
+			return null;
+		}
+
+		public ISymbolValue Evaluate(PostfixExpression_Access acc, ISymbolValue foreExpression, bool ExecuteMethodRefs)
+		{
+			if (foreExpression == null)
+				foreExpression = Evaluate(acc.PostfixForeExpression);
+
+			if (acc.AccessExpression is NewExpression)
+			{
+				var nx = (NewExpression)acc.AccessExpression;
+
+				if (Const)
+					throw new NoConstException(acc);
+			}
+			else
+			{
+				ISymbolValue v = null;
+
+				// If it's a simple identifier only, static properties are allowed
+
+				ResolveResult[] nextPart = null;
+
+				if (acc.AccessExpression is IdentifierExpression)
+				{
+					if ((v = StaticPropertyEvaluator.TryEvaluateProperty(foreExpression, ((IdentifierExpression)acc.AccessExpression).Value as string, vp)) != null)
+						return v;
+
+					nextPart = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(
+						((IdentifierExpression)acc.AccessExpression).Value as string,
+						new[] { foreExpression.RepresentedType }, vp.ResolutionContext, acc.AccessExpression);
+				}
+				else if (acc.AccessExpression is TemplateInstanceExpression)
+				{
+					var tix = (TemplateInstanceExpression)acc.AccessExpression;
+
+					nextPart = ExpressionTypeResolver.Resolve(tix, vp.ResolutionContext, new[] { foreExpression.RepresentedType });
+				}
+
+				if (nextPart == null || nextPart.Length == 0)
+					throw new EvaluationException(acc, "No such member found", foreExpression.RepresentedType);
+
+				var r = nextPart[0];
+
+				if (nextPart[0] is MemberResult)
+				{
+					var mr = (MemberResult)nextPart[0];
+
+					/*
+					 * If accessed member is a variable, delegate its value evaluation to the value provider.
+					 * If it's a method (mostly a simple getter method), execute it.
+					 * If it's a type, return a (somewhat static) link to it.
+					 */
+					if (mr.Node is DVariable)
+						return vp[(DVariable)mr.Node];
+					else if (mr.Node is DMethod)
+					{
+						if (ExecuteMethodRefs)
+							return CTFE.FunctionEvaluation.Execute((DMethod)mr.Node, null, vp);
+						else
+							return new InternalOverloadValue(nextPart, acc);
+					}
+				}
+				else if (nextPart[0] is TypeResult)
+					return new TypeValue(nextPart[0], acc);
+
+				throw new EvaluationException(acc, "Unhandled result type", nextPart);
+			}
+
+			throw new EvaluationException(acc, "Invalid access expression");
+		}
+
+		public ISymbolValue Evaluate(PostfixExpression_MethodCall c)
+		{
+			ISymbolValue v = null;
+			var methods=new List<DMethod>();
+
+			// Evaluate prior expression
+			if (c.PostfixForeExpression is IdentifierExpression)
+				v = EvalId(c.PostfixForeExpression, false);
+
+			// Get all available method overloads
+			if (v is InternalOverloadValue)
+			{
+				var methods_res = ((InternalOverloadValue)v).Overloads;
+
+				if (methods_res != null && methods_res.Length != 0)
+					foreach (var r in methods_res)
+						if (r is MemberResult)
+						{
+							var mr = (MemberResult)r;
+
+							if (mr.Node is DMethod)
+								methods.Add((DMethod)mr.Node);
+						}
+			}
+			else if (v is DelegateValue)
+				methods.Add(((DelegateValue)v).Method);
+
+			// Evaluate all arguments (What about lazy ones?)
+
+			// Compare arguments' types to overloads' expected parameters (pay attention to template parameters!)
+
+			// If finally one method found, execute it in CTFE
 
 			return null;
 		}

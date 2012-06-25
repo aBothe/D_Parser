@@ -221,4 +221,19 @@ namespace D_Parser.Evaluation
 		public NullValue(IExpression x) : base(ExpressionValueType.Class, null, x) { }
 	}
 	#endregion
+
+	/// <summary>
+	/// Used when passing several function overloads from the inner evaluation function to the outer (i.e. method call) one.
+	/// Not intended to be used in any other kind.
+	/// </summary>
+	public class InternalOverloadValue : ExpressionValue
+	{
+		public ResolveResult[] Overloads { get; private set; }
+
+		public InternalOverloadValue(ResolveResult[] overloads, IExpression x)
+			: base(ExpressionValueType.None, null, x)
+		{
+			this.Overloads = overloads;
+		}
+	}
 }

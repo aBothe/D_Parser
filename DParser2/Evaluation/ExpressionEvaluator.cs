@@ -53,10 +53,8 @@ namespace D_Parser.Evaluation
 		public ISymbolValue Evaluate(TypeDeclarationExpression x)
 		{
 			var r=TypeDeclarationResolver.Resolve(x.Declaration, vp.ResolutionContext);
-			
-			if(r!=null)
-				return TryToEvaluateConstInitializer(r, vp.ResolutionContext);
-			return null;
+
+			throw new NotImplementedException("TODO: Handle static properties and ufcs functionality on type declaration expressions");
 		}
 
 		public static bool IsFalseZeroOrNull(ISymbolValue v)

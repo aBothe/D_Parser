@@ -13,7 +13,7 @@ namespace D_Parser.Evaluation
 {
 	public partial class ExpressionEvaluator
 	{
-		ISymbolValue EvalId(IExpression idOrTemplateExpression)
+		ISymbolValue EvalId(IExpression idOrTemplateExpression, bool ImplicitlyExecute = true)
 		{
 			if (vp == null)
 				return null;
@@ -38,7 +38,12 @@ namespace D_Parser.Evaluation
 
 				// If we've got a function here, execute it
 				if (mr.Node is DMethod)
-					return FunctionEvaluation.Execute((DMethod)mr.Node, null, vp);
+				{
+					if (ImplicitlyExecute)
+						return FunctionEvaluation.Execute((DMethod)mr.Node, null, vp);
+					else
+						return new InternalOverloadValue(res, idOrTemplateExpression);
+				}
 				else if (mr.Node is DVariable)
 					return vp[(DVariable)mr.Node];
 			}
