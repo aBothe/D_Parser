@@ -99,6 +99,9 @@
     <Compile Include="Resolver\ASTScanner\MatchFilterVisitor.cs" />
     <Compile Include="Resolver\ASTScanner\NameScan.cs" />
     <Compile Include="Misc\UFCSCache.cs" />
+    <Compile Include="Resolver\ExpressionSemantics\DType.cs" />
+    <Compile Include="Resolver\ExpressionSemantics\DValue.cs" />
+    <Compile Include="Resolver\ExpressionSemantics\ISemantic.cs" />
     <Compile Include="Resolver\ResolutionOptions.cs" />
     <Compile Include="Resolver\ResultComparer.cs" />
     <Compile Include="Resolver\Templates\SpecializationOrdering.cs" />
@@ -147,6 +150,7 @@
   <ItemGroup>
     <Content Include="Todo.txt" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.

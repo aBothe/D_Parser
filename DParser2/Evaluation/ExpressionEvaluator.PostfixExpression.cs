@@ -219,6 +219,10 @@ namespace D_Parser.Evaluation
 			// Evaluate prior expression
 			if (c.PostfixForeExpression is IdentifierExpression)
 				v = EvalId(c.PostfixForeExpression, false);
+			else if (c.PostfixForeExpression is PostfixExpression_Access)
+				v = Evaluate((PostfixExpression_Access)c.PostfixForeExpression, null, false);
+			else
+				v = Evaluate(c.PostfixForeExpression);
 
 			// Get all available method overloads
 			if (v is InternalOverloadValue)
