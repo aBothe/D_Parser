@@ -7,5 +7,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public interface ISemantic
 	{
+		string ToCode();
 	}
 }
