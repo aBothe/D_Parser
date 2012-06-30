@@ -5,6 +5,7 @@ using System.Text;
 using D_Parser.Dom;
 using D_Parser.Parser;
 using D_Parser.Dom.Expressions;
+using System.Collections.ObjectModel;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
@@ -150,8 +151,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	}
 	#endregion
 
-	#region User-defined types
-	public abstract class UserDefinedType : DerivedDataType
+	public abstract class DSymbol : DerivedDataType
 	{
 		public DNode Definition { get; private set; }
 
@@ -159,23 +159,31 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			get
 			{
-				if(Definition!=null)
+				if (Definition != null)
 					return Definition.Name;
 				return null;
 			}
 		}
 
-		public UserDefinedType(DNode Node,DType BaseType, ISyntaxRegion td) : base(BaseType, td) {
+		public DSymbol(DNode Node, DType BaseType, ISyntaxRegion td)
+			: base(BaseType, td)
+		{
 			this.Definition = Node;
 		}
 
 		public override string ToCode()
 		{
-			return Definition.ToString(false, false);
+			return Definition.ToString(false, true);
 		}
 	}
 
-	public class AliasedType : UserDefinedType
+	#region User-defined types
+	public abstract class UserDefinedType : DSymbol
+	{
+		public UserDefinedType(DNode Node, DType baseType, ISyntaxRegion td) : base(Node, baseType, td) { }
+	}
+
+	public class AliasedType : MemberSymbol
 	{
 		public new DVariable Definition { get { return base.Definition as DVariable; } }
 
@@ -191,41 +199,106 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public EnumType(DEnum Enum, ISyntaxRegion td) : base(Enum, new PrimitiveType(DTokens.Int, 0), td) { }
 	}
 
-	public class StructType : UserDefinedType
+	public class StructType : TemplateIntermediateType
 	{
-		public new DClassLike Definition { get { return base.Definition as DClassLike; } }
-
-		public StructType(DClassLike dc, ISyntaxRegion td) : base(dc, null, td) { }
+		public StructType(DClassLike dc, ISyntaxRegion td, Dictionary<string, ISemantic> deducedTypes = null) : base(dc, td, null, null, deducedTypes) { }
 	}
 
-	public class UnionType : UserDefinedType
+	public class UnionType : TemplateIntermediateType
 	{
-		public new DClassLike Definition { get { return base.Definition as DClassLike; } }
-
-		public UnionType(DClassLike dc, ISyntaxRegion td) : base(dc, null, td) { }
+		public UnionType(DClassLike dc, ISyntaxRegion td, Dictionary<string, ISemantic> deducedTypes = null) : base(dc, td, null, null, deducedTypes) { }
 	}
 
 	public class ClassType : TemplateIntermediateType
 	{
+		public ClassType(DClassLike dc, ISyntaxRegion td, 
+			TemplateIntermediateType baseType, InterfaceIntermediateType[] baseInterfaces,
+			ReadOnlyCollection<KeyValuePair<string, ISemantic>> deducedTypes)
+			: base(dc, td, baseType, baseInterfaces, deducedTypes)
+		{}
 
+		public ClassType(DClassLike dc, ISyntaxRegion td, 
+			TemplateIntermediateType baseType, InterfaceIntermediateType[] baseInterfaces = null,
+			Dictionary<string, ISemantic> deducedTypes= null)
+			: base(dc, td, baseType, baseInterfaces, deducedTypes)
+		{}
+
+		public override string ToString()
+		{
+			return "(class) "+base.ToString();
+		}
 	}
-	#endregion
 
-	#region Intermediate types - not directly possible for them to build a value basis
-	public class InterfaceIntermediateType : UserDefinedType
+	public class InterfaceIntermediateType : TemplateIntermediateType
 	{
-
+		public InterfaceIntermediateType(DClassLike dc, ISyntaxRegion td, 
+			InterfaceIntermediateType[] baseInterfaces=null,
+			Dictionary<string,ISemantic> deducedTypes = null) 
+			: base(dc, td, null, baseInterfaces, deducedTypes) {}
 	}
 
 	public class TemplateIntermediateType : UserDefinedType
 	{
+		public new DClassLike Definition { get { return base.Definition as DClassLike; } }
 
+		public readonly InterfaceIntermediateType[] BaseInterfaces;
+
+		/// <summary>
+		/// Key: Type name
+		/// Value: Corresponding type
+		/// </summary>
+		public readonly ReadOnlyCollection<KeyValuePair<string, ISemantic>> DeducedTypes;
+
+		public TemplateIntermediateType(DClassLike dc, ISyntaxRegion td, 
+			DType baseType, InterfaceIntermediateType[] baseInterfaces,
+			ReadOnlyCollection<KeyValuePair<string, ISemantic>> deducedTypes)
+			: base(dc, baseType, td)
+		{
+			this.BaseInterfaces = baseInterfaces;
+			this.DeducedTypes = deducedTypes;
+		}
+
+		public TemplateIntermediateType(DClassLike dc, ISyntaxRegion td, 
+			DType baseType = null, InterfaceIntermediateType[] baseInterfaces = null,
+			Dictionary<string, ISemantic> deducedTypes=null)
+			: this(dc,td, baseType,baseInterfaces, new ReadOnlyCollection<KeyValuePair<string, ISemantic>>(deducedTypes.ToArray()))
+		{ }
 	}
 
-	// Member 'types' -- that store the member definitions and their base types (like aliases)
+	public class MemberSymbol : DSymbol
+	{
+		public MemberSymbol(DNode member, DType memberType, ISyntaxRegion td) : base(member, memberType, td) { }
+	}
 
-	// Module/Package symbols
+	public class ModuleSymbol : DSymbol
+	{
+		public new DModule Definition { get { return base.Definition as DModule; } }
 
-	// ===>> Rename everything to DSymbol etc. ?
+		public ModuleSymbol(DModule mod, ISyntaxRegion td) : base(mod, null, td) { }
+
+		public override string ToString()
+		{
+			return "(module) "+base.ToString();
+		}
+	}
+
+	public class PackageSymbol : DType
+	{
+		public readonly ModulePackage Package;
+
+		public PackageSymbol(ModulePackage pack,ISyntaxRegion td) : base(td) {
+			this.Package = pack;
+		}
+
+		public override string ToCode()
+		{
+			return Package.Path;
+		}
+
+		public override string ToString()
+		{
+			return "(package) "+base.ToString();
+		}
+	}
 	#endregion
 }
