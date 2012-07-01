@@ -1644,13 +1644,23 @@ namespace D_Parser.Parser
 
 		bool IsAttributeSpecifier()
 		{
-			return (laKind == (Extern) || laKind == (Export) || laKind == (Align) || laKind == Pragma || laKind == (Deprecated) || IsProtectionAttribute()
+			return IsAttributeSpecifier(laKind, Lexer.CurrentPeekToken.Kind);
+		}
+
+		public static bool IsAttributeSpecifier(int laKind, int peekTokenKind=0)
+		{
+			return (laKind == (Extern) || laKind == (Export) || laKind == (Align) || laKind == Pragma || laKind == (Deprecated) || IsProtectionAttribute(laKind)
 				|| laKind == (Static) || laKind == (Final) || laKind == (Override) || laKind == (Abstract) || laKind == (Scope) || laKind == (__gshared) || laKind==Synchronized
-				|| ((laKind == (Auto) || MemberFunctionAttribute[laKind]) && (Lexer.CurrentPeekToken.Kind != (OpenParenthesis) && Lexer.CurrentPeekToken.Kind != (Identifier)))
+				|| ((laKind == (Auto) || MemberFunctionAttribute[laKind]) && (peekTokenKind != OpenParenthesis && peekTokenKind != Identifier))
 				|| laKind==PropertyAttribute);
 		}
 
 		bool IsProtectionAttribute()
+		{
+			return IsProtectionAttribute(laKind);
+		}
+
+		public static bool IsProtectionAttribute(int laKind)
 		{
 			return laKind == (Public) || laKind == (Private) || laKind == (Protected) || laKind == (Extern) || laKind == (Package);
 		}
