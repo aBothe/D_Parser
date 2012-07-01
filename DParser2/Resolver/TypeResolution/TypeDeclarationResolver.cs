@@ -664,7 +664,7 @@ namespace D_Parser.Resolver.TypeResolution
 					var aggregateType = ExpressionTypeResolver.Resolve(fe.Aggregate, ctxt);
 
 					bool remMember = false;
-					aggregateType = DResolver.ResolveMembersFromResult(aggregateType, out remMember);
+					aggregateType = DResolver.StripMemberSymbols(aggregateType, out remMember);
 
 					if (aggregateType == null)
 						return null;

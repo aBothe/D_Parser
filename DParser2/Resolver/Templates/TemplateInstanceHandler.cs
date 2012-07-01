@@ -194,7 +194,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 				// Get the type of the type of 'this' - so of the result that is the overload's base
 				bool m = false;
-				var t = DResolver.ResolveMembersFromResult(new[] { overload.ResultBase }, out m);
+				var t = DResolver.StripMemberSymbols(new[] { overload.ResultBase }, out m);
 
 				if (t == null || t.Length == 0 || t[0].DeclarationOrExpressionBase == null)
 					return false;

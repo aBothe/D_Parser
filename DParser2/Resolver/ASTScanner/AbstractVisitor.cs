@@ -306,7 +306,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					ctxt.ScopedStatement = back;
 
 					bool resolvedMember=false;
-					if ((r = DResolver.ResolveMembersFromResult(r,out resolvedMember)) != null)
+					if ((r = DResolver.StripMemberSymbols(r,out resolvedMember)) != null)
 						foreach (var rr in r)
 						{
 							if (rr is TypeResult)

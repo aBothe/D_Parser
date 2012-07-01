@@ -143,7 +143,6 @@
     <Compile Include="Parser\DToken.cs" />
     <Compile Include="Dom\DDeclarations.cs" />
     <Compile Include="Resolver\ResolverContext.cs" />
-    <Compile Include="Resolver\ResolveResults.cs" />
     <Compile Include="Resolver\TypeResolution\UFCSResolver.cs" />
   </ItemGroup>
   <ItemGroup>

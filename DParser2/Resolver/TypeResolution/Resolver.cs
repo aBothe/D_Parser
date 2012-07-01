@@ -431,39 +431,17 @@ namespace D_Parser.Resolver.TypeResolution
 		/// Removes all kinds of members from the given results.
 		/// </summary>
 		/// <param name="resolvedMember">True if a member (not an alias!) had to be bypassed</param>
-		public static ResolveResult[] ResolveMembersFromResult(IEnumerable<ResolveResult> initialResults, out bool resolvedMember)
+		public static AbstractType StripMemberSymbols(AbstractType r, out bool resolvedMember)
 		{
 			resolvedMember = false;
 
-            if (initialResults == null)
-                return null;
-
-			var ret = new List<ResolveResult>(initialResults);
-			var l2 = new List<ResolveResult>();
-
-			while (ret.Count > 0)
+			while (r is MemberSymbol)
 			{
-				foreach (var res in ret)
-				{
-					var mr = res as MemberResult;
-					if (mr != null && mr.MemberBaseTypes != null)
-					{
-						l2.AddRange(mr.MemberBaseTypes);
-
-						if(!(mr.Node is DVariable) || !((DVariable)mr.Node).IsAlias)
-							resolvedMember = true;
-					}
-				}
-
-				if (l2.Count < 1)
-					break;
-
-				ret.Clear();
-				ret.AddRange(l2);
-				l2.Clear();
+				resolvedMember = true;
+				r = ((MemberSymbol)r).Base;
 			}
 
-			return ret.Count == 0? null : ret.ToArray();
+			return r;
 		}
 	}
 }

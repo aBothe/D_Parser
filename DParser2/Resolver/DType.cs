@@ -1,20 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using D_Parser.Dom;
-using D_Parser.Parser;
-using D_Parser.Dom.Expressions;
 using System.Collections.ObjectModel;
+using System.Linq;
+using D_Parser.Dom;
+using D_Parser.Dom.Expressions;
+using D_Parser.Parser;
 
-namespace D_Parser.Resolver.ExpressionSemantics
+namespace D_Parser.Resolver
 {
-	public abstract class DType : ISemantic
+	public abstract class AbstractType : ISemantic
 	{
 		public readonly ISyntaxRegion DeclarationOrExpressionBase;
 
-		public DType() { }
-		public DType(ISyntaxRegion DeclarationOrExpressionBase)
+		public AbstractType() { }
+		public AbstractType(ISyntaxRegion DeclarationOrExpressionBase)
 		{
 			this.DeclarationOrExpressionBase = DeclarationOrExpressionBase;
 		}
@@ -27,7 +26,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		}
 	}
 
-	public class PrimitiveType : DType
+	public class PrimitiveType : AbstractType
 	{
 		public readonly int TypeToken;
 
@@ -59,11 +58,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	}
 
 	#region Derived data types
-	public abstract class DerivedDataType : DType
+	public abstract class DerivedDataType : AbstractType
 	{
-		public readonly DType Base;
+		public readonly AbstractType Base;
 
-		public DerivedDataType(DType Base, ISyntaxRegion td) : base(td)
+		public DerivedDataType(AbstractType Base, ISyntaxRegion td) : base(td)
 		{
 			this.Base = Base;
 		}
@@ -71,7 +70,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 	public class PointerType : DerivedDataType
 	{
-		public PointerType(DType Base, ISyntaxRegion td) : base(Base, td) { }
+		public PointerType(AbstractType Base, ISyntaxRegion td) : base(Base, td) { }
 
 		public override string ToCode()
 		{
@@ -81,7 +80,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 	public class ArrayType : AssocArrayType
 	{
-		public ArrayType(DType ValueType, ISyntaxRegion td)
+		public ArrayType(AbstractType ValueType, ISyntaxRegion td)
 			: base(ValueType, new PrimitiveType(DTokens.Int, 0), td) { }
 
 		public override string ToCode()
@@ -92,14 +91,14 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 	public class AssocArrayType : DerivedDataType
 	{
-		public readonly DType KeyType;
+		public readonly AbstractType KeyType;
 
 		/// <summary>
 		/// Aliases <see cref="Base"/>
 		/// </summary>
-		public DType ValueType { get { return Base; } }
+		public AbstractType ValueType { get { return Base; } }
 
-		public AssocArrayType(DType ValueType, DType KeyType, ISyntaxRegion td)
+		public AssocArrayType(AbstractType ValueType, AbstractType KeyType, ISyntaxRegion td)
 			: base(ValueType, td)
 		{
 			this.KeyType = KeyType;
@@ -115,25 +114,25 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	{
 		public readonly bool IsFunction;
 		public bool IsFunctionLiteral { get { return DeclarationOrExpressionBase is FunctionLiteral; } }
-		public readonly DType[] Parameters;
+		public readonly AbstractType[] Parameters;
 
-		public DelegateType(DType ReturnType,DelegateDeclaration Declaration, IEnumerable<DType> Parameters) : base(ReturnType, Declaration)
+		public DelegateType(AbstractType ReturnType,DelegateDeclaration Declaration, IEnumerable<AbstractType> Parameters) : base(ReturnType, Declaration)
 		{
 			this.IsFunction = Declaration.IsFunction;
 
-			if (Parameters is DType[])
-				this.Parameters = (DType[])Parameters;
+			if (Parameters is AbstractType[])
+				this.Parameters = (AbstractType[])Parameters;
 			else if(Parameters!=null)
 				this.Parameters = Parameters.ToArray();
 		}
 
-		public DelegateType(DType ReturnType, FunctionLiteral Literal, IEnumerable<DType> Parameters)
+		public DelegateType(AbstractType ReturnType, FunctionLiteral Literal, IEnumerable<AbstractType> Parameters)
 			: base(ReturnType, Literal)
 		{
 			this.IsFunction = Literal.LiteralToken == DTokens.Function;
 			
-			if (Parameters is DType[])
-				this.Parameters = (DType[])Parameters;
+			if (Parameters is AbstractType[])
+				this.Parameters = (AbstractType[])Parameters;
 			else if (Parameters != null)
 				this.Parameters = Parameters.ToArray();
 		}
@@ -165,7 +164,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 		}
 
-		public DSymbol(DNode Node, DType BaseType, ISyntaxRegion td)
+		public DSymbol(DNode Node, AbstractType BaseType, ISyntaxRegion td)
 			: base(BaseType, td)
 		{
 			this.Definition = Node;
@@ -180,14 +179,14 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	#region User-defined types
 	public abstract class UserDefinedType : DSymbol
 	{
-		public UserDefinedType(DNode Node, DType baseType, ISyntaxRegion td) : base(Node, baseType, td) { }
+		public UserDefinedType(DNode Node, AbstractType baseType, ISyntaxRegion td) : base(Node, baseType, td) { }
 	}
 
 	public class AliasedType : MemberSymbol
 	{
 		public new DVariable Definition { get { return base.Definition as DVariable; } }
 
-		public AliasedType(DVariable AliasDefinition, DType Type, ISyntaxRegion td)
+		public AliasedType(DVariable AliasDefinition, AbstractType Type, ISyntaxRegion td)
 			: base(AliasDefinition,Type, td) {}
 	}
 
@@ -195,7 +194,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	{
 		public new DEnum Definition { get { return base.Definition as DEnum; } }
 
-		public EnumType(DEnum Enum, DType BaseType, ISyntaxRegion td) : base(Enum, BaseType, td) { }
+		public EnumType(DEnum Enum, AbstractType BaseType, ISyntaxRegion td) : base(Enum, BaseType, td) { }
 		public EnumType(DEnum Enum, ISyntaxRegion td) : base(Enum, new PrimitiveType(DTokens.Int, 0), td) { }
 	}
 
@@ -250,7 +249,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public readonly ReadOnlyCollection<KeyValuePair<string, ISemantic>> DeducedTypes;
 
 		public TemplateIntermediateType(DClassLike dc, ISyntaxRegion td, 
-			DType baseType, InterfaceIntermediateType[] baseInterfaces,
+			AbstractType baseType, InterfaceIntermediateType[] baseInterfaces,
 			ReadOnlyCollection<KeyValuePair<string, ISemantic>> deducedTypes)
 			: base(dc, baseType, td)
 		{
@@ -259,7 +258,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		}
 
 		public TemplateIntermediateType(DClassLike dc, ISyntaxRegion td, 
-			DType baseType = null, InterfaceIntermediateType[] baseInterfaces = null,
+			AbstractType baseType = null, InterfaceIntermediateType[] baseInterfaces = null,
 			Dictionary<string, ISemantic> deducedTypes=null)
 			: this(dc,td, baseType,baseInterfaces, new ReadOnlyCollection<KeyValuePair<string, ISemantic>>(deducedTypes.ToArray()))
 		{ }
@@ -267,7 +266,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 	public class MemberSymbol : DSymbol
 	{
-		public MemberSymbol(DNode member, DType memberType, ISyntaxRegion td) : base(member, memberType, td) { }
+		public MemberSymbol(DNode member, AbstractType memberType, ISyntaxRegion td) : base(member, memberType, td) { }
 	}
 
 	public class ModuleSymbol : DSymbol
@@ -282,7 +281,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		}
 	}
 
-	public class PackageSymbol : DType
+	public class PackageSymbol : AbstractType
 	{
 		public readonly ModulePackage Package;
 
@@ -301,4 +300,43 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		}
 	}
 	#endregion
+
+	/// <summary>
+	/// Contains an array of zero or more type definitions.
+	/// Used for template parameter-argument deduction.
+	/// </summary>
+	public class TypeTuple : AbstractType
+	{
+		public readonly AbstractType[] Items;
+
+		public TypeTuple(ISyntaxRegion td,params AbstractType[] items) : base(td) {
+			this.Items = items;
+		}
+
+		public TypeTuple(ISyntaxRegion td, AbstractType[] items)
+			: base(td)
+		{
+			this.Items = items;
+		}
+
+		public string ToCode()
+		{
+			var s = "";
+
+			if(Items!=null)
+				foreach (var i in Items)
+					s += i.ToCode() + ",";
+
+			return s.TrimEnd(',');
+		}
+	}
+
+	public class ExpressionTuple : AbstractType
+	{
+
+		public override string ToCode()
+		{
+			throw new NotImplementedException();
+		}
+	}
 }
