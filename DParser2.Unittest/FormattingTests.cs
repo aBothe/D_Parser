@@ -39,6 +39,30 @@ import
 	{
 	}
 	", 1);
+
+			TestLastLine(@"
+class A
+{
+	private:
+		int a;
+		", 2);
+
+			TestLastLine(@"
+class A
+{
+	private:
+		int a;
+		int b;
+}", 0);
+
+			TestLastLine(@"
+class A
+{
+	private:
+		int a;
+	public:
+		", 2);
+
 			TestLastLine(@"foo();", 0);
 
 			TestLastLine(@"foo();
@@ -306,9 +330,15 @@ private foo()
 }", 0);
 
 			TestLastLine(@"
+private foo()
+{
+	a;
+}", 0);
+
+			TestLastLine(@"
 private:
 	foo()
-{", 0);
+	{", 1);
 
 			TestLastLine(@"
 void main(string[] args)
