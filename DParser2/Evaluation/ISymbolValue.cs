@@ -4,11 +4,11 @@ using D_Parser.Resolver;
 
 namespace D_Parser.Evaluation
 {
-	public interface ISymbolValue : IEquatable<ISymbolValue>
+	public interface ISymbolValue : IEquatable<ISymbolValue>, ISemantic
 	{
 		ExpressionValueType Type { get; }
 
-		ResolveResult RepresentedType { get; }
+		AbstractType RepresentedType { get; }
 		IExpression BaseExpression { get; }
 	}
 
@@ -17,14 +17,14 @@ namespace D_Parser.Evaluation
 		IExpression _baseExpression;
 
 		public ExpressionValue(ExpressionValueType Type,
-			ResolveResult RepresentedType)
+			AbstractType RepresentedType)
 		{
 			this.Type = Type;
 			this.RepresentedType = RepresentedType;
 		}
 
 		public ExpressionValue(ExpressionValueType Type,
-			ResolveResult RepresentedType,
+			AbstractType RepresentedType,
 			IExpression BaseExpression) : this(Type, RepresentedType)
 		{
 			this._baseExpression = BaseExpression;
@@ -36,7 +36,7 @@ namespace D_Parser.Evaluation
 			private set;
 		}
 
-		public ResolveResult RepresentedType
+		public AbstractType RepresentedType
 		{
 			get;
 			private set;
@@ -53,6 +53,11 @@ namespace D_Parser.Evaluation
 		public virtual bool Equals(ISymbolValue other)
 		{
 			return SymbolValueComparer.IsEqual(this, other);
+		}
+
+		public string ToCode()
+		{
+			return _baseExpression!=null ? this._baseExpression.ToString() : null;
 		}
 	}
 

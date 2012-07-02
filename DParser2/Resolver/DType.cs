@@ -309,14 +309,12 @@ namespace D_Parser.Resolver
 	{
 		public readonly AbstractType[] Items;
 
-		public TypeTuple(ISyntaxRegion td,params AbstractType[] items) : base(td) {
-			this.Items = items;
-		}
-
-		public TypeTuple(ISyntaxRegion td, AbstractType[] items)
-			: base(td)
+		public TypeTuple(ISyntaxRegion td,IEnumerable<AbstractType> items) : base(td)
 		{
-			this.Items = items;
+			if (items is AbstractType[])
+				Items = (AbstractType[])items;
+			else if (items != null)
+				Items = items.ToArray();
 		}
 
 		public string ToCode()

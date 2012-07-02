@@ -66,9 +66,8 @@ namespace D_Parser.Dom
 		}
 	}
 
-	public class TemplateParameterNode : AbstractNode
+	public class TemplateParameterNode : DNode
 	{
-		public DNode Owner;
 		public readonly ITemplateParameter TemplateParameter;
 
 		public TemplateParameterNode(ITemplateParameter param)
