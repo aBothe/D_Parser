@@ -12,6 +12,7 @@ namespace D_Parser.Resolver
 		#region Properties
 		protected Stack<ResolverContext> stack = new Stack<ResolverContext>();
 		public ResolutionOptions ContextIndependentOptions = ResolutionOptions.Default;
+		public readonly List<ResolutionError> ResolutionErrors = new List<ResolutionError>();
 
 		public ResolutionOptions Options
 		{
@@ -193,6 +194,35 @@ namespace D_Parser.Resolver
 				return IsParent;
 
 			}
+		}
+
+		/// <summary>
+		/// Returns true if 'results' only contains one valid item
+		/// </summary>
+		public bool CheckForSingleResult(ISemantic[] results, ISyntaxRegion td)
+		{
+			if (results == null || results.Length == 0)
+			{
+				LogError(new NothingFoundError(td));
+				return false;
+			}
+			else if (results.Length > 1)
+			{
+				LogError(new AmbiguityError(td, results));
+				return false;
+			}
+
+			return results[0] != null;
+		}
+
+		public void LogError(ResolutionError err)
+		{
+			ResolutionErrors.Add(err);
+		}
+
+		public void LogError(ISyntaxRegion syntaxObj, string msg)
+		{
+			ResolutionErrors.Add(new ResolutionError(syntaxObj,msg));
 		}
 	}
 }

@@ -9,14 +9,14 @@ namespace D_Parser.Resolver
 		public IBlockNode ScopedBlock;
 		public IStatement ScopedStatement;
 
-		public void IntroduceTemplateParameterTypes(TemplateIntermediateType tir)
+		public void IntroduceTemplateParameterTypes(DSymbol tir)
 		{
 			if(tir!=null && tir.DeducedTypes != null)
 				foreach (var dt in tir.DeducedTypes)
 					DeducedTemplateParameters[dt.Key] = dt.Value;
 		}
 
-		public void RemoveParamTypesFromPreferredLocas(TemplateIntermediateType tir)
+		public void RemoveParamTypesFromPreferredLocas(DSymbol tir)
 		{
 			if (tir != null && tir.DeducedTypes != null)
 				foreach (var dt in tir.DeducedTypes)

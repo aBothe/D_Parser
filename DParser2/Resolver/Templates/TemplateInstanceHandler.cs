@@ -49,7 +49,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return templateArguments;
 		}
 
-		public static ResolveResult[] EvalAndFilterOverloads(IEnumerable<ResolveResult> rawOverloadList,
+		public static ResolveResult[] EvalAndFilterOverloads(IEnumerable<ISemantic> rawOverloadList,
 			TemplateInstanceExpression templateInstanceExpr,
 			ResolverContextStack ctxt)
 		{

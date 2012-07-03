@@ -35,7 +35,7 @@ namespace D_Parser.Resolver
 		/// </summary>
 		public readonly int Modifier=0;
 
-		public PrimitiveType(int TypeToken, int Modifier)
+		public PrimitiveType(int TypeToken, int Modifier = 0)
 		{
 			this.TypeToken = TypeToken;
 			this.Modifier = Modifier;
@@ -154,6 +154,13 @@ namespace D_Parser.Resolver
 	{
 		public DNode Definition { get; private set; }
 
+		/// <summary>
+		/// Key: Type name
+		/// Value: Corresponding type
+		/// </summary>
+		public readonly ReadOnlyCollection<KeyValuePair<string, ISemantic>> DeducedTypes;
+
+
 		public string Name
 		{
 			get
@@ -164,9 +171,18 @@ namespace D_Parser.Resolver
 			}
 		}
 
-		public DSymbol(DNode Node, AbstractType BaseType, ISyntaxRegion td)
+		public DSymbol(DNode Node, AbstractType BaseType, ReadOnlyCollection<KeyValuePair<string, ISemantic>> deducedTypes, ISyntaxRegion td)
 			: base(BaseType, td)
 		{
+			this.DeducedTypes = deducedTypes;
+			this.Definition = Node;
+		}
+
+		public DSymbol(DNode Node, AbstractType BaseType, Dictionary<string, ISemantic> deducedTypes, ISyntaxRegion td)
+			: base(BaseType, td)
+		{
+			if(deducedTypes!=null)
+				this.DeducedTypes = new ReadOnlyCollection<KeyValuePair<string,ISemantic>>(deducedTypes.ToArray());
 			this.Definition = Node;
 		}
 
@@ -179,15 +195,15 @@ namespace D_Parser.Resolver
 	#region User-defined types
 	public abstract class UserDefinedType : DSymbol
 	{
-		public UserDefinedType(DNode Node, AbstractType baseType, ISyntaxRegion td) : base(Node, baseType, td) { }
+		public UserDefinedType(DNode Node, AbstractType baseType, ReadOnlyCollection<KeyValuePair<string, ISemantic>> deducedTypes, ISyntaxRegion td) : base(Node, baseType, deducedTypes, td) { }
 	}
 
 	public class AliasedType : MemberSymbol
 	{
 		public new DVariable Definition { get { return base.Definition as DVariable; } }
 
-		public AliasedType(DVariable AliasDefinition, AbstractType Type, ISyntaxRegion td)
-			: base(AliasDefinition,Type, td) {}
+		public AliasedType(DVariable AliasDefinition, AbstractType Type, ISyntaxRegion td, ReadOnlyCollection<KeyValuePair<string, ISemantic>> deducedTypes=null)
+			: base(AliasDefinition,Type, td, deducedTypes) {}
 	}
 
 	public class EnumType : UserDefinedType
@@ -242,31 +258,30 @@ namespace D_Parser.Resolver
 
 		public readonly InterfaceIntermediateType[] BaseInterfaces;
 
-		/// <summary>
-		/// Key: Type name
-		/// Value: Corresponding type
-		/// </summary>
-		public readonly ReadOnlyCollection<KeyValuePair<string, ISemantic>> DeducedTypes;
-
 		public TemplateIntermediateType(DClassLike dc, ISyntaxRegion td, 
-			AbstractType baseType, InterfaceIntermediateType[] baseInterfaces,
-			ReadOnlyCollection<KeyValuePair<string, ISemantic>> deducedTypes)
-			: base(dc, baseType, td)
+			AbstractType baseType = null, InterfaceIntermediateType[] baseInterfaces = null,
+			ReadOnlyCollection<KeyValuePair<string, ISemantic>> deducedTypes = null)
+			: base(dc, baseType, deducedTypes, td)
 		{
 			this.BaseInterfaces = baseInterfaces;
-			this.DeducedTypes = deducedTypes;
 		}
 
 		public TemplateIntermediateType(DClassLike dc, ISyntaxRegion td, 
-			AbstractType baseType = null, InterfaceIntermediateType[] baseInterfaces = null,
-			Dictionary<string, ISemantic> deducedTypes=null)
+			AbstractType baseType, InterfaceIntermediateType[] baseInterfaces,
+			Dictionary<string, ISemantic> deducedTypes)
 			: this(dc,td, baseType,baseInterfaces, new ReadOnlyCollection<KeyValuePair<string, ISemantic>>(deducedTypes.ToArray()))
 		{ }
 	}
 
 	public class MemberSymbol : DSymbol
 	{
-		public MemberSymbol(DNode member, AbstractType memberType, ISyntaxRegion td) : base(member, memberType, td) { }
+		public MemberSymbol(DNode member, AbstractType memberType, ISyntaxRegion td,
+			ReadOnlyCollection<KeyValuePair<string, ISemantic>> deducedTypes = null)
+			: base(member, memberType, deducedTypes, td) { }
+
+		public MemberSymbol(DNode member, AbstractType memberType, ISyntaxRegion td,
+			Dictionary<string, ISemantic> deducedTypes)
+			: base(member, memberType, deducedTypes, td) { }
 	}
 
 	public class ModuleSymbol : DSymbol

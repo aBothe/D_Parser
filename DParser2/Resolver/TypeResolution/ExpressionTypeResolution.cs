@@ -10,7 +10,7 @@ namespace D_Parser.Resolver.TypeResolution
 {
 	public partial class ExpressionTypeResolver
 	{
-		public static ResolveResult[] Resolve(IExpression ex, ResolverContextStack ctxt)
+		public static AbstractType Resolve(IExpression ex, ResolverContextStack ctxt)
 		{
 			#region Operand based/Trivial expressions
 			if (ex is Expression) // a,b,c;
