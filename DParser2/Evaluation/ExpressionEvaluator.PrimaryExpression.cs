@@ -289,7 +289,7 @@ namespace D_Parser.Evaluation
 
 			if (isExpression.TestedType != null)
 			{
-				var typeToCheck_ = DResolver.TryRemoveAliasesFromResult(TypeDeclarationResolver.Resolve(isExpression.TestedType, vp.ResolutionContext));
+				var typeToCheck_ = DResolver.StripAliasSymbols(TypeDeclarationResolver.Resolve(isExpression.TestedType, vp.ResolutionContext));
 
 				if (typeToCheck_ != null && typeToCheck_.Length != 0)
 				{
@@ -359,7 +359,7 @@ namespace D_Parser.Evaluation
 		{
 			if (isExpression.TypeSpecialization != null)
 			{
-				var spec = DResolver.TryRemoveAliasesFromResult(TypeDeclarationResolver.Resolve(isExpression.TypeSpecialization, vp.ResolutionContext));
+				var spec = DResolver.StripAliasSymbols(TypeDeclarationResolver.Resolve(isExpression.TypeSpecialization, vp.ResolutionContext));
 
 				return spec != null && spec.Length != 0 && (isExpression.EqualityTest ? 
 					ResultComparer.IsEqual(typeToCheck, spec[0]) : 

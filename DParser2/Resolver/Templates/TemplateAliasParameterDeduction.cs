@@ -43,7 +43,7 @@ namespace D_Parser.Resolver.Templates
 			#endregion
 
 			#region Given argument must be a symbol - so no built-in type but a reference to a node or an expression
-			var _t=DResolver.TryRemoveAliasesFromResult(new[]{arg});
+			var _t=DResolver.StripAliasSymbols(new[]{arg});
 
 			if (_t == null)
 				return false;

@@ -87,7 +87,7 @@ namespace D_Parser.Resolver.TypeResolution
 			ResolverContextStack ctxt,
 			object typeIdObject=null)
 		{
-			if((resultBases = DResolver.TryRemoveAliasesFromResult(resultBases))==null)
+			if((resultBases = DResolver.StripAliasSymbols(resultBases))==null)
 				return null;
 
 			var r = new List<ResolveResult>();
@@ -702,17 +702,17 @@ namespace D_Parser.Resolver.TypeResolution
 						#region Foreach over Structs and Classes with Ranges
 
 						// Enlist all 'back'/'front' members
-						var t_l = new List<ResolveResult>();
+						var t_l = new List<AbstractType>();
 
-						foreach(var n in (IBlockNode)tr.Node)
+						foreach(var n in (IBlockNode)tr.Definition)
 							if (fe.IsReverse ? n.Name == "back" : n.Name == "front")
 								t_l.Add(HandleNodeMatch(n, ctxt));
 
 						// Remove aliases
-						var iterPropertyTypes = DResolver.TryRemoveAliasesFromResult(t_l);
+						var iterPropertyTypes = DResolver.StripAliasSymbols(t_l);
 
 						foreach (var iterPropType in iterPropertyTypes)
-							if (iterPropType is MemberResult)
+							if (iterPropType is MemberSymbol)
 							{
 								foundIterPropertyMatch = true;
 
@@ -742,7 +742,7 @@ namespace D_Parser.Resolver.TypeResolution
 								(fe.IsReverse ? n.Name == "opApplyReverse" : n.Name == "opApply"))
 								t_l.Add(HandleNodeMatch(n, ctxt));
 
-						iterPropertyTypes = DResolver.TryRemoveAliasesFromResult(t_l);
+						iterPropertyTypes = DResolver.StripAliasSymbols(t_l);
 
 						foreach (var iterPropertyType in iterPropertyTypes)
 							if (iterPropertyType is MemberResult)

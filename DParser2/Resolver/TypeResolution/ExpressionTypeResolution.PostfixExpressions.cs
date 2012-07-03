@@ -18,7 +18,7 @@ namespace D_Parser.Resolver.TypeResolution
 				return null;
 
 			// Important: To ensure correct behaviour, aliases must be removed before further handling
-			baseExpression = DResolver.TryRemoveAliasesFromResult(baseExpression);
+			baseExpression = DResolver.StripAliasSymbols(baseExpression);
 
 			if (baseExpression == null ||
 				ex is PostfixExpression_Increment || // myInt++ is still of type 'int'
@@ -117,7 +117,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 			#region Search possible methods, opCalls or delegates that could be called
 			bool requireStaticItems = true;
-			IEnumerable<ResolveResult> scanResults = DResolver.TryRemoveAliasesFromResult(baseExpression);
+			IEnumerable<ResolveResult> scanResults = DResolver.StripAliasSymbols(baseExpression);
 			var nextResults = new List<ResolveResult>();
 
 			while (scanResults != null)

@@ -175,7 +175,7 @@ namespace D_Parser.Resolver.TypeResolution
 				
 				if(tr==null && InitialResult is MemberResult)
 				{
-					var baseTypes=DResolver.TryRemoveAliasesFromResult(((MemberResult)InitialResult).MemberBaseTypes);
+					var baseTypes=DResolver.StripAliasSymbols(((MemberResult)InitialResult).MemberBaseTypes);
 
 					if (baseTypes != null && baseTypes.Length > 0)
 						tr = baseTypes[0] as TypeResult;

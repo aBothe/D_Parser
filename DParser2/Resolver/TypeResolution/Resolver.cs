@@ -392,7 +392,7 @@ namespace D_Parser.Resolver.TypeResolution
 		/// --> resolvedType will be StaticTypeResult from char[]
 		/// 
 		/// </summary>
-		public static ResolveResult[] TryRemoveAliasesFromResult(IEnumerable<ResolveResult> initialResults)
+		public static ResolveResult[] StripAliasSymbols(IEnumerable<ResolveResult> initialResults)
 		{
 			if (initialResults == null)
 				return null;
