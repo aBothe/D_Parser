@@ -106,12 +106,12 @@ namespace D_Parser.Resolver.TypeResolution
 				return parser.Type();
 		}
 
-		public static ResolveResult[] ResolveType(IEditorData editor,AstReparseOptions Options=0)
+		public static AbstractType[] ResolveType(IEditorData editor,AstReparseOptions Options=0)
 		{
 			return ResolveType(editor,ResolverContextStack.Create(editor),Options);
 		}
 
-		public static ResolveResult[] ResolveType(IEditorData editor, ResolverContextStack ctxt, AstReparseOptions Options=0)
+		public static AbstractType[] ResolveType(IEditorData editor, ResolverContextStack ctxt, AstReparseOptions Options=0)
 		{
 			if (ctxt == null)
 				return null;
@@ -319,9 +319,9 @@ namespace D_Parser.Resolver.TypeResolution
 			return Parent;
 		}
 
-		public static IEnumerable<ResolveResult> FilterOutByResultPriority(
+		public static IEnumerable<ISemantic> FilterOutByResultPriority(
 			ResolverContextStack ctxt,
-			IEnumerable<ResolveResult> results)
+			IEnumerable<ISemantic> results)
 		{
 			if (results == null)
 				return null;
@@ -369,14 +369,10 @@ namespace D_Parser.Resolver.TypeResolution
 			return newRes.Count > 0 ? newRes.ToArray():null;
 		}
 
-		public static INode GetResultMember(ResolveResult res)
+		public static DNode GetResultMember(ISemantic res)
 		{
-			if (res is MemberResult)
-				return ((MemberResult)res).Node;
-			else if (res is TypeResult)
-				return ((TypeResult)res).Node;
-			else if (res is ModuleResult)
-				return ((ModuleResult)res).Module;
+			if(res is DSymbol)
+				return ((DSymbol)res).Definition;
 
 			return null;
 		}

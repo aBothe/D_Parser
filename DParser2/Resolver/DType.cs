@@ -158,7 +158,7 @@ namespace D_Parser.Resolver
 		/// Key: Type name
 		/// Value: Corresponding type
 		/// </summary>
-		public readonly ReadOnlyCollection<KeyValuePair<string, ISemantic>> DeducedTypes;
+		public ReadOnlyCollection<KeyValuePair<string, ISemantic>> DeducedTypes;
 
 
 		public string Name
@@ -275,6 +275,7 @@ namespace D_Parser.Resolver
 
 	public class MemberSymbol : DSymbol
 	{
+		public bool IsUFCSResult;
 		public MemberSymbol(DNode member, AbstractType memberType, ISyntaxRegion td,
 			ReadOnlyCollection<KeyValuePair<string, ISemantic>> deducedTypes = null)
 			: base(member, memberType, deducedTypes, td) { }

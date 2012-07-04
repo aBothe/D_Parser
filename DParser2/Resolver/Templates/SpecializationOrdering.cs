@@ -10,8 +10,8 @@ namespace D_Parser.Resolver.Templates
 	{
 		ResolverContextStack ctxt;
 
-		public static ResolveResult[] FilterFromMostToLeastSpecialized(
-			List<ResolveResult> templateOverloads,
+		public static DSymbol FilterFromMostToLeastSpecialized(
+			List<DSymbol> templateOverloads,
 			ResolverContextStack ctxt)
 		{
 			if (templateOverloads == null)
