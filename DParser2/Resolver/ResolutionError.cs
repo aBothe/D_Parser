@@ -39,4 +39,27 @@ namespace D_Parser.Resolver
 			: base(syntaxObj, (syntaxObj is IExpression ? "Expression" : "Declaration") + " could not be resolved.")
 		{ }
 	}
+
+	public class TemplateParameterDeductionError : ResolutionError
+	{
+		public ITemplateParameter Parameter { get { return SyntacticalContext as ITemplateParameter; } }
+		public readonly ISemantic Argument;
+
+		public TemplateParameterDeductionError(ITemplateParameter parameter, ISemantic argument, string msg)
+			: base(parameter, msg)
+		{
+			this.Argument = argument;
+		}
+	}
+
+	public class AmbigousSpecializationError : ResolutionError
+	{
+		public readonly AbstractType[] ComparedOverloads;
+
+		public AmbigousSpecializationError(AbstractType[] comparedOverloads)
+			: base(comparedOverloads[comparedOverloads.Length - 1].DeclarationOrExpressionBase, "Could not distinguish a most specialized overload. Both overloads seem to be equal.")
+		{
+			this.ComparedOverloads = comparedOverloads;
+		}
+	}
 }

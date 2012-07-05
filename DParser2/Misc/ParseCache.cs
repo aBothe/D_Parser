@@ -49,7 +49,7 @@ namespace D_Parser.Misc
 		/// <summary>
 		/// See <see cref="ObjectClass"/>
 		/// </summary>
-		public TypeResult ObjectClassResult
+		public ClassType ObjectClassResult
 		{
 			get;
 			set;

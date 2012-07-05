@@ -44,7 +44,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return templateArguments;
 		}
 
-		public static DSymbol EvalAndFilterOverloads(IEnumerable<DSymbol> rawOverloadList,
+		public static AbstractType EvalAndFilterOverloads(IEnumerable<AbstractType> rawOverloadList,
 			TemplateInstanceExpression templateInstanceExpr,
 			ResolverContextStack ctxt)
 		{
@@ -65,7 +65,7 @@ namespace D_Parser.Resolver.TypeResolution
 		/// <returns>A filtered list of overloads which mostly fit to the specified arguments.
 		/// Usually contains only 1 element.
 		/// The 'TemplateParameters' property of the results will be also filled for further usage regarding smart completion etc.</returns>
-		public static DSymbol EvalAndFilterOverloads(IEnumerable<DSymbol> rawOverloadList,
+		public static AbstractType EvalAndFilterOverloads(IEnumerable<AbstractType> rawOverloadList,
 			IEnumerable<ISemantic> givenTemplateArguments,
 			bool isMethodCall,
 			ResolverContextStack ctxt)
@@ -84,8 +84,8 @@ namespace D_Parser.Resolver.TypeResolution
 			return null;
 		}
 
-		private static List<DSymbol> DeduceOverloads(
-			IEnumerable<DSymbol> rawOverloadList, 
+		private static List<AbstractType> DeduceOverloads(
+			IEnumerable<AbstractType> rawOverloadList, 
 			IEnumerable<ISemantic> givenTemplateArguments, 
 			bool isMethodCall, 
 			ResolverContextStack ctxt)
@@ -98,10 +98,18 @@ namespace D_Parser.Resolver.TypeResolution
 				enumm.Dispose();
 			}
 
-			var filteredOverloads = new List<DSymbol>();
+			var filteredOverloads = new List<AbstractType>();
 
-			foreach (var overload in rawOverloadList)
+			foreach (var o in rawOverloadList)
 			{
+				if (!(o is DSymbol))
+				{
+					if(!hasTemplateArgsPassed)
+						filteredOverloads.Add(o);
+					continue;
+				}
+
+				var overload = (DSymbol)o;
 				var tplNode = overload.Definition;
 
 				// Generically, the node should never be null -- except for TemplateParameterNodes that encapsule such params

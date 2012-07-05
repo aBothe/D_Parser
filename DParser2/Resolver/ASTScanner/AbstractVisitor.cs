@@ -286,7 +286,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				{
 					var ws = (WithStatement)Statement;
 
-					if (ws.ScopedStatement == null || Caret < ws.ScopedStatement.StartLocation)
+					if (ws.ScopedStatement == null || Caret < ws.ScopedStatement.Location)
 					{
 						Statement = Statement.Parent;
 						continue;
@@ -338,7 +338,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 							 * 
 							 * }
 							 */
-							if (Caret < s.StartLocation && Caret != CodeLocation.Empty)
+							if (Caret < s.Location && Caret != CodeLocation.Empty)
 								continue;
 
 							// Selective imports were handled in the upper section already!

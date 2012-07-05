@@ -74,7 +74,7 @@ namespace D_Parser.Resolver.TypeResolution
 			}
 
 			return (filterForTemplateArgs && !ctxt.Options.HasFlag(ResolutionOptions.NoTemplateParameterDeduction)) ? 
-				TemplateInstanceHandler.EvalAndFilterOverloads(res, null, false, ctxt) : res;
+				new[] { TemplateInstanceHandler.EvalAndFilterOverloads(res, null, false, ctxt) } : res;
 		}
 
 		/// <summary>
@@ -345,10 +345,10 @@ namespace D_Parser.Resolver.TypeResolution
 		/// A class' base class will be searched.
 		/// etc..
 		/// </summary>
-		public static ResolveResult HandleNodeMatch(
+		public static AbstractType HandleNodeMatch(
 			INode m,
 			ResolverContextStack ctxt,
-			ResolveResult resultBase = null,
+			AbstractType resultBase = null,
 			object typeBase = null)
 		{
 			stackNum_HandleNodeMatch++;
@@ -367,12 +367,12 @@ namespace D_Parser.Resolver.TypeResolution
 			if (m.Type != null && m.Type.ToString(false) == m.Name)
 				DoResolveBaseType = false;
 
-			ResolveResult ret = null;
-			ResolveResult[] memberbaseTypes = null;
+			AbstractType ret = null;
+			AbstractType[] memberbaseTypes = null;
 
 			// To support resolving type parameters to concrete types if the context allows this, introduce all deduced parameters to the current context
-			if (DoResolveBaseType && resultBase is TemplateInstanceResult)
-				ctxt.CurrentContext.IntroduceTemplateParameterTypes((TemplateInstanceResult)resultBase);
+			if (DoResolveBaseType && resultBase is DSymbol)
+				ctxt.CurrentContext.IntroduceTemplateParameterTypes((DSymbol)resultBase);
 
 			// Only import symbol aliases are allowed to search in the parse cache
 			if (m is ImportSymbolAlias)
@@ -632,6 +632,7 @@ namespace D_Parser.Resolver.TypeResolution
 		/// </summary>
 		public static AbstractType GetForeachIteratorType(DVariable i, ResolverContextStack ctxt)
 		{
+			var r = new List<AbstractType>();
 			var curStmt = ctxt.ScopedStatement;
 
             bool init = true;
@@ -716,15 +717,15 @@ namespace D_Parser.Resolver.TypeResolution
 							{
 								foundIterPropertyMatch = true;
 
-								var itp = (MemberResult)iterPropType;
+								var itp = (MemberSymbol)iterPropType;
 
 								// Only take non-parameterized methods
-								if (itp.Node is DMethod && ((DMethod)itp.Node).Parameters.Count != 0)
+								if (itp.Definition is DMethod && ((DMethod)itp.Definition).Parameters.Count != 0)
 									continue;
 
 								// Handle its base type [return type] as iterator type
-								if (itp.MemberBaseTypes != null)
-									r.AddRange(itp.MemberBaseTypes);
+								if (itp.Base != null)
+									r.Add(itp.Base);
 
 								foundIterPropertyMatch = true;
 							}
@@ -737,7 +738,7 @@ namespace D_Parser.Resolver.TypeResolution
 						t_l.Clear();
 						r.Clear();
 							
-						foreach (var n in (IBlockNode)tr.Node)
+						foreach (var n in (IBlockNode)tr.Definition)
 							if (n is DMethod && 
 								(fe.IsReverse ? n.Name == "opApplyReverse" : n.Name == "opApply"))
 								t_l.Add(HandleNodeMatch(n, ctxt));
@@ -745,10 +746,10 @@ namespace D_Parser.Resolver.TypeResolution
 						iterPropertyTypes = DResolver.StripAliasSymbols(t_l);
 
 						foreach (var iterPropertyType in iterPropertyTypes)
-							if (iterPropertyType is MemberResult)
+							if (iterPropertyType is MemberSymbol)
 							{
-								var mr = (MemberResult)iterPropertyType;
-								var dm = mr.Node as DMethod;
+								var mr = (MemberSymbol)iterPropertyType;
+								var dm = mr.Definition as DMethod;
 
 								if (dm == null || dm.Parameters.Count != 1)
 									continue;
@@ -762,11 +763,14 @@ namespace D_Parser.Resolver.TypeResolution
 
 								if(paramType!=null && paramType.Length > 0)
 									r.Add(paramType[0]);
-
-								//TODO: Inform the user about multiple matches whereas there should be one allowed only..
 							}
 						#endregion
 					}
+
+					if (r.Count > 1)
+						ctxt.LogError(new ResolutionError(curStmt, "Ambigous iterator type"));
+
+					return r.Count != 0 ? r[0] : null;
 				}
 			}
 

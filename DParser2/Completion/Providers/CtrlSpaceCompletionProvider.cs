@@ -198,7 +198,7 @@ namespace D_Parser.Completion
 				var block = (CurrentScope as DMethod).GetSubBlockAt(caretLocation);
 
 				if (block != null)
-					blockStart = DocumentHelper.LocationToOffset(code, blockStartLocation = block.StartLocation);
+					blockStart = DocumentHelper.LocationToOffset(code, blockStartLocation = block.Location);
 				else
 					return FindCurrentCaretContext(code, CurrentScope.Parent as IBlockNode, caretOffset, caretLocation, out TrackerVariables);
 			}

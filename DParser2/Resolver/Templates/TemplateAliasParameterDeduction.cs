@@ -7,7 +7,7 @@ namespace D_Parser.Resolver.Templates
 {
 	partial class TemplateParameterDeduction
 	{
-		bool Handle(TemplateAliasParameter p, ResolveResult arg)
+		bool Handle(TemplateAliasParameter p, ISemantic arg)
 		{
 			#region Handle parameter defaults
 			if (arg == null)

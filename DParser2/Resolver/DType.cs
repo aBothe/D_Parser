@@ -12,6 +12,20 @@ namespace D_Parser.Resolver
 	{
 		public readonly ISyntaxRegion DeclarationOrExpressionBase;
 
+		/// <summary>
+		/// e.g. const, immutable
+		/// </summary>
+		public virtual int Modifier
+		{
+			get
+			{
+				if (DeclarationOrExpressionBase is MemberFunctionAttributeDecl)
+					return ((MemberFunctionAttributeDecl)DeclarationOrExpressionBase).Modifier;
+
+				return 0;
+			}
+		}
+
 		public AbstractType() { }
 		public AbstractType(ISyntaxRegion DeclarationOrExpressionBase)
 		{
@@ -30,22 +44,23 @@ namespace D_Parser.Resolver
 	{
 		public readonly int TypeToken;
 
-		/// <summary>
-		/// e.g. const, immutable
-		/// </summary>
-		public readonly int Modifier=0;
+		public override int Modifier
+		{
+			get { return _mod; }
+		}
+		readonly int _mod;
 
 		public PrimitiveType(int TypeToken, int Modifier = 0)
 		{
 			this.TypeToken = TypeToken;
-			this.Modifier = Modifier;
+			this._mod = Modifier;
 		}
 
 		public PrimitiveType(int TypeToken, int Modifier, ISyntaxRegion td)
 			: base(td)
 		{
 			this.TypeToken = TypeToken;
-			this.Modifier = Modifier;
+			this._mod = Modifier;
 		}
 
 		public override string ToCode()
@@ -147,6 +162,8 @@ namespace D_Parser.Resolver
 
 			return c.TrimEnd(',') + ")";
 		}
+
+		public ISemantic ReturnType { get { return Base; } }
 	}
 	#endregion
 

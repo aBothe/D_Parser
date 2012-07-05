@@ -192,7 +192,7 @@ namespace D_Parser.Parser
 				var ass = new VersionDebugSpecification
 				{
 					Token = t.Kind,
-					StartLocation = t.Location
+					Location = t.Location
 				};
 				LastParsedObject = ass;
 
@@ -452,7 +452,7 @@ namespace D_Parser.Parser
 		ModuleStatement ModuleDeclaration()
 		{
 			Expect(Module);
-			var ret = new ModuleStatement { StartLocation=t.Location };
+			var ret = new ModuleStatement { Location=t.Location };
 			LastParsedObject = ret;
 			ret.ModuleName = ModuleFullyQualifiedName();
 			if (Expect(Semicolon))
@@ -485,7 +485,7 @@ namespace D_Parser.Parser
 		{
 			Expect(Import);
 
-			var importStatement = new ImportStatement { StartLocation=t.Location };
+			var importStatement = new ImportStatement { Location=t.Location };
 
 			ApplyAttributes(importStatement);
 			
@@ -584,7 +584,7 @@ namespace D_Parser.Parser
             if (mx == null)
                 return null;
 
-            return new ExpressionStatement { StartLocation=mx.Location, Expression=mx, EndLocation=t.EndLocation };
+            return new ExpressionStatement { Location=mx.Location, Expression=mx, EndLocation=t.EndLocation };
 		}
 		#endregion
 
@@ -2943,13 +2943,13 @@ namespace D_Parser.Parser
 
 			if (Expect(GoesTo))
 			{
-				fl.AnonymousMethod.Body = new BlockStatement { StartLocation= la.Location };
+				fl.AnonymousMethod.Body = new BlockStatement { Location= la.Location };
 
 				var ae = AssignExpression(fl.AnonymousMethod);
 
 				fl.AnonymousMethod.Body.Add(new ReturnStatement
 				{
-					StartLocation = ae.Location,
+					Location = ae.Location,
 					EndLocation = ae.EndLocation,
 					ReturnExpression=ae
 				});
@@ -3071,7 +3071,7 @@ namespace D_Parser.Parser
 			{
 				Step();
 
-				var ret = new LabeledStatement() { StartLocation = t.Location, Identifier = t.Value, Parent = Parent };
+				var ret = new LabeledStatement() { Location = t.Location, Identifier = t.Value, Parent = Parent };
 				LastParsedObject = ret;
 				Step();
 				ret.EndLocation = t.EndLocation;
@@ -3089,7 +3089,7 @@ namespace D_Parser.Parser
 
 				Step();
 
-				var dbs = new IfStatement() { StartLocation = t.Location, IsStatic = isStatic, Parent = Parent };
+				var dbs = new IfStatement() { Location = t.Location, IsStatic = isStatic, Parent = Parent };
 				LastParsedObject = dbs;
 				Expect(OpenParenthesis);
 
@@ -3118,7 +3118,7 @@ namespace D_Parser.Parser
 			{
 				Step();
 
-				var dbs = new WhileStatement() { StartLocation = t.Location, Parent = Parent };
+				var dbs = new WhileStatement() { Location = t.Location, Parent = Parent };
 				LastParsedObject = dbs;
 				Expect(OpenParenthesis);
 				dbs.Condition = Expression(Scope);
@@ -3136,7 +3136,7 @@ namespace D_Parser.Parser
 			{
 				Step();
 
-				var dbs = new WhileStatement() { StartLocation = t.Location, Parent = Parent };
+				var dbs = new WhileStatement() { Location = t.Location, Parent = Parent };
 				LastParsedObject = dbs;
 				dbs.ScopedStatement = Statement(Scope: Scope, Parent: dbs);
 
@@ -3156,7 +3156,7 @@ namespace D_Parser.Parser
 			{
 				Step();
 
-				var dbs = new ForStatement { StartLocation = t.Location, Parent = Parent };
+				var dbs = new ForStatement { Location = t.Location, Parent = Parent };
 				LastParsedObject = dbs;
 				Expect(OpenParenthesis);
 
@@ -3195,7 +3195,7 @@ namespace D_Parser.Parser
 			#region [Final] SwitchStatement
 			else if ((laKind == (Final) && Lexer.CurrentPeekToken.Kind == (Switch)) || laKind == (Switch))
 			{
-				var dbs = new SwitchStatement { StartLocation = la.Location, Parent = Parent };
+				var dbs = new SwitchStatement { Location = la.Location, Parent = Parent };
 				LastParsedObject = dbs;
 				if (laKind == (Final))
 				{
@@ -3219,7 +3219,7 @@ namespace D_Parser.Parser
 			{
 				Step();
 
-				var dbs = new SwitchStatement.CaseStatement() { StartLocation = la.Location, Parent = Parent };
+				var dbs = new SwitchStatement.CaseStatement() { Location = la.Location, Parent = Parent };
 				LastParsedObject = dbs;
 				dbs.ArgumentList = Expression(Scope);
 
@@ -3261,7 +3261,7 @@ namespace D_Parser.Parser
 
 				var dbs = new SwitchStatement.DefaultStatement()
 				{
-					StartLocation = la.Location,
+					Location = la.Location,
 					Parent = Parent
 				};
 				LastParsedObject = dbs;
@@ -3292,7 +3292,7 @@ namespace D_Parser.Parser
 			else if (laKind == (Continue))
 			{
 				Step();
-				var s = new ContinueStatement() { StartLocation = t.Location, Parent = Parent };
+				var s = new ContinueStatement() { Location = t.Location, Parent = Parent };
 				LastParsedObject = s;
 				if (laKind == (Identifier))
 				{
@@ -3308,7 +3308,7 @@ namespace D_Parser.Parser
 			else if (laKind == (Break))
 			{
 				Step();
-				var s = new BreakStatement() { StartLocation = t.Location, Parent = Parent };
+				var s = new BreakStatement() { Location = t.Location, Parent = Parent };
 				LastParsedObject = s;
 				if (laKind == (Identifier))
 				{
@@ -3326,7 +3326,7 @@ namespace D_Parser.Parser
 			else if (laKind == (Return))
 			{
 				Step();
-				var s = new ReturnStatement() { StartLocation = t.Location, Parent = Parent };
+				var s = new ReturnStatement() { Location = t.Location, Parent = Parent };
 				LastParsedObject = s;
 				if (laKind != (Semicolon))
 					s.ReturnExpression = Expression(Scope);
@@ -3342,7 +3342,7 @@ namespace D_Parser.Parser
 			else if (laKind == (Goto))
 			{
 				Step();
-				var s = new GotoStatement() { StartLocation = t.Location, Parent = Parent };
+				var s = new GotoStatement() { Location = t.Location, Parent = Parent };
 				LastParsedObject = s;
 
 				if (laKind == (Identifier))
@@ -3377,7 +3377,7 @@ namespace D_Parser.Parser
 			{
 				Step();
 
-				var dbs = new WithStatement() { StartLocation = t.Location, Parent = Parent };
+				var dbs = new WithStatement() { Location = t.Location, Parent = Parent };
 				LastParsedObject = dbs;
 				Expect(OpenParenthesis);
 
@@ -3397,7 +3397,7 @@ namespace D_Parser.Parser
 			else if (laKind == (Synchronized))
 			{
 				Step();
-				var dbs = new SynchronizedStatement() { StartLocation = t.Location, Parent = Parent };
+				var dbs = new SynchronizedStatement() { Location = t.Location, Parent = Parent };
 				LastParsedObject = dbs;
 
 				if (laKind == (OpenParenthesis))
@@ -3419,7 +3419,7 @@ namespace D_Parser.Parser
 			{
 				Step();
 
-				var s = new TryStatement() { StartLocation = t.Location, Parent = Parent };
+				var s = new TryStatement() { Location = t.Location, Parent = Parent };
 				LastParsedObject = s;
 
 				s.ScopedStatement = Statement(Scope: Scope, Parent: s);
@@ -3433,7 +3433,7 @@ namespace D_Parser.Parser
 				{
 					Step();
 
-					var c = new TryStatement.CatchStatement() { StartLocation = t.Location, Parent = s };
+					var c = new TryStatement.CatchStatement() { Location = t.Location, Parent = s };
 					LastParsedObject = c;
 
 					// CatchParameter
@@ -3478,7 +3478,7 @@ namespace D_Parser.Parser
 				{
 					Step();
 
-					var f = new TryStatement.FinallyStatement() { StartLocation = t.Location, Parent = Parent };
+					var f = new TryStatement.FinallyStatement() { Location = t.Location, Parent = Parent };
 					LastParsedObject = f;
 
 					f.ScopedStatement = Statement();
@@ -3496,7 +3496,7 @@ namespace D_Parser.Parser
 			else if (laKind == (Throw))
 			{
 				Step();
-				var s = new ThrowStatement() { StartLocation = t.Location, Parent = Parent };
+				var s = new ThrowStatement() { Location = t.Location, Parent = Parent };
 				LastParsedObject = s;
 
 				s.ThrowExpression = Expression(Scope);
@@ -3514,7 +3514,7 @@ namespace D_Parser.Parser
 
 				if (laKind == OpenParenthesis)
 				{
-					var s = new ScopeGuardStatement() { StartLocation = t.Location, Parent = Parent };
+					var s = new ScopeGuardStatement() { Location = t.Location, Parent = Parent };
 					LastParsedObject = s;
 
 					Step();
@@ -3544,7 +3544,7 @@ namespace D_Parser.Parser
 			#region PragmaStatement
 			else if (laKind == (Pragma))
 			{
-				var s = new PragmaStatement { StartLocation = la.Location };
+				var s = new PragmaStatement { Location = la.Location };
 
 				s.Pragma = _Pragma();
 				s.Parent = Parent;
@@ -3577,7 +3577,7 @@ namespace D_Parser.Parser
 			#region (Static) AssertExpression
 			else if (laKind == Assert || (laKind == Static && PK(Assert)))
 			{
-				var s = new AssertStatement() { StartLocation = la.Location, IsStatic = laKind == Static, Parent = Parent };
+				var s = new AssertStatement() { Location = la.Location, IsStatic = laKind == Static, Parent = Parent };
 				LastParsedObject = s;
 
 				if (s.IsStatic)
@@ -3601,7 +3601,7 @@ namespace D_Parser.Parser
 			else if (laKind == Volatile)
 			{
 				Step();
-				var s = new VolatileStatement() { StartLocation = t.Location, Parent = Parent };
+				var s = new VolatileStatement() { Location = t.Location, Parent = Parent };
 				LastParsedObject = s;
 				s.ScopedStatement = Statement(Scope: Scope, Parent: s);
 				s.EndLocation = t.EndLocation;
@@ -3616,7 +3616,7 @@ namespace D_Parser.Parser
 
 			else if (!(ClassLike[laKind] || BasicTypes[laKind] || laKind == Enum || Modifiers[laKind] || laKind == PropertyAttribute || laKind == Alias || laKind == Typedef) && IsAssignExpression())
 			{
-				var s = new ExpressionStatement() { StartLocation = la.Location, Parent = Parent };
+				var s = new ExpressionStatement() { Location = la.Location, Parent = Parent };
 
 				if (!IsEOF)
 					LastParsedObject = s;
@@ -3631,7 +3631,7 @@ namespace D_Parser.Parser
 			}
 			else
 			{
-				var s = new DeclarationStatement() { StartLocation = la.Location, Parent = Parent };
+				var s = new DeclarationStatement() { Location = la.Location, Parent = Parent };
 				LastParsedObject = s;
 				s.Declarations = Declaration(Scope);
 
@@ -3649,7 +3649,7 @@ namespace D_Parser.Parser
 			Step();
 
 			var dbs = new ForeachStatement() { 
-				StartLocation = t.Location, 
+				Location = t.Location, 
 				IsReverse = t.Kind == Foreach_Reverse, 
 				Parent = Parent 
 			};
@@ -3715,7 +3715,7 @@ namespace D_Parser.Parser
 		AsmStatement AsmStatement(IStatement Parent)
 		{
 			Step();
-			var s = new AsmStatement() { StartLocation = t.Location, Parent = Parent };
+			var s = new AsmStatement() { Location = t.Location, Parent = Parent };
 			LastParsedObject = s;
 
 			Expect(OpenCurlyBrace);
@@ -3743,7 +3743,7 @@ namespace D_Parser.Parser
 		ConditionStatement.DebugStatement DebugStatement(IBlockNode Scope, IStatement Parent)
 		{
 			Step();
-			var s = new ConditionStatement.DebugStatement() { StartLocation = t.Location, Parent = Parent };
+			var s = new ConditionStatement.DebugStatement() { Location = t.Location, Parent = Parent };
 			LastParsedObject = s;
 
 			if (laKind == OpenParenthesis)
@@ -3778,7 +3778,7 @@ namespace D_Parser.Parser
 		ConditionStatement.VersionStatement VersionStatement(IBlockNode Scope, IStatement Parent)
 		{
 			Step();
-			var s = new ConditionStatement.VersionStatement() { StartLocation = t.Location, Parent = Parent };
+			var s = new ConditionStatement.VersionStatement() { Location = t.Location, Parent = Parent };
 
 			if (laKind == OpenParenthesis)
 			{
@@ -3816,7 +3816,7 @@ namespace D_Parser.Parser
 			var OldPreviousCommentString = PreviousComment;
 			PreviousComment = "";
 
-			var bs = new BlockStatement() { StartLocation=la.Location, ParentNode=ParentNode, Parent=Parent};
+			var bs = new BlockStatement() { Location=la.Location, ParentNode=ParentNode, Parent=Parent};
 			LastParsedObject = bs;
 
 			if (Expect(OpenCurlyBrace))
@@ -4391,7 +4391,7 @@ namespace D_Parser.Parser
 			ITypeDeclaration preQualifier = null;
 
 			Expect(Mixin);
-			r.StartLocation = t.Location;
+			r.Location = t.Location;
 			
 			if (laKind == Dot)
 			{

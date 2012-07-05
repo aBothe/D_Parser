@@ -388,28 +388,21 @@ namespace D_Parser.Resolver.TypeResolution
 		/// --> resolvedType will be StaticTypeResult from char[]
 		/// 
 		/// </summary>
-		public static ResolveResult[] StripAliasSymbols(IEnumerable<ResolveResult> initialResults)
+		public static AbstractType[] StripAliasSymbols(IEnumerable<AbstractType> initialResults)
 		{
 			if (initialResults == null)
-				return null;
+				return new AbstractType[0];
 
-			var ret = new List<ResolveResult>(initialResults);
-			var l2 = new List<ResolveResult>();
+			var ret = new List<AbstractType>(initialResults);
+			var l2 = new List<AbstractType>();
 
 			while (ret.Count > 0)
 			{
 				foreach (var res in ret)
 				{
-					var mr = res as MemberResult;
-					if (mr != null &&
-
-						// Alias check
-						mr.Node is DVariable &&	((DVariable)mr.Node).IsAlias &&
-
-						// Check if it has resolved base types
-						mr.MemberBaseTypes != null &&
-						mr.MemberBaseTypes.Length > 0)
-						l2.AddRange(mr.MemberBaseTypes);
+					var mr = res as AliasedType;
+					if (mr != null && mr.Base is AbstractType)
+						l2.Add((AbstractType)mr.Base);
 				}
 
 				if (l2.Count < 1)

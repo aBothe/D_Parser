@@ -249,7 +249,7 @@ namespace D_Parser.Completion
 
 					if (stmts != null && stmts.Length > 0)
 						foreach (var stmt in stmts)
-							if (stmt != null && Caret >= stmt.StartLocation && Caret <= stmt.EndLocation)
+							if (stmt != null && Caret >= stmt.Location && Caret <= stmt.EndLocation)
 							{
 								foundDeeperStmt = true;
 								Statement = stmt;

@@ -5,7 +5,7 @@ namespace D_Parser.Resolver.TypeResolution
 {
 	/// <summary>
 	/// UFCS: User function call syntax;
-	/// A base expression will be used as a method'd first call parameter 
+	/// A base expression will be used as a method's first call parameter 
 	/// so it looks like the first expression had a respective sub-method.
 	/// Example:
 	/// assert("fdas".reverse() == "asdf"); -- reverse() will be called with "fdas" as the first argument.
@@ -13,8 +13,8 @@ namespace D_Parser.Resolver.TypeResolution
 	/// </summary>
 	public class UFCSResolver
 	{
-		public static ResolveResult[] TryResolveUFCS(
-			ResolveResult firstArgument, 
+		public static MemberSymbol[] TryResolveUFCS(
+			ISemantic firstArgument, 
 			PostfixExpression_Access acc, 
 			ResolverContextStack ctxt)
 		{
@@ -30,7 +30,7 @@ namespace D_Parser.Resolver.TypeResolution
 			else
 				return null;
 
-			var methodMatches = new List<ResolveResult>();
+			var methodMatches = new List<MemberSymbol>();
 			if(ctxt.ParseCache!=null)
 				foreach (var pc in ctxt.ParseCache)
 				{
@@ -41,9 +41,9 @@ namespace D_Parser.Resolver.TypeResolution
 						{
 							var r = TypeDeclarationResolver.HandleNodeMatch(m, ctxt, firstArgument, acc);
 
-							if (r is MemberResult)
+							if (r is MemberSymbol)
 							{
-								((MemberResult)r).IsUFCSResult = true;
+								((MemberSymbol)r).IsUFCSResult = true;
 								methodMatches.Add(r);
 							}
 						}

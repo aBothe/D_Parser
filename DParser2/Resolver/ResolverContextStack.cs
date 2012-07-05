@@ -52,12 +52,12 @@ namespace D_Parser.Resolver
 			}
 		}
 
-		Dictionary<object, Dictionary<string, ResolveResult[]>> resolvedTypes = new Dictionary<object, Dictionary<string, ResolveResult[]>>();
+		Dictionary<object, Dictionary<string, ISemantic[]>> resolvedTypes = new Dictionary<object, Dictionary<string, ISemantic[]>>();
 
 		/// <summary>
 		/// Stores scoped-block dependent type dictionaries, which store all types that were already resolved once
 		/// </summary>
-		public Dictionary<object, Dictionary<string, ResolveResult[]>> ResolvedTypes
+		public Dictionary<object, Dictionary<string, ISemantic[]>> ResolvedTypes
 		{
 			get { return resolvedTypes; }
 		}
@@ -133,24 +133,24 @@ namespace D_Parser.Resolver
 			return CurrentContext.ScopedBlock;
 		}
 
-		public void TryAddResults(string TypeDeclarationString, ResolveResult[] NodeMatches)
+		public void TryAddResults(string TypeDeclarationString, ISemantic[] NodeMatches)
 		{
 			var ScopedType = GetMostFittingBlock();
 
-			Dictionary<string, ResolveResult[]> subDict = null;
+			Dictionary<string, ISemantic[]> subDict = null;
 
 			if (!resolvedTypes.TryGetValue(ScopedType, out subDict))
-				resolvedTypes.Add(ScopedType, subDict = new Dictionary<string, ResolveResult[]>());
+				resolvedTypes.Add(ScopedType, subDict = new Dictionary<string, ISemantic[]>());
 
 			if (!subDict.ContainsKey(TypeDeclarationString))
 				subDict.Add(TypeDeclarationString, NodeMatches);
 		}
 
-		public bool TryGetAlreadyResolvedType(string TypeDeclarationString, out ResolveResult[] NodeMatches)
+		public bool TryGetAlreadyResolvedType(string TypeDeclarationString, out ISemantic[] NodeMatches)
 		{
 			var ScopedType = GetMostFittingBlock();
 
-			Dictionary<string, ResolveResult[]> subDict = null;
+			Dictionary<string, ISemantic[]> subDict = null;
 
 			if (ScopedType != null && !resolvedTypes.TryGetValue(ScopedType, out subDict))
 			{
