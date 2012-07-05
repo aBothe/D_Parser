@@ -306,7 +306,7 @@ namespace D_Parser.Resolver
 	{
 		public new DModule Definition { get { return base.Definition as DModule; } }
 
-		public ModuleSymbol(DModule mod, ISyntaxRegion td) : base(mod, null, td) { }
+		public ModuleSymbol(DModule mod, ISyntaxRegion td, PackageSymbol packageBase = null) : base(mod, packageBase, (Dictionary<string, ISemantic>)null, td) { }
 
 		public override string ToString()
 		{

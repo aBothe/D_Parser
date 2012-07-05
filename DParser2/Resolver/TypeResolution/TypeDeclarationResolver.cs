@@ -73,8 +73,17 @@ namespace D_Parser.Resolver.TypeResolution
 				res= ResolveFurtherTypeIdentifier(id.Id, rbases, ctxt, id);
 			}
 
-			return (filterForTemplateArgs && !ctxt.Options.HasFlag(ResolutionOptions.NoTemplateParameterDeduction)) ? 
-				new[] { TemplateInstanceHandler.EvalAndFilterOverloads(res, null, false, ctxt) } : res;
+			if(filterForTemplateArgs && !ctxt.Options.HasFlag(ResolutionOptions.NoTemplateParameterDeduction))
+			{
+				var l_=new List<AbstractType>();
+
+				foreach(var s in res)
+					l_.Add(s as AbstractType);
+
+				return new[] { TemplateInstanceHandler.EvalAndFilterOverloads(l_, null, false, ctxt) };
+			}
+			else
+				return res;
 		}
 
 		/// <summary>
@@ -82,37 +91,37 @@ namespace D_Parser.Resolver.TypeResolution
 		/// 
 		/// a.b -- nextIdentifier would be 'b' whereas <param name="resultBases">resultBases</param> contained the resolution result for 'a'
 		/// </summary>
-		public static ResolveResult[] ResolveFurtherTypeIdentifier(string nextIdentifier,
-			IEnumerable<ResolveResult> resultBases,
+		public static AbstractType[] ResolveFurtherTypeIdentifier(string nextIdentifier,
+			IEnumerable<AbstractType> resultBases,
 			ResolverContextStack ctxt,
 			object typeIdObject=null)
 		{
 			if((resultBases = DResolver.StripAliasSymbols(resultBases))==null)
 				return null;
 
-			var r = new List<ResolveResult>();
+			var r = new List<AbstractType>();
 
-			var nextResults = new List<ResolveResult>();
+			var nextResults = new List<AbstractType>();
 			foreach (var b in resultBases)
 			{
-				IEnumerable<ResolveResult> scanResults = new[]{ b };
+				IEnumerable<AbstractType> scanResults = new[]{ b };
 
 				do
 				{
 					foreach (var scanResult in scanResults)
 					{
 						// First filter out all alias and member results..so that there will be only (Static-)Type or Module results left..
-						if (scanResult is MemberResult)
+						if (scanResult is MemberSymbol)
 						{
-							var mr = scanResult as MemberResult;
+							var mr = (MemberSymbol)scanResult;
 
-							if (mr.MemberBaseTypes != null)
-								nextResults.AddRange(mr.MemberBaseTypes);
+							if (mr.Base != null)
+								nextResults.Add(mr.Base);
 						}
 
-						else if (scanResult is TypeResult)
+						else if (scanResult is UserDefinedType)
 						{
-							var bn = ((TypeResult)scanResult).Node as IBlockNode;
+							var bn = ((DSymbol)scanResult).Definition as IBlockNode;
 							var nodeMatches = NameScan.ScanNodeForIdentifier(bn, nextIdentifier, ctxt);
 
 							ctxt.PushNewScope(bn);
@@ -120,43 +129,37 @@ namespace D_Parser.Resolver.TypeResolution
 							var results = HandleNodeMatches(nodeMatches, ctxt, b, typeIdObject);
 
 							if (results != null)
-								r.AddRange(results);
+								foreach (var res in results)
+									nextResults.Add(res as AbstractType);
 
 							ctxt.Pop();
 						}
-						else if (scanResult is ModulePackageResult)
+						else if (scanResult is PackageSymbol)
 						{
-							var pack=((ModulePackageResult)scanResult).Package;
+							var pack=((PackageSymbol)scanResult).Package;
 
 							IAbstractSyntaxTree accessedModule=null;
 							if (pack.Modules.TryGetValue(nextIdentifier, out accessedModule))
-								r.Add(new ModuleResult(accessedModule)
-								{
-									ResultBase = scanResult,
-									DeclarationOrExpressionBase = typeIdObject
-								});
+								r.Add(new ModuleSymbol(accessedModule as DModule, typeIdObject as ISyntaxRegion, (PackageSymbol)scanResult));
 							else if (pack.Packages.TryGetValue(nextIdentifier, out pack))
-								r.Add(new ModulePackageResult(pack)
-								{
-									ResultBase=scanResult,
-									DeclarationOrExpressionBase=typeIdObject
-								});
+								r.Add(new PackageSymbol(pack, typeIdObject as ISyntaxRegion));
 						}
-						else if (scanResult is ModuleResult)
+						else if (scanResult is ModuleSymbol)
 						{
-							var modRes = (ModuleResult)scanResult;
+							var modRes = (ModuleSymbol)scanResult;
 
-							var matches = NameScan.ScanNodeForIdentifier(modRes.Module, nextIdentifier, ctxt);
+							var matches = NameScan.ScanNodeForIdentifier(modRes.Definition, nextIdentifier, ctxt);
 
 							var results = HandleNodeMatches(matches, ctxt, b, typeIdObject);
 
 							if (results != null)
-								r.AddRange(results);
+								foreach (var res in results)
+									nextResults.Add(res as AbstractType);
 						}
 					}
 
 					scanResults = DResolver.FilterOutByResultPriority(ctxt, nextResults);
-					nextResults = new List<ResolveResult>();
+					nextResults = new List<AbstractType>();
 				}
 				while (scanResults != null);
 			}
@@ -164,57 +167,28 @@ namespace D_Parser.Resolver.TypeResolution
 			return r.Count == 0 ? null : r.ToArray();
 		}
 
-		public static ResolveResult[] Resolve(TypeOfDeclaration typeOf, ResolverContextStack ctxt)
+		public static AbstractType Resolve(TypeOfDeclaration typeOf, ResolverContextStack ctxt)
 		{
 			// typeof(return)
 			if (typeOf.InstanceId is TokenExpression && (typeOf.InstanceId as TokenExpression).Token == DTokens.Return)
 			{
 				var m = HandleNodeMatch(ctxt.ScopedBlock, ctxt, null, typeOf);
 				if (m != null)
-					return new[] { m };
+					return m;
 			}
 			// typeOf(myInt)  =>  int
 			else if (typeOf.InstanceId != null)
 			{
 				var wantedTypes = ExpressionTypeResolver.Resolve(typeOf.InstanceId, ctxt);
 
-				if (wantedTypes == null)
-					return null;
-
-				// Scan down for variable's base types
-				var c1 = new List<ResolveResult>(wantedTypes);
-				var c2 = new List<ResolveResult>();
-
-				var ret = new List<ResolveResult>();
-
-				while (c1.Count > 0)
-				{
-					foreach (var t in c1)
-					{
-						if (t is MemberResult)
-						{
-							if ((t as MemberResult).MemberBaseTypes != null)
-								c2.AddRange((t as MemberResult).MemberBaseTypes);
-						}
-						else
-						{
-							t.DeclarationOrExpressionBase = typeOf;
-							ret.Add(t);
-						}
-					}
-
-					c1.Clear();
-					c1.AddRange(c2);
-					c2.Clear();
-				}
-
-				return ret.ToArray();
+				bool rm=false;
+				return DResolver.StripMemberSymbols(wantedTypes, out rm);
 			}
 
 			return null;
 		}
 
-		public static ResolveResult[] Resolve(MemberFunctionAttributeDecl attrDecl, ResolverContextStack ctxt)
+		public static AbstractType[] Resolve(MemberFunctionAttributeDecl attrDecl, ResolverContextStack ctxt)
 		{
 			var ret = Resolve(attrDecl.InnerType, ctxt);
 
@@ -381,20 +355,34 @@ namespace D_Parser.Resolver.TypeResolution
 
 				if (isa.IsModuleAlias ? isa.Type != null : isa.Type.InnerDeclaration != null)
 				{
-					var alias = new AliasResult	{ Node = m };
+					var mods = new List<DModule>();
+					var td=isa.IsModuleAlias ? isa.Type : isa.Type.InnerDeclaration;
+					foreach (var mod in ctxt.ParseCache.LookupModuleName(td.ToString()))
+						mods.Add(mod as DModule);
 
-					var mods = new List<ResolveResult>();
-					foreach (var mod in ctxt.ParseCache.LookupModuleName(isa.IsModuleAlias ?
-						isa.Type.ToString() :
-						isa.Type.InnerDeclaration.ToString()))
-						mods.Add(new ModuleResult(mod));
+					
 
-					if (isa.IsModuleAlias)
-						alias.MemberBaseTypes = mods.ToArray();
-					else
-						alias.MemberBaseTypes = ResolveFurtherTypeIdentifier(isa.Type.ToString(false), mods, ctxt, isa.Type);
+					if(mods.Count == 0)
+							ctxt.LogError(new NothingFoundError(isa.Type));
+					else if(mods.Count > 1)
+					{
+						var m__=new List<ISemantic>();
 
-					ret = alias;
+						foreach(var mod in mods)
+ 							m__.Add(new ModuleSymbol(mod, isa.Type));
+
+						ctxt.LogError(new AmbiguityError(isa.Type,m__));
+					}
+
+					var bt=mods.Count != 0 ? new ModuleSymbol(mods[0], td) : null;
+
+					if (!isa.IsModuleAlias){
+						var furtherId = ResolveFurtherTypeIdentifier(isa.Type.ToString(false), new[]{ bt }, ctxt, isa.Type);
+
+						if(furtherId)
+					}
+
+					ret = new AliasedType(isa, bt, isa.Type);
 				}
 			}
 			else if (m is DVariable)

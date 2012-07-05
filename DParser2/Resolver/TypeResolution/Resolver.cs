@@ -319,14 +319,14 @@ namespace D_Parser.Resolver.TypeResolution
 			return Parent;
 		}
 
-		public static IEnumerable<ISemantic> FilterOutByResultPriority(
+		public static IEnumerable<T> FilterOutByResultPriority<T>(
 			ResolverContextStack ctxt,
-			IEnumerable<ISemantic> results)
+			IEnumerable<T> results) where T : ISemantic
 		{
 			if (results == null)
 				return null;
 
-			var newRes = new List<ResolveResult>();
+			var newRes = new List<T>();
 
 			foreach (var rb in results)
 			{
@@ -340,20 +340,21 @@ namespace D_Parser.Resolver.TypeResolution
 
 					// If member/type etc. is part of the actual module, omit external symbols
 					if (n.NodeRoot != ctxt.CurrentContext.ScopedBlock.NodeRoot)
+					{
+						bool omit = false;
 						foreach (var r in newRes)
 						{
-							bool omit = false;
-
 							var k = GetResultMember(r);
 							if (k != null && k.NodeRoot == ctxt.CurrentContext.ScopedBlock.NodeRoot)
 							{
 								omit = true;
 								break;
 							}
-
-							if (omit)
-								continue;
 						}
+
+						if (omit)
+							continue;
+					}
 					else
 						foreach (var r in newRes.ToArray())
 						{
