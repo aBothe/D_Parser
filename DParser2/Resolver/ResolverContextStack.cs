@@ -199,7 +199,7 @@ namespace D_Parser.Resolver
 		/// <summary>
 		/// Returns true if 'results' only contains one valid item
 		/// </summary>
-		public bool CheckForSingleResult(ISemantic[] results, ISyntaxRegion td)
+		public bool CheckForSingleResult<T>(T[] results, ISyntaxRegion td) where T : ISemantic
 		{
 			if (results == null || results.Length == 0)
 			{
@@ -208,7 +208,11 @@ namespace D_Parser.Resolver
 			}
 			else if (results.Length > 1)
 			{
-				LogError(new AmbiguityError(td, results));
+				var r = new List<ISemantic>();
+				foreach (var res in results)
+					r.Add(res);
+
+				LogError(new AmbiguityError(td, r));
 				return false;
 			}
 

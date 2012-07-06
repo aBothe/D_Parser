@@ -5,6 +5,7 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
 using D_Parser.Parser;
 using D_Parser.Resolver.ASTScanner;
+using D_Parser.Evaluation;
 
 namespace D_Parser.Resolver.TypeResolution
 {
@@ -18,6 +19,33 @@ namespace D_Parser.Resolver.TypeResolution
 				return new PrimitiveType(tk, 0, token);
 
 			return null;
+		}
+
+		public static ISemantic[] Convert(IEnumerable<AbstractType> at)
+		{
+			var l = new List<ISemantic>();
+
+			if(at!=null)
+				foreach (var t in at)
+					l.Add(t);
+
+			return l.ToArray();
+		}
+
+		public static AbstractType[] Convert(IEnumerable<ISemantic> at)
+		{
+			var l = new List<AbstractType>();
+
+			if (at != null)
+				foreach (var t in at)
+				{
+					if (t is AbstractType)
+						l.Add((AbstractType)t);
+					else if (t is ISymbolValue)
+						l.Add(((ISymbolValue)t).RepresentedType);
+				}
+
+			return l.ToArray();
 		}
 
 		public static ISemantic[] ResolveIdentifier(string id, ResolverContextStack ctxt, object idObject, bool ModuleScope = false)
@@ -70,7 +98,7 @@ namespace D_Parser.Resolver.TypeResolution
 				if (rbases == null || rbases.Length == 0)
 					return null;
 
-				res= ResolveFurtherTypeIdentifier(id.Id, rbases, ctxt, id);
+				res= Convert(ResolveFurtherTypeIdentifier(id.Id, Convert(rbases), ctxt, id));
 			}
 
 			if(filterForTemplateArgs && !ctxt.Options.HasFlag(ResolutionOptions.NoTemplateParameterDeduction))
@@ -188,75 +216,73 @@ namespace D_Parser.Resolver.TypeResolution
 			return null;
 		}
 
-		public static AbstractType[] Resolve(MemberFunctionAttributeDecl attrDecl, ResolverContextStack ctxt)
+		public static AbstractType Resolve(MemberFunctionAttributeDecl attrDecl, ResolverContextStack ctxt)
 		{
 			var ret = Resolve(attrDecl.InnerType, ctxt);
 
-			if (ret != null)
-				foreach (var r in ret)
-					if(r!=null)
-						r.DeclarationOrExpressionBase = attrDecl;
+			ctxt.CheckForSingleResult(ret, attrDecl.InnerType);
 
-			return ret;
+			if (ret != null && ret.Length != 0)
+			{
+				ret[0].Modifier = attrDecl.Modifier;
+				return ret[0];
+			}
+
+			return null;
 		}
 
-		public static ResolveResult[] Resolve(ArrayDecl ad, ResolverContextStack ctxt)
+		public static AssocArrayType Resolve(ArrayDecl ad, ResolverContextStack ctxt)
 		{
 			var valueTypes = Resolve(ad.ValueType, ctxt);
 
-			ResolveResult[] keyTypes = null;
+			ctxt.CheckForSingleResult(valueTypes, ad);
+
+			AbstractType valueType = null;
+			AbstractType keyType=null;
+
+			if (valueTypes == null || valueTypes.Length == 0)
+				return null;
+			valueType = valueTypes[0];
 
 			if (ad.KeyExpression != null)
-				keyTypes = ExpressionTypeResolver.Resolve(ad.KeyExpression, ctxt);
+				keyType = ExpressionTypeResolver.Resolve(ad.KeyExpression, ctxt);
 			else
-				keyTypes = Resolve(ad.KeyType, ctxt);
+			{
+				var t = Resolve(ad.KeyType, ctxt);
+				ctxt.CheckForSingleResult(t, ad.KeyType);
 
-			if (valueTypes == null)
-				return new[] { new ArrayResult { 
-					ArrayDeclaration = ad,
-					KeyType=keyTypes
-				}};
+				if (t != null && t.Length != 0)
+					keyType = t[0];
+			}
 
-			var r = new List<ResolveResult>(valueTypes.Length);
 
-			foreach (var valType in valueTypes)
-				r.Add(new ArrayResult { 
-					ArrayDeclaration = ad,
-					ResultBase=valType,
-					KeyType=keyTypes
-				});
+			if (keyType== null || (keyType is PrimitiveType && ((PrimitiveType)keyType).TypeToken == DTokens.Int))
+				return new ArrayType(valueType, ad);
 
-			return r.ToArray();
+			return new AssocArrayType(valueType, keyType, ad);
 		}
 
-		public static ResolveResult[] Resolve(PointerDecl pd, ResolverContextStack ctxt)
+		public static PointerType Resolve(PointerDecl pd, ResolverContextStack ctxt)
 		{
 			var ptrBaseTypes = Resolve(pd.InnerDeclaration, ctxt);
 
-			if (ptrBaseTypes == null)
-				return new[] { 
-					new StaticTypeResult{ DeclarationOrExpressionBase=pd}
-				};
+			ctxt.CheckForSingleResult(ptrBaseTypes, pd);
 
-			var r = new List<ResolveResult>();
+			if (ptrBaseTypes == null || ptrBaseTypes.Length == 0)
+				return null;
 
-			foreach (var t in ptrBaseTypes)
-				r.Add(new StaticTypeResult { 
-					DeclarationOrExpressionBase=pd,
-					ResultBase=t
-				});
-
-			return r.ToArray();
+			return new PointerType(ptrBaseTypes[0], pd);
 		}
 
-		public static ResolveResult[] Resolve(DelegateDeclaration dg, ResolverContextStack ctxt)
+		public static DelegateType Resolve(DelegateDeclaration dg, ResolverContextStack ctxt)
 		{
-			var r = new DelegateResult { DeclarationOrExpressionBase=dg };
+			var returnTypes = Resolve(dg.ReturnType, ctxt);
 
-			if(!ctxt.Options.HasFlag(ResolutionOptions.DontResolveBaseTypes))
-				r.ReturnType = Resolve(dg.ReturnType, ctxt);
+			ctxt.CheckForSingleResult(returnTypes, dg.ReturnType);
 
-			return new[] { r };
+			if (returnTypes != null && returnTypes.Length != 0)
+				return new DelegateType(returnTypes[0], dg); // Parameter types will be resolved later on
+			return null;
 		}
 
 		public static AbstractType[] Resolve(ITypeDeclaration declaration, ResolverContextStack ctxt)
@@ -374,12 +400,18 @@ namespace D_Parser.Resolver.TypeResolution
 						ctxt.LogError(new AmbiguityError(isa.Type,m__));
 					}
 
-					var bt=mods.Count != 0 ? new ModuleSymbol(mods[0], td) : null;
+					var bt=mods.Count != 0 ? (AbstractType)new ModuleSymbol(mods[0], td) : null;
 
+					//TODO: Is this correct behaviour?
 					if (!isa.IsModuleAlias){
 						var furtherId = ResolveFurtherTypeIdentifier(isa.Type.ToString(false), new[]{ bt }, ctxt, isa.Type);
 
-						if(furtherId)
+						ctxt.CheckForSingleResult(furtherId, isa.Type);
+
+						if (furtherId != null && furtherId.Length != 0)
+							bt = furtherId[0] as AbstractType;
+						else
+							bt = null;
 					}
 
 					ret = new AliasedType(isa, bt, isa.Type);

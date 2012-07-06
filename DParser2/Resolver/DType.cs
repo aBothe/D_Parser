@@ -12,6 +12,8 @@ namespace D_Parser.Resolver
 	{
 		public readonly ISyntaxRegion DeclarationOrExpressionBase;
 
+		protected int modifier;
+
 		/// <summary>
 		/// e.g. const, immutable
 		/// </summary>
@@ -19,10 +21,17 @@ namespace D_Parser.Resolver
 		{
 			get
 			{
+				if (modifier != 0)
+					return modifier;
+
 				if (DeclarationOrExpressionBase is MemberFunctionAttributeDecl)
 					return ((MemberFunctionAttributeDecl)DeclarationOrExpressionBase).Modifier;
 
 				return 0;
+			}
+			set
+			{
+				modifier = value;
 			}
 		}
 
@@ -44,23 +53,17 @@ namespace D_Parser.Resolver
 	{
 		public readonly int TypeToken;
 
-		public override int Modifier
-		{
-			get { return _mod; }
-		}
-		readonly int _mod;
-
 		public PrimitiveType(int TypeToken, int Modifier = 0)
 		{
 			this.TypeToken = TypeToken;
-			this._mod = Modifier;
+			this.modifier = Modifier;
 		}
 
 		public PrimitiveType(int TypeToken, int Modifier, ISyntaxRegion td)
 			: base(td)
 		{
 			this.TypeToken = TypeToken;
-			this._mod = Modifier;
+			this.modifier = Modifier;
 		}
 
 		public override string ToCode()
@@ -129,9 +132,9 @@ namespace D_Parser.Resolver
 	{
 		public readonly bool IsFunction;
 		public bool IsFunctionLiteral { get { return DeclarationOrExpressionBase is FunctionLiteral; } }
-		public readonly AbstractType[] Parameters;
+		public AbstractType[] Parameters { get; set; }
 
-		public DelegateType(AbstractType ReturnType,DelegateDeclaration Declaration, IEnumerable<AbstractType> Parameters) : base(ReturnType, Declaration)
+		public DelegateType(AbstractType ReturnType,DelegateDeclaration Declaration, IEnumerable<AbstractType> Parameters = null) : base(ReturnType, Declaration)
 		{
 			this.IsFunction = Declaration.IsFunction;
 
@@ -141,7 +144,7 @@ namespace D_Parser.Resolver
 				this.Parameters = Parameters.ToArray();
 		}
 
-		public DelegateType(AbstractType ReturnType, FunctionLiteral Literal, IEnumerable<AbstractType> Parameters)
+		public DelegateType(AbstractType ReturnType, FunctionLiteral Literal, IEnumerable<AbstractType> Parameters = null)
 			: base(ReturnType, Literal)
 		{
 			this.IsFunction = Literal.LiteralToken == DTokens.Function;
