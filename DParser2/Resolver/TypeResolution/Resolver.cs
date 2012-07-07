@@ -124,7 +124,10 @@ namespace D_Parser.Resolver.TypeResolution
 				if (o is IdentifierExpression && ((IdentifierExpression)o).Format.HasFlag(LiteralFormat.Scalar))
 					return null;
 
-				return ExpressionTypeResolver.Resolve((IExpression)o, ctxt);
+				var t=ExpressionTypeResolver.Resolve((IExpression)o, ctxt);
+
+				if (t != null)
+					return new[] { t };
 			}
 			else if(o is ITypeDeclaration)
 				return TypeDeclarationResolver.Resolve((ITypeDeclaration)o, ctxt);
@@ -136,41 +139,64 @@ namespace D_Parser.Resolver.TypeResolution
 		/// <summary>
 		/// Takes the class passed via the tr, and resolves its base class and/or implemented interfaces.
 		/// Also usable for enums.
+		/// 
+		/// Never returns null. Instead, the original 'tr' object will be returned if no base class was resolved.
+		/// Will clone 'tr', whereas the new object will contain the base class.
 		/// </summary>
-		public static void ResolveBaseClasses(TypeResult tr, ResolverContextStack ctxt, bool ResolveFirstBaseIdOnly=false)
+		public static UserDefinedType ResolveBaseClasses(UserDefinedType tr, ResolverContextStack ctxt, bool ResolveFirstBaseIdOnly=false)
 		{
 			if (bcStack > 8)
 			{
 				bcStack--;
-				return;
+				return tr;
 			}
 
-			if (tr.Node is DEnum)
+			if (tr is EnumType)
 			{
-				var de = (DEnum)tr.Node;
+				var et = tr as EnumType;
 
-				if (de.Type == null)
-					tr.BaseClass = new[] { new StaticTypeResult { BaseTypeToken = DTokens.Int } };
+				AbstractType bt = null;
+
+				if(et.Definition.Type == null)
+					bt = new PrimitiveType(DTokens.Int);
 				else
-					tr.BaseClass = TypeDeclarationResolver.Resolve(de.Type, ctxt);
+				{
+					var bts=TypeDeclarationResolver.Resolve(et.Definition.Type, ctxt);
 
-				return;
+					ctxt.CheckForSingleResult(bts, et.Definition.Type);
+
+					if(bts!=null && bts.Length!=0)
+						bt=bts[0];
+				}
+
+				return new EnumType(et.Definition, bt, et.DeclarationOrExpressionBase);
 			}
 
-			var dc = tr.Node as DClassLike;
+			var dc = tr.Definition as DClassLike;
 			// Return immediately if searching base classes of the Object class
 			if (dc == null || ((dc.BaseClasses == null || dc.BaseClasses.Count < 1) && dc.Name == "Object"))
-				return;
+				return tr;
 
 			// If no base class(es) specified, and if it's no interface that is handled, return the global Object reference
+			// -- and do not throw any error message, it's ok
 			if(dc.BaseClasses == null || dc.BaseClasses.Count < 1)
 			{
-				if(dc.ClassType != DTokens.Interface) // Only Non-interfaces can inherit from non-interfaces
-					tr.BaseClass= ctxt.ParseCache.ObjectClassResult;
-				return;
+				if(tr is ClassType) // Only Classes can inherit from non-interfaces
+					return new ClassType(dc, tr.DeclarationOrExpressionBase, ctxt.ParseCache.ObjectClassResult);
+				return tr;
 			}
 
-			var interfaces = new List<TypeResult[]>();
+			#region Base class & interface resolution
+			TemplateIntermediateType baseClass=null;
+			var interfaces = new List<InterfaceType>();
+
+			if (!(tr is ClassType || tr is InterfaceType))
+			{
+				if (dc.BaseClasses.Count != 0)
+					ctxt.LogError(dc,"Only classes and interfaces may inherit from other classes/interfaces");
+				return tr;
+			}
+
 			for (int i = 0; i < (ResolveFirstBaseIdOnly ? 1 : dc.BaseClasses.Count); i++)
 			{
 				var type = dc.BaseClasses[i];
@@ -178,24 +204,24 @@ namespace D_Parser.Resolver.TypeResolution
 				// If there's an explicit 'Object' inheritance, also return the pre-resolved object class
 				if (type is IdentifierDeclaration && ((IdentifierDeclaration)type).Id == "Object")
 				{
-					if (tr.BaseClass != null)
+					if (baseClass!=null)
 					{
-						// Error: Two base classes!
+						ctxt.LogError(new ResolutionError(dc, "Class must not have two base classes"));
 						continue;
 					}
 					else if (i != 0)
 					{
-						// Error: Super class must be at first position!
+						ctxt.LogError(new ResolutionError(dc, "The base class name must preceed base interfaces"));
 						continue;
 					}
 
-					tr.BaseClass = ctxt.ParseCache.ObjectClassResult;
+					baseClass = ctxt.ParseCache.ObjectClassResult;
 					continue;
 				}
 
 				if (type == null || type.ToString(false) == dc.Name || dc.NodeRoot == dc)
 				{
-					// Error: A class cannot inherit itself
+					ctxt.LogError(new ResolutionError(dc, "A class cannot inherit from itself"));
 					continue;
 				}
 
@@ -205,77 +231,49 @@ namespace D_Parser.Resolver.TypeResolution
 
 				var res=TypeDeclarationResolver.Resolve(type, ctxt);
 
-				if (res == null)
+				ctxt.CheckForSingleResult(res, type);
+
+				if(res!=null && res.Length != 0)
 				{
-					// Error: Couldn't resolve 'type'
-				}
-				else
-				{
-					var curInterface = new List<TypeResult>();
-					bool isClass = false;
-					foreach (var r in res)
+					var r = res[0];
+					if (r is ClassType || r is TemplateType)
 					{
-						var ttr = r as TypeResult;
-
-						if (ttr == null)
+						if (tr is InterfaceType)
+							ctxt.LogError(new ResolutionError(type, "An interface cannot inherit from non-interfaces"));
+						else if (i == 0)
 						{
-							// Error: Invalid base type
-							continue;
+							baseClass = (TemplateIntermediateType)res[0];
 						}
-
-						var dc_ = ttr.Node as DClassLike;
-
-						if (dc_ == null)
-						{
-							// Error: Invalid base type
-							continue;
-						}
-
-						switch (dc_.ClassType)
-						{
-							case DTokens.Class:
-								if (i == 0)
-								{
-									isClass = true;
-									curInterface.Add(ttr);
-
-									if (curInterface.Count > 1)
-									{
-										// Error: Ambiguous declaration!
-									}
-								}
-								else
-								{
-									// Error: Base class can only be supplied in the first position
-								}
-								break;
-							case DTokens.Interface:
-								curInterface.Add(ttr);
-								
-								if (isClass || curInterface.Count > 1)
-								{
-									// Error: Ambiguous declaration
-								}
-								
-								break;
-							default:
-								// Error: Cannot inherit from other types than 'class' and interface!
-								break;
-						}
+						else
+							ctxt.LogError(new ResolutionError(dc, "The base "+(r is ClassType ?  "class" : "template")+" name must preceed base interfaces"));
 					}
-
-					if (isClass)
-						tr.BaseClass = curInterface.ToArray();
+					else if (r is InterfaceType)
+					{
+						interfaces.Add((InterfaceType)r);
+					}
 					else
-						interfaces.Add(curInterface.ToArray());
+					{
+						ctxt.LogError(new ResolutionError(type, "Resolved class is neither a class nor an interface"));
+						continue;
+					}
 				}
 
 				bcStack--;
 
 				ctxt.Pop();
 			}
+			#endregion
 
-			tr.ImplementedInterfaces = interfaces.ToArray();
+			if (baseClass == null && interfaces.Count == 0)
+				return tr;
+
+			if (tr is ClassType)
+				return new ClassType(dc, tr.DeclarationOrExpressionBase, baseClass, interfaces.Count == 0 ? null : interfaces.ToArray(), tr.DeducedTypes);
+			else if (tr is InterfaceType)
+				return new InterfaceType(dc, tr.DeclarationOrExpressionBase, interfaces.Count == 0 ? null : interfaces.ToArray(), tr.DeducedTypes);
+			
+			// Method should end here
+			return tr;
 		}
 
 		public static IBlockNode SearchBlockAt(IBlockNode Parent, CodeLocation Where, out IStatement ScopedStatement)

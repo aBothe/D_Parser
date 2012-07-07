@@ -162,7 +162,7 @@ namespace D_Parser.Resolver
 
 				if (templateType.BaseInterfaces != null &&
 					templateType.BaseInterfaces.Length != 0 &&
-					target is InterfaceIntermediateType)
+					target is InterfaceType)
 				{
 					foreach (var I in templateType.BaseInterfaces)
 						if (IsImplicitlyConvertible(I, target))

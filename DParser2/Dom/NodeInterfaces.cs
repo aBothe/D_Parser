@@ -42,7 +42,7 @@ namespace D_Parser.Dom
 		INode this[string Name] { get; set; }
 	}
 
-	public interface INode
+	public interface INode : ISyntaxRegion
 	{
 		string Name { get; set; }
 		CodeLocation NameLocation { get; set; }

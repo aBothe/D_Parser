@@ -230,8 +230,8 @@ namespace D_Parser.Resolver
 	{
 		public new DEnum Definition { get { return base.Definition as DEnum; } }
 
-		public EnumType(DEnum Enum, AbstractType BaseType, ISyntaxRegion td) : base(Enum, BaseType, td) { }
-		public EnumType(DEnum Enum, ISyntaxRegion td) : base(Enum, new PrimitiveType(DTokens.Int, 0), td) { }
+		public EnumType(DEnum Enum, AbstractType BaseType, ISyntaxRegion td) : base(Enum, BaseType, null, td) { }
+		public EnumType(DEnum Enum, ISyntaxRegion td) : base(Enum, new PrimitiveType(DTokens.Int, 0), null, td) { }
 	}
 
 	public class StructType : TemplateIntermediateType
@@ -247,13 +247,13 @@ namespace D_Parser.Resolver
 	public class ClassType : TemplateIntermediateType
 	{
 		public ClassType(DClassLike dc, ISyntaxRegion td, 
-			TemplateIntermediateType baseType, InterfaceIntermediateType[] baseInterfaces,
+			TemplateIntermediateType baseType, InterfaceType[] baseInterfaces,
 			ReadOnlyCollection<KeyValuePair<string, ISemantic>> deducedTypes)
 			: base(dc, td, baseType, baseInterfaces, deducedTypes)
 		{}
 
 		public ClassType(DClassLike dc, ISyntaxRegion td, 
-			TemplateIntermediateType baseType, InterfaceIntermediateType[] baseInterfaces = null,
+			TemplateIntermediateType baseType, InterfaceType[] baseInterfaces = null,
 			Dictionary<string, ISemantic> deducedTypes= null)
 			: base(dc, td, baseType, baseInterfaces, deducedTypes)
 		{}
@@ -264,22 +264,32 @@ namespace D_Parser.Resolver
 		}
 	}
 
-	public class InterfaceIntermediateType : TemplateIntermediateType
+	public class InterfaceType : TemplateIntermediateType
 	{
-		public InterfaceIntermediateType(DClassLike dc, ISyntaxRegion td, 
-			InterfaceIntermediateType[] baseInterfaces=null,
+		public InterfaceType(DClassLike dc, ISyntaxRegion td, 
+			InterfaceType[] baseInterfaces=null,
 			Dictionary<string,ISemantic> deducedTypes = null) 
 			: base(dc, td, null, baseInterfaces, deducedTypes) {}
+
+		public InterfaceType(DClassLike dc, ISyntaxRegion td,
+			InterfaceType[] baseInterfaces,
+			ReadOnlyCollection<KeyValuePair<string, ISemantic>> deducedTypes)
+			: base(dc, td, null, baseInterfaces, deducedTypes) { }
+	}
+
+	public class TemplateType : TemplateIntermediateType
+	{
+		public TemplateType(DClassLike dc, ISyntaxRegion td) : base(dc, td) { }
 	}
 
 	public class TemplateIntermediateType : UserDefinedType
 	{
 		public new DClassLike Definition { get { return base.Definition as DClassLike; } }
 
-		public readonly InterfaceIntermediateType[] BaseInterfaces;
+		public readonly InterfaceType[] BaseInterfaces;
 
 		public TemplateIntermediateType(DClassLike dc, ISyntaxRegion td, 
-			AbstractType baseType = null, InterfaceIntermediateType[] baseInterfaces = null,
+			AbstractType baseType = null, InterfaceType[] baseInterfaces = null,
 			ReadOnlyCollection<KeyValuePair<string, ISemantic>> deducedTypes = null)
 			: base(dc, baseType, deducedTypes, td)
 		{
@@ -287,7 +297,7 @@ namespace D_Parser.Resolver
 		}
 
 		public TemplateIntermediateType(DClassLike dc, ISyntaxRegion td, 
-			AbstractType baseType, InterfaceIntermediateType[] baseInterfaces,
+			AbstractType baseType, InterfaceType[] baseInterfaces,
 			Dictionary<string, ISemantic> deducedTypes)
 			: this(dc,td, baseType,baseInterfaces, new ReadOnlyCollection<KeyValuePair<string, ISemantic>>(deducedTypes.ToArray()))
 		{ }
