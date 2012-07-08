@@ -6,6 +6,15 @@ namespace D_Parser.Resolver.TypeResolution
 {
 	public class StaticPropertyResolver
 	{
+		public static AbstractType getStringType(ResolverContextStack ctxt)
+		{
+			var str = new IdentifierDeclaration("string");
+			var sType = TypeDeclarationResolver.Convert(TypeDeclarationResolver.Resolve(str, ctxt));
+			ctxt.CheckForSingleResult(sType, str);
+
+			return sType != null && sType.Length != 0 ? sType[0] : null;
+		}
+
 		/// <summary>
 		/// Tries to resolve a static property's name.
 		/// Returns a result describing the theoretical member (".init"-%gt;MemberResult; ".typeof"-&gt;TypeResult etc).
@@ -13,25 +22,23 @@ namespace D_Parser.Resolver.TypeResolution
 		/// </summary>
 		/// <param name="InitialResult"></param>
 		/// <returns></returns>
-		public static ResolveResult TryResolveStaticProperties(
-			ResolveResult InitialResult, 
+		public static MemberSymbol TryResolveStaticProperties(
+			AbstractType InitialResult, 
 			string propertyIdentifier, 
 			ResolverContextStack ctxt = null, 
 			IdentifierDeclaration idContainter = null)
 		{
 			// If a pointer'ed type is given, take its base type
-			if (InitialResult is StaticTypeResult && InitialResult.DeclarationOrExpressionBase is PointerDecl)
-				InitialResult = InitialResult.ResultBase;
+			if (InitialResult is PointerType)
+				InitialResult = ((PointerType)InitialResult).Base;
 
-			if (InitialResult == null || InitialResult is ModuleResult)
+			if (InitialResult == null || InitialResult is ModuleSymbol)
 				return null;
 
 			INode relatedNode = null;
 
-			if (InitialResult is MemberResult)
-				relatedNode = (InitialResult as MemberResult).Node;
-			else if (InitialResult is TypeResult)
-				relatedNode = (InitialResult as TypeResult).Node;
+			if (InitialResult is DSymbol)
+				relatedNode = ((DSymbol)InitialResult).Definition;
 
 			#region init
 			if (propertyIdentifier == "init")
@@ -57,146 +64,74 @@ namespace D_Parser.Resolver.TypeResolution
 					}
 				}
 
-				return new MemberResult
-				{
-					ResultBase = InitialResult,
-					MemberBaseTypes = new[] { InitialResult },
-					DeclarationOrExpressionBase = idContainter,
-					Node = prop_Init
-				};
+				return new MemberSymbol(prop_Init, DResolver.StripMemberSymbols(InitialResult), idContainter);
 			}
 			#endregion
 
 			#region sizeof
 			if (propertyIdentifier == "sizeof")
-				return new MemberResult
-				{
-					ResultBase = InitialResult,
-					DeclarationOrExpressionBase = idContainter,
-					Node = new DVariable
+				return new MemberSymbol(new DVariable
 					{
 						Name = "sizeof",
 						Type = new DTokenDeclaration(DTokens.Int),
 						Initializer = new IdentifierExpression(4),
 						Description = "Size in bytes (equivalent to C's sizeof(type))"
-					}
-				};
+					}, new PrimitiveType(DTokens.Int), idContainter);
 			#endregion
 
 			#region alignof
 			if (propertyIdentifier == "alignof")
-				return new MemberResult
-				{
-					ResultBase = InitialResult,
-					DeclarationOrExpressionBase = idContainter,
-					Node = new DVariable
+				return new MemberSymbol(new DVariable
 					{
 						Name = "alignof",
 						Type = new DTokenDeclaration(DTokens.Int),
 						Description = "Alignment size"
-					}
-				};
+					}, new PrimitiveType(DTokens.Int),idContainter);
 			#endregion
 
 			#region mangleof
 			if (propertyIdentifier == "mangleof")
-				return new MemberResult
-				{
-					ResultBase = InitialResult,
-					DeclarationOrExpressionBase = idContainter,
-					Node = new DVariable
+				return new MemberSymbol(new DVariable
 					{
 						Name = "mangleof",
 						Type = new IdentifierDeclaration("string"),
 						Description = "String representing the ‘mangled’ representation of the type"
-					},
-					MemberBaseTypes = TypeDeclarationResolver.Resolve(new IdentifierDeclaration("string"), ctxt)
-				};
+					}, getStringType(ctxt) , idContainter);
 			#endregion
 
 			#region stringof
 			if (propertyIdentifier == "stringof")
-				return new MemberResult
-				{
-					ResultBase = InitialResult,
-					DeclarationOrExpressionBase = idContainter,
-					Node = new DVariable
+				return new MemberSymbol(new DVariable
 					{
 						Name = "stringof",
 						Type = new IdentifierDeclaration("string"),
 						Description = "String representing the source representation of the type"
-					},
-					MemberBaseTypes = TypeDeclarationResolver.Resolve(new IdentifierDeclaration("string"), ctxt)
-				};
+					}, getStringType(ctxt), idContainter);
 			#endregion
 
-			bool
-				isArray= false,
-				isAssocArray = false,
-				isInt = false,
-				isFloat = false;
-
-			if (InitialResult is StaticTypeResult)
-			{
-				var srr = InitialResult as StaticTypeResult;
-
-				var type = srr.DeclarationOrExpressionBase;
-
-				// on things like immutable(char), pass by the surrounding attribute..
-				while (type is MemberFunctionAttributeDecl)
-					type = (type as MemberFunctionAttributeDecl).InnerType;
-
-				if (!(type is PointerDecl))
-				{
-					int TypeToken = srr.BaseTypeToken;
-
-					if (TypeToken <= 0 && type is DTokenDeclaration)
-						TypeToken = (type as DTokenDeclaration).Token;
-
-					if (TypeToken > 0)
-					{
-						// Determine whether float by the var's base type
-						isInt = DTokens.BasicTypes_Integral[srr.BaseTypeToken];
-						isFloat = DTokens.BasicTypes_FloatingPoint[srr.BaseTypeToken];
-					}
-				}
-			}
-			else if (InitialResult is ArrayResult)
-			{
-				isArray=true;
-
-				var ar = InitialResult as ArrayResult;
-
-				isAssocArray = ar.ArrayDeclaration.IsAssociative;
-			}
+			#region classinfo
 			else if (propertyIdentifier == "classinfo")
 			{
-				var tr= InitialResult as TypeResult;
-				
-				if(tr==null && InitialResult is MemberResult)
-				{
-					var baseTypes=DResolver.StripAliasSymbols(((MemberResult)InitialResult).MemberBaseTypes);
+				var tr = DResolver.StripMemberSymbols(InitialResult) as TemplateIntermediateType;
 
-					if (baseTypes != null && baseTypes.Length > 0)
-						tr = baseTypes[0] as TypeResult;
-				}
-
-				if (tr != null)
+				if (tr is ClassType || tr is InterfaceType)
 				{
-					var ti = TypeDeclarationResolver.Resolve(new IdentifierDeclaration("TypeInfo_Class")
+					var ci=new IdentifierDeclaration("TypeInfo_Class")
 					{
 						InnerDeclaration = new IdentifierDeclaration("object"),
 						ExpressesVariableAccess = true,
-					}, ctxt);
-
-					return new MemberResult
-					{
-						MemberBaseTypes = ti,
-						ResultBase = InitialResult,
-						DeclarationOrExpressionBase = idContainter
 					};
+
+					var ti = TypeDeclarationResolver.Resolve(ci, ctxt);
+
+					ctxt.CheckForSingleResult(ti, ci);
+
+					return new MemberSymbol(new DVariable { Name = "classinfo", Type = ci }, ti!=null && ti.Length!=0?ti[0] as AbstractType:null, idContainter);
 				}
 			}
+			#endregion
+
+			//TODO: Resolve the types of type-specific properties (floats, ints, arrays, assocarrays etc.)
 
 			return null;
 		}

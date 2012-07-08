@@ -10,7 +10,7 @@ namespace D_Parser.Resolver
 {
 	public abstract class AbstractType : ISemantic
 	{
-		public readonly ISyntaxRegion DeclarationOrExpressionBase;
+		public ISyntaxRegion DeclarationOrExpressionBase;
 
 		protected int modifier;
 

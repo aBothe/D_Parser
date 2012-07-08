@@ -7,7 +7,7 @@ namespace D_Parser.Resolver.TypeResolution
 {
 	public class TraitsResolver
 	{
-		public static ResolveResult[] Resolve(TraitsExpression te, ResolverContextStack ctxt)
+		public static AbstractType Resolve(TraitsExpression te, ResolverContextStack ctxt)
 		{
 			// TODO: Return either bools, strings, array (pointers) to members or stuff
 			return null;

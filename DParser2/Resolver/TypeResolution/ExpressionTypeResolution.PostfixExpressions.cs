@@ -7,7 +7,7 @@ namespace D_Parser.Resolver.TypeResolution
 {
 	public partial class ExpressionTypeResolver
 	{
-		public static ResolveResult[] Resolve(PostfixExpression ex, ResolverContextStack ctxt)
+		public static AbstractType Resolve(PostfixExpression ex, ResolverContextStack ctxt)
 		{
 			if (ex is PostfixExpression_MethodCall)
 				return Resolve(ex as PostfixExpression_MethodCall, ctxt);
@@ -271,27 +271,24 @@ namespace D_Parser.Resolver.TypeResolution
 			return null;
 		}
 
-		public static ResolveResult[] Resolve(PostfixExpression_Access acc, 
+		public static AbstractType[] Resolve(PostfixExpression_Access acc, 
 			ResolverContextStack ctxt, 
-			ResolveResult[] resultBases = null,
+			AbstractType resultBase = null,
 			IExpression supExpression=null)
 		{
 			if (acc == null)
 				return null;
 
-			var baseExpression = resultBases ?? Resolve(acc.PostfixForeExpression, ctxt);
+			var baseExpression = resultBase ?? Resolve(acc.PostfixForeExpression, ctxt);
 
 			if (acc.AccessExpression is TemplateInstanceExpression)
 			{
 				// Do not deduce and filter if superior expression is a method call since call arguments' types also count as template arguments!
-				var res=Resolve((TemplateInstanceExpression)acc.AccessExpression, ctxt, baseExpression, 
+				var res=Resolve((TemplateInstanceExpression)acc.AccessExpression, ctxt, new[]{baseExpression}, 
 					!(supExpression is PostfixExpression_MethodCall));
 
 				// Try to resolve ufcs(?)
-				if (res == null && baseExpression!=null && baseExpression.Length!=0)
-					return UFCSResolver.TryResolveUFCS(baseExpression[0], acc, ctxt);
-				
-				return res;
+				return res ?? UFCSResolver.TryResolveUFCS(baseExpression, acc, ctxt);
 			}
 			else if (acc.AccessExpression is NewExpression)
 			{
@@ -303,56 +300,51 @@ namespace D_Parser.Resolver.TypeResolution
 			else if (acc.AccessExpression is IdentifierExpression)
 			{
 				var id = ((IdentifierExpression)acc.AccessExpression).Value as string;
+				
 				/*
-				 * First off, try to resolve the identifier as it was a type declaration's identifer list part
+				 * 1) First off, try to resolve the identifier as it was a type declaration's identifer list part.
+				 * 2) Static properties
+				 * 3) UFCS
 				 */
-				var results = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(id, baseExpression, ctxt, acc);
+
+				// 1)
+				var results = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(id, new[]{baseExpression}, ctxt, acc);
 
 				if (results != null)
 					return results;
 
-				/*
-				 * Handle cases which can occur in an expression context only
-				 */
+				// 2)
+				var staticTypeProperty = StaticPropertyResolver.TryResolveStaticProperties(baseExpression, id, ctxt);
 
-				if(baseExpression!=null)
-					foreach (var b in baseExpression)
-					{
-						/*
-						 * 1) UFCS
-						 * 2) Static properties 
-						 */
-						var ufcsResult = UFCSResolver.TryResolveUFCS(b, acc, ctxt);
+				if (staticTypeProperty != null)
+					return new[] { staticTypeProperty };
 
-						if (ufcsResult != null)
-							return ufcsResult;
+				// 3)
+				var ufcsResult = UFCSResolver.TryResolveUFCS(baseExpression, acc, ctxt);
 
-						var staticTypeProperty = StaticPropertyResolver.TryResolveStaticProperties(b, id, ctxt);
-
-						if (staticTypeProperty != null)
-							return new[] { staticTypeProperty };
-					}
+				if (ufcsResult != null)
+					return ufcsResult;
 			}
 			else
-				return baseExpression;
+				return new[]{ baseExpression };
 
 			return null;
 		}
 
-		public static ResolveResult[] Resolve(
+		public static AbstractType[] Resolve(
 			TemplateInstanceExpression tix,
 			ResolverContextStack ctxt,
-			IEnumerable<ResolveResult> resultBases = null,
+			IEnumerable<AbstractType> resultBases = null,
 			bool deduceParameters = true)
 		{
-			ResolveResult[] res = null;
+			AbstractType[] res = null;
 			if (resultBases == null)
-				res= TypeDeclarationResolver.ResolveIdentifier(tix.TemplateIdentifier.Id, ctxt, tix, tix.TemplateIdentifier.ModuleScoped);
+				res= TypeDeclarationResolver.Convert(TypeDeclarationResolver.ResolveIdentifier(tix.TemplateIdentifier.Id, ctxt, tix, tix.TemplateIdentifier.ModuleScoped));
 			else
 				res= TypeDeclarationResolver.ResolveFurtherTypeIdentifier(tix.TemplateIdentifier.Id, resultBases, ctxt, tix);
 
 			return !ctxt.Options.HasFlag(ResolutionOptions.NoTemplateParameterDeduction) && deduceParameters ?
-				TemplateInstanceHandler.EvalAndFilterOverloads(res,tix, ctxt) : res;
+				new[]{TemplateInstanceHandler.EvalAndFilterOverloads(res,tix, ctxt)} : res;
 		}
 	}
 }

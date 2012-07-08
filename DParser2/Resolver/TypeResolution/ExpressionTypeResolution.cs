@@ -15,6 +15,7 @@ namespace D_Parser.Resolver.TypeResolution
 			#region Operand based/Trivial expressions
 			if (ex is Expression) // a,b,c;
 			{
+				//TODO
 				return null;
 			}
 
@@ -40,7 +41,7 @@ namespace D_Parser.Resolver.TypeResolution
 				ex is EqualExpression || // a==b
 				ex is IdendityExpression || // a is T
 				ex is RelExpression) // a <= b
-				return new[] { TypeDeclarationResolver.Resolve(new DTokenDeclaration(DTokens.Bool)) };
+				return TypeDeclarationResolver.Resolve(new DTokenDeclaration(DTokens.Bool));
 
 			else if (ex is InExpression) // a in b
 			{
@@ -61,20 +62,48 @@ namespace D_Parser.Resolver.TypeResolution
 				{
 					// http://www.d-programming-language.org/expression.html#NewExpression
 					var nex = ex as NewExpression;
-					ResolveResult[] possibleTypes = null;
-
-					/*
-					 * TODO: Determine argument types
-					 */
+					ISemantic[] possibleTypes = null;
 
 					if (nex.Type is IdentifierDeclaration)
-					{
 						possibleTypes = TypeDeclarationResolver.Resolve((IdentifierDeclaration)nex.Type, ctxt, filterForTemplateArgs: false);
-					}
 					else
 						possibleTypes = TypeDeclarationResolver.Resolve(nex.Type, ctxt);
 
-					return possibleTypes;
+					var ctors = new Dictionary<DMethod,ClassType>();
+
+					foreach (var t in possibleTypes)
+					{
+						if (t is ClassType)
+						{
+							var ct = (ClassType)t;
+
+							bool foundExplicitCtor=false;
+
+							foreach (var m in ct.Definition)
+								if (m is DMethod && ((DMethod)m).SpecialType == DMethod.MethodType.Constructor){
+									ctors.Add((DMethod)m,ct);
+									foundExplicitCtor=true;
+								}
+
+							if(!foundExplicitCtor)
+								ctors.Add(new DMethod(DMethod.MethodType.Constructor) { Type = nex.Type	},ct);
+						}
+					}
+
+					MemberSymbol finalCtor = null;
+
+					var kvArray = ctors.ToArray();
+
+					/*
+					 * TODO: Determine argument types and filter out ctor overloads.
+					 */
+
+					if (kvArray.Length != 0)
+						finalCtor = new MemberSymbol(kvArray[0].Key, kvArray[0].Value, ex);
+					else if (possibleTypes.Length != 0)
+						return possibleTypes[0] as AbstractType;
+
+					return finalCtor;
 				}
 
 
@@ -82,10 +111,16 @@ namespace D_Parser.Resolver.TypeResolution
 				{
 					var ce = ex as CastExpression;
 
-					ResolveResult[] castedType = null;
+					AbstractType castedType = null;
 
-					if (ce.Type != null)
-						castedType = TypeDeclarationResolver.Resolve(ce.Type, ctxt);
+					if (ce.Type != null){
+						var castedTypes = TypeDeclarationResolver.Resolve(ce.Type, ctxt);
+
+						ctxt.CheckForSingleResult(castedTypes, ce.Type);
+
+						if(castedTypes!=null && castedTypes.Length!=0)
+							castedType=castedTypes[0];
+					}
 					else
 					{
 						castedType = Resolve(ce.UnaryExpression, ctxt);
@@ -95,6 +130,8 @@ namespace D_Parser.Resolver.TypeResolution
 							//TODO: Wrap resolved type with member function attributes
 						}
 					}
+
+					return castedType;
 				}
 
 				else if (ex is UnaryExpression_Add ||
@@ -106,25 +143,8 @@ namespace D_Parser.Resolver.TypeResolution
 					return Resolve((ex as SimpleUnaryExpression).UnaryExpression, ctxt);
 
 				else if (ex is UnaryExpression_And)
-				{
-					var baseTypes = Resolve((ex as UnaryExpression_And).UnaryExpression, ctxt);
-
-					/*
-					 * &i -- makes an int* out of an int
-					 */
-					var r = new List<ResolveResult>();
-					if (baseTypes != null)
-						foreach (var b in baseTypes)
-						{
-							r.Add(new StaticTypeResult
-							{
-								ResultBase = b,
-								DeclarationOrExpressionBase = new PointerDecl()
-							});
-						}
-
-					return r.Count > 0 ? r.ToArray() : null;
-				}
+					// &i -- makes an int* out of an int
+					return new PointerType(Resolve((ex as UnaryExpression_And).UnaryExpression, ctxt), ex);
 				else if (ex is DeleteExpression)
 					return null;
 				else if (ex is UnaryExpression_Type)
@@ -134,18 +154,29 @@ namespace D_Parser.Resolver.TypeResolution
 					if (uat.Type == null)
 						return null;
 
-					var type = TypeDeclarationResolver.Resolve(uat.Type, ctxt);
-					var id = new IdentifierDeclaration(uat.AccessIdentifier);
+					var types = TypeDeclarationResolver.Resolve(uat.Type, ctxt);
+					ctxt.CheckForSingleResult(types, uat.Type);
 
-					foreach (var t in type)
+					if(types!=null && types.Length!=0)
 					{
-						var statProp = StaticPropertyResolver.TryResolveStaticProperties(t, id, ctxt);
+						var id = new IdentifierDeclaration(uat.AccessIdentifier) { EndLocation=uat.EndLocation };
 
-						if (statProp != null)
-							return new[] { statProp };
+						// First off, try to resolve static properties
+						var statProp= StaticPropertyResolver.TryResolveStaticProperties(types[0], uat.AccessIdentifier, ctxt, id); 
+
+						if(statProp!=null)
+							return statProp;
+
+						// If it's not the case, try the conservative way
+						var res=TypeDeclarationResolver.Resolve(id, ctxt, TypeDeclarationResolver.Convert(types));
+
+						ctxt.CheckForSingleResult(res, ex);
+
+						if(res!=null && res.Length!=0)
+							return res[0] as AbstractType;
 					}
 
-					return TypeDeclarationResolver.Resolve(id, ctxt, type);
+					return null;
 				}
 			}
 			#endregion
@@ -160,12 +191,21 @@ namespace D_Parser.Resolver.TypeResolution
 				int tt=0;
 
 				if (id.IsIdentifier)
-					return TypeDeclarationResolver.ResolveIdentifier(id.Value as string, ctxt, id, id.ModuleScoped);
+					return TypeDeclarationResolver.ResolveSingle(id.Value as string, ctxt, id, id.ModuleScoped) as AbstractType;
 				
 				switch (id.Format)
 				{
 					case Parser.LiteralFormat.CharLiteral:
-						return new[] { TypeDeclarationResolver.Resolve(new DTokenDeclaration(DTokens.Char)) };
+						switch(id.Subformat)
+						{
+							case LiteralSubformat.Utf8:
+								return new PrimitiveType(DTokens.Char,0,id);
+							case LiteralSubformat.Utf16:
+								return new PrimitiveType(DTokens.Wchar,0,id);
+							case LiteralSubformat.Utf32:
+								return new PrimitiveType(DTokens.Dchar,0,id);
+						}
+						return null;
 
 					case LiteralFormat.FloatingPoint | LiteralFormat.Scalar:
 						var im = id.Subformat.HasFlag(LiteralSubformat.Imaginary);
@@ -177,9 +217,9 @@ namespace D_Parser.Resolver.TypeResolution
 						else if (id.Subformat.HasFlag(LiteralSubformat.Real))
 							tt = im ? DTokens.Ireal : DTokens.Real;
 
-						return new[] { TypeDeclarationResolver.Resolve(new DTokenDeclaration(tt)) };
+						return new PrimitiveType(tt,0,id);
 
-					case Parser.LiteralFormat.Scalar:
+					case LiteralFormat.Scalar:
 						var unsigned = id.Subformat.HasFlag(LiteralSubformat.Unsigned);
 
 						if (id.Subformat.HasFlag(LiteralSubformat.Long))
@@ -187,11 +227,11 @@ namespace D_Parser.Resolver.TypeResolution
 						else
 							tt = unsigned ? DTokens.Uint : DTokens.Int;
 
-						return new[] { TypeDeclarationResolver.Resolve(new DTokenDeclaration(tt)) };
+						return new PrimitiveType(tt,0,id);
 
 					case Parser.LiteralFormat.StringLiteral:
 					case Parser.LiteralFormat.VerbatimStringLiteral:
-						ResolveResult _t = null;
+						AbstractType _t = null;
 
 						if (ctxt != null)
 						{
@@ -209,19 +249,18 @@ namespace D_Parser.Resolver.TypeResolution
 						
 						if(_t==null)
 						{
-							var ch=new DTokenDeclaration(id.Subformat == LiteralSubformat.Utf32 ? DTokens.Dchar :
-								id.Subformat == LiteralSubformat.Utf16 ? DTokens.Wchar : DTokens.Char);
+							var ch=id.Subformat == LiteralSubformat.Utf32 ? DTokens.Dchar :
+								id.Subformat == LiteralSubformat.Utf16 ? DTokens.Wchar : DTokens.Char;
 
-							var immutable = new MemberFunctionAttributeDecl(DTokens.Immutable) {
-								InnerType=ch,
-								Location=id.Location,
-								EndLocation= id.EndLocation
-							};
-
-							_t=TypeDeclarationResolver.Resolve(new ArrayDecl { ValueType = immutable }, null)[0];
+							_t=new ArrayType(new PrimitiveType(ch, DTokens.Immutable),
+								new ArrayDecl{ 
+									ValueType=new MemberFunctionAttributeDecl(DTokens.Immutable) {
+										InnerType=new DTokenDeclaration(ch)
+									}
+								});
 						}
 
-						return new[]{ _t };
+						return _t;
 				}
 			}
 
@@ -241,12 +280,7 @@ namespace D_Parser.Resolver.TypeResolution
 						classDef = classDef.Parent as IBlockNode;
 
 					if (classDef is DClassLike)
-					{
-						var res = TypeDeclarationResolver.HandleNodeMatch(classDef, ctxt, null, ex);
-
-						if (res != null)
-							return new[] { res };
-					}
+						return TypeDeclarationResolver.HandleNodeMatch(classDef, ctxt, null, ex);
 				}
 				// References super type of currently scoped class declaration
 				else if (token == DTokens.Super)
@@ -258,16 +292,14 @@ namespace D_Parser.Resolver.TypeResolution
 
 					if (classDef != null)
 					{
-						var tr = new TypeResult { Node=classDef };
-						DResolver.ResolveBaseClasses(tr, ctxt,true);
+						var tr=DResolver.ResolveBaseClasses(new ClassType(classDef as DClassLike, null, null), ctxt,true);
 
-						if (tr.BaseClass != null && tr.BaseClass.Length!=0)
+						if (tr.Base!=null)
 						{
 							// Important: Overwrite type decl base with 'super' token
-							foreach (var bc in tr.BaseClass)
-								bc.DeclarationOrExpressionBase = ex;
+							tr.Base.DeclarationOrExpressionBase=ex;
 
-							return tr.BaseClass;
+							return tr.Base;
 						}
 					}
 				}
@@ -282,20 +314,7 @@ namespace D_Parser.Resolver.TypeResolution
 					// Simply resolve the first element's type and take it as the array's value type
 					var valueType = Resolve(arr.Elements[0], ctxt);
 
-					if (valueType != null && valueType.Length > 0)
-					{
-						var r = new List<ResolveResult>(valueType.Length);
-
-						// If there are multiple results, return one array result per value type result
-						foreach (var vt in valueType)
-							r.Add(new ArrayResult {
-								ArrayDeclaration=new ArrayDecl(),
-								DeclarationOrExpressionBase=ex,
-								ResultBase=vt
-							});
-
-						return r.ToArray();
-					}
+					return new ArrayType(valueType, ex);
 				}
 			}
 
@@ -303,17 +322,12 @@ namespace D_Parser.Resolver.TypeResolution
 				return Resolve((AssocArrayExpression)ex, ctxt);
 
 			else if (ex is FunctionLiteral)
-			{
-				return new[] { 
-					new DelegateResult { 
-						DeclarationOrExpressionBase=ex, 
-						ReturnType=TypeDeclarationResolver.GetMethodReturnType(((FunctionLiteral)ex).AnonymousMethod, ctxt)
-					}
-				};
-			}
+				return new DelegateType(
+					TypeDeclarationResolver.GetMethodReturnType(((FunctionLiteral)ex).AnonymousMethod, ctxt), 
+					(FunctionLiteral)ex);
 
 			else if (ex is AssertExpression)
-				return new[] { TypeDeclarationResolver.Resolve(new DTokenDeclaration(DTokens.Void)) };
+				return new PrimitiveType(DTokens.Void);
 
 			else if (ex is MixinExpression)
 			{
@@ -326,28 +340,25 @@ namespace D_Parser.Resolver.TypeResolution
 			}
 
 			else if (ex is ImportExpression)
-				return TypeDeclarationResolver.ResolveIdentifier("string", ctxt, null);
+				return StaticPropertyResolver.getStringType(ctxt);
 
-			else if (ex is TypeDeclarationExpression) // should be containing a typeof() only
-				return TypeDeclarationResolver.Resolve((ex as TypeDeclarationExpression).Declaration, ctxt);
+			else if (ex is TypeDeclarationExpression) // should be containing a typeof() only; static properties etc. are parsed as access expressions
+				 return TypeDeclarationResolver.ResolveSingle(((TypeDeclarationExpression)ex).Declaration, ctxt);
 
 			else if (ex is TypeidExpression) //TODO: Split up into more detailed typeinfo objects (e.g. for arrays, pointers, classes etc.)
-				return TypeDeclarationResolver.Resolve(new IdentifierDeclaration("TypeInfo") { InnerDeclaration = new IdentifierDeclaration("object") }, ctxt);
-
+				return TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration("TypeInfo") { InnerDeclaration = new IdentifierDeclaration("object") }, ctxt) as AbstractType;
+			
 			else if (ex is IsExpression)
-				return new[] { TypeDeclarationResolver.Resolve(new DTokenDeclaration(DTokens.Int)) };
+				return new PrimitiveType(DTokens.Bool);
 
 			else if (ex is TraitsExpression)
 				return TraitsResolver.Resolve((TraitsExpression)ex,ctxt);
 			#endregion
 
-			else if (ex is TypeDeclarationExpression)
-				return TypeDeclarationResolver.Resolve((ex as TypeDeclarationExpression).Declaration, ctxt);
-
 			return null;
 		}
 
-		public static ArrayResult[] Resolve(AssocArrayExpression aa, ResolverContextStack ctxt)
+		public static AssocArrayType Resolve(AssocArrayExpression aa, ResolverContextStack ctxt)
 		{
 			if (aa.Elements != null && aa.Elements.Count > 0)
 			{
@@ -357,36 +368,7 @@ namespace D_Parser.Resolver.TypeResolution
 				var keyType = Resolve(firstElement, ctxt);
 				var valueType = Resolve(firstElementValue, ctxt);
 
-				return Resolve(aa, keyType, valueType);
-			}
-			return null;
-		}
-
-		public static ArrayResult[] Resolve(AssocArrayExpression aa, ResolveResult[] firstKey, ResolveResult[] firstValue)
-		{
-			if (aa.Elements != null && aa.Elements.Count > 0)
-			{
-				if (firstValue != null && firstValue.Length > 0)
-				{
-					var r = new List<ArrayResult>(firstValue.Length);
-
-					// If there are multiple results, return one array result per value type result
-					foreach (var vt in firstValue)
-						r.Add(new ArrayResult
-						{
-							DeclarationOrExpressionBase = aa,
-							ResultBase = vt,
-							KeyType = firstKey,
-							ArrayDeclaration = new ArrayDecl
-							{
-								KeyExpression = firstKey[0].DeclarationOrExpressionBase as IExpression,
-								KeyType = null,
-								ClampsEmpty = false
-							}
-						});
-
-					return r.ToArray();
-				}
+				return new AssocArrayType(valueType, keyType, aa);
 			}
 			return null;
 		}

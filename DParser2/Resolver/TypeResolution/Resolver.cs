@@ -419,15 +419,10 @@ namespace D_Parser.Resolver.TypeResolution
 		/// Removes all kinds of members from the given results.
 		/// </summary>
 		/// <param name="resolvedMember">True if a member (not an alias!) had to be bypassed</param>
-		public static AbstractType StripMemberSymbols(AbstractType r, out bool resolvedMember)
+		public static AbstractType StripMemberSymbols(AbstractType r)
 		{
-			resolvedMember = false;
-
-			while (r is MemberSymbol)
-			{
-				resolvedMember = true;
+			while(r is MemberSymbol)
 				r = ((MemberSymbol)r).Base;
-			}
 
 			return r;
 		}

@@ -85,6 +85,25 @@ namespace D_Parser.Resolver.TypeResolution
 			return res;
 		}
 
+		public static ISemantic ResolveSingle(string id, ResolverContextStack ctxt, object idObject, bool ModuleScope = false)
+		{
+			var r = ResolveIdentifier(id, ctxt, idObject, ModuleScope);
+
+			ctxt.CheckForSingleResult(r, idObject as ISyntaxRegion);
+
+			return r != null && r.Length != 0 ? r[0] : null;
+		}
+
+
+		public static ISemantic ResolveSingle(IdentifierDeclaration id, ResolverContextStack ctxt, ISemantic[] resultBases = null, bool filterForTemplateArgs = true)
+		{
+			var r = Resolve(id, ctxt, resultBases, filterForTemplateArgs);
+
+			ctxt.CheckForSingleResult(r, id);
+
+			return r != null && r.Length != 0 ? r[0] : null;
+		}
+
 		public static ISemantic[] Resolve(IdentifierDeclaration id, ResolverContextStack ctxt, ISemantic[] resultBases = null, bool filterForTemplateArgs = true)
 		{
 			ISemantic[] res = null;
@@ -285,12 +304,12 @@ namespace D_Parser.Resolver.TypeResolution
 			return null;
 		}
 
-		public static AbstractType[] Resolve(ITypeDeclaration declaration, ResolverContextStack ctxt)
+		public static AbstractType ResolveSingle(ITypeDeclaration declaration, ResolverContextStack ctxt)
 		{
 			if (declaration is IdentifierDeclaration)
-				return Convert(Resolve(declaration as IdentifierDeclaration, ctxt));
+				return ResolveSingle(declaration as IdentifierDeclaration, ctxt) as AbstractType;
 
-			AbstractType t=null;
+			AbstractType t = null;
 
 			if (declaration is DTokenDeclaration)
 				t = Resolve(declaration as DTokenDeclaration);
@@ -306,7 +325,7 @@ namespace D_Parser.Resolver.TypeResolution
 				t = Resolve(declaration as PointerDecl, ctxt);
 			else if (declaration is DelegateDeclaration)
 				t = Resolve(declaration as DelegateDeclaration, ctxt);
-			
+
 			//TODO: VarArgDeclaration
 			else if (declaration is ITemplateParameterDeclaration)
 			{
@@ -327,6 +346,16 @@ namespace D_Parser.Resolver.TypeResolution
 					// Return a type result?
 				}
 			}
+
+			return t;
+		}
+
+		public static AbstractType[] Resolve(ITypeDeclaration declaration, ResolverContextStack ctxt)
+		{
+			if (declaration is IdentifierDeclaration)
+				return Convert(Resolve(declaration as IdentifierDeclaration, ctxt));
+
+			var t= ResolveSingle(declaration, ctxt);
 
 			return t==null ? null : new[]{t};
 		}
@@ -366,7 +395,6 @@ namespace D_Parser.Resolver.TypeResolution
 				DoResolveBaseType = false;
 
 			AbstractType ret = null;
-			AbstractType[] memberbaseTypes = null;
 
 			// To support resolving type parameters to concrete types if the context allows this, introduce all deduced parameters to the current context
 			if (DoResolveBaseType && resultBase is DSymbol)
