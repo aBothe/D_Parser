@@ -16,7 +16,7 @@ namespace D_Parser.Resolver
 					DeducedTemplateParameters[dt.Key] = dt.Value;
 		}
 
-		public void RemoveParamTypesFromPreferredLocas(DSymbol tir)
+		public void RemoveParamTypesFromPreferredLocals(DSymbol tir)
 		{
 			if (tir != null && tir.DeducedTypes != null)
 				foreach (var dt in tir.DeducedTypes)

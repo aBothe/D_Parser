@@ -287,27 +287,25 @@ namespace D_Parser.Resolver.TypeResolution
 
 		public static AbstractType[] Resolve(ITypeDeclaration declaration, ResolverContextStack ctxt)
 		{
-			if (declaration is DTokenDeclaration)
-			{
-				var r = Resolve(declaration as DTokenDeclaration);
+			if (declaration is IdentifierDeclaration)
+				return Convert(Resolve(declaration as IdentifierDeclaration, ctxt));
 
-				if (r != null)
-					return new[] { r };
-			}
-			else if (declaration is IdentifierDeclaration)
-				return Resolve(declaration as IdentifierDeclaration, ctxt);
+			AbstractType t=null;
+
+			if (declaration is DTokenDeclaration)
+				t = Resolve(declaration as DTokenDeclaration);
 			else if (declaration is TemplateInstanceExpression)
-				return ExpressionTypeResolver.Resolve(declaration as TemplateInstanceExpression, ctxt);
+				t = ExpressionTypeResolver.Resolve(declaration as TemplateInstanceExpression, ctxt);
 			else if (declaration is TypeOfDeclaration)
-				return Resolve(declaration as TypeOfDeclaration, ctxt);
+				t = Resolve(declaration as TypeOfDeclaration, ctxt);
 			else if (declaration is MemberFunctionAttributeDecl)
-				return Resolve(declaration as MemberFunctionAttributeDecl, ctxt);
+				t = Resolve(declaration as MemberFunctionAttributeDecl, ctxt);
 			else if (declaration is ArrayDecl)
-				return Resolve(declaration as ArrayDecl, ctxt);
+				t = Resolve(declaration as ArrayDecl, ctxt);
 			else if (declaration is PointerDecl)
-				return Resolve(declaration as PointerDecl, ctxt);
+				t = Resolve(declaration as PointerDecl, ctxt);
 			else if (declaration is DelegateDeclaration)
-				return Resolve(declaration as DelegateDeclaration, ctxt);
+				t = Resolve(declaration as DelegateDeclaration, ctxt);
 			
 			//TODO: VarArgDeclaration
 			else if (declaration is ITemplateParameterDeclaration)
@@ -330,7 +328,7 @@ namespace D_Parser.Resolver.TypeResolution
 				}
 			}
 
-			return null;
+			return t==null ? null : new[]{t};
 		}
 
 
@@ -420,50 +418,63 @@ namespace D_Parser.Resolver.TypeResolution
 			else if (m is DVariable)
 			{
 				var v = (DVariable)m;
+				AbstractType bt = null;
 
 				if (DoResolveBaseType)
 				{
-					memberbaseTypes = TypeDeclarationResolver.Resolve(v.Type, ctxt);
+					var bts = TypeDeclarationResolver.Resolve(v.Type, ctxt);
+
+					if (bts != null && bts.Length != 0 && ctxt.CheckForSingleResult(bts, v.Type))
+						bt = bts[0];
 
 					// For auto variables, use the initializer to get its type
-					if (memberbaseTypes == null && v.Initializer != null)
-						memberbaseTypes = ExpressionTypeResolver.Resolve(v.Initializer, ctxt);
+					else if (v.Initializer != null)
+						bt = ExpressionTypeResolver.Resolve(v.Initializer, ctxt);
 
 					// Check if inside an foreach statement header
-					if (memberbaseTypes == null && ctxt.ScopedStatement != null)
-						memberbaseTypes = GetForeachIteratorType(v, ctxt);
+					if (bt == null && ctxt.ScopedStatement != null)
+						bt = GetForeachIteratorType(v, ctxt);
 				}
 
 				// Note: Also works for aliases! In this case, we simply try to resolve the aliased type, otherwise the variable's base type
-				var r=v.IsAlias ? new AliasResult() : new MemberResult();
-				ret = r;
-				
-				r.Node = m;
-				r.MemberBaseTypes = memberbaseTypes;
-				r.ResultBase = resultBase;
-				r.DeclarationOrExpressionBase = typeBase;
+				ret=v.IsAlias ? 
+					(DSymbol)new AliasedType(v, bt, typeBase as ISyntaxRegion) : 
+					new MemberSymbol(v, bt, typeBase as ISyntaxRegion);
 			}
 			else if (m is DMethod)
 			{
-				if (DoResolveBaseType)
-					memberbaseTypes = GetMethodReturnType(m as DMethod, ctxt);
+				var bt=DoResolveBaseType ? GetMethodReturnType((DMethod)m, ctxt) : null;
 
-				ret = new MemberResult()
-				{
-					Node = m,
-					MemberBaseTypes = memberbaseTypes,
-					ResultBase = resultBase,
-					DeclarationOrExpressionBase = typeBase
-				};
+				ret = new MemberSymbol((DNode)m, bt, typeBase as ISyntaxRegion);
 			}
 			else if (m is DClassLike)
 			{
-				var tr = new TypeResult() {
-					Node = m, ResultBase = resultBase, DeclarationOrExpressionBase = typeBase
-				};
-				DResolver.ResolveBaseClasses(tr, ctxt);
+				UserDefinedType udt = null;
+				var dc=(DClassLike)m;
 
-				ret = tr;
+				switch (dc.ClassType)
+				{
+					case DTokens.Struct:
+						udt = new StructType(dc, typeBase as ISyntaxRegion);
+						break;
+					case DTokens.Union:
+						udt = new UnionType(dc, typeBase as ISyntaxRegion);
+						break;
+					case DTokens.Class:
+						udt = new ClassType(dc, typeBase as ISyntaxRegion, null);
+						break;
+					case DTokens.Template:
+						udt = new TemplateType(dc, typeBase as ISyntaxRegion);
+						break;
+					case DTokens.Interface:
+						udt = new InterfaceType(dc, typeBase as ISyntaxRegion);
+						break;
+					default:
+						ctxt.LogError(new ResolutionError(m, "Unknown type ("+DTokens.GetTokenString(dc.ClassType)+")"));
+						break;
+				}
+
+				ret=DResolver.ResolveBaseClasses(udt, ctxt);
 			}
 			else if (m is IAbstractSyntaxTree)
 			{
@@ -472,22 +483,13 @@ namespace D_Parser.Resolver.TypeResolution
 				{
 					var pack = ctxt.ParseCache.LookupPackage(typeBase.ToString()).First();
 					if (pack != null)
-						ret = new ModulePackageResult(pack);
+						ret = new PackageSymbol(pack, typeBase as ISyntaxRegion);
 				}
 				else
-					ret = new ModuleResult((IAbstractSyntaxTree)m)
-					{
-						ResultBase = resultBase,
-						DeclarationOrExpressionBase = typeBase
-					};
+					ret = new ModuleSymbol(m as DModule, typeBase as ISyntaxRegion);
 			}
 			else if (m is DEnum)
-				ret = new TypeResult()
-				{
-					Node = m as IBlockNode,
-					ResultBase = resultBase,
-					DeclarationOrExpressionBase = typeBase
-				};
+				ret = new EnumType((DEnum)m, typeBase as ISyntaxRegion);
 			else if (m is TemplateParameterNode)
 			{
 				var tmp = ((TemplateParameterNode)m).TemplateParameter;
@@ -497,17 +499,11 @@ namespace D_Parser.Resolver.TypeResolution
 				//TODO: Resolve the specialization type
 				//var templateParameterType = TemplateInstanceHandler.ResolveTypeSpecialization(tmp, ctxt);
 
-				ret = new MemberResult()
-				{
-					Node = m,
-					DeclarationOrExpressionBase = typeBase,
-					ResultBase = resultBase,
-					//MemberBaseTypes = templateParameterType
-				};
+				ret = new MemberSymbol((DNode)m, null, typeBase as ISyntaxRegion);
 			}
 
-			if (DoResolveBaseType && resultBase is TemplateInstanceResult)
-				ctxt.CurrentContext.RemoveParamTypesFromPreferredLocas((TemplateInstanceResult)resultBase);
+			if (DoResolveBaseType && resultBase is DSymbol)
+				ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals((DSymbol)resultBase);
 
 			if (popAfterwards)
 				ctxt.Pop();
@@ -553,7 +549,7 @@ namespace D_Parser.Resolver.TypeResolution
 				mr = new MemberSymbol(dm, returnType, mr.DeclarationOrExpressionBase);
 			}
 
-			ctxt.CurrentContext.RemoveParamTypesFromPreferredLocas(mr);
+			ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(mr);
 
 			return mr;
 		}

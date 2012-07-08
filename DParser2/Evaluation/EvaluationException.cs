@@ -15,16 +15,16 @@ namespace D_Parser.Evaluation.Exceptions
 	public class ResolutionException : DParserException
 	{
 		public ISyntaxRegion ObjectToResolve { get; protected set; }
-		public ResolveResult[] LastSubResults { get; protected set; }
+		public ISemantic[] LastSubResults { get; protected set; }
 
-		public ResolutionException(ISyntaxRegion ObjToResolve, string Message, IEnumerable<ResolveResult> LastSubresults)
+		public ResolutionException(ISyntaxRegion ObjToResolve, string Message, IEnumerable<ISemantic> LastSubresults)
 			: base(Message)
 		{
 			this.ObjectToResolve=ObjToResolve;
 			this.LastSubResults = LastSubresults.ToArray();
 		}
 
-		public ResolutionException(ISyntaxRegion ObjToResolve, string Message, params ResolveResult[] LastSubresult)
+		public ResolutionException(ISyntaxRegion ObjToResolve, string Message, params ISemantic[] LastSubresult)
 			: base(Message)
 		{
 			this.ObjectToResolve=ObjToResolve;
@@ -39,10 +39,10 @@ namespace D_Parser.Evaluation.Exceptions
 			get { return ObjectToResolve as IExpression; }
 		}
 
-		public EvaluationException(IExpression EvaluatedExpression, string Message, IEnumerable<ResolveResult> LastSubresults)
+		public EvaluationException(IExpression EvaluatedExpression, string Message, IEnumerable<ISemantic> LastSubresults)
 			: base(EvaluatedExpression, Message, LastSubresults) { }
 
-		public EvaluationException(IExpression EvaluatedExpression, string Message, params ResolveResult[] LastSubresults)
+		public EvaluationException(IExpression EvaluatedExpression, string Message, params ISemantic[] LastSubresults)
 			: base(EvaluatedExpression, Message, LastSubresults)
 		{ }
 	}
