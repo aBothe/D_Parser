@@ -46,7 +46,7 @@ namespace D_Parser.Evaluation
 		}
 
 		public PrimitiveValue(int BaseTypeToken, object Value, IExpression Expression)
-			: base(ExpressionValueType.Primitive, new StaticTypeResult{ BaseTypeToken=BaseTypeToken, DeclarationOrExpressionBase=Expression })
+			: base(ExpressionValueType.Primitive, new PrimitiveType(BaseTypeToken,0, Expression))
 		{
 			this.BaseTypeToken = BaseTypeToken;
 			this.Value = Value;
@@ -91,7 +91,7 @@ namespace D_Parser.Evaluation
 		/// String constructor.
 		/// Given result stores both type and idenfitierexpression whose Value is used as content
 		/// </summary>
-		public ArrayValue(ResolveResult stringLiteralResult, IdentifierExpression stringLiteral=null)
+		public ArrayValue(ArrayType stringLiteralResult, IdentifierExpression stringLiteral=null)
 			: base(ExpressionValueType.Array, stringLiteralResult, stringLiteral)
 		{
 			if (stringLiteralResult.DeclarationOrExpressionBase is IdentifierExpression)
@@ -104,13 +104,13 @@ namespace D_Parser.Evaluation
 		/// String constructor.
 		/// Used for generating string results 'internally'.
 		/// </summary>
-		public ArrayValue(ResolveResult stringTypeResult, IExpression baseExpression, string content)
+		public ArrayValue(ArrayType stringTypeResult, IExpression baseExpression, string content)
 			: base(ExpressionValueType.Array, stringTypeResult, baseExpression)
 		{
 			StringValue = content;
 		}
 
-		public ArrayValue(ResolveResult resolvedArrayType, params ISymbolValue[] elements)
+		public ArrayValue(ArrayType resolvedArrayType, params ISymbolValue[] elements)
 			: base(ExpressionValueType.Array, resolvedArrayType)
 		{
 			Elements = elements;
@@ -126,7 +126,7 @@ namespace D_Parser.Evaluation
 			private set;
 		}
 
-		public AssociativeArrayValue(ResolveResult baseType, IExpression baseExpression,IList<KeyValuePair<ISymbolValue,ISymbolValue>> Elements)
+		public AssociativeArrayValue(AssocArrayType baseType, IExpression baseExpression,IList<KeyValuePair<ISymbolValue,ISymbolValue>> Elements)
 			: base(ExpressionValueType.AssocArray, baseType, baseExpression)
 		{
 			this.Elements = new ReadOnlyCollection<KeyValuePair<ISymbolValue, ISymbolValue>>(Elements);
@@ -138,24 +138,31 @@ namespace D_Parser.Evaluation
 	/// </summary>
 	public class DelegateValue : ExpressionValue
 	{
-		public ResolveResult Definition { get; private set; }
+		public AbstractType Definition { get; private set; }
 		public bool IsFunction { get { return base.Type == ExpressionValueType.Function; } }
 
 		public DMethod Method
 		{
 			get
 			{
-				return Definition is TemplateInstanceResult ? ((TemplateInstanceResult)Definition).Node as DMethod : null;
+				if (Definition is DelegateType)
+				{
+					var dg = (DelegateType)Definition;
+
+					if (dg.IsFunctionLiteral)
+						return ((FunctionLiteral)dg.DeclarationOrExpressionBase).AnonymousMethod;
+				}
+				return Definition is DSymbol ? ((DSymbol)Definition).Definition as DMethod : null;
 			}
 		}
 
-		public DelegateValue(DelegateResult Dg)
+		public DelegateValue(DelegateType Dg)
 			: base(ExpressionValueType.Delegate, Dg)
 		{
 			this.Definition = Dg;
 		}
 
-		public DelegateValue(ResolveResult Definition, ResolveResult ReturnType, bool IsFunction = false)
+		public DelegateValue(AbstractType Definition, AbstractType ReturnType, bool IsFunction = false)
 			: base(IsFunction ? ExpressionValueType.Function : ExpressionValueType.Delegate, ReturnType, Definition.DeclarationOrExpressionBase as IExpression)
 		{
 			this.Definition = Definition;
@@ -170,7 +177,7 @@ namespace D_Parser.Evaluation
 	/// </summary>
 	public class TypeValue : ExpressionValue
 	{
-		public TypeValue(ResolveResult r, IExpression x)
+		public TypeValue(AbstractType r, IExpression x)
 			: base(ExpressionValueType.Type, r, x) { }
 	}
 
@@ -178,7 +185,7 @@ namespace D_Parser.Evaluation
 	{
 		INode referencedNode;
 
-		public ReferenceValue(ExpressionValueType vt, ResolveResult type, IExpression x)
+		public ReferenceValue(ExpressionValueType vt, AbstractType type, IExpression x)
 			: base(vt, type, x)
 		{
 		}
@@ -228,9 +235,9 @@ namespace D_Parser.Evaluation
 	/// </summary>
 	public class InternalOverloadValue : ExpressionValue
 	{
-		public ResolveResult[] Overloads { get; private set; }
+		public AbstractType[] Overloads { get; private set; }
 
-		public InternalOverloadValue(ResolveResult[] overloads, IExpression x)
+		public InternalOverloadValue(AbstractType[] overloads, IExpression x)
 			: base(ExpressionValueType.None, null, x)
 		{
 			this.Overloads = overloads;

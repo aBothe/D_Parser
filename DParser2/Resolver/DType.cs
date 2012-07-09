@@ -166,7 +166,7 @@ namespace D_Parser.Resolver
 			return c.TrimEnd(',') + ")";
 		}
 
-		public ISemantic ReturnType { get { return Base; } }
+		public AbstractType ReturnType { get { return Base; } }
 	}
 	#endregion
 

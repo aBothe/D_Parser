@@ -245,12 +245,12 @@ namespace D_Parser.Evaluation
 			return null;
 		}
 
-		ResolveResult TryGetStringDefinition(IdentifierExpression id)
+		AbstractType TryGetStringDefinition(IdentifierExpression id)
 		{
 			return TryGetStringDefinition(id.Subformat, id);
 		}
 
-		ResolveResult TryGetStringDefinition(LiteralSubformat stringFmt, IExpression x)
+		AbstractType TryGetStringDefinition(LiteralSubformat stringFmt, IExpression x)
 		{
 			if (vp.ResolutionContext != null)
 			{
@@ -263,7 +263,7 @@ namespace D_Parser.Evaluation
 				var strDef = obj[strType];
 
 				if(strDef!=null)
-					return TypeDeclarationResolver.HandleNodeMatch(strDef, vp.ResolutionContext, null, x);
+					return DResolver.StripAliasSymbols(TypeDeclarationResolver.HandleNodeMatch(strDef, vp.ResolutionContext, null, x)) as ArrayType;
 			}
 			
 			var ch = new DTokenDeclaration(stringFmt == LiteralSubformat.Utf32 ? DTokens.Dchar :
@@ -310,14 +310,14 @@ namespace D_Parser.Evaluation
 			return new PrimitiveValue(DTokens.Bool, retTrue, isExpression);
 		}
 
-		private bool evalIsExpression_WithAliases(IsExpression isExpression, ResolveResult typeToCheck)
+		private bool evalIsExpression_WithAliases(IsExpression isExpression, AbstractType typeToCheck)
 		{
 			/*
 			 * Note: It's needed to let the abstract ast scanner also scan through IsExpressions etc.
 			 * in order to find aliases and/or specified template parameters!
 			 */
 
-			var tpl_params = new Dictionary<string, ResolveResult[]>();
+			var tpl_params = new Dictionary<string, ISemantic>();
 			tpl_params[isExpression.TypeAliasIdentifier] = null;
 			if (isExpression.TemplateParameterList != null)
 				foreach (var p in isExpression.TemplateParameterList)
@@ -339,7 +339,7 @@ namespace D_Parser.Evaluation
 				{
 					var r = evalIsExpression_EvalSpecToken(isExpression, typeToCheck, true);
 					retTrue = r.Item1;
-					tpl_params[isExpression.TypeAliasIdentifier] = new[]{ r.Item2 };
+					tpl_params[isExpression.TypeAliasIdentifier] = r.Item2;
 				}
 			}
 			else // 5.
@@ -347,7 +347,7 @@ namespace D_Parser.Evaluation
 
 			if (retTrue && isExpression.TemplateParameterList != null)
 				foreach (var p in isExpression.TemplateParameterList)
-					if (!tpd.Handle(p, tpl_params[p.Name] != null ? tpl_params[p.Name].First() : null))
+					if (!tpd.Handle(p, tpl_params[p.Name] != null ? tpl_params[p.Name] : null))
 						return false;
 
 			//TODO: Put all tpl_params results into the resolver context or make a new scope or something! 
@@ -355,7 +355,7 @@ namespace D_Parser.Evaluation
 			return retTrue;
 		}
 
-		private bool evalIsExpression_NoAlias(IsExpression isExpression, ResolveResult typeToCheck)
+		private bool evalIsExpression_NoAlias(IsExpression isExpression, AbstractType typeToCheck)
 		{
 			if (isExpression.TypeSpecialization != null)
 			{
@@ -366,13 +366,17 @@ namespace D_Parser.Evaluation
 					ResultComparer.IsImplicitlyConvertible(typeToCheck, spec[0], vp.ResolutionContext));
 			}
 
-			return isExpression.EqualityTest && evalIsExpression_EvalSpecToken(isExpression, typeToCheck).Item1;
+			return isExpression.EqualityTest && evalIsExpression_EvalSpecToken(isExpression, typeToCheck, false).Item1;
 		}
 
-		private Tuple<bool,ResolveResult> evalIsExpression_EvalSpecToken(IsExpression isExpression, ResolveResult typeToCheck, bool DoAliasHandling=false)
+		/// <summary>
+		/// Item1 - True, if isExpression returns true
+		/// Item2 - If Item1 is true, it contains the type of the alias that is defined in the isExpression 
+		/// </summary>
+		private Tuple<bool,AbstractType> evalIsExpression_EvalSpecToken(IsExpression isExpression, AbstractType typeToCheck, bool DoAliasHandling=false)
 		{
 			bool r = false;
-			ResolveResult res = null;
+			AbstractType res = null;
 
 			switch (isExpression.TypeSpecializationToken)
 			{
@@ -385,30 +389,28 @@ namespace D_Parser.Evaluation
 				case DTokens.Union:
 				case DTokens.Class:
 				case DTokens.Interface:
-					r = typeToCheck is TypeResult &&
-						((TypeResult)typeToCheck).Node is DClassLike &&
-						((DClassLike)((TypeResult)typeToCheck).Node).ClassType == isExpression.TypeSpecializationToken;
-
-					if (r)
+					if(r = typeToCheck is UserDefinedType &&
+						((TemplateIntermediateType)typeToCheck).Definition.ClassType == isExpression.TypeSpecializationToken)
 						res = typeToCheck;
 					break;
 
 				case DTokens.Enum:
-					if(!(typeToCheck is TypeResult))
+					if (!(typeToCheck is EnumType))
 						break;
-
-					var tr=(TypeResult)typeToCheck;
-					if (r= tr.Node is DEnum && tr.BaseClass != null && tr.BaseClass.Length != 0)
-						res =  tr.BaseClass[0];
+					{
+						var tr = (UserDefinedType)typeToCheck;
+						r = true;
+						res = tr.Base;
+					}
 					break;
 
 				case DTokens.Function:
 				case DTokens.Delegate:
-					if (typeToCheck is DelegateResult)
+					if (typeToCheck is DelegateType)
 					{
 						var isFun = false;
-						var dgr = (DelegateResult)typeToCheck;
-						if (dgr.IsDelegateDeclaration)
+						var dgr = (DelegateType)typeToCheck;
+						if (!dgr.IsFunctionLiteral)
 							r = isExpression.TypeSpecializationToken == (
 								(isFun = ((DelegateDeclaration)dgr.DeclarationOrExpressionBase).IsFunction) ? DTokens.Function : DTokens.Delegate);
 						// Must be a delegate otherwise
@@ -429,11 +431,11 @@ namespace D_Parser.Evaluation
 							}
 						}
 					}
-					else
+					else // Normal functions are also accepted as delegates
 					{
 						r= isExpression.TypeSpecializationToken == DTokens.Delegate &&
-							typeToCheck is MemberResult &&
-							((MemberResult)typeToCheck).Node is DMethod;
+							typeToCheck is MemberSymbol &&
+							((DSymbol)typeToCheck).Definition is DMethod;
 
 						//TODO: Alias handling, same as couple of lines above
 					}
@@ -444,21 +446,17 @@ namespace D_Parser.Evaluation
 
 					if (dc != null)
 					{
-						tr = new TypeResult { Node = dc };
-						DResolver.ResolveBaseClasses(tr, vp.ResolutionContext, true);
-
-						if (r = tr.BaseClass != null && tr.BaseClass.Length == 0 && ResultComparer.IsEqual(typeToCheck, tr.BaseClass[0]))
+						var udt = DResolver.ResolveBaseClasses(new ClassType(dc, dc, null), vp.ResolutionContext, true) as ClassType;
+						
+						if (r = udt.Base != null && ResultComparer.IsEqual(typeToCheck, udt.Base))
 						{
-							var l = new List<ResolveResult[]>();
-							if (tr.BaseClass != null)
-								l.Add(tr.BaseClass);
-							if (tr.ImplementedInterfaces != null && tr.ImplementedInterfaces.Length != 0)
-								l.AddRange(tr.ImplementedInterfaces);
+							var l = new List<AbstractType>();
+							if (udt.Base != null)
+								l.Add(udt.Base);
+							if (udt.BaseInterfaces != null && udt.BaseInterfaces.Length!=0)
+								l.AddRange(udt.BaseInterfaces);
 
-							res = new TypeTupleResult { 
-								TupleItems=l.ToArray(),
-								DeclarationOrExpressionBase=isExpression,
-							};
+							res = new TypeTuple(isExpression, l);
 						}
 					}
 					break;
@@ -480,13 +478,13 @@ namespace D_Parser.Evaluation
 					{
 						var retType_ = TypeDeclarationResolver.GetMethodReturnType(dm, vp.ResolutionContext);
 
-						if(r = retType_ != null || retType_.Length != 0 && ResultComparer.IsEqual(typeToCheck, retType_[0]))
-							res = retType_[0];
+						if(r = retType_ != null && ResultComparer.IsEqual(typeToCheck, retType_))
+							res = retType_;
 					}
 					break;
 			}
 
-			return new Tuple<bool,ResolveResult>(r, res);
+			return new Tuple<bool,AbstractType>(r, res);
 		}
 		#endregion
 	}

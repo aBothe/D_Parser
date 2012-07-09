@@ -19,17 +19,9 @@ namespace D_Parser.Evaluation
 		#endregion
 
 		#region Outer interaction
-		public static ResolveResult Resolve(IExpression arg, ResolverContextStack ctxt)
+		public static ISymbolValue Resolve(IExpression arg, ResolverContextStack ctxt)
 		{
-			var ev=Evaluate(arg, new StandardValueProvider(ctxt));
-
-			if (ev == null)
-				return null;
-
-			return new ExpressionValueResult{ 
-				DeclarationOrExpressionBase=arg, 
-				Value=ev
-			};
+			return Evaluate(arg, new StandardValueProvider(ctxt));
 		}
 
 		public static ISymbolValue Evaluate(IExpression expression, ISymbolValueProvider vp)

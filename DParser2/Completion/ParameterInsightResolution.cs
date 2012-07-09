@@ -20,14 +20,14 @@ namespace D_Parser.Completion
 		/// </summary>
 		public object MethodIdentifier;
 
-		public ResolveResult[] ResolvedTypesOrMethods;
+		public AbstractType[] ResolvedTypesOrMethods;
 
-		public readonly Dictionary<IExpression, ResolveResult[]> TemplateArguments = new Dictionary<IExpression, ResolveResult[]>();
+		public readonly Dictionary<IExpression, AbstractType> TemplateArguments = new Dictionary<IExpression, AbstractType>();
 		/// <summary>
 		/// Stores the already typed arguments (Expressions) + their resolved types.
 		/// The value part will be null if nothing could get returned.
 		/// </summary>
-		public readonly Dictionary<IExpression, ResolveResult[]> Arguments = new Dictionary<IExpression, ResolveResult[]>();
+		public readonly Dictionary<IExpression, AbstractType> Arguments = new Dictionary<IExpression, AbstractType>();
 
 		/// <summary>
 		///	Identifies the currently called method overload. Is an index related to <see cref="ResolvedTypesOrMethods"/>
