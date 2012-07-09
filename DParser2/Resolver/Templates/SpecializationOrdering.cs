@@ -10,7 +10,7 @@ namespace D_Parser.Resolver.Templates
 	{
 		ResolverContextStack ctxt;
 
-		public static AbstractType FilterFromMostToLeastSpecialized(
+		public static AbstractType[] FilterFromMostToLeastSpecialized(
 			List<AbstractType> templateOverloads,
 			ResolverContextStack ctxt)
 		{
@@ -19,33 +19,34 @@ namespace D_Parser.Resolver.Templates
 
 			var so = new SpecializationOrdering { ctxt = ctxt };
 
+			/*
+			 * Note: If there are functions that are specialized equally, like
+			 * void foo(T) (T t) {} and
+			 * void foo(T) (T t, int a) {},
+			 * both functions have to be returned - because foo!string matches both overloads.
+			 * Later on, in the parameter-argument-comparison, these overloads will be filtered a second time - only then, 
+			 * two overloads would be illegal.
+			 */
+			var lastEquallySpecializedOverloads = new List<AbstractType>();
 			var currentlyMostSpecialized = templateOverloads[0];
+			lastEquallySpecializedOverloads.Add(currentlyMostSpecialized);
 
 			for (int i = 1; i < templateOverloads.Count; i++)
 			{
 				var evenMoreSpecialized = so.GetTheMoreSpecialized(currentlyMostSpecialized, templateOverloads[i]);
 
-				if (evenMoreSpecialized != null)
+				if (evenMoreSpecialized == null)
+					lastEquallySpecializedOverloads.Add(templateOverloads[i]);
+				else
 				{
 					currentlyMostSpecialized = evenMoreSpecialized;
-				}
-				else if (i == templateOverloads.Count - 1)
-				{
-					/*
-					 * It might be the case that Type 1 is equally specialized as Type 2 is, but:
-					 * If comparing Type 2 with Type 3 turns out that Type 3 is more specialized, return Type 3!
-					 * (There probably will be a global resolution error cache  required to warn the user that
-					 * all template parameters of Type 1 are equal to those of Type 2)
-					 */
 
-					// Ambiguous result -- ERROR!
-					ctxt.LogError(new AmbigousSpecializationError(new[]{ currentlyMostSpecialized, templateOverloads[i] }));
-
-					return currentlyMostSpecialized;
+					lastEquallySpecializedOverloads.Clear();
+					lastEquallySpecializedOverloads.Add(currentlyMostSpecialized);
 				}
 			}
 
-			return currentlyMostSpecialized;
+			return lastEquallySpecializedOverloads.ToArray();
 		}
 
 		AbstractType GetTheMoreSpecialized(AbstractType r1, AbstractType r2)

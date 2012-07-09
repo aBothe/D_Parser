@@ -387,32 +387,28 @@ namespace D_Parser.Resolver.TypeResolution
 		/// --> resolvedType will be StaticTypeResult from char[]
 		/// 
 		/// </summary>
-		public static AbstractType[] StripAliasSymbols(IEnumerable<AbstractType> initialResults)
+		public static AbstractType StripAliasSymbols(AbstractType r)
 		{
-			if (initialResults == null)
-				return new AbstractType[0];
+			while(r is AliasedType)
+				r = ((DSymbol)r).Base;
 
-			var ret = new List<AbstractType>(initialResults);
-			var l2 = new List<AbstractType>();
+			return r;
+		}
 
-			while (ret.Count > 0)
+		public static AbstractType[] StripAliasSymbols(IEnumerable<AbstractType> symbols)
+		{
+			var l = new List<AbstractType>();
+
+			foreach (var r in symbols)
 			{
-				foreach (var res in ret)
-				{
-					var mr = res as AliasedType;
-					if (mr != null && mr.Base is AbstractType)
-						l2.Add((AbstractType)mr.Base);
-				}
+				var r_ = r;
+				while (r_ is AliasedType)
+					r_ = ((DSymbol)r).Base;
 
-				if (l2.Count < 1)
-					break;
-
-				ret.Clear();
-				ret.AddRange(l2);
-				l2.Clear();
+				l.Add(r_);
 			}
 
-			return ret.ToArray();
+			return l.ToArray();
 		}
 
 		/// <summary>
@@ -422,9 +418,25 @@ namespace D_Parser.Resolver.TypeResolution
 		public static AbstractType StripMemberSymbols(AbstractType r)
 		{
 			while(r is MemberSymbol)
-				r = ((MemberSymbol)r).Base;
+				r = ((DSymbol)r).Base;
 
 			return r;
+		}
+
+		public static AbstractType[] StripMemberSymbols(IEnumerable<AbstractType> symbols)
+		{
+			var l = new List<AbstractType>();
+
+			foreach (var r in symbols)
+			{
+				var r_ = r;
+				while (r_ is MemberSymbol)
+					r_ = ((DSymbol)r).Base;
+
+				l.Add(r_);
+			}
+
+			return l.ToArray();
 		}
 	}
 }

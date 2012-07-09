@@ -44,7 +44,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return templateArguments;
 		}
 
-		public static AbstractType EvalAndFilterOverloads(IEnumerable<AbstractType> rawOverloadList,
+		public static AbstractType[] EvalAndFilterOverloads(IEnumerable<AbstractType> rawOverloadList,
 			TemplateInstanceExpression templateInstanceExpr,
 			ResolverContextStack ctxt)
 		{
@@ -65,7 +65,7 @@ namespace D_Parser.Resolver.TypeResolution
 		/// <returns>A filtered list of overloads which mostly fit to the specified arguments.
 		/// Usually contains only 1 element.
 		/// The 'TemplateParameters' property of the results will be also filled for further usage regarding smart completion etc.</returns>
-		public static AbstractType EvalAndFilterOverloads(IEnumerable<AbstractType> rawOverloadList,
+		public static AbstractType[] EvalAndFilterOverloads(IEnumerable<AbstractType> rawOverloadList,
 			IEnumerable<ISemantic> givenTemplateArguments,
 			bool isMethodCall,
 			ResolverContextStack ctxt)
@@ -79,7 +79,7 @@ namespace D_Parser.Resolver.TypeResolution
 			if (filteredOverloads.Count > 1)
 				return SpecializationOrdering.FilterFromMostToLeastSpecialized(filteredOverloads, ctxt);
 			else if (filteredOverloads.Count == 1)
-				return filteredOverloads[0];
+				return filteredOverloads.ToArray();
 			
 			return null;
 		}

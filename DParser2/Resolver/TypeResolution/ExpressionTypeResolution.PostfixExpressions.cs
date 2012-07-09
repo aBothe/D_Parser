@@ -12,13 +12,7 @@ namespace D_Parser.Resolver.TypeResolution
 			if (ex is PostfixExpression_MethodCall)
 				return Resolve(ex as PostfixExpression_MethodCall, ctxt);
 
-			var baseExpression = Resolve(ex.PostfixForeExpression, ctxt);
-
-			if (baseExpression == null)
-				return null;
-
-			// Important: To ensure correct behaviour, aliases must be removed before further handling
-			baseExpression = DResolver.StripAliasSymbols(baseExpression);
+			var baseExpression = DResolver.StripAliasSymbols(Resolve(ex.PostfixForeExpression, ctxt));
 
 			if (baseExpression == null ||
 				ex is PostfixExpression_Increment || // myInt++ is still of type 'int'
@@ -26,70 +20,47 @@ namespace D_Parser.Resolver.TypeResolution
 				return baseExpression;
 
 			if (ex is PostfixExpression_Access)
-				return Resolve(ex as PostfixExpression_Access, ctxt, baseExpression);
-
-			var r = new List<ResolveResult>(baseExpression.Length);
-			foreach (var b in baseExpression)
 			{
-				ResolveResult[] arrayBaseType = null;
-				if (b is MemberResult)
-					arrayBaseType = (b as MemberResult).MemberBaseTypes;
-				else
-					arrayBaseType = new[] { b };
-
-                if (arrayBaseType == null)
-                    return null;
-
-				if (ex is PostfixExpression_Index)
-				{
-					foreach (var rr in arrayBaseType)
-					{
-						if (rr is ArrayResult)
-						{
-							var ar = rr as ArrayResult;
-							/*
-							    * myType_Array[0] -- returns TypeResult myType
-							    * return the value type of a given array result
-							    */
-							//TODO: Handle opIndex overloads
-
-							if (ar != null && ar.ResultBase != null)
-								r.Add(ar.ResultBase);
-						}
-						/*
-						    * int* a = new int[10];
-						    * 
-						    * a[0] = 12;
-						    */
-						else if (rr is StaticTypeResult && rr.DeclarationOrExpressionBase is PointerDecl)
-							r.Add(rr.ResultBase);
-					}
-				}
-				else if (ex is PostfixExpression_Slice)
-				{
-					/*
-					 * myType_Array[0 .. 5] -- returns an array
-					 */
-
-					foreach (ArrayResult ar in arrayBaseType)
-					{
-						//TODO: Handle opSlice overloads
-
-						r.Add(ar);
-					}
-				}
+				var r= Resolve(ex as PostfixExpression_Access, ctxt, baseExpression);
+				ctxt.CheckForSingleResult(r, ex);
+				return r!=null && r.Length != 0 ? r[0] : null;
 			}
 
-			if (r.Count > 0)	
-				return r.ToArray();
+			// myArray[0]; myArray[0..5];
+			var arrayBaseType = DResolver.StripMemberSymbols(baseExpression);
+
+			if (ex is PostfixExpression_Index)
+			{
+				if (arrayBaseType is AssocArrayType)
+				{
+					var ar = (AssocArrayType)arrayBaseType;
+					/*
+					 * myType_Array[0] -- returns TypeResult myType
+					 * return the value type of a given array result
+					 */
+					//TODO: Handle opIndex overloads
+
+					return ar.ValueType;
+				}
+				/*
+				 * int* a = new int[10];
+				 * 
+				 * a[0] = 12;
+				 */
+				else if (arrayBaseType is PointerType)
+					return ((PointerType)arrayBaseType).Base;
+			}
+			else if (ex is PostfixExpression_Slice) // Still of the array's type.
+				return arrayBaseType;
+
 			return null;
 		}
 
-		public static ResolveResult[] Resolve(PostfixExpression_MethodCall call, ResolverContextStack ctxt, bool returnBaseTypesOnly = true)
+		public static AbstractType Resolve(PostfixExpression_MethodCall call, ResolverContextStack ctxt)
 		{
 			// Deduce template parameters later on
-			ResolveResult[] baseExpression = null;
-			TemplateInstanceExpression tix=null;
+			AbstractType[] baseExpression = null;
+			TemplateInstanceExpression tix = null;
 
 			// Explicitly don't resolve the methods' return types - it'll be done after filtering to e.g. resolve template types to the deduced one
 			var optBackup = ctxt.CurrentContext.ContextDependentOptions;
@@ -97,7 +68,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 			if (call.PostfixForeExpression is PostfixExpression_Access)
 			{
-				var pac=(PostfixExpression_Access)call.PostfixForeExpression;
+				var pac = (PostfixExpression_Access)call.PostfixForeExpression;
 				if (pac.AccessExpression is TemplateInstanceExpression)
 					tix = (TemplateInstanceExpression)pac.AccessExpression;
 
@@ -105,33 +76,32 @@ namespace D_Parser.Resolver.TypeResolution
 			}
 			else if (call.PostfixForeExpression is TemplateInstanceExpression)
 			{
-				tix=(TemplateInstanceExpression)call.PostfixForeExpression;
+				tix = (TemplateInstanceExpression)call.PostfixForeExpression;
 				baseExpression = Resolve(tix, ctxt, null, false);
 			}
 			else
-				baseExpression = Resolve(call.PostfixForeExpression, ctxt);
+				baseExpression = new[] { Resolve(call.PostfixForeExpression, ctxt) };
 
 			ctxt.CurrentContext.ContextDependentOptions = optBackup;
 
-			var methodOverloads = new List<ResolveResult>();
+			var methodOverloads = new List<AbstractType>();
 
 			#region Search possible methods, opCalls or delegates that could be called
-			bool requireStaticItems = true;
-			IEnumerable<ResolveResult> scanResults = DResolver.StripAliasSymbols(baseExpression);
-			var nextResults = new List<ResolveResult>();
+			bool requireStaticItems = true; //TODO: What if there's an opCall and a foreign method at the same time? - and then this variable would be bullshit
+			IEnumerable<AbstractType> scanResults = DResolver.StripAliasSymbols(baseExpression);
+			var nextResults = new List<AbstractType>();
 
 			while (scanResults != null)
 			{
 				foreach (var b in scanResults)
 				{
-					if (b is MemberResult)
+					if (b is MemberSymbol)
 					{
-						var mr = b as MemberResult;
+						var mr = (MemberSymbol)b;
 
-						if (mr.Node is DMethod)
+						if (mr.Definition is DMethod)
 						{
 							methodOverloads.Add(mr);
-							continue;
 						}
 
 						/*
@@ -146,16 +116,16 @@ namespace D_Parser.Resolver.TypeResolution
 						 * Foo f=new Foo();
 						 * f(); -- calls opCall, opCall is not static
 						 */
-						if (mr.MemberBaseTypes != null)
+						else if (mr != null)
 						{
-							nextResults.AddRange(mr.MemberBaseTypes);
+							nextResults.Add(mr.Base);
 
 							requireStaticItems = false;
 						}
 					}
-					else if (b is DelegateResult)
+					else if (b is DelegateType)
 					{
-						var dg = b as DelegateResult;
+						var dg = (DelegateType)b;
 
 						/*
 						 * int a = delegate(x) { return x*2; } (12); // a is 24 after execution
@@ -163,40 +133,39 @@ namespace D_Parser.Resolver.TypeResolution
 						 * int b = dg(4);
 						 */
 
-						if (!dg.IsDelegateDeclaration)
+						if (dg.IsFunctionLiteral)
 							methodOverloads.Add(dg);
 					}
-					else if (b is TypeResult)
+					else if (b is ClassType)
 					{
 						/*
 						 * auto a = MyStruct(); -- opCall-Overloads can be used
 						 */
-						var classDef = (b as TypeResult).Node as DClassLike;
+						var classDef = ((ClassType)b).Definition;
 
 						if (classDef == null)
 							continue;
 
 						foreach (var i in classDef)
-							if (i.Name == "opCall" && i is DMethod &&	(!requireStaticItems || (i as DNode).IsStatic))
-								methodOverloads.Add(TypeDeclarationResolver.HandleNodeMatch(i, ctxt, b, call));
-
-						/*
-						 * Every struct can contain a default ctor:
-						 * 
-						 * struct S { int a; bool b; }
-						 * 
-						 * auto s = S(1,true); -- ok
-						 * auto s2= new S(2,false); -- error, no constructor found!
-						 */
-						if (classDef.ClassType == DTokens.Struct && methodOverloads.Count == 0)
-						{
-							//TODO: Enable returning further results
-							return new[] { b };
-						}
+							if (i.Name == "opCall" && i is DMethod && (!requireStaticItems || (i as DNode).IsStatic))
+								methodOverloads.Add(TypeDeclarationResolver.HandleNodeMatch(i, ctxt, b, call) as MemberSymbol);
+					}
+					/*
+					 * Every struct can contain a default ctor:
+					 * 
+					 * struct S { int a; bool b; }
+					 * 
+					 * auto s = S(1,true); -- ok
+					 * auto s2= new S(2,false); -- error, no constructor found!
+					 */
+					else if (b is StructType && methodOverloads.Count == 0)
+					{
+						//TODO: Deduce parameters
+						return b;
 					}
 				}
 
-				scanResults = nextResults.Count==0 ? null:nextResults.ToArray();
+				scanResults = nextResults.Count == 0 ? null : nextResults.ToArray();
 				nextResults.Clear();
 			}
 			#endregion
@@ -204,71 +173,64 @@ namespace D_Parser.Resolver.TypeResolution
 			if (methodOverloads.Count == 0)
 				return null;
 
-			#region Deduce template parameters and filter out unmatching overloads
+			// Get all arguments' types
+			var callArgumentTypes = new List<AbstractType>();
+			if (call.Arguments != null)
+				foreach (var arg in call.Arguments)
+					callArgumentTypes.Add(ExpressionTypeResolver.Resolve(arg, ctxt));
 
+			#region Deduce template parameters and filter out unmatching overloads
 			// UFCS argument assignment will be done per-overload and in the EvalAndFilterOverloads method!
 
 			// First add optionally given template params
 			// http://dlang.org/template.html#function-templates
-			var resolvedCallArguments = tix==null ? 
-				new List<ResolveResult[]>() :
+			var resolvedCallArguments = tix == null ?
+				new List<ISemantic>() :
 				TemplateInstanceHandler.PreResolveTemplateArgs(tix, ctxt);
 
 			// Then add the arguments' types
-			if (call.Arguments != null)
-				foreach (var arg in call.Arguments)
-					resolvedCallArguments.Add(ExpressionTypeResolver.Resolve(arg, ctxt));
+			resolvedCallArguments.AddRange(callArgumentTypes);
 
-			var filteredMethods = TemplateInstanceHandler.EvalAndFilterOverloads(
+			var templateParamFilteredOverloads= TemplateInstanceHandler.EvalAndFilterOverloads(
 				methodOverloads,
-				resolvedCallArguments.Count > 0 ? resolvedCallArguments.ToArray() : null, 
+				resolvedCallArguments.Count > 0 ? resolvedCallArguments.ToArray() : null,
 				true, ctxt);
-
-			if (!returnBaseTypesOnly)
-			{
-				if (filteredMethods == null || filteredMethods.Length == 0)
-					return null;
-
-				foreach (var m in filteredMethods)
-				{
-					var mr = m as MemberResult;
-					mr.MemberBaseTypes = TypeDeclarationResolver.GetMethodReturnType(mr.Node as DMethod, ctxt);
-				}
-
-				return filteredMethods;
-			}
-
-			methodOverloads.Clear();
-			if(filteredMethods!=null)
-				methodOverloads.AddRange(filteredMethods);
 			#endregion
 
-			var r = new List<ResolveResult>();
+			#region Filter by parameter-argument comparison
+			var argTypeFilteredOverloads = new List<AbstractType>();
 
-			foreach (var rr in methodOverloads)
+			foreach (var ov in templateParamFilteredOverloads)
 			{
-				if (rr is MemberResult)
+				if (ov is MemberSymbol)
 				{
-					var mr = (MemberResult)rr;
-					TypeDeclarationResolver.FillMethodReturnType(mr, ctxt);
+					var ms = (MemberSymbol)ov;
+					var dm = ms.Definition as DMethod;
 
-					if (mr.MemberBaseTypes != null)
-						r.AddRange(mr.MemberBaseTypes);
-				}
-				else if (rr is DelegateResult)
-				{
-					var dg = (DelegateResult)rr;
-					TypeDeclarationResolver.FillMethodReturnType(dg, ctxt);
+					if (dm != null)
+					{
+						if (callArgumentTypes.Count == 0 && dm.Parameters.Count == 0)
+							argTypeFilteredOverloads.Add(ov);
+						else
+							for (int i=0; i< dm.Parameters.Count; i++)
+							{
+								ctxt.CurrentContext.IntroduceTemplateParameterTypes(ms);
+								var paramType = TypeDeclarationResolver.ResolveSingle(dm.Parameters[i].Type, ctxt);
+								ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(ms);
 
-					if (dg.ReturnType != null)
-						r.AddRange(dg.ReturnType);
+								// TODO: Expression tuples & variable argument lengths
+								if (i >= callArgumentTypes.Count || 
+									!ResultComparer.IsImplicitlyConvertible(callArgumentTypes[i], paramType, ctxt))
+									continue;
+							}
+					}
 				}
 			}
 
-			if (r.Count != 0)
-				return r.ToArray();
+			ctxt.CheckForSingleResult(argTypeFilteredOverloads.ToArray(), call);
 
-			return null;
+			return argTypeFilteredOverloads!=null && argTypeFilteredOverloads.Count !=0 ? argTypeFilteredOverloads[0] : null;
+			#endregion
 		}
 
 		public static AbstractType[] Resolve(PostfixExpression_Access acc, 
@@ -344,7 +306,7 @@ namespace D_Parser.Resolver.TypeResolution
 				res= TypeDeclarationResolver.ResolveFurtherTypeIdentifier(tix.TemplateIdentifier.Id, resultBases, ctxt, tix);
 
 			return !ctxt.Options.HasFlag(ResolutionOptions.NoTemplateParameterDeduction) && deduceParameters ?
-				new[]{TemplateInstanceHandler.EvalAndFilterOverloads(res,tix, ctxt)} : res;
+				TemplateInstanceHandler.EvalAndFilterOverloads(res,tix, ctxt) : res;
 		}
 	}
 }

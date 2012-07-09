@@ -72,13 +72,13 @@ namespace D_Parser.Unittest
 
 			var res=ExpressionTypeResolver.Resolve(methodName,ctxt);
 
-			Assert.IsTrue(res!=null && res.Length==1, "Resolve() returned no result!");
-			Assert.IsInstanceOfType(res[0],typeof(MemberResult));
+			Assert.IsTrue(res!=null , "Resolve() returned no result!");
+			Assert.IsInstanceOfType(res,typeof(MemberSymbol));
 
-			var mr = (MemberResult)res[0];
+			var mr = (MemberSymbol)res;
 
-			Assert.IsInstanceOfType(mr.Node, typeof(DMethod));
-			Assert.AreEqual(mr.Node.Name, "fooC");
+			Assert.IsInstanceOfType(mr.Definition, typeof(DMethod));
+			Assert.AreEqual(mr.Name, "fooC");
 		}
 
 		[TestMethod]
@@ -117,20 +117,13 @@ int b=4;
 
 			var res = ExpressionTypeResolver.Resolve(instanceExpr, ctxt);
 
-			Assert.IsNotNull(res);
-			Assert.AreEqual(res.Length, 1);
+			Assert.IsInstanceOfType(res,typeof(MemberSymbol));
+			var mr = (MemberSymbol)res;
 
-			var r1 = res[0];
+			Assert.IsInstanceOfType(mr.Base, typeof(PrimitiveType));
+			var sr = (PrimitiveType)mr.Base;
 
-			Assert.IsInstanceOfType(r1,typeof(MemberResult));
-			var mr = r1 as MemberResult;
-
-			Assert.IsNotNull(mr.MemberBaseTypes);
-			Assert.AreEqual(mr.MemberBaseTypes.Length, 1);
-			Assert.IsInstanceOfType(mr.MemberBaseTypes[0], typeof(StaticTypeResult));
-			var sr = (StaticTypeResult)mr.MemberBaseTypes[0];
-
-			Assert.AreEqual(sr.BaseTypeToken, DTokens.Int);
+			Assert.AreEqual(sr.TypeToken, DTokens.Int);
 		}
 
 		[TestMethod]
@@ -146,10 +139,10 @@ T foo(T)() {}
 			var call = DParser.ParseExpression("foo!int()");
 			var bt = ExpressionTypeResolver.Resolve(call, ctxt);
 
-			Assert.IsTrue(bt!=null && bt.Length == 1, "Resolution returned empty result instead of 'int'");
-			var st = bt[0] as StaticTypeResult;
+			Assert.IsInstanceOfType(bt, typeof(PrimitiveType), "Resolution returned empty result instead of 'int'");
+			var st = (PrimitiveType)bt;
 			Assert.IsNotNull(st, "Result must be Static type int");
-			Assert.AreEqual(st.BaseTypeToken, DTokens.Int, "Static type must be int");
+			Assert.AreEqual(st.TypeToken, DTokens.Int, "Static type must be int");
 		}
 
 		[TestMethod]
