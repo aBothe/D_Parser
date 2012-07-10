@@ -265,7 +265,12 @@ namespace D_Parser.Resolver.TypeResolution
 			}
 
 			else if (ex is TemplateInstanceExpression)
-				return ExpressionTypeResolver.Resolve((TemplateInstanceExpression)ex, ctxt);
+			{ 
+				var res=ExpressionTypeResolver.Resolve((TemplateInstanceExpression)ex, ctxt);
+
+				ctxt.CheckForSingleResult(res, ex);
+				return res != null && res.Length == 0 ? res[0] : null;
+			}
 
 			else if (ex is TokenExpression)
 			{
@@ -292,12 +297,12 @@ namespace D_Parser.Resolver.TypeResolution
 
 					if (classDef != null)
 					{
-						var tr=DResolver.ResolveBaseClasses(new ClassType(classDef as DClassLike, null, null), ctxt,true);
+						var tr = DResolver.ResolveBaseClasses(new ClassType(classDef as DClassLike, null, null), ctxt, true);
 
-						if (tr.Base!=null)
+						if (tr.Base != null)
 						{
 							// Important: Overwrite type decl base with 'super' token
-							tr.Base.DeclarationOrExpressionBase=ex;
+							tr.Base.DeclarationOrExpressionBase = ex;
 
 							return tr.Base;
 						}
@@ -323,7 +328,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 			else if (ex is FunctionLiteral)
 				return new DelegateType(
-					TypeDeclarationResolver.GetMethodReturnType(((FunctionLiteral)ex).AnonymousMethod, ctxt), 
+					TypeDeclarationResolver.GetMethodReturnType(((FunctionLiteral)ex).AnonymousMethod, ctxt),
 					(FunctionLiteral)ex);
 
 			else if (ex is AssertExpression)
@@ -343,16 +348,16 @@ namespace D_Parser.Resolver.TypeResolution
 				return StaticPropertyResolver.getStringType(ctxt);
 
 			else if (ex is TypeDeclarationExpression) // should be containing a typeof() only; static properties etc. are parsed as access expressions
-				 return TypeDeclarationResolver.ResolveSingle(((TypeDeclarationExpression)ex).Declaration, ctxt);
+				return TypeDeclarationResolver.ResolveSingle(((TypeDeclarationExpression)ex).Declaration, ctxt);
 
 			else if (ex is TypeidExpression) //TODO: Split up into more detailed typeinfo objects (e.g. for arrays, pointers, classes etc.)
 				return TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration("TypeInfo") { InnerDeclaration = new IdentifierDeclaration("object") }, ctxt) as AbstractType;
-			
+
 			else if (ex is IsExpression)
 				return new PrimitiveType(DTokens.Bool);
 
 			else if (ex is TraitsExpression)
-				return TraitsResolver.Resolve((TraitsExpression)ex,ctxt);
+				return TraitsResolver.Resolve((TraitsExpression)ex, ctxt);
 			#endregion
 
 			return null;
@@ -371,6 +376,11 @@ namespace D_Parser.Resolver.TypeResolution
 				return new AssocArrayType(valueType, keyType, aa);
 			}
 			return null;
+		}
+
+		public static AbstractType[] Resolve(IdentifierExpression id, ResolverContextStack ctxt)
+		{
+			return TypeDeclarationResolver.Convert(TypeDeclarationResolver.ResolveIdentifier(id.Value as string, ctxt, id, id.ModuleScoped));
 		}
 	}
 }

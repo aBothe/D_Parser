@@ -308,13 +308,17 @@ namespace D_Parser.Resolver.TypeResolution
 		{
 			if (declaration is IdentifierDeclaration)
 				return ResolveSingle(declaration as IdentifierDeclaration, ctxt) as AbstractType;
+			else if (declaration is TemplateInstanceExpression)
+			{
+				var a=ExpressionTypeResolver.Resolve(declaration as TemplateInstanceExpression, ctxt);
+				ctxt.CheckForSingleResult(a, declaration);
+				return a != null && a.Length != 0 ? a[0] : null;
+			}
 
 			AbstractType t = null;
 
 			if (declaration is DTokenDeclaration)
 				t = Resolve(declaration as DTokenDeclaration);
-			else if (declaration is TemplateInstanceExpression)
-				t = ExpressionTypeResolver.Resolve(declaration as TemplateInstanceExpression, ctxt);
 			else if (declaration is TypeOfDeclaration)
 				t = Resolve(declaration as TypeOfDeclaration, ctxt);
 			else if (declaration is MemberFunctionAttributeDecl)
@@ -354,6 +358,8 @@ namespace D_Parser.Resolver.TypeResolution
 		{
 			if (declaration is IdentifierDeclaration)
 				return Convert(Resolve(declaration as IdentifierDeclaration, ctxt));
+			else if (declaration is TemplateInstanceExpression)
+				return ExpressionTypeResolver.Resolve(declaration as TemplateInstanceExpression, ctxt);
 
 			var t= ResolveSingle(declaration, ctxt);
 

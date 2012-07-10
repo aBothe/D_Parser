@@ -86,7 +86,7 @@ namespace D_Parser.Completion
 				res.IsMethodArguments = true;
 				var call = (PostfixExpression_MethodCall) e;
 
-				res.ResolvedTypesOrMethods = ExpressionTypeResolver.Resolve(call.PostfixForeExpression, ctxt);
+				res.ResolvedTypesOrMethods = TryGetUnfilteredMethodOverloads(call.PostfixForeExpression, ctxt, call);
 
 				if (call.Arguments != null)
 				{
@@ -107,7 +107,7 @@ namespace D_Parser.Completion
 			{
 				var acc = e as PostfixExpression_Access;
 
-				res.ResolvedTypesOrMethods = ExpressionTypeResolver.Resolve(acc.PostfixForeExpression, ctxt);
+				res.ResolvedTypesOrMethods = TryGetUnfilteredMethodOverloads(acc.PostfixForeExpression, ctxt, acc);
 
 				if (res.ResolvedTypesOrMethods == null)
 					return res;
@@ -122,7 +122,7 @@ namespace D_Parser.Completion
 
 				res.IsTemplateInstanceArguments = true;
 
-				res.ResolvedTypesOrMethods = TypeDeclarationResolver.ResolveIdentifier(templ.TemplateIdentifier.Id, ctxt, e, templ.TemplateIdentifier.ModuleScoped);
+				res.ResolvedTypesOrMethods = ExpressionTypeResolver.Resolve(templ, ctxt, null, false);
 
 				if (templ.Arguments != null)
 				{
@@ -154,35 +154,28 @@ namespace D_Parser.Completion
 			 * myDeleg2( -- allowed neither!
 			 */
 			if (res.ResolvedTypesOrMethods != null)
-			{
-				var finalResults = new List<ResolveResult>();
-
-				foreach (var _r in res.ResolvedTypesOrMethods)
-				{
-					var r = _r;
-					while (r is MemberResult && !(((MemberResult)r).Node is DMethod))
-					{
-						var mr = (MemberResult)r;
-
-						if (mr.MemberBaseTypes == null || mr.MemberBaseTypes.Length == 0)
-							break;
-
-						r = mr.MemberBaseTypes[0];
-					}
-					finalResults.Add(r);
-				}
-
-				res.ResolvedTypesOrMethods = finalResults.ToArray();
-			}
+				res.ResolvedTypesOrMethods = DResolver.StripMemberSymbols(res.ResolvedTypesOrMethods);
 
 			return res;
+		}
+
+		public static AbstractType[] TryGetUnfilteredMethodOverloads(IExpression foreExpression, ResolverContextStack ctxt, IExpression supExpression=null)
+		{
+			if (foreExpression is TemplateInstanceExpression)
+				return ExpressionTypeResolver.Resolve((TemplateInstanceExpression)foreExpression, ctxt, null);
+			else if (foreExpression is IdentifierExpression)
+				return ExpressionTypeResolver.Resolve((IdentifierExpression)foreExpression, ctxt);
+			else if (foreExpression is PostfixExpression_Access)
+				return ExpressionTypeResolver.Resolve((PostfixExpression_Access)foreExpression, ctxt, null, supExpression);
+			else
+				return new[] { ExpressionTypeResolver.Resolve(foreExpression, ctxt) };
 		}
 
 		static void CalculateCurrentArgument(NewExpression nex, 
 			ArgumentsResolutionResult res, 
 			CodeLocation caretLocation, 
 			ResolverContextStack ctxt,
-			IEnumerable<ResolveResult> resultBases=null)
+			IEnumerable<AbstractType> resultBases=null)
 		{
 			if (nex.Arguments != null)
 			{

@@ -363,7 +363,7 @@ namespace D_Parser.Resolver
 				Items = items.ToArray();
 		}
 
-		public string ToCode()
+		public override string ToCode()
 		{
 			var s = "";
 
