@@ -14,9 +14,9 @@ namespace DParser2.Unittest
 	[TestClass]
 	public class ImplicitConversionTests
 	{
-		public static TypeResult GetType(string name, ResolverContextStack ctxt)
+		public static AbstractType GetType(string name, ResolverContextStack ctxt)
 		{
-			return (TypeResult)TypeDeclarationResolver.ResolveIdentifier(name, ctxt, null)[0];
+			return TypeDeclarationResolver.ResolveIdentifier(name, ctxt, null)[0] as AbstractType;
 		}
 
 		[TestMethod]
@@ -126,7 +126,7 @@ int[] p=[1,2,3,4,5];
 			ctxt.PushNewScope(foo);
 			var foo_firstArg= TypeDeclarationResolver.Resolve(foo.Parameters[0].Type, ctxt);
 			
-			var p = TypeDeclarationResolver.ResolveIdentifier("p", ctxt, null)[0] as MemberResult;
+			var p = TypeDeclarationResolver.ResolveIdentifier("p", ctxt, null)[0] as MemberSymbol;
 			
 			Assert.IsTrue(ResultComparer.IsImplicitlyConvertible(p,foo_firstArg[0], ctxt));
 			ctxt.Pop();

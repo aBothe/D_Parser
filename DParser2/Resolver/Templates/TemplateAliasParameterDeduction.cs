@@ -43,18 +43,20 @@ namespace D_Parser.Resolver.Templates
 			#endregion
 
 			#region Given argument must be a symbol - so no built-in type but a reference to a node or an expression
-			var _t=DResolver.StripAliasSymbols(new[]{arg});
+			var t=TypeDeclarationResolver.Convert(arg);
 
-			if (_t == null)
+			if (t == null)
 				return false;
-			var arg_NoAlias = _t.First();
 
-			while (arg_NoAlias != null)
+			while (t != null)
 			{
-				if (arg_NoAlias is StaticTypeResult)
+				if (t is PrimitiveType) // arg must not base on a primitive type.
 					return false;
 
-				arg_NoAlias = arg_NoAlias.ResultBase;
+				if (t is DerivedDataType)
+					t = ((DerivedDataType)t).Base;
+				else
+					break;
 			}
 			#endregion
 

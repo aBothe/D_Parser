@@ -136,7 +136,7 @@ namespace D_Parser.Evaluation
 				for (int i = lower; i < upper; i++)
 					rawArraySlice[j++] = ar.Elements[i];
 
-				return new ArrayValue(ar.RepresentedType, rawArraySlice);
+				return new ArrayValue(ar.RepresentedType as ArrayType, rawArraySlice);
 			}
 
 			return null;
@@ -160,7 +160,7 @@ namespace D_Parser.Evaluation
 
 				// If it's a simple identifier only, static properties are allowed
 
-				ResolveResult[] nextPart = null;
+				AbstractType[] nextPart = null;
 
 				if (acc.AccessExpression is IdentifierExpression)
 				{
@@ -183,27 +183,27 @@ namespace D_Parser.Evaluation
 
 				var r = nextPart[0];
 
-				if (nextPart[0] is MemberResult)
+				if (r is MemberSymbol)
 				{
-					var mr = (MemberResult)nextPart[0];
+					var mr = (MemberSymbol)r;
 
 					/*
 					 * If accessed member is a variable, delegate its value evaluation to the value provider.
 					 * If it's a method (mostly a simple getter method), execute it.
 					 * If it's a type, return a (somewhat static) link to it.
 					 */
-					if (mr.Node is DVariable)
-						return vp[(DVariable)mr.Node];
-					else if (mr.Node is DMethod)
+					if (mr.Definition is DVariable)
+						return vp[(DVariable)mr.Definition];
+					else if (mr.Definition is DMethod)
 					{
 						if (ExecuteMethodRefs)
-							return CTFE.FunctionEvaluation.Execute((DMethod)mr.Node, null, vp);
+							return CTFE.FunctionEvaluation.Execute((DMethod)mr.Definition, null, vp);
 						else
 							return new InternalOverloadValue(nextPart, acc);
 					}
 				}
-				else if (nextPart[0] is TypeResult)
-					return new TypeValue(nextPart[0], acc);
+				else if (r is UserDefinedType)
+					return new TypeValue(r, acc);
 
 				throw new EvaluationException(acc, "Unhandled result type", nextPart);
 			}
@@ -231,12 +231,12 @@ namespace D_Parser.Evaluation
 
 				if (methods_res != null && methods_res.Length != 0)
 					foreach (var r in methods_res)
-						if (r is MemberResult)
+						if (r is MemberSymbol)
 						{
-							var mr = (MemberResult)r;
+							var mr = (MemberSymbol)r;
 
-							if (mr.Node is DMethod)
-								methods.Add((DMethod)mr.Node);
+							if (mr.Definition is DMethod)
+								methods.Add((DMethod)mr.Definition);
 						}
 			}
 			else if (v is DelegateValue)

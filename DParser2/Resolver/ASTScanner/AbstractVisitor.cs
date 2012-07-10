@@ -199,13 +199,17 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				}
 
 				// 3)
-				var tr = new TypeResult { Node = curWatchedClass };
-				DResolver.ResolveBaseClasses(tr, ctxt, true);
+				if (cls.ClassType == DTokens.Class)
+				{
+					var tr = DResolver.ResolveBaseClasses(new ClassType(curWatchedClass, curWatchedClass, null), ctxt, true);
 
-				if (tr.BaseClass==null || tr.BaseClass.Length == 0 || !(tr.BaseClass[0] is TypeResult))
-					return false;
-
-				curWatchedClass = ((TypeResult)tr.BaseClass[0]).Node as DClassLike;
+					if (tr.Base is TemplateIntermediateType)
+						curWatchedClass = ((TemplateIntermediateType)tr.Base).Definition;
+					else
+						break;
+				}
+				else
+					break;
 			}
 			return false;
 		}
@@ -292,7 +296,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 						continue;
 					}
 
-					ResolveResult[] r = null;
+					AbstractType r = null;
 
 					var back = ctxt.ScopedStatement;
 					ctxt.ScopedStatement = ws.Parent;
@@ -301,23 +305,19 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					if (ws.WithExpression != null)
 						r = ExpressionTypeResolver.Resolve(ws.WithExpression, ctxt);
 					else if (ws.WithSymbol != null) // This symbol will be used as default
-						r = TypeDeclarationResolver.Resolve(ws.WithSymbol, ctxt);
+						r = TypeDeclarationResolver.ResolveSingle(ws.WithSymbol, ctxt);
 
 					ctxt.ScopedStatement = back;
 
-					bool resolvedMember=false;
-					if ((r = DResolver.StripMemberSymbols(r,out resolvedMember)) != null)
-						foreach (var rr in r)
+					if ((r = DResolver.StripMemberSymbols(r)) != null)
+						if (r is TemplateIntermediateType)
 						{
-							if (rr is TypeResult)
-							{
-								var tr = (TypeResult)rr;
-								var dc = tr.Node as DClassLike;
+							var tr = (TemplateIntermediateType)r;
+							var dc = tr.Definition as DClassLike;
 
-								bool brk = false;
-								if (IterateThrough(dc, VisibleMembers, ref brk) || brk)
-									return true;
-							}
+							bool brk = false;
+							if (IterateThrough(dc, VisibleMembers, ref brk) || brk)
+								return true;
 						}
 				}
 

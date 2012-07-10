@@ -187,13 +187,7 @@ namespace D_Parser.Misc
 				foreach (var m in objModule)
 					if (m is DClassLike && m.Name == "Object")
 					{
-						ObjectClass = (DClassLike)m;
-
-						ObjectClassResult = new TypeResult
-						{
-							DeclarationOrExpressionBase = new IdentifierDeclaration("Object"),
-							Node = m
-						};
+						 ObjectClassResult = new ClassType(ObjectClass = (DClassLike)m, new IdentifierDeclaration("Object"), null);
 						break;
 					}
 		}

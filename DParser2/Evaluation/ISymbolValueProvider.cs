@@ -81,15 +81,15 @@ namespace D_Parser.Evaluation
 
 				var r = res[0];
 
-				if (r is MemberResult)
+				if (r is MemberSymbol)
 				{
-					var mr = (MemberResult)r;
+					var mr = (MemberSymbol)r;
 
-					if (mr.Node is DVariable)
-						return this[(DVariable)mr.Node];
+					if (mr.Definition is DVariable)
+						return this[(DVariable)mr.Definition];
 				}
-				else if (r is TypeResult)
-					return new TypeValue(r, new IdentifierExpression(LocalName, Parser.LiteralFormat.None));
+				else if (r is UserDefinedType)
+					return new TypeValue((AbstractType)r, new IdentifierExpression(LocalName, Parser.LiteralFormat.None));
 
 				return null;
 			}

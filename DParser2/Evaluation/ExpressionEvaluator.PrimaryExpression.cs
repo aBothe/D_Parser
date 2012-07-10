@@ -73,13 +73,7 @@ namespace D_Parser.Evaluation
 				foreach (var e in ax.Elements)
 					elements.Add(Evaluate(e));
 
-				var arrayRes = new ArrayResult
-				{
-					DeclarationOrExpressionBase = ax,
-					ResultBase = elements[0].RepresentedType
-				};
-
-				return new ArrayValue(arrayRes, elements.ToArray());
+				return new ArrayValue(new ArrayType(elements[0].RepresentedType, ax), elements.ToArray());
 			}
 			else if (x is AssocArrayExpression)
 			{
@@ -95,11 +89,7 @@ namespace D_Parser.Evaluation
 					elements.Add(new KeyValuePair<ISymbolValue, ISymbolValue>(keyVal, valVal));
 				}
 
-				var arr = ExpressionTypeResolver.Resolve(assx,
-					new[] { elements[0].Key.RepresentedType },
-					new[] { elements[0].Value.RepresentedType });
-
-				return new AssociativeArrayValue(arr[0], x, elements);
+				return new AssociativeArrayValue(new AssocArrayType(elements[0].Value.RepresentedType, elements[0].Key.RepresentedType, assx), x, elements);
 			}
 			else if (x is FunctionLiteral)
 			{
@@ -107,13 +97,10 @@ namespace D_Parser.Evaluation
 
 				var r = ExpressionTypeResolver.Resolve(fl, vp.ResolutionContext);
 
-				if (r == null || r.Length == 0)
-					throw new EvaluationException(x, "Delegate could not be resolved");
-
-				if (!(r[0] is DelegateResult))
+				if (!(r is DelegateType))
 					throw new EvaluationException(x, "Wrong result type", r);
 
-				return new DelegateValue((DelegateResult)r[0]);
+				return new DelegateValue((DelegateType)r);
 			}
 			else if (x is AssertExpression)
 			{
@@ -245,12 +232,12 @@ namespace D_Parser.Evaluation
 			return null;
 		}
 
-		AbstractType TryGetStringDefinition(IdentifierExpression id)
+		ArrayType TryGetStringDefinition(IdentifierExpression id)
 		{
 			return TryGetStringDefinition(id.Subformat, id);
 		}
 
-		AbstractType TryGetStringDefinition(LiteralSubformat stringFmt, IExpression x)
+		ArrayType TryGetStringDefinition(LiteralSubformat stringFmt, IExpression x)
 		{
 			if (vp.ResolutionContext != null)
 			{
@@ -263,20 +250,20 @@ namespace D_Parser.Evaluation
 				var strDef = obj[strType];
 
 				if(strDef!=null)
-					return DResolver.StripAliasSymbols(TypeDeclarationResolver.HandleNodeMatch(strDef, vp.ResolutionContext, null, x)) as ArrayType;
+					return DResolver.StripAliasSymbol(TypeDeclarationResolver.HandleNodeMatch(strDef, vp.ResolutionContext, null, x)) as ArrayType;
 			}
-			
-			var ch = new DTokenDeclaration(stringFmt == LiteralSubformat.Utf32 ? DTokens.Dchar :
-				stringFmt == LiteralSubformat.Utf16 ? DTokens.Wchar : DTokens.Char);
 
-			var immutable = new MemberFunctionAttributeDecl(DTokens.Immutable)
-			{
-				InnerType = ch,
-				Location = x.Location,
-				EndLocation = x.EndLocation
-			};
+			var ch = stringFmt == LiteralSubformat.Utf32 ? DTokens.Dchar :
+								stringFmt == LiteralSubformat.Utf16 ? DTokens.Wchar : DTokens.Char;
 
-			return TypeDeclarationResolver.Resolve(new ArrayDecl { ValueType = immutable }, null)[0];
+			return new ArrayType(new PrimitiveType(ch, DTokens.Immutable),
+				new ArrayDecl
+				{
+					ValueType = new MemberFunctionAttributeDecl(DTokens.Immutable)
+					{
+						InnerType = new DTokenDeclaration(ch)
+					}
+				});
 		}
 
 		#region IsExpression

@@ -40,7 +40,7 @@ namespace D_Parser.Resolver.Templates
 				return false;
 
 			// Apply the entire argument to parameter p if there hasn't been no explicit association yet
-			if (!TargetDictionary.ContainsKey(p.Name) || TargetDictionary[p.Name] == null || TargetDictionary[p.Name].Length == 0)
+			if (!TargetDictionary.ContainsKey(p.Name) || TargetDictionary[p.Name] == null)
 				TargetDictionary[p.Name] = arg;
 
 			return true;
@@ -277,10 +277,10 @@ namespace D_Parser.Resolver.Templates
 			// class Foo(T:typeof(1)) {} ?
 			var t_res = TypeDeclarationResolver.Resolve(t,ctxt);
 
-			if (t_res == null || t_res.Length == 0)
+			if (t_res == null)
 				return false;
 
-			return ResultComparer.IsImplicitlyConvertible(r,t_res[0]);
+			return ResultComparer.IsImplicitlyConvertible(r,t_res);
 		}
 
 		bool HandleDecl(VectorDeclaration v, AbstractType r)

@@ -39,12 +39,12 @@ namespace D_Parser.Resolver.TypeResolution
 					if (tempResults != null)
 						foreach (var m in tempResults)
 						{
-							var r = TypeDeclarationResolver.HandleNodeMatch(m, ctxt, firstArgument, acc);
+							var mr = TypeDeclarationResolver.HandleNodeMatch(m, ctxt, TypeDeclarationResolver.Convert(firstArgument), acc) as MemberSymbol;
 
-							if (r is MemberSymbol)
+							if (mr!=null)
 							{
-								((MemberSymbol)r).IsUFCSResult = true;
-								methodMatches.Add(r);
+								mr.IsUFCSResult = true;
+								methodMatches.Add(mr);
 							}
 						}
 				}

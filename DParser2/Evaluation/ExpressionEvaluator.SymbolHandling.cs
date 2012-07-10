@@ -18,7 +18,14 @@ namespace D_Parser.Evaluation
 			if (vp == null)
 				return null;
 
-			var res = ExpressionTypeResolver.Resolve(idOrTemplateExpression, vp.ResolutionContext);
+			AbstractType[] res = null;
+
+			if (idOrTemplateExpression is IdentifierExpression)
+				res = ExpressionTypeResolver.Resolve((IdentifierExpression)idOrTemplateExpression, vp.ResolutionContext);
+			else if (idOrTemplateExpression is TemplateInstanceExpression)
+				res = ExpressionTypeResolver.Resolve((TemplateInstanceExpression)idOrTemplateExpression, vp.ResolutionContext);
+			else
+				throw new InvalidOperationException("Expression " + idOrTemplateExpression + " not allowed in EvalId");
 
 			if (res == null || res.Length == 0)
 			{
@@ -32,22 +39,22 @@ namespace D_Parser.Evaluation
 
 			var r = res[0];
 
-			if (r is MemberResult)
+			if (r is MemberSymbol)
 			{
-				var mr = (MemberResult)r;
+				var mr = (MemberSymbol)r;
 
 				// If we've got a function here, execute it
-				if (mr.Node is DMethod)
+				if (mr.Definition is DMethod)
 				{
 					if (ImplicitlyExecute)
-						return FunctionEvaluation.Execute((DMethod)mr.Node, null, vp);
+						return FunctionEvaluation.Execute((DMethod)mr.Definition, null, vp);
 					else
 						return new InternalOverloadValue(res, idOrTemplateExpression);
 				}
-				else if (mr.Node is DVariable)
-					return vp[(DVariable)mr.Node];
+				else if (mr.Definition is DVariable)
+					return vp[(DVariable)mr.Definition];
 			}
-			else if (r is TypeResult)
+			else if (r is UserDefinedType)
 				return new TypeValue(r, idOrTemplateExpression);
 
 			return null;

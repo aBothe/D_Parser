@@ -12,7 +12,7 @@ namespace D_Parser.Resolver.TypeResolution
 			if (ex is PostfixExpression_MethodCall)
 				return Resolve(ex as PostfixExpression_MethodCall, ctxt);
 
-			var baseExpression = DResolver.StripAliasSymbols(Resolve(ex.PostfixForeExpression, ctxt));
+			var baseExpression = DResolver.StripAliasSymbol(Resolve(ex.PostfixForeExpression, ctxt));
 
 			if (baseExpression == null ||
 				ex is PostfixExpression_Increment || // myInt++ is still of type 'int'

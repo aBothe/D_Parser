@@ -48,6 +48,15 @@ namespace D_Parser.Resolver.TypeResolution
 			return l.ToArray();
 		}
 
+		public static AbstractType Convert(ISemantic s)
+		{
+			if (s is AbstractType)
+				return (AbstractType)s;
+			else if(s is ISymbolValue)
+				return ((ISymbolValue)s).RepresentedType;
+			return null;
+		}
+
 		public static ISemantic[] ResolveIdentifier(string id, ResolverContextStack ctxt, object idObject, bool ModuleScope = false)
 		{
 			var loc = idObject is ISyntaxRegion ? ((ISyntaxRegion)idObject).Location:CodeLocation.Empty;
@@ -127,7 +136,7 @@ namespace D_Parser.Resolver.TypeResolution
 				foreach(var s in res)
 					l_.Add(s as AbstractType);
 
-				return new[] { TemplateInstanceHandler.EvalAndFilterOverloads(l_, null, false, ctxt) };
+				return TemplateInstanceHandler.EvalAndFilterOverloads(l_, null, false, ctxt);
 			}
 			else
 				return res;
@@ -227,9 +236,7 @@ namespace D_Parser.Resolver.TypeResolution
 			else if (typeOf.InstanceId != null)
 			{
 				var wantedTypes = ExpressionTypeResolver.Resolve(typeOf.InstanceId, ctxt);
-
-				bool rm=false;
-				return DResolver.StripMemberSymbols(wantedTypes, out rm);
+				return DResolver.StripMemberSymbols(wantedTypes);
 			}
 
 			return null;
@@ -726,8 +733,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 					var aggregateType = ExpressionTypeResolver.Resolve(fe.Aggregate, ctxt);
 
-					bool remMember = false;
-					aggregateType = DResolver.StripMemberSymbols(aggregateType, out remMember);
+					aggregateType = DResolver.StripMemberSymbols(aggregateType);
 
 					if (aggregateType == null)
 						return null;

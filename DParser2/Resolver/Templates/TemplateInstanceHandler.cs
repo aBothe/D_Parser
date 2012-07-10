@@ -38,7 +38,7 @@ namespace D_Parser.Resolver.TypeResolution
 						}
 					}
 					else
-						templateArguments.Add(new[] { ExpressionEvaluator.Resolve(arg, ctxt) });
+						templateArguments.Add(ExpressionEvaluator.Resolve(arg, ctxt));
 				}
 
 			return templateArguments;
@@ -189,8 +189,7 @@ namespace D_Parser.Resolver.TypeResolution
 				var ttp = (TemplateThisParameter)expectedParam;
 
 				// Get the type of the type of 'this' - so of the result that is the overload's base
-				bool m = false;
-				var t = DResolver.StripMemberSymbols(overload.Base, out m);
+				var t = DResolver.StripMemberSymbols(overload.Base);
 
 				if (t == null || t.DeclarationOrExpressionBase == null)
 					return false;

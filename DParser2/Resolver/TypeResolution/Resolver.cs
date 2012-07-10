@@ -387,10 +387,11 @@ namespace D_Parser.Resolver.TypeResolution
 		/// --> resolvedType will be StaticTypeResult from char[]
 		/// 
 		/// </summary>
-		public static AbstractType StripAliasSymbols(AbstractType r)
+		public static T StripAliasSymbol<T>(T r) where T : ISemantic
 		{
-			while(r is AliasedType)
-				r = ((DSymbol)r).Base;
+			ISemantic t = r;
+			while(t is AliasedType)
+				t = (t as DerivedDataType).Base;
 
 			return r;
 		}
@@ -401,10 +402,10 @@ namespace D_Parser.Resolver.TypeResolution
 
 			foreach (var r in symbols)
 			{
-				var r_ = r;
+				AbstractType r_ = r;
 				while (r_ is AliasedType)
-					r_ = ((DSymbol)r).Base;
-
+					r_ = ((AliasedType)r_).Base;
+				
 				l.Add(r_);
 			}
 

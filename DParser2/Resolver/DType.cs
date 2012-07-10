@@ -224,6 +224,11 @@ namespace D_Parser.Resolver
 
 		public AliasedType(DVariable AliasDefinition, AbstractType Type, ISyntaxRegion td, ReadOnlyCollection<KeyValuePair<string, ISemantic>> deducedTypes=null)
 			: base(AliasDefinition,Type, td, deducedTypes) {}
+
+		public override string ToString()
+		{
+			return "(alias) " + base.ToString();
+		}
 	}
 
 	public class EnumType : UserDefinedType
@@ -232,16 +237,31 @@ namespace D_Parser.Resolver
 
 		public EnumType(DEnum Enum, AbstractType BaseType, ISyntaxRegion td) : base(Enum, BaseType, null, td) { }
 		public EnumType(DEnum Enum, ISyntaxRegion td) : base(Enum, new PrimitiveType(DTokens.Int, 0), null, td) { }
+
+		public override string ToString()
+		{
+			return "(enum) " + base.ToString();
+		}
 	}
 
 	public class StructType : TemplateIntermediateType
 	{
 		public StructType(DClassLike dc, ISyntaxRegion td, Dictionary<string, ISemantic> deducedTypes = null) : base(dc, td, null, null, deducedTypes) { }
+
+		public override string ToString()
+		{
+			return "(struct) " + base.ToString();
+		}
 	}
 
 	public class UnionType : TemplateIntermediateType
 	{
 		public UnionType(DClassLike dc, ISyntaxRegion td, Dictionary<string, ISemantic> deducedTypes = null) : base(dc, td, null, null, deducedTypes) { }
+
+		public override string ToString()
+		{
+			return "(union) " + base.ToString();
+		}
 	}
 
 	public class ClassType : TemplateIntermediateType
@@ -299,7 +319,8 @@ namespace D_Parser.Resolver
 		public TemplateIntermediateType(DClassLike dc, ISyntaxRegion td, 
 			AbstractType baseType, InterfaceType[] baseInterfaces,
 			Dictionary<string, ISemantic> deducedTypes)
-			: this(dc,td, baseType,baseInterfaces, new ReadOnlyCollection<KeyValuePair<string, ISemantic>>(deducedTypes.ToArray()))
+			: this(dc,td, baseType,baseInterfaces, 
+			deducedTypes!= null && deducedTypes.Count != 0 ? new ReadOnlyCollection<KeyValuePair<string, ISemantic>>(deducedTypes.ToArray()) : null)
 		{ }
 	}
 

@@ -56,29 +56,29 @@ namespace DParser2.Unittest
 			Assert.AreEqual(av.StringValue, content);
 
 			Assert.IsNotNull(av.RepresentedType);
-			ArrayResult ar = null;
+			ArrayType ar = null;
 
 			if (ProvideObjModule)
 			{
-				Assert.IsInstanceOfType(av.RepresentedType, typeof(AliasResult));
-				var s = av.RepresentedType as AliasResult;
-				ar = (ArrayResult)s.MemberBaseTypes[0];
+				Assert.IsInstanceOfType(av.RepresentedType, typeof(AliasedType));
+				var s = av.RepresentedType as AliasedType;
+				ar = (ArrayType)s.Base;
 			}
 			else
-				ar = (ArrayResult)av.RepresentedType;
+				ar = (ArrayType)av.RepresentedType;
 
 			Assert.IsNotNull(ar);
 
 			switch (id.Subformat)
 			{
 				case LiteralSubformat.Utf8:
-					Assert.AreEqual(ar.ArrayDeclaration.ToString(),"immutable(char)[]");
+					Assert.AreEqual(ar.DeclarationOrExpressionBase.ToString(),"immutable(char)[]");
 					break;
 				case LiteralSubformat.Utf16:
-					Assert.AreEqual(ar.ArrayDeclaration.ToString(), "immutable(wchar)[]");
+					Assert.AreEqual(ar.DeclarationOrExpressionBase.ToString(), "immutable(wchar)[]");
 					break;
 				case LiteralSubformat.Utf32:
-					Assert.AreEqual(ar.ArrayDeclaration.ToString(), "immutable(dchar)[]");
+					Assert.AreEqual(ar.DeclarationOrExpressionBase.ToString(), "immutable(dchar)[]");
 					break;
 				default:
 					Assert.Fail();

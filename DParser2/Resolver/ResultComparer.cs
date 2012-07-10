@@ -61,13 +61,12 @@ namespace D_Parser.Resolver
 				resToCheck = ((ISymbolValue)resultToCheck).RepresentedType;
 
 			// Initially remove aliases from results
-			bool resMem = false;
-			var _r=DResolver.StripMemberSymbols(resToCheck,out resMem);
+			var _r=DResolver.StripMemberSymbols(resToCheck);
 			if(_r==null)
 				return IsEqual(resToCheck,targetType);
 			resToCheck = _r;
 
-			_r=DResolver.StripMemberSymbols(targetType, out resMem);
+			_r=DResolver.StripMemberSymbols(targetType);
 			if(_r==null)
 				return false;
 			targetType = _r;
@@ -77,7 +76,7 @@ namespace D_Parser.Resolver
 			{
 				var tpn = ((DSymbol)targetType).Definition as TemplateParameterNode;
 
-				if (tpn.TemplateParameters != null)
+				if (tpn!=null && tpn.TemplateParameters != null)
 				{
 					var dedParam = new Dictionary<string, ISemantic>();
 					foreach (var tp in tpn.TemplateParameters)
