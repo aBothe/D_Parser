@@ -49,7 +49,7 @@ namespace D_Parser.Dom
 		string Description { get; set; }
 		ITypeDeclaration Type { get; set; }
 
-		CodeLocation StartLocation { get; set; }
+		CodeLocation Location { get; set; }
 		CodeLocation EndLocation { get; set; }
 
 		/// <summary>

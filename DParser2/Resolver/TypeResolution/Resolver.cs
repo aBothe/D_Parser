@@ -284,7 +284,7 @@ namespace D_Parser.Resolver.TypeResolution
 			{
 				var pi = Parent.Children;
 				foreach (var n in pi)
-					if (n is IBlockNode && Where >= n.StartLocation && Where <= n.EndLocation)
+					if (n is IBlockNode && Where >= n.Location && Where <= n.EndLocation)
 						return SearchBlockAt(n as IBlockNode, Where, out ScopedStatement);
 			}
 

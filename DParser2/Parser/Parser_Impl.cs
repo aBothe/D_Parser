@@ -23,7 +23,7 @@ namespace D_Parser.Parser
 
 			var module = new DModule();
 			LastParsedObject = module;
-			module.StartLocation = la.Location;
+			module.Location = la.Location;
 			doc = module;
 
 			// Only one module declaration possible!
@@ -170,7 +170,7 @@ namespace D_Parser.Parser
 				Step();
 				var dbs = new DMethod(DMethod.MethodType.Unittest);
 				LastParsedObject = dbs;
-				dbs.StartLocation = t.Location;
+				dbs.Location = t.Location;
 				FunctionBody(dbs);
 				dbs.EndLocation = t.EndLocation;
 				module.Add(dbs);
@@ -420,7 +420,7 @@ namespace D_Parser.Parser
 			{
 				Step();
 
-                var dm = new DMethod(DMethod.MethodType.Allocator) { StartLocation=t.Location };
+                var dm = new DMethod(DMethod.MethodType.Allocator) { Location=t.Location };
 				ApplyAttributes(dm);
 
 				dm.Parameters = Parameters(dm);
@@ -434,7 +434,7 @@ namespace D_Parser.Parser
 			{
 				Step();
 
-                var dm = new DMethod(DMethod.MethodType.Deallocator) { StartLocation=t.Location };
+                var dm = new DMethod(DMethod.MethodType.Deallocator) { Location=t.Location };
 				dm.Name = "delete";
 				ApplyAttributes(dm);
 
@@ -634,7 +634,7 @@ namespace D_Parser.Parser
 				{
                     var dv = new DVariable { 
                         Description = GetComments(),
-                        StartLocation=t.Location, 
+                        Location=t.Location, 
                         IsAlias=true, 
                         Name="this"
                     };
@@ -741,7 +741,7 @@ namespace D_Parser.Parser
 			// Declarators
 			var firstNode = Declarator(ttd,false);
 			firstNode.Description = initialComment;
-			firstNode.StartLocation = startLocation;
+			firstNode.Location = startLocation;
 
 			ApplyAttributes(firstNode as DNode);
 
@@ -777,7 +777,7 @@ namespace D_Parser.Parser
 					otherNode.Description = initialComment;
 
 					otherNode.AssignFrom(firstNode);
-					otherNode.StartLocation = t.Location;
+					otherNode.Location = t.Location;
 					otherNode.Name = t.Value;
 					otherNode.NameLocation = t.Location;
 
@@ -1022,7 +1022,7 @@ namespace D_Parser.Parser
 		/// <returns>A dummy node that contains the return type, the variable name and possible parameters of a function declaration</returns>
 		DNode Declarator(ITypeDeclaration basicType,bool IsParam)
 		{
-			DNode ret = new DVariable() { Type=basicType, StartLocation = la.Location };
+			DNode ret = new DVariable() { Type=basicType, Location = la.Location };
 			LastParsedObject = ret;
 			ITypeDeclaration ttd = null;
 
@@ -1448,7 +1448,7 @@ namespace D_Parser.Parser
 			td = BasicType();
 
 			var ret = Declarator(td,true);
-			ret.StartLocation = startLocation;
+			ret.Location = startLocation;
 
 			if (attr.Count > 0) 
 				(ret as DNode).Attributes.AddRange(attr);
@@ -1605,7 +1605,7 @@ namespace D_Parser.Parser
 			LastParsedObject = inv;
 
 			Expect(Invariant);
-			inv.StartLocation = t.Location;
+			inv.Location = t.Location;
 			if (laKind == OpenParenthesis)
 			{
 				Step();
@@ -2637,7 +2637,7 @@ namespace D_Parser.Parser
 			{
 				var fl = new FunctionLiteral() { Location=la.Location};
 				LastParsedObject = fl;
-				fl.AnonymousMethod.StartLocation = la.Location;
+				fl.AnonymousMethod.Location = la.Location;
 
 				if (laKind == Delegate || laKind == Function)
 				{
@@ -2921,7 +2921,7 @@ namespace D_Parser.Parser
 		{
 			var fl = new FunctionLiteral { IsLambda=true };
 
-			fl.Location = fl.AnonymousMethod.StartLocation = la.Location;
+			fl.Location = fl.AnonymousMethod.Location = la.Location;
 
 			if (laKind == Identifier)
 			{
@@ -2929,7 +2929,7 @@ namespace D_Parser.Parser
 
 				var p = new DVariable { 
 					Name = t.Value, 
-					StartLocation = t.Location, 
+					Location = t.Location, 
 					EndLocation = t.EndLocation };
 
 				p.Attributes.Add(new DAttribute(Auto));
@@ -2999,7 +2999,7 @@ namespace D_Parser.Parser
 
 					var n = Declarator(tp, false);
 
-					n.StartLocation = tp.Location;
+					n.Location = tp.Location;
 
 					// Initializer is optional
 					if (laKind == Assign)
@@ -3667,7 +3667,7 @@ namespace D_Parser.Parser
 
 				var forEachVar = new DVariable();
 				LastParsedObject = forEachVar;
-				forEachVar.StartLocation = la.Location;
+				forEachVar.Location = la.Location;
 
 				if (laKind == (Ref))
 				{
@@ -3865,7 +3865,7 @@ namespace D_Parser.Parser
 			Step();
 
 			var ret = new DClassLike(t.Kind) { 
-				StartLocation = t.Location, 
+				Location = t.Location, 
 				Description = GetComments(),
                 ClassType=DTokens.Struct,
 			};
@@ -3909,7 +3909,7 @@ namespace D_Parser.Parser
 			Expect(Class);
 
 			var dc = new DClassLike(Class) { 
-				StartLocation = t.Location,
+				Location = t.Location,
 				Description=GetComments() 
 			};
 			LastParsedObject = dc;
@@ -4014,7 +4014,7 @@ namespace D_Parser.Parser
 			Expect(This);
 			var dm = new DMethod(){
 				SpecialType = DMethod.MethodType.Constructor,
-				StartLocation = t.Location,
+				Location = t.Location,
 				Name = "this"
 			};
 			dm.Description = GetComments();
@@ -4061,7 +4061,7 @@ namespace D_Parser.Parser
 			LastParsedObject = dm;
 
 			dm.SpecialType = DMethod.MethodType.Destructor;
-			dm.StartLocation = Lexer.LastToken.Location;
+			dm.Location = Lexer.LastToken.Location;
 			dm.Name = "~this";
 
 			if (IsTemplateParameterList())
@@ -4082,7 +4082,7 @@ namespace D_Parser.Parser
 		{
 			Expect(Interface);
 			var dc = new DClassLike() { 
-				StartLocation = t.Location, 
+				Location = t.Location, 
 				Description = GetComments(),
                 ClassType= DTokens.Interface
 			};
@@ -4130,7 +4130,7 @@ namespace D_Parser.Parser
 			Expect(Enum);
 			var ret = new List<INode>();
 
-			var mye = new DEnum() { StartLocation = t.Location, Description = GetComments() };
+			var mye = new DEnum() { Location = t.Location, Description = GetComments() };
 			LastParsedObject = mye;
 
 			ApplyAttributes(mye);
@@ -4241,7 +4241,7 @@ namespace D_Parser.Parser
 
 					if (laKind == CloseCurlyBrace) break;
 
-					var ev = new DEnumValue() { StartLocation = la.Location, Description = GetComments() };
+					var ev = new DEnumValue() { Location = la.Location, Description = GetComments() };
 					LastParsedObject = ev;
 
 					if (laKind == Identifier && (
@@ -4355,7 +4355,7 @@ namespace D_Parser.Parser
 				Step();
 			Expect(Template);
 			var dc = new DClassLike(Template) { Description=GetComments(),
-				StartLocation=startLoc
+				Location=startLoc
 			};
 			LastParsedObject = dc;
 

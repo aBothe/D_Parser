@@ -98,7 +98,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
                                 NameLocation = dm.OutResultVariable.Location,
                                 Type = dm.Type, // TODO: What to do on auto functions?
                                 Parent = dm,
-                                StartLocation = dm.OutResultVariable.Location,
+                                Location = dm.OutResultVariable.Location,
                                 EndLocation = dm.OutResultVariable.EndLocation,
                             })) && 
 							breakImmediately)
@@ -266,7 +266,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 						{
 							if (Caret != CodeLocation.Empty)
 							{
-								if (Caret < decl.StartLocation)
+								if (Caret < decl.Location)
 									continue;
 
 								var dv = decl as DVariable;

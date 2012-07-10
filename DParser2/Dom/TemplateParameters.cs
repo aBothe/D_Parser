@@ -76,7 +76,7 @@ namespace D_Parser.Dom
 
 			Name = param.Name;
 
-			StartLocation = NameLocation = param.Location;
+			Location = NameLocation = param.Location;
 			EndLocation = param.EndLocation;
 		}
 

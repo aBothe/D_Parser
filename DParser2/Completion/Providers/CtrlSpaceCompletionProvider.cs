@@ -204,10 +204,10 @@ namespace D_Parser.Completion
 			}
 			else if (CurrentScope != null)
 			{
-				if (CurrentScope.BlockStartLocation.IsEmpty || caretLocation < CurrentScope.BlockStartLocation && caretLocation > CurrentScope.StartLocation)
+				if (CurrentScope.BlockStartLocation.IsEmpty || caretLocation < CurrentScope.BlockStartLocation && caretLocation > CurrentScope.Location)
 				{
 					ParseDecl = true;
-					blockStart = DocumentHelper.LocationToOffset(code, blockStartLocation = CurrentScope.StartLocation);
+					blockStart = DocumentHelper.LocationToOffset(code, blockStartLocation = CurrentScope.Location);
 				}
 				else
 					blockStart = DocumentHelper.LocationToOffset(code, CurrentScope.BlockStartLocation);

@@ -227,7 +227,7 @@ namespace D_Parser.Completion
 
 					if (decls != null && decls.Length > 0)
 						foreach (var decl in decls)
-							if (decl != null && Caret >= decl.StartLocation && Caret <= decl.EndLocation)
+							if (decl != null && Caret >= decl.Location && Caret <= decl.EndLocation)
 							{
 								curDeclaration = decl;
 								break;
