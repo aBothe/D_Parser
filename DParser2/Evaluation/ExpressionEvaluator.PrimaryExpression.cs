@@ -452,8 +452,7 @@ namespace D_Parser.Evaluation
 				case DTokens.Immutable:
 				case DTokens.InOut: // TODO?
 				case DTokens.Shared:
-					if (r = typeToCheck.DeclarationOrExpressionBase is MemberFunctionAttributeDecl &&
-						((MemberFunctionAttributeDecl)typeToCheck.DeclarationOrExpressionBase).Modifier == isExpression.TypeSpecializationToken)
+					if (r = typeToCheck.Modifier == isExpression.TypeSpecializationToken)
 						res = typeToCheck;
 					break;
 

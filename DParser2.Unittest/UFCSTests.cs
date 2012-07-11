@@ -20,9 +20,9 @@ namespace D_Parser.Unittest
 		public void TestBasicUFCS()
 		{
 			var pcl = ResolutionTests.CreateCache(@"module modA;
+void writeln(T...)(T t) {}
 string foo(string a) {}
 void foo(int a) {}
-void writeln(T...)(T t) {}
 
 void main(){
 	string s;

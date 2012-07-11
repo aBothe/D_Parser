@@ -55,19 +55,8 @@ namespace DParser2.Unittest
 
 			Assert.AreEqual(av.StringValue, content);
 
-			Assert.IsNotNull(av.RepresentedType);
-			ArrayType ar = null;
-
-			if (ProvideObjModule)
-			{
-				Assert.IsInstanceOfType(av.RepresentedType, typeof(AliasedType));
-				var s = av.RepresentedType as AliasedType;
-				ar = (ArrayType)s.Base;
-			}
-			else
-				ar = (ArrayType)av.RepresentedType;
-
-			Assert.IsNotNull(ar);
+			Assert.IsInstanceOfType(av.RepresentedType,typeof(ArrayType));
+			var ar = (ArrayType)av.RepresentedType;
 
 			switch (id.Subformat)
 			{

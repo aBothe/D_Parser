@@ -66,25 +66,31 @@ namespace D_Parser.Resolver
 				return IsEqual(resToCheck,targetType);
 			resToCheck = _r;
 
-			_r=DResolver.StripMemberSymbols(targetType);
-			if(_r==null)
-				return false;
-			targetType = _r;
-
+			targetType = DResolver.StripAliasSymbol(targetType);
 
 			if (targetType is DSymbol)
 			{
 				var tpn = ((DSymbol)targetType).Definition as TemplateParameterNode;
 
-				if (tpn!=null && tpn.TemplateParameters != null)
+				if (tpn!=null)
 				{
-					var dedParam = new Dictionary<string, ISemantic>();
-					foreach (var tp in tpn.TemplateParameters)
-						dedParam[tp.Name] = null;
+					var par = tpn.Parent as DNode;
 
-					return new TemplateParameterDeduction(dedParam, ctxt).Handle(tpn.TemplateParameter, resToCheck);
+					if (par != null && par.TemplateParameters != null)
+					{
+						var dedParam = new Dictionary<string, ISemantic>();
+						foreach (var tp in par.TemplateParameters)
+							dedParam[tp.Name] = null;
+
+						return new TemplateParameterDeduction(dedParam, ctxt).Handle(tpn.TemplateParameter, resToCheck);
+					}
 				}
 			}
+
+			_r = DResolver.StripMemberSymbols(targetType);
+			if (_r == null)
+				return false;
+			targetType = _r;
 
 			if (resToCheck is PrimitiveType && targetType is PrimitiveType)
 			{

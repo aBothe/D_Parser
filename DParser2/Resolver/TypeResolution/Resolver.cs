@@ -387,11 +387,10 @@ namespace D_Parser.Resolver.TypeResolution
 		/// --> resolvedType will be StaticTypeResult from char[]
 		/// 
 		/// </summary>
-		public static T StripAliasSymbol<T>(T r) where T : ISemantic
+		public static AbstractType StripAliasSymbol(AbstractType r)
 		{
-			ISemantic t = r;
-			while(t is AliasedType)
-				t = (t as DerivedDataType).Base;
+			while(r is AliasedType)
+				r = (r as DerivedDataType).Base;
 
 			return r;
 		}
@@ -401,13 +400,7 @@ namespace D_Parser.Resolver.TypeResolution
 			var l = new List<AbstractType>();
 
 			foreach (var r in symbols)
-			{
-				AbstractType r_ = r;
-				while (r_ is AliasedType)
-					r_ = ((AliasedType)r_).Base;
-				
-				l.Add(r_);
-			}
+				l.Add(StripAliasSymbol(r));
 
 			return l.ToArray();
 		}
@@ -418,10 +411,12 @@ namespace D_Parser.Resolver.TypeResolution
 		/// <param name="resolvedMember">True if a member (not an alias!) had to be bypassed</param>
 		public static AbstractType StripMemberSymbols(AbstractType r)
 		{
-			while(r is MemberSymbol)
+			r = StripAliasSymbol(r);
+
+			if(r is MemberSymbol)
 				r = ((DSymbol)r).Base;
 
-			return r;
+			return StripAliasSymbol(r);
 		}
 
 		public static AbstractType[] StripMemberSymbols(IEnumerable<AbstractType> symbols)
@@ -430,11 +425,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 			foreach (var r in symbols)
 			{
-				var r_ = r;
-				while (r_ is MemberSymbol)
-					r_ = ((DSymbol)r).Base;
-
-				l.Add(r_);
+				l.Add(StripMemberSymbols(r));
 			}
 
 			return l.ToArray();
