@@ -177,17 +177,20 @@ namespace D_Parser.Resolver.TypeResolution
 
 						else if (scanResult is UserDefinedType)
 						{
-							var bn = ((DSymbol)scanResult).Definition as IBlockNode;
+							var udt = (UserDefinedType)scanResult;
+							var bn=udt.Definition as IBlockNode;
 							var nodeMatches = NameScan.ScanNodeForIdentifier(bn, nextIdentifier, ctxt);
 
 							ctxt.PushNewScope(bn);
+							ctxt.CurrentContext.IntroduceTemplateParameterTypes(udt);
 
 							var results = HandleNodeMatches(nodeMatches, ctxt, b, typeIdObject);
 
 							if (results != null)
 								foreach (var res in results)
-									nextResults.Add(res as AbstractType);
+									r.Add(res as AbstractType);
 
+							ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(udt);
 							ctxt.Pop();
 						}
 						else if (scanResult is PackageSymbol)
@@ -210,7 +213,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 							if (results != null)
 								foreach (var res in results)
-									nextResults.Add(res as AbstractType);
+									r.Add(res as AbstractType);
 						}
 					}
 

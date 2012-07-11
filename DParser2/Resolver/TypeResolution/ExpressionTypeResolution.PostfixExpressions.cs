@@ -56,7 +56,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return null;
 		}
 
-		public static AbstractType Resolve(PostfixExpression_MethodCall call, ResolverContextStack ctxt)
+		public static AbstractType Resolve(PostfixExpression_MethodCall call, ResolverContextStack ctxt, bool returnBaseTypeOnly=true)
 		{
 			// Deduce template parameters later on
 			AbstractType[] baseExpression = null;
@@ -206,24 +206,52 @@ namespace D_Parser.Resolver.TypeResolution
 				{
 					var ms = (MemberSymbol)ov;
 					var dm = ms.Definition as DMethod;
+					bool add = false;
 
 					if (dm != null)
 					{
+						ctxt.CurrentContext.IntroduceTemplateParameterTypes(ms);
+
+						add = false;
+
 						if (callArgumentTypes.Count == 0 && dm.Parameters.Count == 0)
-							argTypeFilteredOverloads.Add(ov);
+							add=true;
 						else
 							for (int i=0; i< dm.Parameters.Count; i++)
 							{
-								ctxt.CurrentContext.IntroduceTemplateParameterTypes(ms);
 								var paramType = TypeDeclarationResolver.ResolveSingle(dm.Parameters[i].Type, ctxt);
-								ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(ms);
-
+								
 								// TODO: Expression tuples & variable argument lengths
-								if (i >= callArgumentTypes.Count || 
+								if (i >= callArgumentTypes.Count ||
 									!ResultComparer.IsImplicitlyConvertible(callArgumentTypes[i], paramType, ctxt))
 									continue;
+
+								add = true;
 							}
+
+						if (add)
+						{
+							var bt=TypeDeclarationResolver.GetMethodReturnType(dm, ctxt);
+
+							if (returnBaseTypeOnly)
+								argTypeFilteredOverloads.Add(bt);
+							else
+								argTypeFilteredOverloads.Add(new MemberSymbol(dm, bt, ms.DeclarationOrExpressionBase, ms.DeducedTypes));
+						}
+
+						ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(ms);
 					}
+				}
+				else if(ov is DelegateType)
+				{
+					var dg = (DelegateType)ov;
+					var bt = TypeDeclarationResolver.GetMethodReturnType(dg, ctxt);
+
+					//TODO: Param-Arg check
+					if (returnBaseTypeOnly)
+						argTypeFilteredOverloads.Add(bt);
+					else
+						argTypeFilteredOverloads.Add(new DelegateType(bt, dg.DeclarationOrExpressionBase as FunctionLiteral, dg.Parameters));
 				}
 			}
 

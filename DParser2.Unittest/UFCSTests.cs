@@ -36,6 +36,7 @@ void main(){
 
 			var methods=pcl[0].UfcsCache.FindFitting(ctxt, s.EndLocation, s_res).ToArray();
 
+			// foo(string), writeln
 			Assert.AreEqual(methods.Length, 2);
 		}
 	}
