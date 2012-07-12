@@ -59,6 +59,11 @@ namespace D_Parser.Evaluation
 		{
 			return _baseExpression!=null ? this._baseExpression.ToString() : null;
 		}
+
+		public static implicit operator AbstractType(ExpressionValue v)
+		{
+			return v.RepresentedType;
+		}
 	}
 
 	public enum ExpressionValueType

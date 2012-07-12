@@ -303,7 +303,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 					// Must be an expression that returns an object reference
 					if (ws.WithExpression != null)
-						r = ExpressionTypeResolver.Resolve(ws.WithExpression, ctxt);
+						r = Evaluation.Resolve(ws.WithExpression, ctxt);
 					else if (ws.WithSymbol != null) // This symbol will be used as default
 						r = TypeDeclarationResolver.ResolveSingle(ws.WithSymbol, ctxt);
 

@@ -30,7 +30,7 @@ namespace D_Parser.Completion
 		protected override void BuildCompletionDataInternal(IEditorData Editor, string EnteredText)
 		{
 			var ctxt=ResolverContextStack.Create(Editor);
-			var resolveResults = ExpressionTypeResolver.Resolve(AccessExpression, ctxt);
+			var resolveResults = Evaluation.Resolve(AccessExpression, ctxt);
 
 			if (resolveResults == null) //TODO: Add after-space list creation when an unbound . (Dot) was entered which means to access the global scope
 				return;

@@ -70,7 +70,7 @@ namespace D_Parser.Unittest
 			var call = ((ExpressionStatement)call_fooC).Expression;
 			var methodName = ((PostfixExpression_MethodCall)call).PostfixForeExpression;
 
-			var res=ExpressionTypeResolver.Resolve(methodName,ctxt);
+			var res=Evaluation.Resolve(methodName,ctxt);
 
 			Assert.IsTrue(res!=null , "Resolve() returned no result!");
 			Assert.IsInstanceOfType(res,typeof(MemberSymbol));
@@ -115,7 +115,7 @@ int b=4;
 
 			Assert.IsInstanceOfType(instanceExpr, typeof(PostfixExpression_Access));
 
-			var res = ExpressionTypeResolver.Resolve(instanceExpr, ctxt);
+			var res = Evaluation.Resolve(instanceExpr, ctxt);
 
 			Assert.IsInstanceOfType(res,typeof(MemberSymbol));
 			var mr = (MemberSymbol)res;
@@ -137,7 +137,7 @@ T foo(T)() {}
 			var ctxt = new ResolverContextStack(pcl, new ResolverContext { ScopedBlock=pcl[0]["modA"] });
 
 			var call = DParser.ParseExpression("foo!int()");
-			var bt = ExpressionTypeResolver.Resolve(call, ctxt);
+			var bt = Evaluation.Resolve(call, ctxt);
 
 			Assert.IsInstanceOfType(bt, typeof(PrimitiveType), "Resolution returned empty result instead of 'int'");
 			var st = (PrimitiveType)bt;

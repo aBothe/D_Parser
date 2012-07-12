@@ -5,11 +5,44 @@ using System.Text;
 using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
 using D_Parser.Dom;
+using D_Parser.Resolver.TypeResolution;
+using D_Parser.Evaluation;
 
-namespace D_Parser.Resolver.TypeResolution
+namespace D_Parser.Resolver.ExpressionSemantics
 {
-	public partial class ExpressionTypeResolver
+	public partial class Evaluation
 	{
+		#region Properties / Ctor
+		/// <summary>
+		/// True, if the expression's value shall be evaluated.
+		/// False, if the expression's type is wanted only.
+		/// </summary>
+		protected bool eval { get { return ValueProvider != null; } }
+		private ResolverContextStack _ctxt;
+		/// <summary>
+		/// Is not null if the expression value shall be evaluated.
+		/// </summary>
+		protected ISymbolValueProvider ValueProvider { get; private set; }
+		ResolverContextStack ResolutionContext { get { return ValueProvider!=null ? ValueProvider.ResolutionContext : _ctxt; } }
+
+		private Evaluation(ISymbolValueProvider vp) { this.ValueProvider = vp; }
+		private Evaluation(ResolverContextStack ctxt) { this._ctxt = ctxt; }
+		#endregion
+
+		public static ISymbolValue EvaluateValue(IExpression x, ISymbolValueProvider vp)
+		{
+
+			return null;
+		}
+
+		public static AbstractType EvaluateType(IExpression x, ResolverContextStack ctxt)
+		{
+
+			return null;
+		}
+
+
+
 		public static AbstractType Resolve(IExpression ex, ResolverContextStack ctxt)
 		{
 			#region Operand based/Trivial expressions
@@ -266,7 +299,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 			else if (ex is TemplateInstanceExpression)
 			{ 
-				var res=ExpressionTypeResolver.Resolve((TemplateInstanceExpression)ex, ctxt);
+				var res=Evaluation.Resolve((TemplateInstanceExpression)ex, ctxt);
 
 				ctxt.CheckForSingleResult(res, ex);
 				return res != null && res.Length == 0 ? res[0] : null;

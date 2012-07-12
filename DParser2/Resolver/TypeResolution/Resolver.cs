@@ -124,7 +124,7 @@ namespace D_Parser.Resolver.TypeResolution
 				if (o is IdentifierExpression && ((IdentifierExpression)o).Format.HasFlag(LiteralFormat.Scalar))
 					return null;
 
-				var t=ExpressionTypeResolver.Resolve((IExpression)o, ctxt);
+				var t=Evaluation.Resolve((IExpression)o, ctxt);
 
 				if (t != null)
 					return new[] { t };

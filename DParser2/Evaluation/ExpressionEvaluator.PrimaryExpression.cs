@@ -95,7 +95,7 @@ namespace D_Parser.Evaluation
 			{
 				var fl = (FunctionLiteral)x;
 
-				var r = ExpressionTypeResolver.Resolve(fl, vp.ResolutionContext);
+				var r = Evaluation.Resolve(fl, vp.ResolutionContext);
 
 				if (!(r is DelegateType))
 					throw new EvaluationException(x, "Wrong result type", r);

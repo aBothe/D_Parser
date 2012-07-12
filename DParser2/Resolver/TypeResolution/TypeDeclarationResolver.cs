@@ -238,7 +238,7 @@ namespace D_Parser.Resolver.TypeResolution
 			// typeOf(myInt)  =>  int
 			else if (typeOf.InstanceId != null)
 			{
-				var wantedTypes = ExpressionTypeResolver.Resolve(typeOf.InstanceId, ctxt);
+				var wantedTypes = Evaluation.Resolve(typeOf.InstanceId, ctxt);
 				return DResolver.StripMemberSymbols(wantedTypes);
 			}
 
@@ -274,7 +274,7 @@ namespace D_Parser.Resolver.TypeResolution
 			valueType = valueTypes[0];
 
 			if (ad.KeyExpression != null)
-				keyType = ExpressionTypeResolver.Resolve(ad.KeyExpression, ctxt);
+				keyType = Evaluation.Resolve(ad.KeyExpression, ctxt);
 			else
 			{
 				var t = Resolve(ad.KeyType, ctxt);
@@ -320,7 +320,7 @@ namespace D_Parser.Resolver.TypeResolution
 				return ResolveSingle(declaration as IdentifierDeclaration, ctxt) as AbstractType;
 			else if (declaration is TemplateInstanceExpression)
 			{
-				var a=ExpressionTypeResolver.Resolve(declaration as TemplateInstanceExpression, ctxt);
+				var a=Evaluation.Resolve(declaration as TemplateInstanceExpression, ctxt);
 				ctxt.CheckForSingleResult(a, declaration);
 				return a != null && a.Length != 0 ? a[0] : null;
 			}
@@ -369,7 +369,7 @@ namespace D_Parser.Resolver.TypeResolution
 			if (declaration is IdentifierDeclaration)
 				return Convert(Resolve(declaration as IdentifierDeclaration, ctxt));
 			else if (declaration is TemplateInstanceExpression)
-				return ExpressionTypeResolver.Resolve(declaration as TemplateInstanceExpression, ctxt);
+				return Evaluation.Resolve(declaration as TemplateInstanceExpression, ctxt);
 
 			var t= ResolveSingle(declaration, ctxt);
 
@@ -473,7 +473,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 					// For auto variables, use the initializer to get its type
 					else if (v.Initializer != null)
-						bt = ExpressionTypeResolver.Resolve(v.Initializer, ctxt);
+						bt = Evaluation.Resolve(v.Initializer, ctxt);
 
 					// Check if inside an foreach statement header
 					if (bt == null && ctxt.ScopedStatement != null)
@@ -670,7 +670,7 @@ namespace D_Parser.Resolver.TypeResolution
 				{
 					ctxt.PushNewScope(method);
 
-					var t= ExpressionTypeResolver.Resolve(returnStmt.ReturnExpression, ctxt);
+					var t= Evaluation.Resolve(returnStmt.ReturnExpression, ctxt);
 
 					ctxt.Pop();
 
@@ -734,7 +734,7 @@ namespace D_Parser.Resolver.TypeResolution
 						return new PrimitiveType(DTokens.Int);
 					}
 
-					var aggregateType = ExpressionTypeResolver.Resolve(fe.Aggregate, ctxt);
+					var aggregateType = Evaluation.Resolve(fe.Aggregate, ctxt);
 
 					aggregateType = DResolver.StripMemberSymbols(aggregateType);
 

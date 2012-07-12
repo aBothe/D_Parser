@@ -31,6 +31,11 @@ namespace D_Parser.Evaluation
 		/// Used for $ operands inside index/slice expressions.
 		/// </summary>
 		int CurrentArrayLength { get; set; }
+
+		public static implicit operator ResolverContextStack(ISymbolValueProvider vp)
+		{
+			return vp.ResolutionContext;
+		}
 	}
 
 	/// <summary>

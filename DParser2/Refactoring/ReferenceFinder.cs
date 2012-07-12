@@ -145,7 +145,7 @@ namespace D_Parser.Refactoring
 
 			var r = o is ITypeDeclaration ?
 				TypeDeclarationResolver.ResolveSingle(o as ITypeDeclaration, ctxt) :
-				(o is IExpression ? ExpressionTypeResolver.Resolve((IExpression)o, ctxt) : null);
+				(o is IExpression ? Evaluation.Resolve((IExpression)o, ctxt) : null);
 
 			if (r != null)
 				HandleResolveResult(r, o, idObject);

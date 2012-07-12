@@ -21,9 +21,9 @@ namespace D_Parser.Evaluation
 			AbstractType[] res = null;
 
 			if (idOrTemplateExpression is IdentifierExpression)
-				res = ExpressionTypeResolver.Resolve((IdentifierExpression)idOrTemplateExpression, vp.ResolutionContext);
+				res = Evaluation.Resolve((IdentifierExpression)idOrTemplateExpression, vp.ResolutionContext);
 			else if (idOrTemplateExpression is TemplateInstanceExpression)
-				res = ExpressionTypeResolver.Resolve((TemplateInstanceExpression)idOrTemplateExpression, vp.ResolutionContext);
+				res = Evaluation.Resolve((TemplateInstanceExpression)idOrTemplateExpression, vp.ResolutionContext);
 			else
 				throw new InvalidOperationException("Expression " + idOrTemplateExpression + " not allowed in EvalId");
 

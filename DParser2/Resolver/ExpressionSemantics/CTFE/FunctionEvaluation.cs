@@ -4,8 +4,9 @@ using System.Linq;
 using System.Text;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
+using D_Parser.Resolver.ExpressionSemantics;
 
-namespace D_Parser.Evaluation.CTFE
+namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 {
 	public class FunctionEvaluation
 	{

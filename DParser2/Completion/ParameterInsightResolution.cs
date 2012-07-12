@@ -122,7 +122,7 @@ namespace D_Parser.Completion
 
 				res.IsTemplateInstanceArguments = true;
 
-				res.ResolvedTypesOrMethods = ExpressionTypeResolver.Resolve(templ, ctxt, null, false);
+				res.ResolvedTypesOrMethods = Evaluation.Resolve(templ, ctxt, null, false);
 
 				if (templ.Arguments != null)
 				{
@@ -162,13 +162,13 @@ namespace D_Parser.Completion
 		public static AbstractType[] TryGetUnfilteredMethodOverloads(IExpression foreExpression, ResolverContextStack ctxt, IExpression supExpression=null)
 		{
 			if (foreExpression is TemplateInstanceExpression)
-				return ExpressionTypeResolver.Resolve((TemplateInstanceExpression)foreExpression, ctxt, null);
+				return Evaluation.Resolve((TemplateInstanceExpression)foreExpression, ctxt, null);
 			else if (foreExpression is IdentifierExpression)
-				return ExpressionTypeResolver.Resolve((IdentifierExpression)foreExpression, ctxt);
+				return Evaluation.Resolve((IdentifierExpression)foreExpression, ctxt);
 			else if (foreExpression is PostfixExpression_Access)
-				return ExpressionTypeResolver.Resolve((PostfixExpression_Access)foreExpression, ctxt, null, supExpression);
+				return Evaluation.Resolve((PostfixExpression_Access)foreExpression, ctxt, null, supExpression);
 			else
-				return new[] { ExpressionTypeResolver.Resolve(foreExpression, ctxt) };
+				return new[] { Evaluation.Resolve(foreExpression, ctxt) };
 		}
 
 		static void CalculateCurrentArgument(NewExpression nex, 

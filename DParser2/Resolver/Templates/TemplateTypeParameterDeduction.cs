@@ -123,7 +123,7 @@ namespace D_Parser.Resolver.Templates
 					if (param_Expected == null)
 						return false;
 
-					var result_Given = ExpressionTypeResolver.Resolve(argEnum_given.Current as IExpression, ctxt);
+					var result_Given = Evaluation.Resolve(argEnum_given.Current as IExpression, ctxt);
 
 					if (result_Given == null || !HandleDecl(param_Expected, result_Given))
 						return false;
@@ -287,8 +287,8 @@ namespace D_Parser.Resolver.Templates
 		{
 			if (r.DeclarationOrExpressionBase is VectorDeclaration)
 			{
-				var v_res = ExpressionTypeResolver.Resolve( v.Id,ctxt);
-				var r_res = ExpressionTypeResolver.Resolve(((VectorDeclaration)r.DeclarationOrExpressionBase).Id,ctxt);
+				var v_res = Evaluation.Resolve( v.Id,ctxt);
+				var r_res = Evaluation.Resolve(((VectorDeclaration)r.DeclarationOrExpressionBase).Id,ctxt);
 
 				if (v_res == null || r_res == null)
 					return false;

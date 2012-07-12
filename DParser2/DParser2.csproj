@@ -73,7 +73,7 @@
     <Compile Include="Dom\ISyntaxRegion.cs" />
     <Compile Include="Dom\ModulePackage.cs" />
     <Compile Include="Dom\TemplateParameters.cs" />
-    <Compile Include="Evaluation\CTFE\FunctionEvaluation.cs" />
+    <Compile Include="Resolver\ExpressionSemantics\CTFE\FunctionEvaluation.cs" />
     <Compile Include="Evaluation\EvaluationException.cs" />
     <Compile Include="Evaluation\ExpressionEvaluator.cs" />
     <Compile Include="Evaluation\ExpressionEvaluator.PostfixExpression.cs" />
@@ -100,6 +100,7 @@
     <Compile Include="Resolver\ASTScanner\NameScan.cs" />
     <Compile Include="Misc\UFCSCache.cs" />
     <Compile Include="Resolver\DType.cs" />
+    <Compile Include="Resolver\ExpressionSemantics\Evaluation.PrimaryExpression.cs" />
     <Compile Include="Resolver\ISemantic.cs" />
     <Compile Include="Resolver\ResolutionError.cs" />
     <Compile Include="Resolver\ResolutionOptions.cs" />
@@ -109,11 +110,11 @@
     <Compile Include="Resolver\Templates\TemplateParameterDeduction.cs" />
     <Compile Include="Resolver\Templates\TemplateTypeParameterDeduction.cs" />
     <Compile Include="Resolver\Templates\TemplateValueParameterDeduction.cs" />
-    <Compile Include="Resolver\TypeResolution\ExpressionTypeResolution.cs" />
+    <Compile Include="Resolver\ExpressionSemantics\Evaluation.cs" />
     <Compile Include="Resolver\ASTScanner\AbstractVisitor.cs" />
-    <Compile Include="Resolver\TypeResolution\ExpressionTypeResolution.PostfixExpressions.cs" />
+    <Compile Include="Resolver\ExpressionSemantics\Evaluation.PostfixExpressions.cs" />
     <Compile Include="Resolver\Templates\TemplateInstanceHandler.cs" />
-    <Compile Include="Resolver\TypeResolution\ExpressionTypeResolution.TraitsResolver.cs" />
+    <Compile Include="Resolver\ExpressionSemantics\Evaluation.TraitsResolver.cs" />
     <Compile Include="Resolver\TypeResolution\TypeDeclarationResolver.cs" />
     <Compile Include="Completion\Providers\StaticTypePropertyProvider.cs" />
     <Compile Include="Completion\ICompletionDataGenerator.cs" />
@@ -149,9 +150,7 @@
   <ItemGroup>
     <Content Include="Todo.txt" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Resolver\ExpressionSemantics\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.

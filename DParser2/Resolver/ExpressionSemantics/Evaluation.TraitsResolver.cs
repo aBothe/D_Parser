@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Text;
 using D_Parser.Dom.Expressions;
 
-namespace D_Parser.Resolver.TypeResolution
+namespace D_Parser.Resolver.ExpressionSemantics
 {
-	public class TraitsResolver
+	public partial class Evaluation
 	{
 		public static AbstractType Resolve(TraitsExpression te, ResolverContextStack ctxt)
 		{

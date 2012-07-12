@@ -175,7 +175,7 @@ namespace D_Parser.Evaluation
 				{
 					var tix = (TemplateInstanceExpression)acc.AccessExpression;
 
-					nextPart = ExpressionTypeResolver.Resolve(tix, vp.ResolutionContext, new[] { foreExpression.RepresentedType });
+					nextPart = Evaluation.Resolve(tix, vp.ResolutionContext, new[] { foreExpression.RepresentedType });
 				}
 
 				if (nextPart == null || nextPart.Length == 0)

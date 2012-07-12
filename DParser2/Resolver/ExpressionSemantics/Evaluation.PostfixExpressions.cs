@@ -2,10 +2,11 @@
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
+using D_Parser.Resolver.TypeResolution;
 
-namespace D_Parser.Resolver.TypeResolution
+namespace D_Parser.Resolver.ExpressionSemantics
 {
-	public partial class ExpressionTypeResolver
+	public partial class Evaluation
 	{
 		public static AbstractType Resolve(PostfixExpression ex, ResolverContextStack ctxt)
 		{
@@ -177,7 +178,7 @@ namespace D_Parser.Resolver.TypeResolution
 			var callArgumentTypes = new List<AbstractType>();
 			if (call.Arguments != null)
 				foreach (var arg in call.Arguments)
-					callArgumentTypes.Add(ExpressionTypeResolver.Resolve(arg, ctxt));
+					callArgumentTypes.Add(Evaluation.Resolve(arg, ctxt));
 
 			#region Deduce template parameters and filter out unmatching overloads
 			// UFCS argument assignment will be done per-overload and in the EvalAndFilterOverloads method!
