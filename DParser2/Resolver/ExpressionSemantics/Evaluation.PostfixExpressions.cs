@@ -8,12 +8,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public partial class Evaluation
 	{
-		public static AbstractType Resolve(PostfixExpression ex, ResolverContextStack ctxt)
+		ISemantic E(PostfixExpression ex)
 		{
 			if (ex is PostfixExpression_MethodCall)
-				return Resolve(ex as PostfixExpression_MethodCall, ctxt);
+				return E(ex as PostfixExpression_MethodCall, ctxt);
 
-			var baseExpression = DResolver.StripAliasSymbol(Resolve(ex.PostfixForeExpression, ctxt));
+			var baseExpression = DResolver.StripAliasSymbol(E(ex.PostfixForeExpression) as AbstractType);
 
 			if (baseExpression == null ||
 				ex is PostfixExpression_Increment || // myInt++ is still of type 'int'
@@ -22,7 +22,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			if (ex is PostfixExpression_Access)
 			{
-				var r= Resolve(ex as PostfixExpression_Access, ctxt, baseExpression);
+				var r= E(ex as PostfixExpression_Access, ctxt, baseExpression);
 				ctxt.CheckForSingleResult(r, ex);
 				return r!=null && r.Length != 0 ? r[0] : null;
 			}
@@ -57,7 +57,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return null;
 		}
 
-		public static AbstractType Resolve(PostfixExpression_MethodCall call, ResolverContextStack ctxt, bool returnBaseTypeOnly=true)
+		ISemantic E(PostfixExpression_MethodCall call, bool returnBaseTypeOnly=true)
 		{
 			// Deduce template parameters later on
 			AbstractType[] baseExpression = null;
@@ -73,15 +73,15 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				if (pac.AccessExpression is TemplateInstanceExpression)
 					tix = (TemplateInstanceExpression)pac.AccessExpression;
 
-				baseExpression = Resolve(pac, ctxt, null, call);
+				baseExpression = TypeDeclarationResolver.Convert(E(pac, null, call));
 			}
 			else if (call.PostfixForeExpression is TemplateInstanceExpression)
 			{
 				tix = (TemplateInstanceExpression)call.PostfixForeExpression;
-				baseExpression = Resolve(tix, ctxt, null, false);
+				baseExpression = TypeDeclarationResolver.Convert(E(tix, null, false));
 			}
 			else
-				baseExpression = new[] { Resolve(call.PostfixForeExpression, ctxt) };
+				baseExpression = new[] { E(call.PostfixForeExpression) as AbstractType };
 
 			ctxt.CurrentContext.ContextDependentOptions = optBackup;
 
@@ -178,7 +178,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var callArgumentTypes = new List<AbstractType>();
 			if (call.Arguments != null)
 				foreach (var arg in call.Arguments)
-					callArgumentTypes.Add(Evaluation.Resolve(arg, ctxt));
+					callArgumentTypes.Add(E(arg) as AbstractType);
 
 			#region Deduce template parameters and filter out unmatching overloads
 			// UFCS argument assignment will be done per-overload and in the EvalAndFilterOverloads method!
@@ -262,20 +262,19 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			#endregion
 		}
 
-		public static AbstractType[] Resolve(PostfixExpression_Access acc, 
-			ResolverContextStack ctxt, 
+		ISemantic[] E(PostfixExpression_Access acc,
 			AbstractType resultBase = null,
 			IExpression supExpression=null)
 		{
 			if (acc == null)
 				return null;
 
-			var baseExpression = resultBase ?? Resolve(acc.PostfixForeExpression, ctxt);
+			var baseExpression = resultBase ?? E(acc.PostfixForeExpression) as AbstractType;
 
 			if (acc.AccessExpression is TemplateInstanceExpression)
 			{
 				// Do not deduce and filter if superior expression is a method call since call arguments' types also count as template arguments!
-				var res=Resolve((TemplateInstanceExpression)acc.AccessExpression, ctxt, new[]{baseExpression}, 
+				var res=E((TemplateInstanceExpression)acc.AccessExpression, ctxt, new[]{baseExpression}, 
 					!(supExpression is PostfixExpression_MethodCall));
 
 				// Try to resolve ufcs(?)
@@ -322,11 +321,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return null;
 		}
 
-		public static AbstractType[] Resolve(
-			TemplateInstanceExpression tix,
-			ResolverContextStack ctxt,
-			IEnumerable<AbstractType> resultBases = null,
-			bool deduceParameters = true)
+		ISemantic[] E(TemplateInstanceExpression tix, IEnumerable<AbstractType> resultBases = null,	bool deduceParameters = true)
 		{
 			AbstractType[] res = null;
 			if (resultBases == null)

@@ -7,7 +7,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public partial class Evaluation
 	{
-		public static AbstractType Resolve(TraitsExpression te, ResolverContextStack ctxt)
+		ISemantic E(TraitsExpression te)
 		{
 			// TODO: Return either bools, strings, array (pointers) to members or stuff
 			return null;
