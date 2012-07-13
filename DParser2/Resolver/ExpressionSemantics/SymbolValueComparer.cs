@@ -5,16 +5,14 @@ using System.Text;
 using D_Parser.Dom.Expressions;
 using D_Parser.Resolver;
 
-namespace D_Parser.Evaluation
+namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public class SymbolValueComparer
 	{
-
-
 		public static bool IsEqual(IExpression ex, IExpression ex2, ISymbolValueProvider vp)
 		{
-			var val_x1 = ExpressionEvaluator.Evaluate(ex, vp);
-			var val_x2 = ExpressionEvaluator.Evaluate(ex2, vp);
+			var val_x1 = Evaluation.EvaluateValue(ex, vp);
+			var val_x2 = Evaluation.EvaluateValue(ex2, vp);
 
 			//TEMPORARILY: Remove the string comparison
 			if (val_x1 == null && val_x2 == null)

@@ -8,7 +8,7 @@ using D_Parser.Evaluation.Exceptions;
 using D_Parser.Resolver.TypeResolution;
 using D_Parser.Dom.Expressions;
 
-namespace D_Parser.Evaluation
+namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public interface ISymbolValueProvider
 	{
@@ -112,7 +112,7 @@ namespace D_Parser.Evaluation
 				if (n != null && n.IsConst)
 				{
 					// .. resolve it's pre-compile time value and make the returned value the given argument
-					var val = ExpressionEvaluator.Evaluate(n.Initializer, this);
+					var val = Evaluation.EvaluateValue(n.Initializer, this);
 
 					// If it's null, then the initializer is null - which is equal to e.g. 0 or null !;
 

@@ -6,6 +6,7 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Resolver.TypeResolution;
 using D_Parser.Parser;
 using D_Parser.Dom;
+using D_Parser.Evaluation;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
@@ -13,6 +14,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	{
 		ISemantic E(PrimaryExpression ex)
 		{
+			AbstractType type=null;
+
 			if (ex is IdentifierExpression)
 			{
 				var id = ex as IdentifierExpression;
@@ -24,16 +27,14 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				switch (id.Format)
 				{
 					case Parser.LiteralFormat.CharLiteral:
-						switch (id.Subformat)
-						{
-							case LiteralSubformat.Utf8:
-								return new PrimitiveType(DTokens.Char, 0, id);
-							case LiteralSubformat.Utf16:
-								return new PrimitiveType(DTokens.Wchar, 0, id);
-							case LiteralSubformat.Utf32:
-								return new PrimitiveType(DTokens.Dchar, 0, id);
-						}
-						return null;
+						var tk=id.Subformat == LiteralSubformat.Utf32 ? DTokens.Dchar :
+							id.Subformat == LiteralSubformat.Utf16 ? DTokens.Wchar:
+							DTokens.Char;
+
+						if(eval)
+							return new PrimitiveValue(tk, id.Value, ex);
+						else
+							return new PrimitiveType(tk,0,id);
 
 					case LiteralFormat.FloatingPoint | LiteralFormat.Scalar:
 						var im = id.Subformat.HasFlag(LiteralSubformat.Imaginary);
@@ -45,7 +46,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						else if (id.Subformat.HasFlag(LiteralSubformat.Real))
 							tt = im ? DTokens.Ireal : DTokens.Real;
 
-						return new PrimitiveType(tt, 0, id);
+						if (eval)
+							return new PrimitiveValue(tt, id.Value, ex);
+						else
+							return new PrimitiveType(tt, 0, id);
 
 					case LiteralFormat.Scalar:
 						var unsigned = id.Subformat.HasFlag(LiteralSubformat.Unsigned);
@@ -55,11 +59,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						else
 							tt = unsigned ? DTokens.Uint : DTokens.Int;
 
-						return new PrimitiveType(tt, 0, id);
+						return eval ? (ISemantic)new PrimitiveValue(tt, id.Value, id) : new PrimitiveType(tt, 0, id);
 
 					case Parser.LiteralFormat.StringLiteral:
 					case Parser.LiteralFormat.VerbatimStringLiteral:
-						AbstractType _t = null;
+						ArrayType _t = null;
 
 						if (ctxt != null)
 						{
@@ -72,7 +76,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							var strNode = obj[strType];
 
 							if (strNode != null)
-								_t = TypeDeclarationResolver.HandleNodeMatch(strNode, ctxt, null, id);
+								_t = DResolver.StripAliasSymbol(TypeDeclarationResolver.HandleNodeMatch(strNode, ctxt, null, id)) as ArrayType;
 						}
 
 						if (_t == null)
@@ -90,7 +94,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 								});
 						}
 
-						return _t;
+						return eval ? (ISemantic)new ArrayValue(_t, id) : _t;
 				}
 			}
 

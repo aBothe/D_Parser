@@ -2,7 +2,7 @@
 using D_Parser.Dom.Expressions;
 using D_Parser.Resolver;
 
-namespace D_Parser.Evaluation
+namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public interface ISymbolValue : IEquatable<ISymbolValue>, ISemantic
 	{

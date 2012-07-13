@@ -6,7 +6,7 @@ using D_Parser.Resolver;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
-namespace D_Parser.Evaluation
+namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public class PrimitiveValue : ExpressionValue
 	{

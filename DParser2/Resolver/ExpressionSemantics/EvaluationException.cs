@@ -5,7 +5,7 @@ using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Resolver;
 
-namespace D_Parser.Evaluation.Exceptions
+namespace D_Parser.Resolver
 {
 	public class DParserException : Exception {
 		public DParserException() { }

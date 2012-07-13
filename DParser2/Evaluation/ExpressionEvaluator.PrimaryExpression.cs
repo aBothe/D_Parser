@@ -10,7 +10,6 @@ using D_Parser.Resolver.TypeResolution;
 using D_Parser.Dom.Statements;
 using D_Parser.Resolver.Templates;
 using System.IO;
-using D_Parser.Evaluation.Exceptions;
 
 namespace D_Parser.Evaluation
 {
@@ -190,80 +189,6 @@ namespace D_Parser.Evaluation
 				return Evaluate(((SurroundingParenthesesExpression)x).Expression);
 
 			return null;
-		}
-
-		public ISymbolValue Evaluate(IdentifierExpression id)
-		{
-			if (id.IsIdentifier)
-				return EvalId(id);
-
-			int tt = 0;
-			switch (id.Format)
-			{
-				case Parser.LiteralFormat.CharLiteral:
-					return new PrimitiveValue(DTokens.Char, id.Value, id);
-
-				case LiteralFormat.FloatingPoint | LiteralFormat.Scalar:
-					var im = id.Subformat.HasFlag(LiteralSubformat.Imaginary);
-
-					tt = im ? DTokens.Idouble : DTokens.Double;
-
-					if (id.Subformat.HasFlag(LiteralSubformat.Float))
-						tt = im ? DTokens.Ifloat : DTokens.Float;
-					else if (id.Subformat.HasFlag(LiteralSubformat.Real))
-						tt = im ? DTokens.Ireal : DTokens.Real;
-
-					return new PrimitiveValue(tt, id.Value, id);
-
-				case Parser.LiteralFormat.Scalar:
-					var unsigned = id.Subformat.HasFlag(LiteralSubformat.Unsigned);
-
-					if (id.Subformat.HasFlag(LiteralSubformat.Long))
-						tt = unsigned ? DTokens.Ulong : DTokens.Long;
-					else
-						tt = unsigned ? DTokens.Uint : DTokens.Int;
-
-					return new PrimitiveValue(DTokens.Int, id.Value, id);
-
-				case Parser.LiteralFormat.StringLiteral:
-				case Parser.LiteralFormat.VerbatimStringLiteral:
-					return new ArrayValue(TryGetStringDefinition(id), id);
-			}
-			return null;
-		}
-
-		ArrayType TryGetStringDefinition(IdentifierExpression id)
-		{
-			return TryGetStringDefinition(id.Subformat, id);
-		}
-
-		ArrayType TryGetStringDefinition(LiteralSubformat stringFmt, IExpression x)
-		{
-			if (vp.ResolutionContext != null)
-			{
-				var obj = vp.ResolutionContext.ParseCache.LookupModuleName("object").First();
-
-				string strType = stringFmt == LiteralSubformat.Utf32 ? "dstring" :
-					stringFmt == LiteralSubformat.Utf16 ? "wstring" :
-					"string";
-
-				var strDef = obj[strType];
-
-				if(strDef!=null)
-					return DResolver.StripAliasSymbol(TypeDeclarationResolver.HandleNodeMatch(strDef, vp.ResolutionContext, null, x)) as ArrayType;
-			}
-
-			var ch = stringFmt == LiteralSubformat.Utf32 ? DTokens.Dchar :
-								stringFmt == LiteralSubformat.Utf16 ? DTokens.Wchar : DTokens.Char;
-
-			return new ArrayType(new PrimitiveType(ch, DTokens.Immutable),
-				new ArrayDecl
-				{
-					ValueType = new MemberFunctionAttributeDecl(DTokens.Immutable)
-					{
-						InnerType = new DTokenDeclaration(ch)
-					}
-				});
 		}
 
 		#region IsExpression

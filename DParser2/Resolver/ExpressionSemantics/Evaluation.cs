@@ -17,7 +17,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// True, if the expression's value shall be evaluated.
 		/// False, if the expression's type is wanted only.
 		/// </summary>
-		protected bool eval { get { return ValueProvider != null; } }
+		protected readonly bool eval;
 		private ResolverContextStack _ctxt;
 		/// <summary>
 		/// Is not null if the expression value shall be evaluated.
@@ -25,20 +25,18 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		protected ISymbolValueProvider ValueProvider { get; private set; }
 		ResolverContextStack ctxt { get { return ValueProvider!=null ? ValueProvider.ResolutionContext : _ctxt; } }
 
-		private Evaluation(ISymbolValueProvider vp) { this.ValueProvider = vp; }
+		private Evaluation(ISymbolValueProvider vp) { this.ValueProvider = vp; this.eval = true; }
 		private Evaluation(ResolverContextStack ctxt) { this._ctxt = ctxt; }
 		#endregion
 
 		public static ISymbolValue EvaluateValue(IExpression x, ISymbolValueProvider vp)
 		{
-
-			return null;
+			return new Evaluation(vp).E(x) as ISymbolValue;
 		}
 
 		public static AbstractType EvaluateType(IExpression x, ResolverContextStack ctxt)
 		{
-
-			return null;
+			return new Evaluation(ctxt).E(x) as AbstractType;
 		}
 
 		ISemantic E(IExpression x)
