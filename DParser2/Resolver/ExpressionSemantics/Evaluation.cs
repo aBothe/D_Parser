@@ -17,16 +17,22 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// True, if the expression's value shall be evaluated.
 		/// False, if the expression's type is wanted only.
 		/// </summary>
-		protected readonly bool eval;
-		private ResolverContextStack _ctxt;
+		private readonly bool eval;
+		private readonly ResolverContextStack ctxt;
 		/// <summary>
 		/// Is not null if the expression value shall be evaluated.
 		/// </summary>
-		protected ISymbolValueProvider ValueProvider { get; private set; }
-		ResolverContextStack ctxt { get { return ValueProvider!=null ? ValueProvider.ResolutionContext : _ctxt; } }
+		private readonly ISymbolValueProvider ValueProvider;
+		bool resolveConstOnly { get { return ValueProvider == null || ValueProvider.ConstantOnly; } set { if(ValueProvider!=null) ValueProvider.ConstantOnly = value; } }
 
-		private Evaluation(ISymbolValueProvider vp) { this.ValueProvider = vp; this.eval = true; }
-		private Evaluation(ResolverContextStack ctxt) { this._ctxt = ctxt; }
+		private Evaluation(ISymbolValueProvider vp) { 
+			this.ValueProvider = vp; 
+			this.eval = true;
+			this.ctxt = vp.ResolutionContext;
+		}
+		private Evaluation(ResolverContextStack ctxt) {
+			this.ctxt = ctxt;
+		}
 		#endregion
 
 		public static ISymbolValue EvaluateValue(IExpression x, ISymbolValueProvider vp)
@@ -66,6 +72,21 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return E((PrimaryExpression)x);
 
 			return null;
+		}
+
+		public static bool IsFalseZeroOrNull(ISymbolValue v)
+		{
+			var pv = v as PrimitiveValue;
+			if (pv != null)
+				try
+				{
+					return !Convert.ToBoolean(pv.Value);
+				}
+				catch { }
+			else
+				return v is NullValue;
+
+			return v != null;
 		}
 	}
 }

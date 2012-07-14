@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using D_Parser.Resolver;
 using D_Parser.Dom;
-using D_Parser.Evaluation.Exceptions;
 using D_Parser.Resolver.TypeResolution;
 using D_Parser.Dom.Expressions;
 

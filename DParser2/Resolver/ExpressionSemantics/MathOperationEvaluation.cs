@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using D_Parser.Resolver.ExpressionSemantics;
 
 namespace D_Parser.Evaluation
 {
@@ -73,5 +74,46 @@ namespace D_Parser.Evaluation
 
 			return true;
 		}
+
+		#region Helpers
+		public static bool ToBool(object value)
+		{
+			bool b = false;
+
+			try
+			{
+				b = Convert.ToBoolean(value);
+			}
+			catch { }
+
+			return b;
+		}
+
+		public static double ToDouble(object value)
+		{
+			double d = 0;
+
+			try
+			{
+				d = Convert.ToDouble(value);
+			}
+			catch { }
+
+			return d;
+		}
+
+		public static long ToLong(object value)
+		{
+			long d = 0;
+
+			try
+			{
+				d = Convert.ToInt64(value);
+			}
+			catch { }
+
+			return d;
+		}
+		#endregion
 	}
 }
