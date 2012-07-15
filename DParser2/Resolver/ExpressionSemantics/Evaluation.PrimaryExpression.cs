@@ -57,61 +57,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		ISemantic E(PrimaryExpression ex)
 		{
 			if (ex is IdentifierExpression)
-			{
-				var id = ex as IdentifierExpression;
-				int tt = 0;
-
-				if (id.IsIdentifier)
-					return TypeDeclarationResolver.ResolveSingle(id.Value as string, ctxt, id, id.ModuleScoped) as AbstractType;
-
-				switch (id.Format)
-				{
-					case Parser.LiteralFormat.CharLiteral:
-						var tk = id.Subformat == LiteralSubformat.Utf32 ? DTokens.Dchar :
-							id.Subformat == LiteralSubformat.Utf16 ? DTokens.Wchar :
-							DTokens.Char;
-
-						if (eval)
-							return new PrimitiveValue(tk, id.Value, ex);
-						else
-							return new PrimitiveType(tk, 0, id);
-
-					case LiteralFormat.FloatingPoint | LiteralFormat.Scalar:
-						var im = id.Subformat.HasFlag(LiteralSubformat.Imaginary);
-
-						tt = im ? DTokens.Idouble : DTokens.Double;
-
-						if (id.Subformat.HasFlag(LiteralSubformat.Float))
-							tt = im ? DTokens.Ifloat : DTokens.Float;
-						else if (id.Subformat.HasFlag(LiteralSubformat.Real))
-							tt = im ? DTokens.Ireal : DTokens.Real;
-
-						if (eval)
-							return new PrimitiveValue(tt, id.Value, ex);
-						else
-							return new PrimitiveType(tt, 0, id);
-
-					case LiteralFormat.Scalar:
-						var unsigned = id.Subformat.HasFlag(LiteralSubformat.Unsigned);
-
-						if (id.Subformat.HasFlag(LiteralSubformat.Long))
-							tt = unsigned ? DTokens.Ulong : DTokens.Long;
-						else
-							tt = unsigned ? DTokens.Uint : DTokens.Int;
-
-						return eval ? (ISemantic)new PrimitiveValue(tt, id.Value, id) : new PrimitiveType(tt, 0, id);
-
-					case Parser.LiteralFormat.StringLiteral:
-					case Parser.LiteralFormat.VerbatimStringLiteral:
-
-						var _t = GetStringType(id.Subformat);
-						return eval ? (ISemantic)new ArrayValue(_t, id) : _t;
-				}
-			}
-
+				return E((IdentifierExpression)ex);
 			else if (ex is TemplateInstanceExpression)
 			{
-				var res = E((TemplateInstanceExpression)ex);
+				var res = GetOverloads((TemplateInstanceExpression)ex);
 
 				ctxt.CheckForSingleResult(res, ex);
 				return res != null && res.Length == 0 ? res[0] : null;
@@ -121,45 +70,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return E((TokenExpression)ex);
 
 			else if (ex is ArrayLiteralExpression)
-			{
-				var arr = (ArrayLiteralExpression)ex;
-
-				if (eval)
-				{
-					var elements = new List<ISymbolValue>(arr.Elements.Count);
-
-					//ISSUE: Type-check each item to distinguish not matching items
-					foreach (var e in arr.Elements)
-						elements.Add(E(e) as ISymbolValue);
-
-					return new ArrayValue(new ArrayType(elements[0].RepresentedType, arr), elements.ToArray());
-				}
-
-				if (arr.Elements != null && arr.Elements.Count > 0)
-				{
-					// Simply resolve the first element's type and take it as the array's value type
-					var valueType = E(arr.Elements[0]) as AbstractType;
-
-					return new ArrayType(valueType, ex);
-				}
-			}
+				return E((ArrayLiteralExpression)ex);
 
 			else if (ex is AssocArrayExpression)
 				return E((AssocArrayExpression)ex);
 
 			else if (ex is FunctionLiteral)
-			{
-				var fl = (FunctionLiteral)ex;
-
-				var dg = new DelegateType(
-					TypeDeclarationResolver.GetMethodReturnType(((FunctionLiteral)ex).AnonymousMethod, ctxt),
-					(FunctionLiteral)ex);
-
-				if (eval)
-					return new DelegateValue(dg);
-				else
-					return dg;
-			}
+				return E((FunctionLiteral)ex);
 
 			else if (ex is AssertExpression)
 				return E((AssertExpression)ex);
@@ -173,7 +90,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			else if (ex is TypeDeclarationExpression) // should be containing a typeof() only; static properties etc. are parsed as access expressions
 				return TypeDeclarationResolver.ResolveSingle(((TypeDeclarationExpression)ex).Declaration, ctxt);
 
-			else if (ex is TypeidExpression) //TODO: Split up into more detailed typeinfo objects (e.g. for arrays, pointers, classes etc.)
+			else if (ex is TypeidExpression)
 				return E((TypeidExpression)ex);
 
 			else if (ex is IsExpression)
@@ -187,46 +104,92 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		ISemantic E(TokenExpression x)
 		{
-			var token = x.Token;
-
-			// References current class scope
-			if (token == DTokens.This)
+			switch (x.Token)
 			{
-				var classDef = ctxt.ScopedBlock;
+				// References current class scope
+				case DTokens.This:
+					if (eval && resolveConstOnly) 
+						throw new NoConstException(x);
 
-				while (!(classDef is DClassLike) && classDef != null)
-					classDef = classDef.Parent as IBlockNode;
+					var classDef = ctxt.ScopedBlock;
 
-				if (classDef is DClassLike)
-					return TypeDeclarationResolver.HandleNodeMatch(classDef, ctxt, null, x);
-			}
-			// References super type of currently scoped class declaration
-			else if (token == DTokens.Super)
-			{
-				var classDef = ctxt.ScopedBlock;
+					while (!(classDef is DClassLike) && classDef != null)
+						classDef = classDef.Parent as IBlockNode;
 
-				while (!(classDef is DClassLike) && classDef != null)
-					classDef = classDef.Parent as IBlockNode;
+					if (classDef is DClassLike)
+						return TypeDeclarationResolver.HandleNodeMatch(classDef, ctxt, null, x);
 
-				if (classDef != null)
-				{
-					var tr = DResolver.ResolveBaseClasses(new ClassType(classDef as DClassLike, null, null), ctxt, true);
+					/*
+					 * TODO: Return an object reference to the 'this' object.
+					 */
+					break;
 
-					if (tr.Base != null)
+
+				case DTokens.Super:
+					// References super type of currently scoped class declaration
+
+					if (eval && resolveConstOnly) 
+						throw new NoConstException(x);
+
+					classDef = ctxt.ScopedBlock;
+
+					while (!(classDef is DClassLike) && classDef != null)
+						classDef = classDef.Parent as IBlockNode;
+
+					if (classDef != null)
 					{
-						// Important: Overwrite type decl base with 'super' token
-						tr.Base.DeclarationOrExpressionBase = x;
+						var tr = DResolver.ResolveBaseClasses(new ClassType(classDef as DClassLike, null, null), ctxt, true);
 
-						return tr.Base;
+						if (tr.Base != null)
+						{
+							// Important: Overwrite type decl base with 'super' token
+							tr.Base.DeclarationOrExpressionBase = x;
+
+							return tr.Base;
+						}
 					}
-				}
+
+					/*
+					 * TODO: Return an object reference to 'this', wheras the type is the superior type.
+					 */
+					break;
+
+				case DTokens.Null:
+					if (eval && resolveConstOnly)
+						throw new NoConstException(x);
+
+					if (eval)
+					{
+						//TODO
+					}
+
+					return null;
+
+				case DTokens.Dollar:
+					// It's only allowed if the evaluation stack contains an array value
+					if (ValueProvider.CurrentArrayLength != -1)
+						return new PrimitiveValue(DTokens.Int, ValueProvider.CurrentArrayLength, x);
+					else
+						throw new EvaluationException(x, "Dollar not allowed here!");
+
+				case DTokens.True:
+					return new PrimitiveValue(DTokens.Bool, true, x);
+				case DTokens.False:
+					return new PrimitiveValue(DTokens.Bool, false, x);
+				case DTokens.__FILE__:
+					return new ArrayValue(GetStringType(), x, (ctxt.ScopedBlock.NodeRoot as IAbstractSyntaxTree).FileName);
+				case DTokens.__LINE__:
+					return new PrimitiveValue(DTokens.Int, x.Location.Line, x);
 			}
+
+
+			return null;
 		}
 
 		ISemantic E(AssertExpression x)
 		{
 			if (!eval)
-				return new PrimitiveType(DTokens.Void,0,x);
+				return new PrimitiveType(DTokens.Void, 0, x);
 
 			var assertVal = E(x.AssignExpressions[0]) as ISymbolValue;
 			/*TODO
@@ -295,7 +258,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					throw new InvalidStringException(x);
 
 				var fn = Path.IsPathRooted(v.StringValue) ? v.StringValue :
-							Path.Combine(Path.GetDirectoryName((ctxt.ScopedBlock.NodeRoot as IAbstractSyntaxTree).FileName), 
+							Path.Combine(Path.GetDirectoryName((ctxt.ScopedBlock.NodeRoot as IAbstractSyntaxTree).FileName),
 							v.StringValue);
 
 				if (!File.Exists(fn))
@@ -307,6 +270,34 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 			else
 				return strType;
+		}
+
+		ISemantic E(ArrayLiteralExpression arr)
+		{
+			if (eval)
+			{
+				var elements = new List<ISymbolValue>(arr.Elements.Count);
+
+				//ISSUE: Type-check each item to distinguish not matching items
+				foreach (var e in arr.Elements)
+					elements.Add(E(e) as ISymbolValue);
+
+				if(elements.Count == 0)
+					throw new EvaluationException(arr, "Array literal must contain at least one element.");
+
+				return new ArrayValue(new ArrayType(elements[0].RepresentedType, arr), elements.ToArray());
+			}
+
+			if (arr.Elements != null && arr.Elements.Count > 0)
+			{
+				// Simply resolve the first element's type and take it as the array's value type
+				var valueType = E(arr.Elements[0]) as AbstractType;
+
+				return new ArrayType(valueType, arr);
+			}
+
+			ctxt.LogError(arr, "Array literal must contain at least one element.");
+			return null;
 		}
 
 		ISemantic E(AssocArrayExpression aa)
@@ -340,9 +331,14 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return null;
 		}
 
-		ISemantic[] E(IdentifierExpression id)
+		ISemantic E(FunctionLiteral x)
 		{
-			return TypeDeclarationResolver.ResolveIdentifier(id.Value as string, ctxt, id, id.ModuleScoped);
+			var dg = new DelegateType(TypeDeclarationResolver.GetMethodReturnType(x.AnonymousMethod, ctxt),x);
+
+			if (eval)
+				return new DelegateValue(dg);
+			else
+				return dg;
 		}
 	}
 }

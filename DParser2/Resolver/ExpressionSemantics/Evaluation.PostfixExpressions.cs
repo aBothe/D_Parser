@@ -78,7 +78,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			else if (call.PostfixForeExpression is TemplateInstanceExpression)
 			{
 				tix = (TemplateInstanceExpression)call.PostfixForeExpression;
-				baseExpression = TypeDeclarationResolver.Convert(E(tix, null, false));
+				baseExpression = TypeDeclarationResolver.Convert(GetOverloads(tix, null, false));
 			}
 			else
 				baseExpression = new[] { E(call.PostfixForeExpression) as AbstractType };
@@ -319,18 +319,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return new[]{ baseExpression };
 
 			return null;
-		}
-
-		ISemantic[] E(TemplateInstanceExpression tix, IEnumerable<AbstractType> resultBases = null,	bool deduceParameters = true)
-		{
-			AbstractType[] res = null;
-			if (resultBases == null)
-				res= TypeDeclarationResolver.Convert(TypeDeclarationResolver.ResolveIdentifier(tix.TemplateIdentifier.Id, ctxt, tix, tix.TemplateIdentifier.ModuleScoped));
-			else
-				res= TypeDeclarationResolver.ResolveFurtherTypeIdentifier(tix.TemplateIdentifier.Id, resultBases, ctxt, tix);
-
-			return !ctxt.Options.HasFlag(ResolutionOptions.NoTemplateParameterDeduction) && deduceParameters ?
-				TemplateInstanceHandler.EvalAndFilterOverloads(res,tix, ctxt) : res;
 		}
 	}
 }

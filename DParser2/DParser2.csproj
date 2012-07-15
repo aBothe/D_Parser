@@ -74,10 +74,10 @@
     <Compile Include="Dom\ModulePackage.cs" />
     <Compile Include="Dom\TemplateParameters.cs" />
     <Compile Include="Resolver\ExpressionSemantics\CTFE\FunctionEvaluation.cs" />
+    <Compile Include="Resolver\ExpressionSemantics\Evaluation.Identifiers.cs" />
     <Compile Include="Resolver\ExpressionSemantics\EvaluationException.cs" />
     <Compile Include="Evaluation\ExpressionEvaluator.cs" />
     <Compile Include="Evaluation\ExpressionEvaluator.PostfixExpression.cs" />
-    <Compile Include="Evaluation\ExpressionEvaluator.PrimaryExpression.cs" />
     <Compile Include="Evaluation\ExpressionEvaluator.SymbolHandling.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.TypeidExpression.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.OperandExpressions.cs" />

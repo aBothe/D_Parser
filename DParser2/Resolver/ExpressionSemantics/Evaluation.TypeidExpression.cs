@@ -16,6 +16,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	{
 		public ISemantic E(TypeidExpression tid)
 		{
+			//TODO: Split up into more detailed typeinfo objects (e.g. for arrays, pointers, classes etc.)
+
 			if(!eval)
 				return TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration("TypeInfo") { InnerDeclaration = new IdentifierDeclaration("object") }, ctxt) as AbstractType;
 
