@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using D_Parser.Dom;
 using D_Parser.Dom.Statements;
+using D_Parser.Resolver.Templates;
 
 namespace D_Parser.Resolver
 {
@@ -23,7 +24,7 @@ namespace D_Parser.Resolver
 					DeducedTemplateParameters.Remove(dt.Key);
 		}
 
-		public Dictionary<string, ISemantic> DeducedTemplateParameters = new Dictionary<string,ISemantic>();
+		public DeducedTypeDictionary DeducedTemplateParameters = new DeducedTypeDictionary();
 
 		//TODO: Cache expression results to increase static if() performance if multiple items are affected by them
 

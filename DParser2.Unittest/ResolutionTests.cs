@@ -10,6 +10,7 @@ using D_Parser.Resolver.TypeResolution;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom;
 using D_Parser.Dom.Statements;
+using D_Parser.Resolver.ExpressionSemantics;
 
 namespace D_Parser.Unittest
 {
@@ -70,7 +71,7 @@ namespace D_Parser.Unittest
 			var call = ((ExpressionStatement)call_fooC).Expression;
 			var methodName = ((PostfixExpression_MethodCall)call).PostfixForeExpression;
 
-			var res=Evaluation.Resolve(methodName,ctxt);
+			var res=Evaluation.EvaluateType(methodName,ctxt);
 
 			Assert.IsTrue(res!=null , "Resolve() returned no result!");
 			Assert.IsInstanceOfType(res,typeof(MemberSymbol));
@@ -115,7 +116,7 @@ int b=4;
 
 			Assert.IsInstanceOfType(instanceExpr, typeof(PostfixExpression_Access));
 
-			var res = Evaluation.Resolve(instanceExpr, ctxt);
+			var res = Evaluation.EvaluateType(instanceExpr, ctxt);
 
 			Assert.IsInstanceOfType(res,typeof(MemberSymbol));
 			var mr = (MemberSymbol)res;

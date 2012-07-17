@@ -6,6 +6,7 @@ using D_Parser.Dom.Statements;
 using D_Parser.Parser;
 using D_Parser.Resolver.ASTScanner;
 using D_Parser.Evaluation;
+using D_Parser.Resolver.ExpressionSemantics;
 
 namespace D_Parser.Resolver.TypeResolution
 {
@@ -57,7 +58,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return null;
 		}
 
-		public static ISemantic[] ResolveIdentifier(string id, ResolverContextStack ctxt, object idObject, bool ModuleScope = false)
+		public static AbstractType[] ResolveIdentifier(string id, ResolverContextStack ctxt, object idObject, bool ModuleScope = false)
 		{
 			var loc = idObject is ISyntaxRegion ? ((ISyntaxRegion)idObject).Location:CodeLocation.Empty;
 
@@ -68,7 +69,7 @@ namespace D_Parser.Resolver.TypeResolution
 			else
 			{
 				var tstk = new Stack<ResolverContext>();
-				ISemantic dedTemplateParam = null;
+				D_Parser.Resolver.Templates.TemplateParameterSymbol dedTemplateParam = null;
 				while (!ctxt.CurrentContext.DeducedTemplateParameters.TryGetValue(id, out dedTemplateParam))
 				{
 					if (ctxt.PrevContextIsInSameHierarchy)
@@ -81,7 +82,7 @@ namespace D_Parser.Resolver.TypeResolution
 					ctxt.Push(tstk.Pop());
 
 				if (dedTemplateParam!=null)
-					return new[]{dedTemplateParam};
+					return new[]{ dedTemplateParam };
 			}
 
 			var matches = NameScan.SearchMatchesAlongNodeHierarchy(ctxt, loc, id);
@@ -94,7 +95,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return res;
 		}
 
-		public static ISemantic ResolveSingle(string id, ResolverContextStack ctxt, object idObject, bool ModuleScope = false)
+		public static AbstractType ResolveSingle(string id, ResolverContextStack ctxt, object idObject, bool ModuleScope = false)
 		{
 			var r = ResolveIdentifier(id, ctxt, idObject, ModuleScope);
 
@@ -104,7 +105,7 @@ namespace D_Parser.Resolver.TypeResolution
 		}
 
 
-		public static ISemantic ResolveSingle(IdentifierDeclaration id, ResolverContextStack ctxt, ISemantic[] resultBases = null, bool filterForTemplateArgs = true)
+		public static AbstractType ResolveSingle(IdentifierDeclaration id, ResolverContextStack ctxt, AbstractType[] resultBases = null, bool filterForTemplateArgs = true)
 		{
 			var r = Resolve(id, ctxt, resultBases, filterForTemplateArgs);
 
@@ -113,9 +114,9 @@ namespace D_Parser.Resolver.TypeResolution
 			return r != null && r.Length != 0 ? r[0] : null;
 		}
 
-		public static ISemantic[] Resolve(IdentifierDeclaration id, ResolverContextStack ctxt, ISemantic[] resultBases = null, bool filterForTemplateArgs = true)
+		public static AbstractType[] Resolve(IdentifierDeclaration id, ResolverContextStack ctxt, AbstractType[] resultBases = null, bool filterForTemplateArgs = true)
 		{
-			ISemantic[] res = null;
+			AbstractType[] res = null;
 
 			if (id.InnerDeclaration == null && resultBases == null)
 				res= ResolveIdentifier(id.Id, ctxt, id, id.ModuleScoped);
@@ -126,15 +127,16 @@ namespace D_Parser.Resolver.TypeResolution
 				if (rbases == null || rbases.Length == 0)
 					return null;
 
-				res= Convert(ResolveFurtherTypeIdentifier(id.Id, Convert(rbases), ctxt, id));
+				res= ResolveFurtherTypeIdentifier(id.Id, rbases, ctxt, id);
 			}
 
 			if(filterForTemplateArgs && !ctxt.Options.HasFlag(ResolutionOptions.NoTemplateParameterDeduction))
 			{
 				var l_=new List<AbstractType>();
 
-				foreach(var s in res)
-					l_.Add(s as AbstractType);
+				if(res!=null)
+					foreach(var s in res)
+						l_.Add(s);
 
 				return TemplateInstanceHandler.EvalAndFilterOverloads(l_, null, false, ctxt);
 			}
@@ -238,7 +240,7 @@ namespace D_Parser.Resolver.TypeResolution
 			// typeOf(myInt)  =>  int
 			else if (typeOf.InstanceId != null)
 			{
-				var wantedTypes = Evaluation.Resolve(typeOf.InstanceId, ctxt);
+				var wantedTypes = Evaluation.EvaluateType(typeOf.InstanceId, ctxt);
 				return DResolver.StripMemberSymbols(wantedTypes);
 			}
 
@@ -320,7 +322,7 @@ namespace D_Parser.Resolver.TypeResolution
 				return ResolveSingle(declaration as IdentifierDeclaration, ctxt) as AbstractType;
 			else if (declaration is TemplateInstanceExpression)
 			{
-				var a=Evaluation.Resolve(declaration as TemplateInstanceExpression, ctxt);
+				var a = Evaluation.GetOverloads(declaration as TemplateInstanceExpression, ctxt);
 				ctxt.CheckForSingleResult(a, declaration);
 				return a != null && a.Length != 0 ? a[0] : null;
 			}
@@ -367,9 +369,9 @@ namespace D_Parser.Resolver.TypeResolution
 		public static AbstractType[] Resolve(ITypeDeclaration declaration, ResolverContextStack ctxt)
 		{
 			if (declaration is IdentifierDeclaration)
-				return Convert(Resolve(declaration as IdentifierDeclaration, ctxt));
+				return Resolve(declaration as IdentifierDeclaration, ctxt);
 			else if (declaration is TemplateInstanceExpression)
-				return Evaluation.Resolve(declaration as TemplateInstanceExpression, ctxt);
+				return Evaluation.GetOverloads(declaration as TemplateInstanceExpression, ctxt);
 
 			var t= ResolveSingle(declaration, ctxt);
 
@@ -473,7 +475,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 					// For auto variables, use the initializer to get its type
 					else if (v.Initializer != null)
-						bt = Evaluation.Resolve(v.Initializer, ctxt);
+						bt = ExpressionSemantics.Evaluation.EvaluateType(v.Initializer, ctxt);
 
 					// Check if inside an foreach statement header
 					if (bt == null && ctxt.ScopedStatement != null)
@@ -557,13 +559,13 @@ namespace D_Parser.Resolver.TypeResolution
 		}
 
 		static int stackNum_HandleNodeMatch = 0;
-		public static ISemantic[] HandleNodeMatches(
+		public static AbstractType[] HandleNodeMatches(
 			IEnumerable<INode> matches,
 			ResolverContextStack ctxt,
 			AbstractType resultBase = null,
 			object TypeDeclaration = null)
 		{
-			var rl = new List<ISemantic>();
+			var rl = new List<AbstractType>();
 
 			if (matches != null)
 				foreach (var m in matches)

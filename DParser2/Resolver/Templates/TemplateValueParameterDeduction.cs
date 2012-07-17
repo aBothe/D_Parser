@@ -1,7 +1,6 @@
 ﻿using D_Parser.Dom;
-using D_Parser.Evaluation;
+using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
-using System.Collections.Generic;
 
 namespace D_Parser.Resolver.Templates
 {
@@ -14,12 +13,12 @@ namespace D_Parser.Resolver.Templates
 			{
 				if (p.DefaultExpression != null)
 				{
-					var eval = ExpressionEvaluator.Resolve(p.DefaultExpression, ctxt);
+					var eval = Evaluation.EvaluateValue(p.DefaultExpression, ctxt);
 
 					if (eval == null)
 						return false;
 
-					return Set(p.Name, eval);
+					return Set(p, eval);
 				}
 				else
 					return false;
@@ -44,13 +43,13 @@ namespace D_Parser.Resolver.Templates
 			// If spec given, test for equality (only ?)
 			if (p.SpecializationExpression != null) 
 			{
-				var specVal = ExpressionEvaluator.Evaluate(p.SpecializationExpression, new StandardValueProvider(ctxt));
+				var specVal = Evaluation.EvaluateValue(p.SpecializationExpression, ctxt);
 
 				if (specVal == null || !SymbolValueComparer.IsEqual(specVal, valueArgument))
 					return false;
 			}
 
-			return Set(p.Name, arg);
+			return Set(p, arg);
 		}
 	}
 }

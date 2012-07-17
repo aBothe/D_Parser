@@ -6,7 +6,6 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
 using D_Parser.Dom;
 using D_Parser.Resolver.TypeResolution;
-using D_Parser.Evaluation;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
@@ -34,6 +33,14 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			this.ctxt = ctxt;
 		}
 		#endregion
+
+		/// <summary>
+		/// Uses the standard value provider for expression value evaluation
+		/// </summary>
+		public static ISymbolValue EvaluateValue(IExpression x, ResolverContextStack ctxt)
+		{
+			return EvaluateValue(x, new StandardValueProvider(ctxt));
+		}
 
 		public static ISymbolValue EvaluateValue(IExpression x, ISymbolValueProvider vp)
 		{

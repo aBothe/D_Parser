@@ -6,8 +6,9 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Resolver;
 using D_Parser.Resolver.TypeResolution;
 using D_Parser.Dom;
+using D_Parser.Resolver.ExpressionSemantics;
 
-namespace D_Parser.Evaluation
+namespace D_Parser.Eval
 {
 	public partial class ExpressionEvaluator
 	{
@@ -46,7 +47,7 @@ namespace D_Parser.Evaluation
 		{
 			var r=TypeDeclarationResolver.Resolve(x.Declaration, vp.ResolutionContext);
 
-			throw new NotImplementedException("TODO: Handle static properties and ufcs functionality on type declaration expressions");
+			
 		}
 	}
 }

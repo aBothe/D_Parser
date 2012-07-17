@@ -3,7 +3,7 @@ using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
 using D_Parser.Resolver.TypeResolution;
-using D_Parser.Evaluation;
+using D_Parser.Resolver.ExpressionSemantics;
 
 namespace D_Parser.Resolver.Templates
 {
@@ -24,7 +24,7 @@ namespace D_Parser.Resolver.Templates
 					var defaultTypeRes = TypeDeclarationResolver.Resolve(p.Default, ctxt);
 					bool b = false;
 					if (defaultTypeRes != null)
-						b = Set(p.Name, defaultTypeRes.First());
+						b = Set(p, defaultTypeRes.First());
 					ctxt.Pop();
 					return b;
 				}
@@ -32,50 +32,50 @@ namespace D_Parser.Resolver.Templates
 
 			// If no spezialization given, assign argument immediately
 			if (p.Specialization == null)
-				return Set(p.Name, arg);
+				return Set(p, arg);
 
-			bool handleResult= HandleDecl(p.Specialization,arg);
+			bool handleResult= HandleDecl(p,p.Specialization,arg);
 
 			if (!handleResult)
 				return false;
 
 			// Apply the entire argument to parameter p if there hasn't been no explicit association yet
 			if (!TargetDictionary.ContainsKey(p.Name) || TargetDictionary[p.Name] == null)
-				TargetDictionary[p.Name] = arg;
+				TargetDictionary[p.Name] = new TemplateParameterSymbol(p, arg);
 
 			return true;
 		}
 
-		bool HandleDecl(ITypeDeclaration td, ISemantic rr)
+		bool HandleDecl(TemplateTypeParameter p ,ITypeDeclaration td, ISemantic rr)
 		{
 			if (td is ArrayDecl)
-				return HandleDecl((ArrayDecl)td, rr as AssocArrayType);
+				return HandleDecl(p,(ArrayDecl)td, rr as AssocArrayType);
 			else if (td is IdentifierDeclaration)
-				return HandleDecl((IdentifierDeclaration)td, rr);
+				return HandleDecl(p,(IdentifierDeclaration)td, rr);
 			else if (td is DTokenDeclaration)
-				return HandleDecl((DTokenDeclaration)td, rr as AbstractType);
+				return HandleDecl(p,(DTokenDeclaration)td, rr as AbstractType);
 			else if (td is DelegateDeclaration)
-				return HandleDecl((DelegateDeclaration)td, rr as DelegateType);
+				return HandleDecl(p,(DelegateDeclaration)td, rr as DelegateType);
 			else if (td is PointerDecl)
-				return HandleDecl((PointerDecl)td, rr as PointerType);
+				return HandleDecl(p,(PointerDecl)td, rr as PointerType);
 			else if (td is MemberFunctionAttributeDecl)
-				return HandleDecl((MemberFunctionAttributeDecl)td, rr as AbstractType);
+				return HandleDecl(p,(MemberFunctionAttributeDecl)td, rr as AbstractType);
 			else if (td is TypeOfDeclaration)
-				return HandleDecl((TypeOfDeclaration)td, rr as AbstractType);
+				return HandleDecl(p,(TypeOfDeclaration)td, rr as AbstractType);
 			else if (td is VectorDeclaration)
-				return HandleDecl((VectorDeclaration)td, rr as AbstractType);
+				return HandleDecl(p,(VectorDeclaration)td, rr as AbstractType);
 			else if (td is TemplateInstanceExpression)
-				return HandleDecl((TemplateInstanceExpression)td,rr as AbstractType);
+				return HandleDecl(p,(TemplateInstanceExpression)td,rr as AbstractType);
 			return false;
 		}
 
-		bool HandleDecl(IdentifierDeclaration id, ISemantic r)
+		bool HandleDecl(TemplateTypeParameter p, IdentifierDeclaration id, ISemantic r)
 		{
 			// Bottom-level reached
 			if (id.InnerDeclaration == null && Contains(id.Id) && !id.ModuleScoped)
 			{
 				// Associate template param with r
-				return Set(id.Id, r);
+				return Set(p, r, id.Id);
 			}
 
 			/*
@@ -287,8 +287,8 @@ namespace D_Parser.Resolver.Templates
 		{
 			if (r.DeclarationOrExpressionBase is VectorDeclaration)
 			{
-				var v_res = Evaluation.Resolve( v.Id,ctxt);
-				var r_res = Evaluation.Resolve(((VectorDeclaration)r.DeclarationOrExpressionBase).Id,ctxt);
+				var v_res = Evaluation.EvaluateType(v.Id,ctxt);
+				var r_res = Evaluation.EvaluateType(((VectorDeclaration)r.DeclarationOrExpressionBase).Id,ctxt);
 
 				if (v_res == null || r_res == null)
 					return false;

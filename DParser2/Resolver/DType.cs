@@ -5,6 +5,7 @@ using System.Linq;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
+using D_Parser.Resolver.Templates;
 
 namespace D_Parser.Resolver
 {
@@ -178,7 +179,7 @@ namespace D_Parser.Resolver
 		/// Key: Type name
 		/// Value: Corresponding type
 		/// </summary>
-		public ReadOnlyCollection<KeyValuePair<string, ISemantic>> DeducedTypes;
+		public ReadOnlyCollection<KeyValuePair<string, TemplateParameterSymbol>> DeducedTypes;
 
 
 		public string Name
@@ -191,18 +192,18 @@ namespace D_Parser.Resolver
 			}
 		}
 
-		public DSymbol(DNode Node, AbstractType BaseType, ReadOnlyCollection<KeyValuePair<string, ISemantic>> deducedTypes, ISyntaxRegion td)
+		public DSymbol(DNode Node, AbstractType BaseType, ReadOnlyCollection<KeyValuePair<string, TemplateParameterSymbol>> deducedTypes, ISyntaxRegion td)
 			: base(BaseType, td)
 		{
 			this.DeducedTypes = deducedTypes;
 			this.Definition = Node;
 		}
 
-		public DSymbol(DNode Node, AbstractType BaseType, Dictionary<string, ISemantic> deducedTypes, ISyntaxRegion td)
+		public DSymbol(DNode Node, AbstractType BaseType, Dictionary<string, TemplateParameterSymbol> deducedTypes, ISyntaxRegion td)
 			: base(BaseType, td)
 		{
 			if(deducedTypes!=null)
-				this.DeducedTypes = new ReadOnlyCollection<KeyValuePair<string,ISemantic>>(deducedTypes.ToArray());
+				this.DeducedTypes = new ReadOnlyCollection<KeyValuePair<string, TemplateParameterSymbol>>(deducedTypes.ToArray());
 			this.Definition = Node;
 		}
 

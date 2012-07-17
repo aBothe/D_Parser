@@ -19,7 +19,7 @@ namespace D_Parser.Resolver.Templates
 					if (eval == null)
 						return false;
 
-					return Set(p.Name, eval);
+					return Set(p, eval);
 				}
 				else if (p.DefaultType != null)
 				{
@@ -30,7 +30,7 @@ namespace D_Parser.Resolver.Templates
 
 					bool ret = false;
 					foreach(var r in res)
-						if (!Set(p.Name, r))
+						if (!Set(p, r))
 						{
 							ret = true;
 						}
@@ -73,7 +73,7 @@ namespace D_Parser.Resolver.Templates
 			}
 			#endregion
 
-			return Set(p.Name,arg);
+			return Set(p,arg);
 		}
 	}
 }

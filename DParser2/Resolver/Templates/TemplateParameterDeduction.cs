@@ -10,7 +10,7 @@ namespace D_Parser.Resolver.Templates
 		/// <summary>
 		/// The dictionary which stores all deduced results + their names
 		/// </summary>
-		Dictionary<string, ISemantic> TargetDictionary;
+		DeducedTypeDictionary TargetDictionary;
 
 		/// <summary>
 		/// If true and deducing a type parameter,
@@ -28,7 +28,7 @@ namespace D_Parser.Resolver.Templates
 		/// </summary>
 		ResolverContextStack ctxt;
 
-		public TemplateParameterDeduction(Dictionary<string, ISemantic> DeducedParameters, ResolverContextStack ctxt)
+		public TemplateParameterDeduction(DeducedTypeDictionary DeducedParameters, ResolverContextStack ctxt)
 		{
 			this.ctxt = ctxt;
 			this.TargetDictionary = DeducedParameters;
@@ -110,7 +110,7 @@ namespace D_Parser.Resolver.Templates
 					break;
 				}					
 
-			return Set(p.Name, new TypeTuple(p, l));
+			return Set(p, new TypeTuple(p, l));
 		}
 
 		/// <summary>
@@ -128,12 +128,15 @@ namespace D_Parser.Resolver.Templates
 		/// Returns false if the item has already been set before and if the already set item is not equal to 'r'.
 		/// Inserts 'r' into the target dictionary and returns true otherwise.
 		/// </summary>
-		bool Set(string parameterName, ISemantic r)
+		bool Set(ITemplateParameter p, ISemantic r, string name=null)
 		{
-			ISemantic rl=null;
-			if (!TargetDictionary.TryGetValue(parameterName, out rl) || rl == null)
+			if (string.IsNullOrEmpty(name))
+				name = p.Name;
+
+			TemplateParameterSymbol rl=null;
+			if (!TargetDictionary.TryGetValue(name, out rl) || rl == null)
 			{
-				TargetDictionary[parameterName] = r;
+				TargetDictionary[name] = new TemplateParameterSymbol(p, r);
 				return true;
 			}
 			else
@@ -146,7 +149,7 @@ namespace D_Parser.Resolver.Templates
 						// Error: Ambiguous assignment
 					}
 
-				TargetDictionary[parameterName] = r;
+				TargetDictionary[name] = new TemplateParameterSymbol(p, r);
 
 				return false;
 			}

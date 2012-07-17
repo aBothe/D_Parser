@@ -78,7 +78,6 @@
     <Compile Include="Resolver\ExpressionSemantics\EvaluationException.cs" />
     <Compile Include="Evaluation\ExpressionEvaluator.cs" />
     <Compile Include="Evaluation\ExpressionEvaluator.PostfixExpression.cs" />
-    <Compile Include="Evaluation\ExpressionEvaluator.SymbolHandling.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.TypeidExpression.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.OperandExpressions.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.UnaryExpressions.cs" />
@@ -87,7 +86,6 @@
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.IsExpression.cs" />
     <Compile Include="Resolver\ExpressionSemantics\MathOperationEvaluation.cs" />
     <Compile Include="Resolver\ExpressionSemantics\ExpressionValues.cs" />
-    <Compile Include="Evaluation\StaticPropertyEvaluator.cs" />
     <Compile Include="Resolver\ExpressionSemantics\SymbolValueComparer.cs" />
     <Compile Include="Misc\CompletionOptions.cs" />
     <Compile Include="Misc\ModuleNameHelper.cs" />
@@ -107,6 +105,7 @@
     <Compile Include="Resolver\ResolutionError.cs" />
     <Compile Include="Resolver\ResolutionOptions.cs" />
     <Compile Include="Resolver\ResultComparer.cs" />
+    <Compile Include="Resolver\Templates\DeducedTypeDictionary.cs" />
     <Compile Include="Resolver\Templates\SpecializationOrdering.cs" />
     <Compile Include="Resolver\Templates\TemplateAliasParameterDeduction.cs" />
     <Compile Include="Resolver\Templates\TemplateParameterDeduction.cs" />

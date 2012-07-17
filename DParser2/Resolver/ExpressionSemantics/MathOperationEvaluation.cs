@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using D_Parser.Resolver.ExpressionSemantics;
 
-namespace D_Parser.Evaluation
+namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public class MathOperationEvaluation
 	{

@@ -1,28 +1,102 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using D_Parser.Dom.Expressions;
-using D_Parser.Resolver.TypeResolution;
-using D_Parser.Parser;
+﻿using System.Collections.Generic;
 using D_Parser.Dom;
-using D_Parser.Evaluation;
+using D_Parser.Dom.Expressions;
+using D_Parser.Parser;
+using D_Parser.Resolver.ExpressionSemantics.CTFE;
+using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public partial class Evaluation
 	{
-		ISemantic EvaluateIdOrTemplateInstance(IExpression x)
+		/// <summary>
+		/// Evaluates the identifier/template instance as usual.
+		/// If the id points to a variable, the initializer/dynamic value will be evaluated using the 
+		/// </summary>
+		ISemantic TryEvaluateInitializerOrDoCTFE(AbstractType[] overloads, IExpression idOrTemplateInstance, bool ImplicitlyExecute = true)
 		{
-			
+			if (overloads == null || overloads.Length == 0)
+				throw new EvaluationException(idOrTemplateInstance, "No symbols found");
+
+			var r = overloads[0];
+			var ex = new EvaluationException(idOrTemplateInstance, "Ambiguous expression", overloads);
+
+			if (r is MemberSymbol)
+			{
+				var mr = (MemberSymbol)r;
+
+				// If we've got a function here, execute it
+				if (mr.Definition is DMethod)
+				{
+					if (ImplicitlyExecute)
+					{
+						if (overloads.Length > 1)
+							throw ex;
+						return FunctionEvaluation.Execute((DMethod)mr.Definition, null, ValueProvider);
+					}
+					else
+						return new InternalOverloadValue(overloads, idOrTemplateInstance);
+				}
+				else if (mr.Definition is DVariable)
+				{
+					if (overloads.Length > 1)
+						throw ex;
+					return ValueProvider[(DVariable)mr.Definition];
+				}
+			}
+			else if (r is UserDefinedType)
+			{
+				if (overloads.Length > 1)
+					throw ex;
+				return new TypeValue(r, idOrTemplateInstance);
+			}
+
+			return null;
 		}
 
-		ISemantic E(IdentifierExpression id)
+		ISemantic E(TemplateInstanceExpression tix, bool ImplicitlyExecute = true)
+		{
+			var o = GetOverloads(tix, ctxt);
+
+			if (eval)
+				return TryEvaluateInitializerOrDoCTFE(o, tix, ImplicitlyExecute);
+			else
+			{
+				ctxt.CheckForSingleResult(o, tix);
+				if (o != null && o.Length != 0)
+					return o[0];
+				return null;
+			}
+		}
+
+		ISemantic E(IdentifierExpression id, bool ImplicitlyExecute = true)
+		{
+			if (id.IsIdentifier)
+			{
+				var o = GetOverloads(id, ctxt);
+
+				if (eval)
+				{
+					if (o == null || o.Length == 0)
+						return ValueProvider[((IdentifierExpression)id).Value as string];
+
+					return TryEvaluateInitializerOrDoCTFE(o, id, ImplicitlyExecute);
+				}
+				else
+				{
+					ctxt.CheckForSingleResult(o, id);
+					if (o != null && o.Length != 0)
+						return o[0];
+					return null;
+				}
+			}
+			else
+				return EvaluateLiteral(id);
+		}
+
+		ISemantic EvaluateLiteral(IdentifierExpression id)
 		{
 			int tt = 0;
-
-			if (id.IsIdentifier)
-				return TypeDeclarationResolver.ResolveSingle(id.Value as string, ctxt, id, id.ModuleScoped) as AbstractType;
 
 			switch (id.Format)
 			{
@@ -70,11 +144,19 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return null;
 		}
 
+
+
+
+		public AbstractType[] GetOverloads(TemplateInstanceExpression tix, IEnumerable<AbstractType> resultBases = null, bool deduceParameters = true)
+		{
+			return GetOverloads(tix, ctxt, resultBases, deduceParameters);
+		}
+
 		public static AbstractType[] GetOverloads(TemplateInstanceExpression tix, ResolverContextStack ctxt, IEnumerable<AbstractType> resultBases = null, bool deduceParameters = true)
 		{
 			AbstractType[] res = null;
 			if (resultBases == null)
-				res = TypeDeclarationResolver.Convert(TypeDeclarationResolver.ResolveIdentifier(tix.TemplateIdentifier.Id, ctxt, tix, tix.TemplateIdentifier.ModuleScoped));
+				res = TypeDeclarationResolver.ResolveIdentifier(tix.TemplateIdentifier.Id, ctxt, tix, tix.TemplateIdentifier.ModuleScoped);
 			else
 				res = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(tix.TemplateIdentifier.Id, resultBases, ctxt, tix);
 
@@ -82,7 +164,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				TemplateInstanceHandler.EvalAndFilterOverloads(res, tix, ctxt) : res;
 		}
 
-		public static ISemantic[] GetOverloads(IdentifierExpression id, ResolverContextStack ctxt)
+		public AbstractType[] GetOverloads(IdentifierExpression id)
+		{
+			return GetOverloads(id, ctxt);
+		}
+
+		public static AbstractType[] GetOverloads(IdentifierExpression id, ResolverContextStack ctxt)
 		{
 			return TypeDeclarationResolver.ResolveIdentifier(id.Value as string, ctxt, id, id.ModuleScoped);
 		}

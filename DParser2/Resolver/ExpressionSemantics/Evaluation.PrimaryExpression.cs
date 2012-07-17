@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using D_Parser.Dom.Expressions;
-using D_Parser.Resolver.TypeResolution;
-using D_Parser.Parser;
-using D_Parser.Dom;
-using D_Parser.Evaluation;
 using System.IO;
+using System.Linq;
+using D_Parser.Dom;
+using D_Parser.Dom.Expressions;
+using D_Parser.Parser;
+using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
@@ -54,50 +52,46 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return GetStringType(ctxt, fmt);
 		}
 
-		ISemantic E(PrimaryExpression ex)
+		ISemantic E(PrimaryExpression x)
 		{
-			if (ex is IdentifierExpression)
-				return E((IdentifierExpression)ex);
-			else if (ex is TemplateInstanceExpression)
-			{
-				var res = GetOverloads((TemplateInstanceExpression)ex);
+			if (x is IdentifierExpression)
+				return E((IdentifierExpression)x);
 
-				ctxt.CheckForSingleResult(res, ex);
-				return res != null && res.Length == 0 ? res[0] : null;
-			}
+			else if (x is TemplateInstanceExpression)
+				return E((TemplateInstanceExpression)x);
 
-			else if (ex is TokenExpression)
-				return E((TokenExpression)ex);
+			else if (x is TokenExpression)
+				return E((TokenExpression)x);
 
-			else if (ex is ArrayLiteralExpression)
-				return E((ArrayLiteralExpression)ex);
+			else if (x is ArrayLiteralExpression)
+				return E((ArrayLiteralExpression)x);
 
-			else if (ex is AssocArrayExpression)
-				return E((AssocArrayExpression)ex);
+			else if (x is AssocArrayExpression)
+				return E((AssocArrayExpression)x);
 
-			else if (ex is FunctionLiteral)
-				return E((FunctionLiteral)ex);
+			else if (x is FunctionLiteral)
+				return E((FunctionLiteral)x);
 
-			else if (ex is AssertExpression)
-				return E((AssertExpression)ex);
+			else if (x is AssertExpression)
+				return E((AssertExpression)x);
 
-			else if (ex is MixinExpression)
-				return E((MixinExpression)ex);
+			else if (x is MixinExpression)
+				return E((MixinExpression)x);
 
-			else if (ex is ImportExpression)
-				return E((ImportExpression)ex);
+			else if (x is ImportExpression)
+				return E((ImportExpression)x);
 
-			else if (ex is TypeDeclarationExpression) // should be containing a typeof() only; static properties etc. are parsed as access expressions
-				return TypeDeclarationResolver.ResolveSingle(((TypeDeclarationExpression)ex).Declaration, ctxt);
+			else if (x is TypeDeclarationExpression) // should be containing a typeof() only; static properties etc. are parsed as access expressions
+				return E((TypeDeclarationExpression)x);
 
-			else if (ex is TypeidExpression)
-				return E((TypeidExpression)ex);
+			else if (x is TypeidExpression)
+				return E((TypeidExpression)x);
 
-			else if (ex is IsExpression)
-				return E((IsExpression)ex);
+			else if (x is IsExpression)
+				return E((IsExpression)x);
 
-			else if (ex is TraitsExpression)
-				return E((TraitsExpression)ex);
+			else if (x is TraitsExpression)
+				return E((TraitsExpression)x);
 
 			return null;
 		}
@@ -339,6 +333,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return new DelegateValue(dg);
 			else
 				return dg;
+		}
+
+		ISemantic E(TypeDeclarationExpression x)
+		{
+			if (eval)
+				throw new NotImplementedException("TODO: Handle static properties and ufcs functionality on type declaration expressions");
+			return TypeDeclarationResolver.ResolveSingle(((TypeDeclarationExpression)x).Declaration, ctxt);
 		}
 	}
 }
