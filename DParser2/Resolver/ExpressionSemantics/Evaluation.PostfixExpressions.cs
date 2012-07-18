@@ -3,6 +3,7 @@ using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
 using D_Parser.Resolver.TypeResolution;
+using System;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
@@ -11,48 +12,43 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		ISemantic E(PostfixExpression ex)
 		{
 			if (ex is PostfixExpression_MethodCall)
-				return E(ex as PostfixExpression_MethodCall, ctxt);
+				return E((PostfixExpression_MethodCall)ex);
 
-			var baseExpression = DResolver.StripAliasSymbol(E(ex.PostfixForeExpression) as AbstractType);
+			var foreExpr=E(ex.PostfixForeExpression);
 
-			if (baseExpression == null ||
-				ex is PostfixExpression_Increment || // myInt++ is still of type 'int'
-				ex is PostfixExpression_Decrement)
-				return baseExpression;
+			if(foreExpr is AliasedType)
+				foreExpr = DResolver.StripAliasSymbol((AbstractType)foreExpr);
+
+			if (foreExpr == null)
+			{
+				if (eval)
+					throw new EvaluationException(ex.PostfixForeExpression, "Evaluation returned empty result");
+				else
+				{
+					ctxt.LogError(new NothingFoundError(ex.PostfixForeExpression);
+					return null;
+				}
+			}
 
 			if (ex is PostfixExpression_Access)
 			{
-				var r= E(ex as PostfixExpression_Access, ctxt, baseExpression);
+				var r = E((PostfixExpression_Access)ex, foreExpr, true);
 				ctxt.CheckForSingleResult(r, ex);
-				return r!=null && r.Length != 0 ? r[0] : null;
+				return r != null && r.Length != 0 ? r[0] : null;
 			}
+			else if (ex is PostfixExpression_Increment)
+				return E((PostfixExpression_Increment)ex, foreExpr);
+			else if (ex is PostfixExpression_Decrement)
+				return E((PostfixExpression_Decrement)foreExpr);
 
 			// myArray[0]; myArray[0..5];
-			var arrayBaseType = DResolver.StripMemberSymbols(baseExpression);
+			if(foreExpr is MemberSymbol)
+				foreExpr = DResolver.StripMemberSymbols((AbstractType)foreExpr);
 
-			if (ex is PostfixExpression_Index)
-			{
-				if (arrayBaseType is AssocArrayType)
-				{
-					var ar = (AssocArrayType)arrayBaseType;
-					/*
-					 * myType_Array[0] -- returns TypeResult myType
-					 * return the value type of a given array result
-					 */
-					//TODO: Handle opIndex overloads
-
-					return ar.ValueType;
-				}
-				/*
-				 * int* a = new int[10];
-				 * 
-				 * a[0] = 12;
-				 */
-				else if (arrayBaseType is PointerType)
-					return ((PointerType)arrayBaseType).Base;
-			}
-			else if (ex is PostfixExpression_Slice) // Still of the array's type.
-				return arrayBaseType;
+			if (ex is PostfixExpression_Slice) 
+				return E((PostfixExpression_Slice)ex, foreExpr);
+			else if(ex is PostfixExpression_Index)
+				return E((PostfixExpression_Index)ex, foreExpr);
 
 			return null;
 		}
@@ -73,12 +69,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				if (pac.AccessExpression is TemplateInstanceExpression)
 					tix = (TemplateInstanceExpression)pac.AccessExpression;
 
-				baseExpression = TypeDeclarationResolver.Convert(E(pac, null, call));
+				baseExpression = TypeDeclarationResolver.Convert(E(pac, null, false));
 			}
 			else if (call.PostfixForeExpression is TemplateInstanceExpression)
 			{
 				tix = (TemplateInstanceExpression)call.PostfixForeExpression;
-				baseExpression = TypeDeclarationResolver.Convert(GetOverloads(tix, null, false));
+				baseExpression = GetOverloads(tix, null, false);
 			}
 			else
 				baseExpression = new[] { E(call.PostfixForeExpression) as AbstractType };
@@ -263,30 +259,32 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		}
 
 		ISemantic[] E(PostfixExpression_Access acc,
-			AbstractType resultBase = null,
-			IExpression supExpression=null)
+			ISemantic resultBase = null, bool DeduceImplicitly=true)
 		{
 			if (acc == null)
 				return null;
 
-			var baseExpression = resultBase ?? E(acc.PostfixForeExpression) as AbstractType;
+			var baseExpression = resultBase ?? E(acc.PostfixForeExpression);
 
-			if (acc.AccessExpression is TemplateInstanceExpression)
-			{
-				// Do not deduce and filter if superior expression is a method call since call arguments' types also count as template arguments!
-				var res=E((TemplateInstanceExpression)acc.AccessExpression, ctxt, new[]{baseExpression}, 
-					!(supExpression is PostfixExpression_MethodCall));
-
-				// Try to resolve ufcs(?)
-				return res ?? UFCSResolver.TryResolveUFCS(baseExpression, acc, ctxt);
-			}
-			else if (acc.AccessExpression is NewExpression)
+			if (acc.AccessExpression is NewExpression)
 			{
 				/*
 				 * This can be both a normal new-Expression as well as an anonymous class declaration!
 				 */
 				//TODO!
+				return null;
 			}
+
+
+			AbstractType[] overloads = null;
+
+			if (acc.AccessExpression is TemplateInstanceExpression)
+			{
+				var tix = (TemplateInstanceExpression)acc.AccessExpression;
+				// Do not deduce and filter if superior expression is a method call since call arguments' types also count as template arguments!
+				overloads = GetOverloads(tix, resultBase==null ? null : new[] { resultBase as AbstractType }, DeduceImplicitly);
+			}
+			
 			else if (acc.AccessExpression is IdentifierExpression)
 			{
 				var id = ((IdentifierExpression)acc.AccessExpression).Value as string;
@@ -298,16 +296,16 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				 */
 
 				// 1)
-				var results = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(id, new[]{baseExpression}, ctxt, acc);
+				overloads = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(id, new[]{baseExpression as AbstractType}, ctxt, acc);
 
-				if (results != null)
-					return results;
+				if (overloads == null)
+				{
+					// 2)
+					var staticTypeProperty = StaticPropertyResolver.TryResolveStaticProperties(baseExpression as AbstractType, id, ctxt);
 
-				// 2)
-				var staticTypeProperty = StaticPropertyResolver.TryResolveStaticProperties(baseExpression, id, ctxt);
-
-				if (staticTypeProperty != null)
-					return new[] { staticTypeProperty };
+					if (staticTypeProperty != null)
+						return new[] { staticTypeProperty };
+				}
 
 				// 3)
 				var ufcsResult = UFCSResolver.TryResolveUFCS(baseExpression, acc, ctxt);
@@ -315,9 +313,181 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				if (ufcsResult != null)
 					return ufcsResult;
 			}
-			else
+			else // Error?
 				return new[]{ baseExpression };
 
+			if (overloads == null)
+			{
+				overloads = UFCSResolver.TryResolveUFCS(baseExpression, acc, ctxt);
+
+				if (overloads != null && overloads.Length != 0 && eval)
+				{
+					// filter out overloads(?)
+					// then, there must be one overload remaining
+					// execute that one, if superior expression is NOT a method call
+				}
+			}
+
+			return null;
+		}
+
+
+
+
+		ISemantic E(PostfixExpression_Index x, ISemantic foreExpression)
+		{
+			if (eval)
+			{
+				//TODO: Access pointer arrays(?)
+
+				if (foreExpression is ArrayValue) // ArrayValue must be checked first due to inheritance!
+				{
+					var av = foreExpression as ArrayValue;
+
+					// Make $ operand available
+					var arrLen_Backup = ValueProvider.CurrentArrayLength;
+					ValueProvider.CurrentArrayLength = av.Elements.Length;
+
+					var n = E(x.Arguments[0]) as PrimitiveValue;
+
+					ValueProvider.CurrentArrayLength = arrLen_Backup;
+
+					if (n == null)
+						throw new EvaluationException(x.Arguments[0], "Returned no value");
+
+					int i = 0;
+					try
+					{
+						i = Convert.ToInt32(n.Value);
+					}
+					catch { throw new EvaluationException(x.Arguments[0], "Index expression must be of type int"); }
+
+					if (i < 0 || i > av.Elements.Length)
+						throw new EvaluationException(x.Arguments[0], "Index out of range - it must be between 0 and " + av.Elements.Length);
+
+					return av.Elements[i];
+				}
+				else if (foreExpression is AssociativeArrayValue)
+				{
+					var aa = (AssociativeArrayValue)foreExpression;
+
+					var key = E(x.Arguments[0]);
+
+					if (key == null)
+						throw new EvaluationException(x.Arguments[0], "Returned no value");
+
+					ISymbolValue val = null;
+
+					foreach (var kv in aa.Elements)
+						if (kv.Key.Equals(key))
+							return kv.Value;
+
+					throw new EvaluationException(x, "Could not find key '" + val + "'");
+				}
+
+				throw new EvaluationException(x.PostfixForeExpression, "Invalid index expression base value type", foreExpression);
+			}
+			else
+			{
+				if (foreExpression is AssocArrayType)
+				{
+					var ar = (AssocArrayType)foreExpression;
+					/*
+					 * myType_Array[0] -- returns TypeResult myType
+					 * return the value type of a given array result
+					 */
+					//TODO: Handle opIndex overloads
+
+					return ar.ValueType;
+				}
+				/*
+				 * int* a = new int[10];
+				 * 
+				 * a[0] = 12;
+				 */
+				else if (foreExpression is PointerType)
+					return ((PointerType)foreExpression).Base;
+
+				ctxt.LogError(new ResolutionError(x, "Invalid base type for index expression"));
+			}
+
+			return null;
+		}
+
+		ISemantic E(PostfixExpression_Slice x, ISemantic foreExpression)
+		{
+			if (!eval)
+				return foreExpression; // Still of the array's type.
+			
+
+			if (!(foreExpression is ArrayValue))
+				throw new EvaluationException(x.PostfixForeExpression, "Must be an array");
+
+			var ar = (ArrayValue)foreExpression;
+			var sl = (PostfixExpression_Slice)x;
+
+			// If the [ ] form is used, the slice is of the entire array.
+			if (sl.FromExpression == null && sl.ToExpression == null)
+				return foreExpression;
+
+			// Make $ operand available
+			var arrLen_Backup = ValueProvider.CurrentArrayLength;
+			ValueProvider.CurrentArrayLength = ar.Elements.Length;
+
+			var bound_lower = E(sl.FromExpression) as PrimitiveValue;
+			var bound_upper = E(sl.ToExpression) as PrimitiveValue;
+
+			ValueProvider.CurrentArrayLength = arrLen_Backup;
+
+			if (bound_lower == null || bound_upper == null)
+				throw new EvaluationException(bound_lower == null ? sl.FromExpression : sl.ToExpression, "Must be of an integral type");
+
+			int lower = -1, upper = -1;
+			try
+			{
+				lower = Convert.ToInt32(bound_lower.Value);
+				upper = Convert.ToInt32(bound_upper.Value);
+			}
+			catch { throw new EvaluationException(lower != -1 ? sl.FromExpression : sl.ToExpression, "Boundary expression must base an integral type"); }
+
+			if (lower < 0)
+				throw new EvaluationException(sl.FromExpression, "Lower boundary must be greater than 0");
+			if (lower >= ar.Elements.Length)
+				throw new EvaluationException(sl.FromExpression, "Lower boundary must be smaller than " + ar.Elements.Length);
+			if (upper < lower)
+				throw new EvaluationException(sl.ToExpression, "Upper boundary must be greater than " + lower);
+			if (upper >= ar.Elements.Length)
+				throw new EvaluationException(sl.ToExpression, "Upper boundary must be smaller than " + ar.Elements.Length);
+
+
+			var rawArraySlice = new ISymbolValue[upper - lower];
+			int j = 0;
+			for (int i = lower; i < upper; i++)
+				rawArraySlice[j++] = ar.Elements[i];
+
+			return new ArrayValue(ar.RepresentedType as ArrayType, rawArraySlice);
+		}
+
+		ISemantic E(PostfixExpression_Increment x, ISemantic foreExpression)
+		{
+			// myInt++ is still of type 'int'
+			if (!eval)
+				return foreExpression;
+
+			if (resolveConstOnly)
+				throw new NoConstException(x);
+			// Must be implemented anyway regarding ctfe
+			return null;
+		}
+
+		ISemantic E(PostfixExpression_Decrement x, ISemantic foreExpression)
+		{
+			if (!eval)
+				return foreExpression;
+
+			if (resolveConstOnly)
+				throw new NoConstException(x);
+			// Must be implemented anyway regarding ctfe
 			return null;
 		}
 	}

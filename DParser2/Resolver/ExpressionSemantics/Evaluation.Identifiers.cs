@@ -11,7 +11,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	{
 		/// <summary>
 		/// Evaluates the identifier/template instance as usual.
-		/// If the id points to a variable, the initializer/dynamic value will be evaluated using the 
+		/// If the id points to a variable, the initializer/dynamic value will be evaluated using its initializer.
+		/// 
+		/// If ImplicitlyExecute is false but value evaluation is switched on, an InternalOverloadValue-object will be returned
+		/// that keeps all overloads passed via 'overloads'
 		/// </summary>
 		ISemantic TryEvaluateInitializerOrDoCTFE(AbstractType[] overloads, IExpression idOrTemplateInstance, bool ImplicitlyExecute = true)
 		{
