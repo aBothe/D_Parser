@@ -12,6 +12,8 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 	{
 		public static ISymbolValue Execute(DMethod method, ISymbolValue[] arguments, ISymbolValueProvider vp)
 		{
+			throw new NotImplementedException("CTFE is not implemented yet.");
+
 			return null;
 		}
 	}
