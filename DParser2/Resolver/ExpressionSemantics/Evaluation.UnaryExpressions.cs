@@ -6,7 +6,6 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
 using D_Parser.Dom;
 using D_Parser.Resolver.TypeResolution;
-using D_Parser.Evaluation;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
@@ -61,7 +60,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				if (kvArray.Length != 0)
 					finalCtor = new MemberSymbol(kvArray[0].Key, kvArray[0].Value, x);
 				else if (possibleTypes.Length != 0)
-					return possibleTypes[0] as AbstractType;
+					return AbstractType.Get(possibleTypes[0]);
 
 				return finalCtor;
 			}
@@ -84,7 +83,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				}
 				else
 				{
-					castedType = E(ce.UnaryExpression) as AbstractType;
+					castedType = AbstractType.Get(E(ce.UnaryExpression));
 
 					if (castedType != null && ce.CastParamTokens != null && ce.CastParamTokens.Length > 0)
 					{
@@ -105,7 +104,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			else if (x is UnaryExpression_And)
 				// &i -- makes an int* out of an int
-				return new PointerType(E((x as UnaryExpression_And).UnaryExpression) as AbstractType, x);
+				return new PointerType(AbstractType.Get(E((x as UnaryExpression_And).UnaryExpression)), x);
 			else if (x is DeleteExpression)
 				return null;
 			else if (x is UnaryExpression_Type)
@@ -123,18 +122,18 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					var id = new IdentifierDeclaration(uat.AccessIdentifier) { EndLocation = uat.EndLocation };
 
 					// First off, try to resolve static properties
-					var statProp = StaticPropertyResolver.TryResolveStaticProperties(types[0], uat.AccessIdentifier, ctxt, id);
+					var statProp = StaticPropertyResolver.TryResolveStaticProperties(types[0], uat.AccessIdentifier, ctxt, eval, id);
 
 					if (statProp != null)
 						return statProp;
 
 					// If it's not the case, try the conservative way
-					var res = TypeDeclarationResolver.Resolve(id, ctxt, TypeDeclarationResolver.Convert(types));
+					var res = TypeDeclarationResolver.Resolve(id, ctxt, types);
 
 					ctxt.CheckForSingleResult(res, x);
 
 					if (res != null && res.Length != 0)
-						return res[0] as AbstractType;
+						return res[0];
 				}
 
 				return null;

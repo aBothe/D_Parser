@@ -11,6 +11,7 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Dom;
 using D_Parser.Dom.Statements;
 using D_Parser.Resolver.ExpressionSemantics;
+using D_Parser.Resolver.Templates;
 
 namespace D_Parser.Unittest
 {
@@ -121,8 +122,10 @@ int b=4;
 			Assert.IsInstanceOfType(res,typeof(MemberSymbol));
 			var mr = (MemberSymbol)res;
 
-			Assert.IsInstanceOfType(mr.Base, typeof(PrimitiveType));
-			var sr = (PrimitiveType)mr.Base;
+			Assert.IsInstanceOfType(mr.Base, typeof(TemplateParameterSymbol));
+			var tps = (TemplateParameterSymbol)mr.Base;
+			Assert.IsInstanceOfType(tps.Base, typeof(PrimitiveType));
+			var sr = (PrimitiveType)tps.Base;
 
 			Assert.AreEqual(sr.TypeToken, DTokens.Int);
 		}
@@ -138,10 +141,12 @@ T foo(T)() {}
 			var ctxt = new ResolverContextStack(pcl, new ResolverContext { ScopedBlock=pcl[0]["modA"] });
 
 			var call = DParser.ParseExpression("foo!int()");
-			var bt = Evaluation.Resolve(call, ctxt);
+			var bt = Evaluation.EvaluateType(call, ctxt);
 
-			Assert.IsInstanceOfType(bt, typeof(PrimitiveType), "Resolution returned empty result instead of 'int'");
-			var st = (PrimitiveType)bt;
+			Assert.IsInstanceOfType(bt, typeof(TemplateParameterSymbol));
+			var tps = (TemplateParameterSymbol)bt;
+			Assert.IsInstanceOfType(tps.Base, typeof(PrimitiveType), "Resolution returned empty result instead of 'int'");
+			var st = (PrimitiveType)tps.Base;
 			Assert.IsNotNull(st, "Result must be Static type int");
 			Assert.AreEqual(st.TypeToken, DTokens.Int, "Static type must be int");
 		}

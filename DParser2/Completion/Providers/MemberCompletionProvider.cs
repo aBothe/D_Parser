@@ -6,6 +6,7 @@ using D_Parser.Dom.Statements;
 using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.TypeResolution;
+using D_Parser.Resolver.ExpressionSemantics;
 
 namespace D_Parser.Completion
 {
@@ -30,18 +31,15 @@ namespace D_Parser.Completion
 		protected override void BuildCompletionDataInternal(IEditorData Editor, string EnteredText)
 		{
 			var ctxt=ResolverContextStack.Create(Editor);
-			var resolveResults = Evaluation.Resolve(AccessExpression, ctxt);
+			var r = Evaluation.EvaluateType(AccessExpression, ctxt);
 
-			if (resolveResults == null) //TODO: Add after-space list creation when an unbound . (Dot) was entered which means to access the global scope
+			if (r == null) //TODO: Add after-space list creation when an unbound . (Dot) was entered which means to access the global scope
 				return;
 
-			foreach (var rr in resolveResults)
-			{
-				BuildCompletionData(rr, ScopedBlock);
+			BuildCompletionData(r, ScopedBlock);
 
-				if(Editor.Options.ShowUFCSItems)
-					UFCSCompletionProvider.Generate(rr, ctxt, Editor, CompletionDataGenerator);
-			}
+			if(Editor.Options.ShowUFCSItems)
+				UFCSCompletionProvider.Generate(r, ctxt, Editor, CompletionDataGenerator);
 		}
 
 		void BuildCompletionData(

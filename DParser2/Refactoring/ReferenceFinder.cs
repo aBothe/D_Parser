@@ -7,6 +7,7 @@ using D_Parser.Misc;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ASTScanner;
 using D_Parser.Resolver.TypeResolution;
+using D_Parser.Resolver.ExpressionSemantics;
 
 namespace D_Parser.Refactoring
 {
@@ -145,7 +146,7 @@ namespace D_Parser.Refactoring
 
 			var r = o is ITypeDeclaration ?
 				TypeDeclarationResolver.ResolveSingle(o as ITypeDeclaration, ctxt) :
-				(o is IExpression ? Evaluation.Resolve((IExpression)o, ctxt) : null);
+				(o is IExpression ? Evaluation.EvaluateType((IExpression)o, ctxt) : null);
 
 			if (r != null)
 				HandleResolveResult(r, o, idObject);

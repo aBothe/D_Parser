@@ -8,6 +8,7 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
 using D_Parser.Parser;
 using System.Linq;
+using D_Parser.Resolver.ExpressionSemantics;
 
 namespace D_Parser.Resolver.TypeResolution
 {
@@ -124,7 +125,7 @@ namespace D_Parser.Resolver.TypeResolution
 				if (o is IdentifierExpression && ((IdentifierExpression)o).Format.HasFlag(LiteralFormat.Scalar))
 					return null;
 
-				var t=Evaluation.Resolve((IExpression)o, ctxt);
+				var t=Evaluation.EvaluateType((IExpression)o, ctxt);
 
 				if (t != null)
 					return new[] { t };

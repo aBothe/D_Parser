@@ -43,12 +43,12 @@ namespace D_Parser.Resolver.Templates
 			 * Introduce previously deduced parameters into current resolution context
 			 * to allow value parameter to be of e.g. type T whereas T is already set somewhere before 
 			 */
-			Dictionary<string, ISemantic> _prefLocalsBackup = null;
+			DeducedTypeDictionary _prefLocalsBackup = null;
 			if (ctxt != null && ctxt.CurrentContext != null)
 			{
 				_prefLocalsBackup = ctxt.CurrentContext.DeducedTemplateParameters;
 
-				var d = new Dictionary<string, ISemantic>();
+				var d = new DeducedTypeDictionary();
 				foreach (var kv in TargetDictionary)
 					if (kv.Value != null)
 						d[kv.Key] = kv.Value;

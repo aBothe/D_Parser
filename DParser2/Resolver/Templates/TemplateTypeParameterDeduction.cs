@@ -48,24 +48,26 @@ namespace D_Parser.Resolver.Templates
 
 		bool HandleDecl(TemplateTypeParameter p ,ITypeDeclaration td, ISemantic rr)
 		{
+			var at = DResolver.StripMemberSymbols(AbstractType.Get(rr));
+
 			if (td is ArrayDecl)
-				return HandleDecl(p,(ArrayDecl)td, rr as AssocArrayType);
+				return HandleDecl(p,(ArrayDecl)td, at as AssocArrayType);
 			else if (td is IdentifierDeclaration)
-				return HandleDecl(p,(IdentifierDeclaration)td, rr);
+				return HandleDecl(p,(IdentifierDeclaration)td, at);
 			else if (td is DTokenDeclaration)
-				return HandleDecl(p,(DTokenDeclaration)td, rr as AbstractType);
+				return HandleDecl((DTokenDeclaration)td, at);
 			else if (td is DelegateDeclaration)
-				return HandleDecl(p,(DelegateDeclaration)td, rr as DelegateType);
+				return HandleDecl(p,(DelegateDeclaration)td, at as DelegateType);
 			else if (td is PointerDecl)
-				return HandleDecl(p,(PointerDecl)td, rr as PointerType);
+				return HandleDecl(p,(PointerDecl)td, at as PointerType);
 			else if (td is MemberFunctionAttributeDecl)
-				return HandleDecl(p,(MemberFunctionAttributeDecl)td, rr as AbstractType);
+				return HandleDecl(p,(MemberFunctionAttributeDecl)td, at);
 			else if (td is TypeOfDeclaration)
-				return HandleDecl(p,(TypeOfDeclaration)td, rr as AbstractType);
+				return HandleDecl((TypeOfDeclaration)td, at);
 			else if (td is VectorDeclaration)
-				return HandleDecl(p,(VectorDeclaration)td, rr as AbstractType);
+				return HandleDecl((VectorDeclaration)td, at);
 			else if (td is TemplateInstanceExpression)
-				return HandleDecl(p,(TemplateInstanceExpression)td,rr as AbstractType);
+				return HandleDecl(p,(TemplateInstanceExpression)td, at);
 			return false;
 		}
 
@@ -88,10 +90,10 @@ namespace D_Parser.Resolver.Templates
 			return _r != null && _r.Length != 0 && 
 				(EnforceTypeEqualityWhenDeducing ?
 				ResultComparer.IsEqual(r,_r[0]) :
-				ResultComparer.IsImplicitlyConvertible(r,_r[0] as AbstractType));
+				ResultComparer.IsImplicitlyConvertible(r,_r[0]));
 		}
 
-		bool HandleDecl(TemplateInstanceExpression tix, AbstractType r)
+		bool HandleDecl(TemplateTypeParameter parameter, TemplateInstanceExpression tix, AbstractType r)
 		{
 			/*
 			 * This part is very tricky:
@@ -123,9 +125,9 @@ namespace D_Parser.Resolver.Templates
 					if (param_Expected == null)
 						return false;
 
-					var result_Given = Evaluation.Resolve(argEnum_given.Current as IExpression, ctxt);
+					var result_Given = Evaluation.EvaluateType(argEnum_given.Current as IExpression, ctxt);
 
-					if (result_Given == null || !HandleDecl(param_Expected, result_Given))
+					if (result_Given == null || !HandleDecl(parameter, param_Expected, result_Given))
 						return false;
 				}
 
@@ -156,7 +158,7 @@ namespace D_Parser.Resolver.Templates
 			return false;
 		}
 
-		bool HandleDecl(ArrayDecl ad, AssocArrayType ar)
+		bool HandleDecl(TemplateTypeParameter p,ArrayDecl ad, AssocArrayType ar)
 		{
 			if (ar == null)
 				return false;
@@ -170,16 +172,16 @@ namespace D_Parser.Resolver.Templates
 			{
 				var arrayDecl_Param = ar.DeclarationOrExpressionBase as ArrayDecl;
 				if (arrayDecl_Param.KeyExpression != null)
-					result = Evaluation.SymbolValueComparer.IsEqual(ad.KeyExpression, arrayDecl_Param.KeyExpression, new StandardValueProvider(ctxt));
+					result = SymbolValueComparer.IsEqual(ad.KeyExpression, arrayDecl_Param.KeyExpression, new StandardValueProvider(ctxt));
 			}
 			else if(ad.KeyType!=null)
-				result = HandleDecl(ad.KeyType, ar.KeyType);
+				result = HandleDecl(p,ad.KeyType, ar.KeyType);
 
 			// Handle inner type
-			return !result && HandleDecl(ad.InnerDeclaration, ar.Base);
+			return !result && HandleDecl(p,ad.InnerDeclaration, ar.Base);
 		}
 
-		bool HandleDecl(DelegateDeclaration d, DelegateType dr)
+		bool HandleDecl(TemplateTypeParameter par, DelegateDeclaration d, DelegateType dr)
 		{
 			// Delegate literals or other expressions are not allowed
 			if(dr==null || dr.IsFunctionLiteral)
@@ -190,7 +192,7 @@ namespace D_Parser.Resolver.Templates
 			// Compare return types
 			if(	d.IsFunction == dr_decl.IsFunction &&
 				dr.ReturnType != null &&
-				HandleDecl(d.ReturnType,dr.ReturnType))
+				HandleDecl(par, d.ReturnType,dr.ReturnType))
 			{
 				// If no delegate args expected, it's valid
 				if ((d.Parameters == null || d.Parameters.Count == 0) &&
@@ -240,7 +242,7 @@ namespace D_Parser.Resolver.Templates
 
 						if (dr_resolvedParamType == null ||
 							dr_resolvedParamType.Length == 0 ||
-							!HandleDecl(p.Type, dr_resolvedParamType[0]))
+							!HandleDecl(par, p.Type, dr_resolvedParamType[0]))
 							return false;
 					}
 					else
@@ -251,14 +253,14 @@ namespace D_Parser.Resolver.Templates
 			return false;
 		}
 
-		bool HandleDecl(PointerDecl p, PointerType r)
+		bool HandleDecl(TemplateTypeParameter parameter, PointerDecl p, PointerType r)
 		{
 			return r != null && 
 				r.DeclarationOrExpressionBase is PointerDecl && 
-				HandleDecl(p.InnerDeclaration, r.Base);
+				HandleDecl(parameter, p.InnerDeclaration, r.Base);
 		}
 
-		bool HandleDecl(MemberFunctionAttributeDecl m, AbstractType r)
+		bool HandleDecl(TemplateTypeParameter p, MemberFunctionAttributeDecl m, AbstractType r)
 		{
 			if (r == null || r.Modifier == 0)
 				return false;
@@ -268,7 +270,7 @@ namespace D_Parser.Resolver.Templates
 				return false;
 				
 			// Now compare the type inside the parentheses with the given type 'r'
-			return m.InnerType != null && HandleDecl(m.InnerType, r);
+			return m.InnerType != null && HandleDecl(p, m.InnerType, r);
 		}
 
 		bool HandleDecl(TypeOfDeclaration t, AbstractType r)

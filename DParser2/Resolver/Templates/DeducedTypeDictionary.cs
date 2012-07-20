@@ -37,7 +37,7 @@ namespace D_Parser.Resolver.Templates
 			ISyntaxRegion originalParameterIdentifier = null,
 			DNode parentNode = null)
 			: base(new TemplateParameterNode(tp) { Parent = parentNode },
-			representedTypeOrValue as AbstractType, originalParameterIdentifier ?? tp)
+			AbstractType.Get(representedTypeOrValue), originalParameterIdentifier ?? tp)
 		{
 			this.Parameter = tp;
 			this.ParameterValue = representedTypeOrValue as ISymbolValue;

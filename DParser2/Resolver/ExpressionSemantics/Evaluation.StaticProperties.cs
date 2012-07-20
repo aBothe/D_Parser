@@ -10,7 +10,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public static AbstractType getStringType(ResolverContextStack ctxt)
 		{
 			var str = new IdentifierDeclaration("string");
-			var sType = TypeDeclarationResolver.Convert(TypeDeclarationResolver.Resolve(str, ctxt));
+			var sType = TypeDeclarationResolver.Resolve(str, ctxt);
 			ctxt.CheckForSingleResult(sType, str);
 
 			return sType != null && sType.Length != 0 ? sType[0] : null;
@@ -24,9 +24,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// <param name="InitialResult"></param>
 		/// <returns></returns>
 		public static MemberSymbol TryResolveStaticProperties(
-			AbstractType InitialResult, 
+			ISemantic InitialResult, 
 			string propertyIdentifier, 
 			ResolverContextStack ctxt = null, 
+			bool Evaluate = false,
 			IdentifierDeclaration idContainter = null)
 		{
 			// If a pointer'ed type is given, take its base type
@@ -65,7 +66,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					}
 				}
 
-				return new MemberSymbol(prop_Init, DResolver.StripMemberSymbols(InitialResult), idContainter);
+				return new MemberSymbol(prop_Init, DResolver.StripAliasSymbol(AbstractType.Get(InitialResult)), idContainter);
 			}
 			#endregion
 
@@ -113,7 +114,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			#region classinfo
 			else if (propertyIdentifier == "classinfo")
 			{
-				var tr = DResolver.StripMemberSymbols(InitialResult) as TemplateIntermediateType;
+				var tr = DResolver.StripMemberSymbols(AbstractType.Get(InitialResult)) as TemplateIntermediateType;
 
 				if (tr is ClassType || tr is InterfaceType)
 				{
@@ -127,7 +128,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 					ctxt.CheckForSingleResult(ti, ci);
 
-					return new MemberSymbol(new DVariable { Name = "classinfo", Type = ci }, ti!=null && ti.Length!=0?ti[0] as AbstractType:null, idContainter);
+					return new MemberSymbol(new DVariable { Name = "classinfo", Type = ci }, ti!=null && ti.Length!=0?ti[0]:null, idContainter);
 				}
 			}
 			#endregion

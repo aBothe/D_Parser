@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using D_Parser.Dom;
 using D_Parser.Resolver.TypeResolution;
-using D_Parser.Evaluation;
+using D_Parser.Resolver.ExpressionSemantics;
 
 namespace D_Parser.Resolver.Templates
 {
@@ -14,7 +14,7 @@ namespace D_Parser.Resolver.Templates
 			{
 				if (p.DefaultExpression != null)
 				{
-					var eval = ExpressionEvaluator.Resolve(p.DefaultExpression, ctxt);
+					var eval = Evaluation.EvaluateValue(p.DefaultExpression, ctxt);
 
 					if (eval == null)
 						return false;

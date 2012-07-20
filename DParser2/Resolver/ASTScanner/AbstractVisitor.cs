@@ -4,6 +4,7 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
 using D_Parser.Parser;
 using D_Parser.Resolver.TypeResolution;
+using D_Parser.Resolver.ExpressionSemantics;
 
 namespace D_Parser.Resolver.ASTScanner
 {
@@ -303,7 +304,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 					// Must be an expression that returns an object reference
 					if (ws.WithExpression != null)
-						r = Evaluation.Resolve(ws.WithExpression, ctxt);
+						r = Evaluation.EvaluateType(ws.WithExpression, ctxt);
 					else if (ws.WithSymbol != null) // This symbol will be used as default
 						r = TypeDeclarationResolver.ResolveSingle(ws.WithSymbol, ctxt);
 

@@ -166,7 +166,7 @@ namespace D_Parser.Resolver.Templates
 			// T** will be X** then - so a theoretically valid type instead of a template param
 			var dummyType = new ClassType(new DClassLike { Name = "X" }, null, null);
 			foreach (var kv in t1_DummyParamList)
-				frame.DeducedTemplateParameters[kv.Key] = dummyType;
+				frame.DeducedTemplateParameters[kv.Key] = new TemplateParameterSymbol(t2,dummyType);
 
 			var t1_TypeResults = Resolver.TypeResolution.TypeDeclarationResolver.Resolve(Spec, ctxt);
 			if (t1_TypeResults == null || t1_TypeResults.Length == 0)
@@ -175,7 +175,7 @@ namespace D_Parser.Resolver.Templates
 			ctxt.Pop();
 
 			// Now try to fit the virtual Type t2 into t1 - and return true if it's possible
-			return new TemplateParameterDeduction(new Dictionary<string, ISemantic>(), ctxt).Handle(t2, t1_TypeResults[0]);
+			return new TemplateParameterDeduction(new DeducedTypeDictionary(), ctxt).Handle(t2, t1_TypeResults[0]);
 		}
 	}
 }

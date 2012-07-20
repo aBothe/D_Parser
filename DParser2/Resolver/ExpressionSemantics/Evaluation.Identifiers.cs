@@ -16,7 +16,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// If ImplicitlyExecute is false but value evaluation is switched on, an InternalOverloadValue-object will be returned
 		/// that keeps all overloads passed via 'overloads'
 		/// </summary>
-		ISemantic TryEvaluateInitializerOrDoCTFE(AbstractType[] overloads, IExpression idOrTemplateInstance, bool ImplicitlyExecute = true)
+		ISemantic TryEvaluateValueOrDoCTFE(AbstractType[] overloads, IExpression idOrTemplateInstance, bool ImplicitlyExecute = true, ISymbolValue[] executionArguments=null)
 		{
 			if (overloads == null || overloads.Length == 0)
 				throw new EvaluationException(idOrTemplateInstance, "No symbols found");
@@ -35,10 +35,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					{
 						if (overloads.Length > 1)
 							throw ex;
-						return FunctionEvaluation.Execute((DMethod)mr.Definition, null, ValueProvider);
+						return FunctionEvaluation.Execute((DMethod)mr.Definition, executionArguments, ValueProvider);
 					}
-					else
-						return new InternalOverloadValue(overloads, idOrTemplateInstance);
+					
+					return new InternalOverloadValue(overloads, idOrTemplateInstance);
 				}
 				else if (mr.Definition is DVariable)
 				{
@@ -62,11 +62,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var o = GetOverloads(tix, ctxt);
 
 			if (eval)
-				return TryEvaluateInitializerOrDoCTFE(o, tix, ImplicitlyExecute);
+				return TryEvaluateValueOrDoCTFE(o, tix, ImplicitlyExecute);
 			else
 			{
 				ctxt.CheckForSingleResult(o, tix);
-				if (o != null && o.Length != 0)
+				if (o != null && o.Length == 1)
 					return o[0];
 				return null;
 			}
@@ -83,12 +83,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					if (o == null || o.Length == 0)
 						return ValueProvider[((IdentifierExpression)id).Value as string];
 
-					return TryEvaluateInitializerOrDoCTFE(o, id, ImplicitlyExecute);
+					return TryEvaluateValueOrDoCTFE(o, id, ImplicitlyExecute);
 				}
 				else
 				{
 					ctxt.CheckForSingleResult(o, id);
-					if (o != null && o.Length != 0)
+					if (o != null && o.Length == 1)
 						return o[0];
 					return null;
 				}

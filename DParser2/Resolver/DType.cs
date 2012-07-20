@@ -6,6 +6,7 @@ using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
 using D_Parser.Resolver.Templates;
+using D_Parser.Resolver.ExpressionSemantics;
 
 namespace D_Parser.Resolver
 {
@@ -47,6 +48,13 @@ namespace D_Parser.Resolver
 		public override string ToString()
 		{
 			return ToCode();
+		}
+
+		public static AbstractType Get(ISemantic s)
+		{
+			if (s is ISymbolValue)
+				return ((ISymbolValue)s).RepresentedType;
+			return s as AbstractType;
 		}
 	}
 
@@ -216,14 +224,14 @@ namespace D_Parser.Resolver
 	#region User-defined types
 	public abstract class UserDefinedType : DSymbol
 	{
-		public UserDefinedType(DNode Node, AbstractType baseType, ReadOnlyCollection<KeyValuePair<string, ISemantic>> deducedTypes, ISyntaxRegion td) : base(Node, baseType, deducedTypes, td) { }
+		public UserDefinedType(DNode Node, AbstractType baseType, ReadOnlyCollection<KeyValuePair<string, TemplateParameterSymbol>> deducedTypes, ISyntaxRegion td) : base(Node, baseType, deducedTypes, td) { }
 	}
 
 	public class AliasedType : MemberSymbol
 	{
 		public new DVariable Definition { get { return base.Definition as DVariable; } }
 
-		public AliasedType(DVariable AliasDefinition, AbstractType Type, ISyntaxRegion td, ReadOnlyCollection<KeyValuePair<string, ISemantic>> deducedTypes=null)
+		public AliasedType(DVariable AliasDefinition, AbstractType Type, ISyntaxRegion td, ReadOnlyCollection<KeyValuePair<string, TemplateParameterSymbol>> deducedTypes=null)
 			: base(AliasDefinition,Type, td, deducedTypes) {}
 
 		public override string ToString()
@@ -247,7 +255,7 @@ namespace D_Parser.Resolver
 
 	public class StructType : TemplateIntermediateType
 	{
-		public StructType(DClassLike dc, ISyntaxRegion td, Dictionary<string, ISemantic> deducedTypes = null) : base(dc, td, null, null, deducedTypes) { }
+		public StructType(DClassLike dc, ISyntaxRegion td, Dictionary<string, TemplateParameterSymbol> deducedTypes = null) : base(dc, td, null, null, deducedTypes) { }
 
 		public override string ToString()
 		{
@@ -257,7 +265,7 @@ namespace D_Parser.Resolver
 
 	public class UnionType : TemplateIntermediateType
 	{
-		public UnionType(DClassLike dc, ISyntaxRegion td, Dictionary<string, ISemantic> deducedTypes = null) : base(dc, td, null, null, deducedTypes) { }
+		public UnionType(DClassLike dc, ISyntaxRegion td, Dictionary<string, TemplateParameterSymbol> deducedTypes = null) : base(dc, td, null, null, deducedTypes) { }
 
 		public override string ToString()
 		{
@@ -269,13 +277,13 @@ namespace D_Parser.Resolver
 	{
 		public ClassType(DClassLike dc, ISyntaxRegion td, 
 			TemplateIntermediateType baseType, InterfaceType[] baseInterfaces,
-			ReadOnlyCollection<KeyValuePair<string, ISemantic>> deducedTypes)
+			ReadOnlyCollection<KeyValuePair<string, TemplateParameterSymbol>> deducedTypes)
 			: base(dc, td, baseType, baseInterfaces, deducedTypes)
 		{}
 
 		public ClassType(DClassLike dc, ISyntaxRegion td, 
 			TemplateIntermediateType baseType, InterfaceType[] baseInterfaces = null,
-			Dictionary<string, ISemantic> deducedTypes= null)
+			Dictionary<string, TemplateParameterSymbol> deducedTypes = null)
 			: base(dc, td, baseType, baseInterfaces, deducedTypes)
 		{}
 
@@ -289,12 +297,12 @@ namespace D_Parser.Resolver
 	{
 		public InterfaceType(DClassLike dc, ISyntaxRegion td, 
 			InterfaceType[] baseInterfaces=null,
-			Dictionary<string,ISemantic> deducedTypes = null) 
+			Dictionary<string, TemplateParameterSymbol> deducedTypes = null) 
 			: base(dc, td, null, baseInterfaces, deducedTypes) {}
 
 		public InterfaceType(DClassLike dc, ISyntaxRegion td,
 			InterfaceType[] baseInterfaces,
-			ReadOnlyCollection<KeyValuePair<string, ISemantic>> deducedTypes)
+			ReadOnlyCollection<KeyValuePair<string, TemplateParameterSymbol>> deducedTypes)
 			: base(dc, td, null, baseInterfaces, deducedTypes) { }
 	}
 
@@ -311,7 +319,7 @@ namespace D_Parser.Resolver
 
 		public TemplateIntermediateType(DClassLike dc, ISyntaxRegion td, 
 			AbstractType baseType = null, InterfaceType[] baseInterfaces = null,
-			ReadOnlyCollection<KeyValuePair<string, ISemantic>> deducedTypes = null)
+			ReadOnlyCollection<KeyValuePair<string, TemplateParameterSymbol>> deducedTypes = null)
 			: base(dc, baseType, deducedTypes, td)
 		{
 			this.BaseInterfaces = baseInterfaces;
@@ -319,9 +327,9 @@ namespace D_Parser.Resolver
 
 		public TemplateIntermediateType(DClassLike dc, ISyntaxRegion td, 
 			AbstractType baseType, InterfaceType[] baseInterfaces,
-			Dictionary<string, ISemantic> deducedTypes)
-			: this(dc,td, baseType,baseInterfaces, 
-			deducedTypes!= null && deducedTypes.Count != 0 ? new ReadOnlyCollection<KeyValuePair<string, ISemantic>>(deducedTypes.ToArray()) : null)
+			Dictionary<string, TemplateParameterSymbol> deducedTypes)
+			: this(dc,td, baseType,baseInterfaces,
+			deducedTypes != null && deducedTypes.Count != 0 ? new ReadOnlyCollection<KeyValuePair<string, TemplateParameterSymbol>>(deducedTypes.ToArray()) : null)
 		{ }
 	}
 
@@ -329,11 +337,11 @@ namespace D_Parser.Resolver
 	{
 		public bool IsUFCSResult;
 		public MemberSymbol(DNode member, AbstractType memberType, ISyntaxRegion td,
-			ReadOnlyCollection<KeyValuePair<string, ISemantic>> deducedTypes = null)
+			ReadOnlyCollection<KeyValuePair<string, TemplateParameterSymbol>> deducedTypes = null)
 			: base(member, memberType, deducedTypes, td) { }
 
 		public MemberSymbol(DNode member, AbstractType memberType, ISyntaxRegion td,
-			Dictionary<string, ISemantic> deducedTypes)
+			Dictionary<string, TemplateParameterSymbol> deducedTypes)
 			: base(member, memberType, deducedTypes, td) { }
 	}
 
@@ -341,7 +349,7 @@ namespace D_Parser.Resolver
 	{
 		public new DModule Definition { get { return base.Definition as DModule; } }
 
-		public ModuleSymbol(DModule mod, ISyntaxRegion td, PackageSymbol packageBase = null) : base(mod, packageBase, (Dictionary<string, ISemantic>)null, td) { }
+		public ModuleSymbol(DModule mod, ISyntaxRegion td, PackageSymbol packageBase = null) : base(mod, packageBase, (Dictionary<string, TemplateParameterSymbol>)null, td) { }
 
 		public override string ToString()
 		{

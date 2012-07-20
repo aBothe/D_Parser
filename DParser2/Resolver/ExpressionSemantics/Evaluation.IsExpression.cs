@@ -52,7 +52,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			 * in order to find aliases and/or specified template parameters!
 			 */
 
-			var tpl_params = new Dictionary<string, ISemantic>();
+			var tpl_params = new DeducedTypeDictionary();
 			tpl_params[isExpression.TypeAliasIdentifier] = null;
 			if (isExpression.TemplateParameterList != null)
 				foreach (var p in isExpression.TemplateParameterList)
@@ -74,7 +74,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				{
 					var r = evalIsExpression_EvalSpecToken(isExpression, typeToCheck, true);
 					retTrue = r.Item1;
-					tpl_params[isExpression.TypeAliasIdentifier] = r.Item2;
+					tpl_params[isExpression.TypeAliasIdentifier] = new TemplateParameterSymbol(null, r.Item2);
 				}
 			}
 			else // 5.

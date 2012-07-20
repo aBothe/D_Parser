@@ -26,7 +26,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				var strNode = obj[strType];
 
 				if (strNode != null)
-					_t = DResolver.StripAliasSymbol(TypeDeclarationResolver.HandleNodeMatch(strNode, ctxt, null, id)) as ArrayType;
+					_t = DResolver.StripAliasSymbol(TypeDeclarationResolver.HandleNodeMatch(strNode, ctxt)) as ArrayType;
 			}
 
 			if (_t == null)
@@ -285,7 +285,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (arr.Elements != null && arr.Elements.Count > 0)
 			{
 				// Simply resolve the first element's type and take it as the array's value type
-				var valueType = E(arr.Elements[0]) as AbstractType;
+				var valueType = AbstractType.Get(E(arr.Elements[0]));
 
 				return new ArrayType(valueType, arr);
 			}
@@ -316,8 +316,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				var firstElement = aa.Elements[0].Key;
 				var firstElementValue = aa.Elements[0].Value;
 
-				var keyType = E(firstElement) as AbstractType;
-				var valueType = E(firstElementValue) as AbstractType;
+				var keyType = AbstractType.Get(E(firstElement));
+				var valueType = AbstractType.Get(E(firstElementValue));
 
 				return new AssocArrayType(valueType, keyType, aa);
 			}

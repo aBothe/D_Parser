@@ -76,7 +76,6 @@
     <Compile Include="Resolver\ExpressionSemantics\CTFE\FunctionEvaluation.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.Identifiers.cs" />
     <Compile Include="Resolver\ExpressionSemantics\EvaluationException.cs" />
-    <Compile Include="Evaluation\OLD ExpressionEvaluator.PostfixExpression.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.TypeidExpression.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.OperandExpressions.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.UnaryExpressions.cs" />

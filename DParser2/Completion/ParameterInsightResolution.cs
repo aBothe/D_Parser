@@ -4,6 +4,7 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
 using D_Parser.Resolver;
 using D_Parser.Resolver.TypeResolution;
+using D_Parser.Resolver.ExpressionSemantics;
 
 namespace D_Parser.Completion
 {
@@ -122,7 +123,7 @@ namespace D_Parser.Completion
 
 				res.IsTemplateInstanceArguments = true;
 
-				res.ResolvedTypesOrMethods = Evaluation.Resolve(templ, ctxt, null, false);
+				res.ResolvedTypesOrMethods = Evaluation.GetOverloads(templ, ctxt, null, false);
 
 				if (templ.Arguments != null)
 				{
@@ -162,13 +163,16 @@ namespace D_Parser.Completion
 		public static AbstractType[] TryGetUnfilteredMethodOverloads(IExpression foreExpression, ResolverContextStack ctxt, IExpression supExpression=null)
 		{
 			if (foreExpression is TemplateInstanceExpression)
-				return Evaluation.Resolve((TemplateInstanceExpression)foreExpression, ctxt, null);
+				return Evaluation.GetOverloads((TemplateInstanceExpression)foreExpression, ctxt, null);
 			else if (foreExpression is IdentifierExpression)
-				return Evaluation.Resolve((IdentifierExpression)foreExpression, ctxt);
+				return Evaluation.GetOverloads((IdentifierExpression)foreExpression, ctxt);
 			else if (foreExpression is PostfixExpression_Access)
-				return Evaluation.Resolve((PostfixExpression_Access)foreExpression, ctxt, null, supExpression);
+			{
+				bool ufcs=false; // TODO?
+				return Evaluation.GetAccessedOverloads((PostfixExpression_Access)foreExpression, ctxt, out ufcs, null, false);
+			}
 			else
-				return new[] { Evaluation.Resolve(foreExpression, ctxt) };
+				return new[] { Evaluation.EvaluateType(foreExpression, ctxt) };
 		}
 
 		static void CalculateCurrentArgument(NewExpression nex, 

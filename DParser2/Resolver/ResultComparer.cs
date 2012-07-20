@@ -3,7 +3,7 @@ using D_Parser.Dom;
 using D_Parser.Parser;
 using D_Parser.Resolver.Templates;
 using D_Parser.Resolver.TypeResolution;
-using D_Parser.Evaluation;
+using D_Parser.Resolver.ExpressionSemantics;
 
 namespace D_Parser.Resolver
 {
@@ -19,7 +19,7 @@ namespace D_Parser.Resolver
 		public static bool IsEqual(ISemantic r1, ISemantic r2)
 		{
 			if (r1 is ISymbolValue && r2 is ISymbolValue)
-				return Evaluation.SymbolValueComparer.IsEqual((ISymbolValue)r1, (ISymbolValue)r2);
+				return SymbolValueComparer.IsEqual((ISymbolValue)r1, (ISymbolValue)r2);
 
 			else if (r1 is TemplateIntermediateType && r2 is TemplateIntermediateType)
 			{
@@ -55,7 +55,7 @@ namespace D_Parser.Resolver
 		/// </summary>
 		public static bool IsImplicitlyConvertible(ISemantic resultToCheck, AbstractType targetType, ResolverContextStack ctxt=null)
 		{
-			var resToCheck = resultToCheck as AbstractType;
+			var resToCheck = AbstractType.Get(resultToCheck);
 
 			if (resultToCheck is ISymbolValue)
 				resToCheck = ((ISymbolValue)resultToCheck).RepresentedType;
@@ -78,7 +78,7 @@ namespace D_Parser.Resolver
 
 					if (par != null && par.TemplateParameters != null)
 					{
-						var dedParam = new Dictionary<string, ISemantic>();
+						var dedParam = new DeducedTypeDictionary();
 						foreach (var tp in par.TemplateParameters)
 							dedParam[tp.Name] = null;
 

@@ -44,12 +44,15 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public static ISymbolValue EvaluateValue(IExpression x, ISymbolValueProvider vp)
 		{
+			if (vp == null)
+				vp = new StandardValueProvider(null);
+
 			return new Evaluation(vp).E(x) as ISymbolValue;
 		}
 
 		public static AbstractType EvaluateType(IExpression x, ResolverContextStack ctxt)
 		{
-			return new Evaluation(ctxt).E(x) as AbstractType;
+			return AbstractType.Get(new Evaluation(ctxt).E(x));
 		}
 
 		ISemantic E(IExpression x)

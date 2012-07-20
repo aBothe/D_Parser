@@ -2,9 +2,9 @@
 using System.Linq;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
-using D_Parser.Evaluation;
 using D_Parser.Resolver.Templates;
 using System.Collections.ObjectModel;
+using D_Parser.Resolver.ExpressionSemantics;
 
 namespace D_Parser.Resolver.TypeResolution
 {
@@ -38,7 +38,7 @@ namespace D_Parser.Resolver.TypeResolution
 						}
 					}
 					else
-						templateArguments.Add(ExpressionEvaluator.Resolve(arg, ctxt));
+						templateArguments.Add(Evaluation.EvaluateValue(arg, ctxt));
 				}
 
 			return templateArguments;

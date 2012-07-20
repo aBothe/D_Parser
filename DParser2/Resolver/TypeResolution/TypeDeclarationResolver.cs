@@ -5,7 +5,6 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
 using D_Parser.Parser;
 using D_Parser.Resolver.ASTScanner;
-using D_Parser.Evaluation;
 using D_Parser.Resolver.ExpressionSemantics;
 
 namespace D_Parser.Resolver.TypeResolution
@@ -190,7 +189,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 							if (results != null)
 								foreach (var res in results)
-									r.Add(res as AbstractType);
+									r.Add(AbstractType.Get(res));
 
 							ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(udt);
 							ctxt.Pop();
@@ -215,7 +214,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 							if (results != null)
 								foreach (var res in results)
-									r.Add(res as AbstractType);
+									r.Add(AbstractType.Get(res));
 						}
 					}
 
@@ -276,7 +275,7 @@ namespace D_Parser.Resolver.TypeResolution
 			valueType = valueTypes[0];
 
 			if (ad.KeyExpression != null)
-				keyType = Evaluation.Resolve(ad.KeyExpression, ctxt);
+				keyType = Evaluation.EvaluateType(ad.KeyExpression, ctxt);
 			else
 			{
 				var t = Resolve(ad.KeyType, ctxt);
@@ -319,7 +318,7 @@ namespace D_Parser.Resolver.TypeResolution
 		public static AbstractType ResolveSingle(ITypeDeclaration declaration, ResolverContextStack ctxt)
 		{
 			if (declaration is IdentifierDeclaration)
-				return ResolveSingle(declaration as IdentifierDeclaration, ctxt) as AbstractType;
+				return ResolveSingle(declaration as IdentifierDeclaration, ctxt);
 			else if (declaration is TemplateInstanceExpression)
 			{
 				var a = Evaluation.GetOverloads(declaration as TemplateInstanceExpression, ctxt);
@@ -453,7 +452,7 @@ namespace D_Parser.Resolver.TypeResolution
 						ctxt.CheckForSingleResult(furtherId, isa.Type);
 
 						if (furtherId != null && furtherId.Length != 0)
-							bt = furtherId[0] as AbstractType;
+							bt = furtherId[0];
 						else
 							bt = null;
 					}
@@ -672,7 +671,7 @@ namespace D_Parser.Resolver.TypeResolution
 				{
 					ctxt.PushNewScope(method);
 
-					var t= Evaluation.Resolve(returnStmt.ReturnExpression, ctxt);
+					var t= Evaluation.EvaluateType(returnStmt.ReturnExpression, ctxt);
 
 					ctxt.Pop();
 
@@ -736,7 +735,7 @@ namespace D_Parser.Resolver.TypeResolution
 						return new PrimitiveType(DTokens.Int);
 					}
 
-					var aggregateType = Evaluation.Resolve(fe.Aggregate, ctxt);
+					var aggregateType = Evaluation.EvaluateType(fe.Aggregate, ctxt);
 
 					aggregateType = DResolver.StripMemberSymbols(aggregateType);
 

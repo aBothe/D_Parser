@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using D_Parser.Dom.Expressions;
-using D_Parser.Evaluation;
 using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Unittest;
+using D_Parser.Resolver.ExpressionSemantics;
 
 namespace DParser2.Unittest
 {
@@ -16,7 +16,7 @@ namespace DParser2.Unittest
 	{
 		public static ISymbolValue E(string expression, ISymbolValueProvider vp=null)
 		{
-			return ExpressionEvaluator.Evaluate(DParser.ParseExpression(expression), vp);
+			return Evaluation.EvaluateValue(DParser.ParseExpression(expression), vp);
 		}
 
 		public static PrimitiveValue GetPrimitiveValue(string literalCode,ISymbolValueProvider vp=null)
@@ -47,7 +47,7 @@ namespace DParser2.Unittest
 			Assert.IsInstanceOfType(x, typeof(IdentifierExpression));
 			var id = (IdentifierExpression)x;
 
-			var v = ExpressionEvaluator.Evaluate(x, new StandardValueProvider(ctxt));
+			var v = Evaluation.EvaluateValue(x, ctxt);
 
 			Assert.IsInstanceOfType(v, typeof(ArrayValue));
 			var av = (ArrayValue)v;
@@ -94,7 +94,7 @@ namespace DParser2.Unittest
 			TestString("\"asdf\"d", "asdf", false);
 
 			var ex = DParser.ParseExpression("['a','s','d','f']");
-			var v = ExpressionEvaluator.Evaluate(ex, null);
+			var v = Evaluation.EvaluateValue(ex, (ResolverContextStack)null);
 
 			Assert.IsInstanceOfType(v, typeof(ArrayValue));
 			var ar = (ArrayValue)v;
@@ -105,7 +105,7 @@ namespace DParser2.Unittest
 
 
 			ex = DParser.ParseExpression("[\"KeyA\":12, \"KeyB\":33, \"KeyC\":44]");
-			v = ExpressionEvaluator.Evaluate(ex, new StandardValueProvider(null));
+			v = Evaluation.EvaluateValue(ex, (ResolverContextStack)null);
 
 			Assert.IsInstanceOfType(v, typeof(AssociativeArrayValue));
 			var aa = (AssociativeArrayValue)v;
@@ -174,11 +174,11 @@ A a;");
 		{
 			var e = DParser.ParseExpression("is("+IsExpressionCode+")");
 
-			var v = ExpressionEvaluator.Evaluate(e, vp);
+			var v = Evaluation.EvaluateValue(e, vp);
 
 			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
 			var pv = (PrimitiveValue)v;
-			Assert.AreEqual(pv.BaseTypeToken, DTokens.Bool, "Type of 'is()' result must be bool");
+			Assert.AreEqual(pv.BaseTypeToken, DTokens.Bool, "Type of 'is(" + IsExpressionCode + ")' result must be bool");
 			Assert.IsInstanceOfType(pv.Value, typeof(bool));
 
 			return (bool)pv.Value;
