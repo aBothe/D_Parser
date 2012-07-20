@@ -42,5 +42,10 @@ namespace D_Parser.Resolver.Templates
 			this.Parameter = tp;
 			this.ParameterValue = representedTypeOrValue as ISymbolValue;
 		}
+
+		public override string ToString()
+		{
+			return "(template param) "+Parameter.Name+" = "+(ParameterValue!=null ? ParameterValue.ToString() : (Base==null ? "" : Base.ToString()));
+		}
 	}
 }

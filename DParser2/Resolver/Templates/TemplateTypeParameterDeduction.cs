@@ -48,7 +48,7 @@ namespace D_Parser.Resolver.Templates
 
 		bool HandleDecl(TemplateTypeParameter p ,ITypeDeclaration td, ISemantic rr)
 		{
-			var at = DResolver.StripMemberSymbols(AbstractType.Get(rr));
+			var at = AbstractType.Get(rr);
 
 			if (td is ArrayDecl)
 				return HandleDecl(p,(ArrayDecl)td, at as AssocArrayType);
@@ -152,8 +152,8 @@ namespace D_Parser.Resolver.Templates
 
 		static bool HandleDecl(DTokenDeclaration tk, AbstractType r)
 		{
-			if (r is PrimitiveType && r.DeclarationOrExpressionBase is DTokenDeclaration)
-				return tk.Token == ((DTokenDeclaration)r.DeclarationOrExpressionBase).Token;
+			if (r is PrimitiveType)
+				return tk.Token == ((PrimitiveType)r).TypeToken;
 
 			return false;
 		}
@@ -178,7 +178,7 @@ namespace D_Parser.Resolver.Templates
 				result = HandleDecl(p,ad.KeyType, ar.KeyType);
 
 			// Handle inner type
-			return !result && HandleDecl(p,ad.InnerDeclaration, ar.Base);
+			return result && HandleDecl(p,ad.InnerDeclaration, ar.Base);
 		}
 
 		bool HandleDecl(TemplateTypeParameter par, DelegateDeclaration d, DelegateType dr)

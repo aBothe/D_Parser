@@ -24,12 +24,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			if (isExpression.TestedType != null)
 			{
-				var typeToCheck_ = DResolver.StripAliasSymbols(TypeDeclarationResolver.Resolve(isExpression.TestedType, ctxt));
+				var typeToCheck = DResolver.StripAliasSymbol(TypeDeclarationResolver.ResolveSingle(isExpression.TestedType, ctxt));
 
-				if (typeToCheck_ != null && typeToCheck_.Length != 0)
+				if (typeToCheck != null)
 				{
-					var typeToCheck = typeToCheck_[0];
-
 					// case 1, 4
 					if (isExpression.TypeSpecialization == null && isExpression.TypeSpecializationToken == 0)
 						retTrue = typeToCheck != null;
@@ -82,7 +80,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			if (retTrue && isExpression.TemplateParameterList != null)
 				foreach (var p in isExpression.TemplateParameterList)
-					if (!tpd.Handle(p, tpl_params[p.Name] != null ? tpl_params[p.Name] : null))
+					if (!tpd.Handle(p, tpl_params[p.Name] != null ? tpl_params[p.Name].Base : null))
 						return false;
 
 			//TODO: Put all tpl_params results into the resolver context or make a new scope or something! 
