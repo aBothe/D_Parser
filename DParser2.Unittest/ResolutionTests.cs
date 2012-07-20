@@ -167,5 +167,35 @@ class B(T){
 
 			var inst = DParser.ParseExpression("(new B!A).new C!A2"); // TODO
 		}
+
+		[TestMethod]
+		public void TestOverloads1()
+		{
+			var pcl = CreateCache(@"module modA;
+
+int foo(int i) {}
+
+class A
+{
+	void foo(int k) {}
+
+	void bar()
+	{
+		
+	}
+}
+
+");
+			var A = pcl[0]["modA"]["A"] as DClassLike;
+			var bar=A["bar"] as DMethod;
+			var ctxt = new ResolverContextStack(pcl, new ResolverContext { ScopedBlock = bar, ScopedStatement=bar.Body });
+
+			var e = DParser.ParseExpression("123.foo");
+
+			var t = Evaluation.EvaluateType(e, ctxt);
+
+			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.AreEqual(pcl[0]["modA"]["foo"], ((MemberSymbol)t).Definition);
+		}
 	}
 }
