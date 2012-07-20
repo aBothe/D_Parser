@@ -147,6 +147,7 @@
     <Compile Include="Resolver\TypeResolution\UFCSResolver.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="readme.txt" />
     <Content Include="Todo.txt" />
   </ItemGroup>
   <ItemGroup />
