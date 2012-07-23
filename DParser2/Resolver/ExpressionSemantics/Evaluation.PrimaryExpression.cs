@@ -167,9 +167,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						throw new EvaluationException(x, "Dollar not allowed here!");
 
 				case DTokens.True:
-					return new PrimitiveValue(DTokens.Bool, true, x);
+					return new PrimitiveValue(DTokens.Bool, 1, x);
 				case DTokens.False:
-					return new PrimitiveValue(DTokens.Bool, false, x);
+					return new PrimitiveValue(DTokens.Bool, 0, x);
 				case DTokens.__FILE__:
 					return new ArrayValue(GetStringType(), x, (ctxt.ScopedBlock.NodeRoot as IAbstractSyntaxTree).FileName);
 				case DTokens.__LINE__:

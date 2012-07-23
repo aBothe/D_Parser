@@ -12,51 +12,32 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	{
 		public readonly int BaseTypeToken;
 
-		public object Value
-		{
-			get;
-			private set;
-		}
-
 		/// <summary>
-		/// Returns true if the represented value is either null (ref type), 0 (int/float), false (bool) or empty (string)
+		/// To make math operations etc. more efficient, use the largest available structure to store scalar values.
+		/// Also representing single characters etc.
 		/// </summary>
-		public bool IsNullFalseOrEmpty
-		{
-			get
-			{
-				if (Value == null)
-					return true;
+		public readonly decimal Value;
+		/// <summary>
+		/// (For future use) For complex number handling, there's an extra value for storing the imaginary part of a number.
+		/// </summary>
+		public readonly decimal ImaginaryPart;
 
-				try
-				{
-					switch (BaseTypeToken)
-					{
-						case DTokens.Bool:
-							return !Convert.ToBoolean(Value);
-						case DTokens.Char:
-							var c = Convert.ToChar(Value);
+		public PrimitiveValue(bool Value, IExpression Expression)
+			: this(DTokens.Bool, Value ? 1 : 0, Expression) { }
 
-							return c == '\0';
-					}
-				}
-				catch { }
-				return false;
-			}
-		}
-
-		public PrimitiveValue(int BaseTypeToken, object Value, IExpression Expression)
+		public PrimitiveValue(int BaseTypeToken, decimal Value, IExpression Expression, decimal ImaginaryPart = 0)
 			: base(ExpressionValueType.Primitive, new PrimitiveType(BaseTypeToken,0, Expression))
 		{
 			this.BaseTypeToken = BaseTypeToken;
 			this.Value = Value;
+			this.ImaginaryPart = ImaginaryPart;
 		}
 	}
 
 	public class VoidValue : PrimitiveValue
 	{
 		public VoidValue(IExpression x)
-			: base(DTokens.Void, null, x)
+			: base(DTokens.Void, 0M, x)
 		{ }
 	}
 

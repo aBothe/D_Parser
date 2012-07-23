@@ -4,6 +4,7 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
 using D_Parser.Resolver.ExpressionSemantics.CTFE;
 using D_Parser.Resolver.TypeResolution;
+using System;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
@@ -109,7 +110,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						DTokens.Char;
 
 					if (eval)
-						return new PrimitiveValue(tk, id.Value, id);
+						return new PrimitiveValue(tk, Convert.ToDecimal(id.Value), id);
 					else
 						return new PrimitiveType(tk, 0, id);
 
@@ -123,8 +124,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					else if (id.Subformat.HasFlag(LiteralSubformat.Real))
 						tt = im ? DTokens.Ireal : DTokens.Real;
 
+					var v = Convert.ToDecimal(id.Value);
+
 					if (eval)
-						return new PrimitiveValue(tt, id.Value, id);
+						return new PrimitiveValue(tt, im ? 0 : v, id, im? v : 0);
 					else
 						return new PrimitiveType(tt, 0, id);
 
@@ -136,7 +139,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					else
 						tt = unsigned ? DTokens.Uint : DTokens.Int;
 
-					return eval ? (ISemantic)new PrimitiveValue(tt, id.Value, id) : new PrimitiveType(tt, 0, id);
+					return eval ? (ISemantic)new PrimitiveValue(tt, Convert.ToDecimal(id.Value), id) : new PrimitiveType(tt, 0, id);
 
 				case Parser.LiteralFormat.StringLiteral:
 				case Parser.LiteralFormat.VerbatimStringLiteral:

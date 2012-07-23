@@ -40,7 +40,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				}
 			}
 
-			return new PrimitiveValue(DTokens.Bool, retTrue, isExpression);
+			return new PrimitiveValue(DTokens.Bool, retTrue?1:0, isExpression);
 		}
 
 		private bool evalIsExpression_WithAliases(IsExpression isExpression, AbstractType typeToCheck)

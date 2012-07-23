@@ -52,19 +52,67 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (!eval)
 				return new PrimitiveType(DTokens.Bool);
 
+			var l = E(x.LeftOperand) as ISymbolValue;
+
 			if (x is OrOrExpression)
 			{
+				// The OrOrExpression evaluates its left operand. 
+				// If the left operand, converted to type bool, evaluates to true, 
+				// then the right operand is not evaluated. If the result type of the OrOrExpression 
+				// is bool then the result of the expression is true. 
+				// If the left operand is false, then the right operand is evaluated. 
+				// If the result type of the OrOrExpression is bool then the result 
+				// of the expression is the right operand converted to type bool.
+				return new PrimitiveValue(!(IsFalseZeroOrNull(l) && IsFalseZeroOrNull(E(x.RightOperand) as ISymbolValue)), x);
 			}
 			else if (x is AndAndExpression)
-			{ }
+			{
+				return new PrimitiveValue(!IsFalseZeroOrNull(l) && !IsFalseZeroOrNull(E(x.RightOperand) as ISymbolValue), x);
+			}
 			else if (x is EqualExpression)
-			{ }
+				return E((EqualExpression)x,l);
 			else if (x is IdendityExpression)
-			{ }
+			{
+				// http://dlang.org/expression.html#IdentityExpression
+			}
 			else if (x is RelExpression)
 			{ }
 
 			throw new WrongEvaluationArgException();
+		}
+
+		ISemantic E(EqualExpression x, ISymbolValue l=null)
+		{
+			var r = E(x.RightOperand) as ISymbolValue;
+
+			if (x.OperatorToken == DTokens.Equal) // ==
+			{
+				if (l is PrimitiveValue && r is PrimitiveValue)
+				{
+					var pv_l = (PrimitiveValue)l;
+					var pv_r = (PrimitiveValue)r;
+
+					return new PrimitiveValue(pv_l.Value == pv_r.Value && pv_l.ImaginaryPart == pv_r.ImaginaryPart, x);
+				}
+
+				/*
+				 * Furthermore TODO: object comparison, pointer content comparison
+				 */
+
+				return new PrimitiveValue(false, x);
+			}
+			else // !=
+			{
+				if (l is PrimitiveValue && r is PrimitiveValue)
+				{
+					var pv_l = (PrimitiveValue)l;
+					var pv_r = (PrimitiveValue)r;
+
+					return new PrimitiveValue(pv_l.Value != pv_r.Value && pv_l.ImaginaryPart != pv_r.ImaginaryPart, x);
+				}
+
+				return new PrimitiveValue(true, x);
+			}
 		}
 
 		/// <summary>
@@ -72,10 +120,29 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// </summary>
 		ISemantic E_MathOp(OperatorBasedExpression x)
 		{
-			var l = E(x.LeftOperand);
+			var lvalue = E(x.LeftOperand);
 
 			if (!eval)
-				return l;
+				return lvalue;
+
+			var l = lvalue as PrimitiveValue;
+
+			if (l == null)
+			{
+				/*
+				 * In terms of adding opOverloading later on, 
+				 * lvalue not being a PrimitiveValue shouldn't be a problem anymore - we simply had to
+				 * search the type of l for methods called opAdd etc. and call that method via ctfe.
+				 * Finally, return the value the opAdd method passed back - and everything is fine.
+				 */
+
+				/*
+				 * Also, pointers should be implemented later on.
+				 * http://dlang.org/expression.html#AddExpression
+				 */
+
+				throw new EvaluationException(x, "Left value must evaluate to a constant scalar value. Operator overloads aren't supported yet", lvalue);
+			}
 
 			//TODO: Operator overloading
 

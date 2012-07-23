@@ -59,8 +59,27 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			if (x is Expression) // a,b,c;
 			{
-				//TODO
-				return null;
+				var ex = (Expression)x;
+				/*
+				 * The left operand of the ',' is evaluated, then the right operand is evaluated. 
+				 * The type of the expression is the type of the right operand, 
+				 * and the result is the result of the right operand.
+				 */
+
+				if (eval)
+				{
+					for (int i = 0; i < ex.Expressions.Count; i++)
+					{
+						var v = E(ex.Expressions[i]);
+
+						if (i == ex.Expressions.Count - 1)
+							return v;
+					}
+
+					throw new EvaluationException(x, "There must be at least one expression in the expression chain");
+				}
+				else
+					return ex.Expressions.Count == 0 ? null : E(ex.Expressions[ex.Expressions.Count - 1]);
 			}
 
 			else if (x is SurroundingParenthesesExpression)

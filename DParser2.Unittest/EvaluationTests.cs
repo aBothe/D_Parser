@@ -181,7 +181,7 @@ A a;");
 			Assert.AreEqual(pv.BaseTypeToken, DTokens.Bool, "Type of 'is(" + IsExpressionCode + ")' result must be bool");
 			Assert.IsInstanceOfType(pv.Value, typeof(bool));
 
-			return (bool)pv.Value;
+			return pv.Value != 0;
 		}
 
 		[TestMethod]
