@@ -61,4 +61,9 @@ namespace D_Parser.Resolver
 	{
 		public AssertException(AssertExpression ae, string optAssertMessage="") : base(ae, "Assert returned false. "+optAssertMessage) { }
 	}
+
+	public class WrongEvaluationArgException : Exception
+	{
+		public WrongEvaluationArgException() : base("Wrong argument type for expression evaluation given") {}
+	}
 }
