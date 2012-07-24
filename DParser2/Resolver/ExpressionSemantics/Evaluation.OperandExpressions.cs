@@ -66,9 +66,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return new PrimitiveValue(!(IsFalseZeroOrNull(l) && IsFalseZeroOrNull(E(x.RightOperand) as ISymbolValue)), x);
 			}
 			else if (x is AndAndExpression)
-			{
 				return new PrimitiveValue(!IsFalseZeroOrNull(l) && !IsFalseZeroOrNull(E(x.RightOperand) as ISymbolValue), x);
-			}
 			else if (x is EqualExpression)
 				return E((EqualExpression)x,l);
 			else if (x is IdendityExpression)
@@ -158,17 +156,36 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				}
 			}
 
-			else if (x is XorExpression)
-			{
+			var r = E(x.RightOperand) as ISymbolValue;
 
+			/*
+			 * TODO: Handle invalid values/value ranges.
+			 */
+
+			if (x is XorExpression)
+			{
+				return HandleSingleMathOp(x, l,r, (a,b)=>(long)a^(long)b);
 			}
 			else if (x is OrExpression)
 			{
+				return HandleSingleMathOp(x, l, r, (a, b) => (long)a | (long)b);
 			}
 			else if (x is AndExpression)
 			{
+				return HandleSingleMathOp(x, l, r, (a, b) => (long)a & (long)b);
 			}
-			else if (x is ShiftExpression) { }
+			else if (x is ShiftExpression) {
+				switch (x.OperatorToken)
+				{
+					case DTokens.ShiftLeft:
+						return HandleSingleMathOp(x, l, r, (a, b) => (long)a << (int)b);
+						break;
+					case DTokens.ShiftRight:
+						break;
+					case DTokens.ShiftRightUnsigned:
+						break;
+				}
+			}
 			else if (x is AddExpression) { }
 			else if (x is CatExpression) { }
 			else if (x is PowExpression) { }
@@ -178,8 +195,39 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return null;
 		}
 
+		delegate decimal MathOp(decimal x, decimal y) ;
+
+		/// <summary>
+		/// Handles mathemathical operation.
+		/// If l and r are both primitive values, the MathOp delegate is executed.
+		/// 
+		/// TODO: Operator overloading.
+		/// </summary>
+		ISemantic HandleSingleMathOp(IExpression x, ISemantic l, ISemantic r, MathOp m)
+		{
+			var pl = l as PrimitiveValue;
+			var pr = r as PrimitiveValue;
+
+			//TODO: imaginary/complex parts
+
+			if (pl != null && pr != null)
+				return new PrimitiveValue(pl.BaseTypeToken, m(pl.Value, pr.Value), x);
+
+			throw new NotImplementedException("Operator overloading not implemented yet.");
+		}
+
 		ISemantic E(ConditionalExpression x)
 		{
+			if (eval)
+			{
+				var b = E(x.OrOrExpression) as ISymbolValue;
+
+				if (IsFalseZeroOrNull(b))
+					return E(x.FalseCaseExpression);
+				else
+					return E(x.TrueCaseExpression);
+			}
+
 			return E(x.TrueCaseExpression);
 		}
 
