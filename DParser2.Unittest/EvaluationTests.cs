@@ -75,6 +75,56 @@ namespace DParser2.Unittest
 			}
 		}
 
+		public static void TestBool(string literal, bool v = true, ISymbolValueProvider vp =null)
+		{
+			var pv = GetPrimitiveValue(literal, vp);
+
+			Assert.AreEqual(DTokens.Bool, pv.BaseTypeToken);
+
+			if (v)
+				Assert.AreEqual(1M, pv.Value,  literal +" must be true");
+			else
+				Assert.AreEqual(0M, pv.Value, literal + " must be false");
+		}
+
+		[TestMethod]
+		public void TestMathOperations()
+		{
+			TestPrimitive("true", DTokens.Bool, 1M);
+			TestPrimitive("false || false", DTokens.Bool, 0M);
+			TestPrimitive("true || false", DTokens.Bool, 1M);
+			TestPrimitive("false || true", DTokens.Bool, 1M);
+			TestPrimitive("true || true", DTokens.Bool, 1M);
+			TestPrimitive("false && false", DTokens.Bool, 0M);
+			TestPrimitive("false && true", DTokens.Bool, 0M);
+			TestPrimitive("true && false", DTokens.Bool, 0M);
+			TestPrimitive("true && true", DTokens.Bool, 1M);
+
+
+			TestPrimitive("0", DTokens.Int, 0M);
+			TestPrimitive("-1", DTokens.Int, -1M);
+			TestPrimitive("-(1+4)", DTokens.Int, -5M);
+
+			TestPrimitive("1+2", DTokens.Int, 3M);
+			TestPrimitive("1-2", DTokens.Int, -1M);
+			TestPrimitive("3*4", DTokens.Int, 12M);
+			TestPrimitive("3/4", DTokens.Int, 0.75M);
+			TestPrimitive("35 % 2", DTokens.Int, 1M);
+
+			TestPrimitive("3*4 + 5", DTokens.Int, 17M);
+			TestPrimitive("3+5*4", DTokens.Int, 23M);
+		}
+
+		[TestMethod]
+		public void TestBooleanOps()
+		{
+			TestBool("1==1");
+			TestBool("0==0");
+			TestBool("1!=1", false);
+			TestBool("1!=0");
+
+		}
+
 		[TestMethod]
 		public void TestPrimitives()
 		{

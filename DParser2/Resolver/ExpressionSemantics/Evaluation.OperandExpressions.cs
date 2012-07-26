@@ -4,15 +4,16 @@ using System.Linq;
 using System.Text;
 using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
+using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public partial class Evaluation
 	{
-		ISemantic E(OperatorBasedExpression x)
+		ISemantic E(OperatorBasedExpression x, ISemantic lValue=null)
 		{
 			if (x is AssignExpression)
-				return E((AssignExpression)x);
+				return E((AssignExpression)x,lValue);
 
 			// TODO: Implement operator precedence (see http://forum.dlang.org/thread/jjohpp$oj6$1@digitalmars.com )
 
@@ -24,37 +25,42 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				x is MulExpression || // a *= b; a /= b; a %= b;
 				x is CatExpression || // a ~= b;
 				x is PowExpression) // a ^^ b;
-				return E_MathOp(x);
+				return E_MathOp(x, lValue);
+
+			else if (x is EqualExpression) // a==b
+				return E((EqualExpression)x, lValue);
 
 			else if (x is OrOrExpression || // a || b
 				x is AndAndExpression || // a && b
-				x is EqualExpression || // a==b
 				x is IdendityExpression || // a is T
 				x is RelExpression) // a <= b
-				return E_BoolOp(x);
+				return E_BoolOp(x, lValue as ISymbolValue);
 
 			else if (x is InExpression) // a in b
-				return E((InExpression)x);
+				return E((InExpression)x, lValue);
 
 			throw new WrongEvaluationArgException();
 		}
 
-		ISemantic E(AssignExpression x)
+		ISemantic E(AssignExpression x, ISemantic lValue=null)
 		{
-			var l = E(x.LeftOperand);
-
 			if (!eval)
-				return l;
+				return E(x.LeftOperand);
+
+			var l = TryGetValue(lValue ?? E(x.LeftOperand));
+
+			//TODO
 
 			return null;
 		}
 
-		ISemantic E_BoolOp(OperatorBasedExpression x)
+		ISemantic E_BoolOp(OperatorBasedExpression x, ISemantic lValue=null, ISemantic rValue = null)
 		{
 			if (!eval)
 				return new PrimitiveType(DTokens.Bool);
 
-			var l = E(x.LeftOperand) as ISymbolValue;
+			var l = TryGetValue(lValue ?? E(x.LeftOperand));
+			var r = TryGetValue(rValue ?? E(x.RightOperand));
 
 			if (x is OrOrExpression)
 			{
@@ -65,12 +71,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				// If the left operand is false, then the right operand is evaluated. 
 				// If the result type of the OrOrExpression is bool then the result 
 				// of the expression is the right operand converted to type bool.
-				return new PrimitiveValue(!(IsFalseZeroOrNull(l) && IsFalseZeroOrNull(E(x.RightOperand) as ISymbolValue)), x);
+				return new PrimitiveValue(!(IsFalseZeroOrNull(l) && IsFalseZeroOrNull(r)), x);
 			}
 			else if (x is AndAndExpression)
-				return new PrimitiveValue(!IsFalseZeroOrNull(l) && !IsFalseZeroOrNull(E(x.RightOperand) as ISymbolValue), x);
-			else if (x is EqualExpression)
-				return E((EqualExpression)x,l);
+				return new PrimitiveValue(!IsFalseZeroOrNull(l) && !IsFalseZeroOrNull(r), x);
 			else if (x is IdendityExpression)
 			{
 				// http://dlang.org/expression.html#IdentityExpression
@@ -81,9 +85,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			throw new WrongEvaluationArgException();
 		}
 
-		ISemantic E(EqualExpression x, ISymbolValue l=null)
+		ISemantic E(EqualExpression x, ISemantic lValue =null, ISemantic rValue = null)
 		{
-			var r = E(x.RightOperand) as ISymbolValue;
+			var l = TryGetValue(lValue ?? E(x.LeftOperand));
+			var r = TryGetValue(rValue ?? E(x.RightOperand));
 
 			if (x.OperatorToken == DTokens.Equal) // ==
 			{
@@ -108,7 +113,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					var pv_l = (PrimitiveValue)l;
 					var pv_r = (PrimitiveValue)r;
 
-					return new PrimitiveValue(pv_l.Value != pv_r.Value && pv_l.ImaginaryPart != pv_r.ImaginaryPart, x);
+					return new PrimitiveValue(pv_l.Value != pv_r.Value || pv_l.ImaginaryPart != pv_r.ImaginaryPart, x);
 				}
 
 				return new PrimitiveValue(true, x);
@@ -118,14 +123,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// <summary>
 		/// a + b; a - b; etc.
 		/// </summary>
-		ISemantic E_MathOp(OperatorBasedExpression x)
+		ISemantic E_MathOp(OperatorBasedExpression x, ISemantic lValue=null, ISemantic rValue=null)
 		{
-			var lvalue = E(x.LeftOperand);
-
 			if (!eval)
-				return lvalue;
+				return lValue ?? E(x.LeftOperand);
 
-			var l = lvalue as ISymbolValue;
+			var l = TryGetValue(lValue ?? E(x.LeftOperand));
 
 			if (l == null)
 			{
@@ -141,7 +144,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				 * http://dlang.org/expression.html#AddExpression
 				 */
 
-				throw new EvaluationException(x, "Left value must evaluate to a constant scalar value. Operator overloads aren't supported yet", lvalue);
+				throw new EvaluationException(x, "Left value must evaluate to a constant scalar value. Operator overloads aren't supported yet", lValue);
 			}
 
 			//TODO: Operator overloading
@@ -154,14 +157,19 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					var sx = (OperatorBasedExpression)x.RightOperand;
 
 					// Now multiply/divide/mod expression 'l' with sx.LeftOperand
-					// afterwards, evaluate the operation between the result just returned and the sx.RightOperand expression.
+					var intermediateResult = HandleSingleMathOp(x, l, E(sx.LeftOperand), mult);
+
+					// afterwards, evaluate the operation between the result just returned and the sx.RightOperand.
+					return E(sx, intermediateResult);
 				}
+
+				return HandleSingleMathOp(x, l, rValue ?? E(x.RightOperand), mult);
 			}
 
-			var r = E(x.RightOperand) as ISymbolValue;
+			var r = TryGetValue(rValue ?? E(x.RightOperand));
 
 			if(r == null)
-				throw new EvaluationException(x, "Right operand must evaluate to a value", lvalue);
+				throw new EvaluationException(x, "Right operand must evaluate to a value", lValue);
 
 			/*
 			 * TODO: Handle invalid values/value ranges.
@@ -209,18 +217,19 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 					throw new EvaluationException(x, "Invalid token for shift expression", l,r);
 				});
-			else if (x is AddExpression) return HandleSingleMathOp(x, l, r, (a, b) =>
-			{
-				switch (x.OperatorToken)
+			else if (x is AddExpression)
+				return HandleSingleMathOp(x, l, r, (a, b, op) =>
 				{
-					case DTokens.Plus:
-						return new PrimitiveValue(a.BaseTypeToken, a.Value + b.Value, x, a.ImaginaryPart + b.ImaginaryPart);
-					case DTokens.Minus:
-						return new PrimitiveValue(a.BaseTypeToken, a.Value - b.Value, x, a.ImaginaryPart - b.ImaginaryPart);
-				}
+					switch (op.OperatorToken)
+					{
+						case DTokens.Plus:
+							return new PrimitiveValue(a.BaseTypeToken, a.Value + b.Value, x, a.ImaginaryPart + b.ImaginaryPart);
+						case DTokens.Minus:
+							return new PrimitiveValue(a.BaseTypeToken, a.Value - b.Value, x, a.ImaginaryPart - b.ImaginaryPart);
+					}
 
-				throw new EvaluationException(x, "Invalid token for add/sub expression", l, r);
-			});
+					throw new EvaluationException(x, "Invalid token for add/sub expression", l, r);
+				});
 			else if (x is CatExpression)
 			{
 				// Notable: If one element is of the value type of the array, the element is added (either at the front or at the back) to the array
@@ -270,7 +279,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					return new ArrayValue(at, elements);
 				}
 
-				throw new EvaluationException(x, "At least one operand must be an array. If so, the other operand must be of the array's element type.", l, r);
+				throw new EvaluationException(x, "At least one operand must be an (non-associative) array. If so, the other operand must be of the array's element type.", l, r);
 			}
 			else if (x is PowExpression)
 			{
@@ -287,6 +296,47 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			throw new WrongEvaluationArgException();
 		}
 
+		ISymbolValue TryGetValue(ISemantic s)
+		{
+			if (s is AbstractType)
+				return DResolver.StripMemberSymbols((AbstractType)s) as ISymbolValue;
+
+			return s as ISymbolValue;
+		}
+
+		static PrimitiveValue mult(PrimitiveValue a, PrimitiveValue b, OperatorBasedExpression x)
+		{
+			decimal v = 0;
+			decimal im=0;
+			switch (x.OperatorToken)
+			{
+				case DTokens.Times:
+					v= a.Value * b.Value;
+					im=a.ImaginaryPart * b.ImaginaryPart;
+					break;
+				case DTokens.Div:
+					if ((a.Value!=0 && b.Value == 0) || (a.ImaginaryPart!=0 && b.ImaginaryPart==0))
+						throw new EvaluationException(x, "Right operand must not be 0");
+					if(b.Value!=0)
+						v= a.Value / b.Value;
+					if(b.ImaginaryPart!=0)
+						im=a.ImaginaryPart / b.ImaginaryPart;
+					break;
+				case DTokens.Mod:
+					if ((a.Value!=0 && b.Value == 0) || (a.ImaginaryPart!=0 && b.ImaginaryPart==0))
+						throw new EvaluationException(x, "Right operand must not be 0");
+					if(b.Value!=0)
+						v= a.Value % b.Value;
+					if(b.ImaginaryPart!=0)
+						im=a.ImaginaryPart % b.ImaginaryPart;
+					break;
+				default:
+					throw new EvaluationException(x, "Invalid token for multiplication expression (*,/,% only)");
+			}
+
+			return new PrimitiveValue(a.BaseTypeToken, v, x, im);
+		}
+
 		void EnsureIntegralType(PrimitiveValue v)
 		{
 			if (!DTokens.BasicTypes_Integral[v.BaseTypeToken])
@@ -294,7 +344,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		}
 
 		delegate decimal MathOp(PrimitiveValue x, PrimitiveValue y) ;
-		delegate PrimitiveValue MathOp2(PrimitiveValue x, PrimitiveValue y);
+		delegate PrimitiveValue MathOp2(PrimitiveValue x, PrimitiveValue y, OperatorBasedExpression op);
 
 		/// <summary>
 		/// Handles mathemathical operation.
@@ -315,7 +365,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			throw new NotImplementedException("Operator overloading not implemented yet.");
 		}
 
-		ISemantic HandleSingleMathOp(IExpression x, ISemantic l, ISemantic r, MathOp2 m)
+		ISemantic HandleSingleMathOp(OperatorBasedExpression x, ISemantic l, ISemantic r, MathOp2 m)
 		{
 			var pl = l as PrimitiveValue;
 			var pr = r as PrimitiveValue;
@@ -323,7 +373,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			//TODO: imaginary/complex parts
 
 			if (pl != null && pr != null)
-				return m(pl,pr);
+				return m(pl,pr, x);
 
 			throw new NotImplementedException("Operator overloading not implemented yet.");
 		}
@@ -343,7 +393,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return E(x.TrueCaseExpression);
 		}
 
-		ISemantic E(InExpression x)
+		ISemantic E(InExpression x, ISemantic l=null)
 		{
 			// The return value of the InExpression is null if the element is not in the array; 
 			// if it is in the array it is a pointer to the element.

@@ -137,7 +137,22 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		ISemantic E(UnaryExpression_Sub x)
 		{
-			return E(x.UnaryExpression);
+			var v = E(x.UnaryExpression);
+
+			if (eval)
+			{
+				if (v is AbstractType)
+					v = DResolver.StripMemberSymbols((AbstractType)v);
+
+				if (v is PrimitiveValue)
+				{
+					var pv = (PrimitiveValue)v;
+
+					return new PrimitiveValue(pv.BaseTypeToken, -pv.Value, x, -pv.ImaginaryPart);
+				}
+			}
+
+			return v;
 		}
 
 		ISemantic E(UnaryExpression_Not x)
