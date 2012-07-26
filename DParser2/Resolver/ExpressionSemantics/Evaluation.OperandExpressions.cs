@@ -14,6 +14,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (x is AssignExpression)
 				return E((AssignExpression)x);
 
+			// TODO: Implement operator precedence (see http://forum.dlang.org/thread/jjohpp$oj6$1@digitalmars.com )
+
 			if (x is XorExpression || // a ^ b
 				x is OrExpression || // a | b
 				x is AndExpression || // a & b
@@ -114,7 +116,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		}
 
 		/// <summary>
-		/// a + b; a - b;
+		/// a + b; a - b; etc.
 		/// </summary>
 		ISemantic E_MathOp(OperatorBasedExpression x)
 		{
@@ -123,7 +125,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (!eval)
 				return lvalue;
 
-			var l = lvalue as PrimitiveValue;
+			var l = lvalue as ISymbolValue;
 
 			if (l == null)
 			{
@@ -147,7 +149,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			// Note: a * b + c is theoretically treated as a * (b + c), but it's needed to evaluate it as (a * b) + c !
 			if (x is MulExpression)
 			{
-				if (x.RightOperand is OperatorBasedExpression) //TODO: This must be true only if it's a math expression, so not an assign expression etc.
+				if (x.RightOperand is OperatorBasedExpression && !(x.RightOperand is AssignExpression)) //TODO: This must be true only if it's a math expression, so not an assign expression etc.
 				{
 					var sx = (OperatorBasedExpression)x.RightOperand;
 
@@ -158,44 +160,141 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			var r = E(x.RightOperand) as ISymbolValue;
 
+			if(r == null)
+				throw new EvaluationException(x, "Right operand must evaluate to a value", lvalue);
+
 			/*
 			 * TODO: Handle invalid values/value ranges.
 			 */
 
 			if (x is XorExpression)
 			{
-				return HandleSingleMathOp(x, l,r, (a,b)=>(long)a^(long)b);
+				return HandleSingleMathOp(x, l,r, (a,b)=>{
+					EnsureIntegralType(a);EnsureIntegralType(b);
+					return (long)a.Value ^ (long)b.Value;
+				});
 			}
 			else if (x is OrExpression)
 			{
-				return HandleSingleMathOp(x, l, r, (a, b) => (long)a | (long)b);
+				return HandleSingleMathOp(x, l, r, (a, b) =>
+				{
+					EnsureIntegralType(a); EnsureIntegralType(b);
+					return (long)a.Value | (long)b.Value;
+				});
 			}
 			else if (x is AndExpression)
 			{
-				return HandleSingleMathOp(x, l, r, (a, b) => (long)a & (long)b);
+				return HandleSingleMathOp(x, l, r, (a, b) =>
+				{
+					EnsureIntegralType(a); EnsureIntegralType(b);
+					return (long)a.Value & (long)b.Value;
+				});
 			}
-			else if (x is ShiftExpression) {
+			else if (x is ShiftExpression) 
+				return HandleSingleMathOp(x, l, r, (a, b) =>
+				{
+					EnsureIntegralType(a); EnsureIntegralType(b);
+					if (b.Value < 0 || b.Value > 31)
+						throw new EvaluationException(b.BaseExpression, "Shift operand must be between 0 and 31", b);
+
+					switch(x.OperatorToken)
+					{
+						case DTokens.ShiftLeft:
+							return (long)a.Value << (int)b.Value; // TODO: Handle the imaginary part
+						case DTokens.ShiftRight:
+							return (long)a.Value >> (int)b.Value;
+						case DTokens.ShiftRightUnsigned: //TODO: Find out where's the difference between >> and >>>
+							return (ulong)a.Value >> (int)(uint)b.Value;
+					}
+
+					throw new EvaluationException(x, "Invalid token for shift expression", l,r);
+				});
+			else if (x is AddExpression) return HandleSingleMathOp(x, l, r, (a, b) =>
+			{
 				switch (x.OperatorToken)
 				{
-					case DTokens.ShiftLeft:
-						return HandleSingleMathOp(x, l, r, (a, b) => (long)a << (int)b);
-						break;
-					case DTokens.ShiftRight:
-						break;
-					case DTokens.ShiftRightUnsigned:
-						break;
+					case DTokens.Plus:
+						return new PrimitiveValue(a.BaseTypeToken, a.Value + b.Value, x, a.ImaginaryPart + b.ImaginaryPart);
+					case DTokens.Minus:
+						return new PrimitiveValue(a.BaseTypeToken, a.Value - b.Value, x, a.ImaginaryPart - b.ImaginaryPart);
 				}
-			}
-			else if (x is AddExpression) { }
-			else if (x is CatExpression) { }
-			else if (x is PowExpression) { }
-			else
-				throw new WrongEvaluationArgException();
 
-			return null;
+				throw new EvaluationException(x, "Invalid token for add/sub expression", l, r);
+			});
+			else if (x is CatExpression)
+			{
+				// Notable: If one element is of the value type of the array, the element is added (either at the front or at the back) to the array
+
+				var av_l = l as ArrayValue;
+				var av_r = r as ArrayValue;
+
+				if (av_l!=null && av_r!=null)
+				{
+					// Ensure that both arrays are of the same type
+					if(!ResultComparer.IsEqual(av_l.RepresentedType, av_r.RepresentedType))
+						throw new EvaluationException(x, "Both arrays must be of same type", l,r);
+
+					// Might be a string
+					if (av_l.IsString && av_r.IsString)
+						return new ArrayValue(av_l.RepresentedType as ArrayType, x, av_l.StringValue + av_r.StringValue);
+					else
+					{
+						var elements = new ISymbolValue[av_l.Elements.Length + av_r.Elements.Length];
+						Array.Copy(av_l.Elements, 0, elements, 0, av_l.Elements.Length);
+						Array.Copy(av_r.Elements, 0, elements, av_l.Elements.Length, av_r.Elements.Length);
+
+						return new ArrayValue(av_l.RepresentedType as ArrayType, elements);
+					}
+				}
+
+				ArrayType at = null;
+
+				// Append the right value to the array
+				if (av_l!=null &&  (at=av_l.RepresentedType as ArrayType) != null &&
+					ResultComparer.IsImplicitlyConvertible(r.RepresentedType, at.ValueType, ctxt))
+				{
+					var elements = new ISymbolValue[av_l.Elements.Length + 1];
+					Array.Copy(av_l.Elements, elements, av_l.Elements.Length);
+					elements[elements.Length - 1] = r;
+
+					return new ArrayValue(at, elements);
+				}
+				// Put the left value into the first position
+				else if (av_r != null && (at = av_r.RepresentedType as ArrayType) != null &&
+					ResultComparer.IsImplicitlyConvertible(l.RepresentedType, at.ValueType, ctxt))
+				{
+					var elements = new ISymbolValue[1 + av_r.Elements.Length];
+					elements[0] = l;
+					Array.Copy(av_r.Elements,0,elements,1,av_r.Elements.Length);
+
+					return new ArrayValue(at, elements);
+				}
+
+				throw new EvaluationException(x, "At least one operand must be an array. If so, the other operand must be of the array's element type.", l, r);
+			}
+			else if (x is PowExpression)
+			{
+				var pv_l=l as PrimitiveValue;
+				var pv_r=r as PrimitiveValue;
+				if (pv_l != null && pv_r != null)
+					return new PrimitiveValue(pv_l.BaseTypeToken, 
+						(decimal)Math.Pow((double)pv_l.Value, (double)pv_r.Value), x,
+						(decimal)Math.Pow((double)pv_l.ImaginaryPart, (double)pv_r.ImaginaryPart));
+
+				throw new EvaluationException(x, "Both operands are expected to be scalar values in order to perform the power operation correctly.",l,r);
+			}
+			
+			throw new WrongEvaluationArgException();
 		}
 
-		delegate decimal MathOp(decimal x, decimal y) ;
+		void EnsureIntegralType(PrimitiveValue v)
+		{
+			if (!DTokens.BasicTypes_Integral[v.BaseTypeToken])
+				throw new EvaluationException(v.BaseExpression, "Literal must be of integral type",v);
+		}
+
+		delegate decimal MathOp(PrimitiveValue x, PrimitiveValue y) ;
+		delegate PrimitiveValue MathOp2(PrimitiveValue x, PrimitiveValue y);
 
 		/// <summary>
 		/// Handles mathemathical operation.
@@ -211,7 +310,20 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			//TODO: imaginary/complex parts
 
 			if (pl != null && pr != null)
-				return new PrimitiveValue(pl.BaseTypeToken, m(pl.Value, pr.Value), x);
+				return new PrimitiveValue(pl.BaseTypeToken, m(pl, pr), x);
+
+			throw new NotImplementedException("Operator overloading not implemented yet.");
+		}
+
+		ISemantic HandleSingleMathOp(IExpression x, ISemantic l, ISemantic r, MathOp2 m)
+		{
+			var pl = l as PrimitiveValue;
+			var pr = r as PrimitiveValue;
+
+			//TODO: imaginary/complex parts
+
+			if (pl != null && pr != null)
+				return m(pl,pr);
 
 			throw new NotImplementedException("Operator overloading not implemented yet.");
 		}
