@@ -156,6 +156,12 @@ namespace DParser2.Unittest
 			//TestBool("float.nan !<= 3");
 			TestBool("1.4 !<> 1.4");
 			TestBool("1.4 !<> 1.5", false);
+
+			TestBool("true ? true : false");
+			TestBool("false ? true : false", false);
+			TestBool("1 == 1 ? true : 2 == 1");
+			TestBool("false && true ? false : true");
+			TestBool("false && (true ? false: true)", false);
 		}
 
 		[TestMethod]
