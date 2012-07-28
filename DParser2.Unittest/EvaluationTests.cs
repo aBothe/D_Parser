@@ -90,17 +90,6 @@ namespace DParser2.Unittest
 		[TestMethod]
 		public void TestMathOperations()
 		{
-			TestPrimitive("true", DTokens.Bool, 1M);
-			TestPrimitive("false || false", DTokens.Bool, 0M);
-			TestPrimitive("true || false", DTokens.Bool, 1M);
-			TestPrimitive("false || true", DTokens.Bool, 1M);
-			TestPrimitive("true || true", DTokens.Bool, 1M);
-			TestPrimitive("false && false", DTokens.Bool, 0M);
-			TestPrimitive("false && true", DTokens.Bool, 0M);
-			TestPrimitive("true && false", DTokens.Bool, 0M);
-			TestPrimitive("true && true", DTokens.Bool, 1M);
-
-
 			TestPrimitive("0", DTokens.Int, 0M);
 			TestPrimitive("-1", DTokens.Int, -1M);
 			TestPrimitive("-(1+4)", DTokens.Int, -5M);
@@ -118,6 +107,16 @@ namespace DParser2.Unittest
 		[TestMethod]
 		public void TestBooleanOps()
 		{
+			TestBool("true");
+			TestBool("false || false", false);
+			TestBool("true || false");
+			TestBool("false || true");
+			TestBool("true || true");
+			TestBool("false && false", false);
+			TestBool("false && true", false);
+			TestBool("true && false", false);
+			TestBool("true && true");
+
 			TestBool("1==1");
 			TestBool("0==0");
 			TestBool("1!=1", false);

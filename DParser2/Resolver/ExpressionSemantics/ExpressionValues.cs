@@ -32,6 +32,22 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			this.Value = Value;
 			this.ImaginaryPart = ImaginaryPart;
 		}
+
+		/// <summary>
+		/// NaN constructor
+		/// </summary>
+		private PrimitiveValue(int baseType,IExpression x)
+			: base(ExpressionValueType.Primitive, new PrimitiveType(baseType, 0, x))
+		{
+			IsNaN = true;
+		}
+
+		public readonly bool IsNaN;
+
+		public static PrimitiveValue CreateNaNValue(IExpression x, int baseType = DTokens.Float)
+		{
+			return new PrimitiveValue(baseType, x);
+		}
 	}
 
 	public class VoidValue : PrimitiveValue

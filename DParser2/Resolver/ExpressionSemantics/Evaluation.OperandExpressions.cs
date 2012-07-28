@@ -80,7 +80,30 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				// http://dlang.org/expression.html#IdentityExpression
 			}
 			else if (x is RelExpression)
-			{ }
+			{
+				return HandleSingleMathOp(x, l, r, (a,b, op) => {
+
+					// Unordered-ness is when at least one operator is Not any Number (NaN)
+					bool unordered = a.Value != a.Value || b.Value != b.Value;
+
+					bool relationIsTrue=false;
+
+					switch(x.OperatorToken)
+					{
+						case DTokens.GreaterThan: // greater
+
+							break;
+						case DTokens.GreaterEqual:
+							break;
+						case DTokens.LessThan:
+							break;
+						case DTokens.LessEqual:
+							break;
+					}
+
+					return new PrimitiveValue(relationIsTrue, op);
+				});
+			}
 
 			throw new WrongEvaluationArgException();
 		}
@@ -90,34 +113,25 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var l = TryGetValue(lValue ?? E(x.LeftOperand));
 			var r = TryGetValue(rValue ?? E(x.RightOperand));
 
+			bool isEq = false;
+
 			if (x.OperatorToken == DTokens.Equal) // ==
 			{
+				// If they are integral values or pointers, equality is defined as the bit pattern of the type matches exactly
 				if (l is PrimitiveValue && r is PrimitiveValue)
 				{
 					var pv_l = (PrimitiveValue)l;
 					var pv_r = (PrimitiveValue)r;
 
-					return new PrimitiveValue(pv_l.Value == pv_r.Value && pv_l.ImaginaryPart == pv_r.ImaginaryPart, x);
+					isEq = pv_l.Value == pv_r.Value && pv_l.ImaginaryPart == pv_r.ImaginaryPart;
 				}
 
 				/*
 				 * Furthermore TODO: object comparison, pointer content comparison
 				 */
-
-				return new PrimitiveValue(false, x);
 			}
-			else // !=
-			{
-				if (l is PrimitiveValue && r is PrimitiveValue)
-				{
-					var pv_l = (PrimitiveValue)l;
-					var pv_r = (PrimitiveValue)r;
 
-					return new PrimitiveValue(pv_l.Value != pv_r.Value || pv_l.ImaginaryPart != pv_r.ImaginaryPart, x);
-				}
-
-				return new PrimitiveValue(true, x);
-			}
+			return new PrimitiveValue(x.OperatorToken == DTokens.Equal ? isEq : !isEq, x);
 		}
 
 		/// <summary>
@@ -150,7 +164,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			//TODO: Operator overloading
 
 			// Note: a * b + c is theoretically treated as a * (b + c), but it's needed to evaluate it as (a * b) + c !
-			if (x is MulExpression)
+			if (x is MulExpression || x is PowExpression)
 			{
 				if (x.RightOperand is OperatorBasedExpression && !(x.RightOperand is AssignExpression)) //TODO: This must be true only if it's a math expression, so not an assign expression etc.
 				{
@@ -281,17 +295,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 				throw new EvaluationException(x, "At least one operand must be an (non-associative) array. If so, the other operand must be of the array's element type.", l, r);
 			}
-			else if (x is PowExpression)
-			{
-				var pv_l=l as PrimitiveValue;
-				var pv_r=r as PrimitiveValue;
-				if (pv_l != null && pv_r != null)
-					return new PrimitiveValue(pv_l.BaseTypeToken, 
-						(decimal)Math.Pow((double)pv_l.Value, (double)pv_r.Value), x,
-						(decimal)Math.Pow((double)pv_l.ImaginaryPart, (double)pv_r.ImaginaryPart));
-
-				throw new EvaluationException(x, "Both operands are expected to be scalar values in order to perform the power operation correctly.",l,r);
-			}
 			
 			throw new WrongEvaluationArgException();
 		}
@@ -310,6 +313,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			decimal im=0;
 			switch (x.OperatorToken)
 			{
+				case DTokens.Pow:
+					v = (decimal)Math.Pow((double)a.Value, (double)b.Value);
+					v = (decimal)Math.Pow((double)a.ImaginaryPart, (double)b.ImaginaryPart);
+					break;
 				case DTokens.Times:
 					v= a.Value * b.Value;
 					im=a.ImaginaryPart * b.ImaginaryPart;
