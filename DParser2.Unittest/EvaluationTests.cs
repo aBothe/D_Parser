@@ -122,6 +122,40 @@ namespace DParser2.Unittest
 			TestBool("1!=1", false);
 			TestBool("1!=0");
 
+			TestBool("3 > 1");
+			TestBool("1 > 2", false);
+			TestBool("1 >= 0");
+			TestBool("1 >= 1");
+			TestBool("1 >= 2", false);
+			TestBool("1 < 10");
+			TestBool("3 < 1", false);
+			TestBool("1 <= 2");
+			TestBool("1 <= 1");
+			TestBool("1 <= 0", false);
+
+			//TestBool("float.nan !<>= 2");
+			TestBool("2.3 <> 2.911");
+			TestBool("2.1 <> 2.2");
+			TestBool("2.3 <> 2.3", false);
+			TestBool("1.4 <>= 1.3");
+			TestBool("1.4 <>= 1.4");
+			TestBool("1.4 <>= 1.5");
+			//TestBool("float.nan <>= 3", false);
+
+			TestBool("3 !> 1", false);
+			TestBool("1 !> 2");
+			TestBool("1 !>= 0", false);
+			TestBool("1 !>= 1", false);
+			TestBool("1 !>= 2");
+			TestBool("1 !< 10", false);
+			TestBool("3 !< 1");
+			TestBool("3 !< 3");
+			TestBool("1 !<= 2", false);
+			TestBool("1 !<= 1", false);
+			TestBool("1 !<= 0");
+			//TestBool("float.nan !<= 3");
+			TestBool("1.4 !<> 1.4");
+			TestBool("1.4 !<> 1.5", false);
 		}
 
 		[TestMethod]

@@ -84,25 +84,55 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return HandleSingleMathOp(x, l, r, (a,b, op) => {
 
 					// Unordered-ness is when at least one operator is Not any Number (NaN)
-					bool unordered = a.Value != a.Value || b.Value != b.Value;
+					bool unordered = a.IsNaN || b.IsNaN;
 
 					bool relationIsTrue=false;
+					bool cmpIm = a.ImaginaryPart != 0 || b.ImaginaryPart != 0;
 
 					switch(x.OperatorToken)
 					{
-						case DTokens.GreaterThan: // greater
-
+						case DTokens.GreaterThan: // greater, >
+							relationIsTrue = a.Value > b.Value && (cmpIm ? a.ImaginaryPart > b.ImaginaryPart : true);
 							break;
-						case DTokens.GreaterEqual:
+						case DTokens.GreaterEqual: // greater or equal, >=
+							relationIsTrue = a.Value >= b.Value && a.ImaginaryPart >= b.ImaginaryPart;
 							break;
-						case DTokens.LessThan:
+						case DTokens.LessThan: // less, <
+							relationIsTrue = a.Value < b.Value && (cmpIm ? a.ImaginaryPart < b.ImaginaryPart : true);
 							break;
-						case DTokens.LessEqual:
+						case DTokens.LessEqual: // less or equal, <=
+							relationIsTrue = a.Value <= b.Value && a.ImaginaryPart <= b.ImaginaryPart;
+							break;
+						case DTokens.Unordered: // unordered, !<>=
+							relationIsTrue = unordered;
+							break;
+						case DTokens.LessOrGreater: // less or greater, <>
+							relationIsTrue = (a.Value < b.Value || a.Value > b.Value) && (cmpIm ? 
+								(a.ImaginaryPart < b.ImaginaryPart || a.ImaginaryPart > b.ImaginaryPart) : true);
+							break;
+						case DTokens.LessEqualOrGreater: // less, equal, or greater, <>=
+							relationIsTrue = (a.Value < b.Value || a.Value >= b.Value) && (cmpIm ?
+								(a.ImaginaryPart < b.ImaginaryPart || a.ImaginaryPart >= b.ImaginaryPart) : true);
+							break;
+						case DTokens.UnorderedOrGreater: // unordered or greater, !<=
+							relationIsTrue = unordered || (a.Value > b.Value && (cmpIm ? a.ImaginaryPart > b.ImaginaryPart : true));
+							break;
+						case DTokens.UnorderedGreaterOrEqual: // unordered, greater, or equal, !<
+							relationIsTrue = unordered || (a.Value >= b.Value && a.ImaginaryPart >= b.ImaginaryPart);
+							break;
+						case DTokens.UnorderedOrLess: // unordered or less, !>=
+							relationIsTrue = unordered || (a.Value < b.Value && (cmpIm ? a.ImaginaryPart < b.ImaginaryPart : true));
+							break;
+						case DTokens.UnorderedLessOrEqual: // unordered, less, or equal, !>
+							relationIsTrue = unordered || (a.Value <= b.Value && a.ImaginaryPart <= b.ImaginaryPart);
+							break;
+						case DTokens.UnorderedOrEqual: // unordered or equal, !<>
+							relationIsTrue = unordered || (a.Value == b.Value && a.ImaginaryPart == b.ImaginaryPart);
 							break;
 					}
 
 					return new PrimitiveValue(relationIsTrue, op);
-				});
+				}, false);
 			}
 
 			throw new WrongEvaluationArgException();
@@ -115,21 +145,18 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			bool isEq = false;
 
-			if (x.OperatorToken == DTokens.Equal) // ==
+			// If they are integral values or pointers, equality is defined as the bit pattern of the type matches exactly
+			if (l is PrimitiveValue && r is PrimitiveValue)
 			{
-				// If they are integral values or pointers, equality is defined as the bit pattern of the type matches exactly
-				if (l is PrimitiveValue && r is PrimitiveValue)
-				{
-					var pv_l = (PrimitiveValue)l;
-					var pv_r = (PrimitiveValue)r;
+				var pv_l = (PrimitiveValue)l;
+				var pv_r = (PrimitiveValue)r;
 
-					isEq = pv_l.Value == pv_r.Value && pv_l.ImaginaryPart == pv_r.ImaginaryPart;
-				}
-
-				/*
-				 * Furthermore TODO: object comparison, pointer content comparison
-				 */
+				isEq = pv_l.Value == pv_r.Value && pv_l.ImaginaryPart == pv_r.ImaginaryPart;
 			}
+
+			/*
+			 * Furthermore TODO: object comparison, pointer content comparison
+			 */
 
 			return new PrimitiveValue(x.OperatorToken == DTokens.Equal ? isEq : !isEq, x);
 		}
@@ -367,12 +394,18 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			//TODO: imaginary/complex parts
 
 			if (pl != null && pr != null)
+			{
+				// If one 
+				if (pl.IsNaN || pr.IsNaN)
+					return PrimitiveValue.CreateNaNValue(x, pl.IsNaN ? pl.BaseTypeToken : pr.BaseTypeToken);
+
 				return new PrimitiveValue(pl.BaseTypeToken, m(pl, pr), x);
+			}
 
 			throw new NotImplementedException("Operator overloading not implemented yet.");
 		}
 
-		ISemantic HandleSingleMathOp(OperatorBasedExpression x, ISemantic l, ISemantic r, MathOp2 m)
+		ISemantic HandleSingleMathOp(OperatorBasedExpression x, ISemantic l, ISemantic r, MathOp2 m, bool UnorderedCheck = true)
 		{
 			var pl = l as PrimitiveValue;
 			var pr = r as PrimitiveValue;
@@ -380,7 +413,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			//TODO: imaginary/complex parts
 
 			if (pl != null && pr != null)
-				return m(pl,pr, x);
+			{
+				if (UnorderedCheck && (pl.IsNaN || pr.IsNaN))
+					return PrimitiveValue.CreateNaNValue(x, pl.IsNaN ? pl.BaseTypeToken : pr.BaseTypeToken);
+
+				return m(pl, pr, x);
+			}
 
 			throw new NotImplementedException("Operator overloading not implemented yet.");
 		}
