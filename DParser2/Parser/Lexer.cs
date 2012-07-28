@@ -891,7 +891,7 @@ namespace D_Parser.Parser
 				#region Exponents
 				if ((NumBase == 16) ? (peek == 'p' || peek == 'P') : (peek == 'e' || peek == 'E'))
 				{ // read exponent
-					string suff = "e";
+					string suff = peek.ToString();
 					ReaderRead();
 					peek = (char)ReaderPeek();
 
@@ -975,7 +975,7 @@ namespace D_Parser.Parser
 				var num = ParseFloatValue(digit, NumBase);
 
 				if (exponent != 1)
-					num = Math.Pow(num, exponent);
+					num *= Math.Pow(NumBase == 16 ? 2 : 10, exponent);
 
 				object val = null;
 

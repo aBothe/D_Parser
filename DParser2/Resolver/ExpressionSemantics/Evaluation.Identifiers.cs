@@ -110,7 +110,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						DTokens.Char;
 
 					if (eval)
-						return new PrimitiveValue(tk, Convert.ToDecimal(id.Value), id);
+						return new PrimitiveValue(tk, Convert.ToDecimal((int)(char)id.Value), id);
 					else
 						return new PrimitiveType(tk, 0, id);
 

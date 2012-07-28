@@ -161,10 +161,12 @@ namespace DParser2.Unittest
 		[TestMethod]
 		public void TestPrimitives()
 		{
-			TestPrimitive("1", DTokens.Int, 1);
-			TestPrimitive("1.0", DTokens.Double, 1.0);
-			TestPrimitive("1f",DTokens.Float, 1);
-			TestPrimitive("'c'",DTokens.Char, 'c');
+			TestPrimitive("1", DTokens.Int, 1M);
+			TestPrimitive("1.0", DTokens.Double, 1.0M);
+			TestPrimitive("1f",DTokens.Float, 1M);
+			TestPrimitive("1e+3", DTokens.Int, 1000M);
+			TestPrimitive("1.0e+2", DTokens.Double, 100M);
+			TestPrimitive("'c'",DTokens.Char, (decimal)(int)'c');
 
 			TestString("\"asdf\"", "asdf", true);
 			TestString("\"asdf\"c", "asdf", true);
@@ -206,10 +208,10 @@ enum int d=126;
 ");
 			var vp = new StandardValueProvider(new ResolverContextStack(pcl, new ResolverContext { ScopedBlock=pcl[0]["modA"] }));
 
-			TestPrimitive("a", DTokens.Int, 234, vp);
-			TestPrimitive("b", DTokens.Int, 123, vp);
-			TestPrimitive("c", DTokens.Int, 125, vp);
-			TestPrimitive("d", DTokens.Int, 126, vp);
+			TestPrimitive("a", DTokens.Int, 234M, vp);
+			TestPrimitive("b", DTokens.Int, 123M, vp);
+			TestPrimitive("c", DTokens.Int, 125M, vp);
+			TestPrimitive("d", DTokens.Int, 126M, vp);
 
 		}
 
@@ -262,9 +264,7 @@ A a;");
 			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
 			var pv = (PrimitiveValue)v;
 			Assert.AreEqual(pv.BaseTypeToken, DTokens.Bool, "Type of 'is(" + IsExpressionCode + ")' result must be bool");
-			Assert.IsInstanceOfType(pv.Value, typeof(bool));
-
-			return pv.Value != 0;
+			return pv.Value == 1M;
 		}
 
 		[TestMethod]
