@@ -58,6 +58,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	}
 
 	#region Derived data types
+	public abstract class LValue : ExpressionValue
+	{
+		public LValue(AbstractType nodeType, IExpression baseExpression)
+			: base(ExpressionValueType.None, nodeType, baseExpression) { }
+
+		public abstract void Set(AbstractSymbolValueProvider vp, ISymbolValue value);
+	}
 
 	public class StaticVariableValue : VariableValue
 	{
@@ -69,14 +76,110 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	/// Contains a reference to a DVariable node.
 	/// To get the actual value of the variable, use the value provider.
 	/// </summary>
-	public class VariableValue : ExpressionValue
+	public class VariableValue : LValue
 	{
 		public readonly DVariable Variable;
 
 		public VariableValue(DVariable variable, AbstractType variableType, IExpression baseExpression)
-			: base(ExpressionValueType.Alias, variableType, baseExpression)
+			: base(variableType, baseExpression)
 		{
 			this.Variable = variable;
+		}
+
+		public override void Set(AbstractSymbolValueProvider vp, ISymbolValue value)
+		{
+			vp[Variable] = value;
+		}
+	}
+
+	/// <summary>
+	/// Used for accessing entries from an array.
+	/// </summary>
+	public class ArrayPointer : VariableValue
+	{
+		/// <summary>
+		/// Used when accessing associative arrays
+		/// </summary>
+		public readonly ISymbolValue Key;
+		/// <summary>
+		/// Used when accessing normal arrays.
+		/// If -1, a item passed to Set() will be added instead of replaced.
+		/// </summary>
+		public readonly int ItemNumber;
+
+		public override void Set(AbstractSymbolValueProvider vp, ISymbolValue value)
+		{
+			var oldV = vp[Variable];
+
+			if (oldV is AssociativeArrayValue)
+			{
+				if (Key != null)
+				{
+					var aa = (AssociativeArrayValue)oldV;
+					
+					int itemToReplace = -1;
+
+					for(int i=0; i<aa.Elements.Count; i++)
+						if (SymbolValueComparer.IsEqual(aa.Elements[i].Key, Key))
+						{
+							itemToReplace = i;
+							break;
+						}
+
+					// If we haven't found a matching key, add it to the array
+					var newElements = new KeyValuePair<ISymbolValue,ISymbolValue>[aa.Elements.Count + (itemToReplace==-1 ? 1:0)];
+					aa.Elements.CopyTo(newElements, 0);
+
+					if (itemToReplace != -1)
+						newElements[itemToReplace] = new KeyValuePair<ISymbolValue, ISymbolValue>(newElements[itemToReplace].Key, value);
+					else
+						newElements[newElements.Length - 1] = new KeyValuePair<ISymbolValue, ISymbolValue>(Key, value);
+
+					// Finally, make a new associative array containing the new elements
+					vp[Variable] = new AssociativeArrayValue(aa.RepresentedType as AssocArrayType, aa.BaseExpression, newElements);
+				}
+				else
+					throw new EvaluationException(BaseExpression, "Key expression must not be null", Key);
+			}
+			else if (oldV is ArrayValue)
+			{
+				var av = (ArrayValue)oldV;
+
+				//TODO: Immutability checks
+
+				if (av.IsString)
+				{
+
+				}
+				else
+				{
+
+				}
+			}
+			else
+				throw new EvaluationException(BaseExpression, "Type of accessed item must be an [associative] array", oldV);
+		}
+
+		/// <summary>
+		/// Associative Array ctor
+		/// </summary>
+		public ArrayPointer(DVariable accessedArray, AssocArrayType arrayType, ISymbolValue accessedItemKey, IExpression baseExpression)
+			: base(accessedArray, arrayType, baseExpression)
+		{
+			Key = accessedItemKey;
+		}
+
+		/// <summary>
+		/// Array ctor.
+		/// </summary>
+		/// <param name="accessedArray"></param>
+		/// <param name="arrayType"></param>
+		/// <param name="accessedItem">0 - the array's length-1; -1 when adding the item is wished.</param>
+		/// <param name="baseExpression"></param>
+		public ArrayPointer(DVariable accessedArray, ArrayType arrayType, int accessedItem, IExpression baseExpression)
+			: base(accessedArray, arrayType, baseExpression)
+		{
+			ItemNumber = accessedItem;
 		}
 	}
 
