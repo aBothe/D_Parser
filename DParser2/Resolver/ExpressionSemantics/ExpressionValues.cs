@@ -58,6 +58,28 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	}
 
 	#region Derived data types
+
+	public class StaticVariableValue : VariableValue
+	{
+		public StaticVariableValue(DVariable artificialVariable, AbstractType propType, IExpression baseExpression)
+			: base(artificialVariable, propType, baseExpression) { }
+	}
+
+	/// <summary>
+	/// Contains a reference to a DVariable node.
+	/// To get the actual value of the variable, use the value provider.
+	/// </summary>
+	public class VariableValue : ExpressionValue
+	{
+		public readonly DVariable Variable;
+
+		public VariableValue(DVariable variable, AbstractType variableType, IExpression baseExpression)
+			: base(ExpressionValueType.Alias, variableType, baseExpression)
+		{
+			this.Variable = variable;
+		}
+	}
+
 	/*public class PointerValue : ExpressionValue
 	{
 

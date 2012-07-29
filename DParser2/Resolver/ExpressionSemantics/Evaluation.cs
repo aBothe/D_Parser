@@ -21,10 +21,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// <summary>
 		/// Is not null if the expression value shall be evaluated.
 		/// </summary>
-		private readonly ISymbolValueProvider ValueProvider;
+		private readonly AbstractSymbolValueProvider ValueProvider;
 		bool resolveConstOnly { get { return ValueProvider == null || ValueProvider.ConstantOnly; } set { if(ValueProvider!=null) ValueProvider.ConstantOnly = value; } }
 
-		private Evaluation(ISymbolValueProvider vp) { 
+		private Evaluation(AbstractSymbolValueProvider vp) { 
 			this.ValueProvider = vp; 
 			this.eval = true;
 			this.ctxt = vp.ResolutionContext;
@@ -42,7 +42,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return EvaluateValue(x, new StandardValueProvider(ctxt));
 		}
 
-		public static ISymbolValue EvaluateValue(IExpression x, ISymbolValueProvider vp)
+		public static ISymbolValue EvaluateValue(IExpression x, AbstractSymbolValueProvider vp)
 		{
 			if (vp == null)
 				vp = new StandardValueProvider(null);

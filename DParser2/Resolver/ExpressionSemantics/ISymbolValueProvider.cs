@@ -9,14 +9,51 @@ using D_Parser.Dom.Expressions;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
-	public interface ISymbolValueProvider
+	public abstract class AbstractSymbolValueProvider
 	{
-		ResolverContextStack ResolutionContext { get; }
-		ISymbolValue this[string LocalName] { get; set; }
-		ISymbolValue this[DVariable variable] { get; set; }
+		public ResolverContextStack ResolutionContext { get; protected set; }
 
-		bool ConstantOnly { get; set; }
-		void LogError(ISyntaxRegion involvedSyntaxObject, string msg, bool isWarning=false);
+		public ISymbolValue this[IdentifierExpression id]
+		{
+			get
+			{
+				return this[GetLocal(id)];
+			}
+			set
+			{
+				this[GetLocal(id)] = value;
+			}
+		}
+
+		public ISymbolValue this[string LocalName]
+		{
+			get
+			{
+				return this[GetLocal(LocalName)];
+			}
+			set
+			{
+				this[GetLocal(LocalName)] = value;
+			}
+		}
+
+		public abstract ISymbolValue this[DVariable variable] { get; set; }
+
+		public DVariable GetLocal(IdentifierExpression id)
+		{
+			return GetLocal(id.Value as string, id);
+		}
+
+		/// <summary>
+		/// Searches a local/parameter variable and returns the node
+		/// </summary>
+		public abstract DVariable GetLocal(string LocalName, IdentifierExpression id=null);
+
+		public abstract bool ConstantOnly { get; set; }
+		public void LogError(ISyntaxRegion involvedSyntaxObject, string msg, bool isWarning = false)
+		{
+			//TODO: Handle semantic errors that occur during analysis
+		}
 
 		/*
 		 * TODO:
@@ -29,81 +66,34 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// <summary>
 		/// Used for $ operands inside index/slice expressions.
 		/// </summary>
-		int CurrentArrayLength { get; set; }
+		public int CurrentArrayLength;
 	}
 
 	/// <summary>
 	/// This provider is used for constant values evaluation.
 	/// 'Locals' aren't provided whereas requesting a variable's constant
 	/// </summary>
-	public class StandardValueProvider : ISymbolValueProvider
+	public class StandardValueProvider : AbstractSymbolValueProvider
 	{
-		public ResolverContextStack ResolutionContext
-		{
-			get;
-			private set;
-		}
-
 		public StandardValueProvider(ResolverContextStack ctxt)
 		{
 			ResolutionContext = ctxt;
 		}
 
-
-
-		public bool ConstantOnly
+		public override bool ConstantOnly
 		{
 			get { return true; }
 			set { }
 		}
 
-		public void LogError(ISyntaxRegion involvedSyntaxObject, string msg, bool isWarning = false)
-		{
-			//TODO: Handle semantic errors that occur during analysis
-		}
-
-
-		public int CurrentArrayLength
-		{
-			get;
-			set;
-		}
-
-		public ISymbolValue this[string LocalName]
+		public override ISymbolValue this[DVariable n]
 		{
 			get
 			{
-				var res = TypeDeclarationResolver.ResolveIdentifier(LocalName, ResolutionContext, null);
+				if (n == null)
+					throw new ArgumentNullException("There must be a valid variable node given in order to retrieve its value");
 
-				if (res == null || res.Length == 0)
-					return null;
-
-				var r = res[0];
-
-				if (r is MemberSymbol)
-				{
-					var mr = (MemberSymbol)r;
-
-					if (mr.Definition is DVariable)
-						return this[(DVariable)mr.Definition];
-				}
-				else if (r is UserDefinedType)
-					return new TypeValue((AbstractType)r, new IdentifierExpression(LocalName, Parser.LiteralFormat.None));
-
-				return null;
-			}
-			set
-			{
-				throw new NotImplementedException();
-				// Shouldn't be supported since consts are theoretically immutable
-			}
-		}
-
-		public ISymbolValue this[DVariable n]
-		{
-			get
-			{
-				if (n != null && n.IsConst)
+				if (n.IsConst)
 				{
 					// .. resolve it's pre-compile time value and make the returned value the given argument
 					var val = Evaluation.EvaluateValue(n.Initializer, this);
@@ -112,16 +102,34 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 					if (val != null)
 						return val;
-
-					throw new EvaluationException(n.Initializer, "Initializer must be constant");
 				}
 
-				throw new EvaluationException(n.Initializer, "Variable must be constant.");
+				throw new ArgumentException(n+" must have a constant initializer");
 			}
 			set
 			{
 				throw new NotImplementedException();
 			}
+		}
+
+		public override DVariable GetLocal(string LocalName, IdentifierExpression id=null)
+		{
+			var res = TypeDeclarationResolver.ResolveIdentifier(LocalName, ResolutionContext, id);
+
+			if (res == null || res.Length == 0)
+				return null;
+
+			var r = res[0];
+
+			if (r is MemberSymbol)
+			{
+				var mr = (MemberSymbol)r;
+
+				if (mr.Definition is DVariable)
+					return(DVariable)mr.Definition;
+			}
+
+			throw new EvaluationException(id ?? new IdentifierExpression(LocalName), LocalName + " must represent a local variable or a parameter", res);
 		}
 	}
 }

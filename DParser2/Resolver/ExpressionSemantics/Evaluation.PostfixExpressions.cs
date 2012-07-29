@@ -249,7 +249,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					args.Add(a as ISymbolValue);
 
 				// Execute/Evaluate the variable contents etc.
-				return TryEvaluateValueOrDoCTFE(argTypeFilteredOverloads.ToArray(), call.PostfixForeExpression, true, args.ToArray());
+				return TryDoCTFEOrGetValueRefs(argTypeFilteredOverloads.ToArray(), call.PostfixForeExpression, true, args.ToArray());
 			}
 			else
 			{
@@ -419,7 +419,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			// If evaluation active and the access expression is stand-alone, return a single item only.
 			if (EvalAndFilterOverloads && eval)
-				return new[] { TryEvaluateValueOrDoCTFE(overloads, acc.AccessExpression) };
+				return new[] { TryDoCTFEOrGetValueRefs(overloads, acc.AccessExpression) };
 
 			return overloads;
 		}

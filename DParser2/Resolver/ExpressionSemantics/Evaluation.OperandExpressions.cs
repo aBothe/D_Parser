@@ -328,8 +328,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		ISymbolValue TryGetValue(ISemantic s)
 		{
-			if (s is AbstractType)
-				return DResolver.StripMemberSymbols((AbstractType)s) as ISymbolValue;
+			if (s is VariableValue)
+				return ValueProvider[((VariableValue)s).Variable];
 
 			return s as ISymbolValue;
 		}

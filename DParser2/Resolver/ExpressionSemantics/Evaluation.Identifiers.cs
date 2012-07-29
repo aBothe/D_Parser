@@ -17,7 +17,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// If ImplicitlyExecute is false but value evaluation is switched on, an InternalOverloadValue-object will be returned
 		/// that keeps all overloads passed via 'overloads'
 		/// </summary>
-		ISemantic TryEvaluateValueOrDoCTFE(AbstractType[] overloads, IExpression idOrTemplateInstance, bool ImplicitlyExecute = true, ISymbolValue[] executionArguments=null)
+		ISemantic TryDoCTFEOrGetValueRefs(AbstractType[] overloads, IExpression idOrTemplateInstance, bool ImplicitlyExecute = true, ISymbolValue[] executionArguments=null)
 		{
 			if (overloads == null || overloads.Length == 0)
 				throw new EvaluationException(idOrTemplateInstance, "No symbols found");
@@ -45,7 +45,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				{
 					if (overloads.Length > 1)
 						throw ex;
-					return ValueProvider[(DVariable)mr.Definition];
+					return new VariableValue((DVariable)mr.Definition, mr.Base, idOrTemplateInstance);
 				}
 			}
 			else if (r is UserDefinedType)
@@ -63,7 +63,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var o = GetOverloads(tix, ctxt);
 
 			if (eval)
-				return TryEvaluateValueOrDoCTFE(o, tix, ImplicitlyExecute);
+				return TryDoCTFEOrGetValueRefs(o, tix, ImplicitlyExecute);
 			else
 			{
 				ctxt.CheckForSingleResult(o, tix);
@@ -82,9 +82,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				if (eval)
 				{
 					if (o == null || o.Length == 0)
-						return ValueProvider[((IdentifierExpression)id).Value as string];
+						return null;
 
-					return TryEvaluateValueOrDoCTFE(o, id, ImplicitlyExecute);
+					return TryDoCTFEOrGetValueRefs(o, id, ImplicitlyExecute);
 				}
 				else
 				{
