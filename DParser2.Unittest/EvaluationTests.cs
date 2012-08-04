@@ -245,7 +245,7 @@ enum int d=126;
 
 			pv = E("d + a", vp) as PrimitiveValue;
 			Assert.IsNotNull(pv);
-			Assert.AreEqual(130M, pv.Value);
+			Assert.AreEqual(360M, pv.Value);
 		}
 
 		[TestMethod]
