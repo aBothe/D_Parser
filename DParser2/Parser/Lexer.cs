@@ -1372,6 +1372,10 @@ namespace D_Parser.Parser
 					// Although we'll pass back a string as literal value, it's originally handled as char literal!
 				}
 			}
+			else if (ch == '\'')
+			{
+				return new DToken(DTokens.Literal, new CodeLocation(x, y), new CodeLocation(x, y), "''", char.MinValue, LiteralFormat.CharLiteral);
+			}
 
 			unchecked
 			{
