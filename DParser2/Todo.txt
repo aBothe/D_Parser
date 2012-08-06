@@ -32,3 +32,18 @@ Template parameter deduction:
 
  Tests:
   - Find out what features did change after it added the first expression as ResultBase to UFCS results
+
+
+  Expression evaluation:
+  - CTFE
+  - Assign expressions
+  - Identity expression
+  - Operator overloads
+  - Finish equal expressions (pointer/object comparison)
+  - Implement class/struct/pointer values
+  - Complex numbers (on at least shift operators)
+  - Handle >> and >>> correctly
+  - InExpressions
+  - NewExpressions in PostfixExpression_Access expressions
+  - Implement static property resolution/evaluation
+  - Pointer arrays in Index[/Slice] expressions

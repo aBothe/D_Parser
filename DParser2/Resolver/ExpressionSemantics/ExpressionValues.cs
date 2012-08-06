@@ -164,6 +164,27 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 	#region User data types
 
+	public abstract class InstanceValue : ReferenceValue
+	{
+		public readonly DClassLike Definition;
+		public Dictionary<DVariable, ISymbolValue> Members = new Dictionary<DVariable, ISymbolValue>();
+		public Dictionary<DVariable, AbstractType> MemberTypes = new Dictionary<DVariable, AbstractType>();
+
+		public InstanceValue(DClassLike Class, AbstractType ClassType, IExpression instanceExpression)
+			: base(Class, ClassType, instanceExpression)
+		{
+
+		}
+
+		/// <summary>
+		/// Initializes all variables that have gotten an explicit initializer.
+		/// </summary>
+		public void RunInitializers()
+		{
+
+		}
+	}
+
 	/// <summary>
 	/// Stores a type. Used e.g. as foreexpressions for PostfixExpressions.
 	/// </summary>
@@ -177,8 +198,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	{
 		INode referencedNode;
 
-		public ReferenceValue(ExpressionValueType vt, AbstractType type, IExpression x)
-			: base(vt, type, x)
+		public ReferenceValue(INode Node, AbstractType type, IExpression x)
+			: base(ExpressionValueType.None, type, x)
 		{
 		}
 	}
@@ -217,7 +238,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 	public class NullValue : ReferenceValue
 	{
-		public NullValue(IExpression x) : base(ExpressionValueType.Class, null, x) { }
+		public NullValue(IExpression x) : base(null, null, x) { }
 	}
 	#endregion
 

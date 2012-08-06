@@ -43,6 +43,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return E((PostfixExpression_Decrement)foreExpr);
 
 			// myArray[0]; myArray[0..5];
+			// opIndex/opSlice ?
 			if(foreExpr is MemberSymbol)
 				foreExpr = DResolver.StripMemberSymbols((AbstractType)foreExpr);
 
