@@ -10,12 +10,17 @@ using D_Parser.Resolver.TypeResolution;
 using D_Parser.Dom.Statements;
 using D_Parser.Resolver.Templates;
 
-namespace D_Parser.Evaluation
+namespace D_Parser.Resolver.ExpressionSemantics
 {
-	public partial class ExpressionEvaluator
+	public partial class Evaluation
 	{
-		public ISymbolValue Evaluate(TypeidExpression tid)
+		public ISemantic E(TypeidExpression tid)
 		{
+			//TODO: Split up into more detailed typeinfo objects (e.g. for arrays, pointers, classes etc.)
+
+			if(!eval)
+				return TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration("TypeInfo") { InnerDeclaration = new IdentifierDeclaration("object") }, ctxt);
+
 			/*
 			 * Depending on what's given as argument, it's needed to find out what kind of TypeInfo_ class to return
 			 * AND to fill it with all required information.
