@@ -11,31 +11,17 @@ namespace D_Parser.Evaluation
 {
 	public partial class ExpressionEvaluator
 	{
-		ResolverContextStack ctxt;
+		#region Properties / Ctor
+		ISymbolValueProvider vp;
+		bool Const { get { return vp.ConstantOnly; } set { vp.ConstantOnly = value; } }
 
 		private ExpressionEvaluator() { }
+		#endregion
 
-		public static bool IsEqual(IExpression ex, IExpression ex2, ResolverContextStack ctxt)
-		{
-			var val_x1 = Evaluate(ex, ctxt);
-			var val_x2 = Evaluate(ex2, ctxt);
-
-			//TEMPORARILY: Remove the string comparison
-			if (val_x1 == null && val_x2 == null)
-				return ex.ToString() == ex2.ToString();
-
-			return IsEqual(val_x1, val_x2);
-		}
-
-		public static bool IsEqual(IExpressionValue val_x1, IExpressionValue val_x2)
-		{
-			//TODO
-			return val_x1 != null && val_x2 != null && val_x1.Value == val_x2.Value;
-		}
-
+		#region Outer interaction
 		public static ResolveResult Resolve(IExpression arg, ResolverContextStack ctxt)
 		{
-			var ev=Evaluate(arg, ctxt);
+			var ev=Evaluate(arg, new StandardValueProvider(ctxt));
 
 			if (ev == null)
 				return null;
@@ -46,58 +32,44 @@ namespace D_Parser.Evaluation
 			};
 		}
 
-		public static IExpressionValue Evaluate(IExpression expression, ResolverContextStack ctxt)
+		public static ISymbolValue Evaluate(IExpression expression, ISymbolValueProvider vp)
 		{
-			return new ExpressionEvaluator { ctxt = ctxt }.Evaluate(expression);
+			return new ExpressionEvaluator { vp=vp }.Evaluate(expression);
 		}
+		#endregion
 
-		/// <summary>
-		/// Tries to evaluate a const initializer of the const/enum variable passed in by r
-		/// </summary>
-		/// <param name="r">Contains a member result that holds a const'ed variable with a static initializer</param>
-		public static IExpressionValue TryToEvaluateConstInitializer(
-			IEnumerable<ResolveResult> r,
-			ResolverContextStack ctxt)
+		public ISymbolValue Evaluate(IExpression x)
 		{
-			// But: If it's a variable that represents a const value..
-			var r_noAlias = DResolver.TryRemoveAliasesFromResult(r);
-			if (r_noAlias != null)
-				foreach (var r_ in r_noAlias)
-				{
-					if (r_ is MemberResult)
-					{
-						var n = ((MemberResult)r_).Node as DVariable;
-
-						if (n != null && n.IsConst)
-						{
-							// .. resolve it's pre-compile time value and make the returned value the given argument
-							var val = Evaluate(n.Initializer, ctxt);
-
-							if (val != null && val.Value != null)
-								return val;
-						}
-					}
-				}
-			return null;
-		}
-
-		public IExpressionValue Evaluate(IExpression x)
-		{
-			//if (x is PrimaryExpression)
-				//return Evaluate((PrimaryExpression)x);
 			if (x is TypeDeclarationExpression)
 				return Evaluate((TypeDeclarationExpression)x);
+			else if (x is PrimaryExpression)
+				return Evaluate((PrimaryExpression)x);
+			else if (x is PostfixExpression)
+				return Evaluate((PostfixExpression)x);
 
 			return null;
 		}
 
-		public IExpressionValue Evaluate(TypeDeclarationExpression x)
+		public ISymbolValue Evaluate(TypeDeclarationExpression x)
 		{
-			var r=TypeDeclarationResolver.Resolve(x.Declaration, ctxt);
+			var r=TypeDeclarationResolver.Resolve(x.Declaration, vp.ResolutionContext);
 
-			if(r!=null)
-				return TryToEvaluateConstInitializer(r,ctxt);
-			return null;
+			throw new NotImplementedException("TODO: Handle static properties and ufcs functionality on type declaration expressions");
+		}
+
+		public static bool IsFalseZeroOrNull(ISymbolValue v)
+		{
+			var pv = v as PrimitiveValue;
+			if (pv != null)
+				try
+				{
+					return !Convert.ToBoolean(pv.Value);
+				}
+				catch { }
+			else
+				return v is NullValue;
+
+			return v != null;
 		}
 
 		#region Helpers

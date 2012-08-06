@@ -134,13 +134,26 @@ namespace D_Parser.Resolver.TypeResolution
 
 		static int bcStack = 0;
 		/// <summary>
-		/// Takes the class passed via the tr, and resolves its base class and/or implemented interfaces
+		/// Takes the class passed via the tr, and resolves its base class and/or implemented interfaces.
+		/// Also usable for enums.
 		/// </summary>
 		public static void ResolveBaseClasses(TypeResult tr, ResolverContextStack ctxt, bool ResolveFirstBaseIdOnly=false)
 		{
 			if (bcStack > 8)
 			{
 				bcStack--;
+				return;
+			}
+
+			if (tr.Node is DEnum)
+			{
+				var de = (DEnum)tr.Node;
+
+				if (de.Type == null)
+					tr.BaseClass = new[] { new StaticTypeResult { BaseTypeToken = DTokens.Int } };
+				else
+					tr.BaseClass = TypeDeclarationResolver.Resolve(de.Type, ctxt);
+
 				return;
 			}
 

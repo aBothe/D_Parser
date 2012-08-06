@@ -21,17 +21,26 @@ namespace D_Parser.Resolver.TypeResolution
 					{
 						var tde = (TypeDeclarationExpression)arg;
 
-						var r = TypeDeclarationResolver.Resolve(tde.Declaration, ctxt);
+						var res = TypeDeclarationResolver.Resolve(tde.Declaration, ctxt);
 
-						var eval = ExpressionEvaluator.TryToEvaluateConstInitializer(r, ctxt);
+						if (res != null && res.Length != 0)
+						{
+							var mr = res[0] as MemberResult;
+							if (mr != null && mr.Node is DVariable)
+							{
+								var eval = new StandardValueProvider(ctxt)[mr.Node as DVariable];
 
-						if (eval == null)
-							templateArguments.Add(r);
-						else
-							templateArguments.Add(new[] { new ExpressionValueResult{
+								if (eval == null)
+									templateArguments.Add(res);
+								else
+									templateArguments.Add(new[] { new ExpressionValueResult{
 								DeclarationOrExpressionBase=eval.BaseExpression,
 								Value=eval
 							} });
+							}
+							else
+								templateArguments.Add(res);
+						}
 					}
 					else
 						templateArguments.Add(new[] { ExpressionEvaluator.Resolve(arg, ctxt) });
@@ -237,7 +246,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return true;
 		}
 
-		static bool AllParamatersSatisfied(Dictionary<string, ResolveResult[]> deductions)
+		public static bool AllParamatersSatisfied(Dictionary<string, ResolveResult[]> deductions)
 		{
 			foreach (var kv in deductions)
 				if (kv.Value == null || kv.Value==null || kv.Value.Length == 0)
@@ -246,7 +255,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return true;
 		}
 
-		static bool HasDefaultType(ITemplateParameter p)
+		public static bool HasDefaultType(ITemplateParameter p)
 		{
 			if (p is TemplateTypeParameter)
 				return ((TemplateTypeParameter)p).Default != null;

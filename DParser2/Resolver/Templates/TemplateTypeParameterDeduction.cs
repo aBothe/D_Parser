@@ -3,6 +3,7 @@ using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
 using D_Parser.Resolver.TypeResolution;
+using D_Parser.Evaluation;
 
 namespace D_Parser.Resolver.Templates
 {
@@ -81,8 +82,10 @@ namespace D_Parser.Resolver.Templates
 			 * If not stand-alone identifier or is not required as template param, resolve the id and compare it against r
 			 */
 			var _r = TypeDeclarationResolver.Resolve(id, ctxt);
-			return _r == null || _r.Length == 0 || 
-				ResultComparer.IsImplicitlyConvertible(r,_r[0]);
+			return _r != null && _r.Length != 0 && 
+				(EnforceTypeEqualityWhenDeducing ?
+				ResultComparer.IsEqual(r,_r[0]) :
+				ResultComparer.IsImplicitlyConvertible(r,_r[0]));
 		}
 
 		bool HandleDecl(TemplateInstanceExpression tix, ResolveResult r)
@@ -167,7 +170,7 @@ namespace D_Parser.Resolver.Templates
 				if (ad.KeyExpression != null)
 				{
 					if (ar.ArrayDeclaration.KeyExpression != null)
-						result = Evaluation.ExpressionEvaluator.IsEqual(ad.KeyExpression, ar.ArrayDeclaration.KeyExpression, ctxt);
+						result = Evaluation.SymbolValueComparer.IsEqual(ad.KeyExpression, ar.ArrayDeclaration.KeyExpression, new StandardValueProvider(ctxt));
 				}
 				else if(ad.KeyType!=null)
 					result = HandleDecl(ad.KeyType, ar.KeyType[0]);

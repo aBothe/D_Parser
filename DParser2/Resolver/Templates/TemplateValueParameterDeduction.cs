@@ -37,20 +37,16 @@ namespace D_Parser.Resolver.Templates
 			if (paramType == null || paramType.Length == 0)
 				return false;
 
-			var argType = TypeDeclarationResolver.Resolve(valResult.Value.RepresentedType, ctxt);
-
-			if (argType == null ||
-				argType.Length == 0 ||
-				!ResultComparer.IsImplicitlyConvertible(paramType[0], argType[0]))
+			if (valResult.Value.RepresentedType == null ||
+				!ResultComparer.IsImplicitlyConvertible(paramType[0], valResult.Value.RepresentedType))
 				return false;
 
 			// If spec given, test for equality (only ?)
 			if (p.SpecializationExpression != null) 
 			{
-				var specVal = ExpressionEvaluator.Evaluate(p.SpecializationExpression, ctxt);
+				var specVal = ExpressionEvaluator.Evaluate(p.SpecializationExpression, new StandardValueProvider(ctxt));
 
-				if (specVal == null || specVal.Value == null ||
-					!ExpressionEvaluator.IsEqual(specVal, valResult.Value))
+				if (specVal == null || !SymbolValueComparer.IsEqual(specVal, valResult.Value))
 					return false;
 			}
 

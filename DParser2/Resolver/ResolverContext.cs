@@ -25,6 +25,8 @@ namespace D_Parser.Resolver
 
 		public Dictionary<string, ResolveResult[]> DeducedTemplateParameters = new Dictionary<string,ResolveResult[]>();
 
+		//TODO: Cache expression results to increase static if() performance if multiple items are affected by them
+
 		public ResolutionOptions ContextDependentOptions = 0;
 
 		public void ApplyFrom(ResolverContext other)

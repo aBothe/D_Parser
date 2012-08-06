@@ -18,6 +18,8 @@ namespace D_Parser.Unittest
 	{
 		public static IAbstractSyntaxTree objMod = DParser.ParseString(@"module object;
 						alias immutable(char)[] string;
+						alias immutable(wchar)[] wstring;
+						alias immutable(dchar)[] dstring;
 						class Object {}");
 
 		public static ParseCacheList CreateCache(params string[] moduleCodes)

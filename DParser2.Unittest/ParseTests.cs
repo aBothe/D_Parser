@@ -21,6 +21,12 @@ namespace DParser2.Unittest
 			Assert.AreEqual((e as D_Parser.Dom.Expressions.IdentifierExpression).Value, "a\nlolol");
 		}
 
+		[TestMethod]
+		public void TestSyntaxError1()
+		{
+			var s = DParser.ParseBlockStatement(@"long neIdx = find(pResult, ""{/loop");
+		}
+
 		//[TestMethod]
 		public void ParsePhobos()
 		{

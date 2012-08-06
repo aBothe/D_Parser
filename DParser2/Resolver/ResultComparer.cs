@@ -129,7 +129,7 @@ namespace D_Parser.Resolver
 			}
 			else if (resultToCheck is ExpressionValueResult && targetType is ExpressionValueResult)
 			{
-				return Evaluation.ExpressionEvaluator.IsEqual(((ExpressionValueResult)resultToCheck).Value, ((ExpressionValueResult)targetType).Value);
+				return ((ExpressionValueResult)resultToCheck).Value.Equals(((ExpressionValueResult)targetType).Value);
 			}
 
 			// http://dlang.org/type.html

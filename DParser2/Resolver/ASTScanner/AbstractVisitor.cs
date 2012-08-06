@@ -192,7 +192,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 					// Add static and non-private members of all base classes; 
 					// Add everything if we're still handling the currently scoped class
-					if ((curWatchedClass == cls || dm2.IsStatic || !dm2.ContainsAttribute(DTokens.Private)) &&
+					if ((curWatchedClass == cls || dm2.IsStatic || (!(m is DVariable) || ((DVariable)dm2).IsConst) || !dm2.ContainsAttribute(DTokens.Private)) &&
 						(breakOnNextScope = HandleItem(m)) &&
 						breakImmediately)
 						return true;
@@ -202,10 +202,10 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				var tr = new TypeResult { Node = curWatchedClass };
 				DResolver.ResolveBaseClasses(tr, ctxt, true);
 
-				if (tr.BaseClass==null || tr.BaseClass.Length == 0)
+				if (tr.BaseClass==null || tr.BaseClass.Length == 0 || !(tr.BaseClass[0] is TypeResult))
 					return false;
 
-				curWatchedClass = tr.BaseClass[0].Node as DClassLike;
+				curWatchedClass = ((TypeResult)tr.BaseClass[0]).Node as DClassLike;
 			}
 			return false;
 		}

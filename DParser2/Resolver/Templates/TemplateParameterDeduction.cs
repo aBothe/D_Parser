@@ -13,6 +13,17 @@ namespace D_Parser.Resolver.Templates
 		Dictionary<string, ResolveResult[]> TargetDictionary;
 
 		/// <summary>
+		/// If true and deducing a type parameter,
+		/// the equality of the given and expected type is required instead of their simple convertibility.
+		/// Used when evaluating IsExpressions.
+		/// </summary>
+		public bool EnforceTypeEqualityWhenDeducing
+		{
+			get;
+			set;
+		}
+
+		/// <summary>
 		/// Needed for resolving default types
 		/// </summary>
 		ResolverContextStack ctxt;

@@ -73,12 +73,20 @@
     <Compile Include="Dom\ISyntaxRegion.cs" />
     <Compile Include="Dom\ModulePackage.cs" />
     <Compile Include="Dom\TemplateParameters.cs" />
+    <Compile Include="Evaluation\CTFE\FunctionEvaluation.cs" />
+    <Compile Include="Evaluation\EvaluationException.cs" />
     <Compile Include="Evaluation\ExpressionEvaluator.cs" />
+    <Compile Include="Evaluation\ExpressionEvaluator.PostfixExpression.cs" />
     <Compile Include="Evaluation\ExpressionEvaluator.PrimaryExpression.cs" />
-    <Compile Include="Evaluation\IExpressionValue.cs" />
+    <Compile Include="Evaluation\ExpressionEvaluator.SymbolHandling.cs" />
+    <Compile Include="Evaluation\ExpressionEvaluator.Traits.cs" />
+    <Compile Include="Evaluation\ExpressionEvaluator.TypeId.cs" />
+    <Compile Include="Evaluation\ISymbolValue.cs" />
     <Compile Include="Evaluation\ISymbolValueProvider.cs" />
     <Compile Include="Evaluation\MathOperationEvaluation.cs" />
-    <Compile Include="Evaluation\PrimitiveValue.cs" />
+    <Compile Include="Evaluation\ExpressionValues.cs" />
+    <Compile Include="Evaluation\StaticPropertyEvaluator.cs" />
+    <Compile Include="Evaluation\SymbolValueComparer.cs" />
     <Compile Include="Misc\CompletionOptions.cs" />
     <Compile Include="Misc\ModuleNameHelper.cs" />
     <Compile Include="Misc\ParseCache.cs" />
@@ -91,6 +99,8 @@
     <Compile Include="Resolver\ASTScanner\MatchFilterVisitor.cs" />
     <Compile Include="Resolver\ASTScanner\NameScan.cs" />
     <Compile Include="Misc\UFCSCache.cs" />
+    <Compile Include="Resolver\DType.cs" />
+    <Compile Include="Resolver\ISemantic.cs" />
     <Compile Include="Resolver\ResolutionOptions.cs" />
     <Compile Include="Resolver\ResultComparer.cs" />
     <Compile Include="Resolver\Templates\SpecializationOrdering.cs" />
@@ -138,6 +148,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Todo.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Resolver\ExpressionSemantics\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.

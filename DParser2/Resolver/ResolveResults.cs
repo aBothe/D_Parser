@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using D_Parser.Dom.Expressions;
 using D_Parser.Misc;
 using System;
+using D_Parser.Parser;
 
 namespace D_Parser.Resolver
 {
@@ -90,7 +91,9 @@ namespace D_Parser.Resolver
 
 		public override string ToString()
 		{
-			return DeclarationOrExpressionBase.ToString();
+			return DeclarationOrExpressionBase is IExpression ? 
+				DTokens.GetTokenString(BaseTypeToken) : 
+				DeclarationOrExpressionBase.ToString();
 		}
 
 		public override string ResultPath
@@ -108,7 +111,7 @@ namespace D_Parser.Resolver
 		/// Only will have two or more items if there are multiple definitions of its base class - 
 		/// theoretically, this should be marked as a precompile error then.
 		/// </summary>
-		public TypeResult[] BaseClass;
+		public ResolveResult[] BaseClass;
 		public TypeResult[][] ImplementedInterfaces;
 
 		public override string ToString()
@@ -257,7 +260,7 @@ namespace D_Parser.Resolver
 
 	public class ExpressionValueResult : ResolveResult
 	{
-		public Evaluation.IExpressionValue Value;
+		public Evaluation.ISymbolValue Value;
 
 		public override string ToString()
 		{
