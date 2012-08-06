@@ -15,7 +15,7 @@ namespace D_Parser.Misc
 	public class ThreadedDirectoryParser
 	{
 		#region Properties
-		public static int numThreads = Environment.ProcessorCount;
+		public static int numThreads = Debugger.IsAttached ? 1 : Environment.ProcessorCount;
 
 		public Exception LastException;
 		string baseDirectory;
@@ -71,6 +71,9 @@ namespace D_Parser.Misc
 
 		void PrepareQueue(RootPackage root)
 		{
+			if (!Directory.Exists(baseDirectory))
+				return;
+
 			//ISSUE: wild card character ? seems to behave differently across platforms
 			// msdn: -> Exactly zero or one character.
 			// monodocs: -> Exactly one character.

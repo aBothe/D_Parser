@@ -10,6 +10,8 @@ using D_Parser.Resolver.TypeResolution;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom;
 using D_Parser.Dom.Statements;
+using D_Parser.Resolver.ExpressionSemantics;
+using D_Parser.Resolver.Templates;
 
 namespace D_Parser.Unittest
 {
@@ -70,15 +72,15 @@ namespace D_Parser.Unittest
 			var call = ((ExpressionStatement)call_fooC).Expression;
 			var methodName = ((PostfixExpression_MethodCall)call).PostfixForeExpression;
 
-			var res=ExpressionTypeResolver.Resolve(methodName,ctxt);
+			var res=Evaluation.EvaluateType(methodName,ctxt);
 
-			Assert.IsTrue(res!=null && res.Length==1, "Resolve() returned no result!");
-			Assert.IsInstanceOfType(res[0],typeof(MemberResult));
+			Assert.IsTrue(res!=null , "Resolve() returned no result!");
+			Assert.IsInstanceOfType(res,typeof(MemberSymbol));
 
-			var mr = (MemberResult)res[0];
+			var mr = (MemberSymbol)res;
 
-			Assert.IsInstanceOfType(mr.Node, typeof(DMethod));
-			Assert.AreEqual(mr.Node.Name, "fooC");
+			Assert.IsInstanceOfType(mr.Definition, typeof(DMethod));
+			Assert.AreEqual(mr.Name, "fooC");
 		}
 
 		[TestMethod]
@@ -115,22 +117,17 @@ int b=4;
 
 			Assert.IsInstanceOfType(instanceExpr, typeof(PostfixExpression_Access));
 
-			var res = ExpressionTypeResolver.Resolve(instanceExpr, ctxt);
+			var res = Evaluation.EvaluateType(instanceExpr, ctxt);
 
-			Assert.IsNotNull(res);
-			Assert.AreEqual(res.Length, 1);
+			Assert.IsInstanceOfType(res,typeof(MemberSymbol));
+			var mr = (MemberSymbol)res;
 
-			var r1 = res[0];
+			Assert.IsInstanceOfType(mr.Base, typeof(TemplateParameterSymbol));
+			var tps = (TemplateParameterSymbol)mr.Base;
+			Assert.IsInstanceOfType(tps.Base, typeof(PrimitiveType));
+			var sr = (PrimitiveType)tps.Base;
 
-			Assert.IsInstanceOfType(r1,typeof(MemberResult));
-			var mr = r1 as MemberResult;
-
-			Assert.IsNotNull(mr.MemberBaseTypes);
-			Assert.AreEqual(mr.MemberBaseTypes.Length, 1);
-			Assert.IsInstanceOfType(mr.MemberBaseTypes[0], typeof(StaticTypeResult));
-			var sr = (StaticTypeResult)mr.MemberBaseTypes[0];
-
-			Assert.AreEqual(sr.BaseTypeToken, DTokens.Int);
+			Assert.AreEqual(sr.TypeToken, DTokens.Int);
 		}
 
 		[TestMethod]
@@ -144,12 +141,14 @@ T foo(T)() {}
 			var ctxt = new ResolverContextStack(pcl, new ResolverContext { ScopedBlock=pcl[0]["modA"] });
 
 			var call = DParser.ParseExpression("foo!int()");
-			var bt = ExpressionTypeResolver.Resolve(call, ctxt);
+			var bt = Evaluation.EvaluateType(call, ctxt);
 
-			Assert.IsTrue(bt!=null && bt.Length == 1, "Resolution returned empty result instead of 'int'");
-			var st = bt[0] as StaticTypeResult;
+			Assert.IsInstanceOfType(bt, typeof(TemplateParameterSymbol));
+			var tps = (TemplateParameterSymbol)bt;
+			Assert.IsInstanceOfType(tps.Base, typeof(PrimitiveType), "Resolution returned empty result instead of 'int'");
+			var st = (PrimitiveType)tps.Base;
 			Assert.IsNotNull(st, "Result must be Static type int");
-			Assert.AreEqual(st.BaseTypeToken, DTokens.Int, "Static type must be int");
+			Assert.AreEqual(st.TypeToken, DTokens.Int, "Static type must be int");
 		}
 
 		[TestMethod]
@@ -167,6 +166,36 @@ class B(T){
 			var ctxt = new ResolverContextStack(pcl, new ResolverContext { ScopedBlock=pcl[0]["modA"] });
 
 			var inst = DParser.ParseExpression("(new B!A).new C!A2"); // TODO
+		}
+
+		[TestMethod]
+		public void TestOverloads1()
+		{
+			var pcl = CreateCache(@"module modA;
+
+int foo(int i) {}
+
+class A
+{
+	void foo(int k) {}
+
+	void bar()
+	{
+		
+	}
+}
+
+");
+			var A = pcl[0]["modA"]["A"] as DClassLike;
+			var bar=A["bar"] as DMethod;
+			var ctxt = new ResolverContextStack(pcl, new ResolverContext { ScopedBlock = bar, ScopedStatement=bar.Body });
+
+			var e = DParser.ParseExpression("123.foo");
+
+			var t = Evaluation.EvaluateType(e, ctxt);
+
+			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.AreEqual(pcl[0]["modA"]["foo"], ((MemberSymbol)t).Definition);
 		}
 	}
 }

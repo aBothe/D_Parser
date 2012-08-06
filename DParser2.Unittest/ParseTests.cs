@@ -7,6 +7,7 @@ using D_Parser.Misc;
 using D_Parser.Parser;
 using System.Diagnostics;
 using D_Parser.Resolver.ASTScanner;
+using D_Parser.Dom.Expressions;
 
 namespace DParser2.Unittest
 {
@@ -18,7 +19,17 @@ namespace DParser2.Unittest
 		{
 			var e = DParser.ParseExpression(@"`a`\n""lolol""");
 
-			Assert.AreEqual((e as D_Parser.Dom.Expressions.IdentifierExpression).Value, "a\nlolol");
+			Assert.AreEqual((e as IdentifierExpression).Value, "a\nlolol");
+		}
+
+		public void ParseEmptyCharLiteral()
+		{
+			var e = DParser.ParseExpression("['': false, '&': true, '=': true]");
+
+			Assert.IsInstanceOfType(e, typeof(AssocArrayExpression));
+			var aa = (AssocArrayExpression)e;
+
+			Assert.AreEqual(3, aa.Elements.Count);
 		}
 
 		[TestMethod]

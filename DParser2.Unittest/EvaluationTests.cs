@@ -4,22 +4,22 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using D_Parser.Dom.Expressions;
-using D_Parser.Evaluation;
 using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Unittest;
+using D_Parser.Resolver.ExpressionSemantics;
 
 namespace DParser2.Unittest
 {
 	[TestClass]
 	public class EvaluationTests
 	{
-		public static ISymbolValue E(string expression, ISymbolValueProvider vp=null)
+		public static ISymbolValue E(string expression, AbstractSymbolValueProvider vp=null)
 		{
-			return ExpressionEvaluator.Evaluate(DParser.ParseExpression(expression), vp);
+			return Evaluation.EvaluateValue(DParser.ParseExpression(expression), vp);
 		}
 
-		public static PrimitiveValue GetPrimitiveValue(string literalCode,ISymbolValueProvider vp=null)
+		public static PrimitiveValue GetPrimitiveValue(string literalCode,AbstractSymbolValueProvider vp=null)
 		{
 			var v = E(literalCode,vp);
 
@@ -27,7 +27,7 @@ namespace DParser2.Unittest
 			return (PrimitiveValue)v;
 		}
 
-		public static void TestPrimitive(string literal, int btToken, object val, ISymbolValueProvider vp=null)
+		public static void TestPrimitive(string literal, int btToken, object val, AbstractSymbolValueProvider vp=null)
 		{
 			var pv = GetPrimitiveValue(literal,vp);
 
@@ -47,7 +47,7 @@ namespace DParser2.Unittest
 			Assert.IsInstanceOfType(x, typeof(IdentifierExpression));
 			var id = (IdentifierExpression)x;
 
-			var v = ExpressionEvaluator.Evaluate(x, new StandardValueProvider(ctxt));
+			var v = Evaluation.EvaluateValue(x, ctxt);
 
 			Assert.IsInstanceOfType(v, typeof(ArrayValue));
 			var av = (ArrayValue)v;
@@ -55,30 +55,19 @@ namespace DParser2.Unittest
 
 			Assert.AreEqual(av.StringValue, content);
 
-			Assert.IsNotNull(av.RepresentedType);
-			ArrayResult ar = null;
-
-			if (ProvideObjModule)
-			{
-				Assert.IsInstanceOfType(av.RepresentedType, typeof(AliasResult));
-				var s = av.RepresentedType as AliasResult;
-				ar = (ArrayResult)s.MemberBaseTypes[0];
-			}
-			else
-				ar = (ArrayResult)av.RepresentedType;
-
-			Assert.IsNotNull(ar);
+			Assert.IsInstanceOfType(av.RepresentedType,typeof(ArrayType));
+			var ar = (ArrayType)av.RepresentedType;
 
 			switch (id.Subformat)
 			{
 				case LiteralSubformat.Utf8:
-					Assert.AreEqual(ar.ArrayDeclaration.ToString(),"immutable(char)[]");
+					Assert.AreEqual(ar.DeclarationOrExpressionBase.ToString(),"immutable(char)[]");
 					break;
 				case LiteralSubformat.Utf16:
-					Assert.AreEqual(ar.ArrayDeclaration.ToString(), "immutable(wchar)[]");
+					Assert.AreEqual(ar.DeclarationOrExpressionBase.ToString(), "immutable(wchar)[]");
 					break;
 				case LiteralSubformat.Utf32:
-					Assert.AreEqual(ar.ArrayDeclaration.ToString(), "immutable(dchar)[]");
+					Assert.AreEqual(ar.DeclarationOrExpressionBase.ToString(), "immutable(dchar)[]");
 					break;
 				default:
 					Assert.Fail();
@@ -86,13 +75,104 @@ namespace DParser2.Unittest
 			}
 		}
 
+		public static void TestBool(string literal, bool v = true, AbstractSymbolValueProvider vp =null)
+		{
+			var pv = GetPrimitiveValue(literal, vp);
+
+			Assert.AreEqual(DTokens.Bool, pv.BaseTypeToken);
+
+			if (v)
+				Assert.AreEqual(1M, pv.Value,  literal +" must be true");
+			else
+				Assert.AreEqual(0M, pv.Value, literal + " must be false");
+		}
+
+		[TestMethod]
+		public void TestMathOperations()
+		{
+			TestPrimitive("0", DTokens.Int, 0M);
+			TestPrimitive("-1", DTokens.Int, -1M);
+			TestPrimitive("-(1+4)", DTokens.Int, -5M);
+
+			TestPrimitive("1+2", DTokens.Int, 3M);
+			TestPrimitive("1-2", DTokens.Int, -1M);
+			TestPrimitive("3*4", DTokens.Int, 12M);
+			TestPrimitive("3/4", DTokens.Int, 0.75M);
+			TestPrimitive("35 % 2", DTokens.Int, 1M);
+
+			TestPrimitive("3*4 + 5", DTokens.Int, 17M);
+			TestPrimitive("3+5*4", DTokens.Int, 23M);
+		}
+
+		[TestMethod]
+		public void TestBooleanOps()
+		{
+			TestBool("true");
+			TestBool("false || false", false);
+			TestBool("true || false");
+			TestBool("false || true");
+			TestBool("true || true");
+			TestBool("false && false", false);
+			TestBool("false && true", false);
+			TestBool("true && false", false);
+			TestBool("true && true");
+
+			TestBool("1==1");
+			TestBool("0==0");
+			TestBool("1!=1", false);
+			TestBool("1!=0");
+
+			TestBool("3 > 1");
+			TestBool("1 > 2", false);
+			TestBool("1 >= 0");
+			TestBool("1 >= 1");
+			TestBool("1 >= 2", false);
+			TestBool("1 < 10");
+			TestBool("3 < 1", false);
+			TestBool("1 <= 2");
+			TestBool("1 <= 1");
+			TestBool("1 <= 0", false);
+
+			//TestBool("float.nan !<>= 2");
+			TestBool("2.3 <> 2.911");
+			TestBool("2.1 <> 2.2");
+			TestBool("2.3 <> 2.3", false);
+			TestBool("1.4 <>= 1.3");
+			TestBool("1.4 <>= 1.4");
+			TestBool("1.4 <>= 1.5");
+			//TestBool("float.nan <>= 3", false);
+
+			TestBool("3 !> 1", false);
+			TestBool("1 !> 2");
+			TestBool("1 !>= 0", false);
+			TestBool("1 !>= 1", false);
+			TestBool("1 !>= 2");
+			TestBool("1 !< 10", false);
+			TestBool("3 !< 1");
+			TestBool("3 !< 3");
+			TestBool("1 !<= 2", false);
+			TestBool("1 !<= 1", false);
+			TestBool("1 !<= 0");
+			//TestBool("float.nan !<= 3");
+			TestBool("1.4 !<> 1.4");
+			TestBool("1.4 !<> 1.5", false);
+
+			TestBool("true ? true : false");
+			TestBool("false ? true : false", false);
+			TestBool("1 == 1 ? true : 2 == 1");
+			TestBool("false && true ? false : true");
+			TestBool("false && (true ? false: true)", false);
+		}
+
 		[TestMethod]
 		public void TestPrimitives()
 		{
-			TestPrimitive("1", DTokens.Int, 1);
-			TestPrimitive("1.0", DTokens.Double, 1.0);
-			TestPrimitive("1f",DTokens.Float, 1);
-			TestPrimitive("'c'",DTokens.Char, 'c');
+			TestPrimitive("1", DTokens.Int, 1M);
+			TestPrimitive("1.0", DTokens.Double, 1.0M);
+			TestPrimitive("1f",DTokens.Float, 1M);
+			TestPrimitive("1e+3", DTokens.Int, 1000M);
+			TestPrimitive("1.0e+2", DTokens.Double, 100M);
+			TestPrimitive("'c'",DTokens.Char, (decimal)(int)'c');
 
 			TestString("\"asdf\"", "asdf", true);
 			TestString("\"asdf\"c", "asdf", true);
@@ -105,7 +185,7 @@ namespace DParser2.Unittest
 			TestString("\"asdf\"d", "asdf", false);
 
 			var ex = DParser.ParseExpression("['a','s','d','f']");
-			var v = ExpressionEvaluator.Evaluate(ex, null);
+			var v = Evaluation.EvaluateValue(ex, (ResolverContextStack)null);
 
 			Assert.IsInstanceOfType(v, typeof(ArrayValue));
 			var ar = (ArrayValue)v;
@@ -116,7 +196,7 @@ namespace DParser2.Unittest
 
 
 			ex = DParser.ParseExpression("[\"KeyA\":12, \"KeyB\":33, \"KeyC\":44]");
-			v = ExpressionEvaluator.Evaluate(ex, new StandardValueProvider(null));
+			v = Evaluation.EvaluateValue(ex, (ResolverContextStack)null);
 
 			Assert.IsInstanceOfType(v, typeof(AssociativeArrayValue));
 			var aa = (AssociativeArrayValue)v;
@@ -134,11 +214,38 @@ enum int d=126;
 ");
 			var vp = new StandardValueProvider(new ResolverContextStack(pcl, new ResolverContext { ScopedBlock=pcl[0]["modA"] }));
 
-			TestPrimitive("a", DTokens.Int, 234, vp);
-			TestPrimitive("b", DTokens.Int, 123, vp);
-			TestPrimitive("c", DTokens.Int, 125, vp);
-			TestPrimitive("d", DTokens.Int, 126, vp);
+			var v = E("a", vp);
 
+			Assert.IsInstanceOfType(v, typeof(VariableValue));
+			var val = vp[((VariableValue)v).Variable];
+
+			Assert.IsInstanceOfType(val, typeof(PrimitiveValue));
+			var pv = (PrimitiveValue)val;
+
+			Assert.AreEqual(pv.Value, 234M);
+
+			v = E("b", vp);
+			val = vp[((VariableValue)v).Variable];
+			pv=(PrimitiveValue)val;
+			Assert.AreEqual(pv.Value, 123M);
+
+			v = E("c", vp);
+			val = vp[((VariableValue)v).Variable];
+			pv = (PrimitiveValue)val;
+			Assert.AreEqual(pv.Value, 125M);
+
+			v = E("d", vp);
+			val = vp[((VariableValue)v).Variable];
+			pv = (PrimitiveValue)val;
+			Assert.AreEqual(pv.Value, 126M);
+
+			pv = E("d + 4", vp) as PrimitiveValue;
+			Assert.IsNotNull(pv);
+			Assert.AreEqual(130M, pv.Value);
+
+			pv = E("d + a", vp) as PrimitiveValue;
+			Assert.IsNotNull(pv);
+			Assert.AreEqual(360M, pv.Value);
 		}
 
 		[TestMethod]
@@ -177,22 +284,21 @@ A a;");
 			Assert.AreEqual(((PrimitiveValue)v).Value,3);
 			*/
 			var v = E("A.someProp", vp);
-			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
-			Assert.AreEqual(((PrimitiveValue)v).Value, 3);
+			Assert.IsInstanceOfType(v, typeof(VariableValue));
+			var vv = vp[((VariableValue)v).Variable] as PrimitiveValue;
+			Assert.AreEqual(3, vv.Value);
 		}
 
-		public static bool EvalIsExpression(string IsExpressionCode, ISymbolValueProvider vp)
+		public static bool EvalIsExpression(string IsExpressionCode, AbstractSymbolValueProvider vp)
 		{
 			var e = DParser.ParseExpression("is("+IsExpressionCode+")");
 
-			var v = ExpressionEvaluator.Evaluate(e, vp);
+			var v = Evaluation.EvaluateValue(e, vp);
 
 			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
 			var pv = (PrimitiveValue)v;
-			Assert.AreEqual(pv.BaseTypeToken, DTokens.Bool, "Type of 'is()' result must be bool");
-			Assert.IsInstanceOfType(pv.Value, typeof(bool));
-
-			return (bool)pv.Value;
+			Assert.AreEqual(pv.BaseTypeToken, DTokens.Bool, "Type of 'is(" + IsExpressionCode + ")' result must be bool");
+			return pv.Value == 1M;
 		}
 
 		[TestMethod]
