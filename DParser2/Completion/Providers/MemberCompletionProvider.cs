@@ -40,7 +40,8 @@ namespace D_Parser.Completion
 
 			BuildCompletionData(r, ScopedBlock);
 
-			if(Editor.Options.ShowUFCSItems)
+			if(Editor.Options.ShowUFCSItems && 
+				!(r is UserDefinedType || r is PackageSymbol || r is ModuleSymbol))
 				UFCSCompletionProvider.Generate(r, ctxt, Editor, CompletionDataGenerator);
 		}
 
