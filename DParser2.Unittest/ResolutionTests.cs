@@ -197,5 +197,30 @@ class A
 			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
 			Assert.AreEqual(pcl[0]["modA"]["foo"], ((MemberSymbol)t).Definition);
 		}
+
+		[TestMethod]
+		public void TestMethodParamDeduction4()
+		{
+			var pcl = CreateCache(@"module modA;
+
+void fo(T:U[], U)(T o) {}
+void f(T:U[n], U,int n)(T o) {}
+
+char[5] arr;
+
+");
+
+			var ctxt=new ResolverContextStack(pcl, new ResolverContext{ ScopedBlock=pcl[0]["modA"] });
+
+			var r=Evaluation.EvaluateType(DParser.ParseExpression("f!(char[5])"), ctxt) as MemberSymbol;
+			Assert.IsNotNull(r);
+
+			var v = r.DeducedTypes[2].Value.ParameterValue;
+			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
+			Assert.AreEqual(5M, ((PrimitiveValue)v).Value);
+
+			r = Evaluation.EvaluateType(DParser.ParseExpression("fo!(char[5])"), ctxt) as MemberSymbol;
+			Assert.IsNotNull(r);
+		}
 	}
 }

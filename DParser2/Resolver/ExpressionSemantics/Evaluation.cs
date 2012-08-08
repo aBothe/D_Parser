@@ -117,5 +117,17 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			return v != null;
 		}
+
+		/// <summary>
+		/// Removes all variable references by resolving them via the given value provider.
+		/// Useful when only the value is of interest, not its container or other things.
+		/// </summary>
+		public static ISymbolValue GetVariableContents(ISymbolValue v, AbstractSymbolValueProvider vp)
+		{
+			while (v is VariableValue)
+				v = vp[((VariableValue)v).Variable];
+
+			return v;
+		}
 	}
 }

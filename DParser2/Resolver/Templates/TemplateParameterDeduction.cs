@@ -37,6 +37,15 @@ namespace D_Parser.Resolver.Templates
 
 		public bool Handle(ITemplateParameter parameter, ISemantic argumentToAnalyze)
 		{
+			// Packages aren't allowed at all
+			if (argumentToAnalyze is PackageSymbol)
+				return false;
+
+			// Module symbols can be used as alias only
+			if (argumentToAnalyze is ModuleSymbol &&
+				!(parameter is TemplateAliasParameter))
+				return false;
+
 			//TODO: Handle __FILE__ and __LINE__ correctly - so don't evaluate them at the template declaration but at the point of instantiation
 
 			/*
@@ -54,15 +63,6 @@ namespace D_Parser.Resolver.Templates
 						d[kv.Key] = kv.Value;
 				ctxt.CurrentContext.DeducedTemplateParameters = d;
 			}
-
-			// Packages aren't allowed at all
-			if(argumentToAnalyze is PackageSymbol)
-				return false;
-
-			// Module symbols can be used as alias only
-			if (argumentToAnalyze is ModuleSymbol &&
-				!(parameter is TemplateAliasParameter))
-				return false;
 
 			bool res = false;
 
