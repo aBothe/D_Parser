@@ -320,7 +320,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 		public static IEnumerable<T> FilterOutByResultPriority<T>(
 			ResolverContextStack ctxt,
-			IEnumerable<T> results) where T : ISemantic
+			IEnumerable<T> results) where T : AbstractType
 		{
 			if (results == null)
 				return null;

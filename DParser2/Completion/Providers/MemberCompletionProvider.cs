@@ -33,7 +33,9 @@ namespace D_Parser.Completion
 			var ctxt = ResolverContextStack.Create(Editor);
 			var ex = AccessExpression.AccessExpression == null ? AccessExpression.PostfixForeExpression : AccessExpression;
 
+			ctxt.PushNewScope(ScopedBlock).ScopedStatement = ScopedStatement;
 			var r = Evaluation.EvaluateType(ex, ctxt);
+			ctxt.Pop();
 
 			if (r == null) //TODO: Add after-space list creation when an unbound . (Dot) was entered which means to access the global scope
 				return;
