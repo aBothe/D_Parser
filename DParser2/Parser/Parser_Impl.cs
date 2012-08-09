@@ -732,7 +732,8 @@ namespace D_Parser.Parser
 			 */
 			var tix=ttd as TemplateInstanceExpression;
 			if (IsEOF && tix!=null && (tix.Arguments == null ||
-				tix.Arguments[tix.Arguments.Length-1]==null))
+				tix.Arguments[tix.Arguments.Length-1] is TokenExpression &&
+				((TokenExpression)tix.Arguments[tix.Arguments.Length-1]).Token == DTokens.INVALID))
 			{
 				LastParsedObject = ttd;
 				return null;
@@ -4648,8 +4649,8 @@ namespace D_Parser.Parser
 
 						if (IsEOF)
 						{
-							args.Add(null);
-							return td;
+							args.Add(new TokenExpression(DTokens.INVALID) { Location= la.Location, EndLocation=la.EndLocation });
+							break;
 						}
 
 						var la_Backup = la;
