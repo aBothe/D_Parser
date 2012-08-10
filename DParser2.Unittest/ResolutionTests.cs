@@ -221,6 +221,9 @@ char[5] arr;
 
 			r = Evaluation.EvaluateType(DParser.ParseExpression("fo!(char[5])"), ctxt) as MemberSymbol;
 			Assert.IsNotNull(r);
+
+			r = Evaluation.EvaluateType(DParser.ParseExpression("fo!(immutable(char)[])"), ctxt) as MemberSymbol;
+			Assert.IsNotNull(r);
 		}
 	}
 }
