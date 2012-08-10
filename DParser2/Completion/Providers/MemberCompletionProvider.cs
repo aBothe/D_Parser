@@ -214,7 +214,7 @@ namespace D_Parser.Completion
 				var tvisMod = visMod;
 				while (curlevel != null)
 				{
-					foreach (var i in curlevel.Definition as IBlockNode)
+					foreach (var i in curlevel.Definition as DBlockNode)
 					{
 						var dn = i as DNode;
 

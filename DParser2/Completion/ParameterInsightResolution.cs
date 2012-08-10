@@ -57,6 +57,7 @@ namespace D_Parser.Completion
 
 	public class ParameterInsightResolution
 	{
+		
 		/// <summary>
 		/// Reparses the given method's fucntion body until the cursor position,
 		/// searches the last occurring method call or template instantiation,
@@ -106,10 +107,7 @@ namespace D_Parser.Completion
 					if (subEx.Location < Editor.CaretLocation && subEx.EndLocation >= Editor.CaretLocation)
 					{
 						e = subEx;
-						if (subEx is PostfixExpression_MethodCall ||
-							subEx is TemplateInstanceExpression ||
-							subEx is NewExpression ||
-							(subEx is PostfixExpression_Access && ((PostfixExpression_Access)subEx).AccessExpression is NewExpression))
+						if (ExpressionHelper.IsParamRelatedExpression(subEx))
 							lastParamExpression = subEx;
 						break;
 					}

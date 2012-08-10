@@ -12,7 +12,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		ISemantic E(PostfixExpression ex)
 		{
 			if (ex is PostfixExpression_MethodCall)
-				return E((PostfixExpression_MethodCall)ex);
+				return E((PostfixExpression_MethodCall)ex, !ctxt.Options.HasFlag(ResolutionOptions.ReturnMethodReferencesOnly));
 
 			var foreExpr=E(ex.PostfixForeExpression);
 
@@ -176,8 +176,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			foreach (var arg in callArguments)
 				if (arg is VariableValue)
 					tplParamDeductionArguments.Add(ValueProvider[((VariableValue)arg).Variable]);
-				else if(arg is MemberSymbol)
-					tplParamDeductionArguments.Add(((MemberSymbol)arg).Base);
+				else if(arg is AbstractType)
+					tplParamDeductionArguments.Add(DResolver.StripMemberSymbols((AbstractType)arg));
 				else
 					tplParamDeductionArguments.Add(arg);
 

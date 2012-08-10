@@ -132,11 +132,11 @@ namespace D_Parser.Resolver.Templates
 		{
 			if (string.IsNullOrEmpty(name))
 				name = p.Name;
-
+			
 			TemplateParameterSymbol rl=null;
 			if (!TargetDictionary.TryGetValue(name, out rl) || rl == null)
 			{
-				TargetDictionary[name] = new TemplateParameterSymbol(p, r);
+				TargetDictionary[name] = new TemplateParameterSymbol(p, r, null, TargetDictionary.ParameterOwner);
 				return true;
 			}
 			else
@@ -149,7 +149,7 @@ namespace D_Parser.Resolver.Templates
 						// Error: Ambiguous assignment
 					}
 
-				TargetDictionary[name] = new TemplateParameterSymbol(p, r);
+				TargetDictionary[name] = new TemplateParameterSymbol(p, r, null, TargetDictionary.ParameterOwner);
 
 				return false;
 			}
