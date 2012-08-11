@@ -201,6 +201,10 @@ namespace DParser2.Unittest
 			Assert.IsInstanceOfType(v, typeof(AssociativeArrayValue));
 			var aa = (AssociativeArrayValue)v;
 			Assert.AreEqual(aa.Elements.Count, 3);
+
+			ex = DParser.ParseExpression("(a,b) => a+b");
+			v = Evaluation.EvaluateValue(ex, new ResolverContextStack(new D_Parser.Misc.ParseCacheList(), new ResolverContext()));
+			Assert.IsInstanceOfType(v, typeof(DelegateValue));
 		}
 
 		[TestMethod]

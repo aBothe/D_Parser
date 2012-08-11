@@ -208,9 +208,14 @@ void f(T:U[n], U,int n)(T o) {}
 
 char[5] arr;
 
+void foo(T)(T a) {}
+
+int delegate(int b) myDeleg;
+
 ");
 
 			var ctxt=new ResolverContextStack(pcl, new ResolverContext{ ScopedBlock=pcl[0]["modA"] });
+			ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
 
 			var r=Evaluation.EvaluateType(DParser.ParseExpression("f!(char[5])"), ctxt) as MemberSymbol;
 			Assert.IsNotNull(r);
@@ -223,6 +228,19 @@ char[5] arr;
 			Assert.IsNotNull(r);
 
 			r = Evaluation.EvaluateType(DParser.ParseExpression("fo!(immutable(char)[])"), ctxt) as MemberSymbol;
+			Assert.IsNotNull(r);
+
+			r = Evaluation.EvaluateType(DParser.ParseExpression("myDeleg"), ctxt) as MemberSymbol;
+			Assert.IsNotNull(r);
+			var t = r.Base;
+			Assert.IsInstanceOfType(t, typeof(DelegateType));
+
+			r = Evaluation.EvaluateType(DParser.ParseExpression("myDeleg(123)"), ctxt) as MemberSymbol;
+			Assert.IsNotNull(r);
+			t = r.Base;
+			Assert.IsInstanceOfType(t, typeof(DelegateType));
+
+			r = Evaluation.EvaluateType(DParser.ParseExpression("foo(myDeleg(123))"), ctxt) as MemberSymbol;
 			Assert.IsNotNull(r);
 		}
 	}
