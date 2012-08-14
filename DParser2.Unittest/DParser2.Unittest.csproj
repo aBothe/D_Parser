@@ -52,6 +52,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ReferenceFinding.cs" />
     <Compile Include="ResolutionTests.cs" />
     <Compile Include="UFCSTests.cs" />
   </ItemGroup>

@@ -20,17 +20,17 @@ namespace D_Parser.Resolver.TypeResolution
 		[Flags]
 		public enum AstReparseOptions
 		{
-			AlsoParseBeyondCaret = 1,
-			OnlyAssumeIdentifierList = 2,
+			AlsoParseBeyondCaret=1,
+			OnlyAssumeIdentifierList=2,
 
 			/// <summary>
 			/// Returns the expression without scanning it down depending on the caret location
 			/// </summary>
-			ReturnRawParsedExpression = 4,
+			ReturnRawParsedExpression=4,
 			/// <summary>
 			/// If passed, the last call, template instance or new() expression will be returned
 			/// </summary>
-			WatchForParamExpressions = 8,
+			WatchForParamExpressions=8,
 		}
 
 		/// <summary>
@@ -42,8 +42,8 @@ namespace D_Parser.Resolver.TypeResolution
 		/// </summary>
 		/// <param name="ctxt">Can be null</param>
 		public static object GetScopedCodeObject(IEditorData editor,
-			ResolverContextStack ctxt = null,
-			AstReparseOptions Options = 0)
+			ResolverContextStack ctxt=null,
+			AstReparseOptions Options=0)
 		{
 			if (ctxt == null)
 				ctxt = ResolverContextStack.Create(editor);
@@ -113,12 +113,12 @@ namespace D_Parser.Resolver.TypeResolution
 				return parser.Type();
 		}
 
-		public static AbstractType[] ResolveType(IEditorData editor, AstReparseOptions Options = 0)
+		public static AbstractType[] ResolveType(IEditorData editor,AstReparseOptions Options=0)
 		{
 			return ResolveType(editor, ResolverContextStack.Create(editor), Options);
 		}
 
-		public static AbstractType[] ResolveType(IEditorData editor, ResolverContextStack ctxt, AstReparseOptions Options = 0)
+		public static AbstractType[] ResolveType(IEditorData editor, ResolverContextStack ctxt, AstReparseOptions Options=0)
 		{
 			if (ctxt == null)
 				return null;
@@ -131,12 +131,12 @@ namespace D_Parser.Resolver.TypeResolution
 				if (o is IdentifierExpression && ((IdentifierExpression)o).Format.HasFlag(LiteralFormat.Scalar))
 					return null;
 
-				var t = Evaluation.EvaluateType((IExpression)o, ctxt);
+				var t=Evaluation.EvaluateType((IExpression)o, ctxt);
 
 				if (t != null)
 					return new[] { t };
 			}
-			else if (o is ITypeDeclaration)
+			else if(o is ITypeDeclaration)
 				return TypeDeclarationResolver.Resolve((ITypeDeclaration)o, ctxt);
 
 			return null;
@@ -150,7 +150,7 @@ namespace D_Parser.Resolver.TypeResolution
 		/// Never returns null. Instead, the original 'tr' object will be returned if no base class was resolved.
 		/// Will clone 'tr', whereas the new object will contain the base class.
 		/// </summary>
-		public static UserDefinedType ResolveBaseClasses(UserDefinedType tr, ResolverContextStack ctxt, bool ResolveFirstBaseIdOnly = false)
+		public static UserDefinedType ResolveBaseClasses(UserDefinedType tr, ResolverContextStack ctxt, bool ResolveFirstBaseIdOnly=false)
 		{
 			if (bcStack > 8)
 			{
@@ -164,16 +164,16 @@ namespace D_Parser.Resolver.TypeResolution
 
 				AbstractType bt = null;
 
-				if (et.Definition.Type == null)
+				if(et.Definition.Type == null)
 					bt = new PrimitiveType(DTokens.Int);
 				else
 				{
-					var bts = TypeDeclarationResolver.Resolve(et.Definition.Type, ctxt);
+					var bts=TypeDeclarationResolver.Resolve(et.Definition.Type, ctxt);
 
 					ctxt.CheckForSingleResult(bts, et.Definition.Type);
 
-					if (bts != null && bts.Length != 0)
-						bt = bts[0];
+					if(bts!=null && bts.Length!=0)
+						bt=bts[0];
 				}
 
 				return new EnumType(et.Definition, bt, et.DeclarationOrExpressionBase);
@@ -186,21 +186,21 @@ namespace D_Parser.Resolver.TypeResolution
 
 			// If no base class(es) specified, and if it's no interface that is handled, return the global Object reference
 			// -- and do not throw any error message, it's ok
-			if (dc.BaseClasses == null || dc.BaseClasses.Count < 1)
+			if(dc.BaseClasses == null || dc.BaseClasses.Count < 1)
 			{
-				if (tr is ClassType) // Only Classes can inherit from non-interfaces
+				if(tr is ClassType) // Only Classes can inherit from non-interfaces
 					return new ClassType(dc, tr.DeclarationOrExpressionBase, ctxt.ParseCache.ObjectClassResult);
 				return tr;
 			}
 
 			#region Base class & interface resolution
-			TemplateIntermediateType baseClass = null;
+			TemplateIntermediateType baseClass=null;
 			var interfaces = new List<InterfaceType>();
 
 			if (!(tr is ClassType || tr is InterfaceType))
 			{
 				if (dc.BaseClasses.Count != 0)
-					ctxt.LogError(dc, "Only classes and interfaces may inherit from other classes/interfaces");
+					ctxt.LogError(dc,"Only classes and interfaces may inherit from other classes/interfaces");
 				return tr;
 			}
 
@@ -211,7 +211,7 @@ namespace D_Parser.Resolver.TypeResolution
 				// If there's an explicit 'Object' inheritance, also return the pre-resolved object class
 				if (type is IdentifierDeclaration && ((IdentifierDeclaration)type).Id == "Object")
 				{
-					if (baseClass != null)
+					if (baseClass!=null)
 					{
 						ctxt.LogError(new ResolutionError(dc, "Class must not have two base classes"));
 						continue;
@@ -236,11 +236,11 @@ namespace D_Parser.Resolver.TypeResolution
 
 				bcStack++;
 
-				var res = TypeDeclarationResolver.Resolve(type, ctxt);
+				var res=TypeDeclarationResolver.Resolve(type, ctxt);
 
 				ctxt.CheckForSingleResult(res, type);
 
-				if (res != null && res.Length != 0)
+				if(res!=null && res.Length != 0)
 				{
 					var r = res[0];
 					if (r is ClassType || r is TemplateType)
@@ -252,7 +252,7 @@ namespace D_Parser.Resolver.TypeResolution
 							baseClass = (TemplateIntermediateType)res[0];
 						}
 						else
-							ctxt.LogError(new ResolutionError(dc, "The base " + (r is ClassType ? "class" : "template") + " name must preceed base interfaces"));
+							ctxt.LogError(new ResolutionError(dc, "The base "+(r is ClassType ?  "class" : "template")+" name must preceed base interfaces"));
 					}
 					else if (r is InterfaceType)
 					{
@@ -278,7 +278,7 @@ namespace D_Parser.Resolver.TypeResolution
 				return new ClassType(dc, tr.DeclarationOrExpressionBase, baseClass, interfaces.Count == 0 ? null : interfaces.ToArray(), tr.DeducedTypes);
 			else if (tr is InterfaceType)
 				return new InterfaceType(dc, tr.DeclarationOrExpressionBase, interfaces.Count == 0 ? null : interfaces.ToArray(), tr.DeducedTypes);
-
+			
 			// Method should end here
 			return tr;
 		}
@@ -368,16 +368,16 @@ namespace D_Parser.Resolver.TypeResolution
 								newRes.Remove(r);
 						}
 				}
-
+				
 				newRes.Add(rb);
 			}
 
-			return newRes.Count > 0 ? newRes.ToArray() : null;
+			return newRes.Count > 0 ? newRes.ToArray():null;
 		}
 
 		public static DNode GetResultMember(ISemantic res)
 		{
-			if (res is DSymbol)
+			if(res is DSymbol)
 				return ((DSymbol)res).Definition;
 
 			return null;
@@ -396,7 +396,7 @@ namespace D_Parser.Resolver.TypeResolution
 		/// </summary>
 		public static AbstractType StripAliasSymbol(AbstractType r)
 		{
-			while (r is AliasedType)
+			while(r is AliasedType)
 				r = (r as DerivedDataType).Base;
 
 			return r;
@@ -420,7 +420,7 @@ namespace D_Parser.Resolver.TypeResolution
 		{
 			r = StripAliasSymbol(r);
 
-			if (r is MemberSymbol)
+			if(r is MemberSymbol)
 				r = ((DSymbol)r).Base;
 
 			return StripAliasSymbol(r);
