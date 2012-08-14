@@ -8,6 +8,7 @@ using D_Parser.Parser;
 using System.Diagnostics;
 using D_Parser.Resolver.ASTScanner;
 using D_Parser.Dom.Expressions;
+using D_Parser.Dom;
 
 namespace DParser2.Unittest
 {
@@ -36,6 +37,38 @@ namespace DParser2.Unittest
 		public void TestSyntaxError1()
 		{
 			var s = DParser.ParseBlockStatement(@"long neIdx = find(pResult, ""{/loop");
+		}
+
+		[TestMethod]
+		public void Attributes1()
+		{
+			var n = DParser.ParseString("align(2) align int a;");
+
+			var a = n["a"] as DVariable;
+			Assert.IsNotNull(a);
+			Assert.AreEqual(1, a.Attributes.Count);
+
+			var attr = a.Attributes[0];
+			Assert.AreEqual(DTokens.Align, attr.Token);
+			Assert.AreEqual(null, attr.LiteralContent);
+
+			n = DParser.ParseString("private public int a;");
+			a = n["a"] as DVariable;
+			Assert.IsNotNull(a);
+			Assert.AreEqual(1, a.Attributes.Count);
+
+			n = DParser.ParseString(@"private:
+public int a;
+int b;");
+			a = n["a"] as DVariable;
+			Assert.IsNotNull(a);
+			Assert.AreEqual(1, a.Attributes.Count);
+			Assert.AreEqual(DTokens.Public,a.Attributes[0].Token);
+
+			a = n["b"] as DVariable;
+			Assert.IsNotNull(a);
+			Assert.AreEqual(1, a.Attributes.Count);
+			Assert.AreEqual(DTokens.Private, a.Attributes[0].Token);
 		}
 
 		//[TestMethod]
