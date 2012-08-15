@@ -217,5 +217,38 @@ namespace D_Parser.Refactoring
 				type = type.InnerDeclaration;
 			}
 		}
+
+		/// <summary>
+		/// Used to extract the adequate code location + the identifier length
+		/// </summary>
+		public static CodeLocation ExtractIdLocation(ISyntaxRegion sr, out int idLength)
+		{
+			if (sr is IdentifierDeclaration)
+			{
+				var id = (IdentifierDeclaration)sr;
+
+				idLength = id.Id.Length;
+				return id.Location;
+			}
+			else if (sr is IdentifierExpression)
+			{
+				var id = (IdentifierExpression)sr;
+				idLength = ((string)id.Value).Length;
+				return id.Location;
+			}
+			else if (sr is TemplateInstanceExpression)
+			{
+				var tix = (TemplateInstanceExpression)sr;
+				idLength = tix.TemplateIdentifier.Id.Length;
+				return tix.TemplateIdentifier.Location;
+			}
+			else if (sr is PostfixExpression_Access)
+				return ExtractIdLocation(((PostfixExpression_Access)sr).AccessExpression, out idLength);
+			else if (sr is NewExpression)
+				return ExtractIdLocation(((NewExpression)sr).Type, out idLength);
+
+			idLength = 0;
+			return CodeLocation.Empty;
+		}
 	}
 }

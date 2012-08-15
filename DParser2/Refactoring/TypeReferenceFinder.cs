@@ -110,6 +110,7 @@ namespace D_Parser.Refactoring
 			IStatement stmt = null;
 			ISyntaxRegion sr = null;
 			int i = 0;
+			int k = 0;
 
 			while (curQueueOffset < queueCount)
 			{
@@ -121,10 +122,18 @@ namespace D_Parser.Refactoring
 				}
 
 				// Try to get an updated scope
-				if (scopes.TryGetValue(i, out bn))
-					ctxt.CurrentContext.ScopedBlock = bn;
-				if (scopes_Stmts.TryGetValue(i, out stmt))
-					ctxt.CurrentContext.ScopedStatement = stmt;
+				for (k = i; k > 0; k--)
+					if (scopes.TryGetValue(k, out bn))
+					{
+						ctxt.CurrentContext.ScopedBlock = bn;
+						break;
+					}
+				for (k = i; k > 0; k--)
+					if (scopes_Stmts.TryGetValue(k, out stmt))
+					{
+						ctxt.CurrentContext.ScopedStatement = stmt;
+						break;
+					}
 
 				// Resolve gotten syntax object
 				sr = q[i];
@@ -147,14 +156,18 @@ namespace D_Parser.Refactoring
 
 		void HandleResult(AbstractType t, ISyntaxRegion sr)
 		{
-			if (t == null)
-				result.UnresolvedIdentifiers.Add(sr);
-			else if (t is UserDefinedType)
-				result.ResolvedTypes.Add(sr, (UserDefinedType)t);
-			else if (t is MemberSymbol)
-				result.ResolvedVariables.Add(sr, (MemberSymbol)t);
-			else
-				result.MiscResults.Add(sr, t);
+			try
+			{
+				if (t == null)
+					result.UnresolvedIdentifiers.Add(sr);
+				else if (t is UserDefinedType)
+					result.ResolvedTypes.Add(sr, (UserDefinedType)t);
+				else if (t is MemberSymbol)
+					result.ResolvedVariables.Add(sr, (MemberSymbol)t);
+				else
+					result.MiscResults.Add(sr, t);
+			}
+			catch { }
 		}
 
 		AbstractType HandleAccessExpressions(PostfixExpression_Access acc, ResolverContextStack ctxt)
@@ -165,6 +178,10 @@ namespace D_Parser.Refactoring
 			else
 			{
 				pfType = DResolver.StripAliasSymbol(Evaluation.EvaluateType(acc.PostfixForeExpression, ctxt));
+
+				if(acc.PostfixForeExpression is IdentifierExpression || 
+					acc.PostfixForeExpression is TemplateInstanceExpression ||
+					acc.PostfixForeExpression is PostfixExpression_Access)
 				HandleResult(pfType, acc.PostfixForeExpression);
 			}
 			
