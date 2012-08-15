@@ -48,27 +48,27 @@ void main()
 		{
 			var pcl = ResolutionTests.CreateCache(@"module modA;
 
-class A(T = int)
+class A(T)
 {
-	int n; // 5
+	int n;
 	static int prop;
-	static A statA; 
+	static A!float statA; 
 }
-
-A a = new A(); // 10
 
 void main()
 {
+	auto a = new A!int();
 	a.n;
-	A.prop = 3; // 15
+	A.prop = 3;
 	int b = A.prop + 4;
-	A.statA.statA = new A!float();
+	A!double.statA.statA = new A!double();
 }
 ");
 
 			var res = TypeReferenceFinder.Scan((IAbstractSyntaxTree)pcl[0]["modA"], pcl);
 
-			
+			Assert.AreEqual(6, res.ResolvedTypes.Count);
+			//TODO: Correct variable recognization
 		}
 	}
 }

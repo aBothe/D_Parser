@@ -31,6 +31,7 @@ namespace D_Parser.Refactoring
 		/// Is kept synchronized with the q stack.
 		/// </summary>
 		readonly SortedDictionary<int, IBlockNode> scopes = new SortedDictionary<int, IBlockNode>();
+		readonly SortedDictionary<int, IStatement> scopes_Stmts = new SortedDictionary<int, IStatement>();
 
 		readonly TypeReferencesResult result = new TypeReferencesResult();
 		readonly ParseCacheList sharedParseCache;
@@ -58,6 +59,11 @@ namespace D_Parser.Refactoring
 		protected override void OnScopeChanged(IBlockNode scopedBlock)
 		{
 			scopes[q.Count] = scopedBlock;
+		}
+
+		protected override void OnScopeChanged(IStatement scopedStatement)
+		{
+			scopes_Stmts[q.Count] = scopedStatement;
 		}
 
 		protected override void Handle(ISyntaxRegion o)
@@ -93,14 +99,15 @@ namespace D_Parser.Refactoring
 
 			// Make it as most performing as possible by avoiding unnecessary base types. 
 			// Aliases should be analyzed deeper though.
-			ctxt.ContextIndependentOptions |= 
+			ctxt.CurrentContext.ContextDependentOptions |= 
 				ResolutionOptions.StopAfterFirstOverloads | 
 				ResolutionOptions.DontResolveBaseClasses | 
-				ResolutionOptions.DontResolveBaseTypes | 
+				ResolutionOptions.DontResolveBaseTypes | //TODO: Exactly find out which option can be enabled here. Resolving variables' types is needed sometimes - but only, when highlighting a variable reference is wanted explicitly.
 				ResolutionOptions.NoTemplateParameterDeduction | 
 				ResolutionOptions.ReturnMethodReferencesOnly;
 
 			IBlockNode bn = null;
+			IStatement stmt = null;
 			ISyntaxRegion sr = null;
 			int i = 0;
 
@@ -116,25 +123,64 @@ namespace D_Parser.Refactoring
 				// Try to get an updated scope
 				if (scopes.TryGetValue(i, out bn))
 					ctxt.CurrentContext.ScopedBlock = bn;
+				if (scopes_Stmts.TryGetValue(i, out stmt))
+					ctxt.CurrentContext.ScopedStatement = stmt;
 
 				// Resolve gotten syntax object
 				sr = q[i];
-				AbstractType t = null;
-				if (sr is IExpression)
-					t = DResolver.StripAliasSymbol(Evaluation.EvaluateType((IExpression)sr, ctxt));
-				else if (sr is ITypeDeclaration)
-					t = DResolver.StripAliasSymbol(TypeDeclarationResolver.ResolveSingle((ITypeDeclaration)sr, ctxt));
 
-				// Enter into the result lists
-				if (t == null)
-					result.UnresolvedIdentifiers.Add(sr);
-				else if (t is UserDefinedType)
-					result.ResolvedTypes.Add(sr, (UserDefinedType)t);
-				else if (t is MemberSymbol)
-					result.ResolvedVariables.Add(sr, (MemberSymbol)t);
+				if (sr is PostfixExpression_Access)
+					HandleAccessExpressions((PostfixExpression_Access)sr, ctxt);
 				else
-					result.MiscResults.Add(sr, t);
+				{
+					AbstractType t = null;
+					if (sr is IExpression)
+						t = DResolver.StripAliasSymbol(Evaluation.EvaluateType((IExpression)sr, ctxt));
+					else if (sr is ITypeDeclaration)
+						t = DResolver.StripAliasSymbol(TypeDeclarationResolver.ResolveSingle((ITypeDeclaration)sr, ctxt));
+
+					// Enter into the result lists
+					HandleResult(t, sr);
+				}
 			}
+		}
+
+		void HandleResult(AbstractType t, ISyntaxRegion sr)
+		{
+			if (t == null)
+				result.UnresolvedIdentifiers.Add(sr);
+			else if (t is UserDefinedType)
+				result.ResolvedTypes.Add(sr, (UserDefinedType)t);
+			else if (t is MemberSymbol)
+				result.ResolvedVariables.Add(sr, (MemberSymbol)t);
+			else
+				result.MiscResults.Add(sr, t);
+		}
+
+		AbstractType HandleAccessExpressions(PostfixExpression_Access acc, ResolverContextStack ctxt)
+		{
+			AbstractType pfType = null;
+			if (acc.PostfixForeExpression is PostfixExpression_Access)
+				pfType = HandleAccessExpressions((PostfixExpression_Access)acc.PostfixForeExpression, ctxt);
+			else
+			{
+				pfType = DResolver.StripAliasSymbol(Evaluation.EvaluateType(acc.PostfixForeExpression, ctxt));
+				HandleResult(pfType, acc.PostfixForeExpression);
+			}
+			
+			bool ufcs=false;
+			var accessedMembers = Evaluation.GetAccessedOverloads(acc, ctxt, out ufcs, pfType);
+			ctxt.CheckForSingleResult(accessedMembers, acc);
+
+			if (accessedMembers != null && accessedMembers.Length != 0)
+			{
+				HandleResult(accessedMembers[0], acc);
+				return accessedMembers[0];
+			}
+			else
+				HandleResult(null, acc);
+
+			return null;
 		}
 
 		#endregion

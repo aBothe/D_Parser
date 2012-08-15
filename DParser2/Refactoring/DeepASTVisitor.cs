@@ -70,7 +70,7 @@ namespace D_Parser.Refactoring
 				var dm = (DModule)n;
 
 				if (dm.OptionalModuleStatement != null)
-					S(dm.OptionalModuleStatement);
+					S(dm.OptionalModuleStatement.ModuleName);
 			}
 			else if (n is DVariable)
 			{
@@ -122,9 +122,6 @@ namespace D_Parser.Refactoring
 					foreach (var stmt in sstmts)
 						S(stmt);
 			}
-
-			else if (s is ModuleStatement)
-				S(((ModuleStatement)s).ModuleName);
 
 			else if (s is ImportStatement)
 			{
