@@ -10,6 +10,7 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
 using System.Threading;
+using D_Parser.Resolver.ASTScanner;
 
 namespace D_Parser.Refactoring
 {
@@ -18,6 +19,8 @@ namespace D_Parser.Refactoring
 	/// </summary>
 	public class TypeReferenceFinder : DeepASTVisitor
 	{
+		readonly Dictionary<IBlockNode, SortedDictionary<string, INode>> TypeCache = new Dictionary<IBlockNode, SortedDictionary<string, INode>>();
+
 		/// <summary>
 		/// Contains the current scope as well as the syntax region
 		/// </summary>
@@ -33,6 +36,8 @@ namespace D_Parser.Refactoring
 		readonly SortedDictionary<int, IBlockNode> scopes = new SortedDictionary<int, IBlockNode>();
 		readonly SortedDictionary<int, IStatement> scopes_Stmts = new SortedDictionary<int, IStatement>();
 
+		IBlockNode curScope = null;
+
 		readonly TypeReferencesResult result = new TypeReferencesResult();
 		readonly ParseCacheList sharedParseCache;
 
@@ -45,32 +50,170 @@ namespace D_Parser.Refactoring
 		{
 			var typeRefFinder = new TypeReferenceFinder(pcl);
 
+			return typeRefFinder.result; // TODO: Implement the whole thing
+
 			// Enum all identifiers
 			typeRefFinder.S(ast);
 
-			// Crawl through all identifiers and try to resolve them.
+			// Crawl through all remaining expressions by evaluating their types and check if they're actual type references.
 			typeRefFinder.queueCount = typeRefFinder.q.Count;
 			typeRefFinder.ResolveAllIdentifiers();
 
 			return typeRefFinder.result;
 		}
 
+		void CreateDeeperLevelCache(IBlockNode bn)
+		{
+			SortedDictionary<string, INode> dd=null;
+
+			if(!TypeCache.TryGetValue(bn, out dd))
+				dd = TypeCache[bn] = new SortedDictionary<string,INode>();
+
+			// Set the parent to null to crawl through current level only. Imports/Mixins etc. will be handled though.
+			var parentBackup = bn.Parent;
+			bn.Parent = null;
+
+			var vis = ItemEnumeration.EnumAllAvailableMembers(bn, null, bn.EndLocation, sharedParseCache, MemberFilter.Types);
+
+			if (vis != null)
+				foreach (var n in vis)
+				{
+					if (!string.IsNullOrEmpty(n.Name))
+						dd[n.Name] = n;
+				}
+
+			bn.Parent = parentBackup;
+		}
+
 		#region Preparation list generation
 		protected override void OnScopeChanged(IBlockNode scopedBlock)
 		{
-			scopes[q.Count] = scopedBlock;
-		}
-
-		protected override void OnScopeChanged(IStatement scopedStatement)
-		{
-			scopes_Stmts[q.Count] = scopedStatement;
+			CreateDeeperLevelCache(curScope = scopes[q.Count] = scopedBlock);
 		}
 
 		protected override void Handle(ISyntaxRegion o)
 		{
-			q.Add(o);
+			if (o is IdentifierDeclaration || o is TemplateInstanceExpression)
+			{
+				if (DoPrimaryIdCheck(ExtractId(o)))
+					result.TypeMatches.Add(o);
+			}
+			/*else if (o is IdentifierExpression)
+			{
+				var id = (IdentifierExpression)o;
+
+				if ((string)id.Value != searchId)
+					return;
+
+				if (resolvedSymbol == null)
+					resolvedSymbol = Evaluation.EvaluateType(id, ctxt) as DSymbol;
+			}
+
+			if (handleSingleIdentifiersOnly)
+				return;
+
+			if (o is PostfixExpression_Access)
+			{
+				var acc = (PostfixExpression_Access)o;
+
+				if ((acc.AccessExpression is IdentifierExpression &&
+				(string)((IdentifierExpression)acc.AccessExpression).Value != searchId) ||
+				(acc.AccessExpression is TemplateInstanceExpression &&
+				(string)((TemplateInstanceExpression)acc.AccessExpression).TemplateIdentifier.Id != searchId))
+				{
+					Handle(acc.PostfixForeExpression, null);
+					return;
+				}
+				else if (acc.AccessExpression is NewExpression)
+				{
+					var nex = (NewExpression)acc.AccessExpression;
+
+					if ((nex.Type is IdentifierDeclaration &&
+						((IdentifierDeclaration)nex.Type).Id != searchId) ||
+						(nex.Type is TemplateInstanceExpression &&
+						(string)((TemplateInstanceExpression)acc.AccessExpression).TemplateIdentifier.Id != searchId))
+					{
+						Handle(acc.PostfixForeExpression, null);
+						return;
+					}
+					// Are there other types to test for?
+				}
+
+				var s = resolvedSymbol ?? Evaluation.EvaluateType(acc, ctxt) as DerivedDataType;
+
+				if (s is DSymbol)
+				{
+					if (((DSymbol)s).Definition == symbol)
+						l.Add(acc.AccessExpression);
+				}
+				else if (s == null || !(s.Base is DSymbol))
+					return;
+
+				// Scan down for other possible symbols
+				Handle(acc.PostfixForeExpression, s.Base as DSymbol);
+				return;
+			}
+
+			q.Add(o);*/
 		}
 		#endregion
+
+		/// <summary>
+		/// Returns true if a type called 'id' exists in the current scope
+		/// </summary>
+		bool DoPrimaryIdCheck(string id)
+		{
+			var bn = curScope;
+
+			while (bn != null)
+				foreach (var m in bn)
+				{
+					if (m.Name == id)
+						return true;
+
+					if (bn.Parent == null || bn.Parent == bn)
+						return bn.Name == id;
+
+					bn = bn.Parent as IBlockNode;
+				}
+			
+			return false;
+		}
+
+		List<IExpression> DoPrimaryIdCheck(PostfixExpression_Access acc)
+		{
+			var r = new List<IExpression>();
+			while(acc != null){
+				if (DoPrimaryIdCheck(ExtractId(acc)))
+					r.Add(acc);
+
+				// Scan down the access expression for other, deeper expressions
+				if (acc.PostfixForeExpression is PostfixExpression_Access)
+					acc = (PostfixExpression_Access)acc.PostfixForeExpression;
+				else
+				{
+					if (DoPrimaryIdCheck(ExtractId(acc.PostfixForeExpression)))
+						r.Add(acc.PostfixForeExpression);
+					break;
+				}
+			}
+			return r;
+		}
+
+		string ExtractId(ISyntaxRegion o)
+		{
+			if (o is IdentifierDeclaration)
+				return ((IdentifierDeclaration)o).Id;
+			else if (o is IdentifierExpression)
+				return (string)((IdentifierExpression)o).Value;
+			else if (o is PostfixExpression_Access)
+				return ExtractId(((PostfixExpression_Access)o).AccessExpression);
+			else if (o is TemplateInstanceExpression)
+				return ((TemplateInstanceExpression)o).TemplateIdentifier.Id;
+			else if (o is NewExpression)
+				return ExtractId(((NewExpression)o).Type);
+			return null;
+		}
 
 		#region Threaded id analysis
 		void ResolveAllIdentifiers()
@@ -149,25 +292,9 @@ namespace D_Parser.Refactoring
 						t = DResolver.StripAliasSymbol(TypeDeclarationResolver.ResolveSingle((ITypeDeclaration)sr, ctxt));
 
 					// Enter into the result lists
-					HandleResult(t, sr);
+					//HandleResult(t, sr);
 				}
 			}
-		}
-
-		void HandleResult(AbstractType t, ISyntaxRegion sr)
-		{
-			try
-			{
-				if (t == null)
-					result.UnresolvedIdentifiers.Add(sr);
-				else if (t is UserDefinedType)
-					result.ResolvedTypes.Add(sr, (UserDefinedType)t);
-				else if (t is MemberSymbol)
-					result.ResolvedVariables.Add(sr, (MemberSymbol)t);
-				else
-					result.MiscResults.Add(sr, t);
-			}
-			catch { }
 		}
 
 		AbstractType HandleAccessExpressions(PostfixExpression_Access acc, ResolverContextStack ctxt)
@@ -179,10 +306,10 @@ namespace D_Parser.Refactoring
 			{
 				pfType = DResolver.StripAliasSymbol(Evaluation.EvaluateType(acc.PostfixForeExpression, ctxt));
 
-				if(acc.PostfixForeExpression is IdentifierExpression || 
+				if (acc.PostfixForeExpression is IdentifierExpression ||
 					acc.PostfixForeExpression is TemplateInstanceExpression ||
-					acc.PostfixForeExpression is PostfixExpression_Access)
-				HandleResult(pfType, acc.PostfixForeExpression);
+					acc.PostfixForeExpression is PostfixExpression_Access) return null;
+				//HandleResult(pfType, acc.PostfixForeExpression);
 			}
 			
 			bool ufcs=false;
@@ -191,11 +318,11 @@ namespace D_Parser.Refactoring
 
 			if (accessedMembers != null && accessedMembers.Length != 0)
 			{
-				HandleResult(accessedMembers[0], acc);
+				//HandleResult(accessedMembers[0], acc);
 				return accessedMembers[0];
 			}
 			else
-				HandleResult(null, acc);
+				//HandleResult(null, acc);
 
 			return null;
 		}
@@ -205,9 +332,6 @@ namespace D_Parser.Refactoring
 
 	public class TypeReferencesResult
 	{
-		public Dictionary<ISyntaxRegion, UserDefinedType> ResolvedTypes = new Dictionary<ISyntaxRegion, UserDefinedType>();
-		public Dictionary<ISyntaxRegion, MemberSymbol> ResolvedVariables = new Dictionary<ISyntaxRegion, MemberSymbol>();
-		public Dictionary<ISyntaxRegion, AbstractType> MiscResults = new Dictionary<ISyntaxRegion, AbstractType>();
-		public List<ISyntaxRegion> UnresolvedIdentifiers = new List<ISyntaxRegion>(); 
+		public List<ISyntaxRegion> TypeMatches = new List<ISyntaxRegion>();
 	}
 }
