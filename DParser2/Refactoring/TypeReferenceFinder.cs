@@ -50,8 +50,6 @@ namespace D_Parser.Refactoring
 		{
 			var typeRefFinder = new TypeReferenceFinder(pcl);
 
-			return typeRefFinder.result; // TODO: Implement the whole thing
-
 			// Enum all identifiers
 			typeRefFinder.S(ast);
 
@@ -97,64 +95,17 @@ namespace D_Parser.Refactoring
 			{
 				if (DoPrimaryIdCheck(ExtractId(o)))
 					result.TypeMatches.Add(o);
+				return;
 			}
-			/*else if (o is IdentifierExpression)
+			else if (o is IdentifierExpression)
 			{
 				var id = (IdentifierExpression)o;
 
-				if ((string)id.Value != searchId)
-					return;
-
-				if (resolvedSymbol == null)
-					resolvedSymbol = Evaluation.EvaluateType(id, ctxt) as DSymbol;
+				if (DoPrimaryIdCheck((string)id.Value))
+					q.Add(o);
 			}
-
-			if (handleSingleIdentifiersOnly)
-				return;
-
-			if (o is PostfixExpression_Access)
-			{
-				var acc = (PostfixExpression_Access)o;
-
-				if ((acc.AccessExpression is IdentifierExpression &&
-				(string)((IdentifierExpression)acc.AccessExpression).Value != searchId) ||
-				(acc.AccessExpression is TemplateInstanceExpression &&
-				(string)((TemplateInstanceExpression)acc.AccessExpression).TemplateIdentifier.Id != searchId))
-				{
-					Handle(acc.PostfixForeExpression, null);
-					return;
-				}
-				else if (acc.AccessExpression is NewExpression)
-				{
-					var nex = (NewExpression)acc.AccessExpression;
-
-					if ((nex.Type is IdentifierDeclaration &&
-						((IdentifierDeclaration)nex.Type).Id != searchId) ||
-						(nex.Type is TemplateInstanceExpression &&
-						(string)((TemplateInstanceExpression)acc.AccessExpression).TemplateIdentifier.Id != searchId))
-					{
-						Handle(acc.PostfixForeExpression, null);
-						return;
-					}
-					// Are there other types to test for?
-				}
-
-				var s = resolvedSymbol ?? Evaluation.EvaluateType(acc, ctxt) as DerivedDataType;
-
-				if (s is DSymbol)
-				{
-					if (((DSymbol)s).Definition == symbol)
-						l.Add(acc.AccessExpression);
-				}
-				else if (s == null || !(s.Base is DSymbol))
-					return;
-
-				// Scan down for other possible symbols
-				Handle(acc.PostfixForeExpression, s.Base as DSymbol);
-				return;
-			}
-
-			q.Add(o);*/
+			else if (o is PostfixExpression_Access)
+				q.AddRange(DoPrimaryIdCheck((PostfixExpression_Access)o));
 		}
 		#endregion
 
@@ -166,6 +117,7 @@ namespace D_Parser.Refactoring
 			var bn = curScope;
 
 			while (bn != null)
+			{
 				foreach (var m in bn)
 				{
 					if (m.Name == id)
@@ -173,9 +125,10 @@ namespace D_Parser.Refactoring
 
 					if (bn.Parent == null || bn.Parent == bn)
 						return bn.Name == id;
-
-					bn = bn.Parent as IBlockNode;
 				}
+
+				bn = bn.Parent as IBlockNode;
+			}
 			
 			return false;
 		}
@@ -200,11 +153,11 @@ namespace D_Parser.Refactoring
 			return r;
 		}
 
-		string ExtractId(ISyntaxRegion o)
+		public static string ExtractId(ISyntaxRegion o)
 		{
 			if (o is IdentifierDeclaration)
 				return ((IdentifierDeclaration)o).Id;
-			else if (o is IdentifierExpression)
+			else if (o is IdentifierExpression && ((IdentifierExpression)o).IsIdentifier)
 				return (string)((IdentifierExpression)o).Value;
 			else if (o is PostfixExpression_Access)
 				return ExtractId(((PostfixExpression_Access)o).AccessExpression);
@@ -218,6 +171,12 @@ namespace D_Parser.Refactoring
 		#region Threaded id analysis
 		void ResolveAllIdentifiers()
 		{
+			if (System.Diagnostics.Debugger.IsAttached)
+			{
+				_th(sharedParseCache);
+				return;
+			}
+
 			var threads = new Thread[ThreadedDirectoryParser.numThreads];
 			for (int i = 0; i < ThreadedDirectoryParser.numThreads; i++)
 			{
@@ -291,8 +250,8 @@ namespace D_Parser.Refactoring
 					else if (sr is ITypeDeclaration)
 						t = DResolver.StripAliasSymbol(TypeDeclarationResolver.ResolveSingle((ITypeDeclaration)sr, ctxt));
 
-					// Enter into the result lists
-					//HandleResult(t, sr);
+					// Enter into the result list
+					HandleResult(sr, t);
 				}
 			}
 		}
@@ -308,8 +267,8 @@ namespace D_Parser.Refactoring
 
 				if (acc.PostfixForeExpression is IdentifierExpression ||
 					acc.PostfixForeExpression is TemplateInstanceExpression ||
-					acc.PostfixForeExpression is PostfixExpression_Access) return null;
-				//HandleResult(pfType, acc.PostfixForeExpression);
+					acc.PostfixForeExpression is PostfixExpression_Access)
+					HandleResult(acc.PostfixForeExpression, pfType);
 			}
 			
 			bool ufcs=false;
@@ -318,13 +277,17 @@ namespace D_Parser.Refactoring
 
 			if (accessedMembers != null && accessedMembers.Length != 0)
 			{
-				//HandleResult(accessedMembers[0], acc);
+				HandleResult(acc, accessedMembers[0]);
 				return accessedMembers[0];
 			}
-			else
-				//HandleResult(null, acc);
 
 			return null;
+		}
+
+		void HandleResult(ISyntaxRegion sr, AbstractType t)
+		{
+			if (t is UserDefinedType)
+				result.TypeMatches.Add(sr);
 		}
 
 		#endregion

@@ -18,11 +18,6 @@ namespace D_Parser.Refactoring
 		readonly INode symbol;
 		readonly IAbstractSyntaxTree ast;
 		readonly string searchId;
-
-		/// <summary>
-		/// Used when searching references of a variable.
-		/// </summary>
-		readonly bool handleSingleIdentifiersOnly;
 		#endregion
 
 		#region Constructor / External
@@ -31,7 +26,6 @@ namespace D_Parser.Refactoring
 			this.ast = ast;
 			this.symbol = symbol;
 			searchId = symbol.Name;
-			this.handleSingleIdentifiersOnly = symbol is DVariable /* && ((DVariable)symbol).IsAlias */;
 			this.ctxt = ctxt;
 		}
 
@@ -87,8 +81,18 @@ namespace D_Parser.Refactoring
 				if (id.Id != searchId)
 					return;
 
-				if(resolvedSymbol==null)
+				if (resolvedSymbol == null)
 					resolvedSymbol = TypeDeclarationResolver.ResolveSingle(id, ctxt) as DSymbol;
+			}
+			else if (o is TemplateInstanceExpression)
+			{
+				var tix = (TemplateInstanceExpression)o;
+
+				if (tix.TemplateIdentifier.Id != searchId)
+					return;
+
+				if (resolvedSymbol == null)
+					resolvedSymbol = Evaluation.EvaluateType(tix, ctxt) as DSymbol;
 			}
 			else if (o is IdentifierExpression)
 			{
@@ -100,11 +104,7 @@ namespace D_Parser.Refactoring
 				if (resolvedSymbol == null)
 					resolvedSymbol = Evaluation.EvaluateType(id, ctxt) as DSymbol;
 			}
-
-			if (handleSingleIdentifiersOnly)
-				return;
-
-			if (o is PostfixExpression_Access)
+			else if (o is PostfixExpression_Access)
 			{
 				var acc = (PostfixExpression_Access)o;
 
@@ -125,7 +125,7 @@ namespace D_Parser.Refactoring
 						(nex.Type is TemplateInstanceExpression &&
 						(string)((TemplateInstanceExpression)acc.AccessExpression).TemplateIdentifier.Id != searchId))
 					{
-						Handle(acc.PostfixForeExpression,null);
+						Handle(acc.PostfixForeExpression, null);
 						return;
 					}
 					// Are there other types to test for?
@@ -144,16 +144,6 @@ namespace D_Parser.Refactoring
 				// Scan down for other possible symbols
 				Handle(acc.PostfixForeExpression, s.Base as DSymbol);
 				return;
-			}
-			else if (o is TemplateInstanceExpression)
-			{
-				var tix = (TemplateInstanceExpression)o;
-
-				if (tix.TemplateIdentifier.Id != searchId)
-					return;
-
-				if (resolvedSymbol == null)
-					resolvedSymbol = Evaluation.EvaluateType(tix, ctxt) as DSymbol;
 			}
 
 			// The resolved node must be equal to the symbol definition that is looked for.
