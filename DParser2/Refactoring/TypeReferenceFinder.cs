@@ -19,7 +19,7 @@ namespace D_Parser.Refactoring
 	/// </summary>
 	public class TypeReferenceFinder : DeepASTVisitor
 	{
-		readonly Dictionary<IBlockNode, SortedDictionary<string, INode>> TypeCache = new Dictionary<IBlockNode, SortedDictionary<string, INode>>();
+		readonly Dictionary<IBlockNode, Dictionary<string, INode>> TypeCache = new Dictionary<IBlockNode, Dictionary<string, INode>>();
 
 		/// <summary>
 		/// Contains the current scope as well as the syntax region
@@ -59,7 +59,7 @@ namespace D_Parser.Refactoring
 
 		void CreateDeeperLevelCache(IBlockNode bn)
 		{
-			var dd = TypeCache[bn] = new SortedDictionary<string,INode>();
+			var dd = TypeCache[bn] = new Dictionary<string,INode>();
 
 			// Set the parent to null to crawl through current level only. Imports/Mixins etc. will be handled though.
 			var parentBackup = bn.Parent;
@@ -90,17 +90,14 @@ namespace D_Parser.Refactoring
 			{
 				if (DoPrimaryIdCheck(ExtractId(o)))
 					result.TypeMatches.Add(o);
-				return;
 			}
-			else if (o is IdentifierExpression)
+			/*else if (o is IdentifierExpression)
 			{
-				var id = (IdentifierExpression)o;
-
-				if (DoPrimaryIdCheck((string)id.Value))
+				if (DoPrimaryIdCheck((string)((IdentifierExpression)o).Value))
 					q.Add(o);
 			}
 			else if (o is PostfixExpression_Access)
-				q.AddRange(DoPrimaryIdCheck((PostfixExpression_Access)o));
+				q.AddRange(DoPrimaryIdCheck((PostfixExpression_Access)o));*/
 		}
 		#endregion
 
@@ -167,6 +164,9 @@ namespace D_Parser.Refactoring
 		#region Threaded id analysis
 		void ResolveAllIdentifiers()
 		{
+			if (q.Count == 0)
+				return;
+
 			if (System.Diagnostics.Debugger.IsAttached)
 			{
 				_th(sharedParseCache);
