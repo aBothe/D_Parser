@@ -36,6 +36,8 @@ namespace DParser2.Unittest
 		[TestMethod]
 		public void TestSyntaxError1()
 		{
+			var e = DParser.ParseExpression("new ubyte[size]");
+
 			var s = DParser.ParseBlockStatement(@"long neIdx = find(pResult, ""{/loop");
 		}
 
@@ -72,7 +74,15 @@ int b;");
 		}
 
 		//[TestMethod]
-		public void ParsePhobos()
+		public void TestPhobos()
+		{
+			var pc = ParsePhobos();
+
+			foreach (var mod in pc)
+				Assert.AreEqual(mod.ParseErrors.Count, 0);
+		}
+
+		public static ParseCache ParsePhobos()
 		{
 			var dmdBase = @"A:\D\dmd2\src";
 
@@ -94,16 +104,21 @@ int b;");
 
 			pc.WaitForParserFinish();
 			
-			foreach (var mod in pc)
-			{
-				Assert.AreEqual(mod.ParseErrors.Count, 0);
-			}
+			return pc;
 		}
 
-		void pc_FinishedParsing(ParsePerformanceData[] PerformanceData)
+		static void pc_FinishedParsing(ParsePerformanceData[] PerformanceData)
 		{
 			foreach (var ppd in PerformanceData)
 				Trace.WriteLine(string.Format("Parsed {0} files in {1}; {2}ms/file", ppd.AmountFiles, ppd.BaseDirectory, ppd.FileDuration), "ParserTests");
+		}
+
+		[TestMethod]
+		public void ParsePerformance1()
+		{
+			var pc = ParsePhobos();
+
+			
 		}
 
 		/*void compareUfcsResults(UFCSCache u)
