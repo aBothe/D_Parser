@@ -96,8 +96,7 @@ namespace D_Parser.Dom
 
 	public class DBlockNode : DNode, IBlockNode
 	{
-		CodeLocation _BlockStart;
-		protected List<INode> _Children = new List<INode>();
+		protected NodeDictionary _Children = new NodeDictionary();
 
 		/// <summary>
 		/// Used for storing import statement and similar stuff
@@ -106,19 +105,12 @@ namespace D_Parser.Dom
 
 		public CodeLocation BlockStartLocation
 		{
-			get
-			{
-				return _BlockStart;
-			}
-			set
-			{
-				_BlockStart = value;
-			}
+			get; set;
 		}
 
-		public INode[] Children
+		public NodeDictionary Children
 		{
-			get { return _Children.ToArray(); }
+			get { return _Children; }
 		}
 
 		public IStatement[] Statements
@@ -134,15 +126,12 @@ namespace D_Parser.Dom
 		public void Add(INode Node)
 		{
 			Node.Parent = this;
-			if (!_Children.Contains(Node))
-				_Children.Add(Node);
+			_Children.Add(Node);
 		}
 
 		public void AddRange(IEnumerable<INode> Nodes)
 		{
-			if(Nodes!=null)
-				foreach (var Node in Nodes)
-					Add(Node);
+			_Children.AddRange(Nodes);
 		}
 
 		public int Count
@@ -155,37 +144,38 @@ namespace D_Parser.Dom
 			_Children.Clear();
 		}
 
-		public INode this[int i]
-		{
-			get { if (i >= 0 && Count > i) return _Children[i]; else return null; }
-			set { if (i >= 0 && Count > i) _Children[i] = value; }
-		}
-
-		public INode this[string Name]
+		/// <summary>
+		/// Always returns at least an empty list of INodes
+		/// except a null value has been assigned to a name explicitly.
+		/// </summary>
+		public List<INode> this[string Name]
 		{
 			get
 			{
-				if (Count > 0)
-					foreach (var n in _Children)
-						if (n.Name == Name) return n;
-				return null;
+				var n = Name ?? string.Empty;
+				List<INode> l = null;
+
+				if (!_Children.TryGetValue(n, out l))
+					return _Children[n] = new List<INode>();
+
+				return l;
 			}
 			set
 			{
-				if (Count > 0)
-					for (int i = 0; i < Count; i++)
-						if (this[i].Name == Name) this[i] = value;
+				_Children[Name ?? string.Empty] = value; 
 			}
 		}
 
 		public IEnumerator<INode> GetEnumerator()
 		{
-			return _Children.GetEnumerator();
+			foreach (var kv in _Children)
+				foreach (var i in kv.Value)
+					yield return i;
 		}
 
 		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
 		{
-			return _Children.GetEnumerator();
+			return this.GetEnumerator();
 		}
 
 		public override void AssignFrom(INode other)
@@ -294,8 +284,13 @@ namespace D_Parser.Dom
 		public BlockStatement Out { get { return _Out; } set { _Out = value; UpdateChildrenArray(); } }
 		public BlockStatement Body { get { return _Body; } set { _Body = value; UpdateChildrenArray(); } }
 
-		INode[] children;
+		NodeDictionary children;
 		List<INode> additionalChildren = new List<INode>();
+
+		public NodeDictionary Children
+		{
+			get { return children; }
+		}
 
 		/// <summary>
 		/// Children which were added artifically via Add() or AddRange()
@@ -308,20 +303,22 @@ namespace D_Parser.Dom
 
 		void UpdateChildrenArray()
 		{
-			var l = new List<INode>();
+			lock (children)
+			{
+				children.Clear();
 
-			l.AddRange(additionalChildren);
+				if (additionalChildren.Count != 0)
+					children.AddRange(additionalChildren);
 
-			if (_In != null)
-				l.AddRange(_In.Declarations);
+				if (_In != null)
+					children.AddRange(_In.Declarations);
 
-			if (_Body != null)
-				l.AddRange(_Body.Declarations);
+				if (_Body != null)
+					children.AddRange(_Body.Declarations);
 
-			if (_Out != null)
-				l.AddRange(_Out.Declarations);
-
-			children = l.ToArray();
+				if (_Out != null)
+					children.AddRange(_Out.Declarations);
+			}
 		}
 
         public enum MethodType
@@ -366,11 +363,6 @@ namespace D_Parser.Dom
 			set{}
 		}
 
-		public INode[] Children
-		{
-			get { return children; }
-		}
-
 		public void Add(INode Node)
 		{
 			Node.Parent = this;
@@ -395,45 +387,19 @@ namespace D_Parser.Dom
 			get { 
 				if (children == null) 
 					return 0;
-				return children.Length; 
+				return children.Count; 
 			}
 		}
 
-		public INode this[int i]
+		public List<INode> this[string Name]
 		{
 			get
 			{
-				if (children != null)
-					return children[i];
-				return null;
+				return children[Name];
 			}
 			set
 			{
-				if (children != null)
-					children[i]=value;
-			}
-		}
-
-		public INode this[string Name]
-		{
-			get
-			{
-				if(children!=null)
-					foreach (var c in children)
-						if (c.Name == Name)
-							return c;
-
-				return null;
-			}
-			set
-			{
-				if (children != null)
-					for(int i=0;i<children.Length;i++)
-						if (children[i].Name == Name)
-						{
-							children[i] = value;
-							return;
-						}
+				children[Name] = value;
 			}
 		}
 
