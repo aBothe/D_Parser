@@ -9,6 +9,10 @@ using System.Diagnostics;
 using D_Parser.Resolver.ASTScanner;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom;
+using D_Parser.Unittest;
+using D_Parser.Resolver;
+using D_Parser.Resolver.ExpressionSemantics;
+using D_Parser.Dom.Statements;
 
 namespace DParser2.Unittest
 {
@@ -117,8 +121,70 @@ int b;");
 		public void ParsePerformance1()
 		{
 			var pc = ParsePhobos();
+			var pcl = ResolutionTests.CreateCache(@"module modA;
 
-			
+import std.stdio, std.array;
+
+class lol{
+	
+	static int Object;
+	
+	int inc(int i, int k)
+	{
+		
+		return i+k;	
+	}
+	
+	const void lolBar(this T)() {
+		
+		auto l=123.inc!int();
+		lol.Object;
+		writeln(typeid(T));
+		
+		Object=1;
+	}
+}
+
+void main()
+{
+	immutable(char)[] arr;
+	destroy(arr);
+	for(int i=0;i<10;i++)
+		writeln(i);
+	return;
+	
+	auto st=new STest();
+	auto tt = new ModClass!int();
+	writeln(st.a);
+	
+	static assert(st.a==34);
+	
+	int i = delegate int() { return 123; }();	
+	//int j= 234++;
+	writeln(i);
+	writeln(di,123,123);
+
+	lol o = new lol();
+	//o.lolBar();
+o;
+}
+
+");
+			pcl.Add(pc);
+
+			var sw = new Stopwatch();
+			var main = pcl[0]["modA"]["main"] as DMethod;
+			var s = main.Body.SubStatements[main.Body.SubStatements.Length - 1] as IExpressionContainingStatement;
+			var ctxt = new ResolverContextStack(pcl, new ResolverContext { ScopedBlock = main, ScopedStatement = s });
+			//ctxt.ContextIndependentOptions |= ResolutionOptions.StopAfterFirstOverloads | ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.DontResolveBaseTypes;
+			var x = s.SubExpressions[0];
+
+			sw.Restart();
+
+			var t = Evaluation.EvaluateType(x, ctxt);
+
+			sw.Stop();
+			Trace.WriteLine("Took " + sw.Elapsed.TotalMilliseconds + "ms to resolve " + x);
 		}
 
 		/*void compareUfcsResults(UFCSCache u)
