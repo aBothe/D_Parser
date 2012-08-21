@@ -284,7 +284,7 @@ namespace D_Parser.Dom
 		public BlockStatement Out { get { return _Out; } set { _Out = value; UpdateChildrenArray(); } }
 		public BlockStatement Body { get { return _Body; } set { _Body = value; UpdateChildrenArray(); } }
 
-		NodeDictionary children;
+		NodeDictionary children = new NodeDictionary();
 		List<INode> additionalChildren = new List<INode>();
 
 		public NodeDictionary Children

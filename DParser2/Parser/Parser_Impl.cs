@@ -1404,11 +1404,10 @@ namespace D_Parser.Parser
 
 				Step();
 
-				var bn = ret as IBlockNode;
-				if (!HadComma && ret.Count > 0 && bn!=null)
+				if (!HadComma && ret.Count > 0)
 				{
 					// Put a VarArgDecl around the type of the last parameter
-					bn[bn.Count - 1].Type = new VarArgDecl(bn[bn.Count - 1].Type);
+					ret[ret.Count - 1].Type = new VarArgDecl(ret[ret.Count - 1].Type);
 				}
 				else
 				{

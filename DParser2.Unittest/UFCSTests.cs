@@ -30,7 +30,7 @@ void main(){
 			var modA=pcl[0]["modA"];
 			var ctxt = new ResolverContextStack(pcl, new ResolverContext { ScopedBlock=modA });
 
-			var main=modA["main"] as DMethod;
+			var main=modA["main"][0] as DMethod;
 			var s = main.Body.Declarations[0];
 			var s_res= TypeDeclarationResolver.HandleNodeMatch(s, ctxt);
 

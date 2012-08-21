@@ -289,10 +289,9 @@ namespace D_Parser.Resolver.TypeResolution
 
 			if (Parent != null && Parent.Count > 0)
 			{
-				var pi = Parent.Children;
-				foreach (var n in pi)
+				foreach (var n in (IEnumerable<INode>)Parent.Children)
 					if (n is IBlockNode && Where >= n.Location && Where <= n.EndLocation)
-						return SearchBlockAt(n as IBlockNode, Where, out ScopedStatement);
+						return SearchBlockAt((IBlockNode)n, Where, out ScopedStatement);
 			}
 
 			if (Parent is DMethod)

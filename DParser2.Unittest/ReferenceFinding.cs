@@ -37,7 +37,7 @@ void main()
 ");
 			var ctxt = new ResolverContextStack(pcl, new ResolverContext{ ScopedBlock = pcl[0]["modA"] });
 
-			var refs = ReferencesFinder.Scan(pcl[0]["modA"]["A"],ctxt) as List<ISyntaxRegion>;
+			var refs = ReferencesFinder.Scan(pcl[0]["modA"]["A"][0],ctxt) as List<ISyntaxRegion>;
 
 			Assert.IsNotNull(refs);
 			Assert.AreEqual(7, refs.Count);

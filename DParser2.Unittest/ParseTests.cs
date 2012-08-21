@@ -50,7 +50,7 @@ namespace DParser2.Unittest
 		{
 			var n = DParser.ParseString("align(2) align int a;");
 
-			var a = n["a"] as DVariable;
+			var a = n["a"][0] as DVariable;
 			Assert.IsNotNull(a);
 			Assert.AreEqual(1, a.Attributes.Count);
 
@@ -59,19 +59,19 @@ namespace DParser2.Unittest
 			Assert.AreEqual(null, attr.LiteralContent);
 
 			n = DParser.ParseString("private public int a;");
-			a = n["a"] as DVariable;
+			a = n["a"][0] as DVariable;
 			Assert.IsNotNull(a);
 			Assert.AreEqual(1, a.Attributes.Count);
 
 			n = DParser.ParseString(@"private:
 public int a;
 int b;");
-			a = n["a"] as DVariable;
+			a = n["a"][0] as DVariable;
 			Assert.IsNotNull(a);
 			Assert.AreEqual(1, a.Attributes.Count);
 			Assert.AreEqual(DTokens.Public,a.Attributes[0].Token);
 
-			a = n["b"] as DVariable;
+			a = n["b"][0] as DVariable;
 			Assert.IsNotNull(a);
 			Assert.AreEqual(1, a.Attributes.Count);
 			Assert.AreEqual(DTokens.Private, a.Attributes[0].Token);
@@ -173,7 +173,7 @@ o;
 			pcl.Add(pc);
 
 			var sw = new Stopwatch();
-			var main = pcl[0]["modA"]["main"] as DMethod;
+			var main = pcl[0]["modA"]["main"][0] as DMethod;
 			var s = main.Body.SubStatements[main.Body.SubStatements.Length - 1] as IExpressionContainingStatement;
 			var ctxt = new ResolverContextStack(pcl, new ResolverContext { ScopedBlock = main, ScopedStatement = s });
 			//ctxt.ContextIndependentOptions |= ResolutionOptions.StopAfterFirstOverloads | ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.DontResolveBaseTypes;

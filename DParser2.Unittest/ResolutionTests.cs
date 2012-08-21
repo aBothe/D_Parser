@@ -61,8 +61,8 @@ namespace D_Parser.Unittest
 						}
 				}");
 
-			var A=pcl[0]["modA"]["A"] as DClassLike;
-			var bar = A["bar"] as DMethod;
+			var A = pcl[0]["modA"]["A"][0] as DClassLike;
+			var bar = A["bar"][0] as DMethod;
 			var call_fooC = bar.Body.SubStatements[0];
 
 			Assert.IsInstanceOfType(call_fooC, typeof(ExpressionStatement));
@@ -186,8 +186,8 @@ class A
 }
 
 ");
-			var A = pcl[0]["modA"]["A"] as DClassLike;
-			var bar=A["bar"] as DMethod;
+			var A = pcl[0]["modA"]["A"][0] as DClassLike;
+			var bar = A["bar"][0] as DMethod;
 			var ctxt = new ResolverContextStack(pcl, new ResolverContext { ScopedBlock = bar, ScopedStatement=bar.Body });
 
 			var e = DParser.ParseExpression("123.foo");
