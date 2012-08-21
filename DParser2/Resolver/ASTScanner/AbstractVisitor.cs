@@ -136,12 +136,12 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
                             return;
 					}
 				}
-				else foreach (var n in curScope)
+				else foreach (var n in curScope.Children)
 					{
 						// Add anonymous enums' items
 						if (n is DEnum && string.IsNullOrEmpty(n.Name) && CanAddMemberOfType(VisibleMembers, n))
 						{
-                            if ((breakOnNextScope = HandleItems((n as DEnum).Children)) && breakImmediately)
+                            if ((breakOnNextScope = HandleItems(((DEnum)n).Children)) && breakImmediately)
                                 return;
 							continue;
 						}

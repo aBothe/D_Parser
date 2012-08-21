@@ -41,6 +41,25 @@ namespace D_Parser.Unittest
 		}
 
 		[TestMethod]
+		public void BasicResolution()
+		{
+			var pcl = CreateCache(@"module modA;
+
+class foo {}");
+
+			var ctxt = new ResolverContextStack(pcl, new ResolverContext { ScopedBlock = pcl[0]["modA"]["foo"][0] as IBlockNode });
+
+			var id = new IdentifierDeclaration("foo");
+
+			var foo = TypeDeclarationResolver.ResolveSingle(id, ctxt);
+
+			Assert.IsInstanceOfType(foo, typeof(ClassType));
+			var ct = (ClassType)foo;
+
+			Assert.AreEqual("foo", ct.Name);
+		}
+
+		[TestMethod]
 		public void TestMultiModuleResolution1()
 		{
 			var pcl = CreateCache(
@@ -195,7 +214,7 @@ class A
 			var t = Evaluation.EvaluateType(e, ctxt);
 
 			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
-			Assert.AreEqual(pcl[0]["modA"]["foo"], ((MemberSymbol)t).Definition);
+			Assert.AreEqual(pcl[0]["modA"]["foo"][0], ((MemberSymbol)t).Definition);
 		}
 
 		[TestMethod]
@@ -217,31 +236,42 @@ int delegate(int b) myDeleg;
 			var ctxt=new ResolverContextStack(pcl, new ResolverContext{ ScopedBlock=pcl[0]["modA"] });
 			ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
 
-			var r=Evaluation.EvaluateType(DParser.ParseExpression("f!(char[5])"), ctxt) as MemberSymbol;
-			Assert.IsNotNull(r);
+			var x = DParser.ParseExpression("f!(char[5])");
+			var r=Evaluation.EvaluateType(x, ctxt);
+			var mr = r as MemberSymbol;
+			Assert.IsNotNull(mr);
 
-			var v = r.DeducedTypes[2].Value.ParameterValue;
+			var v = mr.DeducedTypes[2].Value.ParameterValue;
 			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
 			Assert.AreEqual(5M, ((PrimitiveValue)v).Value);
 
-			r = Evaluation.EvaluateType(DParser.ParseExpression("fo!(char[5])"), ctxt) as MemberSymbol;
-			Assert.IsNotNull(r);
+			x = DParser.ParseExpression("fo!(char[5])");
+			r = Evaluation.EvaluateType(x, ctxt);
+			mr = r as MemberSymbol;
+			Assert.IsNotNull(mr);
 
-			r = Evaluation.EvaluateType(DParser.ParseExpression("fo!(immutable(char)[])"), ctxt) as MemberSymbol;
-			Assert.IsNotNull(r);
+			x = DParser.ParseExpression("fo!(immutable(char)[])");
+			r = Evaluation.EvaluateType(x, ctxt);
+			mr = r as MemberSymbol;
+			Assert.IsNotNull(mr);
 
-			r = Evaluation.EvaluateType(DParser.ParseExpression("myDeleg"), ctxt) as MemberSymbol;
-			Assert.IsNotNull(r);
-			var t = r.Base;
+			x = DParser.ParseExpression("myDeleg");
+			r = Evaluation.EvaluateType(x, ctxt);
+			mr = r as MemberSymbol;
+			Assert.IsNotNull(mr);
+			var t = mr.Base;
 			Assert.IsInstanceOfType(t, typeof(DelegateType));
 
-			r = Evaluation.EvaluateType(DParser.ParseExpression("myDeleg(123)"), ctxt) as MemberSymbol;
-			Assert.IsNotNull(r);
-			t = r.Base;
+			x=DParser.ParseExpression("myDeleg(123)");
+			r = Evaluation.EvaluateType(x, ctxt);
+			mr = r as MemberSymbol;
+			Assert.IsNotNull(mr);
+			t = mr.Base;
 			Assert.IsInstanceOfType(t, typeof(DelegateType));
 
-			r = Evaluation.EvaluateType(DParser.ParseExpression("foo(myDeleg(123))"), ctxt) as MemberSymbol;
-			Assert.IsNotNull(r);
+			x = DParser.ParseExpression("foo(myDeleg(123))");
+			r = Evaluation.EvaluateType(x, ctxt);
+			Assert.IsInstanceOfType(r, typeof(MemberSymbol));
 		}
 	}
 }

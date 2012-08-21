@@ -4,6 +4,7 @@ using D_Parser.Dom.Statements;
 using D_Parser.Parser;
 using System;
 using System.IO;
+using System.Collections.ObjectModel;
 
 namespace D_Parser.Dom
 {
@@ -96,12 +97,17 @@ namespace D_Parser.Dom
 
 	public class DBlockNode : DNode, IBlockNode
 	{
-		protected NodeDictionary _Children = new NodeDictionary();
+		protected readonly NodeDictionary _Children;
+
+		public DBlockNode()
+		{
+			_Children = new NodeDictionary(this);
+		}
 
 		/// <summary>
 		/// Used for storing import statement and similar stuff
 		/// </summary>
-		public List<IStatement> StaticStatements = new List<IStatement>();
+		public readonly List<IStatement> StaticStatements = new List<IStatement>();
 
 		public CodeLocation BlockStartLocation
 		{
@@ -144,33 +150,17 @@ namespace D_Parser.Dom
 			_Children.Clear();
 		}
 
-		/// <summary>
-		/// Always returns at least an empty list of INodes
-		/// except a null value has been assigned to a name explicitly.
-		/// </summary>
-		public List<INode> this[string Name]
+		public ReadOnlyCollection<INode> this[string Name]
 		{
 			get
 			{
-				var n = Name ?? string.Empty;
-				List<INode> l = null;
-
-				if (!_Children.TryGetValue(n, out l))
-					return _Children[n] = new List<INode>();
-
-				return l;
-			}
-			set
-			{
-				_Children[Name ?? string.Empty] = value; 
+				return _Children[Name];
 			}
 		}
 
 		public IEnumerator<INode> GetEnumerator()
 		{
-			foreach (var kv in _Children)
-				foreach (var i in kv.Value)
-					yield return i;
+			return _Children.GetEnumerator();
 		}
 
 		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
@@ -249,6 +239,14 @@ namespace D_Parser.Dom
 		public IdentifierDeclaration OutResultVariable;
 		BlockStatement _Body;
 
+		readonly NodeDictionary children;
+		readonly List<INode> additionalChildren = new List<INode>();
+
+		public DMethod()
+		{
+			children = new NodeDictionary(this);
+		}
+
 		public BlockStatement GetSubBlockAt(CodeLocation Where)
 		{
 			if (_In != null && _In.Location <= Where && _In.EndLocation >= Where)
@@ -283,9 +281,6 @@ namespace D_Parser.Dom
 		public BlockStatement In { get { return _In; } set { _In = value; UpdateChildrenArray(); } }
 		public BlockStatement Out { get { return _Out; } set { _Out = value; UpdateChildrenArray(); } }
 		public BlockStatement Body { get { return _Body; } set { _Body = value; UpdateChildrenArray(); } }
-
-		NodeDictionary children = new NodeDictionary();
-		List<INode> additionalChildren = new List<INode>();
 
 		public NodeDictionary Children
 		{
@@ -334,8 +329,7 @@ namespace D_Parser.Dom
             ClassInvariant
         }
 
-        public DMethod() { }
-        public DMethod(MethodType Type) { SpecialType = Type; }
+        public DMethod(MethodType Type) : this() { SpecialType = Type; }
 
 		public override string ToString(bool Attributes, bool IncludePath)
         {
@@ -391,15 +385,11 @@ namespace D_Parser.Dom
 			}
 		}
 
-		public List<INode> this[string Name]
+		public System.Collections.ObjectModel.ReadOnlyCollection<INode> this[string Name]
 		{
 			get
 			{
 				return children[Name];
-			}
-			set
-			{
-				children[Name] = value;
 			}
 		}
 
@@ -408,7 +398,7 @@ namespace D_Parser.Dom
 			if (children == null)
 				UpdateChildrenArray();
 
-			return (children as IEnumerable<INode>).GetEnumerator();
+			return children.GetEnumerator();
 		}
 
 		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
@@ -422,9 +412,14 @@ namespace D_Parser.Dom
 
 		public void Clear()
 		{
+			children.Clear();
 			additionalChildren.Clear();
+			UpdateChildrenArray();
 		}
 
+		/// <summary>
+		/// Returns true if the function has got at least one parameter and is a direct child of an abstract syntax tree.
+		/// </summary>
 		public bool IsUFCSReady
 		{
 			get

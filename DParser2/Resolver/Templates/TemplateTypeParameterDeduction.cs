@@ -162,36 +162,47 @@ namespace D_Parser.Resolver.Templates
 			return false;
 		}
 
-		bool HandleDecl(TemplateTypeParameter p,ArrayDecl ad, AssocArrayType ar)
+		bool HandleDecl(TemplateTypeParameter parameterRef,ArrayDecl arrayDeclToCheckAgainst, AssocArrayType argumentArrayType)
 		{
-			if (ar == null)
+			if (argumentArrayType == null)
 				return false;
 
 			// Handle key type
-			if((ad.KeyType != null || ad.KeyExpression!=null) && ar.KeyType == null)
+			if((arrayDeclToCheckAgainst.KeyType != null || arrayDeclToCheckAgainst.KeyExpression!=null) && argumentArrayType.KeyType == null)
 				return false;
 			bool result = false;
 
-			if (ad.KeyExpression != null)
+			if (arrayDeclToCheckAgainst.KeyExpression != null)
 			{
-				var arrayDecl_Param = ar.DeclarationOrExpressionBase as ArrayDecl;
-				if (arrayDecl_Param.KeyExpression != null)
-					result = SymbolValueComparer.IsEqual(ad.KeyExpression, arrayDecl_Param.KeyExpression, new StandardValueProvider(ctxt));
+				var ad_Argument = argumentArrayType.DeclarationOrExpressionBase as ArrayDecl;
+				if (ad_Argument.KeyExpression != null)
+				{
+					// ad_Argument.KeyExpression = argument
+					// ad.KeyExpression = parameter
+					var paramType = Evaluation.EvaluateType(arrayDeclToCheckAgainst.KeyExpression, ctxt);
+					
+					// TODO: If ad.KeyExpressionn (e.g. 'n') represents a variable, assign the keyexpression to it
+					// (like a '5' from the argument that will be assigned to the n from the parameter)
+					// but it's also possible that the parameter expects the argument to be exactly '5'.
+					// So first evaluate the parameter's type - if it's a scalar type, expect the arg to be a scalar value, too.
+
+					result = SymbolValueComparer.IsEqual(arrayDeclToCheckAgainst.KeyExpression, ad_Argument.KeyExpression, new StandardValueProvider(ctxt));
+				}
 			}
-			else if (ad.KeyType != null)
+			else if (arrayDeclToCheckAgainst.KeyType != null)
 			{
 				// If the array we're passing to the decl check that is static (i.e. has a constant number as key 'type'),
 				// pass that number instead of type 'int' to the check.
-				var at = ar as ArrayType;
-				if (ar != null && at.IsStaticArray)
-					result = HandleDecl(p, ad.KeyType,
+				var at = argumentArrayType as ArrayType;
+				if (argumentArrayType != null && at.IsStaticArray)
+					result = HandleDecl(parameterRef, arrayDeclToCheckAgainst.KeyType,
 						new PrimitiveValue(D_Parser.Parser.DTokens.Int, (decimal)at.FixedLength, null)); 
 				else
-					result = HandleDecl(p, ad.KeyType, ar.KeyType);
+					result = HandleDecl(parameterRef, arrayDeclToCheckAgainst.KeyType, argumentArrayType.KeyType);
 			}
 
 			// Handle inner type
-			return result && HandleDecl(p,ad.InnerDeclaration, ar.Base);
+			return result && HandleDecl(parameterRef,arrayDeclToCheckAgainst.InnerDeclaration, argumentArrayType.Base);
 		}
 
 		bool HandleDecl(TemplateTypeParameter par, DelegateDeclaration d, DelegateType dr)

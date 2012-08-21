@@ -38,7 +38,7 @@ namespace D_Parser.Dom
 		int Count { get; }
 		void Clear();
 
-		List<INode> this[string Name] { get; set; }
+		ReadOnlyCollection<INode> this[string Name] { get; }
 	}
 
 	public interface INode : ISyntaxRegion
