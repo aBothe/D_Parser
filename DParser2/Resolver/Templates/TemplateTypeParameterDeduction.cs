@@ -174,18 +174,38 @@ namespace D_Parser.Resolver.Templates
 
 			if (arrayDeclToCheckAgainst.KeyExpression != null)
 			{
-				var ad_Argument = argumentArrayType.DeclarationOrExpressionBase as ArrayDecl;
-				if (ad_Argument.KeyExpression != null)
-				{
-					// ad_Argument.KeyExpression = argument
-					// ad.KeyExpression = parameter
-					var paramType = Evaluation.EvaluateType(arrayDeclToCheckAgainst.KeyExpression, ctxt);
-					
-					// TODO: If ad.KeyExpressionn (e.g. 'n') represents a variable, assign the keyexpression to it
-					// (like a '5' from the argument that will be assigned to the n from the parameter)
-					// but it's also possible that the parameter expects the argument to be exactly '5'.
-					// So first evaluate the parameter's type - if it's a scalar type, expect the arg to be a scalar value, too.
+				// Remove all surrounding parentheses from the expression
+				var x_param = arrayDeclToCheckAgainst.KeyExpression;
 
+				while(x_param is SurroundingParenthesesExpression)
+					x_param = ((SurroundingParenthesesExpression)x_param).Expression;
+
+				var ad_Argument = argumentArrayType.DeclarationOrExpressionBase as ArrayDecl;
+
+				/*
+				 * This might be critical:
+				 * the [n] part in class myClass(T:char[n], int n) {}
+				 * will be seen as an identifier expression, not as an identifier declaration.
+				 * So in the case the parameter expression is an identifier,
+				 * test if it's part of the parameter list
+				 */
+				var id = x_param as IdentifierExpression;
+				if(id!=null && id.IsIdentifier && Contains((string)id.Value))
+				{
+					// If an expression (the usual case) has been passed as argument, evaluate its value, otherwise is its type already resolved.
+					var finalArg = ad_Argument.KeyExpression != null ?
+						Evaluation.EvaluateValue(ad_Argument.KeyExpression, new StandardValueProvider(ctxt)) as ISemantic :
+						argumentArrayType.KeyType;
+
+					//TODO: Do a type convertability check between the param type and the given argument's type.
+					// The affected parameter must also be a value parameter then, if an expression was given.
+
+					// and handle it as if it was an identifier declaration..
+					result = Set(parameterRef, finalArg, (string)id.Value); 
+				}
+				else if (ad_Argument.KeyExpression != null)
+				{
+					// Just test for equality of the argument and parameter expression, e.g. if both param and arg are 123, the result will be true.
 					result = SymbolValueComparer.IsEqual(arrayDeclToCheckAgainst.KeyExpression, ad_Argument.KeyExpression, new StandardValueProvider(ctxt));
 				}
 			}
