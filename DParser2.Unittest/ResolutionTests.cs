@@ -273,5 +273,30 @@ int delegate(int b) myDeleg;
 			r = Evaluation.EvaluateType(x, ctxt);
 			Assert.IsInstanceOfType(r, typeof(MemberSymbol));
 		}
+
+		[TestMethod]
+		public void Ctors()
+		{
+			var pcl = CreateCache(@"module modA;
+
+class A {}
+class B : A{
+	this() {
+		super();
+	}
+}");
+
+			var B = pcl[0]["modA"]["B"][0] as DClassLike;
+			var this_ = (DMethod)B[DMethod.ConstructorIdentifier][0];
+			var ctxt = new ResolverContextStack(pcl, new ResolverContext { ScopedBlock = this_, ContextDependentOptions = ResolutionOptions.ReturnMethodReferencesOnly });
+
+			var super = (this_.Body.SubStatements[0] as IExpressionContainingStatement).SubExpressions[0];
+
+			var sym = Evaluation.EvaluateType(super, ctxt);
+			Assert.IsInstanceOfType(sym, typeof(MemberSymbol));
+			var mr = (MemberSymbol)sym;
+			Assert.IsInstanceOfType(mr.Definition, typeof(DMethod));
+			Assert.AreEqual(DMethod.MethodType.Constructor, ((DMethod)mr.Definition).SpecialType);
+		}
 	}
 }
