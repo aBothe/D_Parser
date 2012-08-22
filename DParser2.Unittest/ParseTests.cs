@@ -121,7 +121,7 @@ int b;");
 		[TestMethod]
 		public void ParsePerformance1()
 		{
-			var pc = ParsePhobos(false);
+			//var pc = ParsePhobos(false);
 			var pcl = ResolutionTests.CreateCache(@"module modA;
 
 import std.stdio, std.array;
@@ -172,7 +172,7 @@ void main()
 }
 
 ");
-			pcl.Add(pc);
+			//pcl.Add(pc);
 
 			var sw = new Stopwatch();
 			var main = pcl[0]["modA"]["main"][0] as DMethod;
@@ -180,7 +180,7 @@ void main()
 			var ctxt = new ResolverContextStack(pcl, new ResolverContext { ScopedBlock = main, ScopedStatement = s });
 			//ctxt.ContextIndependentOptions |= ResolutionOptions.StopAfterFirstOverloads | ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.DontResolveBaseTypes;
 			var x = s.SubExpressions[0];
-			pc.UfcsCache.Update(pcl);
+			//pc.UfcsCache.Update(pcl);
 			sw.Restart();
 
 			var t = Evaluation.EvaluateType(x, ctxt);
