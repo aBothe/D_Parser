@@ -86,11 +86,12 @@ int b;");
 				Assert.AreEqual(mod.ParseErrors.Count, 0);
 		}
 
-		public static ParseCache ParsePhobos()
+		public static ParseCache ParsePhobos(bool ufcs=true)
 		{
 			var dmdBase = @"A:\D\dmd2\src";
 
 			var pc = new ParseCache();
+			pc.EnableUfcsCaching = ufcs;
 			pc.FinishedParsing += new ParseCache.ParseFinishedHandler(pc_FinishedParsing);
 			pc.FinishedUfcsCaching += new Action(() =>
 			{
@@ -120,7 +121,7 @@ int b;");
 		[TestMethod]
 		public void ParsePerformance1()
 		{
-			var pc = ParsePhobos();
+			var pc = ParsePhobos(false);
 			var pcl = ResolutionTests.CreateCache(@"module modA;
 
 import std.stdio, std.array;
@@ -134,6 +135,8 @@ class lol{
 		
 		return i+k;	
 	}
+
+	void derp() {}
 	
 	const void lolBar(this T)() {
 		
@@ -165,8 +168,7 @@ void main()
 	writeln(di,123,123);
 
 	lol o = new lol();
-	//o.lolBar();
-o;
+	o.derp();
 }
 
 ");
@@ -178,7 +180,7 @@ o;
 			var ctxt = new ResolverContextStack(pcl, new ResolverContext { ScopedBlock = main, ScopedStatement = s });
 			//ctxt.ContextIndependentOptions |= ResolutionOptions.StopAfterFirstOverloads | ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.DontResolveBaseTypes;
 			var x = s.SubExpressions[0];
-
+			pc.UfcsCache.Update(pcl);
 			sw.Restart();
 
 			var t = Evaluation.EvaluateType(x, ctxt);
