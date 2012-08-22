@@ -21,6 +21,11 @@ namespace D_Parser.Resolver.ASTScanner
 			return scan.Matches;
 		}
 
+		public override IEnumerable<INode> PrefilterSubnodes(IBlockNode bn)
+		{
+			return bn.Children[filterId];
+		}
+
 		protected override bool HandleItem(INode n)
 		{
             if (n != null && n.Name == filterId)
