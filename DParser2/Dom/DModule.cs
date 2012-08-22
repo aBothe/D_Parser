@@ -131,7 +131,6 @@ namespace D_Parser.Dom
 
 		public void Add(INode Node)
 		{
-			Node.Parent = this;
 			_Children.Add(Node);
 		}
 
@@ -242,6 +241,11 @@ namespace D_Parser.Dom
 		readonly NodeDictionary children;
 		readonly List<INode> additionalChildren = new List<INode>();
 
+		/// <summary>
+		/// Used to identify constructor methods. Since it'd be a token otherwise it cannot be used as a regular method's name.
+		/// </summary>
+		public const string ConstructorIdentifier = "this";
+
 		public DMethod()
 		{
 			children = new NodeDictionary(this);
@@ -265,7 +269,7 @@ namespace D_Parser.Dom
 		{
 			if (other is DMethod)
 			{
-				var dm = other as DMethod;
+				var dm = (DMethod)other;
 
 				Parameters = dm.Parameters;
 				SpecialType = dm.SpecialType;

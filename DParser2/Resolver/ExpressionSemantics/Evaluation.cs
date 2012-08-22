@@ -1,5 +1,7 @@
 ﻿using System;
 using D_Parser.Dom.Expressions;
+using D_Parser.Parser;
+using System.Linq;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
@@ -142,6 +144,19 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			{
 				bool ufcs = false; // TODO?
 				return Evaluation.GetAccessedOverloads((PostfixExpression_Access)foreExpression, ctxt, out ufcs, null, false);
+			}
+			else if (foreExpression is TokenExpression)
+			{
+				var tk = ((TokenExpression)foreExpression).Token;
+
+				if (tk == DTokens.This || tk == DTokens.Super)
+				{
+					var classRef = EvaluateType(foreExpression, ctxt) as TemplateIntermediateType;
+
+					if(classRef!=null)
+						return D_Parser.Resolver.TypeResolution.TypeDeclarationResolver.HandleNodeMatches(GetConstructors(classRef), ctxt, classRef,foreExpression);
+				}
+				return null;
 			}
 			else
 				return new[] { Evaluation.EvaluateType(foreExpression, ctxt) };
