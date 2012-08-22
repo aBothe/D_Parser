@@ -56,7 +56,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 			if (ctxt.CurrentContext.ScopedStatement is IExpressionContainingStatement)
 			{
-				var exprs = (ctxt.CurrentContext.ScopedStatement as IExpressionContainingStatement).SubExpressions;
+				var exprs = ((IExpressionContainingStatement)ctxt.CurrentContext.ScopedStatement).SubExpressions;
 				IExpression targetExpr = null;
 
 				if (exprs != null)
@@ -168,7 +168,13 @@ namespace D_Parser.Resolver.TypeResolution
 					bt = new PrimitiveType(DTokens.Int);
 				else
 				{
+					if(tr.Definition.Parent is IBlockNode)
+						ctxt.PushNewScope((IBlockNode)tr.Definition.Parent);
+
 					var bts=TypeDeclarationResolver.Resolve(et.Definition.Type, ctxt);
+
+					if (tr.Definition.Parent is IBlockNode)
+						ctxt.Pop();
 
 					ctxt.CheckForSingleResult(bts, et.Definition.Type);
 
