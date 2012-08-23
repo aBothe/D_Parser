@@ -100,18 +100,42 @@ namespace D_Parser.Resolver.Templates
 		bool HandleDecl(TemplateTypeParameter parameter, TemplateInstanceExpression tix, AbstractType r)
 		{
 			/*
+			 * TODO: Scan down r for having at least one templateinstanceexpression as declaration base.
+			 * If a tix was found, check if the definition of the respective result base level 
+			 * and the un-aliased identifier of the 'tix' parameter match.
+			 * Attention: if the alias represents an undeduced type (i.e. a type bundle of equally named type nodes),
+			 * it is only important that the definition is inside this bundle.
+			 * Therefore, it's needed to manually resolve the identifier, and look out for aliases or such unprecise aliases..confusing as s**t!
+			 * 
+			 * If the param tix id is part of the template param list, the behaviour is currently undefined! - so instantly return false, I'll leave it as TODO/FIXME
+			 */
+			var tixBasedArgumentType = r as TemplateIntermediateType;
+			while (tixBasedArgumentType != null)
+			{
+				if (tixBasedArgumentType.DeclarationOrExpressionBase is TemplateInstanceExpression)
+				{
+					
+				}
+
+				tixBasedArgumentType = tixBasedArgumentType;
+			}
+
+			/*
 			 * This part is very tricky:
 			 * I still dunno what is allowed over here--
 			 * 
 			 * class Foo(T:Bar!E[],E) {}
 			 * ...
 			 * Foo!(Bar!string[]) f; -- E will be 'string' then
+			 * 
+			 * class DerivateBar : Bar!string[] {} -- new Foo!DerivateBar() is also allowed, but now DerivateBar
+			 *		obviously is not a template instance expression - it's a normal identifier only. 
 			 */
 			if (r.DeclarationOrExpressionBase is TemplateInstanceExpression)
 			{
 				var tix_given = (TemplateInstanceExpression)r.DeclarationOrExpressionBase;
 
-				// Template type Ids must be equal (?)
+				// Template type Ids must be equal (? - no, see aliases)
 				if (tix.TemplateIdentifier.ToString() != tix_given.TemplateIdentifier.ToString())
 					return false;
 

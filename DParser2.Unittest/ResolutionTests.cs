@@ -275,6 +275,55 @@ int delegate(int b) myDeleg;
 		}
 
 		[TestMethod]
+		public void TestMethodParamDeduction5()
+		{
+			var pcl = CreateCache(@"module modA;
+struct Params{}
+class IConn ( P ){}
+class Conn : IConn!(Params){}
+class IRegistry ( P ){}
+class Registry (C : IConn!(Params) ) : IRegistry!(Params){}
+class ConcreteRegistry : Registry!(Conn){}
+class IClient ( P, R : IRegistry!(P) ){}
+class Client : IClient!(Params, ConcreteRegistry){}");
+
+			var mod=pcl[0]["modA"];
+			var Client = mod["Client"][0] as DClassLike;
+			var ctxt = new ResolverContextStack(pcl, new ResolverContext {  ScopedBlock = mod });
+
+			var res = TypeDeclarationResolver.HandleNodeMatch(Client, ctxt);
+			Assert.IsInstanceOfType(res, typeof(ClassType));
+			var ct = (ClassType)res;
+
+			Assert.IsInstanceOfType(ct.Base, typeof(ClassType));
+			ct = (ClassType)ct.Base;
+
+			Assert.AreEqual(ct.DeducedTypes.Count, 2);
+		}
+
+		[TestMethod]
+		public void TestMethodParamDeduction6()
+		{
+			var pcl = CreateCache(@"module modA;
+class A(T) {}
+class B : A!int{}
+class C(U: A!int){}
+class D : C!B {}");
+
+			var mod = pcl[0]["modA"];
+			var ctxt = new ResolverContextStack(pcl, new ResolverContext { ScopedBlock = mod });
+
+			var res = TypeDeclarationResolver.HandleNodeMatch(mod["D"][0], ctxt);
+			Assert.IsInstanceOfType(res, typeof(ClassType));
+			var ct = (ClassType)res;
+
+			Assert.IsInstanceOfType(ct.Base, typeof(ClassType));
+			ct = (ClassType)ct.Base;
+
+			Assert.AreEqual(1, ct.DeducedTypes.Count);
+		}
+
+		[TestMethod]
 		public void Ctors()
 		{
 			var pcl = CreateCache(@"module modA;
