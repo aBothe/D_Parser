@@ -255,7 +255,7 @@ namespace D_Parser.Resolver.TypeResolution
 							ctxt.LogError(new ResolutionError(type, "An interface cannot inherit from non-interfaces"));
 						else if (i == 0)
 						{
-							baseClass = (TemplateIntermediateType)res[0];
+							baseClass = (TemplateIntermediateType)r;
 						}
 						else
 							ctxt.LogError(new ResolutionError(dc, "The base "+(r is ClassType ?  "class" : "template")+" name must preceed base interfaces"));
