@@ -4,6 +4,8 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
 using D_Parser.Resolver.TypeResolution;
 using D_Parser.Resolver.ExpressionSemantics;
+using System.Collections.Generic;
+using D_Parser.Resolver.ASTScanner;
 
 namespace D_Parser.Resolver.Templates
 {
@@ -109,15 +111,22 @@ namespace D_Parser.Resolver.Templates
 			 * 
 			 * If the param tix id is part of the template param list, the behaviour is currently undefined! - so instantly return false, I'll leave it as TODO/FIXME
 			 */
-			var tixBasedArgumentType = r as TemplateIntermediateType;
-			while (tixBasedArgumentType != null)
+			var paramTix_TemplateMatchPossibilities = ResolveTemplateInstanceId(tix);
+			TemplateIntermediateType tixBasedArgumentType = null;
+			var r_ = r as DSymbol;
+			while (r_ != null)
 			{
-				if (tixBasedArgumentType.DeclarationOrExpressionBase is TemplateInstanceExpression)
+				if (r_.DeclarationOrExpressionBase is TemplateInstanceExpression)
 				{
-					
+					var tit = r_ as TemplateIntermediateType;
+					if (tit != null && CheckForTixIdentifierEquality(paramTix_TemplateMatchPossibilities, tit.Definition))
+					{
+						tixBasedArgumentType = tit;
+						break;
+					}
 				}
 
-				tixBasedArgumentType = tixBasedArgumentType;
+				r_ = r_.Base as DSymbol;
 			}
 
 			/*
@@ -131,17 +140,10 @@ namespace D_Parser.Resolver.Templates
 			 * class DerivateBar : Bar!string[] {} -- new Foo!DerivateBar() is also allowed, but now DerivateBar
 			 *		obviously is not a template instance expression - it's a normal identifier only. 
 			 */
-			if (r.DeclarationOrExpressionBase is TemplateInstanceExpression)
+			if (tixBasedArgumentType != null)
 			{
-				var tix_given = (TemplateInstanceExpression)r.DeclarationOrExpressionBase;
+				var argEnum_given = ((TemplateInstanceExpression)tixBasedArgumentType.DeclarationOrExpressionBase).Arguments.GetEnumerator();
 
-				// Template type Ids must be equal (? - no, see aliases)
-				if (tix.TemplateIdentifier.ToString() != tix_given.TemplateIdentifier.ToString())
-					return false;
-
-				var thHandler = new TemplateParameterDeduction(TargetDictionary, ctxt);
-
-				var argEnum_given = tix_given.Arguments.GetEnumerator();
 				foreach (var p in tix.Arguments)
 				{
 					if (!argEnum_given.MoveNext() || argEnum_given.Current == null)
@@ -167,6 +169,83 @@ namespace D_Parser.Resolver.Templates
 			}
 
 			return false;
+		}
+
+		DNode[] ResolveTemplateInstanceId(TemplateInstanceExpression tix)
+		{
+			/*
+			 * Again a very unclear/buggy situation:
+			 * When having a cascaded tix as parameter, it uses the left-most part (i.e. the inner most) of the typedeclaration construct.
+			 * 
+			 * class C(A!X.SubClass, X) {} can be instantiated via C!(A!int), but not via C!(A!int.SubClass) - totally confusing
+			 * (dmd v2.060)
+			 */
+			if (tix.InnerDeclaration != null)
+			{
+				if (tix.InnerMost is TemplateInstanceExpression)
+					tix = (TemplateInstanceExpression)tix.InnerMost;
+				else
+					return new DNode[0];
+			}
+
+			var optBackup = ctxt.CurrentContext.ContextDependentOptions;
+			ctxt.CurrentContext.ContextDependentOptions = ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.DontResolveBaseTypes | ResolutionOptions.StopAfterFirstOverloads;
+
+			var initialResults = TypeDeclarationResolver.ResolveIdentifier(tix.TemplateIdentifier.Id, ctxt, tix);
+			var l = _handleResStep(initialResults);
+
+			ctxt.CurrentContext.ContextDependentOptions = optBackup;
+
+			return l.ToArray();
+		}
+
+		List<DNode> _handleResStep(AbstractType[] res)
+		{
+			var l = new List<DNode>();
+
+			if(res!=null)
+				foreach (var r in res)
+				{
+					if (r is AliasedType)
+					{
+						var alias = (AliasedType)r;
+						AbstractType[] next=null;
+
+						ctxt.CurrentContext.ScopedBlock = alias.Definition.Parent as IBlockNode;
+						ctxt.CurrentContext.ScopedStatement = null;
+
+						if (alias.Definition.Type is IdentifierDeclaration)
+							next = TypeDeclarationResolver.Resolve((IdentifierDeclaration)alias.Definition.Type, ctxt, null, false);
+						else
+							next = TypeDeclarationResolver.Resolve(alias.Definition.Type, ctxt);
+
+						l.AddRange(_handleResStep(next));
+					}
+					else if (r is DSymbol)
+						l.Add(((DSymbol)r).Definition);
+				}
+
+			return l;
+		}
+
+		/// <summary>
+		/// Returns true if both template instance identifiers are matching each other or if the parameterSpeci
+		/// </summary>
+		bool CheckForTixIdentifierEquality(
+			DNode[] expectedTemplateTypes, 
+			INode controllee)
+		{
+			/*
+			 * Note: This implementation is not 100% correct or defined in the D spec:
+			 * class A(T){}
+			 * class A(S:string) {}
+			 * class C(U: A!W, W){ W item; }
+			 * 
+			 * C!(A!int) -- is possible
+			 * C!(A!string) -- is not allowed somehow - because there are probably two 'matching' template types.
+			 * (dmd version 2.060, August 2012)
+			 */
+			return expectedTemplateTypes != null && expectedTemplateTypes.Contains(controllee);
 		}
 
 		static ITypeDeclaration ConvertToTypeDeclarationRoughly(IExpression p)
