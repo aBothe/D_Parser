@@ -299,6 +299,20 @@ class Client : IClient!(Params, ConcreteRegistry){}");
 			ct = (ClassType)ct.Base;
 
 			Assert.AreEqual(ct.DeducedTypes.Count, 2);
+			var dedtype = ct.DeducedTypes[0];
+			Assert.AreEqual("P", dedtype.Key);
+			Assert.AreEqual(mod["Params"][0],((DSymbol)dedtype.Value.Base).Definition);
+			dedtype = ct.DeducedTypes[1];
+			Assert.AreEqual("R", dedtype.Key);
+			Assert.AreEqual(mod["ConcreteRegistry"][0], ((DSymbol)dedtype.Value.Base).Definition);
+
+
+			ctxt.ScopedBlock = mod;
+			DToken opt=null;
+			var tix = DParser.ParseBasicType("IClient!(Params,ConcreteRegistry)",out opt);
+			res = TypeDeclarationResolver.ResolveSingle(tix, ctxt);
+
+			Assert.IsInstanceOfType(res, typeof(ClassType));
 		}
 
 		[TestMethod]
