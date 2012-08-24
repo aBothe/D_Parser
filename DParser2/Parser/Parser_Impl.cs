@@ -86,7 +86,7 @@ namespace D_Parser.Parser
 			if (t == null)
 				return "";
 
-			int ExpectedLine = t.line;
+			int ExpectedLine = t.Line;
 
 			string ret = "";
 
@@ -2476,7 +2476,7 @@ namespace D_Parser.Parser
 				if (t.Kind == __FILE__ && doc != null)
 					id = doc.FileName;
 				else if(t.Kind==__LINE__)
-					id = t.line;
+					id = t.Line;
 
 				return new IdentifierExpression(id)
 				{

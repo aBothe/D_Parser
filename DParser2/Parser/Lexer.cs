@@ -473,7 +473,7 @@ namespace D_Parser.Parser
 						x=Col-1;
 						y=Line;
 						var lit=ReadEscapeSequence(out ch, out surr);
-						token = new DToken(DTokens.Literal, x,y, lit, ch.ToString(), LiteralFormat.StringLiteral);
+						token = new DToken(DTokens.Literal, x,y, lit.Length + 1, lit, ch.ToString(), LiteralFormat.StringLiteral);
 						OnError(y, x, "Escape sequence strings are deprecated!");
 						break;
 					case '\'':
@@ -494,7 +494,7 @@ namespace D_Parser.Parser
 							if (Char.IsLetterOrDigit(ch) || ch == '_')
 							{
 								bool canBeKeyword;
-								string ident = ReadIdent(ch, out canBeKeyword);
+								var ident = ReadIdent(ch, out canBeKeyword);
 
 								token = new DToken(DTokens.PropertyAttribute, x - 1, y, ident);
 							}
@@ -527,7 +527,7 @@ namespace D_Parser.Parser
 										break;
 								}
 
-								return new DToken(DTokens.Literal, Col - 1, Line, numString, ParseFloatValue(numString, 16), LiteralFormat.Scalar);
+								return new DToken(DTokens.Literal, Col - 1, Line, numString.Length + 1, ParseFloatValue(numString, 16), numString, LiteralFormat.Scalar);
 							}
 						}
 						else if (ch == 'q') // Token strings
@@ -615,7 +615,7 @@ namespace D_Parser.Parser
 									}
 								}
 
-								return new DToken(DTokens.Literal, x, y, tokenString, tokenString, LiteralFormat.VerbatimStringLiteral);
+								return new DToken(DTokens.Literal, x, y, new CodeLocation(Col, Line), tokenString, tokenString, LiteralFormat.VerbatimStringLiteral);
 							}
 						}
 
@@ -624,43 +624,52 @@ namespace D_Parser.Parser
 							x = Col - 1; // Col was incremented above, but we want the start of the identifier
 							y = Line;
 							bool canBeKeyword;
-							string s = ReadIdent(ch, out canBeKeyword);
+							var s = ReadIdent(ch, out canBeKeyword);
 							if (canBeKeyword)
 							{
-								// Fill in static string surrogates directly
-								if (s == "__DATE__")
-									return new DToken(DTokens.Literal, x, y, 8) { 
-										literalFormat= LiteralFormat.StringLiteral,
-										literalValue=DateTime.Now.ToString("MMM dd yyyy",System.Globalization.CultureInfo.InvariantCulture.DateTimeFormat)
-									};
-								else if (s == "__TIME__")
-									return new DToken(DTokens.Literal, x, y, 8)
-									{
-										literalFormat = LiteralFormat.StringLiteral,
-										literalValue = DateTime.Now.ToString("HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture.DateTimeFormat)
-									};
-								else if (s == "__TIMESTAMP__")
-									return new DToken(DTokens.Literal, x, y, 12)
-									{
-										literalFormat = LiteralFormat.StringLiteral,
-										literalValue = DateTime.Now.ToString("ddd MMM dd HH:mm:ss yyyy", System.Globalization.CultureInfo.InvariantCulture.DateTimeFormat)
-									};
-								else if (s == "__VENDOR__")
-									return new DToken(DTokens.Literal, x, y, 10)
-									{
-										literalFormat = LiteralFormat.StringLiteral,
-										literalValue = "D Parser v"+System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(3)+" by Alexander Bothe"
-									};
-								else if (s == "__VERSION__")
+								// A micro-optimization..
+								if (s.Length >= 8 && s[0] == '_' && s[1] == '_')
 								{
-									var lexerVersion=System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-									return new DToken(DTokens.Literal, x, y, 11)
-									{
-										literalFormat = LiteralFormat.Scalar,
-										literalValue = lexerVersion.Major*1000+lexerVersion.Minor
-									};
-								}
+									LiteralFormat literalFormat = 0;
+									var subFormat = LiteralSubformat.Utf8;
+									object literalValue = null;
 
+									// Fill in static string surrogates directly
+									if (s == "__DATE__")
+									{
+										literalFormat = LiteralFormat.StringLiteral;
+										literalValue = DateTime.Now.ToString("MMM dd yyyy", System.Globalization.CultureInfo.InvariantCulture.DateTimeFormat);
+									}
+									else if (s == "__TIME__")
+									{
+										literalFormat = LiteralFormat.StringLiteral;
+										literalValue = DateTime.Now.ToString("HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture.DateTimeFormat);
+									}
+									else if (s == "__TIMESTAMP__")
+										{
+											literalFormat = LiteralFormat.StringLiteral;
+											literalValue = DateTime.Now.ToString("ddd MMM dd HH:mm:ss yyyy", System.Globalization.CultureInfo.InvariantCulture.DateTimeFormat);
+										}
+									else if (s == "__VENDOR__")
+										{
+											literalFormat = LiteralFormat.StringLiteral;
+											literalValue = "D Parser v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(3) + " by Alexander Bothe";
+										}
+									else if (s == "__VERSION__")
+									{
+										subFormat = LiteralSubformat.Integer;
+										var lexerVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+										literalFormat = LiteralFormat.Scalar;
+										literalValue = lexerVersion.Major * 1000 + lexerVersion.Minor;
+									}
+
+									if (literalFormat != 0)
+										return new DToken(DTokens.Literal, x, y, s.Length, 
+											literalValue,
+											literalValue is string ? (string)literalValue : literalValue.ToString(), 
+											literalFormat, 
+											subFormat);
+								}
 
 								foreach (var kv in DTokens.Keywords)
 									if (s == kv.Value)
@@ -689,7 +698,7 @@ namespace D_Parser.Parser
 				}
 			}
 
-			return new DToken(DTokens.EOF, Col, Line, String.Empty);
+			return new DToken(DTokens.EOF, Col, Line, 0);
 		}
 
 		// The C# compiler has a fixed size length therefore we'll use a fixed size char array for identifiers
@@ -1014,9 +1023,10 @@ namespace D_Parser.Parser
 
 				#endregion
 
-				token = new DToken(DTokens.Literal, new CodeLocation(x, y), new CodeLocation(x + stringValue.Length, y), stringValue, val, 
+				token = new DToken(DTokens.Literal, x,y, stringValue.Length, val, stringValue, 
 					subFmt.HasFlag(LiteralSubformat.Float) || subFmt.HasFlag(LiteralSubformat.Imaginary) || HasDot ? 
-						(LiteralFormat.FloatingPoint | LiteralFormat.Scalar) : LiteralFormat.Scalar,
+						(LiteralFormat.FloatingPoint | LiteralFormat.Scalar) : 
+						LiteralFormat.Scalar,
 					subFmt);
 
 				if (token != null) 
@@ -1085,7 +1095,7 @@ namespace D_Parser.Parser
 				OnError(y, x, String.Format("End of file reached inside string literal"));
 			}
 
-			return new DToken(DTokens.Literal, new CodeLocation(x, y), new CodeLocation(x + originalValue.Length, y), originalValue.ToString(), sb.ToString(), LiteralFormat.StringLiteral, subFmt);
+			return new DToken(DTokens.Literal, x,y, new CodeLocation(Col,Line), originalValue.ToString(), sb.ToString(), LiteralFormat.StringLiteral, subFmt);
 		}
 
 		DToken ReadVerbatimString(int EndingChar)
@@ -1140,14 +1150,19 @@ namespace D_Parser.Parser
 
 			// Suffix literal check
 			int pk = ReaderPeek();
+			var subFmt = LiteralSubformat.Utf8;
 			if (pk != -1)
 			{
 				nextChar = (char)pk;
 				if (nextChar == 'c' || nextChar == 'w' || nextChar == 'd')
+				{
+					subFmt = nextChar == 'w' ? LiteralSubformat.Utf16 :
+						nextChar == 'd' ? LiteralSubformat.Utf32 : LiteralSubformat.Utf8;
 					ReaderRead();
+				}
 			}
 
-			return new DToken(DTokens.Literal, new CodeLocation(x, y), new CodeLocation(x + originalValue.Length, y), originalValue.ToString(), sb.ToString(), LiteralFormat.VerbatimStringLiteral);
+			return new DToken(DTokens.Literal, x,y, new CodeLocation(Col,Line), originalValue.ToString(), sb.ToString(), LiteralFormat.VerbatimStringLiteral, subFmt);
 		}
 
 		char[] escapeSequenceBuffer = new char[12];
@@ -1382,7 +1397,7 @@ namespace D_Parser.Parser
 			}
 			else if (ch == '\'')
 			{
-				return new DToken(DTokens.Literal, new CodeLocation(x, y), new CodeLocation(x, y), "''", char.MinValue, LiteralFormat.CharLiteral);
+				return new DToken(DTokens.Literal, x,y, 2, char.MinValue, "''", LiteralFormat.CharLiteral);
 			}
 
 			unchecked
@@ -1392,7 +1407,7 @@ namespace D_Parser.Parser
 					OnError(y, x, String.Format("Char not terminated"));
 				}
 			}
-			return new DToken(DTokens.Literal, new CodeLocation(x, y), new CodeLocation(x + 1, y), "'" + ch + escapeSequence + "'", string.IsNullOrEmpty(surrogatePair) ? (object)chValue : surrogatePair, LiteralFormat.CharLiteral);
+			return new DToken(DTokens.Literal, x, y, new CodeLocation(Col, Line), string.IsNullOrEmpty(surrogatePair) ? (object)chValue : surrogatePair, "'" + ch + escapeSequence + "'", LiteralFormat.CharLiteral);
 		}
 
 		DToken ReadOperator(char ch)
@@ -1431,7 +1446,7 @@ namespace D_Parser.Parser
 					{
 						case '=':
 							ReaderRead();
-							return new DToken(DTokens.TimesAssign, x, y);
+							return new DToken(DTokens.TimesAssign, x, y, 2);
 						default:
 							break;
 					}
@@ -1441,7 +1456,7 @@ namespace D_Parser.Parser
 					{
 						case '=':
 							ReaderRead();
-							return new DToken(DTokens.DivAssign, x, y);
+							return new DToken(DTokens.DivAssign, x, y,2);
 					}
 					return new DToken(DTokens.Div, x, y);
 				case '%':
@@ -1449,7 +1464,7 @@ namespace D_Parser.Parser
 					{
 						case '=':
 							ReaderRead();
-							return new DToken(DTokens.ModAssign, x, y);
+							return new DToken(DTokens.ModAssign, x, y,2);
 					}
 					return new DToken(DTokens.Mod, x, y);
 				case '&':
@@ -1457,10 +1472,10 @@ namespace D_Parser.Parser
 					{
 						case '&':
 							ReaderRead();
-							return new DToken(DTokens.LogicalAnd, x, y);
+							return new DToken(DTokens.LogicalAnd, x, y,2);
 						case '=':
 							ReaderRead();
-							return new DToken(DTokens.BitwiseAndAssign, x, y);
+							return new DToken(DTokens.BitwiseAndAssign, x, y, 2);
 					}
 					return new DToken(DTokens.BitwiseAnd, x, y);
 				case '|':
@@ -1468,10 +1483,10 @@ namespace D_Parser.Parser
 					{
 						case '|':
 							ReaderRead();
-							return new DToken(DTokens.LogicalOr, x, y);
+							return new DToken(DTokens.LogicalOr, x, y, 2);
 						case '=':
 							ReaderRead();
-							return new DToken(DTokens.BitwiseOrAssign, x, y);
+							return new DToken(DTokens.BitwiseOrAssign, x, y, 2);
 					}
 					return new DToken(DTokens.BitwiseOr, x, y);
 				case '^':
@@ -1479,15 +1494,15 @@ namespace D_Parser.Parser
 					{
 						case '=':
 							ReaderRead();
-							return new DToken(DTokens.XorAssign, x, y);
+							return new DToken(DTokens.XorAssign, x, y, 2);
 						case '^':
 							ReaderRead();
 							if (ReaderPeek() == '=')
 							{
 								ReaderRead();
-								return new DToken(DTokens.PowAssign, x, y);
+								return new DToken(DTokens.PowAssign, x, y,3);
 							}
-							return new DToken(DTokens.Pow, x, y);
+							return new DToken(DTokens.Pow, x, y, 2);
 					}
 					return new DToken(DTokens.Xor, x, y);
 				case '!':
@@ -1495,7 +1510,7 @@ namespace D_Parser.Parser
 					{
 						case '=':
 							ReaderRead();
-							return new DToken(DTokens.NotEqual, x, y); // !=
+							return new DToken(DTokens.NotEqual, x, y, 2); // !=
 
 						case '<':
 							ReaderRead();
@@ -1503,18 +1518,18 @@ namespace D_Parser.Parser
 							{
 								case '=':
 									ReaderRead();
-									return new DToken(DTokens.UnorderedOrGreater, x, y); // !<=
+									return new DToken(DTokens.UnorderedOrGreater, x, y,3); // !<=
 								case '>':
 									ReaderRead();
 									switch (ReaderPeek())
 									{
 										case '=':
 											ReaderRead();
-											return new DToken(DTokens.Unordered, x, y); // !<>=
+											return new DToken(DTokens.Unordered, x, y,4); // !<>=
 									}
-									return new DToken(DTokens.UnorderedOrEqual, x, y); // !<>
+									return new DToken(DTokens.UnorderedOrEqual, x, y,3); // !<>
 							}
-							return new DToken(DTokens.UnorderedGreaterOrEqual, x, y); // !<
+							return new DToken(DTokens.UnorderedGreaterOrEqual, x, y, 2); // !<
 
 						case '>':
 							ReaderRead();
@@ -1522,11 +1537,11 @@ namespace D_Parser.Parser
 							{
 								case '=':
 									ReaderRead();
-									return new DToken(DTokens.UnorderedOrLess, x, y); // !>=
+									return new DToken(DTokens.UnorderedOrLess, x, y,3); // !>=
 								default:
 									break;
 							}
-							return new DToken(DTokens.UnorderedLessOrEqual, x, y); // !>
+							return new DToken(DTokens.UnorderedLessOrEqual, x, y,2); // !>
 
 					}
 					return new DToken(DTokens.Not, x, y);
@@ -1535,7 +1550,7 @@ namespace D_Parser.Parser
 					{
 						case '=':
 							ReaderRead();
-							return new DToken(DTokens.TildeAssign, x, y);
+							return new DToken(DTokens.TildeAssign, x, y, 2);
 					}
 					return new DToken(DTokens.Tilde, x, y);
 				case '=':
@@ -1543,10 +1558,10 @@ namespace D_Parser.Parser
 					{
 						case '=':
 							ReaderRead();
-							return new DToken(DTokens.Equal, x, y);
+							return new DToken(DTokens.Equal, x, y, 2);
 						case '>':
 							ReaderRead();
-							return new DToken(DTokens.GoesTo, x, y);
+							return new DToken(DTokens.GoesTo, x, y, 2);
 					}
 					return new DToken(DTokens.Assign, x, y);
 				case '<':
@@ -1558,25 +1573,25 @@ namespace D_Parser.Parser
 							{
 								case '=':
 									ReaderRead();
-									return new DToken(DTokens.ShiftLeftAssign, x, y);
+									return new DToken(DTokens.ShiftLeftAssign, x, y,3);
 								default:
 									break;
 							}
-							return new DToken(DTokens.ShiftLeft, x, y);
+							return new DToken(DTokens.ShiftLeft, x, y, 2);
 						case '>':
 							ReaderRead();
 							switch (ReaderPeek())
 							{
 								case '=':
 									ReaderRead();
-									return new DToken(DTokens.LessEqualOrGreater, x, y);
+									return new DToken(DTokens.LessEqualOrGreater, x, y, 3);
 								default:
 									break;
 							}
-							return new DToken(DTokens.LessOrGreater, x, y);
+							return new DToken(DTokens.LessOrGreater, x, y,2);
 						case '=':
 							ReaderRead();
-							return new DToken(DTokens.LessEqual, x, y);
+							return new DToken(DTokens.LessEqual, x, y,2);
 					}
 					return new DToken(DTokens.LessThan, x, y);
 				case '>':
@@ -1590,7 +1605,7 @@ namespace D_Parser.Parser
 								{
 									case '=':
 										ReaderRead();
-										return new DToken(DTokens.ShiftRightAssign, x, y);
+										return new DToken(DTokens.ShiftRightAssign, x, y,3);
 									case '>':
 										ReaderRead();
 										if (ReaderPeek() != -1)
@@ -1599,17 +1614,17 @@ namespace D_Parser.Parser
 											{
 												case '=':
 													ReaderRead();
-													return new DToken(DTokens.TripleRightShiftAssign, x, y);
+													return new DToken(DTokens.TripleRightShiftAssign, x, y,4);
 											}
-											return new DToken(DTokens.ShiftRightUnsigned, x, y); // >>>
+											return new DToken(DTokens.ShiftRightUnsigned, x, y,3); // >>>
 										}
 										break;
 								}
 							}
-							return new DToken(DTokens.ShiftRight, x, y);
+							return new DToken(DTokens.ShiftRight, x, y,2);
 						case '=':
 							ReaderRead();
-							return new DToken(DTokens.GreaterEqual, x, y);
+							return new DToken(DTokens.GreaterEqual, x, y, 2);
 					}
 					return new DToken(DTokens.GreaterThan, x, y);
 				case '?':
@@ -1637,19 +1652,19 @@ namespace D_Parser.Parser
 						}
 						return new DToken(DTokens.DoubleDot, x, y,2);
 					}
-					return new DToken(DTokens.Dot, x, y,1);
+					return new DToken(DTokens.Dot, x, y);
 				case ')':
-					return new DToken(DTokens.CloseParenthesis, x, y,1);
+					return new DToken(DTokens.CloseParenthesis, x, y);
 				case '(':
-					return new DToken(DTokens.OpenParenthesis, x, y,1);
+					return new DToken(DTokens.OpenParenthesis, x, y);
 				case ']':
-					return new DToken(DTokens.CloseSquareBracket, x, y,1);
+					return new DToken(DTokens.CloseSquareBracket, x, y);
 				case '[':
-					return new DToken(DTokens.OpenSquareBracket, x, y,1);
+					return new DToken(DTokens.OpenSquareBracket, x, y);
 				case '}':
-					return new DToken(DTokens.CloseCurlyBrace, x, y,1);
+					return new DToken(DTokens.CloseCurlyBrace, x, y);
 				case '{':
-					return new DToken(DTokens.OpenCurlyBrace, x, y,1);
+					return new DToken(DTokens.OpenCurlyBrace, x, y);
 				default:
 					return null;
 			}
