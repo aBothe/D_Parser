@@ -43,6 +43,14 @@ namespace DParser2.Unittest
 			var e = DParser.ParseExpression("new ubyte[size]");
 
 			var s = DParser.ParseBlockStatement(@"long neIdx = find(pResult, ""{/loop");
+
+			var mod = DParser.ParseString(@"void foo() {}
+
+//* one line
+void bar();");
+
+			Assert.AreEqual(2, mod.Children.Count);
+			Assert.IsInstanceOfType(mod["bar"][0], typeof(DMethod));
 		}
 
 		[TestMethod]
