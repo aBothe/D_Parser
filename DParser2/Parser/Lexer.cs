@@ -165,7 +165,7 @@ namespace D_Parser.Parser
 		/// Reads the next token and gives it back.
 		/// </summary>
 		/// <returns>An <see cref="CurrentToken"/> object.</returns>
-		public virtual DToken NextToken()
+		public void NextToken()
 		{
 			if (stopLexing)
 			{
@@ -175,26 +175,21 @@ namespace D_Parser.Parser
 					curToken = lookaheadToken;
 					lookaheadToken = lookaheadToken.next;
 				}
-				return lookaheadToken;
 			}
-
-			if (lookaheadToken == null)
-			{
+			else if (lookaheadToken == null)
 				lookaheadToken = Next();
-				return lookaheadToken;
+			else
+			{
+				prevToken = curToken;
+
+				curToken = lookaheadToken;
+
+				if (lookaheadToken.next == null)
+					lookaheadToken.next = Next();
+
+				lookaheadToken = lookaheadToken.next;
+				StartPeek();
 			}
-
-			prevToken = curToken;
-
-			curToken = lookaheadToken;
-
-			if (lookaheadToken.next == null)
-				lookaheadToken.next = Next();
-
-			lookaheadToken = lookaheadToken.next;
-			StartPeek();
-
-			return lookaheadToken;
 		}
 
 		protected abstract DToken Next();
