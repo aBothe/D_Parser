@@ -6,11 +6,9 @@ using D_Parser.Dom;
 
 namespace D_Parser.Parser
 {
-	/// <summary>
-	/// Taken from SharpDevelop.NRefactory
-	/// </summary>
-	public abstract class AbstractLexer
+	public class Lexer
 	{
+		#region Properties
 		TextReader reader;
 		protected int Col = 1;
 		protected int Line = 1;
@@ -21,17 +19,78 @@ namespace D_Parser.Parser
 		protected DToken peekToken = null;
 
 		protected StringBuilder sb = new StringBuilder();
+		/// <summary>
+		/// used for the original value of strings (with escape sequences).
+		/// </summary>
+		protected StringBuilder originalValue = new StringBuilder();
+		char[] escapeSequenceBuffer = new char[12];
+
+		// The C# compiler has a fixed size length therefore we'll use a fixed size char array for identifiers
+		// it's also faster than using a string builder.
+		const int MAX_IDENTIFIER_LENGTH = 512;
+		char[] identBuffer = new char[MAX_IDENTIFIER_LENGTH];
+
+		public IList<ParserError> LexerErrors = new List<ParserError>();
+
+		/// <summary>
+		/// Set to false if normal block comments shall be logged, too.
+		/// </summary>
+		public bool OnlyEnlistDDocComments = true;
+
+		/// <summary>
+		/// A temporary storage for DDoc comments
+		/// </summary>
+		public List<Comment> Comments = new List<Comment>();
 
 		protected bool stopLexing = false;
+
+		public bool IsEOF
+		{
+			get
+			{
+				return stopLexing ||
+					lookaheadToken == null ||
+					lookaheadToken.Kind == DTokens.EOF ||
+					lookaheadToken.Kind == DTokens.__EOF__;
+			}
+		}
+		#endregion
+
+		#region Constructor / Init
+		public Lexer(TextReader reader)
+		{
+			this.reader = reader;
+			if ((char)reader.Peek() == '#')
+			{
+				reader.ReadLine();
+				HandleLineEnd('\n');
+			}
+		}
+
+		public void SetInitialLocation(CodeLocation location)
+		{
+			if (curToken != null || lookaheadToken != null || peekToken != null)
+				throw new InvalidOperationException();
+			Line = location.Line;
+			Col = location.Column;
+		}
+
+		public virtual void Dispose()
+		{
+			reader.Close();
+			reader = null;
+			curToken = lookaheadToken = peekToken = null;
+			sb = originalValue = null;
+		}
+		#endregion
+
+		#region I/O
+
 		public void StopLexing()
 		{
 			stopLexing = true;
 		}
 
-		/// <summary>
-		/// used for the original value of strings (with escape sequences).
-		/// </summary>
-		protected StringBuilder originalValue = new StringBuilder();
 
 		protected int ReaderRead()
 		{
@@ -52,14 +111,9 @@ namespace D_Parser.Parser
 			return reader.Peek();
 		}
 
-		public void SetInitialLocation(CodeLocation location)
-		{
-			if (curToken != null || lookaheadToken != null || peekToken != null)
-				throw new InvalidOperationException();
-			Line = location.Line;
-			Col = location.Column;
-		}
+		#endregion
 
+		#region Token instance related
 		public DToken LastToken
 		{
 			get { return prevToken; }
@@ -105,24 +159,6 @@ namespace D_Parser.Parser
 		{
 			get { return peekToken; }
 		}
-
-		/// <summary>
-		/// Constructor for the abstract lexer class.
-		/// </summary>
-		protected AbstractLexer(TextReader reader)
-		{
-			this.reader = reader;
-		}
-
-		#region System.IDisposable interface implementation
-		public virtual void Dispose()
-		{
-			reader.Close();
-			reader = null;
-			curToken = lookaheadToken = peekToken = null;
-			sb = originalValue = null;
-		}
-		#endregion
 
 		/// <summary>
 		/// Must be called before a peek operation.
@@ -174,87 +210,6 @@ namespace D_Parser.Parser
 				lookaheadToken = lookaheadToken.next;
 				StartPeek();
 			}
-		}
-
-		protected abstract DToken Next();
-
-		protected static bool IsIdentifierPart(int ch)
-		{
-			if (ch == 95) return true;  // 95 = '_'
-			if (ch == -1) return false;
-			return char.IsLetterOrDigit((char)ch); // accept unicode letters
-		}
-
-		public static bool IsOct(char digit)
-		{
-			return Char.IsDigit(digit) && digit != '9' && digit != '8';
-		}
-
-		public static bool IsHex(char digit)
-		{
-			return Char.IsDigit(digit) || ('A' <= digit && digit <= 'F') || ('a' <= digit && digit <= 'f');
-		}
-
-		public static bool IsBin(char digit)
-		{
-			return digit == '0' || digit == '1';
-		}
-
-		/// <summary>
-		/// Tests if digit <para>d</para> is allowed in the specified numerical base.
-		/// If <para>NumBase</para> is 10, only digits from 0 to 9 would be allowed.
-		/// If NumBase=2, 0 and 1 are legal.
-		/// If NumBase=8, 0 to 7 are legal.
-		/// If NumBase=16, 0 to 9 and a to f are allowed.
-		/// Note: Underscores ('_') are legal everytime!
-		/// </summary>
-		/// <param name="d"></param>
-		/// <param name="NumBase"></param>
-		/// <returns></returns>
-		public static bool IsLegalDigit(char d, int NumBase)
-		{
-			return (NumBase == 10 && Char.IsDigit(d)) || (NumBase == 2 && IsBin(d)) /* (NumBase == 8 && IsOct(d)) || */|| (NumBase == 16 && IsHex(d)) || d == '_';
-		}
-
-		public static int GetHexNumber(char digit)
-		{
-			if (Char.IsDigit(digit))
-			{
-				return digit - '0';
-			}
-			if ('A' <= digit && digit <= 'F')
-			{
-				return digit - 'A' + 0xA;
-			}
-			if ('a' <= digit && digit <= 'f')
-			{
-				return digit - 'a' + 0xA;
-			}
-			//errors.Error(line, col, String.Format("Invalid hex number '" + digit + "'"));
-			return 0;
-		}
-
-		public static double ParseFloatValue(string digit, int NumBase)
-		{
-			double ret = 0;
-
-			int commaPos = digit.IndexOf('.');
-			int k = digit.Length - 1;
-			if (commaPos >= 0)
-				k = commaPos - 1;
-
-			for (int i = 0; i < digit.Length; i++)
-			{
-				if (i == commaPos) { i++; k++; }
-
-				// Check if digit string contains some digits after the comma
-				if (i >= digit.Length) break;
-
-				int n = GetHexNumber(digit[i]);
-				ret += n * Math.Pow(NumBase, k - i);
-			}
-
-			return ret;
 		}
 
 		protected bool HandleLineEnd(char ch)
@@ -334,50 +289,89 @@ namespace D_Parser.Parser
 		/// block (so that Lexer.DToken is the block-opening token, not Lexer.LookAhead).
 		/// After the call, Lexer.LookAhead will be the block-closing token.
 		/// </summary>
-		public abstract void SkipCurrentBlock();
-	}
-
-	public class Lexer : AbstractLexer
-	{
-		public Lexer(TextReader reader)
-			: base(reader)
+		public void SkipCurrentBlock()
 		{
-			if ((char)reader.Peek() == '#')
+			int braceCount = 0;
+			// Scan already parsed tokens
+			var tok = lookaheadToken;
+			while (tok != null)
 			{
-				reader.ReadLine();
-				HandleLineEnd('\n');
+				if (tok.Kind == DTokens.OpenCurlyBrace)
+					braceCount++;
+				else if (tok.Kind == DTokens.CloseCurlyBrace)
+				{
+					braceCount--;
+					if (braceCount < 0)
+					{
+						lookaheadToken = tok;
+						return;
+					}
+				}
+				tok = tok.next;
 			}
-		}
 
-		public bool IsEOF
-		{
-			get { return stopLexing ||
-				lookaheadToken == null || 
-				lookaheadToken.Kind == DTokens.EOF || 
-				lookaheadToken.Kind == DTokens.__EOF__; }
-		}
+			// Scan/proceed tokens rawly (skip them only until braceCount<0)
+			prevToken = LookAhead;
+			int nextChar;
+			while ((nextChar = ReaderRead()) != -1)
+			{
+				switch (nextChar)
+				{
+					// Handle line ends
+					case '\r':
+					case '\n':
+						HandleLineEnd((char)nextChar);
+						break;
 
-		#region Abstract Lexer Props & Methods
-		public IList<ParserError> LexerErrors = new List<ParserError>();
+					// Handle comments
+					case '/':
+						int peek = ReaderPeek();
+						if (peek == '/' || peek == '*' || peek == '+')
+						{
+							ReadComment();
+							continue;
+						}
+						break;
 
+					// handle string literals
+					case 'r':
+						int pk = ReaderPeek();
+						if (pk == '"')
+						{
+							ReaderRead();
+							ReadVerbatimString('"');
+						}
+						break;
+					case '`':
+						ReadVerbatimString(nextChar);
+						break;
+					case '"':
+						ReadString(nextChar);
+						break;
+					case '\'':
+						ReadChar();
+						break;
 
-		/// <summary>
-		/// Set to false if normal block comments shall be logged, too.
-		/// </summary>
-		public bool OnlyEnlistDDocComments = true;
-
-		/// <summary>
-		/// A temporary storage for DDoc comments
-		/// </summary>
-		public List<Comment> Comments = new List<Comment>();
-		void OnError(int line, int col, string message)
-		{
-			if (LexerErrors != null)
-				LexerErrors.Add(new ParserError(false, message, CurrentToken != null ? CurrentToken.Kind : -1, new CodeLocation(col, line)));
+					case '{':
+						braceCount++;
+						continue;
+					case '}':
+						braceCount--;
+						if (braceCount < 0)
+						{
+							lookaheadToken = new DToken(DTokens.CloseCurlyBrace, Col - 1, Line);
+							StartPeek();
+							Peek();
+							return;
+						}
+						break;
+				}
+			}
 		}
 		#endregion
 
-		protected override DToken Next()
+		#region Actual tokenizing
+		DToken Next()
 		{
 			int nextChar;
 			char ch;
@@ -438,10 +432,10 @@ namespace D_Parser.Parser
 						// http://digitalmars.com/d/1.0/lex.html#EscapeSequence
 						// - It's actually deprecated, but parse such literals anyway
 						string surr = "";
-						x=Col-1;
-						y=Line;
-						var lit=ReadEscapeSequence(out ch, out surr);
-						token = new DToken(DTokens.Literal, x,y, lit.Length + 1, lit, ch.ToString(), LiteralFormat.StringLiteral);
+						x = Col - 1;
+						y = Line;
+						var lit = ReadEscapeSequence(out ch, out surr);
+						token = new DToken(DTokens.Literal, x, y, lit.Length + 1, lit, ch.ToString(), LiteralFormat.StringLiteral);
 						OnError(y, x, "Escape sequence strings are deprecated!");
 						break;
 					case '\'':
@@ -614,15 +608,15 @@ namespace D_Parser.Parser
 										literalValue = DateTime.Now.ToString("HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture.DateTimeFormat);
 									}
 									else if (s == "__TIMESTAMP__")
-										{
-											literalFormat = LiteralFormat.StringLiteral;
-											literalValue = DateTime.Now.ToString("ddd MMM dd HH:mm:ss yyyy", System.Globalization.CultureInfo.InvariantCulture.DateTimeFormat);
-										}
+									{
+										literalFormat = LiteralFormat.StringLiteral;
+										literalValue = DateTime.Now.ToString("ddd MMM dd HH:mm:ss yyyy", System.Globalization.CultureInfo.InvariantCulture.DateTimeFormat);
+									}
 									else if (s == "__VENDOR__")
-										{
-											literalFormat = LiteralFormat.StringLiteral;
-											literalValue = "D Parser v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(3) + " by Alexander Bothe";
-										}
+									{
+										literalFormat = LiteralFormat.StringLiteral;
+										literalValue = "D Parser v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(3) + " by Alexander Bothe";
+									}
 									else if (s == "__VERSION__")
 									{
 										subFormat = LiteralSubformat.Integer;
@@ -632,10 +626,10 @@ namespace D_Parser.Parser
 									}
 
 									if (literalFormat != 0)
-										return new DToken(DTokens.Literal, x, y, s.Length, 
+										return new DToken(DTokens.Literal, x, y, s.Length,
 											literalValue,
-											literalValue is string ? (string)literalValue : literalValue.ToString(), 
-											literalFormat, 
+											literalValue is string ? (string)literalValue : literalValue.ToString(),
+											literalFormat,
 											subFormat);
 								}
 
@@ -668,11 +662,6 @@ namespace D_Parser.Parser
 
 			return new DToken(DTokens.EOF, Col, Line, 0);
 		}
-
-		// The C# compiler has a fixed size length therefore we'll use a fixed size char array for identifiers
-		// it's also faster than using a string builder.
-		const int MAX_IDENTIFIER_LENGTH = 512;
-		char[] identBuffer = new char[MAX_IDENTIFIER_LENGTH];
 
 		string ReadIdent(char ch, out bool canBeKeyword)
 		{
@@ -851,7 +840,7 @@ namespace D_Parser.Parser
 							ReaderRead();
 							nextToken = new DToken(DTokens.DoubleDot, Col - 1, Line, 2);
 						}
-						else if(IsIdentifierPart(peek))
+						else if (IsIdentifierPart(peek))
 							nextToken = new DToken(DTokens.Dot, Col - 1, Line, 1);
 
 						AllowSuffixes = false;
@@ -922,8 +911,8 @@ namespace D_Parser.Parser
 							goto unsigned;
 					}
 				}
-				
-				if(HasDot || AllowSuffixes)
+
+				if (HasDot || AllowSuffixes)
 				{
 					if (peek == 'f' || peek == 'F')
 					{ // float value
@@ -991,13 +980,13 @@ namespace D_Parser.Parser
 
 				#endregion
 
-				token = new DToken(DTokens.Literal, x,y, stringValue.Length, val, stringValue, 
-					subFmt.HasFlag(LiteralSubformat.Float) || subFmt.HasFlag(LiteralSubformat.Imaginary) || HasDot ? 
-						(LiteralFormat.FloatingPoint | LiteralFormat.Scalar) : 
+				token = new DToken(DTokens.Literal, x, y, stringValue.Length, val, stringValue,
+					subFmt.HasFlag(LiteralSubformat.Float) || subFmt.HasFlag(LiteralSubformat.Imaginary) || HasDot ?
+						(LiteralFormat.FloatingPoint | LiteralFormat.Scalar) :
 						LiteralFormat.Scalar,
 					subFmt);
 
-				if (token != null) 
+				if (token != null)
 					token.next = nextToken;
 
 				return token;
@@ -1063,7 +1052,7 @@ namespace D_Parser.Parser
 				OnError(y, x, String.Format("End of file reached inside string literal"));
 			}
 
-			return new DToken(DTokens.Literal, x,y, new CodeLocation(Col,Line), originalValue.ToString(), sb.ToString(), LiteralFormat.StringLiteral, subFmt);
+			return new DToken(DTokens.Literal, x, y, new CodeLocation(Col, Line), originalValue.ToString(), sb.ToString(), LiteralFormat.StringLiteral, subFmt);
 		}
 
 		DToken ReadVerbatimString(int EndingChar)
@@ -1130,10 +1119,8 @@ namespace D_Parser.Parser
 				}
 			}
 
-			return new DToken(DTokens.Literal, x,y, new CodeLocation(Col,Line), originalValue.ToString(), sb.ToString(), LiteralFormat.VerbatimStringLiteral, subFmt);
+			return new DToken(DTokens.Literal, x, y, new CodeLocation(Col, Line), originalValue.ToString(), sb.ToString(), LiteralFormat.VerbatimStringLiteral, subFmt);
 		}
-
-		char[] escapeSequenceBuffer = new char[12];
 
 		/// <summary>
 		/// reads an escape sequence
@@ -1169,7 +1156,7 @@ namespace D_Parser.Parser
 					ch = '\"';
 					break;
 				case '?':
-					ch='?';
+					ch = '?';
 					return "\\?"; // Literal question mark
 				case '\\':
 					ch = '\\';
@@ -1365,7 +1352,7 @@ namespace D_Parser.Parser
 			}
 			else if (ch == '\'')
 			{
-				return new DToken(DTokens.Literal, x,y, 2, char.MinValue, "''", LiteralFormat.CharLiteral);
+				return new DToken(DTokens.Literal, x, y, 2, char.MinValue, "''", LiteralFormat.CharLiteral);
 			}
 
 			unchecked
@@ -1424,7 +1411,7 @@ namespace D_Parser.Parser
 					{
 						case '=':
 							ReaderRead();
-							return new DToken(DTokens.DivAssign, x, y,2);
+							return new DToken(DTokens.DivAssign, x, y, 2);
 					}
 					return new DToken(DTokens.Div, x, y);
 				case '%':
@@ -1432,7 +1419,7 @@ namespace D_Parser.Parser
 					{
 						case '=':
 							ReaderRead();
-							return new DToken(DTokens.ModAssign, x, y,2);
+							return new DToken(DTokens.ModAssign, x, y, 2);
 					}
 					return new DToken(DTokens.Mod, x, y);
 				case '&':
@@ -1440,7 +1427,7 @@ namespace D_Parser.Parser
 					{
 						case '&':
 							ReaderRead();
-							return new DToken(DTokens.LogicalAnd, x, y,2);
+							return new DToken(DTokens.LogicalAnd, x, y, 2);
 						case '=':
 							ReaderRead();
 							return new DToken(DTokens.BitwiseAndAssign, x, y, 2);
@@ -1468,7 +1455,7 @@ namespace D_Parser.Parser
 							if (ReaderPeek() == '=')
 							{
 								ReaderRead();
-								return new DToken(DTokens.PowAssign, x, y,3);
+								return new DToken(DTokens.PowAssign, x, y, 3);
 							}
 							return new DToken(DTokens.Pow, x, y, 2);
 					}
@@ -1486,16 +1473,16 @@ namespace D_Parser.Parser
 							{
 								case '=':
 									ReaderRead();
-									return new DToken(DTokens.UnorderedOrGreater, x, y,3); // !<=
+									return new DToken(DTokens.UnorderedOrGreater, x, y, 3); // !<=
 								case '>':
 									ReaderRead();
 									switch (ReaderPeek())
 									{
 										case '=':
 											ReaderRead();
-											return new DToken(DTokens.Unordered, x, y,4); // !<>=
+											return new DToken(DTokens.Unordered, x, y, 4); // !<>=
 									}
-									return new DToken(DTokens.UnorderedOrEqual, x, y,3); // !<>
+									return new DToken(DTokens.UnorderedOrEqual, x, y, 3); // !<>
 							}
 							return new DToken(DTokens.UnorderedGreaterOrEqual, x, y, 2); // !<
 
@@ -1505,11 +1492,11 @@ namespace D_Parser.Parser
 							{
 								case '=':
 									ReaderRead();
-									return new DToken(DTokens.UnorderedOrLess, x, y,3); // !>=
+									return new DToken(DTokens.UnorderedOrLess, x, y, 3); // !>=
 								default:
 									break;
 							}
-							return new DToken(DTokens.UnorderedLessOrEqual, x, y,2); // !>
+							return new DToken(DTokens.UnorderedLessOrEqual, x, y, 2); // !>
 
 					}
 					return new DToken(DTokens.Not, x, y);
@@ -1541,7 +1528,7 @@ namespace D_Parser.Parser
 							{
 								case '=':
 									ReaderRead();
-									return new DToken(DTokens.ShiftLeftAssign, x, y,3);
+									return new DToken(DTokens.ShiftLeftAssign, x, y, 3);
 								default:
 									break;
 							}
@@ -1556,10 +1543,10 @@ namespace D_Parser.Parser
 								default:
 									break;
 							}
-							return new DToken(DTokens.LessOrGreater, x, y,2);
+							return new DToken(DTokens.LessOrGreater, x, y, 2);
 						case '=':
 							ReaderRead();
-							return new DToken(DTokens.LessEqual, x, y,2);
+							return new DToken(DTokens.LessEqual, x, y, 2);
 					}
 					return new DToken(DTokens.LessThan, x, y);
 				case '>':
@@ -1573,7 +1560,7 @@ namespace D_Parser.Parser
 								{
 									case '=':
 										ReaderRead();
-										return new DToken(DTokens.ShiftRightAssign, x, y,3);
+										return new DToken(DTokens.ShiftRightAssign, x, y, 3);
 									case '>':
 										ReaderRead();
 										if (ReaderPeek() != -1)
@@ -1582,14 +1569,14 @@ namespace D_Parser.Parser
 											{
 												case '=':
 													ReaderRead();
-													return new DToken(DTokens.TripleRightShiftAssign, x, y,4);
+													return new DToken(DTokens.TripleRightShiftAssign, x, y, 4);
 											}
-											return new DToken(DTokens.ShiftRightUnsigned, x, y,3); // >>>
+											return new DToken(DTokens.ShiftRightUnsigned, x, y, 3); // >>>
 										}
 										break;
 								}
 							}
-							return new DToken(DTokens.ShiftRight, x, y,2);
+							return new DToken(DTokens.ShiftRight, x, y, 2);
 						case '=':
 							ReaderRead();
 							return new DToken(DTokens.GreaterEqual, x, y, 2);
@@ -1616,9 +1603,9 @@ namespace D_Parser.Parser
 						if ((char)ReaderPeek() == '.') // Triple dot
 						{
 							ReaderRead();
-							return new DToken(DTokens.TripleDot, x, y,3);
+							return new DToken(DTokens.TripleDot, x, y, 3);
 						}
-						return new DToken(DTokens.DoubleDot, x, y,2);
+						return new DToken(DTokens.DoubleDot, x, y, 2);
 					}
 					return new DToken(DTokens.Dot, x, y);
 				case ')':
@@ -1672,7 +1659,7 @@ namespace D_Parser.Parser
 			string comm = ReadToEndOfLine().TrimStart('/');
 			var end = new CodeLocation(Col, Line);
 
-			if (commentType.HasFlag( Comment.Type.Documentation) || !OnlyEnlistDDocComments)
+			if (commentType.HasFlag(Comment.Type.Documentation) || !OnlyEnlistDDocComments)
 				Comments.Add(new Comment(commentType, comm.Trim(), st.Column < 2, st, end));
 		}
 
@@ -1686,7 +1673,7 @@ namespace D_Parser.Parser
 
 			while ((nextChar = ReaderRead()) != -1)
 			{
-				
+
 				char ch = (char)nextChar;
 
 				// Catch deeper-nesting comments
@@ -1706,7 +1693,7 @@ namespace D_Parser.Parser
 					else
 					{
 						if (commentType.HasFlag(Comment.Type.Documentation) || !OnlyEnlistDDocComments)
-							Comments.Add( new Comment(commentType, scCurWord.ToString().Trim(ch, ' ', '\t', '\r', '\n', isNestingComment ? '+' : '*'), st.Column < 2, st, new CodeLocation(Col, Line)));
+							Comments.Add(new Comment(commentType, scCurWord.ToString().Trim(ch, ' ', '\t', '\r', '\n', isNestingComment ? '+' : '*'), st.Column < 2, st, new CodeLocation(Col, Line)));
 						return;
 					}
 				}
@@ -1733,93 +1720,99 @@ namespace D_Parser.Parser
 			}
 
 			// Reached EOF before end of multiline comment.
-			if (commentType.HasFlag( Comment.Type.Documentation) || !OnlyEnlistDDocComments)
+			if (commentType.HasFlag(Comment.Type.Documentation) || !OnlyEnlistDDocComments)
 				Comments.Add(new Comment(commentType, scCurWord.ToString().Trim(), st.Column < 2, st, new CodeLocation(Col, Line)));
 
 			OnError(Line, Col, String.Format("Reached EOF before the end of a multiline comment"));
 		}
+		#endregion
+
+		void OnError(int line, int col, string message)
+		{
+			if (LexerErrors != null)
+				LexerErrors.Add(new ParserError(false, message, CurrentToken != null ? CurrentToken.Kind : -1, new CodeLocation(col, line)));
+		}
+
+		#region Helpers
+		public static bool IsIdentifierPart(int ch)
+		{
+			if (ch == 95) return true;  // 95 = '_'
+			if (ch == -1) return false;
+			return char.IsLetterOrDigit((char)ch); // accept unicode letters
+		}
+
+		public static bool IsOct(char digit)
+		{
+			return Char.IsDigit(digit) && digit != '9' && digit != '8';
+		}
+
+		public static bool IsHex(char digit)
+		{
+			return Char.IsDigit(digit) || ('A' <= digit && digit <= 'F') || ('a' <= digit && digit <= 'f');
+		}
+
+		public static bool IsBin(char digit)
+		{
+			return digit == '0' || digit == '1';
+		}
 
 		/// <summary>
-		/// Rawly skip the current code block
+		/// Tests if digit <para>d</para> is allowed in the specified numerical base.
+		/// If <para>NumBase</para> is 10, only digits from 0 to 9 would be allowed.
+		/// If NumBase=2, 0 and 1 are legal.
+		/// If NumBase=8, 0 to 7 are legal.
+		/// If NumBase=16, 0 to 9 and a to f are allowed.
+		/// Note: Underscores ('_') are legal everytime!
 		/// </summary>
-		public override void SkipCurrentBlock()
+		/// <param name="d"></param>
+		/// <param name="NumBase"></param>
+		/// <returns></returns>
+		public static bool IsLegalDigit(char d, int NumBase)
 		{
-			int braceCount = 0;
-			// Scan already parsed tokens
-			var tok = lookaheadToken;
-			while (tok != null)
-			{
-				if (tok.Kind == DTokens.OpenCurlyBrace)
-					braceCount++;
-				else if (tok.Kind == DTokens.CloseCurlyBrace)
-				{
-					braceCount--;
-					if (braceCount < 0)
-					{
-						lookaheadToken = tok;
-						return;
-					}
-				}
-				tok = tok.next;
-			}
-
-			// Scan/proceed tokens rawly (skip them only until braceCount<0)
-			prevToken = LookAhead;
-			int nextChar;
-			while ((nextChar = ReaderRead()) != -1)
-			{
-				switch (nextChar)
-				{
-					// Handle line ends
-					case '\r':
-					case '\n':
-						HandleLineEnd((char)nextChar);
-						break;
-
-					// Handle comments
-					case '/':
-						int peek = ReaderPeek();
-						if (peek == '/' || peek == '*' || peek == '+')
-						{
-							ReadComment();
-							continue;
-						}
-						break;
-
-					// handle string literals
-					case 'r':
-						int pk = ReaderPeek();
-						if (pk == '"')
-						{
-							ReaderRead();
-							ReadVerbatimString('"');
-						}
-						break;
-					case '`':
-						ReadVerbatimString(nextChar);
-						break;
-					case '"':
-						ReadString(nextChar);
-						break;
-					case '\'':
-						ReadChar();
-						break;
-
-					case '{':
-						braceCount++;
-						continue;
-					case '}':
-						braceCount--;
-						if (braceCount < 0)
-						{
-							lookaheadToken = new DToken(DTokens.CloseCurlyBrace, Col - 1, Line);
-							StartPeek();
-							Peek();
-							return;
-						}
-						break;
-				}
-			}
+			return (NumBase == 10 && Char.IsDigit(d)) || (NumBase == 2 && IsBin(d)) /* (NumBase == 8 && IsOct(d)) || */|| (NumBase == 16 && IsHex(d)) || d == '_';
 		}
+
+		public static int GetHexNumber(char digit)
+		{
+			if (Char.IsDigit(digit))
+			{
+				return digit - '0';
+			}
+			if ('A' <= digit && digit <= 'F')
+			{
+				return digit - 'A' + 0xA;
+			}
+			if ('a' <= digit && digit <= 'f')
+			{
+				return digit - 'a' + 0xA;
+			}
+			//errors.Error(line, col, String.Format("Invalid hex number '" + digit + "'"));
+			return 0;
+		}
+
+		public static double ParseFloatValue(string digit, int NumBase)
+		{
+			double ret = 0;
+
+			int commaPos = digit.IndexOf('.');
+			int k = digit.Length - 1;
+			if (commaPos >= 0)
+				k = commaPos - 1;
+
+			for (int i = 0; i < digit.Length; i++)
+			{
+				if (i == commaPos) { i++; k++; }
+
+				// Check if digit string contains some digits after the comma
+				if (i >= digit.Length) break;
+
+				int n = GetHexNumber(digit[i]);
+				ret += n * Math.Pow(NumBase, k - i);
+			}
+
+			return ret;
+		}
+
+		#endregion
 	}
 }
