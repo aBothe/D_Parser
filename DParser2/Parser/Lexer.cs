@@ -12,8 +12,8 @@ namespace D_Parser.Parser
 	public abstract class AbstractLexer
 	{
 		TextReader reader;
-		int col = 1;
-		int line = 1;
+		protected int Col = 1;
+		protected int Line = 1;
 
 		protected DToken prevToken = null;
 		protected DToken curToken = null;
@@ -33,33 +33,17 @@ namespace D_Parser.Parser
 		/// </summary>
 		protected StringBuilder originalValue = new StringBuilder();
 
-		protected int Line
-		{
-			get
-			{
-				return line;
-			}
-		}
-		protected int Col
-		{
-			get
-			{
-				return col;
-			}
-		}
-
 		protected int ReaderRead()
 		{
 			int val = reader.Read();
 			if ((val == '\r' && reader.Peek() != '\n') || val == '\n')
 			{
-				++line;
-				col = 1;
-				LineBreak();
+				++Line;
+				Col = 1;
 			}
 			else if (val >= 0)
 			{
-				col++;
+				Col++;
 			}
 			return val;
 		}
@@ -72,8 +56,8 @@ namespace D_Parser.Parser
 		{
 			if (curToken != null || lookaheadToken != null || peekToken != null)
 				throw new InvalidOperationException();
-			this.line = location.Line;
-			this.col = location.Column;
+			Line = location.Line;
+			Col = location.Column;
 		}
 
 		public DToken LastToken
@@ -273,13 +257,6 @@ namespace D_Parser.Parser
 			return ret;
 		}
 
-		protected CodeLocation lastLineEnd = new CodeLocation(1, 1);
-		protected CodeLocation curLineEnd = new CodeLocation(1, 1);
-		protected void LineBreak()
-		{
-			lastLineEnd = curLineEnd;
-			curLineEnd = new CodeLocation(col - 1, line);
-		}
 		protected bool HandleLineEnd(char ch)
 		{
 			// Handle MS-DOS or MacOS line ends.
@@ -292,15 +269,11 @@ namespace D_Parser.Parser
 				}
 				else
 				{ // assume MacOS line end which is '\r'
-					LineBreak();
 					return true;
 				}
 			}
 			if (ch == '\n')
-			{
-				LineBreak();
 				return true;
-			}
 			return false;
 		}
 
@@ -317,8 +290,8 @@ namespace D_Parser.Parser
 				}
 				if (nextChar == '\n')
 				{
-					++line;
-					col = 1;
+					++Line;
+					Col = 1;
 					break;
 				}
 			}
@@ -341,8 +314,8 @@ namespace D_Parser.Parser
 				// Return read string, if EOL is reached
 				if (nextChar == '\n')
 				{
-					++line;
-					col = 1;
+					++Line;
+					Col = 1;
 					return sb.ToString();
 				}
 
@@ -350,8 +323,8 @@ namespace D_Parser.Parser
 			}
 
 			// Got EOF before EOL
-			string retStr = sb.ToString();
-			col += retStr.Length;
+			var retStr = sb.ToString();
+			Col += retStr.Length;
 			return retStr;
 		}
 
