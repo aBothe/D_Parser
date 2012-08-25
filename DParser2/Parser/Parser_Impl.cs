@@ -3856,14 +3856,15 @@ namespace D_Parser.Parser
 		#region Structs & Unions
 		private INode AggregateDeclaration(INode Parent)
 		{
-			if (!(laKind == (Union) || laKind == (Struct)))
+			var classType = laKind;
+			if (!(classType == Union || classType == Struct))
 				SynErr(t.Kind, "union or struct required");
 			Step();
 
 			var ret = new DClassLike(t.Kind) { 
 				Location = t.Location, 
 				Description = GetComments(),
-                ClassType=DTokens.Struct,
+                ClassType=classType,
 				Parent=Parent
 			};
 			LastParsedObject = ret;
