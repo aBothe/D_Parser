@@ -1500,7 +1500,7 @@ namespace D_Parser.Parser
 			// ArrayInitializers are handled in PrimaryExpression(), whereas setting IsParsingInitializer to true is required!
 
 			#region StructInitializer
-			if (laKind == OpenCurlyBrace)
+			if (laKind == OpenCurlyBrace && IsStructInitializer)
 			{
 				// StructMemberInitializations
 				var ae = new StructInitializer() { Location = la.Location };
@@ -1551,6 +1551,14 @@ namespace D_Parser.Parser
 				TrackerVariables.IsParsingInitializer = isParsingInitializer_backup;
 
 			return expr;
+		}
+
+		bool IsStructInitializer
+		{
+			get
+			{
+				return true;
+			}
 		}
 
 		TypeOfDeclaration TypeOf()
