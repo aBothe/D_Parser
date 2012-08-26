@@ -2541,11 +2541,11 @@ namespace D_Parser.Parser
 				// Concatenate multiple string literals here
 				if (t.LiteralFormat == LiteralFormat.StringLiteral || t.LiteralFormat == LiteralFormat.VerbatimStringLiteral)
 				{
-					var a = t.LiteralValue as string;
+					var a = t.Value;
 					while (la.LiteralFormat == LiteralFormat.StringLiteral || la.LiteralFormat == LiteralFormat.VerbatimStringLiteral)
 					{
 						Step();
-						a += t.LiteralValue as string;
+						a += t.Value;
 					}
 					return new IdentifierExpression(a, t.LiteralFormat, t.Subformat) { Location = startLoc, EndLocation = t.EndLocation };
 				}
