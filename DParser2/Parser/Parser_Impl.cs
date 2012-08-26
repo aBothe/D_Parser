@@ -630,7 +630,7 @@ namespace D_Parser.Parser
 				ApplyAttributes(_t);
 
 				// AliasThis
-				if (laKind == Identifier && PK(This))
+				if (laKind == Identifier && Lexer.CurrentPeekToken.Kind == This)
 				{
                     var dv = new DVariable { 
                         Description = GetComments(),
@@ -713,9 +713,9 @@ namespace D_Parser.Parser
 			// If there's no explicit type declaration, leave our node's type empty!
 			if ((StorageClass.Token != DAttribute.Empty.Token && laKind == (Identifier) && DeclarationAttributes.Count > 0)) // public auto var=0; // const foo(...) {} 
 			{
-				if (PK(Assign) || PK(OpenParenthesis))
+				if (Lexer.CurrentPeekToken.Kind == Assign || Lexer.CurrentPeekToken.Kind ==OpenParenthesis) 
 				{ }
-				else if (PK(Semicolon))
+				else if (Lexer.CurrentPeekToken.Kind == Semicolon)
 				{
 					SemErr(StorageClass.Token, "Initializer expected for auto type, semicolon found!");
 				}
@@ -1431,7 +1431,7 @@ namespace D_Parser.Parser
 
 			ITypeDeclaration td = null;
 
-			while ((ParamModifiers[laKind] && laKind!=InOut) || (MemberFunctionAttribute[laKind] && !PK(OpenParenthesis)))
+			while ((ParamModifiers[laKind] && laKind != InOut) || (MemberFunctionAttribute[laKind] && Lexer.CurrentPeekToken.Kind != OpenParenthesis))
 			{
 				Step();
 				attr.Add(new DAttribute(t.Kind));
@@ -1852,14 +1852,14 @@ namespace D_Parser.Parser
 				// Skip basictype2's
 				while (Lexer.CurrentPeekToken.Kind == Times || Lexer.CurrentPeekToken.Kind == OpenSquareBracket)
 				{
-					if (PK(Times))
+					if (Lexer.CurrentPeekToken.Kind == Times)
 						HadPointerDeclaration = true;
 
 					if (Lexer.CurrentPeekToken.Kind == OpenSquareBracket)
 						OverPeekBrackets(OpenSquareBracket);
 					else Peek();
 
-					if (HadPointerDeclaration && PK(Literal)) // char[a.member*8] abc; // conv.d:3278
+					if (HadPointerDeclaration && Lexer.CurrentPeekToken.Kind == Literal) // char[a.member*8] abc; // conv.d:3278
 					{
 						Peek(1);
 						return true;
@@ -3604,7 +3604,7 @@ namespace D_Parser.Parser
 			#endregion
 
 			#region (Static) AssertExpression
-			else if (laKind == Assert || (laKind == Static && PK(Assert)))
+			else if (laKind == Assert || (laKind == Static && Lexer.CurrentPeekToken.Kind == Assert))
 			{
 				var s = new AssertStatement() { Location = la.Location, IsStatic = laKind == Static, Parent = Parent };
 				LastParsedObject = s;

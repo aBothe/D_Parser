@@ -125,10 +125,10 @@ namespace D_Parser.Parser
 			p.doc = new DModule();// create dummy module to prevent crash at ImportDeclaration();
 			p.Step();
 
-			if (p.LA(Module))
+			if (p.laKind == Module)
 				p.ModuleDeclaration();
 
-			while (p.LA(Import))
+			while (p.laKind == Import)
 				p.ImportDeclaration();
 
 			return p.t.EndLocation;
@@ -169,7 +169,7 @@ namespace D_Parser.Parser
             var p = Create(new StringReader(Code));
             p.Step();
             // Exception: If we haven't got any basic types as our first token, return this token via OptionalToken
-            if (!p.IsBasicType() || p.LA(__LINE__) || p.LA(__FILE__))
+            if (!p.IsBasicType() || p.laKind == __LINE__ || p.laKind == __FILE__)
             {
                 p.Step();
                 p.Peek(1);
@@ -312,30 +312,6 @@ namespace D_Parser.Parser
                 }
                 pk = Peek();
             }
-        }
-
-        /// <summary>
-        /// LookAhead token check
-        /// </summary>
-        bool LA(int n)
-        {
-            return laKind == n;
-        }
-        /// <summary>
-        /// Currenttoken check
-        /// </summary>
-        bool T(int n)
-        {
-            return t.Kind == n;
-        }
-        /// <summary>
-        /// Peek token check
-        /// </summary>
-        /// <param name="n"></param>
-        /// <returns></returns>
-        bool PK(int n)
-        {
-            return Lexer.CurrentPeekToken.Kind == n;
         }
 
         private bool Expect(int n)
