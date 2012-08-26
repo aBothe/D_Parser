@@ -1480,7 +1480,7 @@ namespace D_Parser.Parser
 			Expect(Assign);
 
 			// VoidInitializer
-			if (laKind == (Void))
+			if (laKind == Void)
 			{
 				Step();
 				var ret= new VoidInitializer() { Location=t.Location,EndLocation=t.EndLocation};
@@ -1533,9 +1533,9 @@ namespace D_Parser.Parser
 					inits.Add(sinit);
 				}
 
-				ae.MemberInitializers = inits.ToArray();
+				Expect(DTokens.CloseCurlyBrace);
 
-				Expect(CloseCurlyBrace);
+				ae.MemberInitializers = inits.ToArray();
 				ae.EndLocation = t.EndLocation;
 
 				if (!IsEOF)
@@ -1553,10 +1553,31 @@ namespace D_Parser.Parser
 			return expr;
 		}
 
+		/// <summary>
+		/// If there's a semicolon or a return somewhere inside the braces, it automatically is a delegate, and not a struct initializer
+		/// </summary>
 		bool IsStructInitializer
 		{
 			get
 			{
+				int r = 1;
+				var pk = Peek(1);
+				while (r > 0 && pk.Kind != DTokens.EOF && pk.Kind != DTokens.__EOF__)
+				{
+					switch (pk.Kind)
+					{
+						case DTokens.Return:
+						case DTokens.Semicolon:
+							return false;
+						case DTokens.OpenCurlyBrace:
+							r++;
+							break;
+						case DTokens.CloseCurlyBrace:
+							r--;
+							break;
+					}
+					pk = Peek();
+				}
 				return true;
 			}
 		}
@@ -2906,7 +2927,7 @@ namespace D_Parser.Parser
 				return false;
 			}
 
-			StartPeek();
+			Lexer.StartPeek();
 
 			OverPeekBrackets(OpenParenthesis, false);
 
@@ -2918,7 +2939,7 @@ namespace D_Parser.Parser
 			if (laKind != OpenParenthesis)
 				return false;
 
-			StartPeek();
+			Lexer.StartPeek();
 
 			OverPeekBrackets(OpenParenthesis, false);
 
@@ -4441,19 +4462,19 @@ namespace D_Parser.Parser
 		private bool IsTemplateParameterList()
 		{
 			Lexer.StartPeek();
+			var pk = la;
 			int r = 0;
-			while (r >= 0 && Lexer.CurrentPeekToken.Kind != EOF)
+			while (r >= 0 && pk.Kind != EOF && pk.Kind != __EOF__)
 			{
-				if (Lexer.CurrentPeekToken.Kind == OpenParenthesis) r++;
-				else if (Lexer.CurrentPeekToken.Kind == CloseParenthesis)
+				if (pk.Kind == OpenParenthesis)
+					r++;
+				else if (pk.Kind == CloseParenthesis)
 				{
 					r--;
 					if (r <= 0)
-						if (Peek().Kind == OpenParenthesis)
-							return true;
-						else return false;
+						return Peek().Kind == OpenParenthesis;
 				}
-				Peek();
+				pk = Peek();
 			}
 			return false;
 		}

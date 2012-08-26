@@ -103,7 +103,6 @@ namespace D_Parser.Parser
 			Lexer.Dispose();
 			Lexer = null;
 			TrackerVariables = null;
-			ParseErrors.Clear();
 			ParseErrors = null;
 		}
 
@@ -287,28 +286,31 @@ namespace D_Parser.Parser
 			n.Attributes = attributes.Count == 0 ? null : attributes.ToArray();
 		}
 
-        void OverPeekBrackets(int OpenBracketKind)
-        {
-            OverPeekBrackets(OpenBracketKind, false);
-        }
-
-        void OverPeekBrackets(int OpenBracketKind,bool LAIsOpenBracket)
+        void OverPeekBrackets(int OpenBracketKind,bool LAIsOpenBracket = false)
         {
             int CloseBracket = CloseParenthesis;
-            if (OpenBracketKind == OpenSquareBracket) CloseBracket = CloseSquareBracket;
-            else if (OpenBracketKind == OpenCurlyBrace) CloseBracket = CloseCurlyBrace;
 
+            if (OpenBracketKind == OpenSquareBracket) 
+				CloseBracket = CloseSquareBracket;
+            else if (OpenBracketKind == OpenCurlyBrace) 
+				CloseBracket = CloseCurlyBrace;
+
+			var pk = Lexer.CurrentPeekToken;
             int i = LAIsOpenBracket?1:0;
-            while (Lexer.CurrentPeekToken.Kind != EOF)
+            while (pk.Kind != EOF)
             {
-                if (Lexer.CurrentPeekToken.Kind== OpenBracketKind)
+                if (pk.Kind== OpenBracketKind)
                     i++;
-                else if (Lexer.CurrentPeekToken.Kind== CloseBracket)
+                else if (pk.Kind== CloseBracket)
                 {
                     i--;
-                    if (i <= 0) { Peek(); break; }
+                    if (i <= 0) 
+					{ 
+						Peek(); 
+						break; 
+					}
                 }
-                Peek();
+                pk = Peek();
             }
         }
 
@@ -365,12 +367,6 @@ namespace D_Parser.Parser
                     return t.Value;
                 return DTokens.GetTokenString(t.Kind);
             }
-        }
-
-        /* Return the n-th token after the current lookahead token */
-        void StartPeek()
-        {
-            Lexer.StartPeek();
         }
 
         DToken Peek()

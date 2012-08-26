@@ -83,7 +83,6 @@ namespace D_Parser.Parser
 			escapeSequenceBuffer = null;
 			identBuffer = null;
 			LexerErrors = null;
-			Comments.Clear();
 			Comments = null;
 		}
 		#endregion
