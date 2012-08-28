@@ -48,7 +48,7 @@ namespace D_Parser.Refactoring
 		}
 
 
-		public static INode[] TryFindingSelectedIdImportIndependently(IEditorData ed, out bool importRequired)
+		public static INode[] TryFindingSelectedIdImportIndependently(IEditorData ed, out bool importRequired, bool tryResolveNormally = true)
 		{
 			importRequired = false;
 			var l = new List<INode>();
@@ -68,20 +68,23 @@ namespace D_Parser.Refactoring
 				throw new Exception("No identifier selected");
 
 			// Try to resolve it using the usual (strictly filtered) way.
-			AbstractType[] t=null;
-
-			if (o is IExpression)
-				t = new[] { Evaluation.EvaluateType((IExpression)o, ctxt) };
-			else if(o is ITypeDeclaration)
-				t = TypeDeclarationResolver.Resolve((ITypeDeclaration)o, ctxt);
-
-			if (t != null && t.Length != 0 && t[0]!=null)
+			if (tryResolveNormally)
 			{
-				foreach (var at in t)
-					if (at is DSymbol)
-						l.Add(((DSymbol)at).Definition);
+				AbstractType[] t = null;
 
-				return l.ToArray();
+				if (o is IExpression)
+					t = new[] { Evaluation.EvaluateType((IExpression)o, ctxt) };
+				else if (o is ITypeDeclaration)
+					t = TypeDeclarationResolver.Resolve((ITypeDeclaration)o, ctxt);
+
+				if (t != null && t.Length != 0 && t[0] != null)
+				{
+					foreach (var at in t)
+						if (at is DSymbol)
+							l.Add(((DSymbol)at).Definition);
+
+					return l.ToArray();
+				}
 			}
 
 			// If no results:
