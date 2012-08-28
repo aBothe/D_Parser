@@ -1,19 +1,52 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using D_Parser.Dom;
 using D_Parser.Completion;
-using D_Parser.Resolver;
-using D_Parser.Resolver.TypeResolution;
+using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
-using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Parser;
+using D_Parser.Resolver;
+using D_Parser.Resolver.ExpressionSemantics;
+using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Refactoring
 {
-	public class ImportGen
+	public abstract class ImportDirectiveCreator
 	{
+		/// <summary>
+		/// Note: May throws various exceptions
+		/// </summary>
+		public static void CreateImportDirectiveForHighlightedSymbol(IEditorData editor, ImportDirectiveCreator IOInterface)
+		{
+			bool importRequired = false;
+			var matches = ImportDirectiveCreator.TryFindingSelectedIdImportIndependently(editor, out importRequired);
+
+			INode selection = null;
+			// If there are multiple types, show a list of those items
+			if (matches == null || matches.Length == 0)
+				throw new Exception("No symbol found!");
+			else if (matches.Length == 1)
+				selection = matches[0];
+			else if((selection = IOInterface.HandleMultipleResults(matches)) == null)
+				return;
+
+			if (selection == null)
+				throw new Exception("Selected symbol must not be null.");
+
+			var mod = selection.NodeRoot as IAbstractSyntaxTree;
+			if (mod == null)
+				throw new Exception("Node not assigned to a parent syntax tree. Abort operation.");
+
+			if (mod == editor.SyntaxTree)
+				throw new Exception("Symbol is part of the current module. No import required!");
+
+			if (!importRequired)
+				throw new Exception("Symbol imported already. No further import required!");
+
+
+			var loc = DParser.FindLastImportStatementEndLocation(editor.ModuleCode);
+			IOInterface.InsertIntoCode(new CodeLocation(0, loc.Line+1), "import " + mod.ModuleName + ";\r\n");
+		}
+
 
 		public static INode[] TryFindingSelectedIdImportIndependently(IEditorData ed, out bool importRequired)
 		{
@@ -54,7 +87,6 @@ namespace D_Parser.Refactoring
 			// If no results:
 
 			// Extract a concrete id from that syntax object. (If access expression/nested decl, use the inner-most one)
-
 			string id = null;
 
 			if (o is ITypeDeclaration)
@@ -105,5 +137,9 @@ namespace D_Parser.Refactoring
 			importRequired = true;
 			return l.ToArray();
 		}
+
+
+		public abstract INode HandleMultipleResults(INode[] results);
+		public abstract void InsertIntoCode(CodeLocation location, string codeToInsert);
 	}
 }
