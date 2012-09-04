@@ -603,7 +603,7 @@ namespace D_Parser.Parser
 					Step();
 					// Always allow more than only one property attribute
 					if (t.Kind == PropertyAttribute || !DAttribute.ContainsAttribute(DeclarationAttributes.ToArray(), t.Kind))
-						PushAttribute(new DAttribute(t.Kind, t.Value), false);
+						PushAttribute(new DAttribute(t.Kind, t.Value) { Location = t.Location, EndLocation = t.EndLocation }, false);
 				}
 				ret = true;
 			}
@@ -1005,7 +1005,7 @@ namespace D_Parser.Parser
 				while (FunctionAttribute[laKind])
 				{
 					Step();
-					attributes.Add(new DAttribute(t.Kind, t.Value));
+					attributes.Add(new DAttribute(t.Kind, t.Value) { Location = t.Location, EndLocation = t.EndLocation });
 				}
 				dd.Modifiers= attributes.Count>0? attributes.ToArray() : null;
 
@@ -1187,7 +1187,7 @@ namespace D_Parser.Parser
 
 			while (MemberFunctionAttribute[laKind])
 			{
-				_Attributes.Add(attr=new DAttribute(laKind, la.Value));
+				_Attributes.Add(attr = new DAttribute(laKind, la.Value) { Location = la.Location, EndLocation = la.EndLocation });
 				LastParsedObject = attr;
 				Step();
 			}
@@ -1235,7 +1235,7 @@ namespace D_Parser.Parser
 
 				while (StorageClass[laKind] || laKind==PropertyAttribute)
 				{
-					_Attributes.Add(attr=new DAttribute(laKind, la.Value));
+					_Attributes.Add(attr = new DAttribute(laKind, la.Value) { Location = la.Location, EndLocation = la.EndLocation });
 					LastParsedObject = attr;
 					Step();
 				}
@@ -1243,7 +1243,7 @@ namespace D_Parser.Parser
 
 			while (MemberFunctionAttribute[laKind])
 			{
-				_Attributes.Add(attr=new DAttribute(laKind,la.Value));
+				_Attributes.Add(attr = new DAttribute(laKind, la.Value) { Location = la.Location, EndLocation = la.EndLocation });
 				LastParsedObject = attr;
 				Step();
 			}
@@ -1655,7 +1655,7 @@ namespace D_Parser.Parser
 		PragmaAttribute _Pragma()
 		{
 			Expect(Pragma);
-			var s = new PragmaAttribute();
+			var s = new PragmaAttribute { Location = t.Location };
 			LastParsedObject = s;
 			if (Expect(OpenParenthesis))
 			{
@@ -1674,6 +1674,7 @@ namespace D_Parser.Parser
 				if (Expect(CloseParenthesis))
 					TrackerVariables.ExpectingIdentifier = false;
 			}
+			s.EndLocation = t.EndLocation;
 			return s;
 		}
 
@@ -1702,7 +1703,7 @@ namespace D_Parser.Parser
 
 		private void AttributeSpecifier()
 		{
-			var attr = new DAttribute(laKind,la.Value);
+			var attr = new DAttribute(laKind, la.Value) { Location = la.Location };
 			LastParsedObject = attr;
 			if (laKind == Extern && Lexer.CurrentPeekToken.Kind == OpenParenthesis)
 			{
@@ -1741,6 +1742,8 @@ namespace D_Parser.Parser
 				 attr=_Pragma();
 			else
 				Step();
+
+			attr.EndLocation = t.EndLocation;
 
 			if (laKind == Colon)
 			{
@@ -2705,7 +2708,7 @@ namespace D_Parser.Parser
 					while (FunctionAttribute[laKind])
 					{
 						Step();
-						fl.AnonymousMethod.Attributes.Add(new DAttribute(t.Kind, t.Value));
+						fl.AnonymousMethod.Attributes.Add(new DAttribute(t.Kind, t.Value) { Location = t.Location, EndLocation = t.EndLocation });
 					}
 				}
 

@@ -1,14 +1,14 @@
-﻿using System.Collections.Generic;
-using D_Parser.Parser;
+﻿using System;
+using System.Collections.Generic;
 using D_Parser.Dom.Expressions;
-using System;
+using D_Parser.Parser;
 
 namespace D_Parser.Dom
 {
     /// <summary>
     /// Represents an attrribute a declaration may have or consists of
     /// </summary>
-    public class DAttribute
+    public class DAttribute : ISyntaxRegion
     {
         public int Token;
         public object LiteralContent;
@@ -128,7 +128,19 @@ namespace D_Parser.Dom
 		{
 			get { return Token == DTokens.PropertyAttribute; }
 		}
-    }
+
+		public CodeLocation Location
+		{
+			get;
+			set;
+		}
+
+		public CodeLocation EndLocation
+		{
+			get;
+			set;
+		}
+	}
 
 	public class DeclarationCondition : DAttribute, ICloneable
 	{
