@@ -12,6 +12,11 @@ namespace D_Parser.Dom
 		{
 			return "module "+ModuleName==null?"": ModuleName.ToString();
 		}
+
+		public override void Accept(StatementVisitor vis)
+		{
+			vis.Visit(this);
+		}
 	}
 
 	public class ImportStatement:AbstractStatement, IDeclarationContainingStatement
@@ -96,6 +101,11 @@ namespace D_Parser.Dom
 				ret += ImportBinding.ToString();
 
 			return ret;
+		}
+
+		public override void Accept(StatementVisitor vis)
+		{
+			vis.Visit(this);
 		}
 
 		#region Pseudo alias variable generation

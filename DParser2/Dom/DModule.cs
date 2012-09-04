@@ -93,6 +93,11 @@ namespace D_Parser.Dom
 
 			return ModuleName;
 		}
+
+		public override void Accept(NodeVisitor vis)
+		{
+			vis.Visit(this);
+		}
 	}
 
 	public class DBlockNode : DNode, IBlockNode
@@ -186,6 +191,11 @@ namespace D_Parser.Dom
 
 			base.AssignFrom(other);
 		}
+
+		public override void Accept(NodeVisitor vis)
+		{
+			vis.Visit(this);
+		}
 	}
 
     public class DVariable : DNode
@@ -226,7 +236,12 @@ namespace D_Parser.Dom
 
 			base.AssignFrom(other);
 		}
-    }
+
+		public override void Accept(NodeVisitor vis)
+		{
+			vis.Visit(this);
+		}
+	}
 
     public class DMethod : DNode,IBlockNode
     {
@@ -431,6 +446,11 @@ namespace D_Parser.Dom
 				return Parameters!=null && Parameters.Count != 0 && Parent is IAbstractSyntaxTree;
 			}
 		}
+
+		public override void Accept(NodeVisitor vis)
+		{
+			vis.Visit(this);
+		}
 	}
 
     public class DClassLike : DBlockNode
@@ -470,6 +490,11 @@ namespace D_Parser.Dom
 
             return ret.Trim().TrimEnd(',');
         }
+
+		public override void Accept(NodeVisitor vis)
+		{
+			vis.Visit(this);
+		}
     }
 
     public class DEnum : DBlockNode
@@ -478,9 +503,18 @@ namespace D_Parser.Dom
         {
 			return (Attributes ? (AttributeString + " ") : "") + "enum " + (IncludePath?GetNodePath(this,true):Name);
         }
+
+		public override void Accept(NodeVisitor vis)
+		{
+			vis.Visit(this);
+		}
 	}
 
     public class DEnumValue : DVariable
     {
+		public override void Accept(NodeVisitor vis)
+		{
+			vis.Visit(this);
+		}
     }
 }

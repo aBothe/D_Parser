@@ -89,6 +89,11 @@ namespace D_Parser.Dom
 		{
 			return (GetNodePath(this, false) + "." + ToString()).TrimEnd('.');
 		}
+
+		public override void Accept(NodeVisitor vis)
+		{
+			vis.Visit(this);
+		}
 	}
 
 	public class TemplateTypeParameter : ITemplateParameter

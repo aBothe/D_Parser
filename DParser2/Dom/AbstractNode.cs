@@ -128,5 +128,7 @@ namespace D_Parser.Dom
 					Parent.NodeRoot = value;
 			}
 		}
+
+		public abstract void Accept(NodeVisitor vis);
 	}
 }
