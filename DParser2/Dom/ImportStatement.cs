@@ -17,6 +17,11 @@ namespace D_Parser.Dom
 		{
 			vis.Visit(this);
 		}
+
+		public override R Accept<R>(StatementVisitor<R> vis)
+		{
+			return vis.Visit(this);
+		}
 	}
 
 	public class ImportStatement:AbstractStatement, IDeclarationContainingStatement
@@ -106,6 +111,11 @@ namespace D_Parser.Dom
 		public override void Accept(StatementVisitor vis)
 		{
 			vis.Visit(this);
+		}
+
+		public override R Accept<R>(StatementVisitor<R> vis)
+		{
+			return vis.Visit(this);
 		}
 
 		#region Pseudo alias variable generation

@@ -130,5 +130,6 @@ namespace D_Parser.Dom
 		}
 
 		public abstract void Accept(NodeVisitor vis);
+		public abstract R Accept<R>(NodeVisitor<R> vis);
 	}
 }

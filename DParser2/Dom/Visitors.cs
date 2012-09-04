@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using D_Parser.Dom.Expressions;
+﻿using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
 
 namespace D_Parser.Dom
@@ -10,6 +6,11 @@ namespace D_Parser.Dom
 	public interface DVisitor : NodeVisitor, StatementVisitor, ExpressionVisitor
 	{
 		
+	}
+
+	public interface DVisitor<out R> : NodeVisitor<R>, StatementVisitor<R>, ExpressionVisitor<R>
+	{
+
 	}
 
 	public interface NodeVisitor
@@ -23,6 +24,19 @@ namespace D_Parser.Dom
 		void Visit(DBlockNode dBlockNode);
 
 		void Visit(TemplateParameterNode templateParameterNode);
+	}
+
+	public interface NodeVisitor<out R>
+	{
+		R Visit(DEnumValue dEnumValue);
+		R Visit(DVariable dVariable);
+		R Visit(DMethod dMethod);
+		R Visit(DClassLike dClassLike);
+		R Visit(DEnum dEnum);
+		R Visit(DModule dModule);
+		R Visit(DBlockNode dBlockNode);
+
+		R Visit(TemplateParameterNode templateParameterNode);
 	}
 
 	public interface StatementVisitor
@@ -59,6 +73,42 @@ namespace D_Parser.Dom
 		void Visit(DeclarationStatement declarationStatement);
 		void Visit(TemplateMixin templateMixin);
 		void Visit(VersionDebugSpecification versionDebugSpecification);
+	}
+
+	public interface StatementVisitor<out R>
+	{
+		R Visit(ModuleStatement moduleStatement);
+		R Visit(ImportStatement importStatement);
+		R Visit(BlockStatement blockStatement);
+		R Visit(LabeledStatement labeledStatement);
+		R Visit(IfStatement ifStatement);
+		R Visit(WhileStatement whileStatement);
+		R Visit(ForStatement forStatement);
+		R Visit(ForeachStatement foreachStatement);
+		R Visit(SwitchStatement switchStatement);
+		R Visit(SwitchStatement.CaseStatement caseStatement);
+		R Visit(SwitchStatement.DefaultStatement defaultStatement);
+		R Visit(ContinueStatement continueStatement);
+		R Visit(BreakStatement breakStatement);
+		R Visit(ReturnStatement returnStatement);
+		R Visit(GotoStatement gotoStatement);
+		R Visit(WithStatement withStatement);
+		R Visit(SynchronizedStatement synchronizedStatement);
+		R Visit(TryStatement tryStatement);
+		R Visit(TryStatement.CatchStatement catchStatement);
+		R Visit(TryStatement.FinallyStatement finallyStatement);
+		R Visit(ThrowStatement throwStatement);
+		R Visit(ScopeGuardStatement scopeGuardStatement);
+		R Visit(AsmStatement asmStatement);
+		R Visit(PragmaStatement pragmaStatement);
+		R Visit(AssertStatement assertStatement);
+		R Visit(ConditionStatement.DebugStatement debugStatement);
+		R Visit(ConditionStatement.VersionStatement versionStatement);
+		R Visit(VolatileStatement volatileStatement);
+		R Visit(ExpressionStatement expressionStatement);
+		R Visit(DeclarationStatement declarationStatement);
+		R Visit(TemplateMixin templateMixin);
+		R Visit(VersionDebugSpecification versionDebugSpecification);
 	}
 
 	public interface ExpressionVisitor
@@ -121,5 +171,67 @@ namespace D_Parser.Dom
 		void Visit(VoidInitializer x);
 		void Visit(ArrayInitializer x);
 		void Visit(StructInitializer x);
+	}
+
+	public interface ExpressionVisitor<out R>
+	{
+		R Visit(Expression x);
+		R Visit(AssignExpression x);
+		R Visit(ConditionalExpression x);
+		R Visit(OrOrExpression x);
+		R Visit(AndAndExpression x);
+		R Visit(XorExpression x);
+		R Visit(OrExpression x);
+		R Visit(AndExpression x);
+		R Visit(EqualExpression x);
+		R Visit(IdendityExpression x);
+		R Visit(RelExpression x);
+		R Visit(InExpression x);
+		R Visit(ShiftExpression x);
+		R Visit(AddExpression x);
+		R Visit(MulExpression x);
+		R Visit(CatExpression x);
+		R Visit(PowExpression x);
+
+		R Visit(UnaryExpression_And x);
+		R Visit(UnaryExpression_Increment x);
+		R Visit(UnaryExpression_Decrement x);
+		R Visit(UnaryExpression_Mul x);
+		R Visit(UnaryExpression_Add x);
+		R Visit(UnaryExpression_Sub x);
+		R Visit(UnaryExpression_Not x);
+		R Visit(UnaryExpression_Cat x);
+		R Visit(UnaryExpression_Type x);
+
+		R Visit(NewExpression x);
+		R Visit(AnonymousClassExpression x);
+		R Visit(DeleteExpression x);
+		R Visit(CastExpression x);
+
+		R Visit(PostfixExpression_Access x);
+		R Visit(PostfixExpression_Increment x);
+		R Visit(PostfixExpression_Decrement x);
+		R Visit(PostfixExpression_MethodCall x);
+		R Visit(PostfixExpression_Index x);
+		R Visit(PostfixExpression_Slice x);
+
+		R Visit(TemplateInstanceExpression x);
+		R Visit(IdentifierExpression x);
+		R Visit(TokenExpression x);
+		R Visit(TypeDeclarationExpression x);
+		R Visit(ArrayLiteralExpression x);
+		R Visit(AssocArrayExpression x);
+		R Visit(FunctionLiteral x);
+		R Visit(AssertExpression x);
+		R Visit(MixinExpression x);
+		R Visit(ImportExpression x);
+		R Visit(TypeidExpression x);
+		R Visit(IsExpression x);
+		R Visit(TraitsExpression x);
+		R Visit(SurroundingParenthesesExpression x);
+
+		R Visit(VoidInitializer x);
+		R Visit(ArrayInitializer x);
+		R Visit(StructInitializer x);
 	}
 }

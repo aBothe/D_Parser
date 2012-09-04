@@ -22,6 +22,7 @@ namespace D_Parser.Dom.Statements
 		string ToCode();
 
 		void Accept(StatementVisitor vis);
+		R Accept<R>(StatementVisitor<R> vis);
 	}
 
 	public interface IExpressionContainingStatement : IStatement
@@ -79,6 +80,7 @@ namespace D_Parser.Dom.Statements
 		}
 
 		public abstract void Accept(StatementVisitor vis);
+		public abstract R Accept<R>(StatementVisitor<R> vis);
 	}
 
 	/// <summary>
@@ -164,6 +166,11 @@ namespace D_Parser.Dom.Statements
 			vis.Visit(this);
 		}
 
+		public override R Accept<R>(StatementVisitor<R> vis)
+		{
+			return vis.Visit(this);
+		}
+
 		public virtual IStatement SearchStatement(CodeLocation Where)
 		{
 			return SearchBlockStatement(this, Where);
@@ -243,6 +250,11 @@ namespace D_Parser.Dom.Statements
 		{
 			vis.Visit(this);
 		}
+
+		public override R Accept<R>(StatementVisitor<R> vis)
+		{
+			return vis.Visit(this);
+		}
 	}
 
 	public class IfStatement : StatementContainingStatement,IDeclarationContainingStatement,IExpressionContainingStatement
@@ -319,6 +331,11 @@ namespace D_Parser.Dom.Statements
 		{
 			vis.Visit(this);
 		}
+
+		public override R Accept<R>(StatementVisitor<R> vis)
+		{
+			return vis.Visit(this);
+		}
 	}
 
 	public class WhileStatement : StatementContainingStatement, IExpressionContainingStatement
@@ -363,6 +380,11 @@ namespace D_Parser.Dom.Statements
 		public override void Accept(StatementVisitor vis)
 		{
 			vis.Visit(this);
+		}
+
+		public override R Accept<R>(StatementVisitor<R> vis)
+		{
+			return vis.Visit(this);
 		}
 	}
 
@@ -424,6 +446,11 @@ namespace D_Parser.Dom.Statements
 		{
 			vis.Visit(this);
 		}
+
+		public override R Accept<R>(StatementVisitor<R> vis)
+		{
+			return vis.Visit(this);
+		}
 	}
 
 	public class ForeachStatement : StatementContainingStatement, 
@@ -481,6 +508,11 @@ namespace D_Parser.Dom.Statements
 		{
 			vis.Visit(this);
 		}
+
+		public override R Accept<R>(StatementVisitor<R> vis)
+		{
+			return vis.Visit(this);
+		}
 	}
 
 	public class SwitchStatement : StatementContainingStatement, IExpressionContainingStatement
@@ -511,6 +543,11 @@ namespace D_Parser.Dom.Statements
 		public override void Accept(StatementVisitor vis)
 		{
 			vis.Visit(this);
+		}
+
+		public override R Accept<R>(StatementVisitor<R> vis)
+		{
+			return vis.Visit(this);
 		}
 
 		public class CaseStatement : StatementContainingStatement, IExpressionContainingStatement
@@ -556,6 +593,11 @@ namespace D_Parser.Dom.Statements
 			{
 				vis.Visit(this);
 			}
+
+			public override R Accept<R>(StatementVisitor<R> vis)
+			{
+				return vis.Visit(this);
+			}
 		}
 
 		public class DefaultStatement : StatementContainingStatement
@@ -584,6 +626,11 @@ namespace D_Parser.Dom.Statements
 			{
 				vis.Visit(this);
 			}
+
+			public override R Accept<R>(StatementVisitor<R> vis)
+			{
+				return vis.Visit(this);
+			}
 		}
 	}
 
@@ -605,6 +652,11 @@ namespace D_Parser.Dom.Statements
 		{
 			vis.Visit(this);
 		}
+
+		public override R Accept<R>(StatementVisitor<R> vis)
+		{
+			return vis.Visit(this);
+		}
 	}
 
 	public class BreakStatement : AbstractStatement,IExpressionContainingStatement
@@ -625,6 +677,11 @@ namespace D_Parser.Dom.Statements
 		{
 			vis.Visit(this);
 		}
+
+		public override R Accept<R>(StatementVisitor<R> vis)
+		{
+			return vis.Visit(this);
+		}
 	}
 
 	public class ReturnStatement : AbstractStatement,IExpressionContainingStatement
@@ -644,6 +701,11 @@ namespace D_Parser.Dom.Statements
 		public override void Accept(StatementVisitor vis)
 		{
 			vis.Visit(this);
+		}
+
+		public override R Accept<R>(StatementVisitor<R> vis)
+		{
+			return vis.Visit(this);
 		}
 	}
 
@@ -684,6 +746,11 @@ namespace D_Parser.Dom.Statements
 		{
 			vis.Visit(this);
 		}
+
+		public override R Accept<R>(StatementVisitor<R> vis)
+		{
+			return vis.Visit(this);
+		}
 	}
 
 	public class WithStatement : StatementContainingStatement, IExpressionContainingStatement
@@ -723,6 +790,11 @@ namespace D_Parser.Dom.Statements
 		{
 			vis.Visit(this);
 		}
+
+		public override R Accept<R>(StatementVisitor<R> vis)
+		{
+			return vis.Visit(this);
+		}
 	}
 
 	public class SynchronizedStatement : StatementContainingStatement,IExpressionContainingStatement
@@ -750,6 +822,11 @@ namespace D_Parser.Dom.Statements
 		public override void Accept(StatementVisitor vis)
 		{
 			vis.Visit(this);
+		}
+
+		public override R Accept<R>(StatementVisitor<R> vis)
+		{
+			return vis.Visit(this);
 		}
 	}
 
@@ -798,6 +875,11 @@ namespace D_Parser.Dom.Statements
 			vis.Visit(this);
 		}
 
+		public override R Accept<R>(StatementVisitor<R> vis)
+		{
+			return vis.Visit(this);
+		}
+
 		public class CatchStatement : StatementContainingStatement,IDeclarationContainingStatement
 		{
 			public DVariable CatchParameter;
@@ -821,6 +903,11 @@ namespace D_Parser.Dom.Statements
 			{
 				vis.Visit(this);
 			}
+
+			public override R Accept<R>(StatementVisitor<R> vis)
+			{
+				return vis.Visit(this);
+			}
 		}
 
 		public class FinallyStatement : StatementContainingStatement
@@ -833,6 +920,11 @@ namespace D_Parser.Dom.Statements
 			public override void Accept(StatementVisitor vis)
 			{
 				vis.Visit(this);
+			}
+
+			public override R Accept<R>(StatementVisitor<R> vis)
+			{
+				return vis.Visit(this);
 			}
 		}
 	}
@@ -855,6 +947,11 @@ namespace D_Parser.Dom.Statements
 		{
 			vis.Visit(this);
 		}
+
+		public override R Accept<R>(StatementVisitor<R> vis)
+		{
+			return vis.Visit(this);
+		}
 	}
 
 	public class ScopeGuardStatement : StatementContainingStatement
@@ -873,6 +970,11 @@ namespace D_Parser.Dom.Statements
 		public override void Accept(StatementVisitor vis)
 		{
 			vis.Visit(this);
+		}
+
+		public override R Accept<R>(StatementVisitor<R> vis)
+		{
+			return vis.Visit(this);
 		}
 	}
 
@@ -898,6 +1000,11 @@ namespace D_Parser.Dom.Statements
 		{
 			vis.Visit(this);
 		}
+
+		public override R Accept<R>(StatementVisitor<R> vis)
+		{
+			return vis.Visit(this);
+		}
 	}
 
 	public class PragmaStatement : StatementContainingStatement,IExpressionContainingStatement
@@ -921,6 +1028,11 @@ namespace D_Parser.Dom.Statements
 		public override void Accept(StatementVisitor vis)
 		{
 			vis.Visit(this);
+		}
+
+		public override R Accept<R>(StatementVisitor<R> vis)
+		{
+			return vis.Visit(this);
 		}
 	}
 
@@ -976,6 +1088,11 @@ namespace D_Parser.Dom.Statements
 			{
 				vis.Visit(this);
 			}
+
+			public override R Accept<R>(StatementVisitor<R> vis)
+			{
+				return vis.Visit(this);
+			}
 		}
 
 		public class VersionStatement : ConditionStatement
@@ -1001,6 +1118,11 @@ namespace D_Parser.Dom.Statements
 			{
 				vis.Visit(this);
 			}
+
+			public override R Accept<R>(StatementVisitor<R> vis)
+			{
+				return vis.Visit(this);
+			}
 		}
 	}
 
@@ -1023,6 +1145,11 @@ namespace D_Parser.Dom.Statements
 		{
 			vis.Visit(this);
 		}
+
+		public override R Accept<R>(StatementVisitor<R> vis)
+		{
+			return vis.Visit(this);
+		}
 	}
 
 	public class VolatileStatement : StatementContainingStatement
@@ -1035,6 +1162,11 @@ namespace D_Parser.Dom.Statements
 		public override void Accept(StatementVisitor vis)
 		{
 			vis.Visit(this);
+		}
+
+		public override R Accept<R>(StatementVisitor<R> vis)
+		{
+			return vis.Visit(this);
 		}
 	}
 
@@ -1055,6 +1187,11 @@ namespace D_Parser.Dom.Statements
 		public override void Accept(StatementVisitor vis)
 		{
 			vis.Visit(this);
+		}
+
+		public override R Accept<R>(StatementVisitor<R> vis)
+		{
+			return vis.Visit(this);
 		}
 	}
 
@@ -1110,6 +1247,11 @@ namespace D_Parser.Dom.Statements
 		{
 			vis.Visit(this);
 		}
+
+		public override R Accept<R>(StatementVisitor<R> vis)
+		{
+			return vis.Visit(this);
+		}
 	}
 
 	public class TemplateMixin : AbstractStatement,IExpressionContainingStatement
@@ -1152,6 +1294,11 @@ namespace D_Parser.Dom.Statements
 		{
 			vis.Visit(this);
 		}
+
+		public override R Accept<R>(StatementVisitor<R> vis)
+		{
+			return vis.Visit(this);
+		}
 	}
 
 	public class VersionDebugSpecification : AbstractStatement, IExpressionContainingStatement
@@ -1173,6 +1320,11 @@ namespace D_Parser.Dom.Statements
 		public override void Accept(StatementVisitor vis)
 		{
 			vis.Visit(this);
+		}
+
+		public override R Accept<R>(StatementVisitor<R> vis)
+		{
+			return vis.Visit(this);
 		}
 	}
 }

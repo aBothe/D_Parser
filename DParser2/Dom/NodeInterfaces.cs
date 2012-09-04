@@ -61,5 +61,6 @@ namespace D_Parser.Dom
 		INode NodeRoot { get; set; }
 
 		void Accept(NodeVisitor vis);
+		R Accept<R>(NodeVisitor<R> vis);
 	}
 }

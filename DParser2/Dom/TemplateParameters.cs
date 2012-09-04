@@ -94,6 +94,11 @@ namespace D_Parser.Dom
 		{
 			vis.Visit(this);
 		}
+
+		public override R Accept<R>(NodeVisitor<R> vis)
+		{
+			return vis.Visit(this);
+		}
 	}
 
 	public class TemplateTypeParameter : ITemplateParameter
