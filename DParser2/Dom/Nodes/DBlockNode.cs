@@ -20,6 +20,17 @@ namespace D_Parser.Dom
 		/// Used for storing import statement and similar stuff
 		/// </summary>
 		public readonly List<IStatement> StaticStatements = new List<IStatement>();
+		/// <summary>
+		/// Used for storing e.g. accessor attribute blocks
+		/// private {
+		/// }
+		/// @safe:
+		/// or
+		/// static if(...) {
+		/// }
+		/// Primarily used for formatting reasons later on.
+		/// </summary>
+		public readonly List<AbstractMetaDeclaration> MetaBlocks = new List<AbstractMetaDeclaration>();
 
 		public CodeLocation BlockStartLocation
 		{
@@ -35,6 +46,11 @@ namespace D_Parser.Dom
 		public IStatement[] Statements
 		{
 			get { return StaticStatements.ToArray(); }
+		}
+
+		public void Add(AbstractMetaDeclaration MetaDecl)
+		{
+			MetaBlocks.Add(MetaDecl);
 		}
 
 		public void Add(IStatement Statement)

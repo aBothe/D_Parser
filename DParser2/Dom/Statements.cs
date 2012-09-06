@@ -1301,6 +1301,9 @@ namespace D_Parser.Dom.Statements
 		}
 	}
 
+	/// <summary>
+	/// version = MyVersionSpec
+	/// </summary>
 	public class VersionDebugSpecification : AbstractStatement, IExpressionContainingStatement
 	{
 		public int Token;

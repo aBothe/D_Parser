@@ -225,7 +225,7 @@ namespace D_Parser.Parser
 			{
 				Step();
 
-				var c = new DeclarationCondition(t.Kind);
+				var c = new DeclarationCondition(t.Kind) { Location = t.Location };
 				LastParsedObject = c;
 
 				/* 
@@ -310,19 +310,28 @@ namespace D_Parser.Parser
 					Expect(CloseParenthesis);
 				}
 
+				c.EndLocation = t.EndLocation;
+
 				if (laKind == Colon)
 				{
 					Step();
 					PushAttribute(c, true);
+
+					//TODO: Put all remaining block/decl(?) attributes into the section definition..
+					//TODO: Centralize colon/braces/default attribute handling - so no code copypasta anymore
+					module.Add(new AttributeMetaDeclarationSection(c) { EndLocation = t.EndLocation });
 					return;
 				}
 				else if (laKind == OpenCurlyBrace)
 				{
+					var blk = new AttributeMetaDeclarationBlock(c) { BlockStartLocation = la.Location };
+
 					BlockAttributes.Push(c);
-
 					ClassBody(module, true, false);
-
 					BlockAttributes.Pop();
+
+					blk.EndLocation = t.EndLocation;
+					module.Add(blk);
 				}
 				else
 				{
