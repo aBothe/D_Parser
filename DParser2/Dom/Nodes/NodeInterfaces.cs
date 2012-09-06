@@ -26,6 +26,11 @@ namespace D_Parser.Dom
 			this.Token = KeyToken;
 			this.Location = ErrorLocation;
 		}
+
+		public override string ToString()
+		{
+			return "[Parse error] "+Message;
+		}
 	}
 
 	public interface IBlockNode: INode, IEnumerable<INode>

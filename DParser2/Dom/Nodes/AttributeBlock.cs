@@ -18,10 +18,10 @@ namespace D_Parser.Dom
 
 	public interface IMetaDeclarationBlock : ISyntaxRegion
 	{
-		public CodeLocation BlockStartLocation { get; set; }
+		CodeLocation BlockStartLocation { get; set; }
 	}
 
-	public abstract class AttributeMetaDeclaration : AbstractMetaDeclaration
+	public class AttributeMetaDeclaration : AbstractMetaDeclaration
 	{
 		public DAttribute[] AttributeOrCondition;
 
@@ -85,12 +85,33 @@ namespace D_Parser.Dom
 	/// </summary>
 	public class AttributeMetaDeclarationBlock : AttributeMetaDeclaration, IMetaDeclarationBlock
 	{
-		public AttributeMetaDeclarationBlock(DAttribute attr) : base(attr) {}
+		public AttributeMetaDeclarationBlock(params DAttribute[] attr) : base(attr) {}
 
 		public CodeLocation BlockStartLocation
 		{
 			get;
 			set;
+		}
+	}
+
+	/// <summary>
+	/// A simple block that is just used for code alignment but semantically irrelevant elsehow.
+	/// {
+	///		int cascadedIntDecl;
+	/// }
+	/// </summary>
+	public class MetaDeclarationBlock : AbstractMetaDeclaration, IMetaDeclarationBlock
+	{
+		public CodeLocation BlockStartLocation
+		{
+			get;
+			set;
+		}
+
+		public override CodeLocation Location
+		{
+			get { return BlockStartLocation; }
+			set { BlockStartLocation = value; }
 		}
 	}
 }
