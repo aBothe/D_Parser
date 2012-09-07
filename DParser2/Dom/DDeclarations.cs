@@ -5,7 +5,7 @@ using D_Parser.Parser;
 
 namespace D_Parser.Dom
 {
-	public interface ITypeDeclaration : ISyntaxRegion
+	public interface ITypeDeclaration : ISyntaxRegion, IVisitable<TypeDeclarationVisitor>
 	{
 		new CodeLocation Location { get; set; }
 		new CodeLocation EndLocation { get; set; }
@@ -21,7 +21,6 @@ namespace D_Parser.Dom
 		string ToString();
 		string ToString(bool IncludesBase);
 
-		void Accept(TypeDeclarationVisitor vis);
 		R Accept<R>(TypeDeclarationVisitor<R> vis);
 	}
 

@@ -3,17 +3,31 @@ using D_Parser.Dom.Statements;
 
 namespace D_Parser.Dom
 {
-	public interface DVisitor : NodeVisitor, StatementVisitor, ExpressionVisitor, TypeDeclarationVisitor
+	public interface IVisitor { }
+	public interface IVisitor<out R> { }
+
+	public interface DVisitor : 
+		NodeVisitor, 
+		MetaDeclarationVisitor,
+		TemplateParameterVisitor,
+		StatementVisitor, 
+		ExpressionVisitor, 
+		TypeDeclarationVisitor
 	{
 		
 	}
 
-	public interface DVisitor<out R> : NodeVisitor<R>, StatementVisitor<R>, ExpressionVisitor<R>, TypeDeclarationVisitor<R>
+	public interface DVisitor<out R> : 
+		NodeVisitor<R>,
+		TemplateParameterVisitor<R>,
+		StatementVisitor<R>, 
+		ExpressionVisitor<R>, 
+		TypeDeclarationVisitor<R>
 	{
 
 	}
 
-	public interface NodeVisitor
+	public interface NodeVisitor : IVisitor
 	{
 		void Visit(DEnumValue dEnumValue);
 		void Visit(DVariable dVariable);
@@ -21,13 +35,15 @@ namespace D_Parser.Dom
 		void Visit(DClassLike dClassLike);
 		void Visit(DEnum dEnum);
 		void Visit(DModule dModule);
-		void Visit(DBlockNode dBlockNode);
+		void VisitBlock(DBlockNode dBlockNode);
 		void Visit(TemplateParameterNode templateParameterNode);
 
-		void Visit(DAttribute attribute);
+		void VisitAttribute(DAttribute attribute);
+		void VisitAttribute(DeclarationCondition declCond);
+		void VisitAttribute(PragmaAttribute pragma);
 	}
 
-	public interface NodeVisitor<out R>
+	public interface NodeVisitor<out R> : IVisitor<R>
 	{
 		R Visit(DEnumValue dEnumValue);
 		R Visit(DVariable dVariable);
@@ -38,10 +54,40 @@ namespace D_Parser.Dom
 		R Visit(DBlockNode dBlockNode);
 		R Visit(TemplateParameterNode templateParameterNode);
 
-		R Visit(DAttribute attr);
+		R VisitAttribute(DAttribute attr);
+		R VisitAttribute(DeclarationCondition attr);
+		R VisitAttribute(PragmaAttribute attr);
 	}
 
-	public interface StatementVisitor
+	public interface MetaDeclarationVisitor : IVisitor
+	{
+		void Visit(MetaDeclarationBlock metaDeclarationBlock);
+		void Visit(AttributeMetaDeclarationBlock attributeMetaDeclarationBlock);
+		void Visit(AttributeMetaDeclarationSection attributeMetaDeclarationSection);
+		void Visit(ElseMetaDeclarationBlock elseMetaDeclarationBlock);
+		void Visit(ElseMetaDeclaration elseMetaDeclaration);
+		void Visit(AttributeMetaDeclaration attributeMetaDeclaration);
+	}
+
+	public interface TemplateParameterVisitor : IVisitor
+	{
+		void Visit(TemplateTypeParameter templateTypeParameter);
+		void Visit(TemplateThisParameter templateThisParameter);
+		void Visit(TemplateValueParameter templateValueParameter);
+		void Visit(TemplateAliasParameter templateAliasParameter);
+		void Visit(TemplateTupleParameter templateTupleParameter);
+	}
+
+	public interface TemplateParameterVisitor<out R> : IVisitor<R>
+	{
+		R Visit(TemplateTypeParameter templateTypeParameter);
+		R Visit(TemplateThisParameter templateThisParameter);
+		R Visit(TemplateValueParameter templateValueParameter);
+		R Visit(TemplateAliasParameter templateAliasParameter);
+		R Visit(TemplateTupleParameter templateTupleParameter);
+	}
+
+	public interface StatementVisitor : IVisitor
 	{
 		void Visit(ModuleStatement moduleStatement);
 		void Visit(ImportStatement importStatement);
@@ -77,7 +123,7 @@ namespace D_Parser.Dom
 		void Visit(VersionDebugSpecification versionDebugSpecification);
 	}
 
-	public interface StatementVisitor<out R>
+	public interface StatementVisitor<out R> : IVisitor<R>
 	{
 		R Visit(ModuleStatement moduleStatement);
 		R Visit(ImportStatement importStatement);
@@ -113,7 +159,7 @@ namespace D_Parser.Dom
 		R Visit(VersionDebugSpecification versionDebugSpecification);
 	}
 
-	public interface ExpressionVisitor
+	public interface ExpressionVisitor : IVisitor
 	{
 		void Visit(Expression x);
 		void Visit(AssignExpression x);
@@ -175,7 +221,7 @@ namespace D_Parser.Dom
 		void Visit(StructInitializer x);
 	}
 
-	public interface ExpressionVisitor<out R>
+	public interface ExpressionVisitor<out R> : IVisitor<R>
 	{
 		R Visit(Expression x);
 		R Visit(AssignExpression x);
@@ -237,7 +283,7 @@ namespace D_Parser.Dom
 		R Visit(StructInitializer x);
 	}
 
-	public interface TypeDeclarationVisitor
+	public interface TypeDeclarationVisitor : IVisitor
 	{
 		void Visit(IdentifierDeclaration identifierDeclaration);
 		void Visit(DTokenDeclaration dTokenDeclaration);
@@ -254,7 +300,7 @@ namespace D_Parser.Dom
 		void Visit(TemplateInstanceExpression templateInstanceExpression);
 	}
 
-	public interface TypeDeclarationVisitor<out R>
+	public interface TypeDeclarationVisitor<out R> : IVisitor<R>
 	{
 		R Visit(IdentifierDeclaration identifierDeclaration);
 		R Visit(DTokenDeclaration dTokenDeclaration);

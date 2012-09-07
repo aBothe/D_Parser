@@ -6,7 +6,7 @@ using D_Parser.Parser;
 namespace D_Parser.Dom.Statements
 {
 	#region Generics
-	public interface IStatement : ISyntaxRegion
+	public interface IStatement : ISyntaxRegion, IVisitable<StatementVisitor>
 	{
 		new CodeLocation Location { get; set; }
 		new CodeLocation EndLocation { get; set; }
@@ -21,7 +21,6 @@ namespace D_Parser.Dom.Statements
 
 		string ToCode();
 
-		void Accept(StatementVisitor vis);
 		R Accept<R>(StatementVisitor<R> vis);
 	}
 

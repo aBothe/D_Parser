@@ -70,6 +70,7 @@
     <Compile Include="Completion\Providers\MemberCompletionProvider.cs" />
     <Compile Include="Completion\Providers\PropertyAttributeCompletionProvider.cs" />
     <Compile Include="Completion\Providers\UFCSCompletionProvider.cs" />
+    <Compile Include="Dom\IVisitable.cs" />
     <Compile Include="Dom\Nodes\AttributeBlock.cs" />
     <Compile Include="Dom\Nodes\DBlockNode.cs" />
     <Compile Include="Dom\DefaultDepthFirstVisitor.cs" />

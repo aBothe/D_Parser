@@ -8,7 +8,7 @@ namespace D_Parser.Dom
     /// <summary>
     /// Represents an attrribute a declaration may have or consists of
     /// </summary>
-    public class DAttribute : ISyntaxRegion
+    public class DAttribute : ISyntaxRegion, IVisitable<NodeVisitor>
     {
         public int Token;
         public object LiteralContent;
@@ -141,14 +141,14 @@ namespace D_Parser.Dom
 			set;
 		}
 
-		public void Accept(NodeVisitor vis)
+		public virtual void Accept(NodeVisitor vis)
 		{
-			vis.Visit(this);
+			vis.VisitAttribute(this);
 		}
 
-		public R Accept<R>(NodeVisitor<R> vis)
+		public virtual R Accept<R>(NodeVisitor<R> vis)
 		{
-			return vis.Visit(this);
+			return vis.VisitAttribute(this);
 		}
 	}
 
@@ -215,6 +215,16 @@ namespace D_Parser.Dom
 				IsNegated=IsNegated
 			};
 		}
+
+		public virtual void Accept(NodeVisitor vis)
+		{
+			vis.VisitAttribute(this);
+		}
+
+		public virtual R Accept<R>(NodeVisitor<R> vis)
+		{
+			return vis.VisitAttribute(this);
+		}
 	}
 
 	public class PragmaAttribute : DAttribute
@@ -241,6 +251,16 @@ namespace D_Parser.Dom
 					r += "," + e!=null ? e.ToString() : "";
 
 			return r + ")";
+		}
+
+		public virtual void Accept(NodeVisitor vis)
+		{
+			vis.VisitAttribute(this);
+		}
+
+		public virtual R Accept<R>(NodeVisitor<R> vis)
+		{
+			return vis.VisitAttribute(this);
 		}
 	}
 }

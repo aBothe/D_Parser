@@ -5,9 +5,8 @@ using D_Parser.Parser;
 
 namespace D_Parser.Dom.Expressions
 {
-	public interface IExpression : ISyntaxRegion
+	public interface IExpression : ISyntaxRegion, IVisitable<ExpressionVisitor>
 	{
-		void Accept(ExpressionVisitor vis);
 		R Accept<R>(ExpressionVisitor<R> vis);
 	}
 

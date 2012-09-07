@@ -9,23 +9,6 @@ namespace D_Parser.Dom
 {
 	public abstract class DefaultDepthFirstVisitor : DVisitor
 	{
-		#region Visit children
-		public virtual void VisitChildren(DBlockNode block)
-		{
-			VisitChildren((IBlockNode)block);
-		}
-
-		public virtual void VisitChildren(IBlockNode block)
-		{
-			foreach (var n in block)
-				n.Accept(this);
-		}
-
-		public virtual void VisitChildren(StatementContainingStatement stmtContainer)
-		{
-
-		}
-
 		public virtual void VisitChildren(ContainerExpression x)
 		{
 			
@@ -35,9 +18,32 @@ namespace D_Parser.Dom
 		{
 
 		}
-		#endregion
 
 		#region Nodes
+		public virtual void VisitChildren(IBlockNode block)
+		{
+			foreach (var n in block)
+				n.Accept(this);
+			
+		}
+
+		/// <summary>
+		/// Calls VisitDNode already.
+		/// </summary>
+		public virtual void VisitBlock(DBlockNode block)
+		{
+			VisitChildren(block);
+			VisitDNode(block);
+
+			if (block.StaticStatements.Count != 0)
+				foreach (var s in block.StaticStatements)
+					s.Accept(this);
+
+			if (block.MetaBlocks.Count != 0)
+				foreach (var mb in block.MetaBlocks)
+					mb.Accept(this);
+		}
+
 		public virtual void Visit(DEnumValue n)
 		{
 			Visit((DVariable)n);
@@ -53,6 +59,7 @@ namespace D_Parser.Dom
 		public virtual void Visit(DMethod n)
 		{
 			VisitChildren(n);
+			VisitDNode(n);
 
 			if(n.Parameters!=null)
 				foreach (var par in n.Parameters)
@@ -71,7 +78,7 @@ namespace D_Parser.Dom
 
 		public virtual void Visit(DClassLike n)
 		{
-			VisitChildren(n);
+			VisitBlock(n);
 
 			foreach (var bc in n.BaseClasses)
 				bc.Accept(this);
@@ -79,37 +86,65 @@ namespace D_Parser.Dom
 
 		public virtual void Visit(DEnum n)
 		{
-			VisitChildren(n);
+			VisitBlock(n);
 		}
 
 		public virtual void Visit(DModule n)
 		{
-			VisitChildren(n);
-		}
+			VisitBlock(n);
 
-		public virtual void Visit(DBlockNode n)
-		{
-			throw new NotImplementedException();
+			if (n.OptionalModuleStatement != null)
+				n.OptionalModuleStatement.Accept(this);
 		}
 
 		public virtual void Visit(TemplateParameterNode n)
 		{
-			throw new NotImplementedException();
+			VisitDNode(n);
+
+			n.TemplateParameter.Accept(this);
 		}
 
 		public virtual void VisitDNode(DNode n)
 		{
+			if (n.TemplateParameters != null)
+				foreach (var tp in n.TemplateParameters)
+					tp.Accept(this);
+
+			if (n.TemplateConstraint != null)
+				n.TemplateConstraint.Accept(this);
+
+			if (n.Attributes != null && n.Attributes.Count != 0)
+				foreach (var attr in n.Attributes)
+					attr.Accept(this);
+
 			if (n.Type != null)
 				n.Type.Accept(this);
 		}
 
-		public void Visit(DAttribute attribute)
+		public virtual void VisitAttribute(DAttribute attribute) {}
+
+		public void VisitAttribute(DeclarationCondition declCond)
 		{
-			throw new NotImplementedException();
+			if (declCond.Condition != null)
+				declCond.Condition.Accept(this);
+		}
+
+		public void VisitAttribute(PragmaAttribute pragma)
+		{
+			if (pragma.Arguments != null && pragma.Arguments.Length != 0)
+				foreach (var arg in pragma.Arguments)
+					arg.Accept(this);
 		}
 		#endregion
 
 		#region Statements
+		public virtual void VisitChildren(StatementContainingStatement stmtContainer)
+		{
+			if (stmtContainer.SubStatements != null)
+				foreach (var s in stmtContainer.SubStatements)
+					s.Accept(this);
+		}
+
 		public virtual void Visit(ModuleStatement s)
 		{
 			s.ModuleName.Accept(this);
@@ -585,6 +620,65 @@ namespace D_Parser.Dom
 		}
 
 		public virtual void Visit(ITemplateParameterDeclaration td)
+		{
+			throw new NotImplementedException();
+		}
+		#endregion
+
+		#region Meta decl blocks
+		public void Visit(MetaDeclarationBlock metaDeclarationBlock)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void Visit(AttributeMetaDeclarationBlock attributeMetaDeclarationBlock)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void Visit(AttributeMetaDeclarationSection attributeMetaDeclarationSection)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void Visit(ElseMetaDeclarationBlock elseMetaDeclarationBlock)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void Visit(ElseMetaDeclaration elseMetaDeclaration)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void Visit(AttributeMetaDeclaration attributeMetaDeclaration)
+		{
+			throw new NotImplementedException();
+		}
+		#endregion
+
+		#region Template parameters
+		public void Visit(TemplateTypeParameter templateTypeParameter)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void Visit(TemplateThisParameter templateThisParameter)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void Visit(TemplateValueParameter templateValueParameter)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void Visit(TemplateAliasParameter templateAliasParameter)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void Visit(TemplateTupleParameter templateTupleParameter)
 		{
 			throw new NotImplementedException();
 		}

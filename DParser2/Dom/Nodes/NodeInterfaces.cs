@@ -46,7 +46,7 @@ namespace D_Parser.Dom
 		ReadOnlyCollection<INode> this[string Name] { get; }
 	}
 
-	public interface INode : ISyntaxRegion
+	public interface INode : ISyntaxRegion, IVisitable<NodeVisitor>
 	{
 		string Name { get; set; }
 		CodeLocation NameLocation { get; set; }
@@ -65,7 +65,6 @@ namespace D_Parser.Dom
 		INode Parent { get; set; }
 		INode NodeRoot { get; set; }
 
-		void Accept(NodeVisitor vis);
 		R Accept<R>(NodeVisitor<R> vis);
 	}
 }
