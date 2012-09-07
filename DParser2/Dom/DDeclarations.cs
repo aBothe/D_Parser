@@ -20,6 +20,9 @@ namespace D_Parser.Dom
 
 		string ToString();
 		string ToString(bool IncludesBase);
+
+		void Accept(TypeDeclarationVisitor vis);
+		R Accept<R>(TypeDeclarationVisitor<R> vis);
 	}
 
 	public abstract class AbstractTypeDeclaration : ITypeDeclaration
@@ -98,6 +101,9 @@ namespace D_Parser.Dom
 			get;
 			set;
 		}
+
+		public abstract void Accept(TypeDeclarationVisitor vis);
+		public abstract R Accept<R>(TypeDeclarationVisitor<R> vis);
 	}
 
     /// <summary>
@@ -115,6 +121,16 @@ namespace D_Parser.Dom
 		public override string ToString(bool IncludesBase)
 		{
 			return (ModuleScoped?".":"")+ (IncludesBase&& InnerDeclaration != null ? (InnerDeclaration.ToString() + ".") : "") +Convert.ToString(Id);
+		}
+
+		public override void Accept(TypeDeclarationVisitor vis)
+		{
+			vis.Visit(this);
+		}
+
+		public override R Accept<R>(TypeDeclarationVisitor<R> vis)
+		{
+			return vis.Visit(this);
 		}
 	}
 
@@ -143,6 +159,16 @@ namespace D_Parser.Dom
 		public override string ToString(bool IncludesBase)
 		{
 			return (IncludesBase && InnerDeclaration!=null?(InnerDeclaration.ToString() + '.'):"") + DTokens.GetTokenString(Token);
+		}
+
+		public override void Accept(TypeDeclarationVisitor vis)
+		{
+			vis.Visit(this);
+		}
+
+		public override R Accept<R>(TypeDeclarationVisitor<R> vis)
+		{
+			return vis.Visit(this);
 		}
 	}
 
@@ -203,7 +229,17 @@ namespace D_Parser.Dom
 			}
 
 			return ret + "]";
-        }
+		}
+
+		public override void Accept(TypeDeclarationVisitor vis)
+		{
+			vis.Visit(this);
+		}
+
+		public override R Accept<R>(TypeDeclarationVisitor<R> vis)
+		{
+			return vis.Visit(this);
+		}
     }
 
     public class DelegateDeclaration : AbstractTypeDeclaration
@@ -245,7 +281,17 @@ namespace D_Parser.Dom
             }
             ret = ret.TrimEnd(',', ' ') + ")";
             return ret;
-        }
+		}
+
+		public override void Accept(TypeDeclarationVisitor vis)
+		{
+			vis.Visit(this);
+		}
+
+		public override R Accept<R>(TypeDeclarationVisitor<R> vis)
+		{
+			return vis.Visit(this);
+		}
     }
 
     /// <summary>
@@ -259,7 +305,17 @@ namespace D_Parser.Dom
 		public override string ToString(bool IncludesBase)
         {
             return (IncludesBase&& InnerDeclaration != null ? InnerDeclaration.ToString() : "") + "*";
-        }
+		}
+
+		public override void Accept(TypeDeclarationVisitor vis)
+		{
+			vis.Visit(this);
+		}
+
+		public override R Accept<R>(TypeDeclarationVisitor<R> vis)
+		{
+			return vis.Visit(this);
+		}
     }
 
     /// <summary>
@@ -280,7 +336,17 @@ namespace D_Parser.Dom
 		public override string ToString(bool IncludesBase)
         {
             return (IncludesBase&& InnerDeclaration != null ? (InnerDeclaration.ToString()+" ") : "") + DTokens.GetTokenString(Modifier) + "(" + (InnerType != null ? InnerType.ToString() : "") + ")";
-        }
+		}
+
+		public override void Accept(TypeDeclarationVisitor vis)
+		{
+			vis.Visit(this);
+		}
+
+		public override R Accept<R>(TypeDeclarationVisitor<R> vis)
+		{
+			return vis.Visit(this);
+		}
     }
     
     /// <summary>
@@ -293,6 +359,16 @@ namespace D_Parser.Dom
 		public override string ToString(bool IncludesBase)
 		{
 			return (IncludesBase&& InnerDeclaration != null ? (InnerDeclaration.ToString()+" ") : "") + "typeof(" + (InstanceId != null ? InstanceId.ToString() : "") + ")";
+		}
+
+		public override void Accept(TypeDeclarationVisitor vis)
+		{
+			vis.Visit(this);
+		}
+
+		public override R Accept<R>(TypeDeclarationVisitor<R> vis)
+		{
+			return vis.Visit(this);
 		}
     }
 
@@ -307,6 +383,16 @@ namespace D_Parser.Dom
 		{
 			return (IncludesBase && InnerDeclaration != null ? (InnerDeclaration.ToString() + " ") : "") + "__vector(" + (Id != null ? Id.ToString() : "") + ")";
 		}
+
+		public override void Accept(TypeDeclarationVisitor vis)
+		{
+			vis.Visit(this);
+		}
+
+		public override R Accept<R>(TypeDeclarationVisitor<R> vis)
+		{
+			return vis.Visit(this);
+		}
 	}
 
 	/// <summary>
@@ -320,6 +406,16 @@ namespace D_Parser.Dom
 		public override string ToString(bool IncludesBase)
         {
             return (IncludesBase&& InnerDeclaration != null ? InnerDeclaration.ToString() : "") + "...";
-        }
+		}
+
+		public override void Accept(TypeDeclarationVisitor vis)
+		{
+			vis.Visit(this);
+		}
+
+		public override R Accept<R>(TypeDeclarationVisitor<R> vis)
+		{
+			return vis.Visit(this);
+		}
     }
 }

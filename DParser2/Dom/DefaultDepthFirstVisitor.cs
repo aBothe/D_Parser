@@ -488,5 +488,56 @@ namespace D_Parser.Dom
 		{
 			throw new NotImplementedException();
 		}
+
+		public void Visit(IdentifierDeclaration identifierDeclaration)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void Visit(DTokenDeclaration dTokenDeclaration)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void Visit(ArrayDecl arrayDecl)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void Visit(DelegateDeclaration delegateDeclaration)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void Visit(PointerDecl pointerDecl)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void Visit(MemberFunctionAttributeDecl memberFunctionAttributeDecl)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void Visit(TypeOfDeclaration typeOfDeclaration)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void Visit(VectorDeclaration vectorDeclaration)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void Visit(VarArgDecl varArgDecl)
+		{
+			throw new NotImplementedException();
+		}
+
+
+		public void Visit(ITemplateParameterDeclaration iTemplateParameterDeclaration)
+		{
+			throw new NotImplementedException();
+		}
 	}
 }

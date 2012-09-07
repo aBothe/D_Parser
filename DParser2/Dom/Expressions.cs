@@ -981,6 +981,8 @@ namespace D_Parser.Dom.Expressions
 
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
+		public override void Accept(TypeDeclarationVisitor vis) {	vis.Visit(this); }
+		public override R Accept<R>(TypeDeclarationVisitor<R> vis) { return vis.Visit(this); }
 	}
 
 	/// <summary>

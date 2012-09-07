@@ -3,12 +3,12 @@ using D_Parser.Dom.Statements;
 
 namespace D_Parser.Dom
 {
-	public interface DVisitor : NodeVisitor, StatementVisitor, ExpressionVisitor
+	public interface DVisitor : NodeVisitor, StatementVisitor, ExpressionVisitor, TypeDeclarationVisitor
 	{
 		
 	}
 
-	public interface DVisitor<out R> : NodeVisitor<R>, StatementVisitor<R>, ExpressionVisitor<R>
+	public interface DVisitor<out R> : NodeVisitor<R>, StatementVisitor<R>, ExpressionVisitor<R>, TypeDeclarationVisitor<R>
 	{
 
 	}
@@ -233,5 +233,37 @@ namespace D_Parser.Dom
 		R Visit(VoidInitializer x);
 		R Visit(ArrayInitializer x);
 		R Visit(StructInitializer x);
+	}
+
+	public interface TypeDeclarationVisitor
+	{
+		void Visit(IdentifierDeclaration identifierDeclaration);
+		void Visit(DTokenDeclaration dTokenDeclaration);
+		void Visit(ArrayDecl arrayDecl);
+		void Visit(DelegateDeclaration delegateDeclaration);
+		void Visit(PointerDecl pointerDecl);
+		void Visit(MemberFunctionAttributeDecl memberFunctionAttributeDecl);
+		void Visit(TypeOfDeclaration typeOfDeclaration);
+		void Visit(VectorDeclaration vectorDeclaration);
+		void Visit(VarArgDecl varArgDecl);
+
+		void Visit(ITemplateParameterDeclaration iTemplateParameterDeclaration);
+
+		void Visit(TemplateInstanceExpression templateInstanceExpression);
+	}
+
+	public interface TypeDeclarationVisitor<out R>
+	{
+		R Visit(IdentifierDeclaration identifierDeclaration);
+		R Visit(DTokenDeclaration dTokenDeclaration);
+		R Visit(ArrayDecl arrayDecl);
+		R Visit(DelegateDeclaration delegateDeclaration);
+		R Visit(PointerDecl pointerDecl);
+		R Visit(MemberFunctionAttributeDecl memberFunctionAttributeDecl);
+		R Visit(TypeOfDeclaration typeOfDeclaration);
+		R Visit(VectorDeclaration vectorDeclaration);
+		R Visit(VarArgDecl varArgDecl);
+		R Visit(ITemplateParameterDeclaration iTemplateParameterDeclaration);
+		R Visit(TemplateInstanceExpression templateInstanceExpression);
 	}
 }

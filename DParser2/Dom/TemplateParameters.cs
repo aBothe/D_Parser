@@ -64,6 +64,16 @@ namespace D_Parser.Dom
 		{
 			return TemplateParameter.ToString();
 		}
+
+		public void Accept(TypeDeclarationVisitor vis)
+		{
+			vis.Visit(this);
+		}
+
+		public R Accept<R>(TypeDeclarationVisitor<R> vis)
+		{
+			return vis.Visit(this);
+		}
 	}
 
 	public class TemplateParameterNode : DNode
