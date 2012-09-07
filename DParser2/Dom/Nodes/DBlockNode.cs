@@ -32,6 +32,30 @@ namespace D_Parser.Dom
 		/// </summary>
 		public readonly List<AbstractMetaDeclaration> MetaBlocks = new List<AbstractMetaDeclaration>();
 
+		/// <summary>
+		/// Returns an array consisting of meta declarations orderd from outer to inner-most, depending on the 'Where' parameter.
+		/// </summary>
+		public AbstractMetaDeclaration[] GetMetaBlockStack(CodeLocation Where)
+		{
+			var l = new List<AbstractMetaDeclaration>();
+
+			ISyntaxRegion lastSr = null;
+
+			for (int i=0; i < MetaBlocks.Count; i++)
+			{
+				var mb = MetaBlocks[i];
+				// Check if 1) block is inside last inner-most meta block
+				if ((lastSr == null || mb.Location > lastSr.Location && mb.EndLocation < lastSr.EndLocation) &&
+					mb.Location <= Where && mb.EndLocation >= Where)
+				{
+					// and 2) if 
+					l.Add(mb);
+				}
+			}
+
+			return l.ToArray();
+		}
+
 		public CodeLocation BlockStartLocation
 		{
 			get;
