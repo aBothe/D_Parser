@@ -138,79 +138,119 @@ namespace D_Parser.Dom
 		#endregion
 
 		#region Statements
+		/// <summary>
+		/// Visit abstract stmt
+		/// </summary>
 		public virtual void VisitChildren(StatementContainingStatement stmtContainer)
 		{
 			if (stmtContainer.SubStatements != null)
 				foreach (var s in stmtContainer.SubStatements)
 					s.Accept(this);
+
+			VisitAbstractStmt(stmtContainer);
 		}
 
 		public virtual void Visit(ModuleStatement s)
 		{
+			VisitAbstractStmt(s);
 			s.ModuleName.Accept(this);
 		}
 
 		public virtual void Visit(ImportStatement s)
 		{
-			
+			VisitAbstractStmt(s);
 		}
 
 		public virtual void Visit(BlockStatement s)
 		{
-			throw new NotImplementedException();
+			VisitChildren(s);
 		}
 
-		public virtual void Visit(Statements.LabeledStatement s)
+		public virtual void Visit(LabeledStatement s)
+		{
+			VisitAbstractStmt(s);
+		}
+
+		public virtual void Visit(IfStatement s)
+		{
+			VisitChildren(s);
+
+			if (s.IfCondition != null)
+				s.IfCondition.Accept(this);
+
+			//TODO: Are the declarations also in the statements?
+			if (s.IfVariable != null)
+				foreach (var d in s.IfVariable)
+					d.Accept(this);
+		}
+
+		public virtual void Visit(WhileStatement s)
+		{
+			VisitChildren(s);
+
+			if (s.Condition != null)
+				s.Condition.Accept(this);
+		}
+
+		public virtual void Visit(ForStatement s)
+		{
+			// Also visits 'Initialize'
+			VisitChildren(s);
+
+			if (s.Test != null)
+				s.Test.Accept(this);
+			if (s.Increment != null)
+				s.Increment.Accept(this);
+		}
+
+		public virtual void Visit(ForeachStatement s)
+		{
+			VisitChildren(s);
+
+			if (s.ForeachTypeList != null)
+				foreach (var t in s.ForeachTypeList)
+					t.Accept(this);
+
+			if (s.UpperAggregate != null)
+				s.UpperAggregate.Accept(this);
+			if (s.Aggregate != null)
+				s.Aggregate.Accept(this);
+		}
+
+		public virtual void Visit(SwitchStatement s)
+		{
+			VisitChildren(s);
+
+			if (s.SwitchExpression != null)
+				s.SwitchExpression.Accept(this);
+		}
+
+		public virtual void Visit(SwitchStatement.CaseStatement s)
+		{
+			VisitChildren(s);
+
+			if (s.ArgumentList != null)
+				s.ArgumentList.Accept(this);
+			if (s.LastExpression != null)
+				s.LastExpression.Accept(this);
+		}
+
+		public virtual void Visit(SwitchStatement.DefaultStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.IfStatement s)
+		public virtual void Visit(ContinueStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.WhileStatement s)
+		public virtual void Visit(BreakStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.ForStatement s)
-		{
-			throw new NotImplementedException();
-		}
-
-		public virtual void Visit(Statements.ForeachStatement s)
-		{
-			throw new NotImplementedException();
-		}
-
-		public virtual void Visit(Statements.SwitchStatement s)
-		{
-			throw new NotImplementedException();
-		}
-
-		public virtual void Visit(Statements.SwitchStatement.CaseStatement s)
-		{
-			throw new NotImplementedException();
-		}
-
-		public virtual void Visit(Statements.SwitchStatement.DefaultStatement s)
-		{
-			throw new NotImplementedException();
-		}
-
-		public virtual void Visit(Statements.ContinueStatement s)
-		{
-			throw new NotImplementedException();
-		}
-
-		public virtual void Visit(Statements.BreakStatement s)
-		{
-			throw new NotImplementedException();
-		}
-
-		public virtual void Visit(Statements.ReturnStatement s)
+		public virtual void Visit(ReturnStatement s)
 		{
 			throw new NotImplementedException();
 		}
@@ -220,22 +260,22 @@ namespace D_Parser.Dom
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.WithStatement s)
+		public virtual void Visit(WithStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.SynchronizedStatement s)
+		public virtual void Visit(SynchronizedStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.TryStatement s)
+		public virtual void Visit(TryStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.TryStatement.CatchStatement s)
+		public virtual void Visit(TryStatement.CatchStatement s)
 		{
 			throw new NotImplementedException();
 		}
@@ -303,6 +343,13 @@ namespace D_Parser.Dom
 		public virtual void Visit(Statements.VersionDebugSpecification s)
 		{
 			throw new NotImplementedException();
+		}
+
+		public virtual void VisitAbstractStmt(AbstractStatement stmt)
+		{
+			if (stmt.Attributes != null && stmt.Attributes.Length != 0)
+				foreach (var attr in stmt.Attributes)
+					attr.Accept(this);
 		}
 		#endregion
 
