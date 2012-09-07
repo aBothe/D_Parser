@@ -9,6 +9,7 @@ namespace D_Parser.Dom
 {
 	public abstract class DefaultDepthFirstVisitor : DVisitor
 	{
+		#region Visit children
 		public virtual void VisitChildren(IBlockNode block)
 		{
 
@@ -24,206 +25,217 @@ namespace D_Parser.Dom
 			
 		}
 
-		public virtual void Visit(DEnumValue dEnumValue)
+		public virtual void VisitChildren(ITypeDeclaration td)
+		{
+
+		}
+		#endregion
+
+		#region Nodes
+		public virtual void Visit(DEnumValue n)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(DVariable dVariable)
+		public virtual void Visit(DVariable n)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(DMethod dMethod)
+		public virtual void Visit(DMethod n)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(DClassLike dClassLike)
+		public virtual void Visit(DClassLike n)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(DEnum dEnum)
+		public virtual void Visit(DEnum n)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(DModule dModule)
+		public virtual void Visit(DModule n)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(DBlockNode dBlockNode)
+		public virtual void Visit(DBlockNode n)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(TemplateParameterNode templateParameterNode)
+		public virtual void Visit(TemplateParameterNode n)
+		{
+			throw new NotImplementedException();
+		}
+		#endregion
+
+		#region Statements
+		public virtual void Visit(ModuleStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(ModuleStatement moduleStatement)
+		public virtual void Visit(ImportStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(ImportStatement importStatement)
+		public virtual void Visit(BlockStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(BlockStatement blockStatement)
+		public virtual void Visit(Statements.LabeledStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.LabeledStatement labeledStatement)
+		public virtual void Visit(Statements.IfStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.IfStatement ifStatement)
+		public virtual void Visit(Statements.WhileStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.WhileStatement whileStatement)
+		public virtual void Visit(Statements.ForStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.ForStatement forStatement)
+		public virtual void Visit(Statements.ForeachStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.ForeachStatement foreachStatement)
+		public virtual void Visit(Statements.SwitchStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.SwitchStatement switchStatement)
+		public virtual void Visit(Statements.SwitchStatement.CaseStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.SwitchStatement.CaseStatement caseStatement)
+		public virtual void Visit(Statements.SwitchStatement.DefaultStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.SwitchStatement.DefaultStatement defaultStatement)
+		public virtual void Visit(Statements.ContinueStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.ContinueStatement continueStatement)
+		public virtual void Visit(Statements.BreakStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.BreakStatement breakStatement)
+		public virtual void Visit(Statements.ReturnStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.ReturnStatement returnStatement)
+		public virtual void Visit(GotoStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.GotoStatement gotoStatement)
+		public virtual void Visit(Statements.WithStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.WithStatement withStatement)
+		public virtual void Visit(Statements.SynchronizedStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.SynchronizedStatement synchronizedStatement)
+		public virtual void Visit(Statements.TryStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.TryStatement tryStatement)
+		public virtual void Visit(Statements.TryStatement.CatchStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.TryStatement.CatchStatement catchStatement)
+		public virtual void Visit(Statements.TryStatement.FinallyStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.TryStatement.FinallyStatement finallyStatement)
+		public virtual void Visit(Statements.ThrowStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.ThrowStatement throwStatement)
+		public virtual void Visit(Statements.ScopeGuardStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.ScopeGuardStatement scopeGuardStatement)
+		public virtual void Visit(Statements.AsmStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.AsmStatement asmStatement)
+		public virtual void Visit(Statements.PragmaStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.PragmaStatement pragmaStatement)
+		public virtual void Visit(Statements.AssertStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.AssertStatement assertStatement)
+		public virtual void Visit(Statements.ConditionStatement.DebugStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.ConditionStatement.DebugStatement debugStatement)
+		public virtual void Visit(Statements.ConditionStatement.VersionStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.ConditionStatement.VersionStatement versionStatement)
+		public virtual void Visit(Statements.VolatileStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.VolatileStatement volatileStatement)
+		public virtual void Visit(Statements.ExpressionStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.ExpressionStatement expressionStatement)
+		public virtual void Visit(Statements.DeclarationStatement s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.DeclarationStatement declarationStatement)
+		public virtual void Visit(Statements.TemplateMixin s)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual void Visit(Statements.TemplateMixin templateMixin)
+		public virtual void Visit(Statements.VersionDebugSpecification s)
 		{
 			throw new NotImplementedException();
 		}
+		#endregion
 
-		public virtual void Visit(Statements.VersionDebugSpecification versionDebugSpecification)
-		{
-			throw new NotImplementedException();
-		}
-
+		#region Expressions
 		public virtual void Visit(Expression x)
 		{
 			throw new NotImplementedException();
@@ -488,56 +500,58 @@ namespace D_Parser.Dom
 		{
 			throw new NotImplementedException();
 		}
+		#endregion
 
-		public void Visit(IdentifierDeclaration identifierDeclaration)
+		#region Decls
+		public virtual void Visit(IdentifierDeclaration td)
 		{
 			throw new NotImplementedException();
 		}
 
-		public void Visit(DTokenDeclaration dTokenDeclaration)
+		public virtual void Visit(DTokenDeclaration td)
 		{
 			throw new NotImplementedException();
 		}
 
-		public void Visit(ArrayDecl arrayDecl)
+		public virtual void Visit(ArrayDecl td)
 		{
 			throw new NotImplementedException();
 		}
 
-		public void Visit(DelegateDeclaration delegateDeclaration)
+		public virtual void Visit(DelegateDeclaration td)
 		{
 			throw new NotImplementedException();
 		}
 
-		public void Visit(PointerDecl pointerDecl)
+		public virtual void Visit(PointerDecl td)
 		{
 			throw new NotImplementedException();
 		}
 
-		public void Visit(MemberFunctionAttributeDecl memberFunctionAttributeDecl)
+		public virtual void Visit(MemberFunctionAttributeDecl td)
 		{
 			throw new NotImplementedException();
 		}
 
-		public void Visit(TypeOfDeclaration typeOfDeclaration)
+		public virtual void Visit(TypeOfDeclaration td)
 		{
 			throw new NotImplementedException();
 		}
 
-		public void Visit(VectorDeclaration vectorDeclaration)
+		public virtual void Visit(VectorDeclaration td)
 		{
 			throw new NotImplementedException();
 		}
 
-		public void Visit(VarArgDecl varArgDecl)
+		public virtual void Visit(VarArgDecl td)
 		{
 			throw new NotImplementedException();
 		}
 
-
-		public void Visit(ITemplateParameterDeclaration iTemplateParameterDeclaration)
+		public virtual void Visit(ITemplateParameterDeclaration td)
 		{
 			throw new NotImplementedException();
 		}
+		#endregion
 	}
 }
