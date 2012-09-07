@@ -140,6 +140,16 @@ namespace D_Parser.Dom
 			get;
 			set;
 		}
+
+		public void Accept(NodeVisitor vis)
+		{
+			vis.Visit(this);
+		}
+
+		public R Accept<R>(NodeVisitor<R> vis)
+		{
+			return vis.Visit(this);
+		}
 	}
 
 	public class DeclarationCondition : DAttribute, ICloneable

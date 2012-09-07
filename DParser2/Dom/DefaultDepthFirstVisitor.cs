@@ -10,9 +10,15 @@ namespace D_Parser.Dom
 	public abstract class DefaultDepthFirstVisitor : DVisitor
 	{
 		#region Visit children
+		public virtual void VisitChildren(DBlockNode block)
+		{
+			VisitChildren((IBlockNode)block);
+		}
+
 		public virtual void VisitChildren(IBlockNode block)
 		{
-
+			foreach (var n in block)
+				n.Accept(this);
 		}
 
 		public virtual void VisitChildren(StatementContainingStatement stmtContainer)
@@ -34,32 +40,51 @@ namespace D_Parser.Dom
 		#region Nodes
 		public virtual void Visit(DEnumValue n)
 		{
-			throw new NotImplementedException();
+			Visit((DVariable)n);
 		}
 
 		public virtual void Visit(DVariable n)
 		{
-			throw new NotImplementedException();
+			VisitDNode(n);
+			if (n.Initializer != null)
+				n.Initializer.Accept(this);
 		}
 
 		public virtual void Visit(DMethod n)
 		{
-			throw new NotImplementedException();
+			VisitChildren(n);
+
+			if(n.Parameters!=null)
+				foreach (var par in n.Parameters)
+					par.Accept(this);
+
+			if (n.In != null)
+				n.In.Accept(this);
+			if (n.Body != null)
+				n.Body.Accept(this);
+			if (n.Out != null)
+				n.Out.Accept(this);
+
+			if (n.OutResultVariable != null)
+				n.OutResultVariable.Accept(this);
 		}
 
 		public virtual void Visit(DClassLike n)
 		{
-			throw new NotImplementedException();
+			VisitChildren(n);
+
+			foreach (var bc in n.BaseClasses)
+				bc.Accept(this);
 		}
 
 		public virtual void Visit(DEnum n)
 		{
-			throw new NotImplementedException();
+			VisitChildren(n);
 		}
 
 		public virtual void Visit(DModule n)
 		{
-			throw new NotImplementedException();
+			VisitChildren(n);
 		}
 
 		public virtual void Visit(DBlockNode n)
@@ -71,17 +96,28 @@ namespace D_Parser.Dom
 		{
 			throw new NotImplementedException();
 		}
+
+		public virtual void VisitDNode(DNode n)
+		{
+			if (n.Type != null)
+				n.Type.Accept(this);
+		}
+
+		public void Visit(DAttribute attribute)
+		{
+			throw new NotImplementedException();
+		}
 		#endregion
 
 		#region Statements
 		public virtual void Visit(ModuleStatement s)
 		{
-			throw new NotImplementedException();
+			s.ModuleName.Accept(this);
 		}
 
 		public virtual void Visit(ImportStatement s)
 		{
-			throw new NotImplementedException();
+			
 		}
 
 		public virtual void Visit(BlockStatement s)

@@ -22,8 +22,9 @@ namespace D_Parser.Dom
 		void Visit(DEnum dEnum);
 		void Visit(DModule dModule);
 		void Visit(DBlockNode dBlockNode);
-
 		void Visit(TemplateParameterNode templateParameterNode);
+
+		void Visit(DAttribute attribute);
 	}
 
 	public interface NodeVisitor<out R>
@@ -35,8 +36,9 @@ namespace D_Parser.Dom
 		R Visit(DEnum dEnum);
 		R Visit(DModule dModule);
 		R Visit(DBlockNode dBlockNode);
-
 		R Visit(TemplateParameterNode templateParameterNode);
+
+		R Visit(DAttribute attr);
 	}
 
 	public interface StatementVisitor
