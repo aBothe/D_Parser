@@ -237,7 +237,7 @@ namespace D_Parser.Dom
 
 		public virtual void Visit(SwitchStatement.DefaultStatement s)
 		{
-			throw new NotImplementedException();
+			VisitChildren(s);
 		}
 
 		public virtual void Visit(ContinueStatement s)

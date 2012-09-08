@@ -103,7 +103,6 @@ namespace D_Parser.Resolver
 		public ResolverContext PushNewScope(IBlockNode scope)
 		{
 			var ctxtOverride = new ResolverContext();
-			ctxtOverride.ApplyFrom(CurrentContext);
 			ctxtOverride.ScopedBlock = scope;
 			ctxtOverride.ScopedStatement = null;
 
