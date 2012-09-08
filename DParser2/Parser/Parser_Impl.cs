@@ -1536,7 +1536,7 @@ namespace D_Parser.Parser
 						break;
 
 					// Identifier : NonVoidInitializer
-					var sinit = new StructMemberInitializer();
+					var sinit = new StructMemberInitializer { Location = la.Location };
 					LastParsedObject = sinit;
 					if (laKind == Identifier && Lexer.CurrentPeekToken.Kind == Colon)
 					{
@@ -1546,6 +1546,8 @@ namespace D_Parser.Parser
 					}
 
 					sinit.Value = NonVoidInitializer(Scope);
+
+					sinit.EndLocation = t.EndLocation;
 
 					inits.Add(sinit);
 				}
