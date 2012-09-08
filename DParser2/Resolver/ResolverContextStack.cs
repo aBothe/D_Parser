@@ -196,6 +196,25 @@ namespace D_Parser.Resolver
 		}
 
 		/// <summary>
+		/// Returns true if the currently scoped node block is located somewhere inside the hierarchy of n.
+		/// Used for prevention of unnecessary context pushing/popping.
+		/// </summary>
+		public bool NodeIsInCurrentScopeHierarchy(INode n)
+		{
+			var t_node_scoped = CurrentContext.ScopedBlock;
+			var t_node = n is IBlockNode ? (IBlockNode)n : n.Parent as IBlockNode;
+
+			while (t_node != null)
+			{
+				if (t_node == t_node_scoped)
+					return true;
+				t_node = t_node.Parent as IBlockNode;
+			}
+
+			return false;
+		}
+
+		/// <summary>
 		/// Returns true if 'results' only contains one valid item
 		/// </summary>
 		public bool CheckForSingleResult<T>(T[] results, ISyntaxRegion td) where T : ISemantic
