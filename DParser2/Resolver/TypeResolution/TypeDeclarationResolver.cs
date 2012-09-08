@@ -692,6 +692,7 @@ namespace D_Parser.Resolver.TypeResolution
 				if (returnStmt != null && returnStmt.ReturnExpression != null)
 				{
 					ctxt.PushNewScope(method);
+					ctxt.CurrentContext.ScopedStatement = returnStmt;
 
 					var t= Evaluation.EvaluateType(returnStmt.ReturnExpression, ctxt);
 
