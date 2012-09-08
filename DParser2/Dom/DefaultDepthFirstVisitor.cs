@@ -242,107 +242,142 @@ namespace D_Parser.Dom
 
 		public virtual void Visit(ContinueStatement s)
 		{
-			throw new NotImplementedException();
+			VisitAbstractStmt(s);
 		}
 
 		public virtual void Visit(BreakStatement s)
 		{
-			throw new NotImplementedException();
+			VisitAbstractStmt(s);
 		}
 
 		public virtual void Visit(ReturnStatement s)
 		{
-			throw new NotImplementedException();
+			VisitAbstractStmt(s);
+			if (s.ReturnExpression != null)
+				s.ReturnExpression.Accept(this);
 		}
 
 		public virtual void Visit(GotoStatement s)
 		{
-			throw new NotImplementedException();
+			VisitAbstractStmt(s);
+			if (s.CaseExpression != null)
+				s.CaseExpression.Accept(this);
 		}
 
 		public virtual void Visit(WithStatement s)
 		{
-			throw new NotImplementedException();
+			VisitChildren(s);
+
+			if (s.WithExpression != null)
+				s.WithExpression.Accept(this);
+			if (s.WithSymbol != null)
+				s.WithSymbol.Accept(this);
 		}
 
 		public virtual void Visit(SynchronizedStatement s)
 		{
-			throw new NotImplementedException();
+			VisitChildren(s);
+
+			if (s.SyncExpression != null)
+				s.SyncExpression.Accept(this);
 		}
 
 		public virtual void Visit(TryStatement s)
 		{
-			throw new NotImplementedException();
+			VisitChildren(s);
 		}
 
 		public virtual void Visit(TryStatement.CatchStatement s)
 		{
-			throw new NotImplementedException();
+			VisitChildren(s);
+
+			if (s.CatchParameter != null)
+				s.CatchParameter.Accept(this);
 		}
 
 		public virtual void Visit(Statements.TryStatement.FinallyStatement s)
 		{
-			throw new NotImplementedException();
+			VisitChildren(s);
 		}
 
 		public virtual void Visit(Statements.ThrowStatement s)
 		{
-			throw new NotImplementedException();
+			VisitAbstractStmt(s);
+
+			if (s.ThrowExpression != null)
+				s.ThrowExpression.Accept(this);
 		}
 
 		public virtual void Visit(Statements.ScopeGuardStatement s)
 		{
-			throw new NotImplementedException();
+			VisitChildren(s);
 		}
 
 		public virtual void Visit(Statements.AsmStatement s)
 		{
-			throw new NotImplementedException();
+			VisitAbstractStmt(s);
 		}
 
 		public virtual void Visit(Statements.PragmaStatement s)
 		{
-			throw new NotImplementedException();
+			VisitChildren(s);
+
+			s.Pragma.Accept(this);
 		}
 
 		public virtual void Visit(Statements.AssertStatement s)
 		{
-			throw new NotImplementedException();
+			VisitAbstractStmt(s);
+
+			if (s.AssertedExpression != null)
+				s.AssertedExpression.Accept(this);
 		}
 
 		public virtual void Visit(Statements.ConditionStatement.DebugStatement s)
 		{
-			throw new NotImplementedException();
+			VisitChildren(s);
 		}
 
 		public virtual void Visit(Statements.ConditionStatement.VersionStatement s)
 		{
-			throw new NotImplementedException();
+			VisitChildren(s);
 		}
 
 		public virtual void Visit(Statements.VolatileStatement s)
 		{
-			throw new NotImplementedException();
+			VisitChildren(s);
 		}
 
 		public virtual void Visit(Statements.ExpressionStatement s)
 		{
-			throw new NotImplementedException();
+			VisitAbstractStmt(s);
+
+			s.Expression.Accept(this);
 		}
 
 		public virtual void Visit(Statements.DeclarationStatement s)
 		{
-			throw new NotImplementedException();
+			VisitAbstractStmt(s);
+
+			if (s.Declarations != null)
+				foreach (var decl in s.Declarations)
+					decl.Accept(this);
 		}
 
 		public virtual void Visit(Statements.TemplateMixin s)
 		{
-			throw new NotImplementedException();
+			VisitAbstractStmt(s);
+
+			if (s.Qualifier != null)
+				s.Qualifier.Accept(this);
 		}
 
 		public virtual void Visit(Statements.VersionDebugSpecification s)
 		{
-			throw new NotImplementedException();
+			VisitAbstractStmt(s);
+
+			if (s.SpecifiedValue != null)
+				s.SpecifiedValue.Accept(this);
 		}
 
 		public virtual void VisitAbstractStmt(AbstractStatement stmt)
