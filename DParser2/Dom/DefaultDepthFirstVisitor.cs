@@ -9,11 +9,6 @@ namespace D_Parser.Dom
 {
 	public abstract class DefaultDepthFirstVisitor : DVisitor
 	{
-		public virtual void VisitChildren(ITypeDeclaration td)
-		{
-
-		}
-
 		#region Nodes
 		public virtual void VisitChildren(IBlockNode block)
 		{
@@ -737,113 +732,171 @@ namespace D_Parser.Dom
 		#endregion
 
 		#region Decls
+		public virtual void VisitInner(ITypeDeclaration td)
+		{
+			if (td.InnerDeclaration != null)
+				td.InnerDeclaration.Accept(this);
+		}
+
 		public virtual void Visit(IdentifierDeclaration td)
 		{
-			throw new NotImplementedException();
+			VisitInner(td);
 		}
 
 		public virtual void Visit(DTokenDeclaration td)
 		{
-			throw new NotImplementedException();
+			VisitInner(td);
 		}
 
 		public virtual void Visit(ArrayDecl td)
 		{
-			throw new NotImplementedException();
+			VisitInner(td);
+
+			if (td.KeyType != null)
+				td.KeyType.Accept(this);
+
+			if (td.KeyExpression != null)
+				td.KeyExpression.Accept(this);
+
+			// ValueType == InnerDeclaration
 		}
 
 		public virtual void Visit(DelegateDeclaration td)
 		{
-			throw new NotImplementedException();
+			VisitInner(td);
+			// ReturnType == InnerDeclaration
+
+			if (td.Modifiers != null && td.Modifiers.Length != 0)
+				foreach (var attr in td.Modifiers)
+					attr.Accept(this);
+
+			foreach (var p in td.Parameters)
+				p.Accept(this);
 		}
 
 		public virtual void Visit(PointerDecl td)
 		{
-			throw new NotImplementedException();
+			VisitInner(td);
 		}
 
 		public virtual void Visit(MemberFunctionAttributeDecl td)
 		{
-			throw new NotImplementedException();
+			VisitInner(td);
+
+			if (td.InnerType != null)
+				td.InnerType.Accept(this);
 		}
 
 		public virtual void Visit(TypeOfDeclaration td)
 		{
-			throw new NotImplementedException();
+			VisitInner(td);
+
+			if (td.InstanceId != null)
+				td.InstanceId.Accept(this);
 		}
 
 		public virtual void Visit(VectorDeclaration td)
 		{
-			throw new NotImplementedException();
+			VisitInner(td);
+
+			if (td.Id != null)
+				td.Id.Accept(this);
 		}
 
 		public virtual void Visit(VarArgDecl td)
 		{
-			throw new NotImplementedException();
+			VisitInner(td);
 		}
 
 		public virtual void Visit(ITemplateParameterDeclaration td)
 		{
-			throw new NotImplementedException();
+			td.TemplateParameter.Accept(this);
 		}
 		#endregion
 
 		#region Meta decl blocks
-		public void Visit(MetaDeclarationBlock metaDeclarationBlock)
+		public virtual void VisitMetaBlock(IMetaDeclarationBlock block)
 		{
-			throw new NotImplementedException();
+
 		}
 
-		public void Visit(AttributeMetaDeclarationBlock attributeMetaDeclarationBlock)
+		public virtual void Visit(MetaDeclarationBlock metaDeclarationBlock)
 		{
-			throw new NotImplementedException();
+			VisitMetaBlock(metaDeclarationBlock);
 		}
 
-		public void Visit(AttributeMetaDeclarationSection attributeMetaDeclarationSection)
+		public virtual void Visit(AttributeMetaDeclarationBlock attributeMetaDeclarationBlock)
 		{
-			throw new NotImplementedException();
+			Visit((AttributeMetaDeclaration)attributeMetaDeclarationBlock);
+			VisitMetaBlock(attributeMetaDeclarationBlock);
 		}
 
-		public void Visit(ElseMetaDeclarationBlock elseMetaDeclarationBlock)
+		public virtual void Visit(AttributeMetaDeclarationSection attributeMetaDeclarationSection)
 		{
-			throw new NotImplementedException();
+			Visit((AttributeMetaDeclaration)attributeMetaDeclarationSection);
 		}
 
-		public void Visit(ElseMetaDeclaration elseMetaDeclaration)
+		public virtual void Visit(ElseMetaDeclarationBlock elseMetaDeclarationBlock)
 		{
-			throw new NotImplementedException();
+			VisitMetaBlock(elseMetaDeclarationBlock);
 		}
 
-		public void Visit(AttributeMetaDeclaration attributeMetaDeclaration)
+		public virtual void Visit(ElseMetaDeclaration elseMetaDeclaration)
 		{
-			throw new NotImplementedException();
+			
+		}
+
+		public virtual void Visit(AttributeMetaDeclaration md)
+		{
+			if (md.AttributeOrCondition != null)
+				foreach (var attr in md.AttributeOrCondition)
+					attr.Accept(this);
+
+			if (md.OptionalElseBlock != null)
+				md.OptionalElseBlock.Accept(this);
 		}
 		#endregion
 
 		#region Template parameters
-		public void Visit(TemplateTypeParameter templateTypeParameter)
+		public virtual void Visit(TemplateTypeParameter p)
 		{
-			throw new NotImplementedException();
+			if (p.Specialization != null)
+				p.Specialization.Accept(this);
+
+			if (p.Default != null)
+				p.Default.Accept(this);
 		}
 
-		public void Visit(TemplateThisParameter templateThisParameter)
+		public virtual void Visit(TemplateThisParameter p)
 		{
-			throw new NotImplementedException();
+			if (p.FollowParameter != null)
+				p.FollowParameter.Accept(this);
 		}
 
-		public void Visit(TemplateValueParameter templateValueParameter)
+		public virtual void Visit(TemplateValueParameter p)
 		{
-			throw new NotImplementedException();
+			if (p.Type != null)
+				p.Type.Accept(this);
+
+			if (p.SpecializationExpression != null)
+				p.SpecializationExpression.Accept(this);
+			if (p.DefaultExpression != null)
+				p.DefaultExpression.Accept(this);
 		}
 
-		public void Visit(TemplateAliasParameter templateAliasParameter)
+		public virtual void Visit(TemplateAliasParameter p)
 		{
-			throw new NotImplementedException();
+			Visit((TemplateValueParameter)p);
+
+			if (p.SpecializationType != null)
+				p.SpecializationType.Accept(this);
+			if (p.DefaultType != null)
+				p.DefaultType.Accept(this);
 		}
 
-		public void Visit(TemplateTupleParameter templateTupleParameter)
+		public virtual void Visit(TemplateTupleParameter p)
 		{
-			throw new NotImplementedException();
+			
 		}
 		#endregion
 	}
