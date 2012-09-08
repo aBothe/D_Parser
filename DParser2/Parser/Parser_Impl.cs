@@ -137,7 +137,7 @@ namespace D_Parser.Parser
 			{
 				AttributeSpecifier(module);
 
-				if (t.Kind == Colon || laKind == CloseCurlyBrace)
+				if (t.Kind == Colon || laKind == CloseCurlyBrace || IsEOF)
 					return;
 			}
 
@@ -1162,7 +1162,7 @@ namespace D_Parser.Parser
 
 				// DeclaratorSuffixes
 				List<INode> _Parameters;
-				ttd = DeclaratorSuffixes(out (ret as DNode).TemplateParameters, out _Parameters, ret.Attributes);
+				ttd = DeclaratorSuffixes(out ret.TemplateParameters, out _Parameters, ret.Attributes);
 				if (ttd != null)
 				{
 					ttd.InnerDeclaration = ret.Type;
@@ -1198,19 +1198,14 @@ namespace D_Parser.Parser
 		/// 
 		/// TemplateParameterList[opt] Parameters MemberFunctionAttributes[opt]
 		/// </summary>
-		ITypeDeclaration DeclaratorSuffixes(out ITemplateParameter[] TemplateParameters, out List<INode> _Parameters, List<DAttribute> _Attributes)
+		ITypeDeclaration DeclaratorSuffixes(out ITemplateParameter[] TemplateParameters, out List<INode> _Parameters, List<DAttribute> attributes)
 		{
 			DAttribute attr = null;
 			ITypeDeclaration td = null;
 			TemplateParameters = null;
 			_Parameters = null;
 
-			while (MemberFunctionAttribute[laKind])
-			{
-				_Attributes.Add(attr = new DAttribute(laKind, la.Value) { Location = la.Location, EndLocation = la.EndLocation });
-				LastParsedObject = attr;
-				Step();
-			}
+			FunctionAttributes(attributes);
 
 			while (laKind == (OpenSquareBracket))
 			{
@@ -1253,20 +1248,16 @@ namespace D_Parser.Parser
 				}
 				_Parameters = Parameters(null);
 
-				while (StorageClass[laKind] || laKind==PropertyAttribute)
+				/* Is there a significant difference between storage class and memberfunctiionattribute attributes?
+				while (StorageClass[laKind])
 				{
-					_Attributes.Add(attr = new DAttribute(laKind, la.Value) { Location = la.Location, EndLocation = la.EndLocation });
+					attributes.Add(attr = new DAttribute(laKind, la.Value) { Location = la.Location, EndLocation = la.EndLocation });
 					LastParsedObject = attr;
 					Step();
-				}
+				}*/
 			}
 
-			while (MemberFunctionAttribute[laKind])
-			{
-				_Attributes.Add(attr = new DAttribute(laKind, la.Value) { Location = la.Location, EndLocation = la.EndLocation });
-				LastParsedObject = attr;
-				Step();
-			}
+			FunctionAttributes(attributes);
 			return td;
 		}
 
@@ -1803,6 +1794,28 @@ namespace D_Parser.Parser
 				if (RequireDeclDef)
 					DeclDef(module);
 				return new AttributeMetaDeclaration(previouslyParsedAttribute) { EndLocation = previouslyParsedAttribute.EndLocation };
+			}
+		}
+
+		void FunctionAttributes(DNode n)
+		{
+			if (!MemberFunctionAttribute[laKind])
+				return;
+
+			if (n.Attributes == null)
+				n.Attributes = new List<DAttribute>();
+
+			FunctionAttributes(n.Attributes);
+		}
+
+		void FunctionAttributes(List<DAttribute> attributes)
+		{
+			DAttribute attr = null;
+			while (MemberFunctionAttribute[laKind])
+			{
+				attributes.Add(attr = new DAttribute(laKind, la.Value) { Location = la.Location, EndLocation = la.EndLocation });
+				LastParsedObject = attr;
+				Step();
 			}
 		}
 		#endregion
@@ -4123,15 +4136,13 @@ namespace D_Parser.Parser
 			}
 
 			// handle post argument attributes
-			while (IsAttributeSpecifier())
-				AttributeSpecifier(scope);
+			FunctionAttributes(dm);
 
-			if (laKind == (If))
+			if (laKind == If)
 				Constraint();
 
 			// handle post argument attributes
-			while (IsAttributeSpecifier())
-				AttributeSpecifier(scope);
+			FunctionAttributes(dm);
 
 			FunctionBody(dm);
 			return dm;
