@@ -2852,15 +2852,27 @@ namespace D_Parser.Parser
 				var ce = new TypeidExpression() { Location=t.Location};
 				LastParsedObject = ce;
 				Expect(OpenParenthesis);
-				
-				AllowWeakTypeParsing = true;
-				ce.Type = Type();
-				AllowWeakTypeParsing = false;
 
-				if (ce.Type==null)
-					ce.Expression = AssignExpression();
+				if (IsAssignExpression())
+					ce.Expression = AssignExpression(Scope);
+				else
+				{
+					var laBackup = la;
+					AllowWeakTypeParsing = true;
+					ce.Type = Type();
+					AllowWeakTypeParsing = false;
 
-				Expect(CloseParenthesis);
+					if (ce.Type == null || laKind != CloseParenthesis)
+					{
+						la = laBackup;
+						Lexer.StartPeek();
+						ce.Expression = AssignExpression();
+					}
+				}
+
+				if (!Expect(CloseParenthesis) && IsEOF)
+					LastParsedObject = (ISyntaxRegion)ce.Type ?? ce.Expression;
+
 				ce.EndLocation = t.EndLocation;
 				return ce;
 			}
