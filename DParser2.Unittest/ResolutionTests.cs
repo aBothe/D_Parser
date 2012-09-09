@@ -361,5 +361,31 @@ class B : A{
 			Assert.IsInstanceOfType(mr.Definition, typeof(DMethod));
 			Assert.AreEqual(DMethod.MethodType.Constructor, ((DMethod)mr.Definition).SpecialType);
 		}
+
+		[TestMethod]
+		public void TemplateAliasing()
+		{
+			var pcl = CreateCache(@"module m;
+template Foo(A)
+{
+	A Foo;
+}");
+
+			var ctxt = new ResolverContextStack(pcl, new ResolverContext { ScopedBlock=pcl[0]["m"] });
+
+			DToken tk;
+			var td = DParser.ParseBasicType("Foo!int",out tk);
+
+			var s = TypeDeclarationResolver.ResolveSingle(td, ctxt);
+
+			Assert.IsInstanceOfType(s, typeof(MemberSymbol));
+
+			var ms = (MemberSymbol)s;
+			Assert.IsInstanceOfType(ms.Definition, typeof(DVariable));
+			Assert.IsInstanceOfType(ms.Base, typeof(PrimitiveType));
+
+			var pt = (PrimitiveType)ms.Base;
+			Assert.AreEqual(DTokens.Int, pt.TypeToken);
+		}
 	}
 }
