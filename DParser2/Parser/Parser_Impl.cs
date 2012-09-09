@@ -3563,7 +3563,7 @@ namespace D_Parser.Parser
 						}
 						else
 						{
-							var catchVar = new DVariable();
+							var catchVar = new DVariable { Parent = Scope };
 							LastParsedObject = catchVar;
 							var tt = la; //TODO?
 							catchVar.Type = BasicType();
@@ -3572,8 +3572,8 @@ namespace D_Parser.Parser
 								la = tt;
 								catchVar.Type = new IdentifierDeclaration("Exception");
 							}
-							Expect(Identifier);
-							catchVar.Name = t.Value;
+							if(Expect(Identifier))
+								catchVar.Name = t.Value;
 							Expect(CloseParenthesis);
 
 							c.CatchParameter = catchVar;
