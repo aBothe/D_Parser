@@ -13,6 +13,7 @@ using D_Parser.Unittest;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Dom.Statements;
+using D_Parser.Resolver.TypeResolution;
 
 namespace DParser2.Unittest
 {
@@ -217,5 +218,59 @@ void main()
 
 			
 		}*/
+
+		[TestMethod]
+		public void DeepBlockSearch()
+		{
+			var m = DParser.ParseString(@"module modA;
+
+class A
+{
+	int a;
+	int b;
+	int c;
+	int d;
+}
+
+class B
+{
+	class subB
+	{
+		int a;
+		int b;
+		int c;	
+	}
+}
+
+void main()
+{
+	int a;
+
+}
+
+class C
+{
+
+}");
+
+			IStatement s;
+			var n = DResolver.SearchBlockAt(m, ((IBlockNode)m["A"][0])["d"][0].Location, out s);
+			Assert.AreEqual("A", n.Name);
+
+			var loc = ((IBlockNode)m["C"][0]).BlockStartLocation;
+			n = DResolver.SearchBlockAt(m, loc, out s);
+			Assert.AreEqual("C", n.Name);
+
+			loc = ((IBlockNode)((IBlockNode)m["B"][0])["subB"][0])["c"][0].Location;
+			n = DResolver.SearchBlockAt(m, loc, out s);
+			Assert.AreEqual("subB", n.Name);
+
+			n = DResolver.SearchBlockAt(m, new CodeLocation(1, 10), out s);
+			Assert.AreEqual(m,n);
+
+			loc = ((IBlockNode)m["main"][0])["a"][0].EndLocation;
+			n = DResolver.SearchBlockAt(m, loc, out s);
+			Assert.AreEqual("main", n.Name);
+		}
 	}
 }
