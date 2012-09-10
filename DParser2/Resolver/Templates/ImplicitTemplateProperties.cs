@@ -19,7 +19,7 @@ namespace D_Parser.Resolver.Templates
 				dc.Children[dc.Name].Count - dc.Children.Count == 0;
 		}
 
-		public static bool TryGetImplicitProperty(TemplateType template, ResolverContextStack ctxt, out MemberSymbol matchingChild)
+		public static bool TryGetImplicitProperty(TemplateType template, ResolverContextStack ctxt, out AbstractType[] matchingChild)
 		{
 			// Check if there are only children that are named as the parent template.
 			// That's the requirement for the special treatment.
@@ -50,10 +50,7 @@ namespace D_Parser.Resolver.Templates
 			foreach (var kv in template.DeducedTypes)
 				args.Add((ISemantic)kv.Value.ParameterValue ?? kv.Value.Base);
 
-			var filteredMatches = TemplateInstanceHandler.DeduceParamsAndFilterOverloads(resolvedOverloads, args, true, ctxt);
-
-			if (filteredMatches != null && filteredMatches.Length != 0)
-				matchingChild = filteredMatches[0] as MemberSymbol;
+			matchingChild = TemplateInstanceHandler.DeduceParamsAndFilterOverloads(resolvedOverloads, args, true, ctxt);
 
 			// Undo context-related changes
 			if (pop)
@@ -61,7 +58,7 @@ namespace D_Parser.Resolver.Templates
 			else
 				ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(template);
 
-			return false;
+			return matchingChild != null && matchingChild.Length == 1 && matchingChild[0] != null;
 		}
 	}
 }

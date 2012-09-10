@@ -382,9 +382,11 @@ template Foo(A)
 
 			var ms = (MemberSymbol)s;
 			Assert.IsInstanceOfType(ms.Definition, typeof(DVariable));
-			Assert.IsInstanceOfType(ms.Base, typeof(PrimitiveType));
+			Assert.IsInstanceOfType(ms.Base, typeof(TemplateParameterSymbol));
+			var tps = (TemplateParameterSymbol)ms.Base;
+			Assert.IsInstanceOfType(tps.Base, typeof(PrimitiveType));
 
-			var pt = (PrimitiveType)ms.Base;
+			var pt = (PrimitiveType)tps.Base;
 			Assert.AreEqual(DTokens.Int, pt.TypeToken);
 		}
 	}
