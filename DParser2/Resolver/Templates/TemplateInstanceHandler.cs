@@ -96,7 +96,7 @@ namespace D_Parser.Resolver.TypeResolution
 			if (filteredOverloads.Count > 1)
 				return SpecializationOrdering.FilterFromMostToLeastSpecialized(filteredOverloads, ctxt);
 			else if (filteredOverloads.Count == 1)
-				return filteredOverloads.ToArray();
+				return new[]{ filteredOverloads[0] };
 			
 			return null;
 		}
