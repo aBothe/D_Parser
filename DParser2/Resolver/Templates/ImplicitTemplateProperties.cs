@@ -15,8 +15,9 @@ namespace D_Parser.Resolver.Templates
 		/// </summary>
 		public static bool ContainsEquallyNamedChildrenOnly(DClassLike dc)
 		{
-			return dc.Children.Count > 0 && 
-				dc.Children[dc.Name].Count - dc.Children.Count == 0;
+			//Edit: The actual dmd implementation differs from the spec immensely:
+			// It's only required that there are items called like dc, nothing else.
+			return dc[dc.Name].Count != 0;
 		}
 
 		public static bool TryGetImplicitProperty(TemplateType template, ResolverContextStack ctxt, out AbstractType[] matchingChild)
