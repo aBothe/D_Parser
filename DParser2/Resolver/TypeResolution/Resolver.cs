@@ -292,7 +292,7 @@ namespace D_Parser.Resolver.TypeResolution
 			{
 				var children = Parent.Children;
 				int start = 0;
-				IBlockNode midElement = null;
+				INode midElement = null;
 				int midIndex = 0;
 				int len = pCount;
 
@@ -301,7 +301,7 @@ namespace D_Parser.Resolver.TypeResolution
 					midIndex = (len % 2 + len) / 2;
 
 					// Take an element from the middle
-					if ((midElement = children[start + midIndex - 1] as IBlockNode) == null)
+					if ((midElement = children[start + midIndex - 1]) == null)
 						break;
 
 					// If 'Where' is beyond its start location
@@ -329,9 +329,9 @@ namespace D_Parser.Resolver.TypeResolution
 					len -= midIndex;
 				}
 
-				if (midElement != null)
+				if (midElement is IBlockNode)
 				{
-					Parent = midElement;
+					Parent = (IBlockNode)midElement;
 					pCount = Parent.Count;
 				}
 				else
@@ -343,8 +343,20 @@ namespace D_Parser.Resolver.TypeResolution
 				var body = ((DMethod)Parent).GetSubBlockAt(Where);
 
 				// First search the deepest statement under the caret
-				if (body != null)
+				if (body != null){
 					ScopedStatement = body.SearchStatementDeeply(Where);
+
+					if (ScopedStatement is IDeclarationContainingStatement)
+					{
+						var dcs = (IDeclarationContainingStatement)ScopedStatement;
+
+						foreach (var decl in dcs.Declarations)
+							if (decl is IBlockNode &&
+								Where > decl.Location &&
+								Where < decl.EndLocation)
+								return SearchBlockAt((IBlockNode)decl, Where, out ScopedStatement);
+					}
+				}
 			}
 
 			return Parent;
