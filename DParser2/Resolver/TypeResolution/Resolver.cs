@@ -348,13 +348,14 @@ namespace D_Parser.Resolver.TypeResolution
 
 					if (ScopedStatement is IDeclarationContainingStatement)
 					{
-						var dcs = (IDeclarationContainingStatement)ScopedStatement;
+						var dcs = ((IDeclarationContainingStatement)ScopedStatement).Declarations;
 
-						foreach (var decl in dcs.Declarations)
-							if (decl is IBlockNode &&
-								Where > decl.Location &&
-								Where < decl.EndLocation)
-								return SearchBlockAt((IBlockNode)decl, Where, out ScopedStatement);
+						if(dcs!=null && dcs.Length != 0)
+							foreach (var decl in dcs)
+								if (decl is IBlockNode &&
+									Where > decl.Location &&
+									Where < decl.EndLocation)
+									return SearchBlockAt((IBlockNode)decl, Where, out ScopedStatement);
 					}
 				}
 			}
