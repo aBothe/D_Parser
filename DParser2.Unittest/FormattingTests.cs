@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using D_Parser.Formatting;
+using D_Parser.Dom;
+using System.Diagnostics;
 
 namespace D_Parser.Unittest
 {
@@ -24,9 +26,9 @@ std", 1);
 			TestLastLine(@"import std;
 import std;
 ", 0);
-			// TODO
-			/*TestLastLine(@"import std.stdio,
-	std.conv;",1);*/
+			TestLastLine(@"import std.stdio,
+	std.conv;",1);
+
 			TestLastLine(@"import std;
 import
 ", 1);
@@ -34,11 +36,26 @@ import
 import
 	std;", 1);
 
-			TestLastLine(@"class A{
+			TestLastLine(@"
+class A
+{
 	void foo()
 	{
 	}
 	", 1);
+
+			TestLastLine(@"class A {
+	void foo(
+		)", 2);
+
+			TestLastLine(@"class A {
+	void foo()
+	{", 1);
+
+			TestLastLine(@"class A {
+	void foo()
+	{
+	}", 1);
 
 			TestLastLine(@"
 class A
@@ -63,45 +80,44 @@ class A
 	public:
 		", 2);
 
-			TestLastLine(@"foo();", 0);
+			TestLastLine(@"foo();", 0, true);
 
 			TestLastLine(@"foo();
-", 0);
+", 0, true);
 
 			TestLastLine(@"foo(
-);", 1);
+);", 1, true);
 			TestLastLine(@"foo(
-	a.lol", 1);
+	a.lol", 1, true);
 			TestLastLine(@"foo(
 	a,
-	b", 1);
+	b", 1, true);
 			TestLastLine(@"foo(a,
-	b);", 1);
+	b);", 1, true);
 
 			TestLastLine(@"foo(
-	a)", 1);
+	a)", 1, true);
 			TestLastLine(@"foo(
-	b())", 1);
+	b())", 1, true);
 			TestLastLine(@"foo(
-", 1);
+", 1, true);
 			TestLastLine(@"foo(
-)", 1);
+)", 1, true);
 
-			TestLastLine(@"foo(asdf())
+			TestLastLine(@"void foo(asdf())
 {", 0);
 			TestLastLine(@"foo(asdf())
-", 1);
-			TestLastLine(@"foo(asdf()=b)
-", 1);
+", 1, true);
+			TestLastLine(@"foo(b=asdf())
+", 1, true);
 			TestLastLine(@"foo(asdf)
-", 1);
+", 1, true);
 			TestLastLine(@"writeln(34,
-	joLol);", 1);
-			/* TODO
+	joLol);", 1, true);
 			TestLastLine(@"writeln,
-	lolSecondExpression();",1);*/
+	lolSecondExpression();", 1, true);
 			TestLastLine(@"std.stdio.
-	writeln(a)", 1);
+	writeln(a)", 1, true);
 			TestLastLine(@"std.stdio.
 	writeln(a);", 1);
 			TestLastLine(@"writeln(
@@ -111,66 +127,66 @@ class A
 			TestLastLine(@"writeln(
 	(162*2)%315==9);", 1);
 
-			TestLastLine(@"foo()
+			TestLastLine(@"void foo()
 {
 	asdf;
 }
 ", 0);
-			TestLastLine(@"foo()
+			TestLastLine(@"void foo()
 {
 	asdf();", 1);
-			TestLastLine(@"foo()
+			TestLastLine(@"void foo()
 {
 	asdf();
 	", 1);
-			TestLastLine(@"foo()
+			TestLastLine(@"void foo()
 {
 	asdf;
 }", 0);
-			TestLastLine(@"foo()
+			TestLastLine(@"void foo()
 {
 	asdf;
 	asdf;}
 ", 0);
-			TestLastLine(@"foo()
+			TestLastLine(@"void foo()
 {
 	asdf;
 	asdf;}", 1);
-			TestLastLine(@"foo(){
+			TestLastLine(@"void foo(){
 	a;
 	bar();}", 1);
-			TestLastLine(@"foo(){
+			TestLastLine(@"void foo(){
 lol(); ger++;
 } yeah;", 0);
-			TestLastLine(@"foo(){
+			TestLastLine(@"void foo(){
 	lol(); } foo();", 1);
-			TestLastLine(@"foo(){
+			TestLastLine(@"void foo(){
 	lol(); } foo();
 ", 0);
-			TestLastLine(@"foo(){
+			TestLastLine(@"void foo(){
 	asdf();
 	if(true){
 		whynot();
 		bar(); }} fooGer();", 2);
 
 
-			TestLastLine(@"foo()
+			TestLastLine(@"void foo()
 	if(..)", 1);
-			TestLastLine(@"foo()
+			TestLastLine(@"void foo()
 	if(..)
 in", 0);
-			TestLastLine(@"foo()
+			TestLastLine(@"void foo()
 in", 0);
-			TestLastLine(@"foo()
+			TestLastLine(@"void foo()
 out", 0);
-			TestLastLine(@"foo()
+			TestLastLine(@"void foo()
 out(result)", 0);
-			TestLastLine(@"foo()
+			TestLastLine(@"void foo()
 	if(true)
 out(result)", 0);
-			TestLastLine(@"foo()
+			TestLastLine(@"void foo()
 out(result){", 0);
-			TestLastLine(@"foo()
+			TestLastLine(@"void foo()
 body", 0);
 			TestLastLine(@"void foo(in
 ", 1);
@@ -179,20 +195,20 @@ body", 0);
 
 
 
-			TestLastLine(@"foo()
+			TestLastLine(@"void foo()
 {
 	b(
 		{
 			nestedFoo();", 3);
 
-			TestLastLine(@"foo()
+			TestLastLine(@"void foo()
 {
 	b({
 		nestedFoo();
 	});
 	", 1);
 
-			TestLastLine(@"foo()
+			TestLastLine(@"void foo()
 {
 	bar({asdfCall();});", 1);
 
@@ -256,18 +272,18 @@ void foo()
 	", 1);
 
 
-			TestLastLine(@"if(a)
+			TestLastLine(@"static if(a)
 {", 0);
 
-			TestLastLine(@"if(a)
+			TestLastLine(@"static if(a)
 	a;", 1);
-			TestLastLine(@"if(asdf)
+			TestLastLine(@"static if(asdf)
 ", 1);
-			TestLastLine(@"if(asdf())
+			TestLastLine(@"static if(asdf())
 ", 1);
-			TestLastLine(@"if(asdf()==b)
+			TestLastLine(@"static if(asdf()==b)
 ", 1);
-			TestLastLine(@"if(
+			TestLastLine(@"static if(
 ", 1);
 
 
@@ -324,20 +340,20 @@ void foo()
 			TestLastLine(@"version(D):", 0);
 
 			TestLastLine(@"
-private foo()
+private void foo()
 {
 	a;
 }", 0);
 
 			TestLastLine(@"
-private foo()
+private void foo()
 {
 	a;
 }", 0);
 
 			TestLastLine(@"
 private:
-	foo()
+	void foo()
 	{", 1);
 
 			TestLastLine(@"
@@ -418,42 +434,36 @@ void main(string[] args)
 		}
 
 
-		void TestLastLine(string code, int targetIndent)
+		void TestLastLine(string code, int targetIndent, bool isStmt = false)
 		{
 			var newInd = GetLastLineIndent(code);
-			Assert.AreEqual(newInd, targetIndent, code);
-
-			newInd = GetLastLineIndent(code, true, true);
-			Assert.AreEqual(newInd, targetIndent, "[Additional Content]\n"+code);
+			Assert.AreEqual(targetIndent, newInd, "[Additional Content]\n" + code);
 		}
 
 		void TestLine(string code, int line, int targetIndent)
 		{
-			var newInd = GetLineIndent(code, line);
-			Assert.AreEqual(newInd, targetIndent, code);
+			var newInd = GetLineIndent(code, new CodeLocation(0, line));
+			Assert.AreEqual(targetIndent, newInd, code);
 		}
 
 
-		static int GetLineIndent(string code, int line)
+		static int GetLineIndent(string code, CodeLocation caret)
 		{
+			var ast = D_Parser.Parser.DParser.ParseString(code);
+
+			return IndentationCalculator.CalculateForward(ast, caret);
+			/*
 			var fmt = new DFormatter();
 
 			var cb = fmt.CalculateIndentation(code, line);
 
-			return cb != null ? cb.GetLineIndentation(line) : 0;
+			return cb != null ? cb.GetLineIndentation(line) : 0;*/
 		}
 
-		static int GetLastLineIndent(string code, bool AddNewLines = false, bool AddSomeFinalCode = false)
+		static int GetLastLineIndent(string code)
 		{
-			var caret = DocumentHelper.OffsetToLocation(code, code.Length);
-
-			if (AddNewLines)
-				code += "\r\n\r\n";
-
-			if (AddSomeFinalCode)
-				code += "StaticFinalContent;";
-
-			return GetLineIndent(code, caret.Line);
+			var l = DocumentHelper.OffsetToLocation(code, code.Length);
+			return GetLineIndent(code, l);
 		}
 	}
 }

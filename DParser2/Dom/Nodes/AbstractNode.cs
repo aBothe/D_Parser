@@ -17,6 +17,11 @@ namespace D_Parser.Dom
 			set { _EndLocation = value; }
 		}
 
+		/// <summary>
+		/// True if the node has ended correctly, i.e. with a semicolon or a '}' token
+		/// </summary>
+		public bool IsComplete;
+
 		public CodeLocation Location
 		{
 			get { return _StartLocation; }

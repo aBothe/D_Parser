@@ -24,32 +24,53 @@ namespace D_Parser.Formatting
 			int i = 0;
 			var line = caret.Line;
 
-			while (n != null)
+			do
 			{
 				var db = n as DBlockNode;
 				if (db != null)
 				{
-					if(!n.BlockStartLocation.IsEmpty)
-						i += GetBlockindent(n, n.BlockStartLocation, GetLastBlockAstChild(db), caret);
-
-					var metaStack = db.GetMetaBlockStack(caret, true, true);
-					for (int k = metaStack.Length; k != 0; k--)
+					if (n.BlockStartLocation.Line > 0) // Should be only non-matching on the ast root node
 					{
-						var mb = metaStack[k];
-						var mbb = mb as IMetaDeclarationBlock;
-						if (mbb != null)
-							i += GetBlockindent(metaStack[i], mbb.BlockStartLocation, k == 0 ? null : metaStack[k - 1], caret);
-						else if (line > mb.Location.Line)
-						{
-							/*
-							 * pragma(lib,
-							 *		"kernel32.lib");
-							 * private:
-							 *		int a;
-							 */
+						if (!db.IsComplete && line > n.BlockStartLocation.Line)
 							i++;
+						else
+							i += GetBlockindent(n, n.BlockStartLocation, GetLastBlockAstChild(db), caret);
+					}
+
+					if (db.MetaBlocks.Count != 0)
+					{
+						var metaStack = db.GetMetaBlockStack(caret, true, true);
+						for (int k = metaStack.Length; k != 0; k--)
+						{
+							var mb = metaStack[k];
+							var mbb = mb as IMetaDeclarationBlock;
+							if (mbb != null)
+								i += GetBlockindent(metaStack[i], mbb.BlockStartLocation, k == 0 ? null : metaStack[k - 1], caret);
+							else if (line > mb.Location.Line)
+							{
+								/*
+								 * pragma(lib,
+								 *		"kernel32.lib");
+								 * private:
+								 *		int a;
+								 */
+								i++;
+							}
 						}
 					}
+
+					/*
+					 * import
+					 *		std.stdio; | // 1) caret must be on the second line of the statement and 2) at maximum on the endlocation's line.
+					 *	// Both implies a statement that is at least 2 lines large. 
+					 */
+					if(db.StaticStatements.Count != 0)
+						foreach (var s in db.StaticStatements)
+							if (line > s.Location.Line && // 1)
+								line <= s.EndLocation.Line) // 2)
+							{
+								i++;
+							}
 				}
 				else if(n is DMethod)
 				{
@@ -131,13 +152,8 @@ namespace D_Parser.Formatting
 									i += Calculate(ref x, caret);
 							}
 						}
-
-				if (n.Parent != null)
-				{
-					i++;
-					n = n.Parent as IBlockNode;
-				}
 			}
+			while((n = n.Parent as IBlockNode) != null);
 
 			return i;
 		}

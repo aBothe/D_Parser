@@ -172,7 +172,7 @@ namespace D_Parser.Parser
 				LastParsedObject = dbs;
 				dbs.Location = t.Location;
 				FunctionBody(dbs);
-				dbs.EndLocation = t.EndLocation;
+				dbs.EndLocation = EndLocation;
 				module.Add(dbs);
 			}
 
@@ -216,7 +216,7 @@ namespace D_Parser.Parser
 
 				Expect(Semicolon);
 
-				ass.EndLocation = t.EndLocation;
+				ass.EndLocation = EndLocation;
 
 				module.Add(ass);
 			}
@@ -285,7 +285,7 @@ namespace D_Parser.Parser
 
 				dm.Parameters = Parameters(dm);
 				FunctionBody(dm);
-				dm.EndLocation = t.EndLocation;
+				dm.EndLocation = EndLocation;
 				module.Add(dm);
 			}
 
@@ -300,7 +300,7 @@ namespace D_Parser.Parser
 
 				dm.Parameters = Parameters(dm);
 				FunctionBody(dm);
-				dm.EndLocation = t.EndLocation;
+				dm.EndLocation = EndLocation;
 				module.Add(dm);
 			}
 
@@ -321,21 +321,20 @@ namespace D_Parser.Parser
 			AbstractMetaDeclaration metaDeclBlock;
 
 			if (popCount != 0)
-				metaDeclBlock = new AttributeMetaDeclarationBlock(DeclarationAttributes.ToArray()) { BlockStartLocation = la.Location };
+				metaDeclBlock = new AttributeMetaDeclarationBlock(DeclarationAttributes.ToArray());
 			else
-				metaDeclBlock = new MetaDeclarationBlock { BlockStartLocation = la.Location };
+				metaDeclBlock = new MetaDeclarationBlock();
 
 			while (DeclarationAttributes.Count > 0)
 				BlockAttributes.Push(DeclarationAttributes.Pop());
 
-			ClassBody(module, true, false);
+			ClassBody(module, true);
 
 			// Pop the previously pushed attributes back off the stack
 			for (int i = popCount; i > 0; i--)
 				BlockAttributes.Pop();
 
 			// Store the meta block
-			metaDeclBlock.EndLocation = t.EndLocation;
 			if(module!=null)
 				module.Add(metaDeclBlock);
 			return metaDeclBlock;
@@ -450,10 +449,10 @@ namespace D_Parser.Parser
 
 				if (laKind == OpenCurlyBrace)
 				{
-					metaBlock.OptionalElseBlock = new ElseMetaDeclarationBlock { Location = t.Location, BlockStartLocation = la.Location };
+					metaBlock.OptionalElseBlock = new ElseMetaDeclarationBlock { Location = t.Location };
 					BlockAttributes.Push(c);
 
-					ClassBody(module, true, false);
+					ClassBody(module, true);
 
 					BlockAttributes.Pop();
 				}
@@ -463,9 +462,9 @@ namespace D_Parser.Parser
 					DeclarationAttributes.Push(c);
 
 					DeclDef(module);
-				}
 
-				metaBlock.OptionalElseBlock.EndLocation = t.EndLocation;
+					metaBlock.OptionalElseBlock.EndLocation = EndLocation;
+				}
 			}
 		}
 
@@ -475,22 +474,26 @@ namespace D_Parser.Parser
 			var ret = new ModuleStatement { Location=t.Location };
 			LastParsedObject = ret;
 			ret.ModuleName = ModuleFullyQualifiedName();
+
 			if (Expect(Semicolon))
 				LastParsedObject = null;
-			ret.EndLocation = t.EndLocation;
+
+			ret.EndLocation = EndLocation;
 			return ret;
 		}
 
 		ITypeDeclaration ModuleFullyQualifiedName()
 		{
-			Expect(Identifier);
+			if (!Expect(Identifier))
+				return null;
 
 			var td = new IdentifierDeclaration(t.Value) { Location=t.Location,EndLocation=t.EndLocation };
 
 			while (laKind == Dot)
 			{
 				Step();
-				Expect(Identifier);
+				if (!Expect(Identifier))
+					break;
 
 				var td2 = new IdentifierDeclaration(t.Value) { Location=t.Location, EndLocation=t.EndLocation };
 
@@ -529,11 +532,15 @@ namespace D_Parser.Parser
 				importStatement.Imports.Add(imp); // Don't forget to add the last import
 
 			if (Expect(Semicolon))
+			{
 				LastParsedObject = null;
 
-			CheckForPostSemicolonComment();
+				CheckForPostSemicolonComment();
 
-			importStatement.EndLocation = t.EndLocation;
+				importStatement.EndLocation = t.EndLocation;
+			}
+			else
+				importStatement.EndLocation = la.Location;
 
 			// Prepare for resolving external items
 			importStatement.CreatePseudoAliases();
@@ -595,16 +602,18 @@ namespace D_Parser.Parser
 			return importBindings;
 		}
 
-
 		IStatement MixinDeclaration()
 		{
             var mx = AssignExpression();
-			Expect(Semicolon);
 
             if (mx == null)
                 return null;
 
-            return new ExpressionStatement { Location=mx.Location, Expression=mx, EndLocation=t.EndLocation };
+            return new ExpressionStatement { 
+				Location=mx.Location, 
+				Expression=mx, 
+				EndLocation= Expect(Semicolon) ? t.EndLocation : la.Location 
+			};
 		}
 		#endregion
 
@@ -668,11 +677,11 @@ namespace D_Parser.Parser
                         EndLocation=t.EndLocation 
                     };
 
-                    Step();
+                    Step(); // the 'this' token
                     dv.NameLocation = t.Location;
 					dv.EndLocation = t.EndLocation;
 					
-					Expect(Semicolon);
+					dv.IsComplete = Expect(Semicolon);
 					dv.Description += CheckForPostSemicolonComment();
 
 					return new[]{dv};
@@ -712,7 +721,7 @@ namespace D_Parser.Parser
 			return null;
 		}
 
-		INode[] Decl(bool HasStorageClassModifiers,IBlockNode Scope)
+		DNode[] Decl(bool HasStorageClassModifiers,IBlockNode Scope)
 		{
 			var startLocation = la.Location;
 			var initialComment = GetComments();
@@ -765,7 +774,7 @@ namespace D_Parser.Parser
 			firstNode.Description = initialComment;
 			firstNode.Location = startLocation;
 
-			ApplyAttributes(firstNode as DNode);
+			ApplyAttributes(firstNode);
 
 			// Check for declaration constraints
 			if (laKind == (If))
@@ -782,8 +791,8 @@ namespace D_Parser.Parser
 					if(dv!=null)
 						dv.Initializer = Initializer(Scope);
 				}
-				firstNode.EndLocation = t.EndLocation;
-				var ret = new List<INode>();
+				firstNode.EndLocation = EndLocation;
+				var ret = new List<DNode>();
 				ret.Add(firstNode);
 
 				// DeclaratorIdentifierList
@@ -809,16 +818,18 @@ namespace D_Parser.Parser
 						otherNode.Initializer = Initializer(Scope);
 					}
 
-					otherNode.EndLocation = t.EndLocation;
+					otherNode.EndLocation = EndLocation;
+					otherNode.IsComplete = true;
 					ret.Add(otherNode);
 				}
 
 				if (Expect(Semicolon))
 					LastParsedObject = null;
+				else
+					ret[ret.Count - 1].IsComplete = false;
 
 				// Note: In DDoc, only the really last declaration will get the post semicolon comment appended
-				if (ret.Count > 0)
-					ret[ret.Count - 1].Description += CheckForPostSemicolonComment();
+				ret[ret.Count - 1].Description += CheckForPostSemicolonComment();
 
 				return ret.ToArray();
 			}
@@ -832,7 +843,7 @@ namespace D_Parser.Parser
 
 				firstNode.Description += CheckForPostSemicolonComment();
 
-				return new[]{ firstNode};
+				return new[]{ firstNode };
 			}
 			else
 				SynErr(OpenCurlyBrace, "; or function body expected after declaration stub.");
@@ -886,8 +897,10 @@ namespace D_Parser.Parser
 					md.InnerType = Type();
 
 				if (p)
-					Expect(CloseParenthesis);
-				md.EndLocation = t.EndLocation;
+					md.EndLocation = Expect(CloseParenthesis) ? t.EndLocation : la.Location;
+				else
+					md.EndLocation = t.EndLocation;
+
 				return md;
 			}
 
@@ -940,7 +953,7 @@ namespace D_Parser.Parser
 		ITypeDeclaration BasicType2()
 		{
 			// *
-			if (laKind == (Times))
+			if (laKind == Times)
 			{
 				Step();
 				return new PointerDecl() { Location=t.Location, EndLocation=t.EndLocation };
@@ -998,9 +1011,9 @@ namespace D_Parser.Parser
 				if (AllowWeakTypeParsing && laKind != CloseSquareBracket)
 					return null;
 
-				Expect(CloseSquareBracket);
-				if(cd!=null)
-					cd.EndLocation = t.EndLocation;
+				if (cd != null)
+					cd.EndLocation = Expect(CloseSquareBracket) ? t.EndLocation : la.Location;
+
 				return cd;
 			}
 
@@ -1235,8 +1248,8 @@ namespace D_Parser.Parser
 						ad.KeyExpression = AssignExpression();
 					}
 				}
-				Expect(CloseSquareBracket);
-				ad.EndLocation = t.EndLocation;
+				
+				ad.EndLocation = Expect(CloseSquareBracket) ? t.EndLocation : la.Location;
 				td = ad;
 			}
 
@@ -1552,10 +1565,8 @@ namespace D_Parser.Parser
 					inits.Add(sinit);
 				}
 
-				Expect(DTokens.CloseCurlyBrace);
-
 				ae.MemberInitializers = inits.ToArray();
-				ae.EndLocation = t.EndLocation;
+				ae.EndLocation = Expect(DTokens.CloseCurlyBrace) ? t.EndLocation : la.Location;
 
 				if (!IsEOF)
 					TrackerVariables.IsParsingInitializer = isParsingInitializer_backup;
@@ -1616,9 +1627,10 @@ namespace D_Parser.Parser
 				}
 				else
 					md.InstanceId = Expression();
-				Expect(CloseParenthesis);
+				md.EndLocation = Expect(CloseParenthesis) ? t.EndLocation : la.Location;
 			}
-			md.EndLocation = t.EndLocation;
+			else
+				md.EndLocation = t.EndLocation;
 			return md;
 		}
 
@@ -1636,17 +1648,19 @@ namespace D_Parser.Parser
 					md.Id = Expression();
 
 				if (Expect(CloseParenthesis))
+				{
 					TrackerVariables.ExpectingIdentifier = false;
+					md.EndLocation = t.EndLocation;
+					return md;
+				}
 			}
-
-			md.EndLocation = t.EndLocation;
+			md.EndLocation = la.Location;
 			return md;
 		}
 
 		#endregion
 
 		#region Attributes
-
 		DMethod _Invariant()
 		{
             var inv = new DMethod { SpecialType= DMethod.MethodType.ClassInvariant };
@@ -1657,11 +1671,17 @@ namespace D_Parser.Parser
 			if (laKind == OpenParenthesis)
 			{
 				Step();
-				Expect(CloseParenthesis);
+				inv.IsComplete = Expect(CloseParenthesis);
 			}
-            if(!IsEOF)
-			    inv.Body=BlockStatement();
-			inv.EndLocation = t.EndLocation;
+
+			if (!IsEOF)
+			{
+				inv.Body = BlockStatement(inv);
+				inv.EndLocation = t.EndLocation;
+			}
+			else
+				inv.EndLocation = la.Location;
+
 			return inv;
 		}
 
@@ -1685,9 +1705,13 @@ namespace D_Parser.Parser
 					s.Arguments = l.ToArray();
 
 				if (Expect(CloseParenthesis))
+				{
 					TrackerVariables.ExpectingIdentifier = false;
+					s.EndLocation = t.EndLocation;
+					return s;
+				}
 			}
-			s.EndLocation = t.EndLocation;
+			s.EndLocation = la.Location;
 			return s;
 		}
 
@@ -3996,6 +4020,7 @@ namespace D_Parser.Parser
 
 			if (laKind == (Semicolon))
 			{
+				ret.IsComplete = true;
 				Step();
 				return ret;
 			}
@@ -4055,7 +4080,6 @@ namespace D_Parser.Parser
 
 			ClassBody(dc);
 
-			dc.EndLocation = t.EndLocation;
 			return dc;
 		}
 
@@ -4089,13 +4113,13 @@ namespace D_Parser.Parser
 			{
 				var stk_backup = BlockAttributes;
 
-				if(!KeepBlockAttributes)
+				if (!KeepBlockAttributes)
 					BlockAttributes = new Stack<DAttribute>();
 
-				if(UpdateBoundaries)
+				if (UpdateBoundaries)
 					ret.BlockStartLocation = t.Location;
 
-				while (!IsEOF && laKind != (CloseCurlyBrace))
+				while (laKind != (CloseCurlyBrace) && !IsEOF)
 				{
 					DeclDef(ret);
 				}
@@ -4103,13 +4127,13 @@ namespace D_Parser.Parser
 				if (!IsEOF)
 					LastParsedObject = ret;
 
-				if (Expect(CloseCurlyBrace))
+				if (ret.IsComplete = Expect(CloseCurlyBrace))
 					LastParsedObject = null;
 
-				if(UpdateBoundaries)
-					ret.EndLocation = t.EndLocation;
+				if (UpdateBoundaries)
+					ret.EndLocation = EndLocation;
 
-				if(!KeepBlockAttributes)
+				if (!KeepBlockAttributes)
 					BlockAttributes = stk_backup;
 			}
 
@@ -4139,7 +4163,7 @@ namespace D_Parser.Parser
 				dm.Parameters.Add(dv);
 				Step();
 				Step();
-				Expect(CloseParenthesis);
+				dv.IsComplete = Expect(CloseParenthesis);
 			}
 			else
 			{
@@ -4215,11 +4239,15 @@ namespace D_Parser.Parser
 
 			// Empty interfaces are allowed
 			if (laKind == Semicolon)
+			{
 				Step();
+				dc.EndLocation = t.EndLocation;
+				dc.Description += CheckForPostSemicolonComment();
+				dc.IsComplete = true;
+			}
 			else
 				ClassBody(dc);
 
-			dc.EndLocation = t.EndLocation;
 			return dc;
 		}
 
@@ -4270,7 +4298,7 @@ namespace D_Parser.Parser
 					if(mye.Type == null)
 						mye.Type = Type();
 
-					if (Expect(Identifier))
+					if (mye.IsComplete = Expect(Identifier))
 					{
 						mye.Name = t.Value;
 						mye.NameLocation = t.Location;
@@ -4300,9 +4328,10 @@ namespace D_Parser.Parser
 			// Variables with 'enum' as base type
 			if (laKind == (Assign) || laKind == (Semicolon))
 			{
+				DVariable enumVar;
 				do
 				{
-					var enumVar = new DVariable();
+					enumVar = new DVariable();
 					LastParsedObject = enumVar;
 
 					enumVar.AssignFrom(mye);
@@ -4331,7 +4360,7 @@ namespace D_Parser.Parser
 				}
 				while (laKind == Comma);
 
-				Expect(Semicolon);
+				enumVar.IsComplete = Expect(Semicolon);
 			}
 			else
 			{
@@ -4377,16 +4406,18 @@ namespace D_Parser.Parser
 						ev.Initializer = AssignExpression();
 					}
 
-					ev.EndLocation = t.EndLocation;
+					ev.EndLocation = EndLocation;
 					ev.Description += CheckForPostSemicolonComment();
 
 					mye.Add(ev);
 				}
-				Expect(CloseCurlyBrace);
+
+				mye.IsComplete = Expect(CloseCurlyBrace);
+
+				mye.EndLocation = EndLocation;
+
 				PreviousComment = OldPreviousComment;
 
-				mye.EndLocation = t.EndLocation;
-				
 				// Important: Add the enum block, whereas it CAN be unnamed, to the return array
 				ret.Add(mye);
 			}
@@ -4405,6 +4436,7 @@ namespace D_Parser.Parser
 				Step();
 				par.Description += CheckForPostSemicolonComment();
 				par.EndLocation = t.EndLocation;
+				par.IsComplete = true;
 				return;
 			}
 
@@ -4447,7 +4479,8 @@ namespace D_Parser.Parser
 				par.Body = BlockStatement(par);
 			}
 
-			par.EndLocation = t.EndLocation;
+			par.IsComplete = t.Kind == CloseCurlyBrace;
+			par.EndLocation = EndLocation;
 		}
 		#endregion
 
@@ -4537,7 +4570,7 @@ namespace D_Parser.Parser
 			}
 
 			Expect(Semicolon);
-			r.EndLocation = t.EndLocation;
+			r.EndLocation = EndLocation;
 
 			return r;
 		}
@@ -4665,7 +4698,7 @@ namespace D_Parser.Parser
 					if (al.DefaultType==null)
 						al.DefaultExpression = ConditionalExpression();
 				}
-				al.EndLocation = t.EndLocation;
+				al.EndLocation = EndLocation;
 				return al;
 			}
 
@@ -4689,7 +4722,7 @@ namespace D_Parser.Parser
 					Step();
 					tt.Default = Type();
 				}
-				tt.EndLocation = t.EndLocation;
+				tt.EndLocation = EndLocation;
 				return tt;
 			}
 
@@ -4714,7 +4747,7 @@ namespace D_Parser.Parser
 				Step();
 				tv.DefaultExpression = AssignExpression();
 			}
-			tv.EndLocation = t.EndLocation;
+			tv.EndLocation = EndLocation;
 			return tv;
 		}
 
@@ -4844,7 +4877,7 @@ namespace D_Parser.Parser
 				args.Add(arg);
 			}
 			td.Arguments = args.ToArray();
-			td.EndLocation = t.EndLocation;
+			td.EndLocation = EndLocation;
 			return td;
 		}
 		#endregion
@@ -4875,7 +4908,7 @@ namespace D_Parser.Parser
 				if (Expect(CloseParenthesis))
 					TrackerVariables.ExpectingIdentifier = false;
 			}
-			ce.EndLocation = t.EndLocation;
+			ce.EndLocation = EndLocation;
 			return ce;
 		}
 		#endregion

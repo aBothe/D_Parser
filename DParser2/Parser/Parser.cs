@@ -54,13 +54,13 @@ namespace D_Parser.Parser
 		public bool ExpectingIdentifier { set { TrackerVariables.ExpectingIdentifier = value; } }
 
 		public ParserTrackerVariables TrackerVariables = new ParserTrackerVariables();
-
+		
 		DToken t
 		{
 			[System.Diagnostics.DebuggerStepThrough]
 			get
 			{
-				return (DToken)Lexer.CurrentToken;
+				return Lexer.CurrentToken;
 			}
 		}
 
@@ -79,13 +79,30 @@ namespace D_Parser.Parser
 			{
 				Lexer.LookAhead = value;
 				laKind = value.Kind;
+				_eof = false;
 			}
 		}
 		int laKind = 0;
-
+		bool _eof;
 		bool IsEOF
 		{
-			get { return Lexer.IsEOF; }
+			get { return _eof || (_eof = Lexer.IsEOF); }
+		}
+
+		CodeLocation EndLocation
+		{
+			get
+			{
+				return (_eof || (_eof = Lexer.IsEOF)) ? Lexer.LookAhead.Location : Lexer.CurrentToken.EndLocation; 
+			}
+		}
+
+		CodeLocation EndLocation_Semicolon
+		{
+			get
+			{
+				return laKind != Semicolon && (_eof || (_eof = Lexer.IsEOF)) ? Lexer.LookAhead.Location : Lexer.CurrentToken.EndLocation;
+			}
 		}
 
 		public IList<ParserError> ParseErrors = new List<ParserError>();
