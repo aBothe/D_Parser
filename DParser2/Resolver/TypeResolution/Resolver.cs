@@ -280,11 +280,17 @@ namespace D_Parser.Resolver.TypeResolution
 			return tr;
 		}
 
+		public static IBlockNode SearchBlockAt(IBlockNode Parent, CodeLocation Where)
+		{
+			IStatement s;
+			return SearchBlockAt(Parent, Where, out s);
+		}
+
 		public static IBlockNode SearchBlockAt(IBlockNode Parent, CodeLocation Where, out IStatement ScopedStatement)
 		{
 			ScopedStatement = null;
 			int pCount = 0;
-			
+
 			if (Parent == null || (pCount = Parent.Count) == 0)
 				return Parent;
 
@@ -296,7 +302,7 @@ namespace D_Parser.Resolver.TypeResolution
 				int midIndex = 0;
 				int len = pCount;
 
-				while(len > 0)
+				while (len > 0)
 				{
 					midIndex = (len % 2 + len) / 2;
 
@@ -325,7 +331,7 @@ namespace D_Parser.Resolver.TypeResolution
 						midElement = null;
 						break;
 					}
-							
+
 					len -= midIndex;
 				}
 
