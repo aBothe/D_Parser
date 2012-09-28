@@ -247,7 +247,7 @@ namespace D_Parser.Parser
 						else
 						{
 							// Single quote char escape
-							if (cur == '\\' && peekChar == '\'')
+							if (cur == '\\')
 							{
 								off += 2;
 								continue;
