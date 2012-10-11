@@ -153,7 +153,7 @@ namespace D_Parser.Parser
 
 			//ImportDeclaration
 			if (laKind == Import)
-				module.Add(ImportDeclaration());
+				module.Add(ImportDeclaration(module));
 
 			//Constructor
 			else if (laKind == (This))
@@ -508,7 +508,7 @@ namespace D_Parser.Parser
 			return td;
 		}
 
-		ImportStatement ImportDeclaration()
+		ImportStatement ImportDeclaration(IBlockNode scope)
 		{
 			Expect(Import);
 
@@ -543,7 +543,7 @@ namespace D_Parser.Parser
 			importStatement.EndLocation = t.EndLocation;
 
 			// Prepare for resolving external items
-			importStatement.CreatePseudoAliases();
+			importStatement.CreatePseudoAliases(scope);
 
 			return importStatement;
 		}
@@ -3751,8 +3751,16 @@ namespace D_Parser.Parser
 			#endregion
 
 			// ImportDeclaration
-			else if (laKind == Import)
-				return ImportDeclaration();
+			else if (laKind == Import || (laKind == Static && Lexer.CurrentPeekToken.Kind == Import))
+			{
+				if(laKind == Static)
+				{
+					Step();
+					PushAttribute(new DAttribute(Static) { Location = t.Location, EndLocation = t.EndLocation }, false);
+				}
+
+				return ImportDeclaration(Scope);
+			}
 
 			else if (!(ClassLike[laKind] || BasicTypes[laKind] || laKind == Enum || Modifiers[laKind] || laKind == PropertyAttribute || laKind == Alias || laKind == Typedef) && IsAssignExpression())
 			{
