@@ -298,7 +298,7 @@ namespace D_Parser.Resolver.Templates
 					// If an expression (the usual case) has been passed as argument, evaluate its value, otherwise is its type already resolved.
 					ISemantic finalArg = null;
 
-					if (ad_Argument.KeyExpression != null)
+					if (ad_Argument != null && ad_Argument.KeyExpression != null)
 					{
 						ISymbolValue val = null;
 						int len = -1;
@@ -315,7 +315,7 @@ namespace D_Parser.Resolver.Templates
 					// and handle it as if it was an identifier declaration..
 					result = Set(parameterRef, finalArg, (string)id.Value); 
 				}
-				else if (ad_Argument.KeyExpression != null)
+				else if (ad_Argument != null && ad_Argument.KeyExpression != null)
 				{
 					// Just test for equality of the argument and parameter expression, e.g. if both param and arg are 123, the result will be true.
 					result = SymbolValueComparer.IsEqual(arrayDeclToCheckAgainst.KeyExpression, ad_Argument.KeyExpression, new StandardValueProvider(ctxt));
