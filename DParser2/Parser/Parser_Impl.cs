@@ -3025,7 +3025,8 @@ namespace D_Parser.Parser
 			#endregion
 
 			SynErr(Identifier);
-			Step();
+			if(laKind != CloseCurlyBrace)
+				Step();
 			return new TokenExpression() { Location = t.Location, EndLocation = t.EndLocation };
 		}
 
