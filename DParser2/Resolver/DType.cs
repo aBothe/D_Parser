@@ -344,6 +344,21 @@ namespace D_Parser.Resolver
 		{ }
 	}
 
+	public class StaticProperty : MemberSymbol
+	{
+		public StaticProperty(string propertyName, string propertyDescription, AbstractType propertyType, INode baseNode, ISyntaxRegion td)
+			: base(new DVariable{ 
+				Name = propertyName, 
+				Description = propertyDescription,
+				Type = propertyType.DeclarationOrExpressionBase as ITypeDeclaration,
+				Parent = baseNode }, propertyType, td)
+		{
+			
+		}
+
+
+	}
+
 	public class MemberSymbol : DSymbol
 	{
 		public bool IsUFCSResult;

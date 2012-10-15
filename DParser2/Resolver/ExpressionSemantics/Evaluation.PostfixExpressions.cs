@@ -461,7 +461,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					// Might be a static property
 					if (overloads == null)
 					{
-						var staticTypeProperty = StaticPropertyResolver.TryResolveStaticProperties(AbstractType.Get(baseExpression), id, ctxt);
+						var staticTypeProperty = StaticPropertyResolver.TryResolveStaticProperties(baseExpression, id, ctxt);
 
 						if (staticTypeProperty != null)
 							return new[] { staticTypeProperty };
