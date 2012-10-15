@@ -82,6 +82,7 @@
     <Compile Include="Dom\TemplateParameters.cs" />
     <Compile Include="Formatting\DFormattingOptions.cs" />
     <Compile Include="Formatting\IndentationCalculator.cs" />
+    <Compile Include="Misc\NameMangling.cs" />
     <Compile Include="Refactoring\DeepASTVisitor.cs" />
     <Compile Include="Refactoring\ImportDirectiveCreator.cs" />
     <Compile Include="Refactoring\ReferencesFinder.cs" />
