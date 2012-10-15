@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using D_Parser.Dom;
+using D_Parser.Parser;
 using D_Parser.Resolver;
 
 namespace D_Parser.Misc
@@ -60,6 +61,22 @@ namespace D_Parser.Misc
 					if (pc.IsObjectClassDefined)
 						return pc.ObjectClassResult;
 				return null;
+			}
+		}
+
+		static readonly AbstractType defaultSizeT = new AliasedType(
+			new DVariable{
+			Name = "size_t",
+			Type = new DTokenDeclaration(DTokens.Uint)}, 
+			new PrimitiveType(DTokens.Uint), null);
+
+		public AbstractType SizeT
+		{
+			get {
+				foreach (var pv in this)
+					if (pv.SizeT != null)
+						return pv.SizeT;
+				return defaultSizeT;
 			}
 		}
 	}

@@ -5,6 +5,7 @@ using D_Parser.Dom;
 using D_Parser.Resolver.ASTScanner;
 using System.Threading;
 using D_Parser.Resolver;
+using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Misc
 {
@@ -46,13 +47,19 @@ namespace D_Parser.Misc
 			private set;
 		}
 
+		public AbstractType SizeT
+		{
+			get;
+			private set;
+		}
+
 		/// <summary>
 		/// See <see cref="ObjectClass"/>
 		/// </summary>
 		public ClassType ObjectClassResult
 		{
 			get;
-			set;
+			private set;
 		}
 		#endregion
 
@@ -185,10 +192,17 @@ namespace D_Parser.Misc
 		{
 			if (objModule != null)
 				foreach (var m in objModule)
-					if (m is DClassLike && m.Name == "Object")
+					if (m.Name == "Object" && m is DClassLike)
 					{
-						 ObjectClassResult = new ClassType(ObjectClass = (DClassLike)m, new IdentifierDeclaration("Object"), null);
+						ObjectClassResult = new ClassType(ObjectClass = (DClassLike)m, new IdentifierDeclaration("Object"), null);
 						break;
+					}
+					else if(m.Name == "size_t")
+					{
+						//TODO: Do a version check, so that only on x64 dmd installations, size_t equals ulong.
+						SizeT = TypeDeclarationResolver.HandleNodeMatch(m, 
+							new ResolverContextStack(ParseCacheList.Create(this), 
+								new ResolverContext { ScopedBlock = objModule }));
 					}
 		}
 		#endregion
