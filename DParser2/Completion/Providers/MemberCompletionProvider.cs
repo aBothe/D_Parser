@@ -230,16 +230,18 @@ namespace D_Parser.Completion
 							add = true;
 						else
 						{
+							bool isStatic = dn.IsStatic || (!(dn is DVariable) || ((DVariable)dn).IsConst) || IsTypeNode(i);
+
 							if (tvisMod.HasFlag(ItemVisibility.ProtectedMembers))
 								add |= dn.ContainsAttribute(DTokens.Protected);
 							if (tvisMod.HasFlag(ItemVisibility.ProtectedStaticMembers))
-								add |= dn.ContainsAttribute(DTokens.Protected) && (dn.IsStatic || IsTypeNode(i));
+								add |= dn.ContainsAttribute(DTokens.Protected) && isStatic;
 							if (tvisMod.HasFlag(ItemVisibility.PublicMembers))
 								add |= dn.IsPublic;
 							if (tvisMod.HasFlag(ItemVisibility.PublicStaticMembers))
-								add |= dn.IsPublic && (dn.IsStatic || IsTypeNode(i));
+								add |= dn.IsPublic && isStatic;
 							if (tvisMod.HasFlag(ItemVisibility.StaticMembers))
-								add |= dn.IsStatic || IsTypeNode(i);
+								add |= isStatic;
 						}
 
 						if (add)
