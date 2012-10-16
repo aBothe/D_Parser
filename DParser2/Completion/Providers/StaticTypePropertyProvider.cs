@@ -57,6 +57,11 @@ namespace D_Parser.Resolver
 				new StaticProperty("sort","Sorts in place the order of the elements in the array. Returns the array.")
 			};
 
+		public static StaticProperty[] DelegateProps = new[] { 
+				new StaticProperty("ptr", "The .ptr property of a delegate will return the frame pointer value as a void*.", new PointerDecl(new DTokenDeclaration(DTokens.Void))),
+				new StaticProperty("funcptr", "The .funcptr property of a delegate will return the function pointer value as a function type.")
+		};
+
 		// Associative Arrays' properties have to be inserted manually
 
 		static void CreateArtificialProperties(StaticProperty[] Properties, ICompletionDataGenerator cdg, ITypeDeclaration DefaultPropType = null)
@@ -67,7 +72,7 @@ namespace D_Parser.Resolver
 				{
 					Name = prop.Name,
 					Description = prop.Description,
-					Type = prop.OverrideType != null ? prop.OverrideType : DefaultPropType
+					Type = prop.OverrideType ?? DefaultPropType
 				};
 
 				cdg.Add(p);
@@ -241,6 +246,11 @@ namespace D_Parser.Resolver
 
 			foreach (var prop in ll)
 				cdg.Add(prop);
+		}
+
+		public static void AddDelegateProperties(DelegateType dg, ICompletionDataGenerator cdg)
+		{
+			CreateArtificialProperties(DelegateProps, cdg, dg.TypeDeclarationOf);
 		}
 	}
 }

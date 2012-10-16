@@ -193,10 +193,20 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							break;
 					}
 				}
+				else if(InitialResult is DelegateType)
+				{
+					if(!Evaluate)
+					{
+						if (propertyIdentifier == "ptr")
+							return new PointerType(new PrimitiveType(DTokens.Void), idContainter);
+						else if (propertyIdentifier == "funcptr")
+							return InitialResult;
+					}
+				}
 			}
 			#endregion
 
-			#region Values
+			#region SymbolValues
 			else if(InitialResult is ISymbolValue)
 			{
 				if(InitialResult is ArrayValue)

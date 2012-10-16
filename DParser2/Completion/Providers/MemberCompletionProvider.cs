@@ -166,6 +166,9 @@ namespace D_Parser.Completion
 				else
 					StaticTypePropertyProvider.AddAssocArrayProperties(rr, CompletionDataGenerator, ad);
 			}
+
+			else if(rr is DelegateType)
+				StaticTypePropertyProvider.AddDelegateProperties((DelegateType)rr, CompletionDataGenerator);
 		}
 
 		void BuildCompletionData(MemberSymbol mrr, IBlockNode currentlyScopedBlock, bool isVariableInstance = false)

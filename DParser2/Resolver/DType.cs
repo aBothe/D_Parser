@@ -239,8 +239,9 @@ namespace D_Parser.Resolver
  					IsFunction = this.IsFunction
 				};
 				//TODO: Modifiers?
-				foreach (var p in this.Parameters)
-					dd.Parameters.Add(new DVariable { Type = p.TypeDeclarationOf });
+				if(Parameters!=null)
+					foreach (var p in Parameters)
+						dd.Parameters.Add(new DVariable { Type = p.TypeDeclarationOf });
 
 				return dd;
 			}
