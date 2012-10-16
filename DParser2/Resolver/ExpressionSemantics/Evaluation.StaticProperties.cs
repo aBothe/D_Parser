@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Misc;
@@ -36,7 +37,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				InitialResult = AbstractType.Get(InitialResult);
 
 			if (InitialResult is MemberSymbol)
+			{
 				relatedNode = ((MemberSymbol)InitialResult).Definition;
+				InitialResult = DResolver.StripMemberSymbols((AbstractType)InitialResult);
+			}
 
 			/*
 			 * Parameter configurations:
@@ -168,6 +172,24 @@ namespace D_Parser.Resolver.ExpressionSemantics
 									relatedNode, idContainter);
 							break;
 						case "get":
+							if (!Evaluate)
+								return new StaticProperty("get",
+									"Looks up key; if it exists returns corresponding value else evaluates and returns defaultValue.",
+									new DelegateType(aat.ValueType, 
+										new DelegateDeclaration{ 
+											ReturnType = aat.ValueType.DeclarationOrExpressionBase as ITypeDeclaration, 
+											Parameters = new List<INode>{
+												new DVariable(){
+													Name="key",
+													Type=aat.KeyType.DeclarationOrExpressionBase as ITypeDeclaration
+												},
+												new DVariable(){
+													Name="defaultValue",
+													Type=aat.ValueType.DeclarationOrExpressionBase as ITypeDeclaration,
+													Attributes=new List<DAttribute>{ new DAttribute(DTokens.Lazy)}
+											}}
+										}, new[]{ aat.KeyType, aat.ValueType }),
+										relatedNode, idContainter);
 							break;
 					}
 				}
