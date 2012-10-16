@@ -12,7 +12,15 @@ namespace D_Parser.Resolver
 {
 	public abstract class AbstractType : ISemantic
 	{
+		#region Properties
 		public ISyntaxRegion DeclarationOrExpressionBase;
+
+		/// <summary>
+		/// Returns either the original type declaration that was used to instantiate this abstract type
+		/// OR creates an artificial type declaration that represents this type.
+		/// May returns null.
+		/// </summary>
+		public virtual ITypeDeclaration TypeDeclarationOf{get{	return DeclarationOrExpressionBase as ITypeDeclaration;	}}
 
 		protected int modifier;
 
@@ -36,12 +44,15 @@ namespace D_Parser.Resolver
 				modifier = value;
 			}
 		}
+		#endregion
 
+		#region Constructor/Init
 		public AbstractType() { }
 		public AbstractType(ISyntaxRegion DeclarationOrExpressionBase)
 		{
 			this.DeclarationOrExpressionBase = DeclarationOrExpressionBase;
 		}
+		#endregion
 
 		public abstract string ToCode();
 
@@ -82,6 +93,14 @@ namespace D_Parser.Resolver
 
 			return DTokens.GetTokenString(TypeToken);
 		}
+
+		public override ITypeDeclaration TypeDeclarationOf
+		{
+			get
+			{
+				return base.TypeDeclarationOf ?? new DTokenDeclaration(TypeToken);
+			}
+		}
 	}
 
 	#region Derived data types
@@ -102,6 +121,14 @@ namespace D_Parser.Resolver
 		public override string ToCode()
 		{
 			return (Base != null ? Base.ToCode() : "") + "*";
+		}
+
+		public override ITypeDeclaration TypeDeclarationOf
+		{
+			get
+			{
+				return base.TypeDeclarationOf ?? new PointerDecl(Base==null ? null : Base.TypeDeclarationOf);
+			}
 		}
 	}
 
@@ -145,6 +172,17 @@ namespace D_Parser.Resolver
 		{
 			return (Base!=null ? Base.ToCode():"") + "[" + (KeyType!=null ? KeyType.ToCode() : "" )+ "]";
 		}
+
+		public override ITypeDeclaration TypeDeclarationOf
+		{
+			get
+			{
+				return base.TypeDeclarationOf ?? new ArrayDecl { 
+					ValueType = ValueType==null ? null : ValueType.TypeDeclarationOf,
+					KeyType = KeyType == null ? null : KeyType.TypeDeclarationOf
+				};
+			}
+		}
 	}
 
 	public class DelegateType : DerivedDataType
@@ -186,6 +224,27 @@ namespace D_Parser.Resolver
 		}
 
 		public AbstractType ReturnType { get { return Base; } }
+
+		public override ITypeDeclaration TypeDeclarationOf
+		{
+			get
+			{
+				var td = base.TypeDeclarationOf;
+				
+				if(td!=null)
+					return td;
+
+				var dd = new DelegateDeclaration { 
+					ReturnType = ReturnType==null ? null : ReturnType.TypeDeclarationOf,
+ 					IsFunction = this.IsFunction
+				};
+				//TODO: Modifiers?
+				foreach (var p in this.Parameters)
+					dd.Parameters.Add(new DVariable { Type = p.TypeDeclarationOf });
+
+				return dd;
+			}
+		}
 	}
 	#endregion
 
@@ -350,7 +409,7 @@ namespace D_Parser.Resolver
 			: base(new DVariable{ 
 				Name = propertyName, 
 				Description = propertyDescription,
-				Type = propertyType.DeclarationOrExpressionBase as ITypeDeclaration,
+				Type = propertyType.TypeDeclarationOf,
 				Parent = baseNode }, propertyType, td)
 		{
 			

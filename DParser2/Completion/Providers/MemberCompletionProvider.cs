@@ -12,6 +12,7 @@ namespace D_Parser.Completion
 {
 	public class MemberCompletionProvider : AbstractCompletionProvider
 	{
+		ResolverContextStack ctxt;
 		public PostfixExpression_Access AccessExpression;
 		public IStatement ScopedStatement;
 		public IBlockNode ScopedBlock;
@@ -30,7 +31,7 @@ namespace D_Parser.Completion
 
 		protected override void BuildCompletionDataInternal(IEditorData Editor, string EnteredText)
 		{
-			var ctxt = ResolverContextStack.Create(Editor);
+			ctxt = ResolverContextStack.Create(Editor);
 			var ex = AccessExpression.AccessExpression == null ? AccessExpression.PostfixForeExpression : AccessExpression;
 
 			ctxt.PushNewScope(ScopedBlock).ScopedStatement = ScopedStatement;
@@ -158,11 +159,12 @@ namespace D_Parser.Completion
 			else if (rr is AssocArrayType)
 			{
 				var ar = (AssocArrayType)rr;
+				var ad = ar.TypeDeclarationOf as ArrayDecl;
 
 				if (ar is ArrayType)
-					StaticTypePropertyProvider.AddArrayProperties(rr, CompletionDataGenerator, ar.DeclarationOrExpressionBase as ArrayDecl);
+					StaticTypePropertyProvider.AddArrayProperties(rr, CompletionDataGenerator, ad);
 				else
-					StaticTypePropertyProvider.AddAssocArrayProperties(rr, CompletionDataGenerator, ar.DeclarationOrExpressionBase as ArrayDecl);
+					StaticTypePropertyProvider.AddAssocArrayProperties(rr, CompletionDataGenerator, ad);
 			}
 		}
 
