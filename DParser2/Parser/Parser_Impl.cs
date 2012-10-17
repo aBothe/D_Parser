@@ -3012,11 +3012,12 @@ namespace D_Parser.Parser
 				if (bt is TypeOfDeclaration && laKind!=Dot)
 					return new TypeDeclarationExpression(bt);
 
-				if (Expect(Dot) && Expect(Identifier))
+				// Things like incomplete 'float.' expressions shall be parseable, too
+				if (Expect(Dot) && (Expect(Identifier) || IsEOF))
                     return new PostfixExpression_Access()
                     {
                         PostfixForeExpression = new TypeDeclarationExpression(bt),
-                        AccessExpression = new IdentifierExpression(t.Value) { Location=t.Location, EndLocation=t.EndLocation },
+                        AccessExpression = string.IsNullOrEmpty(t.Value) ? null : new IdentifierExpression(t.Value) { Location=t.Location, EndLocation=t.EndLocation },
                         EndLocation = t.EndLocation
                     };
 
