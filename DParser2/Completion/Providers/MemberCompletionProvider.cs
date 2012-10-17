@@ -131,13 +131,13 @@ namespace D_Parser.Completion
 			{
 				var primType = (PrimitiveType)rr;
 
-				if (resultParent == null)
-					StaticTypePropertyProvider.AddGenericProperties(rr, CompletionDataGenerator, null);
-
 				if (primType.TypeToken > 0)
 				{
 					// Determine whether float by the var's base type
 					bool isFloat = DTokens.BasicTypes_FloatingPoint[primType.TypeToken];
+
+					if (resultParent == null)
+						StaticTypePropertyProvider.AddGenericProperties(rr, CompletionDataGenerator, null, true);
 
 					// Float implies integral props
 					if (DTokens.BasicTypes_Integral[primType.TypeToken] || isFloat)

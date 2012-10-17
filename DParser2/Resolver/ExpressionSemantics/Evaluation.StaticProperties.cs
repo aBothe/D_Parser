@@ -203,6 +203,94 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							return InitialResult;
 					}
 				}
+				else if(InitialResult is PrimitiveType)
+				{
+					// See http://dlang.org/property.html
+					var pt = (PrimitiveType)InitialResult;
+					
+					if(DTokens.BasicTypes_Integral[pt.TypeToken])
+						switch(propertyIdentifier)
+						{
+							case "init":
+								if (!Evaluate)
+									return new StaticProperty("init", "Initializer (0)", pt, relatedNode, idContainter);
+								break;
+							case "min":
+								if (!Evaluate)
+									return new StaticProperty("min", "Maximum value", pt, relatedNode, idContainter);
+								break;
+							case "max":
+								if (!Evaluate)
+									return new StaticProperty("max", "Minimum value", pt, relatedNode, idContainter);
+								break;
+						}
+					else if(DTokens.BasicTypes_FloatingPoint[pt.TypeToken])
+						switch(propertyIdentifier)
+						{
+							case "init":
+								if (!Evaluate)
+									return new StaticProperty("init", "Initializer (NaN)", pt, relatedNode, idContainter);
+								break;
+							case "infinity":
+								if (!Evaluate)
+									return new StaticProperty("infinity", "Infinity value", pt, relatedNode, idContainter);
+								break;
+							case "nan":
+								if (!Evaluate)
+									return new StaticProperty("nan", "NaN value", pt, relatedNode, idContainter);
+								break;
+							case "dig":
+								if (!Evaluate)
+									return new StaticProperty("dig", "Number of decimal digits of precision", 
+										new PrimitiveType(DTokens.Int), relatedNode, idContainter);
+								break;
+							case "epsilon":
+								if (!Evaluate)
+									return new StaticProperty("epsilon", "Smallest increment to the value 1", pt, relatedNode, idContainter);
+								break;
+							case "mant_dig":
+								if (!Evaluate)
+									return new StaticProperty("mant_dig", "Number of bits in mantissa",
+										new PrimitiveType(DTokens.Int), relatedNode, idContainter);
+								break;
+							case "max_10_exp":
+								if (!Evaluate)
+									return new StaticProperty("max_10_exp", "Maximum int value such that 10^^max_10_exp is representable",
+										new PrimitiveType(DTokens.Int), relatedNode, idContainter);
+								break;
+							case "max_exp":
+								if (!Evaluate)
+									return new StaticProperty("max_exp", "Maximum int value such that 2^^max_exp-1 is representable",
+										new PrimitiveType(DTokens.Int), relatedNode, idContainter);
+								break;
+							case "min_10_exp":
+								if (!Evaluate)
+									return new StaticProperty("min_10_exp", "Minimum int value such that 10^^min_10_exp is representable as a normalized value",
+										new PrimitiveType(DTokens.Int), relatedNode, idContainter);
+								break;
+							case "min_exp":
+								if (!Evaluate)
+									return new StaticProperty("min_exp", "Minimum int value such that 2^^min_exp-1 is representable as a normalized value",
+										new PrimitiveType(DTokens.Int), relatedNode, idContainter);
+								break;
+							case "max":
+								if (!Evaluate)
+									return new StaticProperty("max", "Largest representable value that's not infinity", pt, relatedNode, idContainter);
+								break;
+							case "min_normal":
+								if (!Evaluate)
+									return new StaticProperty("min_normal", "Smallest representable normalized value that's not 0", pt, relatedNode, idContainter);
+								break;
+							case "re":
+								if (!Evaluate)
+									return new StaticProperty("re", "Real part", pt, relatedNode, idContainter);
+								break;
+							case "im":
+								if (!Evaluate)
+									return new StaticProperty("im", "Imaginary part", pt, relatedNode, idContainter);
+								break;
+						}
+				}
 			}
 			#endregion
 
