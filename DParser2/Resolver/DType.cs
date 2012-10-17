@@ -63,8 +63,12 @@ namespace D_Parser.Resolver
 
 		public static AbstractType Get(ISemantic s)
 		{
+			//FIXME: What to do with the other overloads?
+			if (s is InternalOverloadValue)
+				return ((InternalOverloadValue)s).Overloads[0];
 			if (s is ISymbolValue)
 				return ((ISymbolValue)s).RepresentedType;
+			
 			return s as AbstractType;
 		}
 	}
