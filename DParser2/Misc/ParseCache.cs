@@ -29,6 +29,10 @@ namespace D_Parser.Misc
 		/// If a parse directory is relative, like ../ or similar, use this path as base path
 		/// </summary>
 		public string FallbackPath;
+		/// <summary>
+		/// Used to fill the $solution variable that may occur in include paths
+		/// </summary>
+		public string SolutionPath = string.Empty;
 		public List<string> ParsedDirectories = new List<string>();
 
 		public Exception LastParseException { get; private set; }
@@ -121,15 +125,15 @@ namespace D_Parser.Misc
 
 			var parsedDirs = new List<string>();
 			var newRoot = new RootPackage();
-			foreach (var dir in tup.Item1)
+			foreach (var d in tup.Item1)
 			{
-				parsedDirs.Add(dir);
+				parsedDirs.Add(d);
 
-				var dir_abs = dir;
+				var dir = d.Replace("$solution", SolutionPath);
 				if (!Path.IsPathRooted(dir))
-					dir_abs = Path.Combine(FallbackPath, dir_abs);
+					dir = Path.Combine(FallbackPath, dir);
 
-				var ppd = ThreadedDirectoryParser.Parse(dir_abs, newRoot);
+				var ppd = ThreadedDirectoryParser.Parse(dir, newRoot);
 
 				if (ppd != null)
 					tup.Item2.Add(ppd);
