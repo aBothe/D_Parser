@@ -131,7 +131,7 @@ namespace D_Parser.Parser
 				return lastStmt.EndLocation;
 
 			if (m.OptionalModuleStatement != null)
-				return lastStmt.EndLocation;
+				return m.OptionalModuleStatement.EndLocation;
 
 			if (moduleCode != null)
 				using(var sr = new StreamReader(moduleCode))
