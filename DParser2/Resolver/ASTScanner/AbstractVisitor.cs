@@ -208,10 +208,12 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 						// Add static and non-private members of all base classes; 
 						// Add everything if we're still handling the currently scoped class
-						if ((curWatchedClass == cls || dm2.IsStatic || (!(m is DVariable) || ((DVariable)dm2).IsConst) || !dm2.ContainsAttribute(DTokens.Private)) &&
-							(breakOnNextScope = HandleItem(m)) &&
-							breakImmediately)
-							return true;
+						if (curWatchedClass == cls || dm2.IsStatic || 
+							(!(m is DVariable) || ((DVariable)dm2).IsConst) || 
+							(!dm2.ContainsAttribute(DTokens.Private) &&
+								(!dm2.ContainsAttribute(DTokens.Package) || dm2.NodeRoot == ctxt.ScopedBlock.NodeRoot)))
+								if((breakOnNextScope = HandleItem(m)) && breakImmediately)
+									return true;
 					}
 
 				// 3)

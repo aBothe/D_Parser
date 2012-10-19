@@ -26,7 +26,8 @@ namespace D_Parser.Completion
 			PublicStaticMembers = 4,
 			PublicMembers = 8,
 			ProtectedMembers = 16,
-			ProtectedStaticMembers = 32
+			ProtectedStaticMembers = 32,
+			NonPackageOnlyMembers = 64
 		}
 
 		protected override void BuildCompletionDataInternal(IEditorData Editor, string EnteredText)
@@ -219,6 +220,9 @@ namespace D_Parser.Completion
 				var tvisMod = visMod;
 				while (curlevel != null)
 				{
+					if (curlevel.Definition.NodeRoot != tr.Definition.NodeRoot)
+						tvisMod |= ItemVisibility.NonPackageOnlyMembers;
+
 					foreach (var i in curlevel.Definition as DBlockNode)
 					{
 						var dn = i as DNode;
@@ -247,6 +251,9 @@ namespace D_Parser.Completion
 								add |= dn.IsPublic && isStatic;
 							if (tvisMod.HasFlag(ItemVisibility.StaticMembers))
 								add |= isStatic;
+
+							if(tvisMod.HasFlag(ItemVisibility.NonPackageOnlyMembers))
+								add &= !dn.ContainsAttribute(DTokens.Package);
 						}
 
 						if (add)
