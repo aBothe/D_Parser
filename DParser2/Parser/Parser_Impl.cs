@@ -812,30 +812,33 @@ namespace D_Parser.Parser
 				ret.Add(firstNode);
 
 				// DeclaratorIdentifierList
-				while (laKind == (Comma))
+				while (laKind == Comma)
 				{
 					Step();
-					Expect(Identifier);
-
-					var otherNode = new DVariable();
-					LastParsedObject = otherNode;
-
-					/// Note: In DDoc, all declarations that are made at once (e.g. int a,b,c;) get the same pre-declaration-description!
-					otherNode.Description = initialComment;
-
-					otherNode.AssignFrom(firstNode);
-					otherNode.Location = t.Location;
-					otherNode.Name = t.Value;
-					otherNode.NameLocation = t.Location;
-
-					if (laKind == (Assign))
+					if (Expect(Identifier))
 					{
-						TrackerVariables.InitializedNode = otherNode;
-						otherNode.Initializer = Initializer(Scope);
-					}
+						var otherNode = new DVariable();
+						LastParsedObject = otherNode;
 
-					otherNode.EndLocation = t.EndLocation;
-					ret.Add(otherNode);
+						/// Note: In DDoc, all declarations that are made at once (e.g. int a,b,c;) get the same pre-declaration-description!
+						otherNode.Description = initialComment;
+
+						otherNode.AssignFrom(firstNode);
+						otherNode.Location = t.Location;
+						otherNode.Name = t.Value;
+						otherNode.NameLocation = t.Location;
+
+						if (laKind == (Assign))
+						{
+							TrackerVariables.InitializedNode = otherNode;
+							otherNode.Initializer = Initializer(Scope);
+						}
+
+						otherNode.EndLocation = t.EndLocation;
+						ret.Add(otherNode);
+					}
+					else
+						break;
 				}
 
 				if (Expect(Semicolon))
