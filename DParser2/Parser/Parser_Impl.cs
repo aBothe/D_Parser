@@ -44,6 +44,8 @@ namespace D_Parser.Parser
 			{
 				DeclDef(module);
 			}
+
+			GetComments();
 			
 			module.EndLocation = la.Location;
 			return module;
