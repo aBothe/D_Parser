@@ -45,6 +45,7 @@ namespace D_Parser.Parser
 				DeclDef(module);
 			}
 
+			// Also track comments at a module's end e.g. for multi-line comment folding
 			GetComments();
 			
 			module.EndLocation = la.Location;
