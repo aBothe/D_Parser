@@ -3034,6 +3034,10 @@ namespace D_Parser.Parser
 			SynErr(Identifier);
 			if(laKind != CloseCurlyBrace)
 				Step();
+
+			// Don't know why, in rare situations, t tends to be null..
+			if (t == null)
+				return null;
 			return new TokenExpression() { Location = t.Location, EndLocation = t.EndLocation };
 		}
 
