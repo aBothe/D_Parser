@@ -7,6 +7,7 @@ using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.TypeResolution;
 using D_Parser.Resolver.ExpressionSemantics;
+using D_Parser.Misc;
 
 namespace D_Parser.Completion
 {
@@ -21,13 +22,11 @@ namespace D_Parser.Completion
 
 		public enum ItemVisibility
 		{
-			All = 1,
-			StaticMembers = 2,
-			PublicStaticMembers = 4,
-			PublicMembers = 8,
-			ProtectedMembers = 16,
-			ProtectedStaticMembers = 32,
-			NonPackageOnlyMembers = 64
+			None = 0,
+			StaticOnly = 1,
+			NonPrivate = 2,
+			NonProtected = 4,
+			NonPackage = 8
 		}
 
 		protected override void BuildCompletionDataInternal(IEditorData Editor, string EnteredText)
@@ -83,40 +82,26 @@ namespace D_Parser.Completion
 			else if (rr is TemplateIntermediateType)
 			{
 				var tr = (TemplateIntermediateType)rr;
-				var vis = ItemVisibility.All;
-
-				bool HasSameAncestor = HaveSameAncestors(currentlyScopedBlock, tr.Definition);
-				bool IsThis = false, IsSuper = false;
-
+				
 				if (tr.DeclarationOrExpressionBase is TokenExpression)
 				{
 					int token = ((TokenExpression)tr.DeclarationOrExpressionBase).Token;
-					IsThis = token == DTokens.This;
-					IsSuper = token == DTokens.Super;
+					
+					isVariableInstance = token == DTokens.This || token == DTokens.Super;
 				}
+
+				var vis = isVariableInstance ? 
+					(HaveSameAncestors(tr.Definition, currentlyScopedBlock) ? ItemVisibility.None : ItemVisibility.NonProtected) : 
+						ItemVisibility.StaticOnly;
 
 				// Cases:
 
 				// myVar. (located in basetype definition)		<-- Show everything
 				// this. 										<-- Show everything
-				if (IsThis || (isVariableInstance && HasSameAncestor))
-					vis = ItemVisibility.All;
-
 				// myVar. (not located in basetype definition) 	<-- Show public and public static members
-				else if (isVariableInstance && !HasSameAncestor)
-					vis = ItemVisibility.PublicMembers | ItemVisibility.PublicStaticMembers;
-
-				// super. 										<-- Show protected|public or protected|public static base type members
-				else if (IsSuper)
-					vis = ItemVisibility.ProtectedMembers | ItemVisibility.PublicMembers | ItemVisibility.PublicStaticMembers;
-
-				// myClass. (not located in myClass)			<-- Show public static members
-				else if (!isVariableInstance && !HasSameAncestor)
-					vis = ItemVisibility.PublicStaticMembers;
-
+				// super. 										<-- Show all base type members
+				// myClass. (not located in myClass)			<-- Show all static members
 				// myClass. (located in myClass)				<-- Show all static members
-				else if (!isVariableInstance && HasSameAncestor)
-					vis = ItemVisibility.StaticMembers;
 
 				BuildCompletionData(tr, vis);
 
@@ -209,6 +194,21 @@ namespace D_Parser.Completion
 			}
 		}
 
+		void AdjustPrivatePackageFilter(INode n, INode n2, ref ItemVisibility vis)
+		{
+			var curLevelAst = n.NodeRoot as IAbstractSyntaxTree;
+			var nRoot = n2.NodeRoot as IAbstractSyntaxTree;
+
+			if (curLevelAst != nRoot && curLevelAst != null && nRoot != null)
+			{
+				vis |= ItemVisibility.NonPrivate;
+
+				if (ModuleNameHelper.ExtractPackageName(curLevelAst.ModuleName) !=
+					ModuleNameHelper.ExtractPackageName(nRoot.ModuleName))
+					vis |= ItemVisibility.NonPackage;
+			}
+		}
+
 		void BuildCompletionData(UserDefinedType tr, ItemVisibility visMod)
 		{
 			var n = tr.Definition;
@@ -220,8 +220,7 @@ namespace D_Parser.Completion
 				var tvisMod = visMod;
 				while (curlevel != null)
 				{
-					if (curlevel.Definition.NodeRoot != tr.Definition.NodeRoot)
-						tvisMod |= ItemVisibility.NonPackageOnlyMembers;
+					AdjustPrivatePackageFilter(n, curlevel.Definition, ref tvisMod);
 
 					foreach (var i in curlevel.Definition as DBlockNode)
 					{
@@ -233,27 +232,23 @@ namespace D_Parser.Completion
 							continue;
 						}
 
-						bool add = false;
+						bool add = true;
 
-						if (tvisMod.HasFlag(ItemVisibility.All))
+						if (tvisMod == 0 || dn.IsStatic || (!(dn is DVariable) || ((DVariable)dn).IsConst) || IsTypeNode(i))
 							add = true;
 						else
 						{
-							bool isStatic = dn.IsStatic || (!(dn is DVariable) || ((DVariable)dn).IsConst) || IsTypeNode(i);
-
-							if (tvisMod.HasFlag(ItemVisibility.ProtectedMembers))
-								add |= dn.ContainsAttribute(DTokens.Protected);
-							if (tvisMod.HasFlag(ItemVisibility.ProtectedStaticMembers))
-								add |= dn.ContainsAttribute(DTokens.Protected) && isStatic;
-							if (tvisMod.HasFlag(ItemVisibility.PublicMembers))
-								add |= dn.IsPublic;
-							if (tvisMod.HasFlag(ItemVisibility.PublicStaticMembers))
-								add |= dn.IsPublic && isStatic;
-							if (tvisMod.HasFlag(ItemVisibility.StaticMembers))
-								add |= isStatic;
-
-							if(tvisMod.HasFlag(ItemVisibility.NonPackageOnlyMembers))
-								add &= !dn.ContainsAttribute(DTokens.Package);
+							if (tvisMod.HasFlag(ItemVisibility.StaticOnly))
+								add = false;
+							else
+							{
+								if (tvisMod.HasFlag(ItemVisibility.NonPrivate))
+									add = !dn.ContainsAttribute(DTokens.Private);
+								if (tvisMod.HasFlag(ItemVisibility.NonProtected))
+									add = !dn.ContainsAttribute(DTokens.Protected);
+								if (tvisMod.HasFlag(ItemVisibility.NonPackage))
+									add = !dn.ContainsAttribute(DTokens.Package);
+							}
 						}
 
 						if (add)
@@ -294,15 +289,7 @@ namespace D_Parser.Completion
 					}
 					curlevel = curlevel.Base as UserDefinedType;
 
-					// After having shown all items on the current node level,
-					// allow showing public (static) and/or protected items in the more basic levels then
-					if (tvisMod.HasFlag(ItemVisibility.All))
-					{
-						if ((n as DClassLike).ContainsAttribute(DTokens.Static))
-							tvisMod = ItemVisibility.ProtectedStaticMembers | ItemVisibility.PublicStaticMembers;
-						else
-							tvisMod = ItemVisibility.ProtectedMembers | ItemVisibility.PublicMembers;
-					}
+					tvisMod &= ~ItemVisibility.NonProtected;
 				}
 			}
 			else if (n is DEnum)

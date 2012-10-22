@@ -5,6 +5,7 @@ using D_Parser.Dom.Statements;
 using D_Parser.Parser;
 using D_Parser.Resolver.TypeResolution;
 using D_Parser.Resolver.ExpressionSemantics;
+using D_Parser.Misc;
 
 namespace D_Parser.Resolver.ASTScanner
 {
@@ -208,10 +209,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 						// Add static and non-private members of all base classes; 
 						// Add everything if we're still handling the currently scoped class
-						if (curWatchedClass == cls || dm2.IsStatic || 
-							(!(m is DVariable) || ((DVariable)dm2).IsConst) || 
-							(!dm2.ContainsAttribute(DTokens.Private) &&
-								(!dm2.ContainsAttribute(DTokens.Package) || dm2.NodeRoot == ctxt.ScopedBlock.NodeRoot)))
+						if (curWatchedClass == cls || CanShowMember(dm2, ctxt.ScopedBlock))
 								if((breakOnNextScope = HandleItem(m)) && breakImmediately)
 									return true;
 					}
@@ -230,6 +228,20 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					break;
 			}
 			return false;
+		}
+
+		static bool CanShowMember(DNode dn, IBlockNode scope)
+		{
+			if (dn.IsStatic || ((dn is DVariable) && ((DVariable)dn).IsConst))
+				return true;
+
+			if (dn.ContainsAttribute(DTokens.Private))
+				return dn.NodeRoot == scope.NodeRoot;
+			else if (dn.ContainsAttribute(DTokens.Package))
+				return ModuleNameHelper.ExtractPackageName(((IAbstractSyntaxTree)dn.NodeRoot).ModuleName) ==
+						ModuleNameHelper.ExtractPackageName(((IAbstractSyntaxTree)scope.NodeRoot).ModuleName);
+
+			return true;
 		}
 
 		static bool CanAddMemberOfType(MemberFilter VisibleMembers, INode n)
@@ -283,7 +295,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				{ 
 					// Handled in DBlockNode
 				}
-				else if (Statement is IDeclarationContainingStatement)
+				else if (Statement is BlockStatement && Statement.Parent==null) //TODO Optimize
 				{
 					var decls = ((IDeclarationContainingStatement)Statement).Declarations;
 
