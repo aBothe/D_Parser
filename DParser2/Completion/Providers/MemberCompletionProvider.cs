@@ -93,6 +93,7 @@ namespace D_Parser.Completion
 				var vis = isVariableInstance ? 
 					(HaveSameAncestors(tr.Definition, currentlyScopedBlock) ? ItemVisibility.None : ItemVisibility.NonProtected) : 
 						ItemVisibility.StaticOnly;
+				AdjustPrivatePackageFilter(tr.Definition, currentlyScopedBlock, ref vis);
 
 				// Cases:
 
@@ -220,8 +221,6 @@ namespace D_Parser.Completion
 				var tvisMod = visMod;
 				while (curlevel != null)
 				{
-					AdjustPrivatePackageFilter(n, curlevel.Definition, ref tvisMod);
-
 					foreach (var i in curlevel.Definition as DBlockNode)
 					{
 						var dn = i as DNode;
@@ -287,9 +286,12 @@ namespace D_Parser.Completion
 							}
 						}
 					}
-					curlevel = curlevel.Base as UserDefinedType;
 
-					tvisMod &= ~ItemVisibility.NonProtected;
+					if ((curlevel = curlevel.Base as UserDefinedType) != null)
+					{
+						AdjustPrivatePackageFilter(n, curlevel.Definition, ref tvisMod);
+						tvisMod &= ~ItemVisibility.NonProtected;
+					}
 				}
 			}
 			else if (n is DEnum)
