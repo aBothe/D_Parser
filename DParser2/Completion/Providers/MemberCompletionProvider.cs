@@ -242,11 +242,11 @@ namespace D_Parser.Completion
 							else
 							{
 								if (tvisMod.HasFlag(ItemVisibility.NonPrivate))
-									add = !dn.ContainsAttribute(DTokens.Private);
+									add &= !dn.ContainsAttribute(DTokens.Private);
 								if (tvisMod.HasFlag(ItemVisibility.NonProtected))
-									add = !dn.ContainsAttribute(DTokens.Protected);
+									add &= !dn.ContainsAttribute(DTokens.Protected);
 								if (tvisMod.HasFlag(ItemVisibility.NonPackage))
-									add = !dn.ContainsAttribute(DTokens.Package);
+									add &= !dn.ContainsAttribute(DTokens.Package);
 							}
 						}
 
