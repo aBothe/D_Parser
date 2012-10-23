@@ -340,9 +340,8 @@ namespace D_Parser.Resolver.TypeResolution
 			AbstractType keyType=null;
 			int fixedArrayLength = -1;
 
-			if (valueTypes == null || valueTypes.Length == 0)
-				return null;
-			valueType = valueTypes[0];
+			if (valueTypes != null && valueTypes.Length != 0)
+				valueType = valueTypes[0];
 
 			ISymbolValue val;
 			keyType = ResolveKey(ad, out fixedArrayLength, out val, ctxt);
