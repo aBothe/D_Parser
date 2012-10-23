@@ -43,19 +43,22 @@ namespace D_Parser.Dom
 
 			lock(Packages)
 				foreach (var kv in Packages)
-					foreach (var ast in kv.Value)
-						yield return ast;
+					lock(kv.Value)
+						foreach (var ast in kv.Value)
+							yield return ast;
 		}
 
 		IEnumerator<ModulePackage> IEnumerable<ModulePackage>.GetEnumerator()
 		{
-			foreach (var kv in Packages)
-			{
-				yield return kv.Value;
+			lock(Packages)
+				foreach (var kv in Packages)
+				{
+					yield return kv.Value;
 
-				foreach (var p in (IEnumerable<ModulePackage>)kv.Value)
-					yield return p;
-			}
+					lock ((IEnumerable<ModulePackage>)kv.Value)
+						foreach (var p in (IEnumerable<ModulePackage>)kv.Value)
+							yield return p;
+				}
 		}
 
 		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
@@ -77,12 +80,13 @@ namespace D_Parser.Dom
 				if (!currentPackage.Packages.TryGetValue(p, out returnValue))
 				{
 					if (create)
-						returnValue = currentPackage.Packages[p] =
-							new ModulePackage
-							{
-								Name = p,
-								Parent = currentPackage
-							};
+						lock(currentPackage.Packages)
+							returnValue = currentPackage.Packages[p] =
+								new ModulePackage
+								{
+									Name = p,
+									Parent = currentPackage
+								};
 					else
 						return null;
 				}
