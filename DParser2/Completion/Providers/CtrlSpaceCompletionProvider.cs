@@ -214,68 +214,64 @@ namespace D_Parser.Completion
 			}
 
 			if (blockStart >= 0 && caretOffset - blockStart > 0)
-			{
-				var codeToParse = code.Substring(blockStart, caretOffset - blockStart);
-
-                var sr = new StringReader(codeToParse);
-				var psr = DParser.Create(sr);
-
-				/* Deadly important! For correct resolution behaviour, 
-				 * it is required to set the parser virtually to the blockStart position, 
-				 * so that everything using the returned object is always related to 
-				 * the original code file, not our code extraction!
-				 */
-				psr.Lexer.SetInitialLocation(blockStartLocation);
-
-				object ret = null;
-
-				if (CurrentScope == null || CurrentScope is IAbstractSyntaxTree)
-					ret = psr.Parse();
-				else if (CurrentScope is DMethod)
+				using (var sr = new Misc.StringView(code, blockStart, caretOffset - blockStart))
 				{
-					psr.Step();
-					ret = psr.BlockStatement(CurrentScope);
-				}
-				else if (CurrentScope is DModule)
-					ret = psr.Root();
-				else
-				{
-					psr.Step();
-					if (ParseDecl)
+					var psr = DParser.Create(sr);
+
+					/* Deadly important! For correct resolution behaviour, 
+					 * it is required to set the parser virtually to the blockStart position, 
+					 * so that everything using the returned object is always related to 
+					 * the original code file, not our code extraction!
+					 */
+					psr.Lexer.SetInitialLocation(blockStartLocation);
+
+					object ret = null;
+
+					if (CurrentScope == null || CurrentScope is IAbstractSyntaxTree)
+						ret = psr.Parse();
+					else if (CurrentScope is DMethod)
 					{
-						var ret2 = psr.Declaration(CurrentScope);
-
-						if (ret2 != null && ret2.Length > 0)
-							ret = ret2[0];
+						psr.Step();
+						ret = psr.BlockStatement(CurrentScope);
 					}
+					else if (CurrentScope is DModule)
+						ret = psr.Root();
 					else
 					{
-						DBlockNode bn = null;
-						if (CurrentScope is DClassLike)
+						psr.Step();
+						if (ParseDecl)
 						{
-							var t = new DClassLike((CurrentScope as DClassLike).ClassType);
-							t.AssignFrom(CurrentScope);
-							bn = t;
+							var ret2 = psr.Declaration(CurrentScope);
+
+							if (ret2 != null && ret2.Length > 0)
+								ret = ret2[0];
 						}
-						else if (CurrentScope is DEnum)
+						else
 						{
-							var t = new DEnum();
-							t.AssignFrom(CurrentScope);
-							bn = t;
+							DBlockNode bn = null;
+							if (CurrentScope is DClassLike)
+							{
+								var t = new DClassLike((CurrentScope as DClassLike).ClassType);
+								t.AssignFrom(CurrentScope);
+								bn = t;
+							}
+							else if (CurrentScope is DEnum)
+							{
+								var t = new DEnum();
+								t.AssignFrom(CurrentScope);
+								bn = t;
+							}
+
+							bn.Clear();
+
+							psr.ClassBody(bn);
+							ret = bn;
 						}
-
-						bn.Clear();
-
-						psr.ClassBody(bn);
-						ret = bn;
 					}
+
+					TrackerVariables = psr.TrackerVariables;
+					return ret;
 				}
-
-				TrackerVariables = psr.TrackerVariables;
-                sr.Close();
-
-				return ret;
-			}
 
 			TrackerVariables = null;
 
