@@ -19,51 +19,46 @@ namespace D_Parser.Misc
 
 		public Exception LastException;
 		string baseDirectory;
-		Stack<KeyValuePair<string, ModulePackage>> queue = new Stack<KeyValuePair<string, ModulePackage>>();
+		bool stillQueuing = false;
+		int fileCount = 0;
+		bool skipFunctionBodies = !Debugger.IsAttached;
+		Stack<Tuple<string, ModulePackage>> queue = new Stack<Tuple<string, ModulePackage>>(16);
 		#endregion
 
 		public static ParsePerformanceData Parse(string directory, RootPackage rootPackage)
 		{
 			var ppd = new ParsePerformanceData { BaseDirectory = directory };
 
-			/*
-			 * 1) List all files
-			 * 2) Create module packages
-			 * 3) Enlist all file-package pairs in the queue
-			 * 4) Start parse threads
-			 * 5) Wait for all to join
-			 */
-
 			var tpd = new ThreadedDirectoryParser
 			{
-				baseDirectory = directory
+				baseDirectory = directory,
+				stillQueuing = true
 			};
 
-			// 1), 2), 3)
-			tpd.PrepareQueue(rootPackage);
-
-			ppd.AmountFiles = tpd.queue.Count;
-			var sw = new Stopwatch();
-			sw.Start();
-
-			// 4)
 			var threads = new Thread[numThreads];
 			for (int i = 0; i < numThreads; i++)
 			{
-				var th = threads[i] = new Thread(tpd.ParseThread) {
+				var th = threads[i] = new Thread(tpd.ParseThread)
+				{
 					IsBackground = true,
-					Priority= ThreadPriority.Lowest,
-					Name = "Parser thread #"+i+" ("+directory+")"
+					Priority = ThreadPriority.Lowest,
+					Name = "Parser thread #" + i + " (" + directory + ")"
 				};
 				th.Start();
 			}
 
-			// 5)
+			var sw = new Stopwatch();
+			sw.Start();
+
+			tpd.PrepareQueue(rootPackage);
+			
 			for (int i = 0; i < numThreads; i++)
 				if (threads[i].IsAlive)
 					threads[i].Join(10000);
 
 			sw.Stop();
+
+			ppd.AmountFiles = tpd.fileCount;
 			ppd.TotalDuration = sw.Elapsed.TotalSeconds;
 
 			return ppd;
@@ -73,6 +68,9 @@ namespace D_Parser.Misc
 		{
 			if (!Directory.Exists(baseDirectory))
 				return;
+
+			fileCount = 0;
+			stillQueuing = true;
 
 			//ISSUE: wild card character ? seems to behave differently across platforms
 			// msdn: -> Exactly zero or one character.
@@ -104,8 +102,12 @@ namespace D_Parser.Misc
 				if (isPhobosRoot && (file.EndsWith("index.d") || file.EndsWith("phobos.d")))
 					continue;
 
-				queue.Push(new KeyValuePair<string, ModulePackage>(file, lastPack));
+				fileCount++;
+				lock(queue)
+					queue.Push(new Tuple<string, ModulePackage>(file, lastPack));
 			}
+
+			stillQueuing = false;
 		}
 
 		void ParseThread()
@@ -113,22 +115,29 @@ namespace D_Parser.Misc
 			var file = "";
 			ModulePackage pack = null;
 
-			while (queue.Count != 0)
+			while (queue.Count != 0 || stillQueuing)
 			{
 				lock (queue)
 				{
 					if (queue.Count == 0)
+					{
+						if(stillQueuing)
+						{
+							Thread.Sleep(1);
+							continue;
+						}
 						return;
+					}
 
 					var kv = queue.Pop();
-					file = kv.Key;
-					pack = kv.Value;
+					file = kv.Item1;
+					pack = kv.Item2;
 				}
 
 				try
 				{
 					// If no debugger attached, save time + memory by skipping function bodies
-					var ast = DParser.ParseFile(file, !Debugger.IsAttached);
+					var ast = DParser.ParseFile(file, skipFunctionBodies);
 
 					if (!(pack is RootPackage))
 						ast.ModuleName = pack.Path + "." + Path.GetFileNameWithoutExtension(file);
