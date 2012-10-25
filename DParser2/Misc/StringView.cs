@@ -2,6 +2,9 @@
 
 namespace D_Parser.Misc
 {
+	/// <summary>
+	/// Read substrings out of a string without copying it.
+	/// </summary>
 	public class StringView : TextReader
 	{
 		string s;
