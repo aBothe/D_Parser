@@ -119,8 +119,10 @@ namespace D_Parser.Completion
 							 * {
 							 *  |	 -- Okay, there's no } at the block end
 							 */
-							if (Editor.ModuleCode[DocumentHelper.LocationToOffset(Editor.ModuleCode, bs.EndLocation) - 1] == '}')
-								curStmt = curStmt.Parent.Parent;
+							if (Editor.ModuleCode[DocumentHelper.GetOffsetByRelativeLocation(
+								Editor.ModuleCode, Editor.CaretLocation, 
+								Editor.CaretOffset, bs.EndLocation) - 1] == '}')
+									curStmt = curStmt.Parent.Parent;
 						}
 						else // For non-block statements: Switch only one level up - there's no extra level for e.g. 'for', 'if' or 'foreach'
 							curStmt = curStmt.Parent;
@@ -218,7 +220,7 @@ namespace D_Parser.Completion
 				var block = (CurrentScope as DMethod).GetSubBlockAt(caretLocation);
 
 				if (block != null)
-					blockStart = DocumentHelper.LocationToOffset(code, blockStartLocation = block.Location);
+					blockStart = DocumentHelper.GetOffsetByRelativeLocation(code, caretLocation, caretOffset, blockStartLocation = block.Location);
 				else
 					return FindCurrentCaretContext(code, CurrentScope.Parent as IBlockNode, caretOffset, caretLocation, out TrackerVariables);
 			}
@@ -227,10 +229,10 @@ namespace D_Parser.Completion
 				if (CurrentScope.BlockStartLocation.IsEmpty || caretLocation < CurrentScope.BlockStartLocation && caretLocation > CurrentScope.Location)
 				{
 					ParseDecl = true;
-					blockStart = DocumentHelper.LocationToOffset(code, blockStartLocation = CurrentScope.Location);
+					blockStart = DocumentHelper.GetOffsetByRelativeLocation(code, caretLocation, caretOffset, blockStartLocation = CurrentScope.Location);
 				}
 				else
-					blockStart = DocumentHelper.LocationToOffset(code, CurrentScope.BlockStartLocation);
+					blockStart = DocumentHelper.GetOffsetByRelativeLocation(code, caretLocation, caretOffset, CurrentScope.BlockStartLocation);
 			}
 
 			if (blockStart >= 0 && caretOffset - blockStart > 0)

@@ -68,7 +68,7 @@ namespace D_Parser.Resolver.TypeResolution
 				if (targetExpr != null && editor.CaretLocation >= targetExpr.Location && editor.CaretLocation <= targetExpr.EndLocation)
 				{
 					startLocation = targetExpr.Location;
-					start = DocumentHelper.LocationToOffset(editor.ModuleCode, startLocation);
+					start = DocumentHelper.GetOffsetByRelativeLocation(editor.ModuleCode, editor.CaretLocation, editor.CaretOffset, startLocation);
 					IsExpression = true;
 				}
 			}

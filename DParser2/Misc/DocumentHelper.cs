@@ -67,5 +67,35 @@ namespace D_Parser
 
 			return i;
 		}
+
+		public static int GetOffsetByRelativeLocation(string Text, CodeLocation caret, int caretOffset, CodeLocation target)
+		{
+			int line = caret.Line;
+
+			if (caret > target)
+			{
+				if (caret.Column > 1 && Text[caretOffset] == '\n') // Won't occur on windows -- at a line end there will only be \r (and afterwards \n)
+					caretOffset--;
+
+				for (; caretOffset >= 0; caretOffset--)
+				{
+					if (Text[caretOffset] == '\n')
+						line--;
+
+					if (line < target.Line)
+						return caretOffset + target.Column;
+				}
+
+				return 0;
+			}
+			else if (caret < target)
+			{
+				throw new System.Exception("Tell Alex it's not implemented yet!");
+			}
+			else
+				return caretOffset;
+			//TODO
+			return -1;
+		}
 	}
 }
