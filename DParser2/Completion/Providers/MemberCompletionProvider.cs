@@ -233,7 +233,7 @@ namespace D_Parser.Completion
 
 						bool add = true;
 
-						if (tvisMod == 0 || dn.IsStatic || (!(dn is DVariable) || ((DVariable)dn).IsConst) || IsTypeNode(i))
+						if (tvisMod == 0 || dn.IsStatic || ((dn is DVariable) && ((DVariable)dn).IsConst) || IsTypeNode(i))
 							add = true;
 						else
 						{
