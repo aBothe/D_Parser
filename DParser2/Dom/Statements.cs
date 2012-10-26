@@ -149,7 +149,11 @@ namespace D_Parser.Dom.Statements
 				var l = new List<INode>();
 
 				foreach (var s in _Statements)
-					if (s is BlockStatement || s is DeclarationStatement || s is ImportStatement)
+					if (s is BlockStatement || 
+						s is DeclarationStatement || 
+						s is StaticIfStatement || 
+						s is ConditionStatement || 
+						s is ImportStatement)
 					{
 						var decls = (s as IDeclarationContainingStatement).Declarations;
 						if(decls!=null && decls.Length>0)
@@ -234,6 +238,11 @@ namespace D_Parser.Dom.Statements
 			// If not, return null
 			return null;
 		}
+
+		public override string ToString()
+		{
+			return "<block> "+base.ToString();
+		}
 	}
 
 	public class LabeledStatement : AbstractStatement
@@ -256,9 +265,26 @@ namespace D_Parser.Dom.Statements
 		}
 	}
 
+	public class StaticIfStatement : IfStatement
+	{
+		public override string ToCode()
+		{
+			return "static "+base.ToCode();
+		}
+
+		public override void Accept(StatementVisitor vis)
+		{
+			vis.Visit(this);
+		}
+
+		public override R Accept<R>(StatementVisitor<R> vis)
+		{
+			return vis.Visit(this);
+		}
+	}
+
 	public class IfStatement : StatementContainingStatement,IDeclarationContainingStatement,IExpressionContainingStatement
 	{
-		public bool IsStatic = false;
 		public IExpression IfCondition;
 		public DVariable[] IfVariable;
 
@@ -296,7 +322,7 @@ namespace D_Parser.Dom.Statements
 
 		public override string ToCode()
 		{
-			var ret = (IsStatic?"static ":"")+ "if(";
+			var ret = "if(";
 
 			if (IfCondition != null)
 				ret += IfCondition.ToString();

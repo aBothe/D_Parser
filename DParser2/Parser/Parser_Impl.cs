@@ -3242,7 +3242,10 @@ namespace D_Parser.Parser
 
 				Step();
 
-				var dbs = new IfStatement() { Location = t.Location, IsStatic = isStatic, Parent = Parent, ParentNode = Scope };
+				var dbs = isStatic ? new StaticIfStatement() : new IfStatement();
+				dbs.Location = t.Location;
+				dbs.ParentNode = Scope;
+
 				LastParsedObject = dbs;
 				Expect(OpenParenthesis);
 

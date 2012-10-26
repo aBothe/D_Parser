@@ -23,14 +23,14 @@ namespace D_Parser.Completion
 			var visibleMembers = MemberFilter.All;
 
 			IStatement curStmt = null;
-			if(curBlock==null)
+			if (curBlock == null)
 				curBlock = D_Parser.Resolver.TypeResolution.DResolver.SearchBlockAt(Editor.SyntaxTree, Editor.CaretLocation, out curStmt);
 
 			if (curBlock == null)
 				return;
 
 			// 1) Get current context the caret is at
-			if(parsedBlock==null)
+			if (parsedBlock == null)
 				parsedBlock = FindCurrentCaretContext(
 					Editor.ModuleCode,
 					curBlock,
@@ -49,9 +49,9 @@ namespace D_Parser.Completion
 			else
 			{
 				var n = trackVars.LastParsedObject as INode;
-				var dv=n as DVariable;
+				var dv = n as DVariable;
 				if (dv != null && dv.IsAlias && dv.Type == null && trackVars.ExpectingIdentifier)
-				{ 
+				{
 					// Show completion because no aliased type has been entered yet
 				}
 				else if (n != null && string.IsNullOrEmpty(n.Name) && trackVars.ExpectingIdentifier)
@@ -74,19 +74,19 @@ namespace D_Parser.Completion
 				if (trackVars.LastParsedObject is ImportStatement)
 					visibleMembers = MemberFilter.Imports;
 				else if ((trackVars.LastParsedObject is NewExpression && trackVars.IsParsingInitializer) ||
-					trackVars.LastParsedObject is TemplateInstanceExpression && ((TemplateInstanceExpression)trackVars.LastParsedObject).Arguments==null)
+					trackVars.LastParsedObject is TemplateInstanceExpression && ((TemplateInstanceExpression)trackVars.LastParsedObject).Arguments == null)
 					visibleMembers = MemberFilter.Imports | MemberFilter.Types;
 				else if (EnteredText == " ")
 					return;
 				// In class bodies, do not show variables
 				else if (!(parsedBlock is BlockStatement || trackVars.IsParsingInitializer))
 					visibleMembers = MemberFilter.Imports | MemberFilter.Types | MemberFilter.Keywords;
-				
+
 				/*
 				 * Handle module-scoped things:
 				 * When typing a dot without anything following, trigger completion and show types, methods and vars that are located in the module & import scope
 				 */
-				else if (trackVars.LastParsedObject is TokenExpression && 
+				else if (trackVars.LastParsedObject is TokenExpression &&
 					((TokenExpression)trackVars.LastParsedObject).Token == DTokens.Dot)
 				{
 					visibleMembers = MemberFilter.Methods | MemberFilter.Types | MemberFilter.Variables;
@@ -104,11 +104,31 @@ namespace D_Parser.Completion
 					// Insert the updated locals insight.
 					// Do not take the caret location anymore because of the limited parsing of our code.
 					curStmt = bs.SearchStatementDeeply(bs.EndLocation);
+
+					// now, in most cases, the last inner-most block has been selected.
+					// So switch upward by default.
+					if (curStmt != null && curStmt.EndLocation == bs.EndLocation &&
+						curStmt.Parent != null && curStmt.Parent.EndLocation == bs.EndLocation)
+					{
+						if (curStmt is BlockStatement)
+						{
+							/* If we've got an unfinished block, do NOT switch upward in hierarchy
+							 * because it's intended to be e.g. in an empty block statement:
+							 * for(int k;;)
+							 *	|    -- Okay
+							 * {
+							 *  |	 -- Okay, there's no } at the block end
+							 */
+							if (Editor.ModuleCode[DocumentHelper.LocationToOffset(Editor.ModuleCode, bs.EndLocation) - 1] == '}')
+								curStmt = curStmt.Parent.Parent;
+						}
+						else // For non-block statements: Switch only one level up - there's no extra level for e.g. 'for', 'if' or 'foreach'
+							curStmt = curStmt.Parent;
+					}
 				}
 				else
 					curStmt = null;
 
-				
 
 				if (visibleMembers != MemberFilter.Imports) // Do not pass the curStmt because we already inserted all updated locals a few lines before!
 					listedItems = ItemEnumeration.EnumAllAvailableMembers(curBlock, curStmt, Editor.CaretLocation, Editor.ParseCache, visibleMembers);
@@ -141,18 +161,18 @@ namespace D_Parser.Completion
 				var nameStubs = new Dictionary<string, string>();
 				var availModules = new List<IAbstractSyntaxTree>();
 
-				foreach(var sstmt in Editor.SyntaxTree.StaticStatements)
+				foreach (var sstmt in Editor.SyntaxTree.StaticStatements)
 					if (sstmt is ImportStatement)
 					{
 						var impStmt = (ImportStatement)sstmt;
 
-						foreach(var imp in impStmt.Imports)
+						foreach (var imp in impStmt.Imports)
 							if (string.IsNullOrEmpty(imp.ModuleAlias))
 							{
-								var id=imp.ModuleIdentifier.ToString();
-								
+								var id = imp.ModuleIdentifier.ToString();
+
 								IAbstractSyntaxTree mod = null;
-								foreach(var m in Editor.ParseCache.LookupModuleName(id))
+								foreach (var m in Editor.ParseCache.LookupModuleName(id))
 								{
 									mod = m;
 									break;

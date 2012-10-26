@@ -295,7 +295,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				{ 
 					// Handled in DBlockNode
 				}
-				else if (Statement is BlockStatement && Statement.Parent==null) //TODO Optimize
+				else if (Statement is IDeclarationContainingStatement && !(Statement is StaticIfStatement || Statement is ConditionStatement)) //TODO Optimize
 				{
 					var decls = ((IDeclarationContainingStatement)Statement).Declarations;
 

@@ -20,14 +20,14 @@ namespace D_Parser.Misc
 
 		public override int Peek()
 		{
-			if (i > end)
+			if (i >= end)
 				return -1;
 			return s[i];
 		}
 
 		public override int Read()
 		{
-			if (i == end)
+			if (i >= end)
 				return -1;
 			return s[i++];
 		}
