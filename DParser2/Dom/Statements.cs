@@ -148,17 +148,31 @@ namespace D_Parser.Dom.Statements
 			{
 				var l = new List<INode>();
 
-				foreach (var s in _Statements)
-					if (s is BlockStatement || 
-						s is DeclarationStatement || 
-						s is StaticIfStatement || 
-						s is ConditionStatement || 
-						s is ImportStatement)
+				var stmts = new List<IStatement>( _Statements);
+				var next = new List<IStatement>();
+				while (stmts.Count != 0)
+				{
+					foreach (var s in stmts)
 					{
-						var decls = (s as IDeclarationContainingStatement).Declarations;
-						if(decls!=null && decls.Length>0)
-							l.AddRange(decls);
+						if (s is BlockStatement ||
+							s is DeclarationStatement ||
+							s is ImportStatement)
+						{
+							var decls = (s as IDeclarationContainingStatement).Declarations;
+							if (decls != null && decls.Length > 0)
+								l.AddRange(decls);
+						}
+
+						if (s is ConditionStatement || s is StaticIfStatement)
+							next.AddRange(((StatementContainingStatement)s).SubStatements);
 					}
+
+					if (next.Count == 0)
+						break;
+					stmts.Clear();
+					stmts.AddRange(next);
+					next.Clear();
+				}
 
 				return l.ToArray();
 			}
