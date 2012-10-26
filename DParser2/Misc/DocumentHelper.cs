@@ -80,10 +80,12 @@ namespace D_Parser
 				for (; caretOffset >= 0; caretOffset--)
 				{
 					if (Text[caretOffset] == '\n')
+					{
 						line--;
 
-					if (line < target.Line)
-						return caretOffset + target.Column;
+						if (line < target.Line)
+							return caretOffset + target.Column;
+					}
 				}
 
 				return 0;
@@ -94,8 +96,6 @@ namespace D_Parser
 			}
 			else
 				return caretOffset;
-			//TODO
-			return -1;
 		}
 	}
 }
