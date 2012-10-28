@@ -42,14 +42,11 @@ namespace D_Parser.Parser
 		/// </summary>
 		public List<Comment> Comments = new List<Comment>();
 
-		protected bool stopLexing = false;
-
 		public bool IsEOF
 		{
 			get
 			{
-				return stopLexing ||
-					lookaheadToken == null ||
+				return lookaheadToken == null ||
 					lookaheadToken.Kind == DTokens.EOF ||
 					lookaheadToken.Kind == DTokens.__EOF__;
 			}
@@ -87,12 +84,6 @@ namespace D_Parser.Parser
 		#endregion
 
 		#region I/O
-
-		public void StopLexing()
-		{
-			stopLexing = true;
-		}
-
 
 		protected int ReaderRead()
 		{
@@ -189,16 +180,7 @@ namespace D_Parser.Parser
 		/// <returns>An <see cref="CurrentToken"/> object.</returns>
 		public void NextToken()
 		{
-			if (stopLexing)
-			{
-				if (lookaheadToken != null && lookaheadToken.next != null &&
-					(lookaheadToken.next.Kind == DTokens.EOF || lookaheadToken.next.Kind == DTokens.__EOF__))
-				{
-					curToken = lookaheadToken;
-					lookaheadToken = lookaheadToken.next;
-				}
-			}
-			else if (lookaheadToken == null)
+			if (lookaheadToken == null)
 				lookaheadToken = Next();
 			else
 			{
@@ -657,7 +639,7 @@ namespace D_Parser.Parser
 				else
 				{
 					OnError(Line, Col, "Invalid character");
-					StopLexing();
+					//StopLexing();
 					break;
 				}
 			}

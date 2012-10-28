@@ -88,7 +88,7 @@ namespace D_Parser.Parser
 			get { return Lexer.IsEOF; }
 		}
 
-		public IList<ParserError> ParseErrors = new List<ParserError>();
+		public List<ParserError> ParseErrors = new List<ParserError>();
 		public const int MaxParseErrorsBeforeFailure = 100;
 
 		#endregion
@@ -401,6 +401,7 @@ namespace D_Parser.Parser
             this.ParseStructureOnly = ParseStructureOnly;
             doc=Root();
 			doc.ParseErrors = new System.Collections.ObjectModel.ReadOnlyCollection<ParserError>(ParseErrors);
+			
             return doc;
         }
         
@@ -409,8 +410,7 @@ namespace D_Parser.Parser
         {
 			if (ParseErrors.Count > MaxParseErrorsBeforeFailure)
 			{
-				Lexer.StopLexing();
-				return;
+				throw new Exception("Too many errors thrown. Quit parsing.");
 			}
 			else if (ParseErrors.Count == MaxParseErrorsBeforeFailure)
 				msg = "Too many errors - stop parsing";

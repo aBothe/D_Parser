@@ -72,6 +72,9 @@ namespace D_Parser
 		{
 			int line = caret.Line;
 
+			if (caretOffset >= Text.Length)
+				caretOffset = Text.Length - 1;
+
 			if (caret > target)
 			{
 				if (caret.Column > 1 && Text[caretOffset] == '\n') // Won't occur on windows -- at a line end there will only be \r (and afterwards \n)
