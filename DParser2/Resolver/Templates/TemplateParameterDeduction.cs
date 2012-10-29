@@ -26,9 +26,9 @@ namespace D_Parser.Resolver.Templates
 		/// <summary>
 		/// Needed for resolving default types
 		/// </summary>
-		ResolverContextStack ctxt;
+		ResolutionContext ctxt;
 
-		public TemplateParameterDeduction(DeducedTypeDictionary DeducedParameters, ResolverContextStack ctxt)
+		public TemplateParameterDeduction(DeducedTypeDictionary DeducedParameters, ResolutionContext ctxt)
 		{
 			this.ctxt = ctxt;
 			this.TargetDictionary = DeducedParameters;

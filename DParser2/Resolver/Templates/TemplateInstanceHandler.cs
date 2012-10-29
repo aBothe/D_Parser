@@ -10,7 +10,7 @@ namespace D_Parser.Resolver.TypeResolution
 {
 	public class TemplateInstanceHandler
 	{
-		public static List<ISemantic> PreResolveTemplateArgs(TemplateInstanceExpression tix, ResolverContextStack ctxt)
+		public static List<ISemantic> PreResolveTemplateArgs(TemplateInstanceExpression tix, ResolutionContext ctxt)
 		{
 			// Resolve given argument expressions
 			var templateArguments = new List<ISemantic>();
@@ -63,7 +63,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 		public static AbstractType[] DeduceParamsAndFilterOverloads(IEnumerable<AbstractType> rawOverloadList,
 			TemplateInstanceExpression templateInstanceExpr,
-			ResolverContextStack ctxt)
+			ResolutionContext ctxt)
 		{
 			return DeduceParamsAndFilterOverloads(rawOverloadList, PreResolveTemplateArgs(templateInstanceExpr, ctxt), false, ctxt);
 		}
@@ -85,7 +85,7 @@ namespace D_Parser.Resolver.TypeResolution
 		public static AbstractType[] DeduceParamsAndFilterOverloads(IEnumerable<AbstractType> rawOverloadList,
 			IEnumerable<ISemantic> givenTemplateArguments,
 			bool isMethodCall,
-			ResolverContextStack ctxt)
+			ResolutionContext ctxt)
 		{
 			if (rawOverloadList == null)
 				return null;
@@ -114,7 +114,7 @@ namespace D_Parser.Resolver.TypeResolution
 			IEnumerable<AbstractType> rawOverloadList, 
 			IEnumerable<ISemantic> givenTemplateArguments, 
 			bool isMethodCall, 
-			ResolverContextStack ctxt)
+			ResolutionContext ctxt)
 		{
 			bool hasTemplateArgsPassed = givenTemplateArguments != null;
 			if (hasTemplateArgsPassed)
@@ -173,7 +173,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 		private static bool DeduceParams(IEnumerable<ISemantic> givenTemplateArguments, 
 			bool isMethodCall, 
-			ResolverContextStack ctxt, 
+			ResolutionContext ctxt, 
 			DSymbol overload, 
 			DNode tplNode, 
 			DeducedTypeDictionary deducedTypes)
@@ -200,7 +200,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return isLegitOverload;
 		}
 
-		private static bool DeduceParam(ResolverContextStack ctxt, 
+		private static bool DeduceParam(ResolutionContext ctxt, 
 			DSymbol overload, 
 			DeducedTypeDictionary deducedTypes,
 			IEnumerator<ISemantic> argEnum, 
@@ -288,7 +288,7 @@ namespace D_Parser.Resolver.TypeResolution
 		static bool CheckAndDeduceTypeAgainstTplParameter(ITemplateParameter handledParameter, 
 			ISemantic argumentToCheck,
 			DeducedTypeDictionary deducedTypes,
-			ResolverContextStack ctxt)
+			ResolutionContext ctxt)
 		{
 			return new Templates.TemplateParameterDeduction(deducedTypes, ctxt).Handle(handledParameter, argumentToCheck);
 		}
@@ -296,7 +296,7 @@ namespace D_Parser.Resolver.TypeResolution
 		static bool CheckAndDeduceTypeTuple(TemplateTupleParameter tupleParameter, 
 			IEnumerable<ISemantic> typeChain,
 			DeducedTypeDictionary deducedTypes,
-			ResolverContextStack ctxt)
+			ResolutionContext ctxt)
 		{
 			return new Templates.TemplateParameterDeduction(deducedTypes,ctxt).Handle(tupleParameter,typeChain);
 		}

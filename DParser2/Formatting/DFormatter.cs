@@ -10,7 +10,7 @@ using D_Parser.Dom.Expressions;
 
 namespace D_Parser.Formatting
 {
-	public class DFormatter
+	public class DFormatter : IDisposable
 	{
 		#region Properties
 
@@ -77,6 +77,14 @@ namespace D_Parser.Formatting
 
 		int maxLine;
 		Lexer Lexer;
+
+
+		public void Dispose()
+		{
+			block = null;
+			lastLineIndent = null;
+			Lexer.Dispose();
+		}
 
 		CodeBlock PushBlock(CodeBlock previousBlock=null)
 		{
@@ -304,6 +312,8 @@ namespace D_Parser.Formatting
 		{
 			return 0;
 		}
+
+		
 	}
 
 	public class CodeBlock

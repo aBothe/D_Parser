@@ -35,7 +35,7 @@ void main()
 	A.statA.statA = new A!float(); // 15
 }
 ");
-			var ctxt = new ResolverContextStack(pcl, new ResolverContext{ ScopedBlock = pcl[0]["modA"] });
+			var ctxt = ResolutionContext.Create(pcl, pcl[0]["modA"]);
 
 			var refs = ReferencesFinder.Scan(pcl[0]["modA"]["A"][0],ctxt) as List<ISyntaxRegion>;
 

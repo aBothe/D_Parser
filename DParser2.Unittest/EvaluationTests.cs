@@ -37,10 +37,10 @@ namespace DParser2.Unittest
 
 		public static void TestString(string literal, string content, bool ProvideObjModule = true)
 		{
-			ResolverContextStack ctxt = null;
+			ResolutionContext ctxt = null;
 
 			if (ProvideObjModule)
-				ctxt = new ResolverContextStack(ResolutionTests.CreateCache(), new ResolverContext());
+				ctxt = ResolutionContext.Create(ResolutionTests.CreateCache(), null);
 
 			var x = DParser.ParseExpression(literal);
 
@@ -185,7 +185,7 @@ namespace DParser2.Unittest
 			TestString("\"asdf\"d", "asdf", false);
 
 			var ex = DParser.ParseExpression("['a','s','d','f']");
-			var v = Evaluation.EvaluateValue(ex, (ResolverContextStack)null);
+			var v = Evaluation.EvaluateValue(ex, (ResolutionContext)null);
 
 			Assert.IsInstanceOfType(v, typeof(ArrayValue));
 			var ar = (ArrayValue)v;
@@ -196,14 +196,14 @@ namespace DParser2.Unittest
 
 
 			ex = DParser.ParseExpression("[\"KeyA\":12, \"KeyB\":33, \"KeyC\":44]");
-			v = Evaluation.EvaluateValue(ex, (ResolverContextStack)null);
+			v = Evaluation.EvaluateValue(ex, (ResolutionContext)null);
 
 			Assert.IsInstanceOfType(v, typeof(AssociativeArrayValue));
 			var aa = (AssociativeArrayValue)v;
 			Assert.AreEqual(aa.Elements.Count, 3);
 
 			ex = DParser.ParseExpression("(a,b) => a+b");
-			v = Evaluation.EvaluateValue(ex, new ResolverContextStack(new D_Parser.Misc.ParseCacheList(), new ResolverContext()));
+			v = Evaluation.EvaluateValue(ex, ResolutionContext.Create(new D_Parser.Misc.ParseCacheList(), null));
 			Assert.IsInstanceOfType(v, typeof(DelegateValue));
 		}
 
@@ -216,7 +216,7 @@ enum b=123;
 const int c=125;
 enum int d=126;
 ");
-			var vp = new StandardValueProvider(new ResolverContextStack(pcl, new ResolverContext { ScopedBlock=pcl[0]["modA"] }));
+			var vp = new StandardValueProvider(ResolutionContext.Create(pcl, pcl[0]["modA"]));
 
 			var v = E("a", vp);
 
@@ -281,7 +281,7 @@ class A
 
 A a;");
 
-			var vp = new StandardValueProvider(new ResolverContextStack(pcl, new ResolverContext{ ScopedBlock = pcl[0]["modA"] }));
+			var vp = new StandardValueProvider(ResolutionContext.Create(pcl, pcl[0]["modA"]));
 			/*
 			var v = E("a.someProp", vp);
 			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
@@ -314,7 +314,7 @@ class B : A {}
 class C : A {}
 ");
 
-			var vp = new StandardValueProvider(new ResolverContextStack(pcl, new ResolverContext { ScopedBlock=pcl[0]["modA"] }));
+			var vp = new StandardValueProvider(ResolutionContext.Create(pcl, pcl[0]["modA"]));
 
 			Assert.IsTrue(EvalIsExpression("char*[] T : U[], U : V*, V", vp));
 			Assert.IsTrue(EvalIsExpression("string T : U[], U : immutable(V), V : char", vp));

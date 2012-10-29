@@ -53,7 +53,7 @@ namespace D_Parser.Resolver
 		/// <summary>
 		/// Checks results for implicit type convertability 
 		/// </summary>
-		public static bool IsImplicitlyConvertible(ISemantic resultToCheck, AbstractType targetType, ResolverContextStack ctxt=null)
+		public static bool IsImplicitlyConvertible(ISemantic resultToCheck, AbstractType targetType, ResolutionContext ctxt=null)
 		{
 			var resToCheck = AbstractType.Get(resultToCheck);
 

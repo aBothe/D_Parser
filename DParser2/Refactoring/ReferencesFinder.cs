@@ -13,7 +13,7 @@ namespace D_Parser.Refactoring
 	public class ReferencesFinder : DeepASTVisitor
 	{
 		#region Properties
-		readonly ResolverContextStack ctxt;
+		readonly ResolutionContext ctxt;
 		readonly List<ISyntaxRegion> l = new List<ISyntaxRegion>();
 		readonly INode symbol;
 		readonly IAbstractSyntaxTree ast;
@@ -21,7 +21,7 @@ namespace D_Parser.Refactoring
 		#endregion
 
 		#region Constructor / External
-		ReferencesFinder(INode symbol, IAbstractSyntaxTree ast, ResolverContextStack ctxt)
+		ReferencesFinder(INode symbol, IAbstractSyntaxTree ast, ResolutionContext ctxt)
 		{
 			this.ast = ast;
 			this.symbol = symbol;
@@ -29,7 +29,7 @@ namespace D_Parser.Refactoring
 			this.ctxt = ctxt;
 		}
 
-		public static IEnumerable<ISyntaxRegion> Scan(INode symbol, ResolverContextStack ctxt)
+		public static IEnumerable<ISyntaxRegion> Scan(INode symbol, ResolutionContext ctxt)
 		{
 			return Scan(symbol.NodeRoot as IAbstractSyntaxTree, symbol, ctxt);
 		}
@@ -40,7 +40,7 @@ namespace D_Parser.Refactoring
 		/// <param name="symbol">Might not be a child symbol of ast</param>
 		/// <param name="ctxt">The context required to search for symbols</param>
 		/// <returns></returns>
-		public static IEnumerable<ISyntaxRegion> Scan(IAbstractSyntaxTree ast, INode symbol, ResolverContextStack ctxt)
+		public static IEnumerable<ISyntaxRegion> Scan(IAbstractSyntaxTree ast, INode symbol, ResolutionContext ctxt)
 		{
 			if (ast == null || symbol == null || ctxt == null)
 				return null;

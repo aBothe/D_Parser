@@ -391,7 +391,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			ctxt.CurrentContext.ContextDependentOptions = optBackup;
 		}
 
-		public static AbstractType[] GetAccessedOverloads(PostfixExpression_Access acc, ResolverContextStack ctxt, out bool IsUFCS,
+		public static AbstractType[] GetAccessedOverloads(PostfixExpression_Access acc, ResolutionContext ctxt, out bool IsUFCS,
 			ISemantic resultBase = null, bool DeducePostfixTemplateParams = true)
 		{
 			return TypeDeclarationResolver.Convert(new Evaluation(ctxt).E(acc, out IsUFCS, resultBase, DeducePostfixTemplateParams));

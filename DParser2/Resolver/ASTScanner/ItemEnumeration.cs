@@ -25,7 +25,7 @@ namespace D_Parser.Resolver.ASTScanner
 
 	public class ItemEnumeration : AbstractVisitor
 	{
-		protected ItemEnumeration(ResolverContextStack ctxt): base(ctxt) { }
+		protected ItemEnumeration(ResolutionContext ctxt): base(ctxt) { }
 
 		public static IEnumerable<INode> EnumAllAvailableMembers(IBlockNode ScopedBlock
 			, IStatement ScopedStatement,
@@ -33,17 +33,13 @@ namespace D_Parser.Resolver.ASTScanner
 			ParseCacheList CodeCache,
 			MemberFilter VisibleMembers)
 		{
-			return EnumAllAvailableMembers(new ResolverContextStack(CodeCache,new ResolverContext
-			{
-				ScopedBlock = ScopedBlock,
-				ScopedStatement = ScopedStatement
-			}), 
+			return EnumAllAvailableMembers(ResolutionContext.Create(CodeCache,ScopedBlock,ScopedStatement), 
 			Caret, 
 			VisibleMembers);
 		}
 
 		public static IEnumerable<INode> EnumAllAvailableMembers(
-			ResolverContextStack ctxt,
+			ResolutionContext ctxt,
 			CodeLocation Caret,
 			MemberFilter VisibleMembers)
 		{

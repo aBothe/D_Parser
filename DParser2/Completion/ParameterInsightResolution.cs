@@ -66,7 +66,7 @@ namespace D_Parser.Completion
 		/// </summary>
 		public static ArgumentsResolutionResult ResolveArgumentContext(
 			IEditorData Editor,
-			ResolverContextStack ctxt)
+			ResolutionContext ctxt)
 		{
 			ParserTrackerVariables trackVars = null;
 			IStatement curStmt = null; 
@@ -198,7 +198,7 @@ namespace D_Parser.Completion
 		static void HandleNewExpression(NewExpression nex, 
 			ArgumentsResolutionResult res, 
 			IEditorData Editor, 
-			ResolverContextStack ctxt,
+			ResolutionContext ctxt,
 			IBlockNode curBlock)
 		{
 			res.MethodIdentifier = nex;
@@ -271,7 +271,7 @@ namespace D_Parser.Completion
 		static void CalculateCurrentArgument(NewExpression nex, 
 			ArgumentsResolutionResult res, 
 			CodeLocation caretLocation, 
-			ResolverContextStack ctxt,
+			ResolutionContext ctxt,
 			IEnumerable<AbstractType> resultBases=null)
 		{
 			if (nex.Arguments != null)
@@ -291,7 +291,7 @@ namespace D_Parser.Completion
 
 		public static ArgumentsResolutionResult ResolveArgumentContext(IEditorData editorData)
 		{
-			return ResolveArgumentContext(editorData, ResolverContextStack.Create(editorData));
+			return ResolveArgumentContext(editorData, ResolutionContext.Create(editorData));
 		}
 	}
 }

@@ -58,7 +58,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return null;
 		}
 
-		public static AbstractType[] ResolveIdentifier(string id, ResolverContextStack ctxt, object idObject, bool ModuleScope = false)
+		public static AbstractType[] ResolveIdentifier(string id, ResolutionContext ctxt, object idObject, bool ModuleScope = false)
 		{
 			var loc = idObject is ISyntaxRegion ? ((ISyntaxRegion)idObject).Location : CodeLocation.Empty;
 
@@ -68,7 +68,7 @@ namespace D_Parser.Resolver.TypeResolution
 			// If there are symbols that must be preferred, take them instead of scanning the ast
 			else
 			{
-				var tstk = new Stack<ResolverContext>();
+				var tstk = new Stack<ContextFrame>();
 				D_Parser.Resolver.Templates.TemplateParameterSymbol dedTemplateParam = null;
 				while (!ctxt.CurrentContext.DeducedTemplateParameters.TryGetValue(id, out dedTemplateParam))
 				{
@@ -95,7 +95,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return res;
 		}
 
-		public static AbstractType ResolveSingle(string id, ResolverContextStack ctxt, object idObject, bool ModuleScope = false)
+		public static AbstractType ResolveSingle(string id, ResolutionContext ctxt, object idObject, bool ModuleScope = false)
 		{
 			var r = ResolveIdentifier(id, ctxt, idObject, ModuleScope);
 
@@ -105,7 +105,7 @@ namespace D_Parser.Resolver.TypeResolution
 		}
 
 
-		public static AbstractType ResolveSingle(IdentifierDeclaration id, ResolverContextStack ctxt, AbstractType[] resultBases = null, bool filterForTemplateArgs = true)
+		public static AbstractType ResolveSingle(IdentifierDeclaration id, ResolutionContext ctxt, AbstractType[] resultBases = null, bool filterForTemplateArgs = true)
 		{
 			var r = Resolve(id, ctxt, resultBases, filterForTemplateArgs);
 
@@ -114,7 +114,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return r != null && r.Length != 0 ? r[0] : null;
 		}
 
-		public static AbstractType[] Resolve(IdentifierDeclaration id, ResolverContextStack ctxt, AbstractType[] resultBases = null, bool filterForTemplateArgs = true)
+		public static AbstractType[] Resolve(IdentifierDeclaration id, ResolutionContext ctxt, AbstractType[] resultBases = null, bool filterForTemplateArgs = true)
 		{
 			AbstractType[] res = null;
 
@@ -151,7 +151,7 @@ namespace D_Parser.Resolver.TypeResolution
 		/// </summary>
 		public static AbstractType[] ResolveFurtherTypeIdentifier(string nextIdentifier,
 			IEnumerable<AbstractType> resultBases,
-			ResolverContextStack ctxt,
+			ResolutionContext ctxt,
 			object typeIdObject = null)
 		{
 			if ((resultBases = DResolver.StripAliasSymbols(resultBases)) == null)
@@ -228,7 +228,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return r.Count == 0 ? null : r.ToArray();
 		}
 
-		public static AbstractType Resolve(TypeOfDeclaration typeOf, ResolverContextStack ctxt)
+		public static AbstractType Resolve(TypeOfDeclaration typeOf, ResolutionContext ctxt)
 		{
 			// typeof(return)
 			if (typeOf.InstanceId is TokenExpression && (typeOf.InstanceId as TokenExpression).Token == DTokens.Return)
@@ -247,7 +247,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return null;
 		}
 
-		public static AbstractType Resolve(MemberFunctionAttributeDecl attrDecl, ResolverContextStack ctxt)
+		public static AbstractType Resolve(MemberFunctionAttributeDecl attrDecl, ResolutionContext ctxt)
 		{
 			if (attrDecl != null)
 			{
@@ -264,7 +264,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return null;
 		}
 
-		public static AbstractType ResolveKey(ArrayDecl ad, out int fixedArrayLength, out ISymbolValue keyVal, ResolverContextStack ctxt)
+		public static AbstractType ResolveKey(ArrayDecl ad, out int fixedArrayLength, out ISymbolValue keyVal, ResolutionContext ctxt)
 		{
 			keyVal = null;
 			fixedArrayLength = 0;
@@ -330,7 +330,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return keyType;
 		}
 
-		public static AssocArrayType Resolve(ArrayDecl ad, ResolverContextStack ctxt)
+		public static AssocArrayType Resolve(ArrayDecl ad, ResolutionContext ctxt)
 		{
 			var valueTypes = Resolve(ad.ValueType, ctxt);
 
@@ -355,7 +355,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return new AssocArrayType(valueType, keyType, ad);
 		}
 
-		public static PointerType Resolve(PointerDecl pd, ResolverContextStack ctxt)
+		public static PointerType Resolve(PointerDecl pd, ResolutionContext ctxt)
 		{
 			var ptrBaseTypes = Resolve(pd.InnerDeclaration, ctxt);
 
@@ -367,7 +367,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return new PointerType(ptrBaseTypes[0], pd);
 		}
 
-		public static DelegateType Resolve(DelegateDeclaration dg, ResolverContextStack ctxt)
+		public static DelegateType Resolve(DelegateDeclaration dg, ResolutionContext ctxt)
 		{
 			var returnTypes = Resolve(dg.ReturnType, ctxt);
 
@@ -378,7 +378,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return null;
 		}
 
-		public static AbstractType ResolveSingle(ITypeDeclaration declaration, ResolverContextStack ctxt)
+		public static AbstractType ResolveSingle(ITypeDeclaration declaration, ResolutionContext ctxt)
 		{
 			if (declaration is IdentifierDeclaration)
 				return ResolveSingle(declaration as IdentifierDeclaration, ctxt);
@@ -428,7 +428,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return t;
 		}
 
-		public static AbstractType[] Resolve(ITypeDeclaration declaration, ResolverContextStack ctxt)
+		public static AbstractType[] Resolve(ITypeDeclaration declaration, ResolutionContext ctxt)
 		{
 			if (declaration is IdentifierDeclaration)
 				return Resolve((IdentifierDeclaration)declaration, ctxt);
@@ -455,7 +455,7 @@ namespace D_Parser.Resolver.TypeResolution
 		/// </summary>
 		public static AbstractType HandleNodeMatch(
 			INode m,
-			ResolverContextStack ctxt,
+			ResolutionContext ctxt,
 			AbstractType resultBase = null,
 			object typeBase = null)
 		{
@@ -570,7 +570,7 @@ namespace D_Parser.Resolver.TypeResolution
 				 * Add 'superior' template parameters to the current symbol because the parameters 
 				 * might be re-used in the nested class.
 				 */
-				var tStk = new Stack<ResolverContext>();
+				var tStk = new Stack<ContextFrame>();
 				do
 				{
 					var curCtxt = ctxt.Pop();
@@ -657,7 +657,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 		public static AbstractType[] HandleNodeMatches(
 			IEnumerable<INode> matches,
-			ResolverContextStack ctxt,
+			ResolutionContext ctxt,
 			AbstractType resultBase = null,
 			object TypeDeclaration = null)
 		{
@@ -681,7 +681,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return rl.ToArray();
 		}
 
-		public static MemberSymbol FillMethodReturnType(MemberSymbol mr, ResolverContextStack ctxt)
+		public static MemberSymbol FillMethodReturnType(MemberSymbol mr, ResolutionContext ctxt)
 		{
 			if (mr == null || ctxt == null)
 				return mr;
@@ -701,7 +701,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return mr;
 		}
 
-		public static AbstractType GetMethodReturnType(DelegateType dg, ResolverContextStack ctxt)
+		public static AbstractType GetMethodReturnType(DelegateType dg, ResolutionContext ctxt)
 		{
 			if (dg == null || ctxt == null)
 				return null;
@@ -719,7 +719,7 @@ namespace D_Parser.Resolver.TypeResolution
 			}
 		}
 
-		public static AbstractType GetMethodReturnType(DMethod method, ResolverContextStack ctxt)
+		public static AbstractType GetMethodReturnType(DMethod method, ResolutionContext ctxt)
 		{
 			if (ctxt != null && ctxt.Options.HasFlag(ResolutionOptions.DontResolveBaseTypes))
 				return null;
@@ -782,8 +782,7 @@ namespace D_Parser.Resolver.TypeResolution
 					if (pushMethodScope)
 					{
 						var dedTypes = ctxt.CurrentContext.DeducedTemplateParameters;
-						ctxt.PushNewScope(method);
-						ctxt.CurrentContext.ScopedStatement = returnStmt;
+						ctxt.PushNewScope(method,returnStmt);
 
 						if (dedTypes.Count != 0)
 							foreach (var kv in dedTypes)
@@ -811,7 +810,7 @@ namespace D_Parser.Resolver.TypeResolution
 		///		writeln(i);
 		/// }
 		/// </summary>
-		public static AbstractType GetForeachIteratorType(DVariable i, ResolverContextStack ctxt)
+		public static AbstractType GetForeachIteratorType(DVariable i, ResolutionContext ctxt)
 		{
 			var r = new List<AbstractType>();
 			var curStmt = ctxt.ScopedStatement;

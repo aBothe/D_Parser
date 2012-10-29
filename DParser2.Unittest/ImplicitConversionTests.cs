@@ -14,7 +14,7 @@ namespace DParser2.Unittest
 	[TestClass]
 	public class ImplicitConversionTests
 	{
-		public static AbstractType GetType(string name, ResolverContextStack ctxt)
+		public static AbstractType GetType(string name, ResolutionContext ctxt)
 		{
 			return TypeDeclarationResolver.ResolveIdentifier(name, ctxt, null)[0] as AbstractType;
 		}
@@ -27,7 +27,7 @@ namespace DParser2.Unittest
 				class B:A {}
 				class C:A {}
 				class D:C {}");
-			var ctxt=new ResolverContextStack(pcl, new ResolverContext{ ScopedBlock=pcl[0]["modA"] });
+			var ctxt = ResolutionContext.Create(pcl, pcl[0]["modA"]);
 
 			var A = GetType("A",ctxt);
 			var B = GetType("B", ctxt);
@@ -71,7 +71,7 @@ namespace DParser2.Unittest
 
 				class G : A, IC {}
 				class H : B, ID {}");
-			var ctxt = new ResolverContextStack(pcl, new ResolverContext { ScopedBlock = pcl[0]["modA"] });
+			var ctxt = ResolutionContext.Create(pcl, pcl[0]["modA"]);
 
 			var A = GetType("A", ctxt);
 			var B = GetType("B", ctxt);
@@ -120,7 +120,7 @@ void foo(T:T)(T[] t) {}
 
 int[] p=[1,2,3,4,5];
 ");
-			var ctxt = new ResolverContextStack(pcl, new ResolverContext { ScopedBlock = pcl[0]["modA"] });
+			var ctxt = ResolutionContext.Create(pcl, pcl[0]["modA"]);
 
 			var foo = pcl[0]["modA"]["foo"][0] as DMethod;
 			ctxt.PushNewScope(foo);

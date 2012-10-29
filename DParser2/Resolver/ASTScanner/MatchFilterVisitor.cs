@@ -21,7 +21,7 @@ namespace D_Parser.Resolver.ASTScanner
 		/// </summary>
 		public List<T> filteredList=new List<T>();
 
-		public MatchFilterVisitor(ResolverContextStack ctxt, IList<T> rawList) : base(ctxt) {
+		public MatchFilterVisitor(ResolutionContext ctxt, IList<T> rawList) : base(ctxt) {
 			this.rawList = rawList;
 
 			names = new HashSet<string>();

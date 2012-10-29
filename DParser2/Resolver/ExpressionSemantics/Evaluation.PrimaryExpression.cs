@@ -11,7 +11,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public partial class Evaluation
 	{
-		public static ArrayType GetStringType(ResolverContextStack ctxt, LiteralSubformat fmt = LiteralSubformat.Utf8)
+		public static ArrayType GetStringType(ResolutionContext ctxt, LiteralSubformat fmt = LiteralSubformat.Utf8)
 		{
 			ArrayType _t = null;
 

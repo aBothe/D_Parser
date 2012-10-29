@@ -44,7 +44,8 @@ namespace D_Parser.Resolver.ASTScanner
 			{
 				IsProcessing = true;
 
-				var ctxt = new ResolverContextStack(pcList, new ResolverContext()) { ContextIndependentOptions = ResolutionOptions.StopAfterFirstOverloads };
+				var ctxt = ResolutionContext.Create(pcList, null);
+				ctxt.ContextIndependentOptions = ResolutionOptions.StopAfterFirstOverloads;
 
 				queue.Clear();
 
@@ -105,7 +106,7 @@ namespace D_Parser.Resolver.ASTScanner
 		{
 			DMethod dm = null;
 			var pcl = (ParseCacheList)pcl_shared;
-			var ctxt = new ResolverContextStack(pcl, new ResolverContext());
+			var ctxt = ResolutionContext.Create(pcl, null);
 			ctxt.ContextIndependentOptions |= ResolutionOptions.StopAfterFirstOverloads;
 
 			while (queue.Count != 0)
@@ -148,7 +149,7 @@ namespace D_Parser.Resolver.ASTScanner
 					CachedMethods.Remove(i);
 		}
 
-		public void CacheModuleMethods(IAbstractSyntaxTree ast, ResolverContextStack ctxt)
+		public void CacheModuleMethods(IAbstractSyntaxTree ast, ResolutionContext ctxt)
 		{
 			foreach (var m in ast)
 				if (m is DMethod)
@@ -168,7 +169,7 @@ namespace D_Parser.Resolver.ASTScanner
 				}
 		}
 
-		public IEnumerable<DMethod> FindFitting(ResolverContextStack ctxt, CodeLocation currentLocation, ISemantic firstArgument, string nameFilter = null)
+		public IEnumerable<DMethod> FindFitting(ResolutionContext ctxt, CodeLocation currentLocation, ISemantic firstArgument, string nameFilter = null)
 		{
 			if (IsProcessing)
 				return null;

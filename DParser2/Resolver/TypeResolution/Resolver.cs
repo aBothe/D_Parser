@@ -42,11 +42,11 @@ namespace D_Parser.Resolver.TypeResolution
 		/// </summary>
 		/// <param name="ctxt">Can be null</param>
 		public static ISyntaxRegion GetScopedCodeObject(IEditorData editor,
-			ResolverContextStack ctxt=null,
+			ResolutionContext ctxt=null,
 			AstReparseOptions Options=0)
 		{
 			if (ctxt == null)
-				ctxt = ResolverContextStack.Create(editor);
+				ctxt = ResolutionContext.Create(editor);
 
 			var code = editor.ModuleCode;
 
@@ -115,10 +115,10 @@ namespace D_Parser.Resolver.TypeResolution
 
 		public static AbstractType[] ResolveType(IEditorData editor,AstReparseOptions Options=0)
 		{
-			return ResolveType(editor, ResolverContextStack.Create(editor), Options);
+			return ResolveType(editor, ResolutionContext.Create(editor), Options);
 		}
 
-		public static AbstractType[] ResolveType(IEditorData editor, ResolverContextStack ctxt, AstReparseOptions Options=0)
+		public static AbstractType[] ResolveType(IEditorData editor, ResolutionContext ctxt, AstReparseOptions Options=0)
 		{
 			if (ctxt == null)
 				return null;
@@ -141,7 +141,7 @@ namespace D_Parser.Resolver.TypeResolution
 		/// Never returns null. Instead, the original 'tr' object will be returned if no base class was resolved.
 		/// Will clone 'tr', whereas the new object will contain the base class.
 		/// </summary>
-		public static UserDefinedType ResolveBaseClasses(UserDefinedType tr, ResolverContextStack ctxt, bool ResolveFirstBaseIdOnly=false)
+		public static UserDefinedType ResolveBaseClasses(UserDefinedType tr, ResolutionContext ctxt, bool ResolveFirstBaseIdOnly=false)
 		{
 			if (bcStack > 8)
 			{
@@ -386,7 +386,7 @@ namespace D_Parser.Resolver.TypeResolution
 		}
 
 		public static IEnumerable<T> FilterOutByResultPriority<T>(
-			ResolverContextStack ctxt,
+			ResolutionContext ctxt,
 			IEnumerable<T> results) where T : AbstractType
 		{
 			if (results == null)

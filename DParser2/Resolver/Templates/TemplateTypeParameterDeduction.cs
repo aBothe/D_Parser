@@ -21,8 +21,8 @@ namespace D_Parser.Resolver.Templates
 				else
 				{
 					IStatement stmt = null;
-					ctxt.PushNewScope(DResolver.SearchBlockAt(ctxt.ScopedBlock.NodeRoot as IBlockNode, p.Default.Location, out stmt));
-					ctxt.ScopedStatement = stmt;
+					ctxt.PushNewScope(DResolver.SearchBlockAt(ctxt.ScopedBlock.NodeRoot as IBlockNode, p.Default.Location, out stmt),stmt);
+
 					var defaultTypeRes = TypeDeclarationResolver.Resolve(p.Default, ctxt);
 					bool b = false;
 					if (defaultTypeRes != null)

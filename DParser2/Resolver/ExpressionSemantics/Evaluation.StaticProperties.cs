@@ -20,7 +20,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public static ISemantic TryResolveStaticProperties(
 			ISemantic InitialResult, 
 			string propertyIdentifier, 
-			ResolverContextStack ctxt = null, 
+			ResolutionContext ctxt = null, 
 			bool Evaluate = false,
 			IdentifierDeclaration idContainter = null)
 		{

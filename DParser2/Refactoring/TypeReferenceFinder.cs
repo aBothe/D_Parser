@@ -34,12 +34,12 @@ namespace D_Parser.Refactoring
 
 		readonly TypeReferencesResult result = new TypeReferencesResult();
 		readonly ParseCacheList sharedParseCache;
-		ResolverContextStack sharedCtxt;
+		ResolutionContext sharedCtxt;
 
 		private TypeReferenceFinder(ParseCacheList sharedCache)
 		{
 			this.sharedParseCache = sharedCache;
-			sharedCtxt = new ResolverContextStack(sharedCache, new ResolverContext { });
+			sharedCtxt = ResolutionContext.Create(sharedCache, null);
 		}
 
 		public static TypeReferencesResult Scan(IAbstractSyntaxTree ast, ParseCacheList pcl)
@@ -195,8 +195,7 @@ namespace D_Parser.Refactoring
 
 		void _th(object pcl_shared)
 		{
-			var pcl = (ParseCacheList)pcl_shared;
-			var ctxt = new ResolverContextStack(pcl, new ResolverContext { ScopedBlock= ast });
+			var ctxt = ResolutionContext.Create((ParseCacheList)pcl_shared, ast);
 
 			// Make it as most performing as possible by avoiding unnecessary base types. 
 			// Aliases should be analyzed deeper though.
@@ -242,7 +241,7 @@ namespace D_Parser.Refactoring
 			}
 		}
 
-		AbstractType HandleAccessExpressions(PostfixExpression_Access acc, ResolverContextStack ctxt)
+		AbstractType HandleAccessExpressions(PostfixExpression_Access acc, ResolutionContext ctxt)
 		{
 			AbstractType pfType = null;
 			if (acc.PostfixForeExpression is PostfixExpression_Access)
