@@ -8,11 +8,11 @@ namespace D_Parser.Resolver.Templates
 	/// </summary>
 	public class SpecializationOrdering
 	{
-		ResolverContextStack ctxt;
+		ResolutionContext ctxt;
 
 		public static AbstractType[] FilterFromMostToLeastSpecialized(
 			List<AbstractType> templateOverloads,
-			ResolverContextStack ctxt)
+			ResolutionContext ctxt)
 		{
 			if (templateOverloads == null)
 				return null;

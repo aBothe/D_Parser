@@ -16,7 +16,7 @@ namespace D_Parser.Resolver.TypeResolution
 		public static MemberSymbol[] TryResolveUFCS(
 			ISemantic firstArgument, 
 			PostfixExpression_Access acc, 
-			ResolverContextStack ctxt)
+			ResolutionContext ctxt)
 		{
 			if (ctxt == null)
 				return null;

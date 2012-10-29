@@ -11,7 +11,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public abstract class AbstractSymbolValueProvider
 	{
-		public ResolverContextStack ResolutionContext { get; protected set; }
+		public ResolutionContext ResolutionContext { get; protected set; }
 
 		public ISymbolValue this[IdentifierExpression id]
 		{
@@ -75,7 +75,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	/// </summary>
 	public class StandardValueProvider : AbstractSymbolValueProvider
 	{
-		public StandardValueProvider(ResolverContextStack ctxt)
+		public StandardValueProvider(ResolutionContext ctxt)
 		{
 			ResolutionContext = ctxt;
 		}

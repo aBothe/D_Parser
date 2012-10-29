@@ -10,9 +10,9 @@ namespace D_Parser.Resolver.ASTScanner
 		string filterId;
 		public List<INode> Matches = new List<INode>();
 
-		NameScan(ResolverContextStack ctxt) : base(ctxt) { }
+		NameScan(ResolutionContext ctxt) : base(ctxt) { }
 
-		public static IEnumerable<INode> SearchMatchesAlongNodeHierarchy(ResolverContextStack ctxt, CodeLocation caret, string name)
+		public static IEnumerable<INode> SearchMatchesAlongNodeHierarchy(ResolutionContext ctxt, CodeLocation caret, string name)
 		{
 			var scan = new NameScan(ctxt) { filterId=name };
 
@@ -75,7 +75,7 @@ namespace D_Parser.Resolver.ASTScanner
 		/// Scans through the node. Also checks if n is a DClassLike or an other kind of type node and checks their specific child and/or base class nodes.
 		/// </summary>
 		/// <param name="parseCache">Needed when trying to search base classes</param>
-		public static INode[] ScanNodeForIdentifier(IBlockNode curScope, string name, ResolverContextStack ctxt)
+		public static INode[] ScanNodeForIdentifier(IBlockNode curScope, string name, ResolutionContext ctxt)
 		{
 			if (__stack > 40)
 				return null;

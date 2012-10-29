@@ -186,7 +186,7 @@ void main()
 			var sw = new Stopwatch();
 			var main = pcl[0]["modA"]["main"][0] as DMethod;
 			var s = main.Body.SubStatements[main.Body.SubStatements.Length - 1] as IExpressionContainingStatement;
-			var ctxt = new ResolverContextStack(pcl, new ResolverContext { ScopedBlock = main, ScopedStatement = s });
+			var ctxt = ResolutionContext.Create(pcl, main, s);
 			//ctxt.ContextIndependentOptions |= ResolutionOptions.StopAfterFirstOverloads | ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.DontResolveBaseTypes;
 			var x = s.SubExpressions[0];
 			//pc.UfcsCache.Update(pcl);

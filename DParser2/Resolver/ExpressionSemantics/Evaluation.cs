@@ -15,7 +15,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// False, if the expression's type is wanted only.
 		/// </summary>
 		private readonly bool eval;
-		private readonly ResolverContextStack ctxt;
+		private readonly ResolutionContext ctxt;
 		/// <summary>
 		/// Is not null if the expression value shall be evaluated.
 		/// </summary>
@@ -27,7 +27,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			this.eval = true;
 			this.ctxt = vp.ResolutionContext;
 		}
-		private Evaluation(ResolverContextStack ctxt) {
+		private Evaluation(ResolutionContext ctxt) {
 			this.ctxt = ctxt;
 		}
 		#endregion
@@ -35,7 +35,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// <summary>
 		/// Uses the standard value provider for expression value evaluation
 		/// </summary>
-		public static ISymbolValue EvaluateValue(IExpression x, ResolverContextStack ctxt)
+		public static ISymbolValue EvaluateValue(IExpression x, ResolutionContext ctxt)
 		{
 			try
 			{
@@ -60,7 +60,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// Since most expressions should return a single type only, it's not needed to use this function unless you might
 		/// want to pay attention on (illegal) multiple overloads.
 		/// </summary>
-		public static AbstractType[] EvaluateTypes(IExpression x, ResolverContextStack ctxt)
+		public static AbstractType[] EvaluateTypes(IExpression x, ResolutionContext ctxt)
 		{
 			var t = new Evaluation(ctxt).E(x);
 
@@ -70,7 +70,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return new[]{ AbstractType.Get(t) };
 		}
 
-		public static AbstractType EvaluateType(IExpression x, ResolverContextStack ctxt)
+		public static AbstractType EvaluateType(IExpression x, ResolutionContext ctxt)
 		{
 			return AbstractType.Get(new Evaluation(ctxt).E(x));
 		}
@@ -150,7 +150,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return v;
 		}
 
-		public static AbstractType[] GetUnfilteredMethodOverloads(IExpression foreExpression, ResolverContextStack ctxt, IExpression supExpression = null)
+		public static AbstractType[] GetUnfilteredMethodOverloads(IExpression foreExpression, ResolutionContext ctxt, IExpression supExpression = null)
 		{
 			AbstractType[] overloads = null;
 
@@ -205,7 +205,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return l.ToArray();
 		}
 
-		public static AbstractType[] GetResolvedConstructorOverloads(TokenExpression tk, ResolverContextStack ctxt)
+		public static AbstractType[] GetResolvedConstructorOverloads(TokenExpression tk, ResolutionContext ctxt)
 		{
 			if (tk.Token == DTokens.This || tk.Token == DTokens.Super)
 			{

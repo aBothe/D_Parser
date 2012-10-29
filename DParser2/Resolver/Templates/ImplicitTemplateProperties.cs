@@ -20,7 +20,7 @@ namespace D_Parser.Resolver.Templates
 			return dc != null && dc[dc.Name].Count != 0;
 		}
 
-		public static bool TryGetImplicitProperty(TemplateType template, ResolverContextStack ctxt, out AbstractType[] matchingChild)
+		public static bool TryGetImplicitProperty(TemplateType template, ResolutionContext ctxt, out AbstractType[] matchingChild)
 		{
 			// Check if there are only children that are named as the parent template.
 			// That's the requirement for the special treatment.

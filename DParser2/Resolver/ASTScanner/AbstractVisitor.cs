@@ -20,15 +20,15 @@ namespace D_Parser.Resolver.ASTScanner
 			ModuleIdentifier = new IdentifierDeclaration("object")
 		};
 
-		ResolverContextStack ctxt;
-		public ResolverContextStack Context { 
+		ResolutionContext ctxt;
+		public ResolutionContext Context { 
 			get{ return ctxt;}
 			set{ ctxt=value;}
 		}
 		#endregion
 
 		#region Constructor
-		public AbstractVisitor(ResolverContextStack context)
+		public AbstractVisitor(ResolutionContext context)
 		{
 			ctxt=context;
 		}

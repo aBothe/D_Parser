@@ -13,7 +13,7 @@ namespace D_Parser.Completion
 {
 	public class MemberCompletionProvider : AbstractCompletionProvider
 	{
-		ResolverContextStack ctxt;
+		ResolutionContext ctxt;
 		public PostfixExpression_Access AccessExpression;
 		public IStatement ScopedStatement;
 		public IBlockNode ScopedBlock;
@@ -31,12 +31,10 @@ namespace D_Parser.Completion
 
 		protected override void BuildCompletionDataInternal(IEditorData Editor, string EnteredText)
 		{
-			ctxt = ResolverContextStack.Create(Editor);
+			ctxt = ResolutionContext.Create(Editor.ParseCache,ScopedBlock, ScopedStatement);
 			var ex = AccessExpression.AccessExpression == null ? AccessExpression.PostfixForeExpression : AccessExpression;
 
-			ctxt.PushNewScope(ScopedBlock).ScopedStatement = ScopedStatement;
 			var r = Evaluation.EvaluateType(ex, ctxt);
-			ctxt.Pop();
 
 			if (r == null) //TODO: Add after-space list creation when an unbound . (Dot) was entered which means to access the global scope
 				return;

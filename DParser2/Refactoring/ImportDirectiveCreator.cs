@@ -53,13 +53,10 @@ namespace D_Parser.Refactoring
 			importRequired = false;
 			var l = new List<INode>();
 
-			var ctxt = new ResolverContextStack(ed.ParseCache, new ResolverContext())
-			{
-				ContextIndependentOptions = ResolutionOptions.ReturnMethodReferencesOnly | 
-				ResolutionOptions.DontResolveBaseTypes | 
-				ResolutionOptions.DontResolveAliases | ResolutionOptions.NoTemplateParameterDeduction
-			};
-			ctxt.ScopedBlock = DResolver.SearchBlockAt(ed.SyntaxTree, ed.CaretLocation, out ctxt.CurrentContext.ScopedStatement);
+			var ctxt = ResolutionContext.Create(ed);
+			ctxt.ContextIndependentOptions = ResolutionOptions.ReturnMethodReferencesOnly |
+				ResolutionOptions.DontResolveBaseTypes |
+				ResolutionOptions.DontResolveAliases | ResolutionOptions.NoTemplateParameterDeduction;
 
 			// Get scoped object.
 			var o = DResolver.GetScopedCodeObject(ed, ctxt, DResolver.AstReparseOptions.AlsoParseBeyondCaret);

@@ -5,7 +5,7 @@ using D_Parser.Resolver.Templates;
 
 namespace D_Parser.Resolver
 {
-	public class ResolverContext
+	public class ContextFrame
 	{
 		public IBlockNode ScopedBlock;
 		public IStatement ScopedStatement;
@@ -30,7 +30,7 @@ namespace D_Parser.Resolver
 
 		public ResolutionOptions ContextDependentOptions = 0;
 
-		public void ApplyFrom(ResolverContext other)
+		public void ApplyFrom(ContextFrame other)
 		{
 			if (other == null)
 				return;

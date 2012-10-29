@@ -6,7 +6,7 @@ using D_Parser.Dom;
 
 namespace D_Parser.Parser
 {
-	public class Lexer : IDisposable
+	public sealed class Lexer : IDisposable
 	{
 		#region Properties
 		TextReader reader;
@@ -71,10 +71,10 @@ namespace D_Parser.Parser
 			Col = location.Column;
 		}
 
-		public virtual void Dispose()
+		public void Dispose()
 		{
 			reader = null;
-			curToken = lookaheadToken = peekToken = null;
+			prevToken = curToken = lookaheadToken = peekToken = null;
 			sb = originalValue = null;
 			escapeSequenceBuffer = null;
 			identBuffer = null;

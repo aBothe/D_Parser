@@ -7,10 +7,10 @@ using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Resolver
 {
-	public class ResolverContextStack
+	public class ResolutionContext
 	{
 		#region Properties
-		protected Stack<ResolverContext> stack = new Stack<ResolverContext>();
+		protected Stack<ContextFrame> stack = new Stack<ContextFrame>();
 		public ResolutionOptions ContextIndependentOptions = ResolutionOptions.Default;
 		public readonly List<ResolutionError> ResolutionErrors = new List<ResolutionError>();
 
@@ -62,7 +62,7 @@ namespace D_Parser.Resolver
 			get { return resolvedTypes; }
 		}
 
-		public ResolverContext CurrentContext
+		public ContextFrame CurrentContext
 		{
 			get {
 				return stack.Peek();
@@ -70,24 +70,29 @@ namespace D_Parser.Resolver
 		}
 		#endregion
 
-		public static ResolverContextStack Create(IEditorData editor)
+		public static ResolutionContext Create(IEditorData editor)
 		{
 			IStatement stmt = null;
-			return new ResolverContextStack(editor.ParseCache, new ResolverContext
+			return new ResolutionContext(editor.ParseCache, new ContextFrame
 			{
 				ScopedBlock = DResolver.SearchBlockAt(editor.SyntaxTree, editor.CaretLocation, out stmt) ?? editor.SyntaxTree,
 				ScopedStatement = stmt
 			});
 		}
 
-		public ResolverContextStack(ParseCacheList ParseCache,	ResolverContext initialContext)
+		public static ResolutionContext Create(ParseCacheList pcl, IBlockNode scopedBlock, IStatement scopedStatement=null)
+		{
+			return new ResolutionContext(pcl, new ContextFrame { ScopedBlock=scopedBlock, ScopedStatement=scopedStatement });
+		}
+
+		protected ResolutionContext(ParseCacheList ParseCache,	ContextFrame initialContext)
 		{
 			this.ParseCache = ParseCache;
 			
 			stack.Push(initialContext);
 		}
 
-		public ResolverContext Pop()
+		public ContextFrame Pop()
 		{
 			if(stack.Count>0)
 				return stack.Pop();
@@ -95,16 +100,16 @@ namespace D_Parser.Resolver
 			return null;
 		}
 
-		public void Push(ResolverContext c)
+		public void Push(ContextFrame c)
 		{
 			stack.Push(c);
 		}
 
-		public ResolverContext PushNewScope(IBlockNode scope)
+		public ContextFrame PushNewScope(IBlockNode scope, IStatement stmt = null)
 		{
-			var ctxtOverride = new ResolverContext();
+			var ctxtOverride = new ContextFrame();
 			ctxtOverride.ScopedBlock = scope;
-			ctxtOverride.ScopedStatement = null;
+			ctxtOverride.ScopedStatement = stmt;
 
 			stack.Push(ctxtOverride);
 
@@ -167,12 +172,12 @@ namespace D_Parser.Resolver
 		/// <summary>
 		/// Clones the stack object and also clones the highest item on the context stack (only!)
 		/// </summary>
-		public ResolverContextStack Clone()
+		public ResolutionContext Clone()
 		{
-			var rc=new ResolverContext();
+			var rc=new ContextFrame();
 			rc.ApplyFrom(CurrentContext);
 
-			return new ResolverContextStack(ParseCache, rc);
+			return new ResolutionContext(ParseCache, rc);
 		}
 
 		/// <summary>

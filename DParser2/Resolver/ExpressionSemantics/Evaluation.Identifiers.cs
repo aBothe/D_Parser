@@ -165,7 +165,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return GetOverloads(tix, ctxt, resultBases, deduceParameters);
 		}
 
-		public static AbstractType[] GetOverloads(TemplateInstanceExpression tix, ResolverContextStack ctxt, IEnumerable<AbstractType> resultBases = null, bool deduceParameters = true)
+		public static AbstractType[] GetOverloads(TemplateInstanceExpression tix, ResolutionContext ctxt, IEnumerable<AbstractType> resultBases = null, bool deduceParameters = true)
 		{
 			AbstractType[] res = null;
 			if (resultBases == null)
@@ -182,7 +182,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return GetOverloads(id, ctxt);
 		}
 
-		public static AbstractType[] GetOverloads(IdentifierExpression id, ResolverContextStack ctxt)
+		public static AbstractType[] GetOverloads(IdentifierExpression id, ResolutionContext ctxt)
 		{
 			var raw=TypeDeclarationResolver.ResolveIdentifier(id.Value as string, ctxt, id, id.ModuleScoped);
 			var f = DResolver.FilterOutByResultPriority(ctxt, raw);

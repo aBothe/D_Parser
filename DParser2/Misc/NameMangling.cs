@@ -9,7 +9,7 @@ namespace D_Parser.Misc
 {
 	public class NameMangling
 	{
-		public AbstractType Demangle(string mangledString, ResolverContextStack ctxt)
+		public AbstractType Demangle(string mangledString, ResolutionContext ctxt)
 		{
 			return null;
 		}

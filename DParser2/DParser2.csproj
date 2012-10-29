@@ -136,7 +136,7 @@
     <Compile Include="Parser\CaretContextAnalyzer.cs" />
     <Compile Include="Completion\ParameterInsightResolution.cs" />
     <Compile Include="Resolver\ASTScanner\ResultCache.cs" />
-    <Compile Include="Resolver\ResolverContextStack.cs" />
+    <Compile Include="Resolver\ResolutionContext.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.StaticProperties.cs" />
     <Compile Include="Completion\IEditorData.cs" />
     <Compile Include="Dom\Nodes\AbstractNode.cs" />
@@ -158,7 +158,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Parser\DToken.cs" />
     <Compile Include="Dom\DDeclarations.cs" />
-    <Compile Include="Resolver\ResolverContext.cs" />
+    <Compile Include="Resolver\ContextFrame.cs" />
     <Compile Include="Resolver\TypeResolution\UFCSResolver.cs" />
   </ItemGroup>
   <ItemGroup>
