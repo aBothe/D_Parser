@@ -213,7 +213,7 @@ namespace D_Parser.Parser
 			bool IsInString = false;
 			bool IsInLineComment = false;
 			bool IsInBlockComment = false;
-			bool IsInNestedBlockComment = false;
+			int IsInNestedBlockComment = 0;
 			bool IsChar = false;
 			bool IsVerbatimString = false;
 			bool IsAlternateVerbatimString = false;
@@ -233,7 +233,7 @@ namespace D_Parser.Parser
 					peekChar = Text[off + 1];
 
 				// String check
-				if (!IsInLineComment && !IsInBlockComment && !IsInNestedBlockComment)
+				if (!IsInLineComment && !IsInBlockComment && IsInNestedBlockComment < 1)
 				{
 					if (!IsInString)
 					{
@@ -308,7 +308,7 @@ namespace D_Parser.Parser
 				if (!IsInString && !IsChar)
 				{
 					// Line comment check
-					if (!IsInBlockComment && !IsInNestedBlockComment)
+					if (!IsInBlockComment && IsInNestedBlockComment < 1)
 					{
 						if (cur == '/' && peekChar == '/')
 						{
@@ -342,13 +342,13 @@ namespace D_Parser.Parser
 					// Nested comment check
 					if (!IsInString && cur == '/' && peekChar == '+')
 					{
-						IsInNestedBlockComment = true;
+						IsInNestedBlockComment++;
 						lastBeginOffset = off;
 						lastEndOffset = -1;
 					}
-					else if (IsInNestedBlockComment && cur == '+' && peekChar == '/')
+					else if (IsInNestedBlockComment > 0 && cur == '+' && peekChar == '/')
 					{
-						IsInNestedBlockComment = false;
+						IsInNestedBlockComment--;
 						off++;
 						lastEndOffset = off + 1;
 					}
@@ -365,7 +365,7 @@ namespace D_Parser.Parser
 				ret |= TokenContext.LineComment;
 			if (IsInBlockComment)
 				ret |= TokenContext.BlockComment;
-			else if (IsInNestedBlockComment)
+			else if (IsInNestedBlockComment>0)
 				ret |= TokenContext.NestedComment;
 			if (IsInString)
 				ret |= TokenContext.String;
