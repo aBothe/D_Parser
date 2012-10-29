@@ -45,10 +45,10 @@ namespace D_Parser.Completion
 
 				if(trackVars.ExpectingIdentifier)
 				{
-					if (trackVars.LastParsedObject is DAttribute)
+					if (trackVars.LastParsedObject is Modifier)
 						return new AttributeCompletionProvider(dataGen)
 						{
-							Attribute = trackVars.LastParsedObject as DAttribute
+							Attribute = trackVars.LastParsedObject as Modifier
 						};
 					else if (trackVars.LastParsedObject is ScopeGuardStatement)
 						return new ScopeAttributeCompletionProvider(dataGen)

@@ -46,8 +46,8 @@ can be used to pro­vide an al­ter­na­tive ex­e­cu­tion path
 to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			};
 
-			__ctfe.Attributes.Add(new DAttribute(DTokens.Static));
-			__ctfe.Attributes.Add(new DAttribute(DTokens.Const));
+			__ctfe.Attributes.Add(new Modifier(DTokens.Static));
+			__ctfe.Attributes.Add(new Modifier(DTokens.Const));
 		}
 		#endregion
 
@@ -454,7 +454,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					{
 						if (takePublicImportsOnly &&
 							dstmt is ImportStatement &&
-							!DAttribute.ContainsAttribute(dstmt.Attributes, DTokens.Public))
+							!Modifier.ContainsAttribute(dstmt.Attributes, DTokens.Public))
 							continue;
 
 						/*

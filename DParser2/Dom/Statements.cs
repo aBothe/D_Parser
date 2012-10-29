@@ -16,7 +16,7 @@ namespace D_Parser.Dom.Statements
 		/// <summary>
 		/// Mostly used for storing declaration constraints.
 		/// </summary>
-		DAttribute[] Attributes { get; set; }
+		Modifier[] Attributes { get; set; }
 		string AttributeString { get; }
 
 		string ToCode();
@@ -39,7 +39,7 @@ namespace D_Parser.Dom.Statements
 		public virtual CodeLocation Location { get; set; }
 		public virtual CodeLocation EndLocation { get; set; }
 		public IStatement Parent { get; set; }
-		public DAttribute[] Attributes { get; set; }
+		public Modifier[] Attributes { get; set; }
 
 		INode parent;
 		public INode ParentNode {
@@ -1349,6 +1349,7 @@ namespace D_Parser.Dom.Statements
 	public class VersionDebugSpecification : AbstractStatement, IExpressionContainingStatement
 	{
 		public int Token;
+		public IDeclarationCondition[] PrecedingConditions;
 
 		public IExpression SpecifiedValue;
 	

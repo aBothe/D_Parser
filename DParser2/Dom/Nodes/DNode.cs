@@ -28,10 +28,10 @@ namespace D_Parser.Dom
 			}
 		}
 		
-        public List<DAttribute> Attributes = new List<DAttribute>();
+        public List<Modifier> Attributes = new List<Modifier>();
         public bool ContainsAttribute(params int[] Token)
         {
-            return DAttribute.ContainsAttribute(Attributes, Token);
+            return Modifier.ContainsAttribute(Attributes, Token);
         }
 
 		public bool ContainsPropertyAttribute(string prop="property")

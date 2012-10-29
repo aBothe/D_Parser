@@ -28,11 +28,11 @@ namespace D_Parser.Parser
 		/// <summary>
 		/// Modifiers for entire block
 		/// </summary>
-		Stack<DAttribute> BlockAttributes = new Stack<DAttribute>();
+		Stack<Modifier> BlockAttributes = new Stack<Modifier>();
 		/// <summary>
 		/// Modifiers for current expression only
 		/// </summary>
-		Stack<DAttribute> DeclarationAttributes = new Stack<DAttribute>();
+		Stack<Modifier> DeclarationAttributes = new Stack<Modifier>();
 
 		bool ParseStructureOnly = false;
 		public Lexer Lexer;
@@ -243,15 +243,15 @@ namespace D_Parser.Parser
         }
 		#endregion
 
-		void PushAttribute(DAttribute attr, bool BlockAttributes)
+		void PushAttribute(Modifier attr, bool BlockAttributes)
 		{
 			var stk=BlockAttributes?this.BlockAttributes:this.DeclarationAttributes;
 
 			// If attr would change the accessability of an item, remove all previously found (so the most near attribute that's next to the item is significant)
 			if (DTokens.VisModifiers[attr.Token])
-				DAttribute.CleanupAccessorAttributes(stk, attr.Token);
+				Modifier.CleanupAccessorAttributes(stk, attr.Token);
 			else
-				DAttribute.RemoveFromStack(stk, attr.Token);
+				Modifier.RemoveFromStack(stk, attr.Token);
 
 			LastParsedObject = attr;
 
@@ -269,16 +269,16 @@ namespace D_Parser.Parser
 
 				// If accessor already in attribute array, remove it
 				if (DTokens.VisModifiers[attr.Token])
-					DAttribute.CleanupAccessorAttributes(n.Attributes);
+					Modifier.CleanupAccessorAttributes(n.Attributes);
 
-                if (attr.IsProperty || !DAttribute.ContainsAttribute(n.Attributes.ToArray(),attr.Token))
+                if (attr.IsProperty || !Modifier.ContainsAttribute(n.Attributes.ToArray(),attr.Token))
                     n.Attributes.Add(attr);
             }
         }
 
 		void ApplyAttributes(IStatement n)
 		{
-			var attributes = new List<DAttribute>();
+			var attributes = new List<Modifier>();
 
 			foreach (var attr in BlockAttributes.ToArray())
 				attributes.Add(attr);
@@ -289,9 +289,9 @@ namespace D_Parser.Parser
 
 				// If accessor already in attribute array, remove it
 				if (DTokens.VisModifiers[attr.Token])
-					DAttribute.CleanupAccessorAttributes(attributes);
+					Modifier.CleanupAccessorAttributes(attributes);
 
-				if (attr.IsProperty || !DAttribute.ContainsAttribute(attributes, attr.Token))
+				if (attr.IsProperty || !Modifier.ContainsAttribute(attributes, attr.Token))
 					attributes.Add(attr);
 			}
 

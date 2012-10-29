@@ -38,9 +38,10 @@ namespace D_Parser.Dom
 		void VisitBlock(DBlockNode dBlockNode);
 		void Visit(TemplateParameterNode templateParameterNode);
 
-		void VisitAttribute(DAttribute attribute);
-		void VisitAttribute(DeclarationCondition declCond);
+		void VisitAttribute(Modifier attribute);
 		void VisitAttribute(PragmaAttribute pragma);
+		void VisitAttribute(VersionCondition vis);
+		void VisitAttribute(DebugCondition debugCondition);
 	}
 
 	public interface NodeVisitor<out R> : IVisitor<R>
@@ -54,9 +55,10 @@ namespace D_Parser.Dom
 		R Visit(DBlockNode dBlockNode);
 		R Visit(TemplateParameterNode templateParameterNode);
 
-		R VisitAttribute(DAttribute attr);
-		R VisitAttribute(DeclarationCondition attr);
+		R VisitAttribute(Modifier attr);
 		R VisitAttribute(PragmaAttribute attr);
+		R VisitAttribute(VersionCondition vis);
+		R VisitAttribute(DebugCondition debugCondition);
 	}
 
 	public interface MetaDeclarationVisitor : IVisitor

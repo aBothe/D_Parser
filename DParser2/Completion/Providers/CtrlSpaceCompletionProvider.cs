@@ -63,9 +63,9 @@ namespace D_Parser.Completion
 					IsIdentifierChar(EnteredText[0]))
 					return;
 
-				if (trackVars.LastParsedObject is DAttribute)
+				if (trackVars.LastParsedObject is Modifier)
 				{
-					var attr = trackVars.LastParsedObject as DAttribute;
+					var attr = trackVars.LastParsedObject as Modifier;
 
 					if (attr.IsStorageClass && attr.Token != DTokens.Abstract)
 						return;

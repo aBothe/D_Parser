@@ -11,7 +11,7 @@ namespace D_Parser.Completion
 {
 	internal class AttributeCompletionProvider : AbstractCompletionProvider
 	{
-		public DAttribute Attribute;
+		public Attribute Attribute;
 
 		public AttributeCompletionProvider(ICompletionDataGenerator gen) : base(gen) { }
 

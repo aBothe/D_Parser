@@ -111,7 +111,7 @@ namespace D_Parser.Dom
 				n.Type.Accept(this);
 		}
 
-		public virtual void VisitAttribute(DAttribute attribute) {}
+		public virtual void VisitAttribute(Modifier attribute) {}
 
 		public void VisitAttribute(DeclarationCondition declCond)
 		{

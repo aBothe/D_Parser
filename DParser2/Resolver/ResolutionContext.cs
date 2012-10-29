@@ -10,6 +10,7 @@ namespace D_Parser.Resolver
 	public class ResolutionContext
 	{
 		#region Properties
+		public ConditionalCompilationFlags CompilationEnvironment;
 		protected Stack<ContextFrame> stack = new Stack<ContextFrame>();
 		public ResolutionOptions ContextIndependentOptions = ResolutionOptions.Default;
 		public readonly List<ResolutionError> ResolutionErrors = new List<ResolutionError>();
@@ -67,6 +68,18 @@ namespace D_Parser.Resolver
 			get {
 				return stack.Peek();
 			}
+		}
+
+		public static List<IDeclarationCondition> GetDeclarationConditions(DNode n)
+		{
+			var l = new List<IDeclarationCondition>();
+
+			while(n!=null)
+			{
+				
+			}
+
+			return l;
 		}
 		#endregion
 

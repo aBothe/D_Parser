@@ -235,7 +235,7 @@ namespace D_Parser.Parser
 			{
 				Step();
 
-				if (DAttribute.ContainsAttribute(DeclarationAttributes, Static))
+				if (Attribute.ContainsAttribute(DeclarationAttributes, Static))
 				{
 					//HACK: Assume that there's only our 'static' attribute applied to the 'if'-statement
 					DeclarationAttributes.Clear();
@@ -430,7 +430,7 @@ namespace D_Parser.Parser
 			 */
 			else if (c.IsStaticIfCondition && Expect(OpenParenthesis))
 			{
-				if (DAttribute.ContainsAttribute(DeclarationAttributes, Static))
+				if (Attribute.ContainsAttribute(DeclarationAttributes, Static))
 					DeclarationAttributes.Clear();
 				else
 					SynErr(Static, "Conditional declaration checks must be static");
@@ -632,8 +632,8 @@ namespace D_Parser.Parser
 				{
 					Step();
 					// Always allow more than only one property attribute
-					if (t.Kind == PropertyAttribute || !DAttribute.ContainsAttribute(DeclarationAttributes.ToArray(), t.Kind))
-						PushAttribute(new DAttribute(t.Kind, t.Value) { Location = t.Location, EndLocation = t.EndLocation }, false);
+					if (t.Kind == PropertyAttribute || !Attribute.ContainsAttribute(DeclarationAttributes.ToArray(), t.Kind))
+						PushAttribute(new Attribute(t.Kind, t.Value) { Location = t.Location, EndLocation = t.EndLocation }, false);
 				}
 				ret = true;
 			}
@@ -645,7 +645,7 @@ namespace D_Parser.Parser
 			// Skip ref token
 			if (laKind == (Ref))
 			{
-				PushAttribute(new DAttribute(Ref), false);
+				PushAttribute(new Attribute(Ref), false);
 				Step();
 			}
 
@@ -742,8 +742,8 @@ namespace D_Parser.Parser
 			// Skip ref token
 			if (laKind == (Ref))
 			{
-				if (!DAttribute.ContainsAttribute(DeclarationAttributes, Ref))
-					PushAttribute(new DAttribute(Ref), false);
+				if (!Attribute.ContainsAttribute(DeclarationAttributes, Ref))
+					PushAttribute(new Attribute(Ref), false);
 				Step();
 			}
 
@@ -751,14 +751,14 @@ namespace D_Parser.Parser
 			var StorageClass = DTokens.ContainsStorageClass(DeclarationAttributes.ToArray());
 
 			//TODO: Specify how enum-returning functions shall be handled
-			if (StorageClass.Token == DAttribute.Empty.Token && laKind == Enum)
+			if (StorageClass.Token == Attribute.Empty.Token && laKind == Enum)
 			{
 				Step();
-				PushAttribute(StorageClass = new DAttribute(Enum) { Location = t.Location, EndLocation = t.EndLocation },false);
+				PushAttribute(StorageClass = new Attribute(Enum) { Location = t.Location, EndLocation = t.EndLocation },false);
 			}
 			
 			// If there's no explicit type declaration, leave our node's type empty!
-			if ((StorageClass.Token != DAttribute.Empty.Token && 
+			if ((StorageClass.Token != Attribute.Empty.Token && 
 				laKind == (Identifier) && DeclarationAttributes.Count > 0)) // public auto var=0; // const foo(...) {} 
 			{
 				if (Lexer.CurrentPeekToken.Kind == Assign || Lexer.CurrentPeekToken.Kind ==OpenParenthesis) 
@@ -1052,11 +1052,11 @@ namespace D_Parser.Parser
 				if (!IsEOF)
 					LastParsedObject = lpo;
 
-				var attributes = new List<DAttribute>();
+				var attributes = new List<Attribute>();
 				while (FunctionAttribute[laKind])
 				{
 					Step();
-					attributes.Add(new DAttribute(t.Kind, t.Value) { Location = t.Location, EndLocation = t.EndLocation });
+					attributes.Add(new Attribute(t.Kind, t.Value) { Location = t.Location, EndLocation = t.EndLocation });
 				}
 				dd.Modifiers= attributes.Count>0? attributes.ToArray() : null;
 
@@ -1147,7 +1147,7 @@ namespace D_Parser.Parser
 						{
 							ITemplateParameter[] _unused2 = null;
 							List<INode> _unused = null;
-							List<DAttribute> _unused3 = new List<DAttribute>();
+							List<Attribute> _unused3 = new List<Attribute>();
 							ttd = DeclaratorSuffixes(out _unused2, out _unused, _unused3);
 
 							if (ttd != null)
@@ -1230,9 +1230,9 @@ namespace D_Parser.Parser
 		/// 
 		/// TemplateParameterList[opt] Parameters MemberFunctionAttributes[opt]
 		/// </summary>
-		ITypeDeclaration DeclaratorSuffixes(out ITemplateParameter[] TemplateParameters, out List<INode> _Parameters, List<DAttribute> attributes)
+		ITypeDeclaration DeclaratorSuffixes(out ITemplateParameter[] TemplateParameters, out List<INode> _Parameters, List<Attribute> attributes)
 		{
-			DAttribute attr = null;
+			Attribute attr = null;
 			ITypeDeclaration td = null;
 			TemplateParameters = null;
 			_Parameters = null;
@@ -1390,7 +1390,7 @@ namespace D_Parser.Parser
 				{
 					List<INode> _unused = null;
 					ITemplateParameter[] _unused2 = null;
-					List<DAttribute> _unused3 = new List<DAttribute>();
+					List<Attribute> _unused3 = new List<Attribute>();
 					DeclaratorSuffixes(out _unused2, out _unused,_unused3);
 				}
 				return td;
@@ -1475,7 +1475,7 @@ namespace D_Parser.Parser
 
 		private INode Parameter(IBlockNode Scope = null)
 		{
-			var attr = new List<DAttribute>();
+			var attr = new List<Attribute>();
 			var startLocation = la.Location;
 
 			ITypeDeclaration td = null;
@@ -1483,15 +1483,15 @@ namespace D_Parser.Parser
 			while ((ParamModifiers[laKind] && laKind != InOut) || (MemberFunctionAttribute[laKind] && Lexer.CurrentPeekToken.Kind != OpenParenthesis))
 			{
 				Step();
-				attr.Add(new DAttribute(t.Kind));
+				attr.Add(new Attribute(t.Kind));
 			}
 
 			if (laKind == Auto && Lexer.CurrentPeekToken.Kind == Ref) // functional.d:595 // auto ref F fp
 			{
 				Step();
 				Step();
-				attr.Add(new DAttribute(Auto));
-				attr.Add(new DAttribute(Ref));
+				attr.Add(new Attribute(Auto));
+				attr.Add(new Attribute(Ref));
 			}
 
 			td = BasicType();
@@ -1748,7 +1748,7 @@ namespace D_Parser.Parser
 
 		private void AttributeSpecifier(DBlockNode scope)
 		{
-			var attr = new DAttribute(laKind, la.Value) { Location = la.Location };
+			var attr = new Attribute(laKind, la.Value) { Location = la.Location };
 			LastParsedObject = attr;
 			if (laKind == Extern && Lexer.CurrentPeekToken.Kind == OpenParenthesis)
 			{
@@ -1805,7 +1805,7 @@ namespace D_Parser.Parser
 		/// <param name="previouslyParsedAttribute"></param>
 		/// <param name="RequireDeclDef">If no colon and no open curly brace is given as lookahead, a DeclDef may be parsed otherwise, if parameter is true.</param>
 		/// <returns></returns>
-		AbstractMetaDeclaration AttributeTrail(DBlockNode module,DAttribute previouslyParsedAttribute, bool RequireDeclDef = false)
+		AbstractMetaDeclaration AttributeTrail(DBlockNode module,Attribute previouslyParsedAttribute, bool RequireDeclDef = false)
 		{
 			if (laKind == Colon)
 			{
@@ -1837,17 +1837,17 @@ namespace D_Parser.Parser
 				return;
 
 			if (n.Attributes == null)
-				n.Attributes = new List<DAttribute>();
+				n.Attributes = new List<Attribute>();
 
 			FunctionAttributes(n.Attributes);
 		}
 
-		void FunctionAttributes(List<DAttribute> attributes)
+		void FunctionAttributes(List<Attribute> attributes)
 		{
-			DAttribute attr = null;
+			Attribute attr = null;
 			while (MemberFunctionAttribute[laKind])
 			{
-				attributes.Add(attr = new DAttribute(laKind, la.Value) { Location = la.Location, EndLocation = la.EndLocation });
+				attributes.Add(attr = new Attribute(laKind, la.Value) { Location = la.Location, EndLocation = la.EndLocation });
 				LastParsedObject = attr;
 				Step();
 			}
@@ -2805,7 +2805,7 @@ namespace D_Parser.Parser
 					while (FunctionAttribute[laKind])
 					{
 						Step();
-						fl.AnonymousMethod.Attributes.Add(new DAttribute(t.Kind, t.Value) { Location = t.Location, EndLocation = t.EndLocation });
+						fl.AnonymousMethod.Attributes.Add(new Attribute(t.Kind, t.Value) { Location = t.Location, EndLocation = t.EndLocation });
 					}
 				}
 
@@ -3085,7 +3085,7 @@ namespace D_Parser.Parser
 					Location = t.Location, 
 					EndLocation = t.EndLocation };
 
-				p.Attributes.Add(new DAttribute(Auto));
+				p.Attributes.Add(new Attribute(Auto));
 				
 				fl.AnonymousMethod.Parameters.Add(p);
 			}
@@ -3688,7 +3688,7 @@ namespace D_Parser.Parser
 					return s;
 				}
 				else
-					PushAttribute(new DAttribute(DTokens.Scope), false);
+					PushAttribute(new Attribute(DTokens.Scope), false);
 			}
 			#endregion
 
@@ -3772,7 +3772,7 @@ namespace D_Parser.Parser
 				if(laKind == Static)
 				{
 					Step();
-					PushAttribute(new DAttribute(Static) { Location = t.Location, EndLocation = t.EndLocation }, false);
+					PushAttribute(new Attribute(Static) { Location = t.Location, EndLocation = t.EndLocation }, false);
 				}
 
 				return ImportDeclaration(Scope);
@@ -3832,7 +3832,7 @@ namespace D_Parser.Parser
 				if (laKind == (Ref))
 				{
 					Step();
-					forEachVar.Attributes.Add(new DAttribute(Ref));
+					forEachVar.Attributes.Add(new Attribute(Ref));
 				}
 				if (laKind == (Identifier) && (Lexer.CurrentPeekToken.Kind == (Semicolon) || Lexer.CurrentPeekToken.Kind == Comma))
 				{
@@ -4139,7 +4139,7 @@ namespace D_Parser.Parser
 				var stk_backup = BlockAttributes;
 
 				if(!KeepBlockAttributes)
-					BlockAttributes = new Stack<DAttribute>();
+					BlockAttributes = new Stack<Attribute>();
 
 				if(UpdateBoundaries)
 					ret.BlockStartLocation = t.Location;
@@ -4304,7 +4304,7 @@ namespace D_Parser.Parser
 			else if (laKind == Auto)
 			{
 				Step();
-				mye.Attributes.Add(new DAttribute(Auto));
+				mye.Attributes.Add(new Attribute(Auto));
 			}
 
 			if (laKind == (Identifier))
@@ -4361,7 +4361,7 @@ namespace D_Parser.Parser
 
 					enumVar.AssignFrom(mye);
 
-					enumVar.Attributes.Add(new DAttribute(Enum));
+					enumVar.Attributes.Add(new Attribute(Enum));
 					if (mye.Type != null)
 						enumVar.Type = mye.Type;
 					else
@@ -4530,7 +4530,7 @@ namespace D_Parser.Parser
 			ApplyAttributes(dc);
 
 			if (isTemplateMixinDecl)
-				dc.Attributes.Add(new DAttribute(Mixin));
+				dc.Attributes.Add(new Attribute(Mixin));
 
 			if (Expect(Identifier))
 			{

@@ -29,12 +29,12 @@ namespace D_Parser.Dom
 	{
 		public bool IsStatic
 		{
-			get { return DAttribute.ContainsAttribute(Attributes, DTokens.Static); }
+			get { return Modifier.ContainsAttribute(Attributes, DTokens.Static); }
 		}
 
 		public bool IsPublic
 		{
-			get { return DAttribute.ContainsAttribute(Attributes, DTokens.Public); }
+			get { return Modifier.ContainsAttribute(Attributes, DTokens.Public); }
 		}
 
 		public class Import

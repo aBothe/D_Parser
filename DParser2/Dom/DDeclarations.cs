@@ -259,7 +259,7 @@ namespace D_Parser.Dom
         public bool IsFunction = false;
 
         public List<INode> Parameters = new List<INode>();
-		public DAttribute[] Modifiers;
+		public Modifier[] Modifiers;
 
 		public override string ToString(bool IncludesBase)
         {
