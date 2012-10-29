@@ -6,7 +6,7 @@ using D_Parser.Resolver;
 
 namespace D_Parser.Dom
 {
-	interface IDeclarationCondition : IEquatable<IDeclarationCondition>
+	public interface IDeclarationCondition : IEquatable<IDeclarationCondition>
 	{
 		
 	}

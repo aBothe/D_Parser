@@ -186,7 +186,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 												new DVariable(){
 													Name="defaultValue",
 													Type=aat.ValueType.DeclarationOrExpressionBase as ITypeDeclaration,
-													Attributes=new List<Attribute>{ new Attribute(DTokens.Lazy)}
+													Attributes=new List<Modifier>{ new Modifier(DTokens.Lazy)}
 											}}
 										}, new[]{ aat.KeyType, aat.ValueType }),
 										relatedNode, idContainter);

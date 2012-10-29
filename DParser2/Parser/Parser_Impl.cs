@@ -235,7 +235,7 @@ namespace D_Parser.Parser
 			{
 				Step();
 
-				if (Attribute.ContainsAttribute(DeclarationAttributes, Static))
+				if (Modifier.ContainsAttribute(DeclarationAttributes, Static))
 				{
 					//HACK: Assume that there's only our 'static' attribute applied to the 'if'-statement
 					DeclarationAttributes.Clear();
@@ -355,41 +355,39 @@ namespace D_Parser.Parser
 		{
 			Step();
 
-			var c = new DeclarationCondition(t.Kind) { Location = t.Location };
-			LastParsedObject = c;
+			DeclarationCondition c = null;
 
 			/* 
-			 * http://www.d-programming-language.org/version.html#VersionSpecification
+			 * http://www.dlang.org/version.html#VersionSpecification
 			 * VersionCondition: 
 			 *		version ( IntegerLiteral ) 
 			 *		version ( Identifier ) 
 			 *		version ( unittest )
 			 */
-			if (c.IsVersionCondition && Expect(OpenParenthesis))
+			if (t.Kind == Version)
 			{
-				if (laKind == Unittest)
+				if (Expect(OpenParenthesis))
 				{
-					Step();
-					c.Condition = new TokenExpression(Unittest) { Location = t.Location, EndLocation = t.EndLocation };
-				}
-				else if (laKind == Literal)
-				{
-					Step();
-					c.Condition = new IdentifierExpression(t.LiteralValue, t.LiteralFormat)
+					TrackerVariables.ExpectingIdentifier = true;
+					if (laKind == Unittest)
 					{
-						Location = t.Location,
-						EndLocation = t.EndLocation
-					};
-				}
-				else if (Expect(Identifier))
-					c.Condition = new IdentifierExpression(t.Value, t.LiteralFormat)
+						Step();
+						c = new VersionCondition("unittest") { IdLocation = t.Location };
+					}
+					else if (laKind == Literal)
 					{
-						Location = t.Location,
-						EndLocation = t.EndLocation
-					};
+						Step();
+						if (t.LiteralFormat != LiteralFormat.Scalar)
+							SynErr(t.Kind, "Version number must be an integer");
+						else
+							c = new VersionCondition(Convert.ToInt32(t.LiteralValue)) { IdLocation = t.Location };
+					}
+					else if (Expect(Identifier))
+						c = new VersionCondition((string)t.LiteralValue) { IdLocation = t.Location };
 
-				if (Expect(CloseParenthesis))
-					TrackerVariables.ExpectingIdentifier = false;
+					if (Expect(CloseParenthesis))
+						TrackerVariables.ExpectingIdentifier = false;
+				}
 			}
 
 			/*
@@ -398,46 +396,48 @@ namespace D_Parser.Parser
 			 *		debug ( IntegerLiteral )
 			 *		debug ( Identifier )
 			 */
-			else if (c.IsDebugCondition)
+			else if (t.Kind == Debug)
 			{
 				if (laKind == OpenParenthesis)
 				{
 					Step();
+					TrackerVariables.ExpectingIdentifier = true;
 
 					if (laKind == Literal)
 					{
 						Step();
-						c.Condition = new IdentifierExpression(t.LiteralValue, t.LiteralFormat)
-						{
-							Location = t.Location,
-							EndLocation = t.EndLocation
-						};
+						if (t.LiteralFormat != LiteralFormat.Scalar)
+							SynErr(t.Kind, "Debug level must be an integer");
+						else
+							c = new DebugCondition(Convert.ToInt32(t.LiteralValue)) { IdLocation = t.Location };
 					}
 					else if (Expect(Identifier))
-						c.Condition = new IdentifierExpression(t.Value, t.LiteralFormat)
-						{
-							Location = t.Location,
-							EndLocation = t.EndLocation
-						};
+						c = new DebugCondition((string)t.LiteralValue) { IdLocation = t.Location };
 
-					Expect(CloseParenthesis);
+					if (Expect(CloseParenthesis))
+						TrackerVariables.ExpectingIdentifier = false;
 				}
+				else
+					c = new DebugCondition();
 			}
 
 			/*
 			 * StaticIfCondition: 
 			 *		static if ( AssignExpression )
 			 */
-			else if (c.IsStaticIfCondition && Expect(OpenParenthesis))
+			else if (t.Kind == If)
 			{
-				if (Attribute.ContainsAttribute(DeclarationAttributes, Static))
-					DeclarationAttributes.Clear();
-				else
-					SynErr(Static, "Conditional declaration checks must be static");
+				if (Expect(OpenParenthesis))
+				{
+					if (Attribute.ContainsAttribute(DeclarationAttributes, Static))
+						DeclarationAttributes.Clear();
+					else
+						SynErr(Static, "Conditional declaration checks must be static");
 
-				c.Condition = AssignExpression();
+					c.Condition = AssignExpression();
 
-				Expect(CloseParenthesis);
+					Expect(CloseParenthesis);
+				}
 			}
 
 			c.EndLocation = t.EndLocation;

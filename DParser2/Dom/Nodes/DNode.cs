@@ -4,10 +4,60 @@ using D_Parser.Parser;
 
 namespace D_Parser.Dom
 {
-    public abstract class DNode :AbstractNode
-    {
-        public ITemplateParameter[] TemplateParameters=null; // Functions, Templates
+    public abstract class DNode : AbstractNode
+	{
+		#region Properties
+		public ITemplateParameter[] TemplateParameters; // Functions, Templates
 		public IExpression TemplateConstraint;
+		public List<Modifier> Attributes = new List<Modifier>();
+		public DeclarationCondition[] DeclarationConditions;
+
+		public IEnumerable<TemplateParameterNode> TemplateParameterNodes
+		{
+			get
+			{
+				if (TemplateParameters != null)
+					foreach (var p in TemplateParameters)
+						yield return new TemplateParameterNode(p) { Parent = this };
+			}
+		}
+
+		public string AttributeString
+		{
+			get
+			{
+				string s = "";
+				foreach (var attr in Attributes)
+					if (attr != null)
+						s += attr.ToString() + " ";
+				return s.Trim();
+			}
+		}
+
+		public bool IsClassMember
+		{
+			get
+			{
+				return Parent is DClassLike && ((DClassLike)Parent).ClassType == DTokens.Class;
+			}
+		}
+
+		public bool IsPublic
+		{
+			get
+			{
+				return !ContainsAttribute(DTokens.Private, DTokens.Protected);
+			}
+		}
+
+		public bool IsStatic
+		{
+			get
+			{
+				return ContainsAttribute(DTokens.Static);
+			}
+		}
+		#endregion
 
 		public bool ContainsTemplateParameter(string Name)
 		{
@@ -19,16 +69,6 @@ namespace D_Parser.Dom
 			return false;
 		}
 
-		public IEnumerable<TemplateParameterNode> TemplateParameterNodes
-		{
-			get {
-				if (TemplateParameters != null)
-					foreach (var p in TemplateParameters)
-						yield return new TemplateParameterNode(p) { Parent=this };
-			}
-		}
-		
-        public List<Modifier> Attributes = new List<Modifier>();
         public bool ContainsAttribute(params int[] Token)
         {
             return Modifier.ContainsAttribute(Attributes, Token);
@@ -37,8 +77,11 @@ namespace D_Parser.Dom
 		public bool ContainsPropertyAttribute(string prop="property")
 		{
 			foreach (var attr in Attributes)
-				if (attr.IsProperty && attr.LiteralContent is string && attr.LiteralContent.ToString() == prop)
+			{
+				var mod = attr as Modifier;
+				if (mod!=null && mod.LiteralContent is string && ((string)mod.LiteralContent) == prop)
 					return true;
+			}
 			return false;
 		}
 
@@ -50,18 +93,6 @@ namespace D_Parser.Dom
 				Attributes = (other as DNode).Attributes;
 			}
 			base.AssignFrom(other);
-        }
-
-        public string AttributeString
-        {
-            get
-            {
-                string s = "";
-                foreach (var attr in Attributes)
-					if(attr!=null)
-						s += attr.ToString() + " ";
-                return s.Trim();
-            }
         }
 
         /// <summary>
@@ -91,30 +122,6 @@ namespace D_Parser.Dom
             }
             
             return s.Trim();
-        }
-
-		public bool IsClassMember
-		{
-			get
-			{
-				return Parent is DClassLike && ((DClassLike)Parent).ClassType == DTokens.Class;
-			}
-		}
-
-        public bool IsPublic
-        {
-            get
-            {
-                return !ContainsAttribute(DTokens.Private, DTokens.Protected);
-            }
-        }
-
-        public bool IsStatic
-        {
-            get
-            {
-                return ContainsAttribute(DTokens.Static);
-            }
         }
 	}
 }

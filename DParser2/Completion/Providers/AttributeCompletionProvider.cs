@@ -1,29 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using D_Parser.Dom;
-using D_Parser.Dom.Statements;
 using D_Parser.Parser;
-using D_Parser.Dom.Expressions;
 
 namespace D_Parser.Completion
 {
 	internal class AttributeCompletionProvider : AbstractCompletionProvider
 	{
-		public Attribute Attribute;
+		public DAttribute Attribute;
 
 		public AttributeCompletionProvider(ICompletionDataGenerator gen) : base(gen) { }
 
 		protected override void BuildCompletionDataInternal(IEditorData Editor, string EnteredText)
 		{
-			if (Attribute is DeclarationCondition)
+			if (Attribute is VersionCondition)
 			{
-				var c = Attribute as DeclarationCondition;
-
-				if (c.IsVersionCondition)
-				{
-					foreach (var kv in new Dictionary<string, string>{
+				foreach (var kv in new Dictionary<string, string>{
 						{"DigitalMars","DMD (Digital Mars D) is the compiler"},
 						{"GNU","GDC (GNU D Compiler) is the compiler"},
 						{"LDC","LDC (LLVM D Compiler) is the compiler"},
@@ -77,19 +68,6 @@ namespace D_Parser.Completion
 						{"none","Never defined; used to just disable a section of code"},
 						{"all","Always defined; used as the opposite of none"}
 					})
-						CompletionDataGenerator.AddTextItem(kv.Key,kv.Value);
-				}
-			}
-			else if (Attribute.Token == DTokens.Extern)
-			{
-				foreach (var kv in new Dictionary<string, string>{
-					{"C",""},
-					{"C++","C++ is reserved for future use"},
-					{"D",""},
-					{"Windows","Implementation Note: for Win32 platforms, Windows and Pascal should exist"},
-					{"Pascal","Implementation Note: for Win32 platforms, Windows and Pascal should exist"},
-					{"System","System is the same as Windows on Windows platforms, and C on other platforms"}
-				})
 					CompletionDataGenerator.AddTextItem(kv.Key, kv.Value);
 			}
 			else if (Attribute is PragmaAttribute)
@@ -101,6 +79,18 @@ namespace D_Parser.Completion
 					{"msg","Prints a message while compiling"}, 
 					{"startaddress","Puts a directive into the object file saying that the function specified in the first argument will be the start address for the program"}})
 						CompletionDataGenerator.AddTextItem(kv.Key, kv.Value);
+			}
+			else if (Attribute is Modifier && ((Modifier)Attribute).Token == DTokens.Extern)
+			{
+				foreach (var kv in new Dictionary<string, string>{
+					{"C",""},
+					{"C++","C++ is reserved for future use"},
+					{"D",""},
+					{"Windows","Implementation Note: for Win32 platforms, Windows and Pascal should exist"},
+					{"Pascal","Implementation Note: for Win32 platforms, Windows and Pascal should exist"},
+					{"System","System is the same as Windows on Windows platforms, and C on other platforms"}
+				})
+					CompletionDataGenerator.AddTextItem(kv.Key, kv.Value);
 			}
 		}
 	}
@@ -117,7 +107,7 @@ namespace D_Parser.Completion
 				{"exit","Executes on leaving current scope"}, 
 				{"success", "Executes if no error occurred in current scope"}, 
 				{"failure","Executes if error occurred in current scope"}})
-				CompletionDataGenerator.AddTextItem(kv.Key,kv.Value);
+				CompletionDataGenerator.AddTextItem(kv.Key, kv.Value);
 		}
 	}
 
@@ -158,9 +148,7 @@ namespace D_Parser.Completion
 				{"allMembers","Takes a single argument, which must evaluate to either a type or an expression of type. A tuple of string literals is returned, each of which is the name of a member of that type combined with all of the members of the base classes (if the type is a class). No name is repeated. Builtin properties are not included."},
 				{"derivedMembers","Takes a single argument, which must evaluate to either a type or an expression of type. A tuple of string literals is returned, each of which is the name of a member of that type. No name is repeated. Base class member names are not included. Builtin properties are not included."},
 				{"isSame","Takes two arguments and returns bool true if they are the same symbol, false if not."},
-				{"compiles",@"Returns a bool true if all of the arguments compile (are semantically correct). The arguments can be symbols, types, or expressions that are syntactically correct. The arguments cannot be statements or declarations.
-
-If there are no arguments, the result is false."},
+				{"compiles",@"Returns a bool true if all of the arguments compile (are semantically correct). The arguments can be symbols, types, or expressions that are syntactically correct. The arguments cannot be statements or declarations. If there are no arguments, the result is false."},
 			})
 				CompletionDataGenerator.AddTextItem(kv.Key, kv.Value);
 		}

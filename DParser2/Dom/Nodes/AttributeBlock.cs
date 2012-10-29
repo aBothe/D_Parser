@@ -25,11 +25,11 @@ namespace D_Parser.Dom
 
 	public class AttributeMetaDeclaration : AbstractMetaDeclaration
 	{
-		public Modifier[] AttributeOrCondition;
+		public DAttribute[] AttributeOrCondition;
 
 		public ElseMetaDeclaration OptionalElseBlock;
 
-		public AttributeMetaDeclaration(params Modifier[] attr)
+		public AttributeMetaDeclaration(params DAttribute[] attr)
 		{
 			this.AttributeOrCondition = attr;
 		}
@@ -88,7 +88,7 @@ namespace D_Parser.Dom
 	/// </summary>
 	public class AttributeMetaDeclarationSection : AttributeMetaDeclaration
 	{
-		public AttributeMetaDeclarationSection(Modifier attr) : base(attr) { }
+		public AttributeMetaDeclarationSection(DAttribute attr) : base(attr) { }
 
 		public override void Accept(MetaDeclarationVisitor vis)
 		{
@@ -107,7 +107,7 @@ namespace D_Parser.Dom
 	/// </summary>
 	public class AttributeMetaDeclarationBlock : AttributeMetaDeclaration, IMetaDeclarationBlock
 	{
-		public AttributeMetaDeclarationBlock(params Modifier[] attr) : base(attr) {}
+		public AttributeMetaDeclarationBlock(params DAttribute[] attr) : base(attr) {}
 
 		public CodeLocation BlockStartLocation
 		{

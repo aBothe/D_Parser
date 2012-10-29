@@ -5,16 +5,16 @@ using D_Parser.Parser;
 
 namespace D_Parser.Dom
 {
-	public abstract class Attribute : ISyntaxRegion, IVisitable<NodeVisitor>
+	public abstract class DAttribute : ISyntaxRegion, IVisitable<NodeVisitor>
 	{ 
 		public CodeLocation Location
 		{
-			get; protected set;
+			get; set;
 		}
 
 		public CodeLocation EndLocation
 		{
-			get; protected set;
+			get; set;
 		}
 	
 		public abstract void Accept(NodeVisitor vis);
@@ -25,7 +25,7 @@ namespace D_Parser.Dom
     /// Represents an attrribute a declaration may have or consists of.
 	/// A modifier or storage class.
     /// </summary>
-    public class Modifier : Attribute
+    public class Modifier : DAttribute
     {
         public int Token;
         public object LiteralContent;
@@ -194,7 +194,7 @@ namespace D_Parser.Dom
 		}
 	}
 
-	public abstract class DeclarationCondition : Attribute, IDeclarationCondition, ICloneable
+	public abstract class DeclarationCondition : DAttribute, IDeclarationCondition, ICloneable
 	{
 		public bool IsNegated { get; protected set; }
 
@@ -215,8 +215,9 @@ namespace D_Parser.Dom
 
 	public class VersionCondition : DeclarationCondition
 	{
-		public string VersionId { get; private set; }
-		public int VersionNumber { get; private set; }
+		public readonly string VersionId;
+		public readonly int VersionNumber;
+		public CodeLocation IdLocation;
 
 		public VersionCondition(string versionIdentifier) { VersionId = versionIdentifier; }
 		public VersionCondition(int versionNumber) { VersionNumber = versionNumber; }
@@ -235,12 +236,27 @@ namespace D_Parser.Dom
 		{
 			return "version("+(VersionId ?? VersionNumber.ToString())+")";
 		}
+
+		public override object Clone()
+		{
+			if (VersionId != null)
+				return new VersionCondition(VersionId);
+			else
+				return new VersionCondition(VersionNumber);
+		}
+
+		public override bool Equals(IDeclarationCondition other)
+		{
+			var v = other as VersionCondition;
+			return v != null && v.VersionId == VersionId && v.VersionNumber == VersionNumber && v.IsNegated == IsNegated;
+		}
 	}
 
 	public class DebugCondition : DeclarationCondition
 	{
 		public string DebugId { get; private set; }
 		public int DebugLevel { get; private set; }
+		public CodeLocation IdLocation;
 
 		public DebugCondition() { }
 		public DebugCondition(string debugIdentifier) { DebugId = debugIdentifier; }
@@ -262,6 +278,40 @@ namespace D_Parser.Dom
 				return "debug";
 
 			return "debug(" + (DebugId ?? DebugLevel.ToString()) + ")";
+		}
+
+		public override object Clone()
+		{
+			if (DebugId != null)
+				return new DebugCondition(DebugId);
+			else if (DebugLevel != 0)
+				return new DebugCondition(DebugLevel);
+			else
+				return new DebugCondition();
+		}
+
+		public override bool Equals(IDeclarationCondition other)
+		{
+			var v = other as DebugCondition;
+			return v != null && v.DebugId == DebugId && v.DebugLevel == DebugLevel && v.IsNegated == IsNegated;
+		}
+	}
+
+	public class StaticIfCondition : DeclarationCondition
+	{
+		public readonly IExpression Expression;
+
+		public StaticIfCondition(IExpression x) { Expression = x; }
+
+		public override object Clone()
+		{
+			return new StaticIfCondition(Expression);
+		}
+
+		public override bool Equals(IDeclarationCondition other)
+		{
+			var cd = other as StaticIfCondition;
+			return cd != null && cd.Expression == Expression;
 		}
 	}
 }

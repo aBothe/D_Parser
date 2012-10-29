@@ -113,17 +113,21 @@ namespace D_Parser.Dom
 
 		public virtual void VisitAttribute(Modifier attribute) {}
 
-		public void VisitAttribute(DeclarationCondition declCond)
-		{
-			if (declCond.Condition != null)
-				declCond.Condition.Accept(this);
-		}
-
 		public void VisitAttribute(PragmaAttribute pragma)
 		{
 			if (pragma.Arguments != null && pragma.Arguments.Length != 0)
 				foreach (var arg in pragma.Arguments)
 					arg.Accept(this);
+		}
+
+		public void VisitAttribute(VersionCondition vis)
+		{
+			
+		}
+
+		public void VisitAttribute(DebugCondition debugCondition)
+		{
+			
 		}
 		#endregion
 
