@@ -389,5 +389,56 @@ template Foo(A)
 			var pt = (PrimitiveType)tps.Base;
 			Assert.AreEqual(DTokens.Int, pt.TypeToken);
 		}
+
+		[TestMethod]
+		public void DeclCond1()
+		{
+			var pcl = CreateCache(@"module m;
+
+version = A;
+
+version(Windows)
+	int* f(){}
+else
+	int[] f(){}
+
+
+debug
+	int* d(){}
+else
+	int[] d(){}
+
+
+version(A)
+	int* a(){}
+else
+	int[] a(){}
+
+");
+
+			var ctxt = new ResolverContextStack(pcl, new ResolverContext { ScopedBlock = pcl[0]["m"] });
+
+			var ms = TypeDeclarationResolver.ResolveIdentifier("f", ctxt, null);
+			Assert.AreEqual(1, ms.Length);
+			var m = ms[0] as MemberSymbol;
+			Assert.IsNotNull(m);
+
+			Assert.IsInstanceOfType(m.Base, typeof(PointerType));
+
+
+			ms = TypeDeclarationResolver.ResolveIdentifier("d", ctxt, null);
+			Assert.AreEqual(1, ms.Length);
+			m = ms[0] as MemberSymbol;
+			Assert.IsNotNull(m);
+
+			Assert.IsInstanceOfType(m.Base, typeof(PointerType));
+
+			ms = TypeDeclarationResolver.ResolveIdentifier("a", ctxt, null);
+			Assert.AreEqual(1, ms.Length);
+			m = ms[0] as MemberSymbol;
+			Assert.IsNotNull(m);
+
+			Assert.IsInstanceOfType(m.Base, typeof(PointerType));
+		}
 	}
 }
