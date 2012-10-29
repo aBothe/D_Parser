@@ -29,6 +29,9 @@ namespace D_Parser.Misc
 		{
 			var ppd = new ParsePerformanceData { BaseDirectory = directory };
 
+			if (!Directory.Exists(directory))
+				return ppd;
+
 			var tpd = new ThreadedDirectoryParser
 			{
 				baseDirectory = directory,
@@ -67,7 +70,10 @@ namespace D_Parser.Misc
 		void PrepareQueue(RootPackage root)
 		{
 			if (!Directory.Exists(baseDirectory))
-				return;
+			{
+				stillQueuing = false;
+				return; 
+			}
 
 			fileCount = 0;
 			stillQueuing = true;
@@ -78,6 +84,11 @@ namespace D_Parser.Misc
 			var dFiles = Directory.GetFiles(baseDirectory, "*.d", SearchOption.AllDirectories);
 			var diFiles = Directory.GetFiles(baseDirectory, "*.di", SearchOption.AllDirectories);
 			var files = new string[dFiles.Length + diFiles.Length];
+			if(files.Length==0)
+			{
+				stillQueuing = false;
+				return;
+			}
 			Array.Copy(dFiles, 0, files, 0, dFiles.Length);
 			Array.Copy(diFiles, 0, files, dFiles.Length, diFiles.Length);
 
