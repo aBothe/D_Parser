@@ -467,15 +467,16 @@ namespace D_Parser.Parser
         /// </summary>
         /// <param name="mods"></param>
         /// <returns></returns>
-        public static Modifier ContainsStorageClass(Modifier[] mods)
+        public static Modifier ContainsStorageClass(DAttribute[] mods)
         {
-            var r=Modifier.Empty;
+            Modifier r=null;
             foreach (var attr in mods)
             {
-                if (attr.IsStorageClass || attr.IsProperty)
-                    r = attr;
+				r = attr as Modifier;
+				if (r != null && (r.IsStorageClass || r.IsProperty))
+					return r;
             }
-            return r;
+            return Modifier.Empty;
         }
 
 

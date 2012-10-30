@@ -28,11 +28,11 @@ namespace D_Parser.Parser
 		/// <summary>
 		/// Modifiers for entire block
 		/// </summary>
-		Stack<Modifier> BlockAttributes = new Stack<Modifier>();
+		Stack<DAttribute> BlockAttributes = new Stack<DAttribute>();
 		/// <summary>
 		/// Modifiers for current expression only
 		/// </summary>
-		Stack<Modifier> DeclarationAttributes = new Stack<Modifier>();
+		Stack<DAttribute> DeclarationAttributes = new Stack<DAttribute>();
 
 		bool ParseStructureOnly = false;
 		public Lexer Lexer;
@@ -243,15 +243,17 @@ namespace D_Parser.Parser
         }
 		#endregion
 
-		void PushAttribute(Modifier attr, bool BlockAttributes)
+		void PushAttribute(DAttribute attr, bool BlockAttributes)
 		{
 			var stk=BlockAttributes?this.BlockAttributes:this.DeclarationAttributes;
 
+			var m = attr as Modifier;
+			if(m!=null)
 			// If attr would change the accessability of an item, remove all previously found (so the most near attribute that's next to the item is significant)
-			if (DTokens.VisModifiers[attr.Token])
-				Modifier.CleanupAccessorAttributes(stk, attr.Token);
+			if (DTokens.VisModifiers[m.Token])
+				Modifier.CleanupAccessorAttributes(stk, m.Token);
 			else
-				Modifier.RemoveFromStack(stk, attr.Token);
+				Modifier.RemoveFromStack(stk, m.Token);
 
 			LastParsedObject = attr;
 
@@ -260,43 +262,27 @@ namespace D_Parser.Parser
 
         void ApplyAttributes(DNode n)
         {
-            foreach (var attr in BlockAttributes.ToArray())
-                n.Attributes.Add(attr);
+			foreach (var attr in BlockAttributes.ToArray())
+					n.Attributes.Add(attr);
 
             while (DeclarationAttributes.Count > 0)
             {
                 var attr = DeclarationAttributes.Pop();
 
-				// If accessor already in attribute array, remove it
-				if (DTokens.VisModifiers[attr.Token])
-					Modifier.CleanupAccessorAttributes(n.Attributes);
+				var m = attr as Modifier;
+				if (m != null)
+				{
+					// If accessor already in attribute array, remove it
+					if (DTokens.VisModifiers[m.Token])
+						Modifier.CleanupAccessorAttributes(n.Attributes);
 
-                if (attr.IsProperty || !Modifier.ContainsAttribute(n.Attributes.ToArray(),attr.Token))
-                    n.Attributes.Add(attr);
+					if (m.IsProperty || !Modifier.ContainsAttribute(n.Attributes.ToArray(), m.Token))
+						n.Attributes.Add(attr);
+				}
+				else
+					n.Attributes.Add(attr);
             }
         }
-
-		void ApplyAttributes(IStatement n)
-		{
-			var attributes = new List<Modifier>();
-
-			foreach (var attr in BlockAttributes.ToArray())
-				attributes.Add(attr);
-
-			while (DeclarationAttributes.Count > 0)
-			{
-				var attr = DeclarationAttributes.Pop();
-
-				// If accessor already in attribute array, remove it
-				if (DTokens.VisModifiers[attr.Token])
-					Modifier.CleanupAccessorAttributes(attributes);
-
-				if (attr.IsProperty || !Modifier.ContainsAttribute(attributes, attr.Token))
-					attributes.Add(attr);
-			}
-
-			n.Attributes = attributes.Count == 0 ? null : attributes.ToArray();
-		}
 
         void OverPeekBrackets(int OpenBracketKind,bool LAIsOpenBracket = false)
         {

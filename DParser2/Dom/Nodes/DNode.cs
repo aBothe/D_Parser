@@ -9,8 +9,7 @@ namespace D_Parser.Dom
 		#region Properties
 		public ITemplateParameter[] TemplateParameters; // Functions, Templates
 		public IExpression TemplateConstraint;
-		public List<Modifier> Attributes = new List<Modifier>();
-		public DeclarationCondition[] DeclarationConditions;
+		public List<DAttribute> Attributes = new List<DAttribute>();
 
 		public IEnumerable<TemplateParameterNode> TemplateParameterNodes
 		{

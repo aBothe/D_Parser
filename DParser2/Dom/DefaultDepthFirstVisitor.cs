@@ -376,9 +376,7 @@ namespace D_Parser.Dom
 
 		public virtual void VisitAbstractStmt(AbstractStatement stmt)
 		{
-			if (stmt.Attributes != null && stmt.Attributes.Length != 0)
-				foreach (var attr in stmt.Attributes)
-					attr.Accept(this);
+			
 		}
 		#endregion
 

@@ -55,11 +55,11 @@ namespace D_Parser.Dom
 		/// <summary>
 		/// Removes all public,private,protected or package attributes from the list
 		/// </summary>
-		public static void CleanupAccessorAttributes(List<Modifier> HayStack)
+		public static void CleanupAccessorAttributes(List<DAttribute> HayStack)
 		{
 			foreach (var i in HayStack.ToArray())
 			{
-				if (DTokens.VisModifiers[i.Token])
+				if (i is Modifier && DTokens.VisModifiers[((Modifier)i).Token])
 					HayStack.Remove(i);
 			}
 		}
@@ -67,14 +67,15 @@ namespace D_Parser.Dom
 		/// <summary>
 		/// Removes all public,private,protected or package attributes from the stack
 		/// </summary>
-		public static void CleanupAccessorAttributes(Stack<Modifier> HayStack, int furtherAttrToRemove = -1)
+		public static void CleanupAccessorAttributes(Stack<DAttribute> HayStack, int furtherAttrToRemove = -1)
 		{
-			var l=new List<Modifier>();
+			var l=new List<DAttribute>();
 
 			while(HayStack.Count>0)
 			{
 				var attr=HayStack.Pop();
-				if (!DTokens.VisModifiers[attr.Token] && attr.Token != furtherAttrToRemove)
+				var m = attr as Modifier;
+				if (m==null || (!DTokens.VisModifiers[m.Token] && m.Token != furtherAttrToRemove))
 					l.Add(attr);
 			}
 
@@ -82,14 +83,14 @@ namespace D_Parser.Dom
 				HayStack.Push(i);
 		}
 
-		public static void RemoveFromStack(Stack<Modifier> HayStack, int Token)
+		public static void RemoveFromStack(Stack<DAttribute> HayStack, int Token)
 		{
-			var l = new List<Modifier>();
+			var l = new List<DAttribute>();
 
 			while (HayStack.Count > 0)
 			{
 				var attr = HayStack.Pop();
-				if (attr.Token!=Token)
+				if (!(attr is Modifier) || ((Modifier)attr).Token!=Token)
 					l.Add(attr);
 			}
 
@@ -97,40 +98,42 @@ namespace D_Parser.Dom
 				HayStack.Push(i);
 		}
 
-		public static bool ContainsAccessorAttribute(Stack<Modifier> HayStack)
+		public static bool ContainsAccessorAttribute(Stack<DAttribute> HayStack)
 		{
 			foreach (var i in HayStack)
-				if (DTokens.VisModifiers[i.Token])
+				if (i is Modifier && DTokens.VisModifiers[((Modifier)i).Token])
 					return true;
 			return false;
 		}
 
-        public static bool ContainsAttribute(Modifier[] HayStack,params int[] NeedleToken)
+        public static bool ContainsAttribute(DAttribute[] HayStack,params int[] NeedleToken)
         {
-            var l = new List<int>(NeedleToken);
-			if(HayStack!=null)
-				foreach (var attr in HayStack)
-					if (l.Contains(attr.Token))
-						return true;
-            return false;
-        }
-        public static bool ContainsAttribute(List<Modifier> HayStack,params int[] NeedleToken)
-        {
-            var l = new List<int>(NeedleToken);
-            foreach (var attr in HayStack)
-                if (l.Contains(attr.Token))
-                    return true;
-            return false;
-        }
+			if (HayStack == null || HayStack.Length == 0)
+				return false;
 
-        public static bool ContainsAttribute(Stack<Modifier> HayStack,params int[] NeedleToken)
+            var l = new List<int>(NeedleToken);
+			foreach (var attr in HayStack)
+				if (attr is Modifier && l.Contains(((Modifier)attr).Token))
+					return true;
+            
+			return false;
+        }
+        public static bool ContainsAttribute(List<DAttribute> HayStack,params int[] NeedleToken)
         {
             var l = new List<int>(NeedleToken);
             foreach (var attr in HayStack)
-                if (l.Contains(attr.Token))
+				if (attr is Modifier && l.Contains(((Modifier)attr).Token))
                     return true;
             return false;
         }
+		public static bool ContainsAttribute(Stack<DAttribute> HayStack, params int[] NeedleToken)
+		{
+			var l = new List<int>(NeedleToken);
+			foreach (var attr in HayStack)
+				if (attr is Modifier && l.Contains(((Modifier)attr).Token))
+					return true;
+			return false;
+		}
 
 
         public bool IsStorageClass
@@ -196,7 +199,7 @@ namespace D_Parser.Dom
 
 	public abstract class DeclarationCondition : DAttribute, IDeclarationCondition, ICloneable
 	{
-		public bool IsNegated { get; protected set; }
+		public bool IsNegated { get; set; }
 
 		public abstract object Clone();
 	
@@ -234,7 +237,7 @@ namespace D_Parser.Dom
 
 		public override string ToString()
 		{
-			return "version("+(VersionId ?? VersionNumber.ToString())+")";
+			return (IsNegated?"<not>":"")+"version("+(VersionId ?? VersionNumber.ToString())+")";
 		}
 
 		public override object Clone()
@@ -275,9 +278,9 @@ namespace D_Parser.Dom
 		public override string ToString()
 		{
 			if (string.IsNullOrEmpty(DebugId) && DebugLevel==0)
-				return "debug";
+				return (IsNegated ? "<not>" : "") + "debug";
 
-			return "debug(" + (DebugId ?? DebugLevel.ToString()) + ")";
+			return (IsNegated ? "<not>" : "") + "debug(" + (DebugId ?? DebugLevel.ToString()) + ")";
 		}
 
 		public override object Clone()
@@ -312,6 +315,11 @@ namespace D_Parser.Dom
 		{
 			var cd = other as StaticIfCondition;
 			return cd != null && cd.Expression == Expression;
+		}
+
+		public override string ToString()
+		{
+			return (IsNegated ? "<not>" : "") + "static if(" + (Expression == null ? "" : Expression.ToString()) + ")";
 		}
 	}
 }

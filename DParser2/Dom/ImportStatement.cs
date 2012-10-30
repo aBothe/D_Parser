@@ -27,15 +27,9 @@ namespace D_Parser.Dom
 
 	public class ImportStatement:AbstractStatement, IDeclarationContainingStatement
 	{
-		public bool IsStatic
-		{
-			get { return Modifier.ContainsAttribute(Attributes, DTokens.Static); }
-		}
+		public bool IsStatic;
 
-		public bool IsPublic
-		{
-			get { return Modifier.ContainsAttribute(Attributes, DTokens.Public); }
-		}
+		public bool IsPublic;
 
 		public class Import
 		{
@@ -94,7 +88,7 @@ namespace D_Parser.Dom
 
 		public override string ToCode()
 		{
-			var ret = AttributeString + "import ";
+			var ret = (IsPublic?"public ":"")+ (IsStatic?"static ":"") + "import ";
 
 			foreach (var imp in Imports)
 			{

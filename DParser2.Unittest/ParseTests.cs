@@ -63,7 +63,7 @@ void bar();");
 			Assert.IsNotNull(a);
 			Assert.AreEqual(1, a.Attributes.Count);
 
-			var attr = a.Attributes[0];
+			var attr = a.Attributes[0] as Modifier;
 			Assert.AreEqual(DTokens.Align, attr.Token);
 			Assert.AreEqual(null, attr.LiteralContent);
 
@@ -78,15 +78,15 @@ int b;");
 			a = n["a"][0] as DVariable;
 			Assert.IsNotNull(a);
 			Assert.AreEqual(1, a.Attributes.Count);
-			Assert.AreEqual(DTokens.Public,a.Attributes[0].Token);
+			Assert.AreEqual(DTokens.Public,((Modifier)a.Attributes[0]).Token);
 
 			a = n["b"][0] as DVariable;
 			Assert.IsNotNull(a);
 			Assert.AreEqual(1, a.Attributes.Count);
-			Assert.AreEqual(DTokens.Private, a.Attributes[0].Token);
+			Assert.AreEqual(DTokens.Private, ((Modifier)a.Attributes[0]).Token);
 		}
 
-		//[TestMethod]
+		[TestMethod]
 		public void TestPhobos()
 		{
 			var pc = ParsePhobos();

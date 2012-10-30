@@ -238,7 +238,7 @@ namespace D_Parser.Resolver
 						new DVariable(){
 							Name="defaultValue",
 							Type=ad.ValueType,
-							Attributes=new List<Modifier>{ new Modifier(DTokens.Lazy)}
+							Attributes=new List<DAttribute>{ new Modifier(DTokens.Lazy)}
 						}
 					}
 				});
