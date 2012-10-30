@@ -90,9 +90,23 @@ int b;");
 		public void TestPhobos()
 		{
 			var pc = ParsePhobos();
-
+			bool hadErrors = false;
 			foreach (var mod in pc)
-				Assert.AreEqual(mod.ParseErrors.Count, 0);
+			{
+				if (mod.ParseErrors.Count != 0)
+				{
+					Trace.WriteLine(mod.FileName);
+					Trace.Indent();
+
+					foreach (var err in mod.ParseErrors)
+						Trace.WriteLine(err.Location.ToString() + "\t" + err.Message);
+
+					Trace.Unindent();
+					hadErrors = true;
+				}
+			}
+			if(hadErrors)
+				Assert.Fail("Parse process failed!");
 		}
 
 		public static ParseCache ParsePhobos(bool ufcs=true)
