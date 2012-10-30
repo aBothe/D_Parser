@@ -452,7 +452,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					var dstmt = stmt as IDeclarationContainingStatement;
 					if (dstmt != null)
 					{
-						if (takePublicImportsOnly && dstmt is ImportStatement && ((ImportStatement)dstmt).IsPublic)
+						if (takePublicImportsOnly && dstmt is ImportStatement && !((ImportStatement)dstmt).IsPublic)
 							continue;
 
 						/*
