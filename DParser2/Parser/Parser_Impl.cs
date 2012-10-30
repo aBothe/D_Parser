@@ -521,7 +521,7 @@ namespace D_Parser.Parser
 		ImportStatement ImportDeclaration(IBlockNode scope)
 		{
 			// In DMD 2.060, the static keyword must be written exactly before the import token
-			bool isStatic = t.Kind == Static; 
+			bool isStatic = t!= null && t.Kind == Static; 
 			bool isPublic = Modifier.ContainsAttribute(DeclarationAttributes, Public) ||
 							Modifier.ContainsAttribute(BlockAttributes,Public);
 
