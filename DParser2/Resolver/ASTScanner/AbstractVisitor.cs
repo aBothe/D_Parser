@@ -293,9 +293,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			{
 				if (Statement is ImportStatement) 
 				{ 
-					// Handled in DBlockNode
+					// Handled in DBlockNode.Declarations
 				}
-				else if (Statement is IDeclarationContainingStatement && !(Statement is StaticIfStatement || Statement is ConditionStatement)) //TODO Optimize
+				else if (Statement is IDeclarationContainingStatement)
 				{
 					var decls = ((IDeclarationContainingStatement)Statement).Declarations;
 
@@ -318,6 +318,10 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
                             if (HandleItem(decl))
                                 return true;
 						}
+				}
+				else if(Statement is StatementCondition)
+				{
+					var sc = (StatementCondition)Statement;
 				}
 				/// http://dlang.org/statement.html#WithStatement
 				else if (Statement is WithStatement)

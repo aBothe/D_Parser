@@ -87,6 +87,33 @@ int b;");
 		}
 
 		[TestMethod]
+		public void Attributes2()
+		{
+			var m = DParser.ParseString(@"
+debug(1) private int a;
+int b;
+
+debug
+	int A;
+else version(D)
+	int B;
+else int C;");
+			var a = m["a"][0] as DVariable;
+			var b = m["b"][0] as DVariable;
+
+			Assert.AreEqual(2,a.Attributes.Count);
+			Assert.AreEqual(0,b.Attributes.Count);
+
+			var A = m["A"][0] as DVariable;
+			var B = m["B"][0] as DVariable;
+			var C = m["C"][0] as DVariable;
+
+			Assert.AreEqual(1, A.Attributes.Count);
+			Assert.AreEqual(2,B.Attributes.Count);
+			Assert.AreEqual(2, C.Attributes.Count);
+		}
+
+		[TestMethod]
 		public void TestPhobos()
 		{
 			var pc = ParsePhobos();

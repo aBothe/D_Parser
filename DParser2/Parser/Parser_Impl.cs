@@ -351,10 +351,8 @@ namespace D_Parser.Parser
 			return metaDeclBlock;
 		}
 
-		void DeclarationCondition(DBlockNode module)
+		DeclarationCondition Condition(IBlockNode parent)
 		{
-			Step();
-			var sl = t.Location;
 			DeclarationCondition c = null;
 
 			/* 
@@ -364,8 +362,9 @@ namespace D_Parser.Parser
 			 *		version ( Identifier ) 
 			 *		version ( unittest )
 			 */
-			if (t.Kind == Version)
+			if (laKind == Version)
 			{
+				Step();
 				if (Expect(OpenParenthesis))
 				{
 					TrackerVariables.ExpectingIdentifier = true;
@@ -383,7 +382,7 @@ namespace D_Parser.Parser
 							c = new VersionCondition(Convert.ToInt32(t.LiteralValue)) { IdLocation = t.Location };
 					}
 					else if (Expect(Identifier))
-						c = new VersionCondition((string)t.LiteralValue) { IdLocation = t.Location };
+						c = new VersionCondition(t.Value) { IdLocation = t.Location };
 
 					if (Expect(CloseParenthesis))
 						TrackerVariables.ExpectingIdentifier = false;
@@ -396,8 +395,9 @@ namespace D_Parser.Parser
 			 *		debug ( IntegerLiteral )
 			 *		debug ( Identifier )
 			 */
-			else if (t.Kind == Debug)
+			else if (laKind == Debug)
 			{
+				Step();
 				if (laKind == OpenParenthesis)
 				{
 					Step();
@@ -425,27 +425,34 @@ namespace D_Parser.Parser
 			 * StaticIfCondition: 
 			 *		static if ( AssignExpression )
 			 */
-			else if (t.Kind == If)
+			else if (laKind == If)
 			{
+				Step();
 				if (Expect(OpenParenthesis))
 				{
 					if (Modifier.ContainsAttribute(DeclarationAttributes, Static))
-						Modifier.RemoveFromStack(DeclarationAttributes,Static);
+						Modifier.RemoveFromStack(DeclarationAttributes, Static);
 					else
 						SynErr(Static, "Conditional declaration checks must be static");
 
-					var x = AssignExpression(module);
+					var x = AssignExpression(parent);
 					c = new StaticIfCondition(x);
 
 					Expect(CloseParenthesis);
 				}
 			}
+			else
+				throw new Exception("Condition() should only be called if Version/Debug/If is the next token!");
 
-			if(c == null)
-			{
-				SynErr(t.Kind, "Wrong condition type. See DeclarationCondition()");
-				return;
-			}
+			return c;
+		}
+
+		void DeclarationCondition(DBlockNode module)
+		{
+			var sl = la.Location;
+
+			var c = Condition(module);
+
 			c.Location = sl;
 			c.EndLocation = t.EndLocation;
 
@@ -462,25 +469,20 @@ namespace D_Parser.Parser
 			{
 				Step();
 
-				c = c.Clone() as DeclarationCondition;
-				c.IsNegated = true;
+				c = new NegatedDeclarationCondition(c);
 
+				BlockAttributes.Push(c);
 				if (laKind == OpenCurlyBrace)
 				{
 					metaBlock.OptionalElseBlock = new ElseMetaDeclarationBlock { Location = t.Location, BlockStartLocation = la.Location };
-					BlockAttributes.Push(c);
-
 					ClassBody(module, true, false);
-
-					BlockAttributes.Pop();
 				}
 				else
 				{
 					metaBlock.OptionalElseBlock = new ElseMetaDeclaration { Location = t.Location };
-					DeclarationAttributes.Push(c);
-
 					DeclDef(module);
 				}
+				BlockAttributes.Pop();
 
 				metaBlock.OptionalElseBlock.EndLocation = t.EndLocation;
 			}
@@ -616,7 +618,6 @@ namespace D_Parser.Parser
 
 			return importBindings;
 		}
-
 
 		IStatement MixinDeclaration()
 		{
@@ -3246,15 +3247,11 @@ namespace D_Parser.Parser
 			#endregion
 
 			#region IfStatement
-			else if (laKind == (If) || (laKind == Static && Lexer.CurrentPeekToken.Kind == If))
+			else if (laKind == (If))
 			{
-				bool isStatic = laKind == Static;
-				if (isStatic)
-					Step();
-
 				Step();
 
-				var dbs = isStatic ? new StaticIfStatement() : new IfStatement();
+				var dbs = new IfStatement();
 				dbs.Location = t.Location;
 				dbs.ParentNode = Scope;
 
@@ -3735,11 +3732,8 @@ namespace D_Parser.Parser
 			#endregion
 
 			#region Conditions
-			if (laKind == Debug)
-				return DebugStatement(Scope, Parent);
-
-			if (laKind == Version)
-				return VersionStatement(Scope, Parent);
+			else if ((laKind == Static && Lexer.CurrentPeekToken.Kind == If) || laKind == Version || laKind == Debug)
+				return StmtCondition(Parent,Scope);
 			#endregion
 
 			#region (Static) AssertExpression
@@ -3802,15 +3796,13 @@ namespace D_Parser.Parser
 				s.EndLocation = t.EndLocation;
 				return s;
 			}
-			else
-			{
-				var s = new DeclarationStatement() { Location = la.Location, Parent = Parent, ParentNode = Scope };
-				LastParsedObject = s;
-				s.Declarations = Declaration(Scope);
 
-				s.EndLocation = t.EndLocation;
-				return s;
-			}
+			var ds = new DeclarationStatement() { Location = la.Location, Parent = Parent, ParentNode = Scope };
+			LastParsedObject = ds;
+			ds.Declarations = Declaration(Scope);
+
+			ds.EndLocation = t.EndLocation;
+			return ds;
 		}
 
 		ForeachStatement ForeachStatement(IBlockNode Scope,IStatement Parent)
@@ -3909,75 +3901,28 @@ namespace D_Parser.Parser
 			return s;
 		}
 
-		ConditionStatement.DebugStatement DebugStatement(IBlockNode Scope, IStatement Parent)
+		StatementCondition StmtCondition(IStatement Parent, IBlockNode Scope)
 		{
-			Step();
-			var s = new ConditionStatement.DebugStatement() { Location = t.Location, Parent = Parent };
-			LastParsedObject = s;
+			var sl = la.Location;
+			if (laKind == Static)
+				Step();
 
-			if (laKind == OpenParenthesis)
+			var c = Condition(Scope);
+			c.Location = sl;
+			c.EndLocation = t.EndLocation;
+			var sc = new StatementCondition {
+				Condition = c,
+			};
+
+			sc.ScopedStatement = Statement(true, false, Scope, sc);
+
+			if(laKind == Else)
 			{
 				Step();
-				if (laKind == Identifier || laKind == Literal)
-				{
-					Step();
-					if (laKind == Literal)
-						s.DebugIdentifierOrLiteral = t.LiteralValue;
-					else
-						s.DebugIdentifierOrLiteral = t.Value;
-				}
-				else
-					SynErr(t.Kind, "Identifier or Literal expected, " + DTokens.GetTokenString(t.Kind) + " found");
-
-				Expect(CloseParenthesis);
+				sc.ElseStatement = Statement(true, false, Scope, sc);
 			}
 
-			s.ScopedStatement = Statement(Scope: Scope, Parent: s);
-
-			if (laKind == Else)
-			{
-				Step();
-				s.ElseStatement = Statement(Scope: Scope, Parent: s);
-			}
-
-			s.EndLocation = t.EndLocation;
-			return s;
-		}
-
-		ConditionStatement.VersionStatement VersionStatement(IBlockNode Scope, IStatement Parent)
-		{
-			Step();
-			var s = new ConditionStatement.VersionStatement() { Location = t.Location, Parent = Parent };
-
-			if (laKind == OpenParenthesis)
-			{
-				Step();
-				if (laKind == Identifier || laKind == Literal || laKind == Unittest)
-				{
-					Step();
-					if (laKind == Unittest)
-						s.VersionIdentifierOrLiteral = "unittest";
-					else if (laKind == Literal)
-						s.VersionIdentifierOrLiteral = t.LiteralValue;
-					else
-						s.VersionIdentifierOrLiteral = t.Value;
-				}
-				else
-					SynErr(t.Kind, "Identifier or Literal expected, " + DTokens.GetTokenString(t.Kind) + " found");
-
-				Expect(CloseParenthesis);
-			}
-
-			s.ScopedStatement = Statement(Parent: s);
-
-			if (laKind == Else)
-			{
-				Step();
-				s.ElseStatement = Statement(Parent: s);
-			}
-
-			s.EndLocation = t.EndLocation;
-			return s;
+			return sc;
 		}
 
 		public BlockStatement BlockStatement(INode ParentNode=null, IStatement Parent=null)
@@ -4945,5 +4890,4 @@ namespace D_Parser.Parser
 		}
 		#endregion
 	}
-
 }

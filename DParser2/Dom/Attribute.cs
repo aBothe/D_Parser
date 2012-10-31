@@ -197,12 +197,8 @@ namespace D_Parser.Dom
 		}
 	}
 
-	public abstract class DeclarationCondition : DAttribute, IDeclarationCondition, ICloneable
+	public abstract class DeclarationCondition : DAttribute, IDeclarationCondition
 	{
-		public bool IsNegated { get; set; }
-
-		public abstract object Clone();
-	
 		public override void Accept(NodeVisitor vis)
 		{
  			throw new NotImplementedException();
@@ -237,21 +233,13 @@ namespace D_Parser.Dom
 
 		public override string ToString()
 		{
-			return (IsNegated?"<not>":"")+"version("+(VersionId ?? VersionNumber.ToString())+")";
-		}
-
-		public override object Clone()
-		{
-			if (VersionId != null)
-				return new VersionCondition(VersionId);
-			else
-				return new VersionCondition(VersionNumber);
+			return "version("+(VersionId ?? VersionNumber.ToString())+")";
 		}
 
 		public override bool Equals(IDeclarationCondition other)
 		{
 			var v = other as VersionCondition;
-			return v != null && v.VersionId == VersionId && v.VersionNumber == VersionNumber && v.IsNegated == IsNegated;
+			return v != null && v.VersionId == VersionId && v.VersionNumber == VersionNumber;
 		}
 	}
 
@@ -278,25 +266,15 @@ namespace D_Parser.Dom
 		public override string ToString()
 		{
 			if (string.IsNullOrEmpty(DebugId) && DebugLevel==0)
-				return (IsNegated ? "<not>" : "") + "debug";
+				return "debug";
 
-			return (IsNegated ? "<not>" : "") + "debug(" + (DebugId ?? DebugLevel.ToString()) + ")";
-		}
-
-		public override object Clone()
-		{
-			if (DebugId != null)
-				return new DebugCondition(DebugId);
-			else if (DebugLevel != 0)
-				return new DebugCondition(DebugLevel);
-			else
-				return new DebugCondition();
+			return "debug(" + (DebugId ?? DebugLevel.ToString()) + ")";
 		}
 
 		public override bool Equals(IDeclarationCondition other)
 		{
 			var v = other as DebugCondition;
-			return v != null && v.DebugId == DebugId && v.DebugLevel == DebugLevel && v.IsNegated == IsNegated;
+			return v != null && v.DebugId == DebugId && v.DebugLevel == DebugLevel;
 		}
 	}
 
@@ -306,11 +284,6 @@ namespace D_Parser.Dom
 
 		public StaticIfCondition(IExpression x) { Expression = x; }
 
-		public override object Clone()
-		{
-			return new StaticIfCondition(Expression);
-		}
-
 		public override bool Equals(IDeclarationCondition other)
 		{
 			var cd = other as StaticIfCondition;
@@ -319,7 +292,28 @@ namespace D_Parser.Dom
 
 		public override string ToString()
 		{
-			return (IsNegated ? "<not>" : "") + "static if(" + (Expression == null ? "" : Expression.ToString()) + ")";
+			return "static if(" + (Expression == null ? "" : Expression.ToString()) + ")";
+		}
+	}
+
+	public class NegatedDeclarationCondition : DeclarationCondition
+	{
+		public readonly DeclarationCondition FirstCondition;
+
+		public NegatedDeclarationCondition(DeclarationCondition dc)
+		{
+			this.FirstCondition = dc;
+		}
+
+		public override bool Equals(IDeclarationCondition other)
+		{
+			var o = other as NegatedDeclarationCondition;
+			return o != null && o.FirstCondition.Equals(FirstCondition);
+		}
+
+		public override string ToString()
+		{
+			return "<not>"+FirstCondition.ToString();
 		}
 	}
 }

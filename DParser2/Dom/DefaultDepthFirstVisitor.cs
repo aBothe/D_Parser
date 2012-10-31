@@ -327,14 +327,11 @@ namespace D_Parser.Dom
 				s.AssertedExpression.Accept(this);
 		}
 
-		public virtual void Visit(Statements.ConditionStatement.DebugStatement s)
+		public virtual void Visit(StatementCondition s)
 		{
 			VisitChildren(s);
-		}
-
-		public virtual void Visit(Statements.ConditionStatement.VersionStatement s)
-		{
-			VisitChildren(s);
+			if(s.Condition is StaticIfCondition) //TODO Null check
+				((StaticIfCondition)s.Condition).Expression.Accept(this);
 		}
 
 		public virtual void Visit(Statements.VolatileStatement s)

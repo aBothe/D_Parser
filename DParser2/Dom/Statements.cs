@@ -119,8 +119,9 @@ namespace D_Parser.Dom.Statements
 		}
 
 		/// <summary>
-		/// Returns a deep view on all declarations in this block statement.
-		/// Scans down to the deepest block and adds all their declarations etc.
+		/// Returns all child nodes inside the current scope.
+		/// Includes nodes from direct block statement substatements and alias nodes from import statements.
+		/// Condition
 		/// </summary>
 		public INode[] Declarations
 		{
@@ -133,7 +134,6 @@ namespace D_Parser.Dom.Statements
 				while (stmts.Count != 0)
 				{
 					foreach (var s in stmts)
-					{
 						if (s is BlockStatement ||
 							s is DeclarationStatement ||
 							s is ImportStatement)
@@ -142,10 +142,6 @@ namespace D_Parser.Dom.Statements
 							if (decls != null && decls.Length > 0)
 								l.AddRange(decls);
 						}
-
-						if (s is ConditionStatement || s is StaticIfStatement)
-							next.AddRange(((StatementContainingStatement)s).SubStatements);
-					}
 
 					if (next.Count == 0)
 						break;
@@ -246,24 +242,6 @@ namespace D_Parser.Dom.Statements
 		public override string ToCode()
 		{
 			return Identifier + ":";
-		}
-
-		public override void Accept(StatementVisitor vis)
-		{
-			vis.Visit(this);
-		}
-
-		public override R Accept<R>(StatementVisitor<R> vis)
-		{
-			return vis.Visit(this);
-		}
-	}
-
-	public class StaticIfStatement : IfStatement
-	{
-		public override string ToCode()
-		{
-			return "static "+base.ToCode();
 		}
 
 		public override void Accept(StatementVisitor vis)
@@ -1073,77 +1051,42 @@ namespace D_Parser.Dom.Statements
 		}
 	}*/
 
-	public abstract class ConditionStatement : StatementContainingStatement
+	public class StatementCondition : StatementContainingStatement, IExpressionContainingStatement
 	{
 		public IStatement ElseStatement;
+		public DeclarationCondition Condition;
 
 		public override IStatement[] SubStatements
 		{
 			get
 			{
-				if (ScopedStatement != null && ElseStatement != null)
+				if (ElseStatement != null)
 					return new[] { ScopedStatement, ElseStatement };
 				return new[] { ScopedStatement };
 			}
 		}
 
-		public class DebugStatement : ConditionStatement
+		public override void Accept(StatementVisitor vis)
 		{
-			public object DebugIdentifierOrLiteral;
-			public override string ToCode()
-			{
-				var ret = "debug";
-
-				if(DebugIdentifierOrLiteral!=null)
-					ret+='('+DebugIdentifierOrLiteral.ToString()+')';
-
-				if (ScopedStatement != null)
-					ret += ' ' + ScopedStatement.ToCode();
-
-				if (ElseStatement != null)
-					ret += " else " + ElseStatement.ToCode();
-
-				return ret;
-			}
-
-			public override void Accept(StatementVisitor vis)
-			{
-				vis.Visit(this);
-			}
-
-			public override R Accept<R>(StatementVisitor<R> vis)
-			{
-				return vis.Visit(this);
-			}
+			vis.Visit(this);
 		}
 
-		public class VersionStatement : ConditionStatement
+		public override R Accept<R>(StatementVisitor<R> vis)
 		{
-			public object VersionIdentifierOrLiteral;
-			public override string ToCode()
-			{
-				var ret = "version";
+			return vis.Visit(this);
+		}
 
-				if (VersionIdentifierOrLiteral != null)
-					ret += '(' + VersionIdentifierOrLiteral.ToString() + ')';
-
-				if (ScopedStatement != null)
-					ret += ' ' + ScopedStatement.ToCode();
-
-				if (ElseStatement != null)
-					ret += " else " + ElseStatement.ToCode();
-
-				return ret;
-			}
-
-			public override void Accept(StatementVisitor vis)
-			{
-				vis.Visit(this);
-			}
-
-			public override R Accept<R>(StatementVisitor<R> vis)
-			{
-				return vis.Visit(this);
+		public IExpression[] SubExpressions
+		{
+			get 
+			{ 
+				if(Condition is StaticIfCondition)
+				{
+					var sic = (StaticIfCondition)Condition;
+					if (sic.Expression != null)
+						return new[] { sic.Expression };
+				}
+				return null;
 			}
 		}
 	}
