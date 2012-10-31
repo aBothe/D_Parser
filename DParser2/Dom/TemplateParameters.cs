@@ -189,8 +189,8 @@ namespace D_Parser.Dom
 			return "alias " + base.ToString();
 		}
 
-		public void Accept(TemplateParameterVisitor vis) { vis.Visit(this); }
-		public R Accept<R>(TemplateParameterVisitor<R> vis) { return vis.Visit(this); }
+		public override void Accept(TemplateParameterVisitor vis) { vis.Visit(this); }
+		public override R Accept<R>(TemplateParameterVisitor<R> vis) { return vis.Visit(this); }
 	}
 
 	public class TemplateTupleParameter : ITemplateParameter

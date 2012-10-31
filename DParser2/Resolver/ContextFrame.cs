@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using D_Parser.Dom;
 using D_Parser.Dom.Statements;
 using D_Parser.Resolver.Templates;
@@ -27,17 +28,14 @@ namespace D_Parser.Resolver
 		public DeducedTypeDictionary DeducedTemplateParameters = new DeducedTypeDictionary();
 
 		//TODO: Cache expression results to increase static if() performance if multiple items are affected by them
+		public List<DeclarationCondition> CurrentDeclarationConditions
+		{
+			get {
+				return ConditionalCompilation.EnumConditions(ScopedStatement, ScopedBlock);
+			}
+		}
 
 		public ResolutionOptions ContextDependentOptions = 0;
-
-		public void ApplyFrom(ContextFrame other)
-		{
-			if (other == null)
-				return;
-
-			ScopedBlock = other.ScopedBlock;
-			ScopedStatement = other.ScopedStatement;
-		}
 
 		public override string ToString()
 		{

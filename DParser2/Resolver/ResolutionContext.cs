@@ -30,11 +30,6 @@ namespace D_Parser.Resolver
 
 				return CurrentContext.ScopedBlock;
 			}
-			set
-			{
-				if (stack.Count > 0)
-					CurrentContext.ScopedBlock = value;
-			}
 		}
 
 		public IStatement ScopedStatement
@@ -45,11 +40,6 @@ namespace D_Parser.Resolver
 					return null;
 
 				return CurrentContext.ScopedStatement;
-			}
-			set
-			{
-				if (stack.Count > 0)
-					CurrentContext.ScopedStatement = value;
 			}
 		}
 
@@ -70,17 +60,6 @@ namespace D_Parser.Resolver
 			}
 		}
 
-		public static List<IDeclarationCondition> GetDeclarationConditions(DNode n)
-		{
-			var l = new List<IDeclarationCondition>();
-
-			while(n!=null)
-			{
-				
-			}
-
-			return l;
-		}
 		#endregion
 
 		public static ResolutionContext Create(IEditorData editor)
@@ -180,17 +159,6 @@ namespace D_Parser.Resolver
 
 			NodeMatches = null;
 			return false;
-		}
-
-		/// <summary>
-		/// Clones the stack object and also clones the highest item on the context stack (only!)
-		/// </summary>
-		public ResolutionContext Clone()
-		{
-			var rc=new ContextFrame();
-			rc.ApplyFrom(CurrentContext);
-
-			return new ResolutionContext(ParseCache, rc);
 		}
 
 		/// <summary>

@@ -10,19 +10,19 @@ namespace D_Parser.Parser
 	{
 		#region Properties
 		TextReader reader;
-		protected int Col = 1;
-		protected int Line = 1;
+		int Col = 1;
+		int Line = 1;
 
-		protected DToken prevToken = null;
-		protected DToken curToken = null;
-		protected DToken lookaheadToken = null;
-		protected DToken peekToken = null;
+		DToken prevToken = null;
+		DToken curToken = null;
+		DToken lookaheadToken = null;
+		DToken peekToken = null;
 
-		protected StringBuilder sb = new StringBuilder();
+		StringBuilder sb = new StringBuilder();
 		/// <summary>
 		/// used for the original value of strings (with escape sequences).
 		/// </summary>
-		protected StringBuilder originalValue = new StringBuilder();
+		StringBuilder originalValue = new StringBuilder();
 		char[] escapeSequenceBuffer = new char[12];
 
 		// The C# compiler has a fixed size length therefore we'll use a fixed size char array for identifiers
@@ -85,7 +85,7 @@ namespace D_Parser.Parser
 
 		#region I/O
 
-		protected int ReaderRead()
+		int ReaderRead()
 		{
 			int val = reader.Read();
 			if ((val == '\r' && reader.Peek() != '\n') || val == '\n')
@@ -99,7 +99,7 @@ namespace D_Parser.Parser
 			}
 			return val;
 		}
-		protected int ReaderPeek()
+		int ReaderPeek()
 		{
 			return reader.Peek();
 		}
@@ -196,7 +196,7 @@ namespace D_Parser.Parser
 			}
 		}
 
-		protected bool HandleLineEnd(char ch)
+		bool HandleLineEnd(char ch)
 		{
 			// Handle MS-DOS or MacOS line ends.
 			if (ch == '\r')
@@ -216,7 +216,7 @@ namespace D_Parser.Parser
 			return false;
 		}
 
-		protected void SkipToEndOfLine()
+		void SkipToEndOfLine()
 		{
 			int nextChar;
 			while ((nextChar = reader.Read()) != -1)
@@ -236,7 +236,7 @@ namespace D_Parser.Parser
 			}
 		}
 
-		protected string ReadToEndOfLine()
+		string ReadToEndOfLine()
 		{
 			sb.Length = 0;
 			int nextChar;
