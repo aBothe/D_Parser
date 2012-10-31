@@ -175,6 +175,7 @@ namespace D_Parser.Parser
 			{
 				Step();
 				var dbs = new DMethod(DMethod.MethodType.Unittest);
+				ApplyAttributes(dbs);
 				LastParsedObject = dbs;
 				dbs.Location = t.Location;
 				FunctionBody(dbs);
@@ -193,38 +194,50 @@ namespace D_Parser.Parser
 			 */
 			else if ((laKind == Version || laKind == Debug) && Peek(1).Kind == Assign)
 			{
+				DebugSpecification ds = null;
+				VersionSpecification vs = null;
+
+				if (laKind == Version)
+					LastParsedObject = vs = new VersionSpecification { Location = la.Location, Conditions = GetDeclConditions() };
+				else
+					LastParsedObject = ds = new DebugSpecification { Location = la.Location, Conditions = GetDeclConditions() };
+				
 				Step();
-
-				var ass = new VersionDebugSpecification
-				{
-					Token = t.Kind,
-					Location = t.Location
-				};
-				LastParsedObject = ass;
-
 				Step();
 
 				if (laKind == Literal)
 				{
 					Step();
-					ass.SpecifiedValue = new IdentifierExpression(t.LiteralValue, t.LiteralFormat)
-						{
-							Location = t.Location,
-							EndLocation = t.EndLocation
-						};
-				}
-				else if (Expect(Identifier))
-					ass.SpecifiedValue = new IdentifierExpression(t.LiteralValue, t.LiteralFormat)
+					if (t.LiteralFormat != LiteralFormat.Scalar)
+						SynErr(t.Kind, "Integer literal expected!");
+					try
 					{
-						Location = t.Location,
-						EndLocation = t.EndLocation
-					};
+						if (vs != null)
+							vs.SpecifiedNumber = Convert.ToInt32(t.LiteralValue);
+						else
+							ds.SpecifiedDebugLevel = Convert.ToInt32(t.LiteralValue);
+					}
+					catch { }
+				}
+				else if (laKind == Identifier)
+				{
+					Step();
+					if (vs != null)
+						vs.SpecifiedId = t.Value;
+					else
+						ds.SpecifiedId = t.Value;
+				}
+				else if (ds == null)
+					Expect(Identifier);
 
 				Expect(Semicolon);
 
-				ass.EndLocation = t.EndLocation;
+				if (vs == null)
+					ds.EndLocation = t.EndLocation;
+				else
+					vs.EndLocation = t.EndLocation;
 
-				module.Add(ass);
+				module.Add(vs as StaticStatement ?? ds);
 			}
 
 			else if (laKind == Version || laKind == Debug || laKind == If)
@@ -235,25 +248,26 @@ namespace D_Parser.Parser
 			{
 				Step();
 
-				if (Modifier.ContainsAttribute(DeclarationAttributes, Static))
-				{
-					//HACK: Assume that there's only our 'static' DAttribute applied to the 'if'-statement
-					DeclarationAttributes.Clear();
-				}
-				else
+				if (!Modifier.ContainsAttribute(DeclarationAttributes, Static))
 					SynErr(Static, "Static assert statements must be explicitly marked as static");
+
+				var ass = new StaticAssertStatement { Conditions = GetDeclConditions(), Location = t.Location };
 
 				if (Expect(OpenParenthesis))
 				{
-					AssignExpression();
+					ass.AssertedExpression = AssignExpression();
 					if (laKind == (Comma))
 					{
 						Step();
-						AssignExpression();
+						ass.Message = AssignExpression();
 					}
-					Expect(CloseParenthesis);
+					if(Expect(CloseParenthesis))
+						Expect(Semicolon);
 				}
-				Expect(Semicolon);
+
+				ass.EndLocation = t.EndLocation;
+
+				module.Add(ass);
 			}
 
 			//TemplateMixinDeclaration
@@ -427,14 +441,15 @@ namespace D_Parser.Parser
 			 */
 			else if (laKind == If)
 			{
-				Step();
-				if (Expect(OpenParenthesis))
-				{
+				if (t.Kind != Static)
 					if (Modifier.ContainsAttribute(DeclarationAttributes, Static))
 						Modifier.RemoveFromStack(DeclarationAttributes, Static);
 					else
 						SynErr(Static, "Conditional declaration checks must be static");
 
+				Step();
+				if (Expect(OpenParenthesis))
+				{
 					var x = AssignExpression(parent);
 					c = new StaticIfCondition(x);
 
@@ -527,12 +542,12 @@ namespace D_Parser.Parser
 			bool isPublic = Modifier.ContainsAttribute(DeclarationAttributes, Public) ||
 							Modifier.ContainsAttribute(BlockAttributes,Public);
 
-			DeclarationAttributes.Clear();
-			
 			Expect(Import);
 
-			var importStatement = new ImportStatement { Location=t.Location, IsStatic = isStatic, IsPublic = isPublic };
-
+			var importStatement = new ImportStatement { Conditions = GetDeclConditions(), Location=t.Location, IsStatic = isStatic, IsPublic = isPublic };
+			
+			DeclarationAttributes.Clear();
+			
 			var imp = _Import();
 
 			while (laKind == Comma)
@@ -619,7 +634,7 @@ namespace D_Parser.Parser
 			return importBindings;
 		}
 
-		IStatement MixinDeclaration()
+		MixinStatement MixinDeclaration()
 		{
             var mx = AssignExpression();
 			Expect(Semicolon);
@@ -627,7 +642,7 @@ namespace D_Parser.Parser
             if (mx == null)
                 return null;
 
-            return new ExpressionStatement { Location=mx.Location, Expression=mx, EndLocation=t.EndLocation };
+            return new MixinStatement { Conditions = GetDeclConditions(), Location=mx.Location, MixinExpression = mx, EndLocation=t.EndLocation };
 		}
 		#endregion
 
@@ -3278,6 +3293,11 @@ namespace D_Parser.Parser
 			}
 			#endregion
 
+			#region Conditions
+			else if ((laKind == Static && Lexer.CurrentPeekToken.Kind == If) || laKind == Version || laKind == Debug)
+				return StmtCondition(Parent, Scope);
+			#endregion
+
 			#region WhileStatement
 			else if (laKind == While)
 			{
@@ -3731,19 +3751,19 @@ namespace D_Parser.Parser
 			}
 			#endregion
 
-			#region Conditions
-			else if ((laKind == Static && Lexer.CurrentPeekToken.Kind == If) || laKind == Version || laKind == Debug)
-				return StmtCondition(Parent,Scope);
-			#endregion
-
 			#region (Static) AssertExpression
 			else if (laKind == Assert || (laKind == Static && Lexer.CurrentPeekToken.Kind == Assert))
 			{
-				var s = new AssertStatement() { Location = la.Location, IsStatic = laKind == Static, Parent = Parent };
-				LastParsedObject = s;
-
-				if (s.IsStatic)
+				var isStatic = laKind == Static;
+				AssertStatement s;
+				if (isStatic)
+				{
 					Step();
+					s = new StaticAssertStatement { Location = la.Location, Parent = Parent };
+				}
+				else
+					s = new AssertStatement() { Location = la.Location, Parent = Parent };
+				LastParsedObject = s;
 
 				Step();
 
@@ -4508,7 +4528,7 @@ namespace D_Parser.Parser
 		{
 			// mixin TemplateIdentifier !( TemplateArgumentList ) MixinIdentifier ;
 			//							|<--			optional			 -->|
-			var r = new TemplateMixin();
+			var r = new TemplateMixin { Conditions = GetDeclConditions() };
 			LastParsedObject = r;
 			ITypeDeclaration preQualifier = null;
 

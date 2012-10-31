@@ -284,6 +284,26 @@ namespace D_Parser.Parser
             }
         }
 
+		DeclarationCondition[] GetDeclConditions()
+		{
+			var l = new List<DeclarationCondition>();
+
+			foreach (var a in BlockAttributes)
+				if (a is DeclarationCondition)
+					l.Add((DeclarationCondition)a);
+
+			while (DeclarationAttributes.Count != 0)
+			{
+				if (DeclarationAttributes.Peek() is DeclarationCondition)
+					l.Add((DeclarationCondition)DeclarationAttributes.Pop());
+				else
+					DeclarationAttributes.Pop(); // TODO What to do with it? Highlight it as useless?
+			}
+
+			return l.Count == 0 ? null : l.ToArray();
+		}
+
+
         void OverPeekBrackets(int OpenBracketKind,bool LAIsOpenBracket = false)
         {
             int CloseBracket = CloseParenthesis;

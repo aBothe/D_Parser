@@ -363,12 +363,14 @@ namespace D_Parser.Dom
 				s.Qualifier.Accept(this);
 		}
 
-		public virtual void Visit(Statements.VersionDebugSpecification s)
+		public virtual void Visit(Statements.VersionSpecification s)
 		{
 			VisitAbstractStmt(s);
+		}
 
-			if (s.SpecifiedValue != null)
-				s.SpecifiedValue.Accept(this);
+		public virtual void Visit(Statements.DebugSpecification s)
+		{
+			VisitAbstractStmt(s);
 		}
 
 		public virtual void VisitAbstractStmt(AbstractStatement stmt)

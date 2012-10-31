@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using D_Parser.Dom.Statements;
 
@@ -19,7 +16,7 @@ namespace D_Parser.Dom
 		/// <summary>
 		/// Used for storing import statement and similar stuff
 		/// </summary>
-		public readonly List<IStatement> StaticStatements = new List<IStatement>();
+		public readonly List<StaticStatement> StaticStatements = new List<StaticStatement>();
 		/// <summary>
 		/// Used for storing e.g. accessor attribute blocks
 		/// private {
@@ -96,7 +93,7 @@ namespace D_Parser.Dom
 			MetaBlocks.Add(MetaDecl);
 		}
 
-		public void Add(IStatement Statement)
+		public void Add(StaticStatement Statement)
 		{
 			StaticStatements.Add(Statement);
 		}

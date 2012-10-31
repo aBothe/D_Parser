@@ -121,7 +121,8 @@ namespace D_Parser.Dom
 		void Visit(ExpressionStatement expressionStatement);
 		void Visit(DeclarationStatement declarationStatement);
 		void Visit(TemplateMixin templateMixin);
-		void Visit(VersionDebugSpecification versionDebugSpecification);
+		void Visit(DebugSpecification versionSpecification);
+		void Visit(VersionSpecification versionSpecification);
 	}
 
 	public interface StatementVisitor<out R> : IVisitor<R>
@@ -156,7 +157,8 @@ namespace D_Parser.Dom
 		R Visit(ExpressionStatement expressionStatement);
 		R Visit(DeclarationStatement declarationStatement);
 		R Visit(TemplateMixin templateMixin);
-		R Visit(VersionDebugSpecification versionDebugSpecification);
+		R Visit(DebugSpecification versionSpecification);
+		R Visit(VersionSpecification versionSpecification);
 	}
 
 	public interface ExpressionVisitor : IVisitor

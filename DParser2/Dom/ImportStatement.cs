@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using D_Parser.Dom.Statements;
-using D_Parser.Parser;
 
 namespace D_Parser.Dom
 {
-	public class ModuleStatement:AbstractStatement
+	public class ModuleStatement:AbstractStatement, StaticStatement
 	{
 		public ITypeDeclaration ModuleName;
 
@@ -23,12 +21,17 @@ namespace D_Parser.Dom
 		{
 			return vis.Visit(this);
 		}
+
+		public DeclarationCondition[] Conditions
+		{
+			get { return null; }
+		}
 	}
 
-	public class ImportStatement:AbstractStatement, IDeclarationContainingStatement
+	public class ImportStatement:AbstractStatement, IDeclarationContainingStatement, StaticStatement
 	{
+		public DeclarationCondition[] Conditions { get; set; }
 		public bool IsStatic;
-
 		public bool IsPublic;
 
 		public class Import

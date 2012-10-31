@@ -94,6 +94,9 @@ debug(1) private int a;
 int b;
 
 debug
+	version = Cust;
+
+debug
 	int A;
 else version(D)
 	int B;
@@ -226,6 +229,7 @@ void main()
 
 			var sw = new Stopwatch();
 			var main = pcl[0]["modA"]["main"][0] as DMethod;
+			Assert.AreEqual(0, (pcl[0]["modA"] as DModule).ParseErrors.Count);
 			var s = main.Body.SubStatements[main.Body.SubStatements.Length - 1] as IExpressionContainingStatement;
 			var ctxt = ResolutionContext.Create(pcl, main, s);
 			//ctxt.ContextIndependentOptions |= ResolutionOptions.StopAfterFirstOverloads | ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.DontResolveBaseTypes;
@@ -312,6 +316,19 @@ class C
 			loc = ((IBlockNode)m["main"][0])["a"][0].EndLocation;
 			n = DResolver.SearchBlockAt(m, loc, out s);
 			Assert.AreEqual("main", n.Name);
+		}
+
+		[TestMethod]
+		public void StaticIf()
+		{
+			var m = DParser.ParseString(@"module m;
+void foo()
+{
+	static if(true)
+		writeln();
+}");
+
+			Assert.AreEqual(0, m.ParseErrors.Count);
 		}
 	}
 }

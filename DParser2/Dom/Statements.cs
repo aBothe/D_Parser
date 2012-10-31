@@ -1036,20 +1036,36 @@ namespace D_Parser.Dom.Statements
 		}
 	}
 
-	/*public class MixinStatement : AbstractStatement,IExpressionContainingStatement
+	public class MixinStatement : AbstractStatement,IExpressionContainingStatement,StaticStatement
 	{
 		public IExpression MixinExpression;
 
 		public override string ToCode()
 		{
-			return "mixin("+(MixinExpression==null?"":MixinExpression.ToString())+");";
+			return (MixinExpression==null?"":MixinExpression.ToString())+";";
 		}
 
 		public IExpression[] SubExpressions
 		{
 			get { return new[]{MixinExpression}; }
 		}
-	}*/
+
+		public DeclarationCondition[] Conditions
+		{
+			get;
+			set;
+		}
+
+		public override void Accept(StatementVisitor vis)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override R Accept<R>(StatementVisitor<R> vis)
+		{
+			throw new NotImplementedException();
+		}
+	}
 
 	public class StatementCondition : StatementContainingStatement, IExpressionContainingStatement
 	{
@@ -1093,12 +1109,13 @@ namespace D_Parser.Dom.Statements
 
 	public class AssertStatement : AbstractStatement,IExpressionContainingStatement
 	{
-		public bool IsStatic = false;
 		public IExpression AssertedExpression;
+		public IExpression Message;
 
 		public override string ToCode()
 		{
-			return (IsStatic?"static ":"")+"assert("+(AssertedExpression!=null?AssertedExpression.ToString():"")+");";
+			return "assert("+(AssertedExpression!=null?AssertedExpression.ToString():"")+
+				(Message == null?"":(","+Message))+");";
 		}
 
 		public IExpression[] SubExpressions
@@ -1114,6 +1131,20 @@ namespace D_Parser.Dom.Statements
 		public override R Accept<R>(StatementVisitor<R> vis)
 		{
 			return vis.Visit(this);
+		}
+	}
+
+	public class StaticAssertStatement : AssertStatement, StaticStatement
+	{
+		public override string ToCode()
+		{
+			return "static "+base.ToCode();
+		}
+
+		public DeclarationCondition[] Conditions
+		{
+			get;
+			set;
 		}
 	}
 
@@ -1219,7 +1250,7 @@ namespace D_Parser.Dom.Statements
 		}
 	}
 
-	public class TemplateMixin : AbstractStatement,IExpressionContainingStatement
+	public class TemplateMixin : AbstractStatement,IExpressionContainingStatement, StaticStatement
 	{
 		public ITypeDeclaration Qualifier;
 		public string MixinId;
@@ -1264,26 +1295,22 @@ namespace D_Parser.Dom.Statements
 		{
 			return vis.Visit(this);
 		}
+
+		public DeclarationCondition[] Conditions
+		{
+			get;
+			set;
+		}
 	}
 
-	/// <summary>
-	/// version = MyVersionSpec
-	/// </summary>
-	public class VersionDebugSpecification : AbstractStatement, IExpressionContainingStatement
+	public class DebugSpecification : AbstractStatement, StaticStatement
 	{
-		public int Token;
-		public IDeclarationCondition[] PrecedingConditions;
+		public string SpecifiedId;
+		public int SpecifiedDebugLevel;
 
-		public IExpression SpecifiedValue;
-	
-		public override string  ToCode()
+		public override string ToCode()
 		{
- 			return DTokens.GetTokenString(Token)+ "="+(SpecifiedValue!=null?SpecifiedValue.ToString():"");
-		}
-
-		public IExpression[] SubExpressions
-		{
-			get { return new[]{ SpecifiedValue }; }
+			return "debug = "+(SpecifiedId??SpecifiedDebugLevel.ToString())+";";
 		}
 
 		public override void Accept(StatementVisitor vis)
@@ -1294,6 +1321,39 @@ namespace D_Parser.Dom.Statements
 		public override R Accept<R>(StatementVisitor<R> vis)
 		{
 			return vis.Visit(this);
+		}
+
+		public DeclarationCondition[] Conditions
+		{
+			get;
+			set;
+		}
+	}
+
+	public class VersionSpecification : AbstractStatement, StaticStatement
+	{
+		public string SpecifiedId;
+		public int SpecifiedNumber;
+
+		public override string ToCode()
+		{
+			return "version = " + (SpecifiedId ?? SpecifiedNumber.ToString()) + ";";
+		}
+
+		public override void Accept(StatementVisitor vis)
+		{
+			vis.Visit(this);
+		}
+
+		public override R Accept<R>(StatementVisitor<R> vis)
+		{
+			return vis.Visit(this);
+		}
+
+		public DeclarationCondition[] Conditions
+		{
+			get;
+			set;
 		}
 	}
 }

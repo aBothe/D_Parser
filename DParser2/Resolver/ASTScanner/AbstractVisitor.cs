@@ -21,16 +21,17 @@ namespace D_Parser.Resolver.ASTScanner
 		};
 
 		ResolutionContext ctxt;
-		public ResolutionContext Context { 
-			get{ return ctxt;}
-			set{ ctxt=value;}
+		public ResolutionContext Context
+		{
+			get { return ctxt; }
+			set { ctxt = value; }
 		}
 		#endregion
 
 		#region Constructor
 		public AbstractVisitor(ResolutionContext context)
 		{
-			ctxt=context;
+			ctxt = context;
 		}
 
 		static AbstractVisitor()
@@ -59,29 +60,29 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			return bn.Children;
 		}
 
-        /// <summary>
-        /// Return true if search shall stop(!), false if search shall go on
-        /// </summary>
+		/// <summary>
+		/// Return true if search shall stop(!), false if search shall go on
+		/// </summary>
 		protected abstract bool HandleItem(INode n);
 
 		protected virtual bool HandleItems(IEnumerable<INode> nodes)
 		{
-            foreach (var n in nodes)
-                if (HandleItem(n))
-                    return true;
-            return false;
+			foreach (var n in nodes)
+				if (HandleItem(n))
+					return true;
+			return false;
 		}
 
 		bool breakImmediately { get { return ctxt.Options == ResolutionOptions.StopAfterFirstMatch; } }
 
-		public virtual void IterateThroughScopeLayers(CodeLocation Caret, MemberFilter VisibleMembers= MemberFilter.All)
+		public virtual void IterateThroughScopeLayers(CodeLocation Caret, MemberFilter VisibleMembers = MemberFilter.All)
 		{
 			// 1)
-			if (ctxt.ScopedStatement != null && 
+			if (ctxt.ScopedStatement != null &&
 				IterateThroughItemHierarchy(ctxt.ScopedStatement, Caret, VisibleMembers) &&
-					(ctxt.Options.HasFlag(ResolutionOptions.StopAfterFirstOverloads) || 
+					(ctxt.Options.HasFlag(ResolutionOptions.StopAfterFirstOverloads) ||
 					ctxt.Options.HasFlag(ResolutionOptions.StopAfterFirstMatch)))
-					return;
+				return;
 
 			var curScope = ctxt.ScopedBlock;
 
@@ -148,7 +149,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				else
 				{
 					var ch = PrefilterSubnodes(curScope);
-					if(ch!=null)
+					if (ch != null)
 						foreach (var n in ch)
 						{
 							// Add anonymous enums' items
@@ -171,9 +172,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				}
 
 				// Handle imports
-                if (curScope is DBlockNode)
-                    if ((breakOnNextScope = HandleDBlockNode((DBlockNode)curScope, VisibleMembers)) && breakImmediately)
-                        return;
+				if (curScope is DBlockNode)
+					if ((breakOnNextScope = HandleDBlockNode((DBlockNode)curScope, VisibleMembers)) && breakImmediately)
+						return;
 
 				if (breakOnNextScope && ctxt.Options.HasFlag(ResolutionOptions.StopAfterFirstOverloads))
 					return;
@@ -182,9 +183,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			}
 
 			// Add __ctfe variable
-            if (!breakOnNextScope && CanAddMemberOfType(VisibleMembers, __ctfe))
-                if (HandleItem(__ctfe))
-                    return;
+			if (!breakOnNextScope && CanAddMemberOfType(VisibleMembers, __ctfe))
+				if (HandleItem(__ctfe))
+					return;
 		}
 
 		bool IterateThrough(DClassLike cls, MemberFilter VisibleMembers, ref bool breakOnNextScope)
@@ -198,7 +199,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					return true;
 
 				var ch = PrefilterSubnodes(curWatchedClass);
-				if(ch!=null)
+				if (ch != null)
 					foreach (var m in ch)
 					{
 						var dm2 = m as DNode;
@@ -210,8 +211,8 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 						// Add static and non-private members of all base classes; 
 						// Add everything if we're still handling the currently scoped class
 						if (curWatchedClass == cls || CanShowMember(dm2, ctxt.ScopedBlock))
-								if((breakOnNextScope = HandleItem(m)) && breakImmediately)
-									return true;
+							if ((breakOnNextScope = HandleItem(m)) && breakImmediately)
+								return true;
 					}
 
 				// 3)
@@ -282,7 +283,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		/// Walks up the statement scope hierarchy and enlists all declarations that have been made BEFORE the caret position. 
 		/// (If CodeLocation.Empty given, this parameter will be ignored)
 		/// </summary>
-        /// <returns>True if scan shall stop, false if not</returns>
+		/// <returns>True if scan shall stop, false if not</returns>
 		bool IterateThroughItemHierarchy(IStatement Statement, CodeLocation Caret, MemberFilter VisibleMembers)
 		{
 			// To a prevent double entry of the same declaration, skip a most scoped declaration first
@@ -291,8 +292,8 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 			while (Statement != null)
 			{
-				if (Statement is ImportStatement) 
-				{ 
+				if (Statement is ImportStatement)
+				{
 					// Handled in DBlockNode.Declarations
 				}
 				else if (Statement is IDeclarationContainingStatement)
@@ -315,13 +316,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 									continue;
 							}
 
-                            if (HandleItem(decl))
-                                return true;
+							if (HandleItem(decl))
+								return true;
 						}
-				}
-				else if(Statement is StatementCondition)
-				{
-					var sc = (StatementCondition)Statement;
 				}
 				/// http://dlang.org/statement.html#WithStatement
 				else if (Statement is WithStatement)
@@ -362,31 +359,37 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				if (Statement is StatementContainingStatement)
 					foreach (var s in (Statement as StatementContainingStatement).SubStatements)
 					{
+						/*
+						 * void foo()
+						 * {
+						 * 
+						 *	writeln(); -- error, writeln undefined
+						 *	
+						 *  import std.stdio;
+						 *  
+						 *  writeln(); -- ok
+						 * 
+						 * }
+						 */
+						if (s == null || Caret < s.Location && Caret != CodeLocation.Empty)
+							continue;
+
 						if (s is ImportStatement)
 						{
-							/*
-							 * void foo()
-							 * {
-							 * 
-							 *	writeln(); -- error, writeln undefined
-							 *	
-							 *  import std.stdio;
-							 *  
-							 *  writeln(); -- ok
-							 * 
-							 * }
-							 */
-							if (Caret < s.Location && Caret != CodeLocation.Empty)
-								continue;
-
 							// Selective imports were handled in the upper section already!
 
 							var impStmt = (ImportStatement)s;
 
-                            foreach (var imp in impStmt.Imports)
-                                if (string.IsNullOrEmpty(imp.ModuleAlias))
-                                    if (HandleNonAliasedImport(imp, VisibleMembers))
-                                        return true;
+							foreach (var imp in impStmt.Imports)
+								if (string.IsNullOrEmpty(imp.ModuleAlias))
+									if (HandleNonAliasedImport(imp, VisibleMembers))
+										return true;
+						}
+						else if (s is StatementCondition)
+						{
+							var sc = (StatementCondition)Statement;
+
+							//TODO
 						}
 						else if (s is ExpressionStatement)
 						{
@@ -410,7 +413,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				Statement = Statement.Parent;
 			}
 
-            return false;
+			return false;
 		}
 
 		#region Imports
@@ -447,7 +450,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		/// <summary>
 		/// Handle the node's static statements (but not the node itself)
 		/// </summary>
-		bool HandleDBlockNode(DBlockNode dbn, MemberFilter VisibleMembers, bool takePublicImportsOnly=false)
+		bool HandleDBlockNode(DBlockNode dbn, MemberFilter VisibleMembers, bool takePublicImportsOnly = false)
 		{
 			if (dbn != null && dbn.StaticStatements != null)
 			{
@@ -481,11 +484,11 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			}
 
 			// Every module imports 'object' implicitly
-            if (!takePublicImportsOnly)
-                if (HandleNonAliasedImport(_objectImport, VisibleMembers))
-                    return true;
+			if (!takePublicImportsOnly)
+				if (HandleNonAliasedImport(_objectImport, VisibleMembers))
+					return true;
 
-            return false;
+			return false;
 		}
 
 		bool HandleNonAliasedImport(ImportStatement.Import imp, MemberFilter VisibleMembers)
@@ -498,24 +501,24 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 			List<string> seenModules = null;
 
-			if(!scannedModules.TryGetValue(thisModuleName,out seenModules))
+			if (!scannedModules.TryGetValue(thisModuleName, out seenModules))
 				seenModules = scannedModules[thisModuleName] = new List<string>();
 			else if (seenModules.Contains(moduleName))
 				return false;
 			seenModules.Add(moduleName);
 
-			if(ctxt.ParseCache!=null)
+			if (ctxt.ParseCache != null)
 				foreach (var module in ctxt.ParseCache.LookupModuleName(moduleName))
 				{
 					var scAst = ctxt.ScopedBlock.NodeRoot as IAbstractSyntaxTree;
-					if (module == null || (scAst!=null && module.FileName == scAst.FileName && module.FileName!=null))
+					if (module == null || (scAst != null && module.FileName == scAst.FileName && module.FileName != null))
 						continue;
 
 					if (HandleItem(module))
 						return true;
 
 					var ch = PrefilterSubnodes(module);
-					if(ch!=null)
+					if (ch != null)
 						foreach (var i in ch)
 						{
 							var dn = i as DNode;
@@ -546,7 +549,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					if (HandleDBlockNode(module as DBlockNode, VisibleMembers, true))
 						return true;
 				}
-            return false;
+			return false;
 		}
 
 		#endregion
