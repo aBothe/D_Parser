@@ -2,3 +2,5 @@
 *.suo
 */obj/*
 /TestResults*
+*test-results*
+*.userprefs

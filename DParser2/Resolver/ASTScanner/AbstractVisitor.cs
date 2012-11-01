@@ -21,10 +21,10 @@ namespace D_Parser.Resolver.ASTScanner
 		};
 
 		ResolutionContext ctxt;
+		ConditionalCompilation.ConditionSet conditionSet;
 		public ResolutionContext Context
 		{
 			get { return ctxt; }
-			set { ctxt = value; }
 		}
 		#endregion
 
@@ -32,6 +32,7 @@ namespace D_Parser.Resolver.ASTScanner
 		public AbstractVisitor(ResolutionContext context)
 		{
 			ctxt = context;
+			conditionSet = ctxt.BuildConditionSet();
 		}
 
 		static AbstractVisitor()
@@ -152,6 +153,10 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					if (ch != null)
 						foreach (var n in ch)
 						{
+							if(n is DNode &&
+								!ConditionalCompilation.IsMatchingVersionAndDebugConditions(this.conditionSet, ((DNode)n).Attributes))
+								continue;
+
 							// Add anonymous enums' items
 							if (n is DEnum && string.IsNullOrEmpty(n.Name) && CanAddMemberOfType(VisibleMembers, n))
 							{
@@ -208,6 +213,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 							(dm3 != null && !(dm3.SpecialType == DMethod.MethodType.Normal || dm3.SpecialType == DMethod.MethodType.Delegate)))
 							continue;
 
+						if (!ConditionalCompilation.IsMatchingVersionAndDebugConditions(this.conditionSet, dm2.Attributes))
+							continue;
+
 						// Add static and non-private members of all base classes; 
 						// Add everything if we're still handling the currently scoped class
 						if (curWatchedClass == cls || CanShowMember(dm2, ctxt.ScopedBlock))
@@ -221,7 +229,11 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					var tr = DResolver.ResolveBaseClasses(new ClassType(curWatchedClass, curWatchedClass, null), ctxt, true);
 
 					if (tr.Base is TemplateIntermediateType)
+					{
 						curWatchedClass = ((TemplateIntermediateType)tr.Base).Definition;
+
+						//TODO: Switch declaration condition set
+					}
 					else
 						break;
 				}
@@ -292,126 +304,134 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 			while (Statement != null)
 			{
-				if (Statement is ImportStatement)
-				{
-					// Handled in DBlockNode.Declarations
-				}
-				else if (Statement is IDeclarationContainingStatement)
-				{
-					var decls = ((IDeclarationContainingStatement)Statement).Declarations;
-
-					if (decls != null)
-						foreach (var decl in decls)
-						{
-							if (Caret != CodeLocation.Empty)
-							{
-								if (Caret < decl.Location)
-									continue;
-
-								var dv = decl as DVariable;
-								if (dv != null &&
-									dv.Initializer != null &&
-									!(Caret < dv.Initializer.Location ||
-									Caret > dv.Initializer.EndLocation))
-									continue;
-							}
-
-							if (HandleItem(decl))
-								return true;
-						}
-				}
-				/// http://dlang.org/statement.html#WithStatement
-				else if (Statement is WithStatement)
-				{
-					var ws = (WithStatement)Statement;
-
-					if (ws.ScopedStatement == null || Caret < ws.ScopedStatement.Location)
-					{
-						Statement = Statement.Parent;
-						continue;
-					}
-
-					AbstractType r = null;
-
-					var back = ctxt.ScopedStatement;
-					ctxt.ScopedStatement = ws.Parent;
-
-					// Must be an expression that returns an object reference
-					if (ws.WithExpression != null)
-						r = Evaluation.EvaluateType(ws.WithExpression, ctxt);
-					else if (ws.WithSymbol != null) // This symbol will be used as default
-						r = TypeDeclarationResolver.ResolveSingle(ws.WithSymbol, ctxt);
-
-					ctxt.ScopedStatement = back;
-
-					if ((r = DResolver.StripMemberSymbols(r)) != null)
-						if (r is TemplateIntermediateType)
-						{
-							var tr = (TemplateIntermediateType)r;
-							var dc = tr.Definition as DClassLike;
-
-							bool brk = false;
-							if (IterateThrough(dc, VisibleMembers, ref brk) || brk)
-								return true;
-						}
-				}
-
-				if (Statement is StatementContainingStatement)
-					foreach (var s in (Statement as StatementContainingStatement).SubStatements)
-					{
-						/*
-						 * void foo()
-						 * {
-						 * 
-						 *	writeln(); -- error, writeln undefined
-						 *	
-						 *  import std.stdio;
-						 *  
-						 *  writeln(); -- ok
-						 * 
-						 * }
-						 */
-						if (s == null || Caret < s.Location && Caret != CodeLocation.Empty)
-							continue;
-
-						if (s is ImportStatement)
-						{
-							// Selective imports were handled in the upper section already!
-
-							var impStmt = (ImportStatement)s;
-
-							foreach (var imp in impStmt.Imports)
-								if (string.IsNullOrEmpty(imp.ModuleAlias))
-									if (HandleNonAliasedImport(imp, VisibleMembers))
-										return true;
-						}
-						else if (s is StatementCondition)
-						{
-							var sc = (StatementCondition)Statement;
-
-							//TODO
-						}
-						else if (s is ExpressionStatement)
-						{
-							// TODO: Parse MixinStatements à la mixin("int x" ~ "="~ to!string(5) ~";");
-						}
-						else if (s is TemplateMixin)
-						{
-							var tm = s as TemplateMixin;
-
-							if (string.IsNullOrEmpty(tm.MixinId))
-							{
-
-							}
-							else
-							{
-
-							}
-						}
-					}
+				if (HandleSingleStatemt(Statement, Caret, VisibleMembers))
+					return true;
 
 				Statement = Statement.Parent;
 			}
+
+			return false;
+		}
+
+		bool HandleSingleStatemt(IStatement Statement, CodeLocation Caret, MemberFilter VisibleMembers)
+		{
+			if (Statement is ImportStatement)
+			{
+				// Handled in DBlockNode
+			}
+			else if (Statement is IDeclarationContainingStatement)
+			{
+				var decls = ((IDeclarationContainingStatement)Statement).Declarations;
+
+				if (decls != null)
+					foreach (var decl in decls)
+					{
+						if (Caret != CodeLocation.Empty)
+						{
+							if (Caret < decl.Location)
+								continue;
+
+							var dv = decl as DVariable;
+							if (dv != null &&
+								dv.Initializer != null &&
+								!(Caret < dv.Initializer.Location ||
+								Caret > dv.Initializer.EndLocation))
+								continue;
+						}
+
+						if (HandleItem(decl))
+							return true;
+					}
+			}
+			/// http://dlang.org/statement.html#WithStatement
+			else if (Statement is WithStatement)
+			{
+				var ws = (WithStatement)Statement;
+
+				if (ws.ScopedStatement == null || Caret < ws.ScopedStatement.Location)
+					return false;
+
+				AbstractType r = null;
+
+				var back = ctxt.ScopedStatement;
+				ctxt.CurrentContext.ScopedStatement = ws.Parent;
+
+				// Must be an expression that returns an object reference
+				if (ws.WithExpression != null)
+					r = Evaluation.EvaluateType(ws.WithExpression, ctxt);
+				else if (ws.WithSymbol != null) // This symbol will be used as default
+					r = TypeDeclarationResolver.ResolveSingle(ws.WithSymbol, ctxt);
+
+				ctxt.CurrentContext.ScopedStatement = back;
+
+				if ((r = DResolver.StripMemberSymbols(r)) != null)
+					if (r is TemplateIntermediateType)
+					{
+						var tr = (TemplateIntermediateType)r;
+						var dc = tr.Definition as DClassLike;
+
+						bool brk = false;
+						if (IterateThrough(dc, VisibleMembers, ref brk) || brk)
+							return true;
+					}
+			}
+
+			if (Statement is StatementContainingStatement)
+				foreach (var s in (Statement as StatementContainingStatement).SubStatements)
+				{
+					/*
+					 * void foo()
+					 * {
+					 * 
+					 *	writeln(); -- error, writeln undefined
+					 *	
+					 *  import std.stdio;
+					 *  
+					 *  writeln(); -- ok
+					 * 
+					 * }
+					 */
+					if (s == null || Caret < s.Location && Caret != CodeLocation.Empty)
+						continue;
+
+					if (s is ImportStatement)
+					{
+						// Selective imports were handled in the upper section already!
+
+						var impStmt = (ImportStatement)s;
+
+						foreach (var imp in impStmt.Imports)
+							if (string.IsNullOrEmpty(imp.ModuleAlias))
+								if (HandleNonAliasedImport(imp, VisibleMembers))
+									return true;
+					}
+					else if (s is StatementCondition)
+					{
+						var sc = (StatementCondition)Statement;
+
+						if (ConditionalCompilation.IsMatchingVersionAndDebugConditions(this.conditionSet, new[] { sc.Condition }))
+							return HandleSingleStatemt(sc.ScopedStatement, Caret, VisibleMembers);
+						else if (sc.ElseStatement != null)
+							return HandleSingleStatemt(sc.ElseStatement, Caret, VisibleMembers);
+					}
+					else if (s is MixinStatement)
+					{
+						// TODO: Parse MixinStatements à la mixin("int x" ~ "="~ to!string(5) ~";");
+					}
+					else if (s is TemplateMixin)
+					{
+						var tm = s as TemplateMixin;
+
+						if (string.IsNullOrEmpty(tm.MixinId))
+						{
+
+						}
+						else
+						{
+
+						}
+					}
+				}
 
 			return false;
 		}
@@ -456,6 +476,11 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			{
 				foreach (var stmt in dbn.StaticStatements)
 				{
+					// Check if all conditions are satisfied..
+					if (stmt.Conditions != null && stmt.Conditions.Length != 0 &&
+							!ConditionalCompilation.IsMatchingVersionAndDebugConditions(conditionSet, stmt.Conditions))
+						continue;
+
 					var dstmt = stmt as IDeclarationContainingStatement;
 					if (dstmt != null)
 					{
@@ -508,7 +533,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			seenModules.Add(moduleName);
 
 			if (ctxt.ParseCache != null)
-				foreach (var module in ctxt.ParseCache.LookupModuleName(moduleName))
+				foreach (var module in ctxt.ParseCache.LookupModuleName(moduleName)) //TODO: Only take the first module? Notify the user about ambigous module names?
 				{
 					var scAst = ctxt.ScopedBlock.NodeRoot as IAbstractSyntaxTree;
 					if (module == null || (scAst != null && module.FileName == scAst.FileName && module.FileName != null))
@@ -516,6 +541,10 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 					if (HandleItem(module))
 						return true;
+
+					var backup = new List<DeclarationCondition>(conditionSet.ScopeConditions);
+					conditionSet.ScopeConditions.Clear();
+					ConditionalCompilation.EnumConditions(conditionSet, null, module, CodeLocation.Empty);
 
 					var ch = PrefilterSubnodes(module);
 					if (ch != null)
@@ -532,24 +561,41 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 									CanAddMemberOfType(VisibleMembers, i))
 								{
 									if (HandleItems((i as DEnum).Children))
+									{
+										_restoreCSBackup(backup);
 										return true;
+									}
 									continue;
 								}
 
 								if (dn.IsPublic && !dn.ContainsAttribute(DTokens.Package) &&
 									CanAddMemberOfType(VisibleMembers, dn))
 									if (HandleItem(dn))
+									{
+										_restoreCSBackup(backup);
 										return true;
+									}
 							}
 							else
 								if (HandleItem(i))
+								{
+									_restoreCSBackup(backup);
 									return true;
+								}
 						}
+
+					_restoreCSBackup(backup);
 
 					if (HandleDBlockNode(module as DBlockNode, VisibleMembers, true))
 						return true;
 				}
 			return false;
+		}
+
+		void _restoreCSBackup(List<DeclarationCondition> l)
+		{
+			conditionSet.ScopeConditions.Clear();
+			conditionSet.ScopeConditions.AddRange(l);
 		}
 
 		#endregion

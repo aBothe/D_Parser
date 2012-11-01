@@ -1260,7 +1260,6 @@ namespace D_Parser.Parser
 		/// </summary>
 		ITypeDeclaration DeclaratorSuffixes(out ITemplateParameter[] TemplateParameters, out List<INode> _Parameters, List<DAttribute> attributes)
 		{
-			DAttribute attr = null;
 			ITypeDeclaration td = null;
 			TemplateParameters = null;
 			_Parameters = null;

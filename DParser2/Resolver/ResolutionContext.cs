@@ -43,6 +43,24 @@ namespace D_Parser.Resolver
 			}
 		}
 
+		public ConditionalCompilation.ConditionSet BuildConditionSet()
+		{
+			return BuildConditionSet(ScopedStatement == null ? ScopedBlock.BlockStartLocation : ScopedStatement.Location);
+		}
+
+		/// <summary>
+		/// Builds a set of conditions that match the currently selected region in the code.
+		/// Used for conditional compilation filtering in the AST visitors.
+		/// </summary>
+		public ConditionalCompilation.ConditionSet BuildConditionSet(CodeLocation caret)
+		{
+			var cs = new ConditionalCompilation.ConditionSet(this.CompilationEnvironment);
+
+			ConditionalCompilation.EnumConditions(cs, ScopedStatement, ScopedBlock, caret); 
+
+			return cs;
+		}
+
 		Dictionary<object, Dictionary<string, ISemantic[]>> resolvedTypes = new Dictionary<object, Dictionary<string, ISemantic[]>>();
 
 		/// <summary>

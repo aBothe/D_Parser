@@ -40,6 +40,13 @@ namespace D_Parser.Unittest
 			return pcl;
 		}
 
+		public static ResolutionContext CreateDefCtxt(ParseCacheList pcl, IBlockNode scope, IStatement stmt=null)
+		{
+			var r = ResolutionContext.Create(pcl, scope, stmt);
+			r.CompilationEnvironment = new ConditionalCompilationFlags(new[]{"Windows","all"},1,true,null,0);
+			return r;
+		}
+
 		[TestMethod]
 		public void BasicResolution()
 		{
@@ -47,7 +54,7 @@ namespace D_Parser.Unittest
 
 class foo {}");
 
-			var ctxt = ResolutionContext.Create(pcl, pcl[0]["modA"]);
+			var ctxt = CreateDefCtxt(pcl, pcl[0]["modA"]);
 
 			var id = new IdentifierDeclaration("foo");
 
@@ -86,7 +93,7 @@ class foo {}");
 
 			Assert.IsInstanceOfType(call_fooC, typeof(ExpressionStatement));
 
-			var ctxt=ResolutionContext.Create(pcl, bar, call_fooC);
+			var ctxt = CreateDefCtxt(pcl, bar, call_fooC);
 
 			var call = ((ExpressionStatement)call_fooC).Expression;
 			var methodName = ((PostfixExpression_MethodCall)call).PostfixForeExpression;
@@ -128,7 +135,7 @@ const int a=3;
 int b=4;
 ");
 
-			var ctxt = ResolutionContext.Create(pcl, pcl[0]["modA"]);
+			var ctxt = CreateDefCtxt(pcl, pcl[0]["modA"]);
 
 			var instanceExpr = DParser.ParseExpression("(new MyClass!int).tvar");
 
@@ -155,7 +162,7 @@ module modA;
 T foo(T)() {}
 ");
 
-			var ctxt = ResolutionContext.Create(pcl, pcl[0]["modA"]);
+			var ctxt = CreateDefCtxt(pcl, pcl[0]["modA"]);
 
 			var call = DParser.ParseExpression("foo!int()");
 			var bt = Evaluation.EvaluateType(call, ctxt);
@@ -180,7 +187,7 @@ class B(T){
 	class C(T2) : T {} 
 }");
 
-			var ctxt = ResolutionContext.Create(pcl, pcl[0]["modA"]);
+			var ctxt = CreateDefCtxt(pcl, pcl[0]["modA"]);
 
 			var inst = DParser.ParseExpression("(new B!A).new C!A2"); // TODO
 		}
@@ -205,7 +212,7 @@ class A
 ");
 			var A = pcl[0]["modA"]["A"][0] as DClassLike;
 			var bar = A["bar"][0] as DMethod;
-			var ctxt = ResolutionContext.Create(pcl, bar, bar.Body);
+			var ctxt = CreateDefCtxt(pcl, bar, bar.Body);
 
 			var e = DParser.ParseExpression("123.foo");
 
@@ -231,7 +238,7 @@ int delegate(int b) myDeleg;
 
 ");
 
-			var ctxt = ResolutionContext.Create(pcl, pcl[0]["modA"]);
+			var ctxt = CreateDefCtxt(pcl, pcl[0]["modA"]);
 			ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
 
 			var x = DParser.ParseExpression("f!(char[5])");
@@ -287,7 +294,7 @@ class Client : IClient!(Params, ConcreteRegistry){}");
 
 			var mod=pcl[0]["modA"];
 			var Client = mod["Client"][0] as DClassLike;
-			var ctxt = ResolutionContext.Create(pcl, mod);
+			var ctxt = CreateDefCtxt(pcl, mod);
 
 			var res = TypeDeclarationResolver.HandleNodeMatch(Client, ctxt);
 			Assert.IsInstanceOfType(res, typeof(ClassType));
@@ -305,7 +312,7 @@ class Client : IClient!(Params, ConcreteRegistry){}");
 			Assert.AreEqual(mod["ConcreteRegistry"][0], ((DSymbol)dedtype.Value.Base).Definition);
 
 
-			ctxt.ScopedBlock = mod;
+			ctxt.CurrentContext.ScopedBlock = mod;
 			DToken opt=null;
 			var tix = DParser.ParseBasicType("IClient!(Params,ConcreteRegistry)",out opt);
 			res = TypeDeclarationResolver.ResolveSingle(tix, ctxt);
@@ -323,7 +330,7 @@ class C(U: A!int){}
 class D : C!B {}");
 
 			var mod = pcl[0]["modA"];
-			var ctxt = ResolutionContext.Create(pcl, mod);
+			var ctxt = CreateDefCtxt(pcl, mod);
 
 			var res = TypeDeclarationResolver.HandleNodeMatch(mod["D"][0], ctxt);
 			Assert.IsInstanceOfType(res, typeof(ClassType));
@@ -349,7 +356,7 @@ class B : A{
 
 			var B = pcl[0]["modA"]["B"][0] as DClassLike;
 			var this_ = (DMethod)B[DMethod.ConstructorIdentifier][0];
-			var ctxt = ResolutionContext.Create(pcl, this_);
+			var ctxt = CreateDefCtxt(pcl, this_);
 			ctxt.ContextIndependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
 
 			var super = (this_.Body.SubStatements[0] as IExpressionContainingStatement).SubExpressions[0];
@@ -370,7 +377,7 @@ template Foo(A)
 	A Foo;
 }");
 
-			var ctxt = ResolutionContext.Create(pcl, pcl[0]["m"]);
+			var ctxt = CreateDefCtxt(pcl, pcl[0]["m"]);
 
 			DToken tk;
 			var td = DParser.ParseBasicType("Foo!int",out tk);
@@ -415,7 +422,7 @@ else
 
 ");
 
-			var ctxt = ResolutionContext.Create(pcl, pcl[0]["m"]);
+			var ctxt = CreateDefCtxt(pcl, pcl[0]["m"]);
 
 			var ms = TypeDeclarationResolver.ResolveIdentifier("f", ctxt, null);
 			Assert.AreEqual(1, ms.Length);

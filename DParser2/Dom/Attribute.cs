@@ -263,12 +263,16 @@ namespace D_Parser.Dom
 			return vis.VisitAttribute(this);
 		}
 
+		public bool HasNoExplicitSpecification
+		{
+			get {
+				return DebugId == null && DebugLevel == 0;
+			}
+		}
+
 		public override string ToString()
 		{
-			if (string.IsNullOrEmpty(DebugId) && DebugLevel==0)
-				return "debug";
-
-			return "debug(" + (DebugId ?? DebugLevel.ToString()) + ")";
+			return HasNoExplicitSpecification ? "debug" : ("debug(" + (DebugId ?? DebugLevel.ToString()) + ")");
 		}
 
 		public override bool Equals(IDeclarationCondition other)

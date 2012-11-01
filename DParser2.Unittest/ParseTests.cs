@@ -116,7 +116,7 @@ else int C;");
 			Assert.AreEqual(2, C.Attributes.Count);
 		}
 
-		[TestMethod]
+		//[TestMethod]
 		public void TestPhobos()
 		{
 			var pc = ParsePhobos();
