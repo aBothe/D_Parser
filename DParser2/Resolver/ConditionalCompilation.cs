@@ -16,7 +16,7 @@ namespace D_Parser.Resolver
 
 			public ConditionSet(ConditionalCompilationFlags gFLags)
 			{
-				GlobalFlags = gFLags;
+				GlobalFlags = gFLags ?? new ConditionalCompilationFlags(null,0,false);
 				ScopeConditions = new List<DeclarationCondition>();
 			}
 		}

@@ -420,10 +420,18 @@ version(A)
 else
 	int[] a(){}
 
-");
+version = B;
+
+version(B)
+	import b;
+
+", @"module b;
+
+int pub;");
 
 			var ctxt = CreateDefCtxt(pcl, pcl[0]["m"]);
 
+			// Test basic version-dependent resolution
 			var ms = TypeDeclarationResolver.ResolveIdentifier("f", ctxt, null);
 			Assert.AreEqual(1, ms.Length);
 			var m = ms[0] as MemberSymbol;
@@ -445,6 +453,9 @@ else
 			Assert.IsNotNull(m);
 
 			Assert.IsInstanceOfType(m.Base, typeof(PointerType));
+
+			ms = TypeDeclarationResolver.ResolveIdentifier("pub", ctxt, null);
+			Assert.AreEqual(1, ms.Length);
 		}
 	}
 }
