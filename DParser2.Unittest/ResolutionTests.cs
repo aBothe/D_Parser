@@ -425,9 +425,11 @@ version = B;
 version(B)
 	import b;
 
-", @"module b;
+version(C)
+	import c;
 
-int pub;");
+", @"module b; int pubB;",
+@"module c; int pubC;");
 
 			var ctxt = CreateDefCtxt(pcl, pcl[0]["m"]);
 
@@ -438,7 +440,6 @@ int pub;");
 			Assert.IsNotNull(m);
 
 			Assert.IsInstanceOfType(m.Base, typeof(PointerType));
-
 
 			ms = TypeDeclarationResolver.ResolveIdentifier("d", ctxt, null);
 			Assert.AreEqual(1, ms.Length);
@@ -454,8 +455,98 @@ int pub;");
 
 			Assert.IsInstanceOfType(m.Base, typeof(PointerType));
 
-			ms = TypeDeclarationResolver.ResolveIdentifier("pub", ctxt, null);
+			ms = TypeDeclarationResolver.ResolveIdentifier("pubB", ctxt, null);
 			Assert.AreEqual(1, ms.Length);
+
+			ms = TypeDeclarationResolver.ResolveIdentifier("pubC", ctxt, null);
+			Assert.AreEqual(0, ms.Length);
+		}
+
+		[TestMethod]
+		public void DeclCond2()
+		{
+			var pcl = CreateCache(@"module m;
+
+version(X)
+	int x;
+else
+	int y;
+
+class A
+{
+	version(X)
+		void foo()
+		{
+			x; // 0
+
+			version(X2) // 1
+				int x2;
+
+			version(X2) // 2
+			{
+				x2;
+			}
+
+			int t3=0; // 3
+
+			t1; // 4
+			t2; // 5
+			t3; // 6
+
+			int t1;
+			version(X)
+				int t2;
+		}
+
+	version(X)
+		int z;
+	int z2;
+	version(X_not)
+		int z3;
+}
+
+");
+
+			var m = pcl[0]["m"];
+			var A = m["A"][0] as DClassLike;
+			var foo = A["foo"][0] as DMethod;
+			var ctxt = CreateDefCtxt(pcl, foo, foo.Body.SubStatements[0]);
+
+			var x = TypeDeclarationResolver.ResolveIdentifier("x", ctxt, null);
+			Assert.AreEqual(1, x.Length);
+
+			x = TypeDeclarationResolver.ResolveIdentifier("y",ctxt,null);
+			Assert.AreEqual(0, x.Length);
+
+			x = TypeDeclarationResolver.ResolveIdentifier("z", ctxt, null);
+			Assert.AreEqual(1, x.Length);
+
+			x = TypeDeclarationResolver.ResolveIdentifier("z2", ctxt, null);
+			Assert.AreEqual(1, x.Length);
+
+			x = TypeDeclarationResolver.ResolveIdentifier("z3", ctxt, null);
+			Assert.AreEqual(0, x.Length);
+
+			var ss = ctxt.CurrentContext.ScopedStatement =
+				((foo.Body.SubStatements[2] as StatementCondition).ScopedStatement as BlockStatement).SubStatements[0];
+
+			var x2 = Evaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
+			Assert.IsInstanceOfType(x2, typeof(MemberSymbol));
+
+			ss = ctxt.CurrentContext.ScopedStatement = foo.Body.SubStatements[4];
+
+			x2 = Evaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
+			Assert.IsNull(x2);
+
+			ss = ctxt.CurrentContext.ScopedStatement = foo.Body.SubStatements[5];
+
+			x2 = Evaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
+			Assert.IsNull(x2);
+
+			ss = ctxt.CurrentContext.ScopedStatement = foo.Body.SubStatements[6];
+
+			x2 = Evaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
+			Assert.IsNotNull(x2);
 		}
 	}
 }

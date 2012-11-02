@@ -407,7 +407,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					}
 					else if (s is StatementCondition)
 					{
-						var sc = (StatementCondition)Statement;
+						var sc = (StatementCondition)s;
 
 						if (ConditionalCompilation.IsMatchingVersionAndDebugConditions(this.conditionSet, new[] { sc.Condition }))
 							return HandleSingleStatemt(sc.ScopedStatement, Caret, VisibleMembers);
