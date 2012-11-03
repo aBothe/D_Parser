@@ -585,5 +585,32 @@ debug(4)
 			x = TypeDeclarationResolver.ResolveIdentifier("dbg_f", ctxt, null);
 			Assert.AreEqual(0, x.Length);
 		}
+
+		[TestMethod]
+		public void DeclCond3()
+		{
+			var pcl = CreateCache(@"module m;
+version = X;
+
+version(X)
+	int a;
+else
+	int b;
+
+version(Y)
+	int c;
+
+");
+			var ctxt = CreateDefCtxt(pcl, pcl[0]["m"]);
+
+			var x = TypeDeclarationResolver.ResolveIdentifier("a", ctxt,null);
+			Assert.AreEqual(1, x.Length);
+
+			x = TypeDeclarationResolver.ResolveIdentifier("b", ctxt, null);
+			Assert.AreEqual(0, x.Length);
+
+			x = TypeDeclarationResolver.ResolveIdentifier("c", ctxt, null);
+			Assert.AreEqual(0, x.Length);
+		}
 	}
 }
