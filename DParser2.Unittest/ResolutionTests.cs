@@ -505,6 +505,28 @@ class A
 		int z3;
 }
 
+
+debug = C
+
+debug
+	int dbg_a;
+
+debug(C)
+	int dbg_b;
+else
+	int dbg_c;
+
+debug = 3;
+
+debug(2)
+	int dbg_d;
+
+debug(3)
+	int dbg_e;
+
+debug(4)
+	int dbg_f;
+
 ");
 
 			var m = pcl[0]["m"];
@@ -534,19 +556,34 @@ class A
 			Assert.IsInstanceOfType(x2, typeof(MemberSymbol));
 
 			ss = ctxt.CurrentContext.ScopedStatement = foo.Body.SubStatements[4];
-
 			x2 = Evaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
 			Assert.IsNull(x2);
 
 			ss = ctxt.CurrentContext.ScopedStatement = foo.Body.SubStatements[5];
-
 			x2 = Evaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
 			Assert.IsNull(x2);
 
 			ss = ctxt.CurrentContext.ScopedStatement = foo.Body.SubStatements[6];
-
 			x2 = Evaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
 			Assert.IsNotNull(x2);
+
+			x = TypeDeclarationResolver.ResolveIdentifier("dbg_a", ctxt, null);
+			Assert.AreEqual(1, x.Length);
+
+			x = TypeDeclarationResolver.ResolveIdentifier("dbg_b", ctxt, null);
+			Assert.AreEqual(1, x.Length);
+
+			x = TypeDeclarationResolver.ResolveIdentifier("dbg_c", ctxt, null);
+			Assert.AreEqual(0, x.Length);
+
+			x = TypeDeclarationResolver.ResolveIdentifier("dbg_d", ctxt, null);
+			Assert.AreEqual(1, x.Length);
+
+			x = TypeDeclarationResolver.ResolveIdentifier("dbg_e", ctxt, null);
+			Assert.AreEqual(1, x.Length);
+
+			x = TypeDeclarationResolver.ResolveIdentifier("dbg_f", ctxt, null);
+			Assert.AreEqual(0, x.Length);
 		}
 	}
 }

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using D_Parser.Dom;
 using D_Parser.Dom.Statements;
 
@@ -9,21 +6,39 @@ namespace D_Parser.Resolver
 {
 	public class ConditionalCompilation
 	{
-		public struct ConditionSet
+		public class ConditionSet
 		{
 			public readonly ConditionalCompilationFlags GlobalFlags;
-			public readonly List<DeclarationCondition> ScopeConditions;
+			public ConditionalCompilationFlags LocalFlags;
 
-			public ConditionSet(ConditionalCompilationFlags gFLags)
+			public ConditionSet(ConditionalCompilationFlags gFLags, ConditionalCompilationFlags lFlags = null)
 			{
+				// Make a default global environment for test resolutions etc.
 				GlobalFlags = gFLags ?? new ConditionalCompilationFlags(null,0,false);
-				ScopeConditions = new List<DeclarationCondition>();
+				LocalFlags = lFlags;
+			}
+
+			public bool IsMatching(IEnumerable<DAttribute> conditions)
+			{
+				if(conditions!=null)
+					foreach (var c in conditions)
+						if (c is DeclarationCondition){
+							if(c is NegatedDeclarationCondition)
+							{
+								if (!(GlobalFlags.IsMatching((DeclarationCondition)c) && LocalFlags.IsMatching((DeclarationCondition)c)))
+									return false;
+							}
+							else if(!(GlobalFlags.IsMatching((DeclarationCondition)c) || LocalFlags.IsMatching((DeclarationCondition)c)))
+								return false;
+						}
+				return true;
 			}
 		}
 
 		public static void EnumConditions(ConditionSet cs,IStatement stmt, IBlockNode block, CodeLocation caret)
 		{
-			var l = cs.ScopeConditions;
+			var l = new MutableConditionFlagSet();
+			cs.LocalFlags = l;
 			
 			// If the current scope is a dedicated block.. (so NOT in a method but probably in an initializer or other static statement)
 			if(block is DBlockNode)
@@ -55,7 +70,7 @@ namespace D_Parser.Resolver
 			while (block != null)
 			{
 				if (block is DModule)
-					GetDoneVersionDebugSpecs(cs, (DModule)block);
+					GetDoneVersionDebugSpecs(cs, l, (DModule)block);
 				else if (block is DNode)
 				{
 					foreach (var attr in ((DNode)block).Attributes)
@@ -67,7 +82,7 @@ namespace D_Parser.Resolver
 			}
 		}
 
-		static void GetDoneVersionDebugSpecs(ConditionSet cs, DModule m)
+		static void GetDoneVersionDebugSpecs(ConditionSet cs, MutableConditionFlagSet l, DModule m)
 		{
 			if (m.StaticStatements == null || m.StaticStatements.Count == 0)
 				return;
@@ -78,124 +93,27 @@ namespace D_Parser.Resolver
 				{
 					var vs = (VersionSpecification)ss;
 
-					if (vs.Conditions != null && !IsMatchingVersionAndDebugConditions(cs, vs.Conditions))
+					if (vs.Conditions != null && !cs.IsMatching(vs.Conditions))
 						continue;
 
-					cs.ScopeConditions.Add(vs.SpecifiedId==null ? 
-						new VersionCondition(vs.SpecifiedNumber) :
-						new VersionCondition(vs.SpecifiedId));
+					if(vs.SpecifiedId==null)
+ 						l.AddVersionCondition(vs.SpecifiedNumber);
+					else
+						l.AddVersionCondition(vs.SpecifiedId);
 				}
 				else if(ss is DebugSpecification)
 				{
 					var ds = (DebugSpecification)ss;
 
-					if (ds.Conditions != null && !IsMatchingVersionAndDebugConditions(cs, ds.Conditions))
+					if (ds.Conditions != null && !cs.IsMatching(ds.Conditions))
 						continue;
 
-					cs.ScopeConditions.Add(ds.SpecifiedId == null ?
-						new DebugCondition(ds.SpecifiedDebugLevel) :
-						new DebugCondition(ds.SpecifiedId));
+					if (ds.SpecifiedId == null)
+						l.AddDebugCondition(ds.SpecifiedDebugLevel);
+					else
+						l.AddDebugCondition(ds.SpecifiedId);
 				}
 			}
-		}
-
-		public static bool IsMatchingVersionAndDebugConditions(ConditionSet environment,
-			IEnumerable<DAttribute> conditionsToCheck)
-		{
-			var expectedDebugConds = new List<DebugCondition>();
-			var expectedVersionConds = new List<VersionCondition>();
-
-			foreach (var c in environment.ScopeConditions)
-				if (c is DebugCondition)
-					expectedDebugConds.Add((DebugCondition)c);
-				else if (c is VersionCondition)
-					expectedVersionConds.Add((VersionCondition)c);
-
-			bool HasDebugConditions = expectedDebugConds.Count != 0 || environment.GlobalFlags.IsDebug;
-			
-			foreach(var c in conditionsToCheck)
-			{
-				if (!IsMatching(environment, expectedDebugConds, expectedVersionConds, HasDebugConditions, c))
-					return false;
-			}
-			return true;
-		}
-
-		private static bool IsMatching(ConditionSet environment, 
-			List<DebugCondition> expectedDebugConds, List<VersionCondition> expectedVersionConds, 
-			bool HasDebugConditions, DAttribute c)
-		{
-			bool t = false;
-			if(c is NegatedDeclarationCondition)
-			{
-				return !IsMatching(environment, expectedDebugConds, expectedVersionConds, HasDebugConditions,
-					((NegatedDeclarationCondition)c).FirstCondition);
-			}
-			else if (c is DebugCondition)
-			{
-				// If there is a debug condition but no debug flag set anywhere, return immediately
-				if (!HasDebugConditions)
-					return false;
-
-				var ds = (DebugCondition)c;
-
-				if (ds.DebugId != null)
-				{
-					if (!environment.GlobalFlags.IsDebugIdSet(ds.DebugId))
-					{
-						foreach (var dc in expectedDebugConds)
-							if (t = dc.DebugId == ds.DebugId)
-								break;
-
-						if (!t)
-							return false;
-					}
-				}
-				else if (ds.DebugLevel != 0)
-				{
-					if (!environment.GlobalFlags.IsDebugLevel(ds.DebugLevel))
-					{
-						foreach (var dc in expectedDebugConds)
-							if (t = dc.DebugLevel <= ds.DebugLevel) // TODO really <= or >= ? 
-								break;
-
-						if (!t)
-							return false;
-					}
-				}
-			}
-			else if (c is VersionCondition)
-			{
-				var vs = (VersionCondition)c;
-
-				if (vs.VersionId != null)
-				{
-					if (!environment.GlobalFlags.IsVersionSupported(vs.VersionId))
-					{
-						foreach (var vc in expectedVersionConds)
-							if (t = vc.VersionId == vs.VersionId)
-								break;
-
-						if (!t)
-							return false;
-					}
-				}
-				else if (vs.VersionNumber != 0)
-				{
-					if (!environment.GlobalFlags.IsVersionSupported(vs.VersionNumber))
-					{
-						foreach (var vc in expectedVersionConds)
-							if (t = vc.VersionNumber <= vs.VersionNumber) // TODO really <= or >= ? 
-								break;
-
-						if (!t)
-							return false;
-					}
-				}
-			}
-
-			// Default all static if's to true..
-			return true;
 		}
 	}
 }

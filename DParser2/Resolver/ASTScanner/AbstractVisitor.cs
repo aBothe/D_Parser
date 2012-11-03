@@ -154,7 +154,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 						foreach (var n in ch)
 						{
 							if(n is DNode &&
-								!ConditionalCompilation.IsMatchingVersionAndDebugConditions(this.conditionSet, ((DNode)n).Attributes))
+								!conditionSet.IsMatching(((DNode)n).Attributes))
 								continue;
 
 							// Add anonymous enums' items
@@ -213,7 +213,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 							(dm3 != null && !(dm3.SpecialType == DMethod.MethodType.Normal || dm3.SpecialType == DMethod.MethodType.Delegate)))
 							continue;
 
-						if (!ConditionalCompilation.IsMatchingVersionAndDebugConditions(this.conditionSet, dm2.Attributes))
+						if (!conditionSet.IsMatching(dm2.Attributes))
 							continue;
 
 						// Add static and non-private members of all base classes; 
@@ -409,7 +409,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					{
 						var sc = (StatementCondition)s;
 
-						if (ConditionalCompilation.IsMatchingVersionAndDebugConditions(this.conditionSet, new[] { sc.Condition }))
+						if (conditionSet.IsMatching(new[] { sc.Condition }))
 							return HandleSingleStatemt(sc.ScopedStatement, Caret, VisibleMembers);
 						else if (sc.ElseStatement != null)
 							return HandleSingleStatemt(sc.ElseStatement, Caret, VisibleMembers);
@@ -478,7 +478,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				{
 					// Check if all conditions are satisfied..
 					if (stmt.Conditions != null && stmt.Conditions.Length != 0 &&
-							!ConditionalCompilation.IsMatchingVersionAndDebugConditions(conditionSet, stmt.Conditions))
+							!conditionSet.IsMatching(stmt.Conditions))
 						continue;
 
 					var dstmt = stmt as IDeclarationContainingStatement;
@@ -542,8 +542,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					if (HandleItem(module))
 						return true;
 
-					var backup = new List<DeclarationCondition>(conditionSet.ScopeConditions);
-					conditionSet.ScopeConditions.Clear();
+					var backup = conditionSet.LocalFlags;
 					ConditionalCompilation.EnumConditions(conditionSet, null, module, CodeLocation.Empty);
 
 					var ch = PrefilterSubnodes(module);
@@ -592,10 +591,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			return false;
 		}
 
-		void _restoreCSBackup(List<DeclarationCondition> l)
+		void _restoreCSBackup(ConditionalCompilationFlags l)
 		{
-			conditionSet.ScopeConditions.Clear();
-			conditionSet.ScopeConditions.AddRange(l);
+			conditionSet.LocalFlags = l;
 		}
 
 		#endregion

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using D_Parser.Dom;
 
 namespace D_Parser.Resolver
 {
@@ -18,26 +19,27 @@ namespace D_Parser.Resolver
 		protected bool debugFlagOverride = false;
 		protected List<string> setDebugVersions = new List<string>();
 		protected int debugLevel = 0;
-		#endregion
 
-		public bool IsVersionSupported(string versionId)
+
+		protected bool IsVersionSupported(string versionId)
 		{ return setVersions.Contains(versionId); }
-		public bool IsVersionSupported(int versionNumber)
+		protected bool IsVersionSupported(int versionNumber)
 		{ return versionNumber >= this.versionNumber || setVersions.Contains(versionNumber.ToString()); }
 
-		public bool IsDebugIdSet(string id)
+		protected bool IsDebugIdSet(string id)
 		{ return setDebugVersions.Contains(id); }
-		public bool IsDebugLevel(int lvl)
+		protected bool IsDebugLevel(int lvl)
 		{ return lvl >= debugLevel; }
-		public bool IsDebug
+		protected bool IsDebug
 		{ get { return debugFlagOverride || debugLevel != 0 || setDebugVersions.Count != 0; } }
+		#endregion
 
 		protected ConditionalCompilationFlags()	{}
 
 		public ConditionalCompilationFlags(IEnumerable<string> definedVersionIdentifiers, int versionNumber,
 			bool debug,IEnumerable<string> definedDebugIdentifiers=null, int debugLevel=0)
 		{
-			if(definedVersionIdentifiers!=null)
+			if (definedVersionIdentifiers != null)
 				setVersions.AddRange(definedVersionIdentifiers);
 			this.versionNumber = versionNumber;
 
@@ -45,6 +47,118 @@ namespace D_Parser.Resolver
 				setDebugVersions.AddRange(definedDebugIdentifiers);
 			this.debugLevel = debugLevel;
 			this.debugFlagOverride = debug;
+		}
+
+		public bool IsMatching(DeclarationCondition cond)
+		{
+			if(cond is VersionCondition)
+			{
+				var vc = (VersionCondition)cond;
+				return vc.VersionId == null ?
+					vc.VersionNumber >= versionNumber :
+					setVersions.Contains(vc.VersionId);
+			}
+			else if(cond is DebugCondition)
+			{
+				var dc = (DebugCondition)cond;
+				if (dc.HasNoExplicitSpecification)
+					return IsDebug;
+				return dc.DebugId == null ?
+					debugLevel >= dc.DebugLevel :
+					setDebugVersions.Contains(dc.DebugId);
+			}
+			else if(cond is NegatedDeclarationCondition)
+			{
+				cond = ((NegatedDeclarationCondition)cond).FirstCondition;
+				//TODO: Ensure that there's no double negation
+				if(cond is VersionCondition)
+				{
+					var vc = (VersionCondition)cond;
+					return vc.VersionId == null ?
+						vc.VersionNumber < versionNumber :
+						(!setVersions.Contains(vc.VersionId) || setVersions.Contains("!"+vc.VersionId));
+				}
+				else if(cond is DebugCondition)
+				{
+					var dc = (DebugCondition)cond;
+					if (dc.HasNoExplicitSpecification)
+						return !IsDebug;
+					return dc.DebugId == null ?
+						debugLevel < dc.DebugLevel :
+						(!setDebugVersions.Contains(dc.DebugId) || setDebugVersions.Contains("!" + dc.DebugId));
+				}
+			}
+
+			// True on default -- static if's etc. will be filtered later on
+			return true;
+		}
+	}
+
+	public class MutableConditionFlagSet : ConditionalCompilationFlags
+	{
+		public void Add(DeclarationCondition cond)
+		{
+			if(cond is VersionCondition)
+			{
+				var vc = (VersionCondition)cond;
+				if (vc.VersionId == null)
+					AddVersionCondition(vc.VersionNumber);
+				else
+					AddVersionCondition(vc.VersionId);
+			}
+			else if(cond is DebugCondition)
+			{
+				var dc = (DebugCondition)cond;
+				if (dc.DebugId == null)
+					AddDebugCondition(dc.DebugLevel);
+				else
+					AddDebugCondition(dc.DebugId);
+			}
+			else if(cond is NegatedDeclarationCondition)
+			{
+				cond = ((NegatedDeclarationCondition)cond).FirstCondition;
+
+				if (cond is VersionCondition)
+				{
+					var vc = (VersionCondition)cond;
+					if (vc.VersionId != null)
+						/*AddVersionCondition(vc.VersionNumber); -- TODO How are "negated" version numbers handled?
+					else*/
+						AddVersionCondition("!"+vc.VersionId);
+				}
+				else if (cond is DebugCondition)
+				{
+					var dc = (DebugCondition)cond;
+					if (dc.DebugId != null)
+						/*AddDebugCondition(dc.DebugLevel);
+					else*/
+						AddDebugCondition("!"+dc.DebugId);
+				}
+			}
+		}
+
+		public void AddVersionCondition(string id)
+		{
+			if (!setVersions.Contains(id))
+				setVersions.Add(id);
+		}
+
+		public void AddVersionCondition(int v)
+		{
+			if (v > versionNumber)
+				versionNumber = v;
+		}
+
+		public void AddDebugCondition(string id)
+		{
+			if (!setDebugVersions.Contains(id))
+				setDebugVersions.Add(id);
+		}
+
+		public void AddDebugCondition(int lvl)
+		{
+			if (lvl > debugLevel)
+				debugLevel = lvl;
 		}
 	}
 }
