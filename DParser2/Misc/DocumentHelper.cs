@@ -70,6 +70,9 @@ namespace D_Parser
 
 		public static int GetOffsetByRelativeLocation(string Text, CodeLocation caret, int caretOffset, CodeLocation target)
 		{
+			if (string.IsNullOrEmpty(Text))
+				return 0;
+
 			int line = caret.Line;
 
 			if (caretOffset >= Text.Length)
