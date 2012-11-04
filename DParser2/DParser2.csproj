@@ -164,6 +164,7 @@
     <Compile Include="Resolver\ContextFrame.cs" />
     <Compile Include="Resolver\TypeResolution\UFCSResolver.cs" />
     <Compile Include="Resolver\ConditionalCompilationFlags.cs" />
+    <Compile Include="Misc\VersionIdEvaluation.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="readme.txt" />
