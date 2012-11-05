@@ -104,7 +104,7 @@ namespace D_Parser.Misc
 
 			l.Add("all");
 
-			return l;
+			return l.ToArray();
 		}
 	}
 }
