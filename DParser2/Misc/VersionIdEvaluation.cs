@@ -74,7 +74,7 @@ namespace D_Parser.Misc
 		/// implies D
 		/// </param>
 		/// <param name="isD1">If false, D_Version2 will be defined</param>
-		public static string[] GetVersionIds(string compilerId,string finalCompilerCommandLine, bool isD1 = false)
+		public static string[] GetVersionIds(string compilerId,string finalCompilerCommandLine, bool unittests, bool isD1 = false)
 		{
 			var l = new List<string>();
 
@@ -115,7 +115,7 @@ namespace D_Parser.Misc
 
 			if(finalCompilerCommandLine.Contains("-noboundscheck"))
 				l.Add("D_NoBOundsChecks");
-			if(finalCompilerCommandLine.Contains("-unittest"))
+			if(finalCompilerCommandLine.Contains("-unittest") || unittests)
 				l.Add("unittest");
 
 			return l.ToArray();
