@@ -32,6 +32,8 @@ namespace D_Parser.Completion
 		protected override void BuildCompletionDataInternal(IEditorData Editor, string EnteredText)
 		{
 			ctxt = ResolutionContext.Create(Editor.ParseCache,ScopedBlock, ScopedStatement);
+			ctxt.CompilationEnvironment = new ConditionalCompilationFlags(Editor);
+
 			var ex = AccessExpression.AccessExpression == null ? AccessExpression.PostfixForeExpression : AccessExpression;
 
 			var r = Evaluation.EvaluateType(ex, ctxt);

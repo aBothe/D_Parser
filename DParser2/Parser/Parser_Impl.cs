@@ -401,6 +401,9 @@ namespace D_Parser.Parser
 					if (Expect(CloseParenthesis))
 						TrackerVariables.ExpectingIdentifier = false;
 				}
+				
+				if(c==null)
+					c = new VersionCondition("");
 			}
 
 			/*

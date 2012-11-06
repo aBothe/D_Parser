@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using D_Parser.Completion;
 using D_Parser.Dom;
 
 namespace D_Parser.Resolver
@@ -35,6 +36,9 @@ namespace D_Parser.Resolver
 		#endregion
 
 		protected ConditionalCompilationFlags()	{}
+
+		public ConditionalCompilationFlags(IEditorData ed)
+			: this(ed.GlobalVersionIds, ed.VersionNumber, ed.IsDebug, ed.GlobalDebugIds, ed.DebugLevel) { }
 
 		public ConditionalCompilationFlags(IEnumerable<string> definedVersionIdentifiers, int versionNumber,
 			bool debug,IEnumerable<string> definedDebugIdentifiers=null, int debugLevel=0)

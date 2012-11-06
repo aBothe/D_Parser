@@ -10,30 +10,21 @@ namespace D_Parser.Misc
 	/// </summary>
 	public class VersionIdEvaluation
 	{
-		/// <summary>
-		/// See class description.
-		/// </summary>
-		/// <returns>
-		/// The version identifiers.
-		/// </returns>
-		/// <param name="compilerId">The compiler-specific version identifier which is e.g. DigitalMars for dmd1/dmd2</param>
-		/// <param name="finalCompilerCommandLine">
-		/// Used for extracting additional information like "-cov" that implies D_Coverage or "-m64" that
-		/// implies D
-		/// </param>
-		/// <param name="isD1">If false, D_Version2 will be defined</param>
-		public static string[] GetVersionIds(string compilerId,string finalCompilerCommandLine, bool isD1 = false)
+		static string[] minimalConfiguration;
+
+		public static string[] GetOSAndCPUVersions()
 		{
+			if(minimalConfiguration != null)
+				return minimalConfiguration;
+
 			var l = new List<string>();
 
-			// 1. Compiler id
-			if(!string.IsNullOrEmpty(compilerId))
-				l.Add(compilerId);
+			l.Add("all");
 
-			// 2. OS
+			// OS
 			bool isWin = Environment.OSVersion.Platform.HasFlag(PlatformID.Win32NT);
 			bool is64BitOS = Environment.Is64BitOperatingSystem;
-
+			
 			if(isWin)
 			{
 				l.Add("Windows");
@@ -52,8 +43,8 @@ namespace D_Parser.Misc
 			}
 			//TODO: Execute uname to retrieve further info of the Posix-OS
 			// http://www.computerhope.com/unix/uuname.htm
-
-			// 3. CPU information
+			
+			// CPU information
 			var cpuArch = Environment.GetEnvironmentVariable("PROCESSOR_ARCHITECTURE");
 			if(cpuArch=="X86")
 				l.Add("X86");
@@ -62,20 +53,45 @@ namespace D_Parser.Misc
 			else if(cpuArch=="IA64")
 				l.Add("IA64");
 			//TODO: Other architectures...
-
+			
 			if(BitConverter.IsLittleEndian)
 				l.Add("LittleEndian");
 			else
 				l.Add("BigEndian");
 
-			// 4. D specific info
+			return minimalConfiguration = l.ToArray();
+		}
+
+		/// <summary>
+		/// See class description.
+		/// </summary>
+		/// <returns>
+		/// The version identifiers.
+		/// </returns>
+		/// <param name="compilerId">The compiler-specific version identifier which is e.g. DigitalMars for dmd1/dmd2</param>
+		/// <param name="finalCompilerCommandLine">
+		/// Used for extracting additional information like "-cov" that implies D_Coverage or "-m64" that
+		/// implies D
+		/// </param>
+		/// <param name="isD1">If false, D_Version2 will be defined</param>
+		public static string[] GetVersionIds(string compilerId,string finalCompilerCommandLine, bool isD1 = false)
+		{
+			var l = new List<string>();
+
+			l.AddRange(GetOSAndCPUVersions());
+
+			// Compiler id
+			if(!string.IsNullOrEmpty(compilerId))
+				l.Add(compilerId);
+
+			// D specific info
 
 			if(finalCompilerCommandLine.Contains("-cov"))
 				l.Add("D_Coverage");
 			if(finalCompilerCommandLine.Contains("-D"))
 				l.Add("D_Ddoc");
 
-			if(is64BitOS)
+			if(false /* TODO: Determine x64-version of dmd etc. */)
 				l.Add("D_InlineAsm_X86_64");
 			else
 				l.Add("D_InlineAsm_X86");
@@ -101,8 +117,6 @@ namespace D_Parser.Misc
 				l.Add("D_NoBOundsChecks");
 			if(finalCompilerCommandLine.Contains("-unittest"))
 				l.Add("unittest");
-
-			l.Add("all");
 
 			return l.ToArray();
 		}

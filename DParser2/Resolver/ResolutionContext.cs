@@ -10,6 +10,10 @@ namespace D_Parser.Resolver
 	public class ResolutionContext
 	{
 		#region Properties
+		/// <summary>
+		/// Stores global compilation parameters.
+		/// Used by BuildConditionSet() as global flags for ConditionSet instances.
+		/// </summary>
 		public ConditionalCompilationFlags CompilationEnvironment;
 		protected Stack<ContextFrame> stack = new Stack<ContextFrame>();
 		public ResolutionOptions ContextIndependentOptions = ResolutionOptions.Default;

@@ -31,9 +31,12 @@ namespace D_Parser.Resolver.ASTScanner
 			, IStatement ScopedStatement,
 			CodeLocation Caret,
 			ParseCacheList CodeCache,
-			MemberFilter VisibleMembers)
+			MemberFilter VisibleMembers,
+			ConditionalCompilationFlags compilationEnvironment = null)
 		{
-			return EnumAllAvailableMembers(ResolutionContext.Create(CodeCache,ScopedBlock,ScopedStatement), 
+			var ctxt = ResolutionContext.Create(CodeCache, ScopedBlock, ScopedStatement);
+			ctxt.CompilationEnvironment = compilationEnvironment;
+			return EnumAllAvailableMembers(ctxt, 
 			Caret, 
 			VisibleMembers);
 		}

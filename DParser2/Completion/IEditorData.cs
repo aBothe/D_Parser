@@ -14,7 +14,13 @@ namespace D_Parser.Completion
 		public virtual DModule SyntaxTree { get; set; }
 
 		public virtual ParseCacheList ParseCache { get; set; }
-
+		
+		public int VersionNumber { get; set; }
+		public string[] GlobalVersionIds { get; set; }
+		public bool IsDebug {set;get;}
+		public int DebugLevel { get; set; }
+		public string[] GlobalDebugIds { get; set; }
+		
 		public void ApplyFrom(IEditorData data)
 		{
 			ModuleCode = data.ModuleCode;
@@ -22,6 +28,12 @@ namespace D_Parser.Completion
 			CaretOffset = data.CaretOffset;
 			SyntaxTree = data.SyntaxTree;
 			ParseCache = data.ParseCache;
+
+			VersionNumber = data.VersionNumber;
+			GlobalVersionIds = data.GlobalVersionIds;
+			IsDebug = data.IsDebug;
+			DebugLevel = data.DebugLevel;
+			GlobalDebugIds = data.GlobalDebugIds;
 		}
 
 		public CompletionOptions Options
@@ -40,5 +52,11 @@ namespace D_Parser.Completion
 
 		ParseCacheList ParseCache { get; }
 		CompletionOptions Options { get; }
+
+		int VersionNumber { get; }
+		string[] GlobalVersionIds { get; }
+		bool IsDebug{get;}
+		int DebugLevel { get; }
+		string[] GlobalDebugIds { get; }
 	}
 }

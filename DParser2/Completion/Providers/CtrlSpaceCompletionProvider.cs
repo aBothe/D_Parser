@@ -44,7 +44,7 @@ namespace D_Parser.Completion
 				// --> Happens if no actual declaration syntax given --> Show types/imports/keywords anyway
 				visibleMembers = MemberFilter.Imports | MemberFilter.Types | MemberFilter.Keywords;
 
-				listedItems = ItemEnumeration.EnumAllAvailableMembers(curBlock, null, Editor.CaretLocation, Editor.ParseCache, visibleMembers);
+				listedItems = ItemEnumeration.EnumAllAvailableMembers(curBlock, null, Editor.CaretLocation, Editor.ParseCache, visibleMembers, new ConditionalCompilationFlags(Editor));
 			}
 			else
 			{
@@ -133,7 +133,7 @@ namespace D_Parser.Completion
 
 
 				if (visibleMembers != MemberFilter.Imports) // Do not pass the curStmt because we already inserted all updated locals a few lines before!
-					listedItems = ItemEnumeration.EnumAllAvailableMembers(curBlock, curStmt, Editor.CaretLocation, Editor.ParseCache, visibleMembers);
+					listedItems = ItemEnumeration.EnumAllAvailableMembers(curBlock, curStmt, Editor.CaretLocation, Editor.ParseCache, visibleMembers, new ConditionalCompilationFlags(Editor));
 			}
 
 			// Add all found items to the referenced list
