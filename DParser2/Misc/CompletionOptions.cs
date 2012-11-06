@@ -2,7 +2,7 @@
 
 namespace D_Parser.Misc
 {
-	public struct CompletionOptions
+	public class CompletionOptions
 	{
 		public readonly static CompletionOptions Default = new CompletionOptions();
 
