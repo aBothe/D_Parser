@@ -17,16 +17,19 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			if (ctxt != null)
 			{
-				var obj = ctxt.ParseCache.LookupModuleName("object").First();
+				var obj = ctxt.ParseCache.LookupModuleName("object").FirstOrDefault();
 
-				string strType = fmt == LiteralSubformat.Utf32 ? "dstring" :
-					fmt == LiteralSubformat.Utf16 ? "wstring" :
-					"string";
+				if (obj != null)
+				{
+					string strType = fmt == LiteralSubformat.Utf32 ? "dstring" :
+						fmt == LiteralSubformat.Utf16 ? "wstring" :
+						"string";
 
-				var strNode = obj[strType];
+					var strNode = obj[strType];
 
-				if(strNode!=null && strNode.Count != 0)
-					_t = DResolver.StripAliasSymbol(TypeDeclarationResolver.HandleNodeMatch(strNode[0], ctxt)) as ArrayType;
+					if (strNode != null && strNode.Count != 0)
+						_t = DResolver.StripAliasSymbol(TypeDeclarationResolver.HandleNodeMatch(strNode[0], ctxt)) as ArrayType;
+				}
 			}
 
 			if (_t == null)
