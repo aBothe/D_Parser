@@ -4,13 +4,10 @@ namespace D_Parser.Misc
 {
 	public struct CompletionOptions
 	{
-		public readonly static CompletionOptions Default = new CompletionOptions
-		{
-			ShowUFCSItems = true
-		};
+		public readonly static CompletionOptions Default = new CompletionOptions();
 
 
-		public bool ShowUFCSItems;
+		public bool ShowUFCSItems = true;
 
 
 		public void Load(XmlReader x)
