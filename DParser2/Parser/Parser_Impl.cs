@@ -462,6 +462,8 @@ namespace D_Parser.Parser
 			else
 				throw new Exception("Condition() should only be called if Version/Debug/If is the next token!");
 
+			LastParsedObject = c;
+
 			return c;
 		}
 
