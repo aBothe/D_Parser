@@ -142,7 +142,7 @@ namespace D_Parser.Resolver
 		public readonly bool IsStaticArray;
 
 		public ArrayType(AbstractType ValueType, ISyntaxRegion td)
-			: base(ValueType, new PrimitiveType(DTokens.Int, 0), td) { }
+			: base(ValueType, new PrimitiveType(DTokens.Int, 0), td) { FixedLength = -1; }
 
 		public ArrayType(AbstractType ValueType, int ArrayLength, ISyntaxRegion td)
 			: this(ValueType, td)
@@ -153,7 +153,7 @@ namespace D_Parser.Resolver
 
 		public override string ToCode()
 		{
-			return (Base != null ? Base.ToCode() : "") + (IsStaticArray ? string.Format("[{0}]",FixedLength) : "[]");
+			return (Base != null ? Base.ToCode() : "") + (IsStaticArray && FixedLength >= 0 ? string.Format("[{0}]",FixedLength) : "[]");
 		}
 	}
 

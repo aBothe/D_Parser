@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
@@ -267,7 +268,7 @@ namespace D_Parser.Resolver.TypeResolution
 		public static AbstractType ResolveKey(ArrayDecl ad, out int fixedArrayLength, out ISymbolValue keyVal, ResolutionContext ctxt)
 		{
 			keyVal = null;
-			fixedArrayLength = 0;
+			fixedArrayLength = -1;
 			AbstractType keyType = null;
 
 			if (ad.KeyExpression != null)
@@ -447,7 +448,8 @@ namespace D_Parser.Resolver.TypeResolution
 
 
 		#region Intermediate methods
-		static Dictionary<INode, int> stackCalls = new Dictionary<INode, int>();
+		[ThreadStatic]
+		static Dictionary<INode, int> stackCalls;
 		/// <summary>
 		/// The variable's or method's base type will be resolved (if auto type, the intializer's type will be taken).
 		/// A class' base class will be searched.
@@ -463,13 +465,16 @@ namespace D_Parser.Resolver.TypeResolution
 
 			// See https://github.com/aBothe/Mono-D/issues/161
 			int stkC;
-			lock (stackCalls)
+
+			if (stackCalls == null)
 			{
-				if (stackCalls.TryGetValue(m, out stkC))
-					stackCalls[m] = ++stkC;
-				else
-					stackCalls[m] = stkC = 1;
+				stackCalls = new Dictionary<INode, int>();
+				stackCalls[m] = stkC = 1;
 			}
+			else if (stackCalls.TryGetValue(m, out stkC))
+				stackCalls[m] = ++stkC;
+			else
+				stackCalls[m] = stkC = 1;
 			/*
 			 * Pushing a new scope is only required if current scope cannot be found in the handled node's hierarchy.
 			 */
@@ -645,13 +650,11 @@ namespace D_Parser.Resolver.TypeResolution
 			if (popAfterwards)
 				ctxt.Pop();
 
-			lock (stackCalls)
-			{
-				if (stkC == 1)
-					stackCalls.Remove(m);
-				else
-					stackCalls[m] = stkC--;
-			}
+			if (stkC == 1)
+				stackCalls.Remove(m);
+			else
+				stackCalls[m] = stkC--;
+
 			return ret;
 		}
 
