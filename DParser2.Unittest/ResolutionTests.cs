@@ -600,7 +600,30 @@ else
 version(Y)
 	int c;
 
-");
+debug
+	int dbgX;
+else
+	int dbgY;
+
+", @"module B;
+
+debug int dbg;
+else int noDbg;
+
+debug = D;
+
+debug(D)
+	int a;
+else
+	int b;
+
+void main()
+{
+	a;
+	b;
+	dbg;
+	noDbg;
+}");
 			var ctxt = CreateDefCtxt(pcl, pcl[0]["m"]);
 
 			var x = TypeDeclarationResolver.ResolveIdentifier("a", ctxt,null);
@@ -611,6 +634,46 @@ version(Y)
 
 			x = TypeDeclarationResolver.ResolveIdentifier("c", ctxt, null);
 			Assert.AreEqual(0, x.Length);
+
+			x = TypeDeclarationResolver.ResolveIdentifier("dbgX", ctxt, null);
+			Assert.AreEqual(1, x.Length);
+
+			x = TypeDeclarationResolver.ResolveIdentifier("dbgY", ctxt, null);
+			Assert.AreEqual(0, x.Length);
+
+			ctxt.CurrentContext.ScopedBlock = pcl[0]["B"];
+
+			x = TypeDeclarationResolver.ResolveIdentifier("dbg", ctxt, null);
+			Assert.AreEqual(1, x.Length);
+
+			x = TypeDeclarationResolver.ResolveIdentifier("noDbg", ctxt, null);
+			Assert.AreEqual(0, x.Length);
+
+			x = TypeDeclarationResolver.ResolveIdentifier("a", ctxt, null);
+			Assert.AreEqual(1, x.Length);
+
+			x = TypeDeclarationResolver.ResolveIdentifier("b", ctxt, null);
+			Assert.AreEqual(0, x.Length);
+
+			var main = pcl[0]["B"]["main"][0] as DMethod;
+			var body = main.Body;
+			ctxt.PushNewScope(main, body);
+
+			var ss = body.SubStatements[0] as ExpressionStatement;
+			var t = Evaluation.EvaluateType(ss.Expression, ctxt);
+			Assert.IsNotNull(t);
+
+			ss = body.SubStatements[1] as ExpressionStatement;
+			t = Evaluation.EvaluateType(ss.Expression, ctxt);
+			Assert.IsNull(t);
+
+			ss = body.SubStatements[2] as ExpressionStatement;
+			t = Evaluation.EvaluateType(ss.Expression, ctxt);
+			Assert.IsNotNull(t);
+
+			ss = body.SubStatements[3] as ExpressionStatement;
+			t = Evaluation.EvaluateType(ss.Expression, ctxt);
+			Assert.IsNull(t);
 		}
 	}
 }
