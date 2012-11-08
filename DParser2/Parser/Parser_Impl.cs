@@ -458,6 +458,8 @@ namespace D_Parser.Parser
 
 					Expect(CloseParenthesis);
 				}
+				else
+					c = new StaticIfCondition(null);
 			}
 			else
 				throw new Exception("Condition() should only be called if Version/Debug/If is the next token!");
