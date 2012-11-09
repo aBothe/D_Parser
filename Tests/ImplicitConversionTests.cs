@@ -2,16 +2,15 @@
 using System.Text;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using D_Parser.Unittest;
+using NUnit.Framework;
 using D_Parser.Resolver;
 using D_Parser.Resolver.TypeResolution;
 using D_Parser.Parser;
 using D_Parser.Dom;
 
-namespace DParser2.Unittest
+namespace Tests
 {
-	[TestClass]
+	[TestFixture]
 	public class ImplicitConversionTests
 	{
 		public static AbstractType GetType(string name, ResolutionContext ctxt)
@@ -19,7 +18,7 @@ namespace DParser2.Unittest
 			return TypeDeclarationResolver.ResolveIdentifier(name, ctxt, null)[0] as AbstractType;
 		}
 
-		[TestMethod]
+		[Test]
 		public void ClassInheritanceTest()
 		{
 			var pcl=ResolutionTests.CreateCache(@"module modA;
@@ -53,7 +52,7 @@ namespace DParser2.Unittest
 			Assert.IsTrue(ResultComparer.IsImplicitlyConvertible(D, A));
 		}
 
-		[TestMethod]
+		[Test]
 		public void InterfaceInheritanceTest()
 		{
 			var pcl = ResolutionTests.CreateCache(@"module modA;
@@ -112,7 +111,7 @@ namespace DParser2.Unittest
 			
 		}
 
-		[TestMethod]
+		[Test]
 		public void TestTemplateDeductionAsConversion()
 		{
 			var pcl = ResolutionTests.CreateCache(@"module modA;

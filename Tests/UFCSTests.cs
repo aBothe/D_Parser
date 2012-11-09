@@ -2,7 +2,7 @@
 using System.Text;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 using D_Parser.Parser;
 using D_Parser.Misc;
 using D_Parser.Resolver;
@@ -11,12 +11,12 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Dom;
 using D_Parser.Dom.Statements;
 
-namespace D_Parser.Unittest
+namespace Tests
 {
-	[TestClass]
+	[TestFixture]
 	public class UFCSTests
 	{
-		[TestMethod]
+		[Test]
 		public void TestBasicUFCS()
 		{
 			var pcl = ResolutionTests.CreateCache(@"module modA;

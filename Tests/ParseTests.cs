@@ -2,25 +2,24 @@
 using System.Text;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 using D_Parser.Misc;
 using D_Parser.Parser;
 using System.Diagnostics;
 using D_Parser.Resolver.ASTScanner;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom;
-using D_Parser.Unittest;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Dom.Statements;
 using D_Parser.Resolver.TypeResolution;
 
-namespace DParser2.Unittest
+namespace Tests
 {
-	[TestClass]
+	[TestFixture]
 	public class ParseTests
 	{
-		[TestMethod]
+		[Test]
 		public void ParseEscapeLiterals()
 		{
 			var e = DParser.ParseExpression(@"`a`\n""lolol""");
@@ -32,13 +31,13 @@ namespace DParser2.Unittest
 		{
 			var e = DParser.ParseExpression("['': false, '&': true, '=': true]");
 
-			Assert.IsInstanceOfType(e, typeof(AssocArrayExpression));
+			Assert.IsInstanceOfType(typeof(AssocArrayExpression),e);
 			var aa = (AssocArrayExpression)e;
 
 			Assert.AreEqual(3, aa.Elements.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void TestSyntaxError1()
 		{
 			var e = DParser.ParseExpression("new ubyte[size]");
@@ -51,10 +50,10 @@ namespace DParser2.Unittest
 void bar();");
 
 			Assert.AreEqual(2, mod.Children.Count);
-			Assert.IsInstanceOfType(mod["bar"][0], typeof(DMethod));
+			Assert.IsInstanceOfType(typeof(DMethod),mod["bar"][0]);
 		}
 
-		[TestMethod]
+		[Test]
 		public void Attributes1()
 		{
 			var n = DParser.ParseString("align(2) align int a;");
@@ -86,7 +85,7 @@ int b;");
 			Assert.AreEqual(DTokens.Private, ((Modifier)a.Attributes[0]).Token);
 		}
 
-		[TestMethod]
+		[Test]
 		public void Attributes2()
 		{
 			var m = DParser.ParseString(@"
@@ -116,7 +115,7 @@ else int C;");
 			Assert.AreEqual(2, C.Attributes.Count);
 		}
 
-		//[TestMethod]
+		//[Test]
 		public void TestPhobos()
 		{
 			var pc = ParsePhobos();
@@ -171,7 +170,7 @@ else int C;");
 				Trace.WriteLine(string.Format("Parsed {0} files in {1}; {2}ms/file", ppd.AmountFiles, ppd.BaseDirectory, ppd.FileDuration), "ParserTests");
 		}
 
-		[TestMethod]
+		[Test]
 		public void ParsePerformance1()
 		{
 			//var pc = ParsePhobos(false);
@@ -264,7 +263,7 @@ void main()
 			
 		}*/
 
-		[TestMethod]
+		[Test]
 		public void DeepBlockSearch()
 		{
 			var m = DParser.ParseString(@"module modA;
@@ -318,7 +317,7 @@ class C
 			Assert.AreEqual("main", n.Name);
 		}
 
-		[TestMethod]
+		[Test]
 		public void StaticIf()
 		{
 			var m = DParser.ParseString(@"module m;

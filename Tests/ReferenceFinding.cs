@@ -2,7 +2,7 @@
 using System.Text;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 using D_Parser;
 using D_Parser.Parser;
 using D_Parser.Dom;
@@ -10,13 +10,13 @@ using D_Parser.Resolver.ASTScanner;
 using D_Parser.Resolver;
 using D_Parser.Refactoring;
 
-namespace D_Parser.Unittest
+namespace Tests
 {
-	[TestClass]
+	[TestFixture]
 	public class ReferenceFinding
 	{
-		[TestMethod]
-		public void TestMethod1()
+		[Test]
+		public void Test1()
 		{
 			var pcl = ResolutionTests.CreateCache(@"module modA;
 
@@ -43,7 +43,7 @@ void main()
 			Assert.AreEqual(7, refs.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void TypeRefFinding()
 		{
 			var pcl = ResolutionTests.CreateCache(@"module modA;

@@ -1,16 +1,18 @@
 ﻿using System;
-using System.Text;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using D_Parser.Formatting;
+using System.Text;
 
-namespace D_Parser.Unittest
+using D_Parser;
+using D_Parser.Formatting;
+using NUnit.Framework;
+
+namespace Tests
 {
-	[TestClass]
+	[TestFixture]
 	public class FormattingTests
 	{
-		[TestMethod]
+		[Test]
 		public void TestFormatter()
 		{
 			TestLastLine("", 0);
