@@ -375,6 +375,22 @@ class B : A{
 template Foo(A)
 {
 	A Foo;
+}
+
+template Bar(B)
+{
+	version(X)
+		B[] Bar;
+	else
+		B* Bar;
+}
+
+template Baz(B)
+{
+	debug
+		B* Baz;
+	else
+		B[] Baz;
 }");
 
 			var ctxt = CreateDefCtxt(pcl, pcl[0]["m"]);
@@ -382,8 +398,10 @@ template Foo(A)
 			DToken tk;
 			var td = DParser.ParseBasicType("Foo!int",out tk);
 
-			var s = TypeDeclarationResolver.ResolveSingle(td, ctxt);
-
+			var s_ = TypeDeclarationResolver.Resolve(td, ctxt);
+			Assert.AreEqual(1,s_.Length);
+			var s = s_[0];
+			
 			Assert.IsInstanceOfType(typeof(MemberSymbol),s);
 
 			var ms = (MemberSymbol)s;
@@ -394,6 +412,18 @@ template Foo(A)
 
 			var pt = (PrimitiveType)tps.Base;
 			Assert.AreEqual(DTokens.Int, pt.TypeToken);
+			
+			s_ = TypeDeclarationResolver.Resolve(DParser.ParseBasicType("Bar!int",out tk),ctxt);
+			Assert.That(s_.Length, Is.EqualTo(1));
+			s = s_[0];
+			
+			Assert.That(((DSymbol)s).Base, Is.TypeOf(typeof(PointerType)));
+			
+			s_ = TypeDeclarationResolver.Resolve(DParser.ParseBasicType("Baz!int",out tk),ctxt);
+			Assert.That(s_.Length, Is.EqualTo(1));
+			s = s_[0];
+			
+			Assert.That(((DSymbol)s).Base, Is.TypeOf(typeof(PointerType)));
 		}
 
 		[Test]
@@ -553,7 +583,7 @@ debug(4)
 				((foo.Body.SubStatements[2] as StatementCondition).ScopedStatement as BlockStatement).SubStatements[0];
 
 			var x2 = Evaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
-			Assert.IsInstanceOfType(typeof(MemberSymbol),x2);
+			Assert.That(x2, Is.TypeOf(typeof(MemberSymbol)));
 
 			ss = ctxt.CurrentContext.ScopedStatement = foo.Body.SubStatements[4];
 			x2 = Evaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);

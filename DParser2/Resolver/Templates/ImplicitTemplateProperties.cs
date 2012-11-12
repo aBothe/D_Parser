@@ -37,8 +37,15 @@ namespace D_Parser.Resolver.Templates
 			ctxt.CurrentContext.IntroduceTemplateParameterTypes(template);
 
 			// Get actual overloads,
-			var overloads = template.Definition[template.Name];
+			var rawOverloads = template.Definition[template.Name];
 
+			// Pre-check version/debug conditions + (TODO: Check declaration constraints)
+			var overloads = new List<INode>(rawOverloads.Count);
+			var cs = ctxt.BuildConditionSet();
+			foreach(var oo in rawOverloads)
+				if(oo is DNode && cs.IsMatching(((DNode)oo).Attributes))
+				   overloads.Add(oo);
+			
 			// resolve them
 			var resolvedOverloads = TypeDeclarationResolver.HandleNodeMatches(overloads, ctxt, null, template.DeclarationOrExpressionBase);
 
