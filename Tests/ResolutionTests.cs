@@ -617,6 +617,14 @@ debug(D)
 else
 	int b;
 
+template T(O)
+{
+	version(Windows)
+		O[] T;
+	else
+		O T;
+}
+
 void main()
 {
 	a;
@@ -655,12 +663,20 @@ void main()
 			x = TypeDeclarationResolver.ResolveIdentifier("b", ctxt, null);
 			Assert.AreEqual(0, x.Length);
 
+			DToken tk;
+			x = TypeDeclarationResolver.Resolve(DParser.ParseBasicType("T!int",out tk),ctxt);
+			Assert.AreEqual(1, x.Length);
+			var t = x[0];
+			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			t = ((MemberSymbol)t).Base;
+			Assert.IsInstanceOfType(t, typeof(ArrayType));
+
 			var main = pcl[0]["B"]["main"][0] as DMethod;
 			var body = main.Body;
 			ctxt.PushNewScope(main, body);
 
 			var ss = body.SubStatements[0] as ExpressionStatement;
-			var t = Evaluation.EvaluateType(ss.Expression, ctxt);
+			t = Evaluation.EvaluateType(ss.Expression, ctxt);
 			Assert.IsNotNull(t);
 
 			ss = body.SubStatements[1] as ExpressionStatement;
