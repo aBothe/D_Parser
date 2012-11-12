@@ -667,9 +667,9 @@ void main()
 			x = TypeDeclarationResolver.Resolve(DParser.ParseBasicType("T!int",out tk),ctxt);
 			Assert.AreEqual(1, x.Length);
 			var t = x[0];
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.That(t,Is.TypeOf(typeof(MemberSymbol)));
 			t = ((MemberSymbol)t).Base;
-			Assert.IsInstanceOfType(t, typeof(ArrayType));
+			Assert.That(t,Is.TypeOf(typeof(ArrayType)));
 
 			var main = pcl[0]["B"]["main"][0] as DMethod;
 			var body = main.Body;
