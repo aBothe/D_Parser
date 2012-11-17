@@ -49,7 +49,15 @@ namespace D_Parser.Resolver
 
 		public ConditionalCompilation.ConditionSet BuildConditionSet()
 		{
-			return BuildConditionSet(ScopedStatement == null ? ScopedBlock.BlockStartLocation : ScopedStatement.Location);
+			var c = CodeLocation.Empty;
+			if(ScopedStatement == null)
+			{
+				if(ScopedBlock!=null)
+					c = ScopedBlock.BlockStartLocation;
+			}
+			else
+				c = ScopedStatement.Location;
+			return BuildConditionSet(c);
 		}
 
 		/// <summary>
