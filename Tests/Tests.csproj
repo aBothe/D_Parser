@@ -52,6 +52,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CompletionTests.cs" />
     <Compile Include="EvaluationTests.cs" />
     <Compile Include="FormattingTests.cs" />
     <Compile Include="ImplicitConversionTests.cs" />
