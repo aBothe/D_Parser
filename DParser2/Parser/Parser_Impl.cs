@@ -3344,38 +3344,7 @@ namespace D_Parser.Parser
 
 			#region ForStatement
 			else if (laKind == (For))
-			{
-				Step();
-
-				var dbs = new ForStatement { Location = t.Location, Parent = Parent };
-				LastParsedObject = dbs;
-				Expect(OpenParenthesis);
-
-				// Initialize
-				if (laKind != Semicolon)
-					dbs.Initialize = Statement(false, Scope: Scope, Parent: dbs); // Against the D language theory, blocks aren't allowed here!
-				else
-					Step();
-				// Enforce a trailing semi-colon only if there hasn't been an expression (the ; gets already skipped in there)
-				//	Expect(Semicolon);
-
-				// Test
-				if (laKind != (Semicolon))
-					dbs.Test = Expression(Scope);
-
-				Expect(Semicolon);
-
-				// Increment
-				if (laKind != (CloseParenthesis))
-					dbs.Increment = Expression(Scope);
-
-				Expect(CloseParenthesis);
-
-				dbs.ScopedStatement = Statement(Scope: Scope, Parent: dbs);
-				dbs.EndLocation = t.EndLocation;
-
-				return dbs;
-			}
+				return ForStatement(Scope, Parent);
 			#endregion
 
 			#region ForeachStatement
@@ -3830,6 +3799,39 @@ namespace D_Parser.Parser
 			ds.EndLocation = t.EndLocation;
 			return ds;
 		}
+		
+		ForStatement ForStatement(IBlockNode Scope, IStatement Parent)
+		{
+			Step();
+
+			var dbs = new ForStatement { Location = t.Location, Parent = Parent };
+			LastParsedObject = dbs;
+			if(!Expect(OpenParenthesis))
+				return dbs;
+
+			// Initialize
+			if (laKind == Semicolon)
+				Step();
+			else
+				dbs.Initialize = Statement(false, Scope: Scope, Parent: dbs); // Against the spec, blocks aren't allowed here!
+
+			// Test
+			if (laKind != (Semicolon) && !IsEOF)
+				dbs.Test = Expression(Scope);
+
+			if(Expect(Semicolon))
+			{
+				// Increment
+				if (laKind != (CloseParenthesis))
+					dbs.Increment = Expression(Scope);
+	
+				Expect(CloseParenthesis);
+				dbs.ScopedStatement = Statement(Scope: Scope, Parent: dbs);
+			}
+			dbs.EndLocation = t.EndLocation;
+
+			return dbs;
+		}
 
 		ForeachStatement ForeachStatement(IBlockNode Scope,IStatement Parent)
 		{
@@ -3842,19 +3844,20 @@ namespace D_Parser.Parser
 			};
 
 			LastParsedObject = dbs;
-			Expect(OpenParenthesis);
+			if(!Expect(OpenParenthesis))
+				return dbs;
 
 			var tl = new List<DVariable>();
 
-			
-			bool init = true;
-			while (init || laKind == (Comma))
+			bool init=true;
+			while(init || laKind == Comma)
 			{
-				if (!init) Step();
-				init = false;
-
+				if (init) 
+					init = false;
+				else
+					Step();
+				
 				var forEachVar = new DVariable{ Parent = Scope };
-				LastParsedObject = forEachVar;
 				forEachVar.Location = la.Location;
 
 				if (laKind == Ref || laKind == InOut)
@@ -3862,6 +3865,13 @@ namespace D_Parser.Parser
 					Step();
 					forEachVar.Attributes.Add(new Modifier(t.Kind));
 				}
+				
+				if(IsEOF){
+					SynErr(t.Kind,"Basic type or iteration variable identifier expected.");
+					return dbs;
+				}
+				
+				LastParsedObject = forEachVar;					
 				
 				if (laKind == (Identifier) && (Lexer.CurrentPeekToken.Kind == (Semicolon) || Lexer.CurrentPeekToken.Kind == Comma))
 				{
@@ -3881,6 +3891,7 @@ namespace D_Parser.Parser
 
 				tl.Add(forEachVar);
 			}
+			
 			dbs.ForeachTypeList = tl.ToArray();
 
 			if(Expect(Semicolon))
