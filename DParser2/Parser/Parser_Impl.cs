@@ -3846,21 +3846,23 @@ namespace D_Parser.Parser
 
 			var tl = new List<DVariable>();
 
+			
 			bool init = true;
 			while (init || laKind == (Comma))
 			{
 				if (!init) Step();
 				init = false;
 
-				var forEachVar = new DVariable();
+				var forEachVar = new DVariable{ Parent = Scope };
 				LastParsedObject = forEachVar;
 				forEachVar.Location = la.Location;
 
-				if (laKind == (Ref))
+				if (laKind == Ref || laKind == InOut)
 				{
 					Step();
-					forEachVar.Attributes.Add(new Modifier(Ref));
+					forEachVar.Attributes.Add(new Modifier(t.Kind));
 				}
+				
 				if (laKind == (Identifier) && (Lexer.CurrentPeekToken.Kind == (Semicolon) || Lexer.CurrentPeekToken.Kind == Comma))
 				{
 					Step();
@@ -3868,12 +3870,12 @@ namespace D_Parser.Parser
 				}
 				else
 				{
-					forEachVar.Type = Type();
-					if (laKind == Identifier)
-					{
-						Expect(Identifier);
-						forEachVar.Name = t.Value;
-					}
+					var type = BasicType();
+					
+					var tnode = Declarator(type, false, Scope);
+					tnode.Attributes.AddRange(forEachVar.Attributes);
+					tnode.Location = forEachVar.Location;
+					forEachVar = (DVariable)tnode;
 				}
 				forEachVar.EndLocation = t.EndLocation;
 
@@ -3881,8 +3883,8 @@ namespace D_Parser.Parser
 			}
 			dbs.ForeachTypeList = tl.ToArray();
 
-			Expect(Semicolon);
-			dbs.Aggregate = Expression(Scope);
+			if(Expect(Semicolon))
+				dbs.Aggregate = Expression(Scope);
 
 			// ForeachRangeStatement
 			if (laKind == DoubleDot)
@@ -3891,9 +3893,8 @@ namespace D_Parser.Parser
 				dbs.UpperAggregate = Expression();
 			}
 
-			Expect(CloseParenthesis);
-
-			dbs.ScopedStatement = Statement(Scope: Scope, Parent: dbs);
+			if(Expect(CloseParenthesis))
+				dbs.ScopedStatement = Statement(Scope: Scope, Parent: dbs);
 			dbs.EndLocation = t.EndLocation;
 
 			return dbs;
