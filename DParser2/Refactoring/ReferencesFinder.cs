@@ -59,12 +59,12 @@ namespace D_Parser.Refactoring
 
 		protected override void OnScopeChanged(Dom.Statements.IStatement scopedStatement)
 		{
-			ctxt.CurrentContext.ScopedStatement = scopedStatement;
+			ctxt.CurrentContext.Set(ctxt.CurrentContext.ScopedBlock,scopedStatement);
 		}
 
 		protected override void OnScopeChanged(IBlockNode scopedBlock)
 		{
-			ctxt.CurrentContext.ScopedBlock = scopedBlock;
+			ctxt.CurrentContext.Set(scopedBlock);
 		}
 
 		protected override void Handle(ISyntaxRegion o)

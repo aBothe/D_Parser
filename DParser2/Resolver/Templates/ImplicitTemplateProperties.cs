@@ -41,9 +41,8 @@ namespace D_Parser.Resolver.Templates
 
 			// Pre-check version/debug conditions + (TODO: Check declaration constraints)
 			var overloads = new List<INode>(rawOverloads.Count);
-			var cs = ctxt.BuildConditionSet();
 			foreach(var oo in rawOverloads)
-				if(oo is DNode && cs.IsMatching(((DNode)oo).Attributes))
+				if(oo is DNode && ctxt.CurrentContext.MatchesDeclarationEnvironment((DNode)oo))
 				   overloads.Add(oo);
 			
 			// resolve them

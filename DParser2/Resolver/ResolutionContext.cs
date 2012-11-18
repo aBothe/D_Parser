@@ -14,7 +14,7 @@ namespace D_Parser.Resolver
 		/// Stores global compilation parameters.
 		/// Used by BuildConditionSet() as global flags for ConditionSet instances.
 		/// </summary>
-		public ConditionalCompilationFlags CompilationEnvironment;
+		public readonly ConditionalCompilationFlags CompilationEnvironment;
 		protected Stack<ContextFrame> stack = new Stack<ContextFrame>();
 		public ResolutionOptions ContextIndependentOptions = ResolutionOptions.Default;
 		public readonly List<ResolutionError> ResolutionErrors = new List<ResolutionError>();
@@ -47,32 +47,6 @@ namespace D_Parser.Resolver
 			}
 		}
 
-		public ConditionalCompilation.ConditionSet BuildConditionSet()
-		{
-			var c = CodeLocation.Empty;
-			if(ScopedStatement == null)
-			{
-				if(ScopedBlock!=null)
-					c = ScopedBlock.BlockStartLocation;
-			}
-			else
-				c = ScopedStatement.Location;
-			return BuildConditionSet(c);
-		}
-
-		/// <summary>
-		/// Builds a set of conditions that match the currently selected region in the code.
-		/// Used for conditional compilation filtering in the AST visitors.
-		/// </summary>
-		public ConditionalCompilation.ConditionSet BuildConditionSet(CodeLocation caret)
-		{
-			var cs = new ConditionalCompilation.ConditionSet(this.CompilationEnvironment);
-
-			ConditionalCompilation.EnumConditions(cs, ScopedStatement, ScopedBlock, caret); 
-
-			return cs;
-		}
-
 		Dictionary<object, Dictionary<string, ISemantic[]>> resolvedTypes = new Dictionary<object, Dictionary<string, ISemantic[]>>();
 
 		/// <summary>
@@ -89,55 +63,52 @@ namespace D_Parser.Resolver
 				return stack.Peek();
 			}
 		}
-
 		#endregion
 
-		public static ResolutionContext Create(IEditorData editor)
+		public static ResolutionContext Create(IEditorData editor, ConditionalCompilationFlags globalConditions = null)
 		{
 			IStatement stmt = null;
-			return new ResolutionContext(editor.ParseCache, new ContextFrame
-			{
-				ScopedBlock = DResolver.SearchBlockAt(editor.SyntaxTree, editor.CaretLocation, out stmt) ?? editor.SyntaxTree,
-				ScopedStatement = stmt
-			});
+			return new ResolutionContext(editor.ParseCache, globalConditions ?? new ConditionalCompilationFlags(editor),
+			                             DResolver.SearchBlockAt(editor.SyntaxTree, editor.CaretLocation, out stmt) ?? editor.SyntaxTree,
+			                             stmt);
 		}
 
-		public static ResolutionContext Create(ParseCacheList pcl, IBlockNode scopedBlock, IStatement scopedStatement=null)
+		public static ResolutionContext Create(ParseCacheList pcl, ConditionalCompilationFlags globalConditions, IBlockNode scopedBlock, IStatement scopedStatement=null)
 		{
-			return new ResolutionContext(pcl, new ContextFrame { ScopedBlock=scopedBlock, ScopedStatement=scopedStatement });
+			return new ResolutionContext(pcl, globalConditions, scopedBlock, scopedStatement);
 		}
 
-		protected ResolutionContext(ParseCacheList ParseCache,	ContextFrame initialContext)
+		protected ResolutionContext(ParseCacheList ParseCache, ConditionalCompilationFlags gFlags, IBlockNode bn, IStatement stmt=null)
 		{
+			this.CompilationEnvironment = gFlags;
 			this.ParseCache = ParseCache;
 			
-			stack.Push(initialContext);
+			var initCtxt = new ContextFrame(this, bn, stmt);
+			
+			stack.Push(initCtxt);
 		}
 
 		public ContextFrame Pop()
 		{
 			if(stack.Count>0)
 				return stack.Pop();
-
 			return null;
 		}
-
-		public void Push(ContextFrame c)
+		
+		public void Push(ContextFrame frm)
 		{
-			stack.Push(c);
+			stack.Push(frm);
 		}
 
-		public ContextFrame PushNewScope(IBlockNode scope, IStatement stmt = null)
+		public void PushNewScope(IBlockNode scope, IStatement stmt = null)
 		{
-			var ctxtOverride = new ContextFrame();
-			ctxtOverride.ScopedBlock = scope;
-			ctxtOverride.ScopedStatement = stmt;
-
-			stack.Push(ctxtOverride);
-
-			return ctxtOverride;
+			stack.Push(new ContextFrame(this, scope, stmt));
 		}
 
+		/// <summary>
+		/// Returns either the nearest block statement that is containing the scoped statement or the 
+		/// currently scoped block if no statement scope is given.
+		/// </summary>
 		object GetMostFittingBlock()
 		{
 			if (CurrentContext == null)
@@ -158,8 +129,8 @@ namespace D_Parser.Resolver
 			
 			return CurrentContext.ScopedBlock;
 		}
-
-		public void TryAddResults(string TypeDeclarationString, ISemantic[] NodeMatches)
+		/* TODO: Resolution caching
+		public void TryCacheResults(string TypeDeclarationString, ISemantic[] NodeMatches)
 		{
 			var ScopedType = GetMostFittingBlock();
 
@@ -190,7 +161,7 @@ namespace D_Parser.Resolver
 			NodeMatches = null;
 			return false;
 		}
-
+*/
 		/// <summary>
 		/// Returns true if the the context that is stacked below the current context represents the parent item of the current block scope
 		/// </summary>

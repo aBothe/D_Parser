@@ -35,7 +35,7 @@ void main()
 	A.statA.statA = new A!float(); // 15
 }
 ");
-			var ctxt = ResolutionContext.Create(pcl, pcl[0]["modA"]);
+			var ctxt = ResolutionContext.Create(pcl, null, pcl[0]["modA"]);
 
 			var refs = ReferencesFinder.Scan(pcl[0]["modA"]["A"][0],ctxt) as List<ISyntaxRegion>;
 
@@ -52,7 +52,7 @@ class A(T)
 {
 	int n;
 	static int prop;
-	static A!float statA; 
+	static A!float statA;
 }
 
 void main()

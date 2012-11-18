@@ -21,7 +21,6 @@ namespace D_Parser.Resolver.ASTScanner
 		};
 
 		ResolutionContext ctxt;
-		ConditionalCompilation.ConditionSet conditionSet;
 		public ResolutionContext Context
 		{
 			get { return ctxt; }
@@ -32,7 +31,6 @@ namespace D_Parser.Resolver.ASTScanner
 		public AbstractVisitor(ResolutionContext context)
 		{
 			ctxt = context;
-			conditionSet = ctxt.BuildConditionSet();
 		}
 
 		static AbstractVisitor()
@@ -153,8 +151,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					if (ch != null)
 						foreach (var n in ch)
 						{
-							if(n is DNode &&
-								!conditionSet.IsMatching(((DNode)n).Attributes))
+							if(n is DNode && !ctxt.CurrentContext.MatchesDeclarationEnvironment((DNode)n))	
 								continue;
 
 							// Add anonymous enums' items
@@ -213,7 +210,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 							(dm3 != null && !(dm3.SpecialType == DMethod.MethodType.Normal || dm3.SpecialType == DMethod.MethodType.Delegate)))
 							continue;
 
-						if (!conditionSet.IsMatching(dm2.Attributes))
+						if (!ctxt.CurrentContext.MatchesDeclarationEnvironment(dm2))
 							continue;
 
 						// Add static and non-private members of all base classes; 
@@ -304,7 +301,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 			while (Statement != null)
 			{
-				if (HandleSingleStatemt(Statement, Caret, VisibleMembers))
+				if (HandleSingleStatement(Statement, Caret, VisibleMembers))
 					return true;
 
 				Statement = Statement.Parent;
@@ -313,7 +310,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			return false;
 		}
 
-		bool HandleSingleStatemt(IStatement Statement, CodeLocation Caret, MemberFilter VisibleMembers)
+		bool HandleSingleStatement(IStatement Statement, CodeLocation Caret, MemberFilter VisibleMembers)
 		{
 			if (Statement is ImportStatement)
 			{
@@ -354,7 +351,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				AbstractType r = null;
 
 				var back = ctxt.ScopedStatement;
-				ctxt.CurrentContext.ScopedStatement = ws.Parent;
+				ctxt.CurrentContext.Set(ws.Parent);
 
 				// Must be an expression that returns an object reference
 				if (ws.WithExpression != null)
@@ -362,7 +359,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				else if (ws.WithSymbol != null) // This symbol will be used as default
 					r = TypeDeclarationResolver.ResolveSingle(ws.WithSymbol, ctxt);
 
-				ctxt.CurrentContext.ScopedStatement = back;
+				ctxt.CurrentContext.Set(back);
 
 				if ((r = DResolver.StripMemberSymbols(r)) != null)
 					if (r is TemplateIntermediateType)
@@ -409,10 +406,10 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					{
 						var sc = (StatementCondition)s;
 
-						if (conditionSet.IsMatching(new[] { sc.Condition }))
-							return HandleSingleStatemt(sc.ScopedStatement, Caret, VisibleMembers);
+						if (ctxt.CurrentContext.MatchesDeclarationEnvironment(sc.Condition))
+							return HandleSingleStatement(sc.ScopedStatement, Caret, VisibleMembers);
 						else if (sc.ElseStatement != null)
-							return HandleSingleStatemt(sc.ElseStatement, Caret, VisibleMembers);
+							return HandleSingleStatement(sc.ElseStatement, Caret, VisibleMembers);
 					}
 					else if (s is MixinStatement)
 					{
@@ -478,7 +475,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				{
 					// Check if all conditions are satisfied..
 					if (stmt.Conditions != null && stmt.Conditions.Length != 0 &&
-							!conditionSet.IsMatching(stmt.Conditions))
+							!ctxt.CurrentContext.MatchesDeclarationEnvironment(stmt.Conditions))
 						continue;
 
 					var dstmt = stmt as IDeclarationContainingStatement;
@@ -521,7 +518,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			if (imp == null || imp.ModuleIdentifier == null)
 				return false;
 
-			var thisModuleName = ctxt.ScopedBlock.NodeRoot is IAbstractSyntaxTree ? (ctxt.ScopedBlock.NodeRoot as IAbstractSyntaxTree).ModuleName : string.Empty;
+			var thisModuleName = ctxt.ScopedBlock.NodeRoot is IAbstractSyntaxTree ? ((IAbstractSyntaxTree)ctxt.ScopedBlock.NodeRoot).ModuleName : string.Empty;
 			var moduleName = imp.ModuleIdentifier.ToString();
 
 			List<string> seenModules = null;
@@ -542,8 +539,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					if (HandleItem(module))
 						return true;
 
-					var backup = conditionSet.LocalFlags;
-					ConditionalCompilation.EnumConditions(conditionSet, null, module, CodeLocation.Empty);
+					ctxt.PushNewScope(module);
 
 					var ch = PrefilterSubnodes(module);
 					if (ch != null)
@@ -561,7 +557,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 								{
 									if (HandleItems((i as DEnum).Children))
 									{
-										_restoreCSBackup(backup);
+										ctxt.Pop();
 										return true;
 									}
 									continue;
@@ -571,31 +567,25 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 									CanAddMemberOfType(VisibleMembers, dn))
 									if (HandleItem(dn))
 									{
-										_restoreCSBackup(backup);
+										ctxt.Pop();
 										return true;
 									}
 							}
 							else
 								if (HandleItem(i))
 								{
-									_restoreCSBackup(backup);
+									ctxt.Pop();
 									return true;
 								}
 						}
 
-					_restoreCSBackup(backup);
+					ctxt.Pop();
 
 					if (HandleDBlockNode(module as DBlockNode, VisibleMembers, true))
 						return true;
 				}
 			return false;
 		}
-
-		void _restoreCSBackup(ConditionalCompilationFlags l)
-		{
-			conditionSet.LocalFlags = l;
-		}
-
 		#endregion
 	}
 }

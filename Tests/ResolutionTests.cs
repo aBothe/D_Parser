@@ -35,15 +35,14 @@ namespace Tests
 			foreach (var code in moduleCodes)
 				pc.AddOrUpdate(DParser.ParseString(code));
 
-			pc.UfcsCache.Update(pcl, pc);
+			pc.UfcsCache.Update(pcl, null, pc);
 
 			return pcl;
 		}
 
 		public static ResolutionContext CreateDefCtxt(ParseCacheList pcl, IBlockNode scope, IStatement stmt=null)
 		{
-			var r = ResolutionContext.Create(pcl, scope, stmt);
-			r.CompilationEnvironment = new ConditionalCompilationFlags(new[]{"Windows","all"},1,true,null,0);
+			var r = ResolutionContext.Create(pcl, new ConditionalCompilationFlags(new[]{"Windows","all"},1,true,null,0), scope, stmt);
 			return r;
 		}
 
@@ -312,7 +311,7 @@ class Client : IClient!(Params, ConcreteRegistry){}");
 			Assert.AreEqual(mod["ConcreteRegistry"][0], ((DSymbol)dedtype.Value.Base).Definition);
 
 
-			ctxt.CurrentContext.ScopedBlock = mod;
+			ctxt.CurrentContext.Set(mod);
 			DToken opt=null;
 			var tix = DParser.ParseBasicType("IClient!(Params,ConcreteRegistry)",out opt);
 			res = TypeDeclarationResolver.ResolveSingle(tix, ctxt);
@@ -579,21 +578,21 @@ debug(4)
 			x = TypeDeclarationResolver.ResolveIdentifier("z3", ctxt, null);
 			Assert.AreEqual(0, x.Length);
 
-			var ss = ctxt.CurrentContext.ScopedStatement =
-				((foo.Body.SubStatements[2] as StatementCondition).ScopedStatement as BlockStatement).SubStatements[0];
+			IStatement ss;
+			ctxt.CurrentContext.Set(ss=((foo.Body.SubStatements[2] as StatementCondition).ScopedStatement as BlockStatement).SubStatements[0]);
 
 			var x2 = Evaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
 			Assert.That(x2, Is.TypeOf(typeof(MemberSymbol)));
 
-			ss = ctxt.CurrentContext.ScopedStatement = foo.Body.SubStatements[4];
+			ctxt.CurrentContext.Set(ss = foo.Body.SubStatements[4]);
 			x2 = Evaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
 			Assert.IsNull(x2);
 
-			ss = ctxt.CurrentContext.ScopedStatement = foo.Body.SubStatements[5];
+			ctxt.CurrentContext.Set(ss =  foo.Body.SubStatements[5]);
 			x2 = Evaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
 			Assert.IsNull(x2);
 
-			ss = ctxt.CurrentContext.ScopedStatement = foo.Body.SubStatements[6];
+			ctxt.CurrentContext.Set(ss = foo.Body.SubStatements[6]);
 			x2 = Evaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
 			Assert.IsNotNull(x2);
 
@@ -679,7 +678,7 @@ void main()
 			x = TypeDeclarationResolver.ResolveIdentifier("dbgY", ctxt, null);
 			Assert.AreEqual(0, x.Length);
 
-			ctxt.CurrentContext.ScopedBlock = pcl[0]["B"];
+			ctxt.CurrentContext.Set(pcl[0]["B"]);
 
 			x = TypeDeclarationResolver.ResolveIdentifier("dbg", ctxt, null);
 			Assert.AreEqual(1, x.Length);
@@ -720,6 +719,42 @@ void main()
 			ss = body.SubStatements[3] as ExpressionStatement;
 			t = Evaluation.EvaluateType(ss.Expression, ctxt);
 			Assert.IsNull(t);
+		}
+		
+		[Test]
+		public void DeclConstraints()
+		{
+			var pcl=CreateCache(@"module A;
+
+const i = 12;
+
+static if(i>0)
+	int a;
+else
+	int b;
+
+template Templ(T)
+{
+	static if(is(T:int))
+		enum Templ = 1;
+	else
+		enum Templ = 0;
+}");
+			
+			var A = pcl[0]["A"];
+			
+			var ctxt = CreateDefCtxt(pcl, A, null);
+			
+			var x = TypeDeclarationResolver.ResolveIdentifier("a", ctxt, null);
+			Assert.AreEqual(1, x.Length);
+			
+			x = TypeDeclarationResolver.ResolveIdentifier("b",ctxt,null);
+			Assert.AreEqual(0, x.Length);
+			
+			var v = Evaluation.EvaluateValue(DParser.ParseExpression("Templ!int"), ctxt);
+			Assert.That(v, Is.InstanceOf(typeof(PrimitiveValue)));
+			var pv = (PrimitiveValue)v;
+			Assert.AreEqual(1m, pv.Value);
 		}
 	}
 }

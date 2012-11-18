@@ -785,7 +785,6 @@ namespace D_Parser.Parser
 			// Autodeclaration
 			var StorageClass = DTokens.ContainsStorageClass(DeclarationAttributes.ToArray());
 
-			//TODO: Specify how enum-returning functions shall be handled
 			if (StorageClass.Token == Modifier.Empty.Token && laKind == Enum)
 			{
 				Step();

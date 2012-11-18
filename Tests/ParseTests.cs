@@ -230,7 +230,7 @@ void main()
 			var main = pcl[0]["modA"]["main"][0] as DMethod;
 			Assert.AreEqual(0, (pcl[0]["modA"] as DModule).ParseErrors.Count);
 			var s = main.Body.SubStatements[main.Body.SubStatements.Length - 1] as IExpressionContainingStatement;
-			var ctxt = ResolutionContext.Create(pcl, main, s);
+			var ctxt = ResolutionContext.Create(pcl, null, main, s);
 			//ctxt.ContextIndependentOptions |= ResolutionOptions.StopAfterFirstOverloads | ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.DontResolveBaseTypes;
 			var x = s.SubExpressions[0];
 			//pc.UfcsCache.Update(pcl);

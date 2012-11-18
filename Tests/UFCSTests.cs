@@ -28,7 +28,7 @@ void main(){
 	string s;
 }");
 			var modA=pcl[0]["modA"];
-			var ctxt = ResolutionContext.Create(pcl, modA);
+			var ctxt = ResolutionContext.Create(pcl, null, modA);
 
 			var main=modA["main"][0] as DMethod;
 			var s = main.Body.Declarations[0];

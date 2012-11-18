@@ -162,7 +162,8 @@ namespace D_Parser.Resolver.Templates
 		bool IsMoreSpecialized(ITypeDeclaration Spec, ITemplateParameter t2, Dictionary<string, ISemantic> t1_DummyParamList)
 		{
 			// Make a type out of t1's specialization
-			var frame = ctxt.PushNewScope(ctxt.ScopedBlock.Parent as IBlockNode);
+			ctxt.PushNewScope(ctxt.ScopedBlock.Parent as IBlockNode);
+			var frame = ctxt.CurrentContext;
 
 			// Make the T in e.g. T[] a virtual type so T will be replaced by it
 			// T** will be X** then - so a theoretically valid type instead of a template param

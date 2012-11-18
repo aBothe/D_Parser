@@ -17,7 +17,8 @@ namespace D_Parser.Resolver.ASTScanner
 	{
 		#region Properties
 		public bool IsProcessing { get; private set; }
-
+		
+		ConditionalCompilationFlags gFlags_shared;
 		Stack<DMethod> queue = new Stack<DMethod>();
 		public readonly Dictionary<DMethod, AbstractType> CachedMethods = new Dictionary<DMethod, AbstractType>();
 		/// <summary>
@@ -35,7 +36,7 @@ namespace D_Parser.Resolver.ASTScanner
 		/// <summary>
 		/// Returns false if cache is already updating.
 		/// </summary>
-		public bool Update(ParseCacheList pcList, ParseCache subCacheToUpdate = null)
+		public bool Update(ParseCacheList pcList, ConditionalCompilationFlags compilationEnvironment = null, ParseCache subCacheToUpdate = null)
 		{
 			if (IsProcessing)
 				return false;
@@ -43,9 +44,7 @@ namespace D_Parser.Resolver.ASTScanner
 			try
 			{
 				IsProcessing = true;
-
-				var ctxt = ResolutionContext.Create(pcList, null);
-				ctxt.ContextIndependentOptions = ResolutionOptions.StopAfterFirstOverloads;
+				gFlags_shared = compilationEnvironment;
 
 				queue.Clear();
 
@@ -105,8 +104,7 @@ namespace D_Parser.Resolver.ASTScanner
 		void parseThread(object pcl_shared)
 		{
 			DMethod dm = null;
-			var pcl = (ParseCacheList)pcl_shared;
-			var ctxt = ResolutionContext.Create(pcl, null);
+			var ctxt = ResolutionContext.Create((ParseCacheList)pcl_shared, gFlags_shared, null);
 			ctxt.ContextIndependentOptions |= ResolutionOptions.StopAfterFirstOverloads;
 
 			while (queue.Count != 0)
@@ -119,7 +117,7 @@ namespace D_Parser.Resolver.ASTScanner
 					dm = queue.Pop();
 				}
 
-				ctxt.CurrentContext.ScopedBlock = dm;
+				ctxt.CurrentContext.Set(dm);
 
 				var firstArg_result = TypeDeclarationResolver.Resolve(dm.Parameters[0].Type, ctxt);
 

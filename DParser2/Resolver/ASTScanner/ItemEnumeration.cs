@@ -34,11 +34,8 @@ namespace D_Parser.Resolver.ASTScanner
 			MemberFilter VisibleMembers,
 			ConditionalCompilationFlags compilationEnvironment = null)
 		{
-			var ctxt = ResolutionContext.Create(CodeCache, ScopedBlock, ScopedStatement);
-			ctxt.CompilationEnvironment = compilationEnvironment;
-			return EnumAllAvailableMembers(ctxt, 
-			Caret, 
-			VisibleMembers);
+			var ctxt = ResolutionContext.Create(CodeCache, compilationEnvironment, ScopedBlock, ScopedStatement);
+			return EnumAllAvailableMembers(ctxt, Caret, VisibleMembers);
 		}
 
 		public static IEnumerable<INode> EnumAllAvailableMembers(

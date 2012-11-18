@@ -211,8 +211,7 @@ namespace D_Parser.Resolver.Templates
 						var alias = (AliasedType)r;
 						AbstractType[] next=null;
 
-						ctxt.CurrentContext.ScopedBlock = alias.Definition.Parent as IBlockNode;
-						ctxt.CurrentContext.ScopedStatement = null;
+						ctxt.CurrentContext.Set(alias.Definition.Parent as IBlockNode);
 
 						if (alias.Definition.Type is IdentifierDeclaration)
 							next = TypeDeclarationResolver.Resolve((IdentifierDeclaration)alias.Definition.Type, ctxt, null, false);

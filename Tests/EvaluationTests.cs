@@ -39,7 +39,7 @@ namespace Tests
 			ResolutionContext ctxt = null;
 
 			if (ProvideObjModule)
-				ctxt = ResolutionContext.Create(ResolutionTests.CreateCache(), null);
+				ctxt = ResolutionContext.Create(ResolutionTests.CreateCache(), null, null);
 
 			var x = DParser.ParseExpression(literal);
 
@@ -202,7 +202,7 @@ namespace Tests
 			Assert.AreEqual(aa.Elements.Count, 3);
 
 			ex = DParser.ParseExpression("(a,b) => a+b");
-			v = Evaluation.EvaluateValue(ex, ResolutionContext.Create(new D_Parser.Misc.ParseCacheList(), null));
+			v = Evaluation.EvaluateValue(ex, ResolutionContext.Create(new D_Parser.Misc.ParseCacheList(), null, null));
 			Assert.IsInstanceOfType(typeof(DelegateValue),v);
 		}
 
@@ -215,7 +215,7 @@ enum b=123;
 const int c=125;
 enum int d=126;
 ");
-			var vp = new StandardValueProvider(ResolutionContext.Create(pcl, pcl[0]["modA"]));
+			var vp = new StandardValueProvider(ResolutionContext.Create(pcl, null, pcl[0]["modA"]));
 
 			var v = E("a", vp);
 
@@ -280,7 +280,7 @@ class A
 
 A a;");
 
-			var vp = new StandardValueProvider(ResolutionContext.Create(pcl, pcl[0]["modA"]));
+			var vp = new StandardValueProvider(ResolutionContext.Create(pcl, null, pcl[0]["modA"]));
 			/*
 			var v = E("a.someProp", vp);
 			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
@@ -313,7 +313,7 @@ class B : A {}
 class C : A {}
 ");
 
-			var vp = new StandardValueProvider(ResolutionContext.Create(pcl, pcl[0]["modA"]));
+			var vp = new StandardValueProvider(ResolutionContext.Create(pcl, null,pcl[0]["modA"]));
 
 			Assert.IsTrue(EvalIsExpression("char*[] T : U[], U : V*, V", vp));
 			Assert.IsTrue(EvalIsExpression("string T : U[], U : immutable(V), V : char", vp));

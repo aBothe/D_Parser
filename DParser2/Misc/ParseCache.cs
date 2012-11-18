@@ -205,7 +205,7 @@ namespace D_Parser.Misc
 					{
 						//TODO: Do a version check, so that only on x64 dmd installations, size_t equals ulong.
 						SizeT = TypeDeclarationResolver.HandleNodeMatch(m, 
-							ResolutionContext.Create(ParseCacheList.Create(this), objModule));
+							ResolutionContext.Create(ParseCacheList.Create(this), null, objModule));
 					}
 		}
 		#endregion

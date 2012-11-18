@@ -33,21 +33,22 @@ namespace D_Parser.Refactoring
 		IAbstractSyntaxTree ast = null;
 
 		readonly TypeReferencesResult result = new TypeReferencesResult();
+		ConditionalCompilationFlags gFlags_shared;
 		readonly ParseCacheList sharedParseCache;
 		ResolutionContext sharedCtxt;
 
-		private TypeReferenceFinder(ParseCacheList sharedCache)
+		private TypeReferenceFinder(ParseCacheList sharedCache, ConditionalCompilationFlags compilationEnvironment = null)
 		{
 			this.sharedParseCache = sharedCache;
-			sharedCtxt = ResolutionContext.Create(sharedCache, null);
+			sharedCtxt = ResolutionContext.Create(sharedCache, gFlags_shared = compilationEnvironment, null);
 		}
 
-		public static TypeReferencesResult Scan(IAbstractSyntaxTree ast, ParseCacheList pcl)
+		public static TypeReferencesResult Scan(IAbstractSyntaxTree ast, ParseCacheList pcl, ConditionalCompilationFlags compilationEnvironment = null)
 		{
 			if (ast == null)
 				return new TypeReferencesResult();
 
-			var typeRefFinder = new TypeReferenceFinder(pcl);
+			var typeRefFinder = new TypeReferenceFinder(pcl, compilationEnvironment);
 
 			typeRefFinder.ast = ast;
 			// Enum all identifiers
@@ -68,7 +69,7 @@ namespace D_Parser.Refactoring
 			var parentBackup = bn.Parent;
 			bn.Parent = null;
 
-			sharedCtxt.CurrentContext.ScopedBlock = bn;
+			sharedCtxt.CurrentContext.Set(bn);
 			var vis = ItemEnumeration.EnumAllAvailableMembers(sharedCtxt, bn.EndLocation, MemberFilter.Types);
 
 			if (vis != null)
@@ -195,7 +196,7 @@ namespace D_Parser.Refactoring
 
 		void _th(object pcl_shared)
 		{
-			var ctxt = ResolutionContext.Create((ParseCacheList)pcl_shared, ast);
+			var ctxt = ResolutionContext.Create((ParseCacheList)pcl_shared, gFlags_shared, ast);
 
 			// Make it as most performing as possible by avoiding unnecessary base types. 
 			// Aliases should be analyzed deeper though.
@@ -220,10 +221,11 @@ namespace D_Parser.Refactoring
 				// Resolve gotten syntax object
 				sr = q[i];
 				var sb = ctxt.CurrentContext.ScopedBlock;
-				ctxt.CurrentContext.ScopedBlock = DResolver.SearchBlockAt(
+				IStatement tStmt;
+				ctxt.CurrentContext.Set(DResolver.SearchBlockAt(
 					sb==null || sr.Location < sb.BlockStartLocation || sr.EndLocation > sb.EndLocation ? ast : sb,
 					sr.Location, 
-					out ctxt.CurrentContext.ScopedStatement);
+					out tStmt),tStmt);
 
 				if (sr is PostfixExpression_Access)
 					HandleAccessExpressions((PostfixExpression_Access)sr, ctxt);

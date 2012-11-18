@@ -22,15 +22,22 @@ namespace D_Parser.Resolver
 			{
 				if(conditions!=null)
 					foreach (var c in conditions)
-						if (c is DeclarationCondition){
-							if(c is NegatedDeclarationCondition)
-							{
-								if (!(GlobalFlags.IsMatching((DeclarationCondition)c) && LocalFlags.IsMatching((DeclarationCondition)c)))
-									return false;
-							}
-							else if(!(GlobalFlags.IsMatching((DeclarationCondition)c) || LocalFlags.IsMatching((DeclarationCondition)c)))
-								return false;
-						}
+						if (c is DeclarationCondition)
+							if(!IsMatching((DeclarationCondition)c))
+							   return false;
+				return true;
+			}
+			
+			public bool IsMatching(DeclarationCondition dc)
+			{
+				if(dc is NegatedDeclarationCondition)
+				{
+					if (!(GlobalFlags.IsMatching(dc) && LocalFlags.IsMatching(dc)))
+						return false;
+				}
+				else if(!(GlobalFlags.IsMatching(dc) || LocalFlags.IsMatching(dc)))
+					return false;
+				
 				return true;
 			}
 		}

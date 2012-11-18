@@ -329,9 +329,12 @@ namespace D_Parser.Dom
 
 		public virtual void Visit(StatementCondition s)
 		{
-			VisitChildren(s);
-			if(s.Condition is StaticIfCondition) //TODO Null check
-				((StaticIfCondition)s.Condition).Expression.Accept(this);
+			if(s!=null)
+			{
+				VisitChildren(s);
+				if(s.Condition is StaticIfCondition)
+					((StaticIfCondition)s.Condition).Expression.Accept(this);
+			}
 		}
 
 		public virtual void Visit(Statements.VolatileStatement s)
