@@ -75,8 +75,19 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return AbstractType.Get(new Evaluation(ctxt).E(x));
 		}
 
+		/// <summary>
+		/// HACK: SO prevention
+		/// </summary>
+		[ThreadStatic]
+		static int evaluationDepth = 0;
+		
 		ISemantic E(IExpression x)
 		{
+			if(evaluationDepth > 20)
+				return null;
+			evaluationDepth++;
+			
+			ISemantic ret = null;
 			if (x is Expression) // a,b,c;
 			{
 				var ex = (Expression)x;
@@ -93,34 +104,40 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						var v = E(ex.Expressions[i]);
 
 						if (i == ex.Expressions.Count - 1)
-							return v;
+						{
+							ret = v;
+							break;
+						}
 					}
 
-					throw new EvaluationException(x, "There must be at least one expression in the expression chain");
+					if(ret == null)
+						throw new EvaluationException(x, "There must be at least one expression in the expression chain");
 				}
 				else
-					return ex.Expressions.Count == 0 ? null : E(ex.Expressions[ex.Expressions.Count - 1]);
+					ret = ex.Expressions.Count == 0 ? null : E(ex.Expressions[ex.Expressions.Count - 1]);
 			}
 
 			else if (x is SurroundingParenthesesExpression)
-				return E((x as SurroundingParenthesesExpression).Expression);
+				ret= E((x as SurroundingParenthesesExpression).Expression);
 
 			else if (x is ConditionalExpression) // a ? b : c
-				return E((ConditionalExpression)x);
+				ret= E((ConditionalExpression)x);
 
 			else if (x is OperatorBasedExpression)
-				return E((OperatorBasedExpression)x);
+				ret= E((OperatorBasedExpression)x);
 
 			else if (x is UnaryExpression)
-				return E((UnaryExpression)x);
+				ret= E((UnaryExpression)x);
 
 			else if (x is PostfixExpression)
-				return E((PostfixExpression)x);
+				ret= E((PostfixExpression)x);
 
 			else if (x is PrimaryExpression)
-				return E((PrimaryExpression)x);
+				ret= E((PrimaryExpression)x);
 
-			return null;
+			evaluationDepth--;
+			
+			return ret;
 		}
 
 		public static bool IsFalseZeroOrNull(ISymbolValue v)

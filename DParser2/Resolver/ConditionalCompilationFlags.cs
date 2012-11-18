@@ -110,7 +110,7 @@ namespace D_Parser.Resolver
 				if(v is VariableValue)
 					v = Evaluation.EvaluateValue(((VariableValue)v).Variable.Initializer, ctxt);
 			}
-			catch(EvaluationException ex)
+			catch
 			{
 				return true; //TODO: In case of an 
 			}
