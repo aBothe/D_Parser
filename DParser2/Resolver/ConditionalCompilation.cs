@@ -18,31 +18,31 @@ namespace D_Parser.Resolver
 				LocalFlags = lFlags;
 			}
 
-			public bool IsMatching(IEnumerable<DAttribute> conditions)
+			public bool IsMatching(IEnumerable<DAttribute> conditions, ResolutionContext ctxt)
 			{
 				if(conditions!=null)
 					foreach (var c in conditions)
 						if (c is DeclarationCondition)
-							if(!IsMatching((DeclarationCondition)c))
+							if(!IsMatching((DeclarationCondition)c,ctxt))
 							   return false;
 				return true;
 			}
 			
-			public bool IsMatching(DeclarationCondition dc)
+			public bool IsMatching(DeclarationCondition dc, ResolutionContext ctxt)
 			{
 				if(dc is NegatedDeclarationCondition)
 				{
-					if (!(GlobalFlags.IsMatching(dc) && LocalFlags.IsMatching(dc)))
+					if (!(GlobalFlags.IsMatching(dc,ctxt) && LocalFlags.IsMatching(dc,ctxt)))
 						return false;
 				}
-				else if(!(GlobalFlags.IsMatching(dc) || LocalFlags.IsMatching(dc)))
+				else if(!(GlobalFlags.IsMatching(dc,ctxt) || LocalFlags.IsMatching(dc,ctxt)))
 					return false;
 				
 				return true;
 			}
 		}
 
-		public static void EnumConditions(ConditionSet cs,IStatement stmt, IBlockNode block, CodeLocation caret)
+		public static void EnumConditions(ConditionSet cs,IStatement stmt, IBlockNode block, ResolutionContext ctxt, CodeLocation caret)
 		{
 			var l = new MutableConditionFlagSet();
 			cs.LocalFlags = l;
@@ -77,7 +77,7 @@ namespace D_Parser.Resolver
 			while (block != null)
 			{
 				if (block is DModule)
-					GetDoneVersionDebugSpecs(cs, l, (DModule)block);
+					GetDoneVersionDebugSpecs(cs, l, (DModule)block, ctxt);
 				else if (block is DNode)
 				{
 					foreach (var attr in ((DNode)block).Attributes)
@@ -89,7 +89,7 @@ namespace D_Parser.Resolver
 			}
 		}
 
-		static void GetDoneVersionDebugSpecs(ConditionSet cs, MutableConditionFlagSet l, DModule m)
+		static void GetDoneVersionDebugSpecs(ConditionSet cs, MutableConditionFlagSet l, DModule m, ResolutionContext ctxt)
 		{
 			if (m.StaticStatements == null || m.StaticStatements.Count == 0)
 				return;
@@ -99,10 +99,19 @@ namespace D_Parser.Resolver
 				if(ss is VersionSpecification)
 				{
 					var vs = (VersionSpecification)ss;
-
-					if (vs.Conditions != null && !cs.IsMatching(vs.Conditions))
-						continue;
-
+					
+					// If there are conditions, push a new context and check if they match the global compilation conditions
+					if(vs.Conditions != null)
+					{
+						ctxt.PushNewScope(m, vs);
+						if (!cs.IsMatching(vs.Conditions,ctxt))
+						{
+							ctxt.Pop();
+							continue;
+						}
+						ctxt.Pop();
+					}
+					
 					if(vs.SpecifiedId==null)
  						l.AddVersionCondition(vs.SpecifiedNumber);
 					else
@@ -112,8 +121,16 @@ namespace D_Parser.Resolver
 				{
 					var ds = (DebugSpecification)ss;
 
-					if (ds.Conditions != null && !cs.IsMatching(ds.Conditions))
-						continue;
+					if(ds.Conditions != null)
+					{
+						ctxt.PushNewScope(m, ds);
+						if (!cs.IsMatching(ds.Conditions,ctxt))
+						{
+							ctxt.Pop();
+							continue;
+						}
+						ctxt.Pop();
+					}
 
 					if (ds.SpecifiedId == null)
 						l.AddDebugCondition(ds.SpecifiedDebugLevel);

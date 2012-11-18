@@ -39,7 +39,7 @@ namespace D_Parser.Resolver.Templates
 			// Get actual overloads,
 			var rawOverloads = template.Definition[template.Name];
 
-			// Pre-check version/debug conditions + (TODO: Check declaration constraints)
+			// Pre-check version/debug conditions
 			var overloads = new List<INode>(rawOverloads.Count);
 			foreach(var oo in rawOverloads)
 				if(oo is DNode && ctxt.CurrentContext.MatchesDeclarationEnvironment((DNode)oo))

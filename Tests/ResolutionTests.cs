@@ -739,7 +739,15 @@ template Templ(T)
 		enum Templ = 1;
 	else
 		enum Templ = 0;
-}");
+}
+
+static if(Templ!int == 1)
+	int c;
+
+static if(Templ!float)
+	int d;
+else
+	int e;");
 			
 			var A = pcl[0]["A"];
 			
@@ -752,9 +760,20 @@ template Templ(T)
 			Assert.AreEqual(0, x.Length);
 			
 			var v = Evaluation.EvaluateValue(DParser.ParseExpression("Templ!int"), ctxt);
+			Assert.That(v, Is.InstanceOf(typeof(VariableValue)));
+			v = Evaluation.EvaluateValue(((VariableValue)v).Variable.Initializer, ctxt);
 			Assert.That(v, Is.InstanceOf(typeof(PrimitiveValue)));
 			var pv = (PrimitiveValue)v;
 			Assert.AreEqual(1m, pv.Value);
+			
+			x = TypeDeclarationResolver.ResolveIdentifier("c", ctxt, null);
+			Assert.AreEqual(1, x.Length);
+			
+			x = TypeDeclarationResolver.ResolveIdentifier("d", ctxt, null);
+			Assert.AreEqual(0, x.Length);
+			
+			x = TypeDeclarationResolver.ResolveIdentifier("e", ctxt, null);
+			Assert.AreEqual(1, x.Length);
 		}
 	}
 }

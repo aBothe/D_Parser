@@ -60,7 +60,7 @@ namespace D_Parser.Resolver
 			else
 				c = stmt.Location;
 			
-			ConditionalCompilation.EnumConditions(declarationCondititons, stmt, b, c); 
+			ConditionalCompilation.EnumConditions(declarationCondititons, stmt, b, ctxt, c); 
 		}
 		
 		/// <summary>
@@ -68,17 +68,17 @@ namespace D_Parser.Resolver
 		/// </summary>
 		public bool MatchesDeclarationEnvironment(DNode dn)
 		{
-			return declarationCondititons.IsMatching(dn.Attributes);
+			return declarationCondititons.IsMatching(dn.Attributes, ctxt);
 		}
 		
 		public bool MatchesDeclarationEnvironment(IEnumerable<DAttribute> conditions)
 		{
-			return declarationCondititons.IsMatching(conditions);
+			return declarationCondititons.IsMatching(conditions,ctxt);
 		}
 		
 		public bool MatchesDeclarationEnvironment(DeclarationCondition dc)
 		{
-			return declarationCondititons.IsMatching(dc);
+			return declarationCondititons.IsMatching(dc,ctxt);
 		}
 
 		public override string ToString()

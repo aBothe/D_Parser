@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using D_Parser.Completion;
 using D_Parser.Dom;
+using D_Parser.Resolver.ExpressionSemantics;
 
 namespace D_Parser.Resolver
 {
@@ -53,7 +54,7 @@ namespace D_Parser.Resolver
 			this.debugFlagOverride = debug;
 		}
 
-		public bool IsMatching(DeclarationCondition cond)
+		public bool IsMatching(DeclarationCondition cond, ResolutionContext ctxt)
 		{
 			if(cond is VersionCondition)
 			{
@@ -71,6 +72,8 @@ namespace D_Parser.Resolver
 					debugLevel >= dc.DebugLevel :
 					setDebugVersions.Contains(dc.DebugId);
 			}
+			else if(cond is StaticIfCondition)
+				return IsMatching((StaticIfCondition)cond,ctxt);
 			else if(cond is NegatedDeclarationCondition)
 			{
 				cond = ((NegatedDeclarationCondition)cond).FirstCondition;
@@ -91,10 +94,27 @@ namespace D_Parser.Resolver
 						debugLevel < dc.DebugLevel :
 						(!setDebugVersions.Contains(dc.DebugId) || setDebugVersions.Contains("!" + dc.DebugId));
 				}
+				else if(cond is StaticIfCondition)
+					return !IsMatching((StaticIfCondition)cond,ctxt);
 			}
 
 			// True on default -- static if's etc. will be filtered later on
 			return true;
+		}
+		
+		public bool IsMatching(StaticIfCondition sc, ResolutionContext ctxt)
+		{
+			ISymbolValue v;
+			try{
+				v = Evaluation.EvaluateValue(sc.Expression, ctxt);
+				if(v is VariableValue)
+					v = Evaluation.EvaluateValue(((VariableValue)v).Variable.Initializer, ctxt);
+			}
+			catch(EvaluationException ex)
+			{
+				return true; //TODO: In case of an 
+			}
+			return !Evaluation.IsFalseZeroOrNull(v);
 		}
 	}
 
