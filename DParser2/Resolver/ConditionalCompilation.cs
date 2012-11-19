@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using D_Parser.Dom;
 using D_Parser.Dom.Statements;
 
@@ -100,17 +101,8 @@ namespace D_Parser.Resolver
 				{
 					var vs = (VersionSpecification)ss;
 					
-					// If there are conditions, push a new context and check if they match the global compilation conditions
-					if(vs.Conditions != null)
-					{
-						ctxt.PushNewScope(m, vs);
-						if (!cs.IsMatching(vs.Conditions,ctxt))
-						{
-							ctxt.Pop();
-							continue;
-						}
-						ctxt.Pop();
-					}
+					if(!_checkForMatchinSpecConditions(m,cs,ss,ctxt))
+						continue;
 					
 					if(vs.SpecifiedId==null)
  						l.AddVersionCondition(vs.SpecifiedNumber);
@@ -121,23 +113,20 @@ namespace D_Parser.Resolver
 				{
 					var ds = (DebugSpecification)ss;
 
-					if(ds.Conditions != null)
-					{
-						ctxt.PushNewScope(m, ds);
-						if (!cs.IsMatching(ds.Conditions,ctxt))
-						{
-							ctxt.Pop();
-							continue;
-						}
-						ctxt.Pop();
-					}
-
+					if(!_checkForMatchinSpecConditions(m,cs,ss, ctxt))
+						continue;
+					
 					if (ds.SpecifiedId == null)
 						l.AddDebugCondition(ds.SpecifiedDebugLevel);
 					else
 						l.AddDebugCondition(ds.SpecifiedId);
 				}
 			}
+		}
+		
+		static bool _checkForMatchinSpecConditions(DModule m,ConditionSet cs,StaticStatement ss, ResolutionContext ctxt)
+		{
+			return ss.Conditions == null || cs.IsMatching(ss.Conditions,ctxt);
 		}
 	}
 }
