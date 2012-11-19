@@ -639,7 +639,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				{
 					// parse it as a list of statements
 					var statements = DParser.ParseBlockStatement("{"+av.StringValue+"}", mx.ParentNode);
-					statements.Parent = mx.Parent;
+					//statements.Parent = mx.Parent; //Dont' do this to avoid StackOverflows
 					
 					// as above, disregard the caret position because 1) caret and parsed code do not match 
 					// and 2) the caret must be located somewhere after the mixin statement's end
