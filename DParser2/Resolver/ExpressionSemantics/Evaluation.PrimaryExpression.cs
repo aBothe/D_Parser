@@ -235,7 +235,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			if (ex == null)
 				throw new EvaluationException(x, "Invalid expression code given");
-
+			//TODO: Excessive caching
 			// 3) Evaluate the expression's type/value
 			return E(ex);
 		}

@@ -83,8 +83,11 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					ctxt.Options.HasFlag(ResolutionOptions.StopAfterFirstMatch)))
 				return;
 
-			var curScope = ctxt.ScopedBlock;
-
+			ScanBlockUpward(ctxt.ScopedBlock, Caret, VisibleMembers);			
+		}
+		
+		bool ScanBlockUpward(IBlockNode curScope, CodeLocation Caret, MemberFilter VisibleMembers)
+		{
 			bool breakOnNextScope = false;
 
 			// 2)
@@ -93,8 +96,8 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				// Walk up inheritance hierarchy
 				if (curScope is DClassLike)
 				{
-					if (IterateThrough((DClassLike)curScope, VisibleMembers, ref breakOnNextScope))
-						return;
+					if (DeepScanClass((DClassLike)curScope, VisibleMembers, ref breakOnNextScope))
+						return true;
 				}
 				else if (curScope is DMethod)
 				{
@@ -112,24 +115,24 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 								EndLocation = dm.OutResultVariable.EndLocation,
 							})) &&
 							breakImmediately)
-						return;
+						return true;
 
 					if (VisibleMembers.HasFlag(MemberFilter.Variables) &&
 						(breakOnNextScope = HandleItems(dm.Parameters)) &&
 						breakImmediately)
-						return;
+						return true;
 
 					if (dm.TemplateParameters != null &&
 						(breakOnNextScope = HandleItems(dm.TemplateParameterNodes as IEnumerable<INode>)) &&
 						breakImmediately)
-						return;
+						return true;
 
 					// The method's declaration children are handled above already via BlockStatement.GetItemHierarchy().
 					// except AdditionalChildren:
 					foreach (var ch in dm.AdditionalChildren)
 						if (CanAddMemberOfType(VisibleMembers, ch) &&
 							(breakOnNextScope = HandleItem(ch) && breakImmediately))
-							return;
+							return true;
 
 					// If the method is a nested method,
 					// this method won't be 'linked' to the parent statement tree directly - 
@@ -142,7 +145,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 						if (nestedBlock != null &&
 							(breakOnNextScope = IterateThroughItemHierarchy(nestedBlock.SearchStatementDeeply(Caret), Caret, VisibleMembers)) &&
 							breakImmediately)
-							return;
+							return true;
 					}
 				}
 				else
@@ -158,7 +161,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 							if (n is DEnum && string.IsNullOrEmpty(n.Name) && CanAddMemberOfType(VisibleMembers, n))
 							{
 								if ((breakOnNextScope = HandleItems(((DEnum)n).Children)) && breakImmediately)
-									return;
+									return true;
 								continue;
 							}
 
@@ -169,28 +172,31 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 								continue;
 
 							if ((breakOnNextScope = HandleItem(n)) && breakImmediately)
-								return;
+								return true;
 						}
 				}
 
 				// Handle imports
 				if (curScope is DBlockNode)
 					if ((breakOnNextScope = HandleDBlockNode((DBlockNode)curScope, VisibleMembers)) && breakImmediately)
-						return;
+						return true;
 
 				if (breakOnNextScope && ctxt.Options.HasFlag(ResolutionOptions.StopAfterFirstOverloads))
-					return;
+					return true;
 
 				curScope = curScope.Parent as IBlockNode;
 			}
 
 			// Add __ctfe variable
-			if (!breakOnNextScope && CanAddMemberOfType(VisibleMembers, __ctfe))
-				if (HandleItem(__ctfe))
-					return;
+			if (!breakOnNextScope && 
+			    CanAddMemberOfType(VisibleMembers, __ctfe) &&
+			    HandleItem(__ctfe))
+					return true;
+			
+			return false;
 		}
 
-		bool IterateThrough(DClassLike cls, MemberFilter VisibleMembers, ref bool breakOnNextScope)
+		bool DeepScanClass(DClassLike cls, MemberFilter VisibleMembers, ref bool breakOnNextScope)
 		{
 			var curWatchedClass = cls;
 			// MyClass > BaseA > BaseB > Object
@@ -368,7 +374,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 						var dc = tr.Definition as DClassLike;
 
 						bool brk = false;
-						if (IterateThrough(dc, VisibleMembers, ref brk) || brk)
+						if (DeepScanClass(dc, VisibleMembers, ref brk) || brk)
 							return true;
 					}
 			}
@@ -413,10 +419,12 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					}
 					else if (s is MixinStatement)
 					{
-						// TODO: Parse MixinStatements à la mixin("int x" ~ "="~ to!string(5) ~";");
+						if(HandleMixin((MixinStatement)s, false, VisibleMembers))
+							return true;
 					}
 					else if (s is TemplateMixin)
 					{
+						// http://dlang.org/template-mixin.html#TemplateMixin
 						var tm = s as TemplateMixin;
 
 						if (string.IsNullOrEmpty(tm.MixinId))
@@ -473,15 +481,11 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			{
 				foreach (var stmt in dbn.StaticStatements)
 				{
-					// Check if all conditions are satisfied..
-					if (stmt.Conditions != null && stmt.Conditions.Length != 0 &&
-							!ctxt.CurrentContext.MatchesDeclarationEnvironment(stmt.Conditions))
-						continue;
-
 					var dstmt = stmt as IDeclarationContainingStatement;
 					if (dstmt != null)
 					{
-						if (takePublicImportsOnly && dstmt is ImportStatement && !((ImportStatement)dstmt).IsPublic)
+						if ((takePublicImportsOnly && dstmt is ImportStatement && !((ImportStatement)dstmt).IsPublic) ||
+						    !MatchesCompilationEnv(stmt))
 							continue;
 
 						/*
@@ -501,6 +505,12 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 									if (HandleNonAliasedImport(imp, VisibleMembers))
 										return true;
 						}
+						
+					}
+					else if(stmt is MixinStatement)
+					{
+						if(MatchesCompilationEnv(stmt) && HandleMixin((MixinStatement)stmt,true,VisibleMembers))
+							return true;
 					}
 				}
 			}
@@ -511,6 +521,11 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					return true;
 
 			return false;
+		}
+		
+		bool MatchesCompilationEnv(StaticStatement ss)
+		{
+			return ss.Conditions == null || ctxt.CurrentContext.MatchesDeclarationEnvironment(ss.Conditions);
 		}
 
 		bool HandleNonAliasedImport(ImportStatement.Import imp, MemberFilter VisibleMembers)
@@ -586,6 +601,56 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				}
 			return false;
 		}
+		#endregion
+		
+		#region Mixins
+		/// <summary>
+		/// Evaluates the literal given as expression and tries to parse it as a string.
+		/// Important: Assumes all its compilation conditions to be checked already!
+		/// </summary>
+		bool HandleMixin(MixinStatement mx, bool parseDeclDefs, MemberFilter vis)
+		{
+			try // 'try' because there is always a risk of e.g. not having something implemented or having an evaluation exception...
+			{
+			// Evaluate the mixin expression
+			var x = mx.MixinExpression;
+			var v = Evaluation.EvaluateValue(x, ctxt);
+			if(v is VariableValue)
+				v = Evaluation.EvaluateValue(x=((VariableValue)v).Variable.Initializer, ctxt);
+			
+			// Ensure it's a string literal
+			var av = v as ArrayValue;
+			if(av != null && av.IsString)
+			{
+				// If in a class/module block => MixinDeclaration
+				if(parseDeclDefs)
+				{
+					// parse it as a module
+					var ast = DParser.ParseString(av.StringValue, true);
+					
+					foreach(var ch in ast)
+						ch.Parent = mx.ParentNode;
+					
+					// take ast.Endlocation because the cursor must be beyond the actual mixin expression 
+					// - and therewith _after_ each declaration
+					return ScanBlockUpward(ast, ast.EndLocation, vis);
+				}
+				else // => MixinStatement
+				{
+					// parse it as a list of statements
+					var statements = DParser.ParseBlockStatement("{"+av.StringValue+"}", mx.ParentNode);
+					statements.Parent = mx.Parent;
+					
+					// as above, disregard the caret position because 1) caret and parsed code do not match 
+					// and 2) the caret must be located somewhere after the mixin statement's end
+					return IterateThroughItemHierarchy(statements, CodeLocation.Empty, vis);
+				}
+			}
+			
+			}catch{}
+			return false;
+		}
+		
 		#endregion
 	}
 }

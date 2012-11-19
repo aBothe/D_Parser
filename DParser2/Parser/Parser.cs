@@ -204,19 +204,23 @@ namespace D_Parser.Parser
 
         public static IAbstractSyntaxTree ParseString(string ModuleCode,bool SkipFunctionBodies=false)
         {
-            var p = Create(new StringReader(ModuleCode));
-            return p.Parse(SkipFunctionBodies);
+            using(var sr = new StringReader(ModuleCode))
+        	{
+	            var p = Create(sr);
+	            return p.Parse(SkipFunctionBodies);
+        	}
         }
 
         public static IAbstractSyntaxTree ParseFile(string File, bool SkipFunctionBodies=false)
         {
-			var s = new StreamReader(File);
-            var p=Create(s);
-            var m = p.Parse(SkipFunctionBodies);
-            m.FileName = File;
-			m.ModuleName = Path.GetFileNameWithoutExtension(File);
-			s.Close();
-			return m;
+        	using(var s = new StreamReader(File)){
+	            var p=Create(s);
+	            var m = p.Parse(SkipFunctionBodies);
+	            m.FileName = File;
+				m.ModuleName = Path.GetFileNameWithoutExtension(File);
+				s.Close();
+				return m;
+        	}
         }
 
         /// <summary>

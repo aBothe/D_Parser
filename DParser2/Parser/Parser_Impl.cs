@@ -282,7 +282,7 @@ namespace D_Parser.Parser
 
 				//MixinDeclaration
 				else if (Lexer.CurrentPeekToken.Kind == OpenParenthesis)
-					module.Add(MixinDeclaration());
+					module.Add(MixinDeclaration(module,null));
 				else
 				{
 					Step();
@@ -641,15 +641,25 @@ namespace D_Parser.Parser
 			return importBindings;
 		}
 
-		MixinStatement MixinDeclaration()
+		MixinStatement MixinDeclaration(IBlockNode Scope, IStatement StmtScope)
 		{
-            var mx = AssignExpression();
-			Expect(Semicolon);
-
-            if (mx == null)
-                return null;
-
-            return new MixinStatement { Conditions = GetDeclConditions(), Location=mx.Location, MixinExpression = mx, EndLocation=t.EndLocation };
+			var mx = new MixinStatement{
+				Conditions = GetDeclConditions(),
+				Location = la.Location,
+				Parent = StmtScope,
+				ParentNode = Scope
+			};
+			Expect(Mixin);
+			if(Expect(OpenParenthesis))
+			{
+            	mx.MixinExpression = AssignExpression();
+            	if(Expect(CloseParenthesis))
+					Expect(Semicolon);
+			}
+			
+			mx.EndLocation = t.EndLocation;
+			
+			return mx;
 		}
 		#endregion
 
@@ -3715,11 +3725,10 @@ namespace D_Parser.Parser
 			#endregion
 
 			#region MixinStatement
-			//TODO: Handle this one in terms of adding it to the node structure
 			else if (laKind == (Mixin))
 			{
 				if (Peek(1).Kind == OpenParenthesis)
-					return MixinDeclaration();
+					return MixinDeclaration(Scope,Parent);
 				else
 					return TemplateMixin();
 			}
