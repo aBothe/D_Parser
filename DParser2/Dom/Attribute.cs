@@ -121,9 +121,10 @@ namespace D_Parser.Dom
         public static bool ContainsAttribute(List<DAttribute> HayStack,params int[] NeedleToken)
         {
             var l = new List<int>(NeedleToken);
-            foreach (var attr in HayStack)
-				if (attr is Modifier && l.Contains(((Modifier)attr).Token))
-                    return true;
+            if(HayStack!=null)
+	            foreach (var attr in HayStack)
+					if (attr is Modifier && l.Contains(((Modifier)attr).Token))
+	                    return true;
             return false;
         }
 		public static bool ContainsAttribute(Stack<DAttribute> HayStack, params int[] NeedleToken)

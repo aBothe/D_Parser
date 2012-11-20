@@ -1,9 +1,6 @@
 ﻿
 Everything that still needs to be handled by D_Parser comes right in here:
 
-
-* Add Expression Value Resolution
-* Mixin support
 * UFCS -- assert("fdas" == "asdf".reverse()); and stuff -- very complex & time-intensive!
 * CTFE
 * Implement declaration condition checks
@@ -14,14 +11,24 @@ Everything that still needs to be handled by D_Parser comes right in here:
 
 * Make Mixin analysis etc. multi-threaded!
 
+=======================================
+
+CTFE caching concept:
+
+Store a tuple of input values and the returned value.
+Calculate hash sum of a method.
+
+
+Mixin caching:
+
+Cache expression string
+
+=======================================
+
 * Pre-resolve constant values (such as const/enum literals) from least to most dependent(?)
 * Handle semantic errors that occur during analysis/resolution/evaluation etc. -> Implement own Exceptions for that!
 
 Resolver:
-	-	Implement single-element aliasing on templates(only !)
-		(when a template contains only one item that is called like the template, 
-		the template's name will be resolved to that member element instead of the template)
-	-	when typing new Foo(..., show up the ctors instead of the class definition
 	- .tupleof for structs
 	- .offsetof for struct fields
 	- new MyClass() should return the ctor member instead - that has the actual class as its return type

@@ -77,13 +77,15 @@ namespace D_Parser.Resolver
 			// Go up the block hierarchy and add all conditions that belong to the respective nodes
 			while (block != null)
 			{
-				if (block is DModule)
+				var dn = block as DNode;
+				if (dn is DModule)
 					GetDoneVersionDebugSpecs(cs, l, (DModule)block, ctxt);
-				else if (block is DNode)
+				else if (dn!=null)
 				{
-					foreach (var attr in ((DNode)block).Attributes)
-						if (attr is DeclarationCondition)
-							l.Add(((DeclarationCondition)attr));
+					if(dn.Attributes!=null)
+						foreach (var attr in dn.Attributes)
+							if (attr is DeclarationCondition)
+								l.Add(((DeclarationCondition)attr));
 				}
 				
 				block = block.Parent as IBlockNode;
@@ -126,7 +128,7 @@ namespace D_Parser.Resolver
 		
 		static bool _checkForMatchinSpecConditions(DModule m,ConditionSet cs,StaticStatement ss, ResolutionContext ctxt)
 		{
-			return ss.Conditions == null || cs.IsMatching(ss.Conditions,ctxt);
+			return ss.Attributes == null || cs.IsMatching(ss.Attributes,ctxt);
 		}
 	}
 }

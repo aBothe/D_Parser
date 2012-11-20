@@ -1050,12 +1050,6 @@ namespace D_Parser.Dom.Statements
 			get { return new[]{MixinExpression}; }
 		}
 
-		public DeclarationCondition[] Conditions
-		{
-			get;
-			set;
-		}
-
 		public override void Accept(StatementVisitor vis)
 		{
 			throw new NotImplementedException();
@@ -1065,6 +1059,8 @@ namespace D_Parser.Dom.Statements
 		{
 			throw new NotImplementedException();
 		}
+		
+		public DAttribute[] Attributes{get;set;}
 	}
 
 	public class StatementCondition : StatementContainingStatement, IExpressionContainingStatement
@@ -1141,7 +1137,7 @@ namespace D_Parser.Dom.Statements
 			return "static "+base.ToCode();
 		}
 
-		public DeclarationCondition[] Conditions
+		public DAttribute[] Attributes
 		{
 			get;
 			set;
@@ -1296,7 +1292,7 @@ namespace D_Parser.Dom.Statements
 			return vis.Visit(this);
 		}
 
-		public DeclarationCondition[] Conditions
+		public DAttribute[] Attributes
 		{
 			get;
 			set;
@@ -1323,7 +1319,7 @@ namespace D_Parser.Dom.Statements
 			return vis.Visit(this);
 		}
 
-		public DeclarationCondition[] Conditions
+		public DAttribute[] Attributes
 		{
 			get;
 			set;
@@ -1350,7 +1346,7 @@ namespace D_Parser.Dom.Statements
 			return vis.Visit(this);
 		}
 
-		public DeclarationCondition[] Conditions
+		public DAttribute[] Attributes
 		{
 			get;
 			set;

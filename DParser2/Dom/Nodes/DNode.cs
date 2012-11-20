@@ -9,7 +9,7 @@ namespace D_Parser.Dom
 		#region Properties
 		public ITemplateParameter[] TemplateParameters; // Functions, Templates
 		public IExpression TemplateConstraint;
-		public List<DAttribute> Attributes = new List<DAttribute>();
+		public List<DAttribute> Attributes;
 
 		public IEnumerable<TemplateParameterNode> TemplateParameterNodes
 		{
@@ -26,9 +26,10 @@ namespace D_Parser.Dom
 			get
 			{
 				string s = "";
-				foreach (var attr in Attributes)
-					if (attr != null)
-						s += attr.ToString() + " ";
+				if(Attributes!=null)
+					foreach (var attr in Attributes)
+						if (attr != null)
+							s += attr.ToString() + " ";
 				return s.Trim();
 			}
 		}
@@ -75,12 +76,13 @@ namespace D_Parser.Dom
 
 		public bool ContainsPropertyAttribute(string prop="property")
 		{
-			foreach (var attr in Attributes)
-			{
-				var mod = attr as Modifier;
-				if (mod!=null && mod.LiteralContent is string && ((string)mod.LiteralContent) == prop)
-					return true;
-			}
+			if(Attributes!=null)
+				foreach (var attr in Attributes)
+				{
+					var mod = attr as Modifier;
+					if (mod!=null && mod.LiteralContent is string && ((string)mod.LiteralContent) == prop)
+						return true;
+				}
 			return false;
 		}
 

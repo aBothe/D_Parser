@@ -779,7 +779,17 @@ else
 		[Test]
 		public void Mixins1()
 		{
-			var pcl = ResolutionTests.CreateCache("module A; mixin(\"int x; int \"~\"y\"~\";\");");
+			var pcl = ResolutionTests.CreateCache(@"module A;
+private mixin(""int privA;"");
+package mixin(""int packA;"");
+private int privAA;
+package int packAA;
+
+mixin(""int x; int ""~""y""~"";"");",
+
+			                                      @"module pack.B;
+import A;",
+			                                     @"module C; import A;");
 			
 			var ctxt = ResolutionTests.CreateDefCtxt(pcl, pcl[0]["A"]);
 			
@@ -787,6 +797,31 @@ else
 			Assert.That(x.Length, Is.EqualTo(1));
 			
 			x = TypeDeclarationResolver.ResolveIdentifier("y", ctxt, null);
+			Assert.That(x.Length, Is.EqualTo(1));
+			
+			ctxt.CurrentContext.Set(pcl[0]["pack.B"]);
+			
+			x = TypeDeclarationResolver.ResolveIdentifier("x", ctxt, null);
+			Assert.That(x.Length, Is.EqualTo(1));
+			
+			x = TypeDeclarationResolver.ResolveIdentifier("privAA", ctxt, null);
+			Assert.That(x.Length, Is.EqualTo(0));
+			
+			x = TypeDeclarationResolver.ResolveIdentifier("privA", ctxt, null);
+			Assert.That(x.Length, Is.EqualTo(0));
+			
+			x = TypeDeclarationResolver.ResolveIdentifier("packAA", ctxt, null);
+			Assert.That(x.Length, Is.EqualTo(0));
+			
+			x = TypeDeclarationResolver.ResolveIdentifier("packA", ctxt, null);
+			Assert.That(x.Length, Is.EqualTo(0));
+			
+			ctxt.CurrentContext.Set(pcl[0]["C"]);
+			
+			x = TypeDeclarationResolver.ResolveIdentifier("packAA", ctxt, null);
+			Assert.That(x.Length, Is.EqualTo(1));
+			
+			x = TypeDeclarationResolver.ResolveIdentifier("packA", ctxt, null);
 			Assert.That(x.Length, Is.EqualTo(1));
 		}
 		

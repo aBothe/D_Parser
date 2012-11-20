@@ -44,10 +44,8 @@ namespace D_Parser.Resolver.ASTScanner
 which eval­u­ates to true at com­pile time, but false at run time, 
 can be used to pro­vide an al­ter­na­tive ex­e­cu­tion path 
 to avoid op­er­a­tions which are for­bid­den at com­pile time.",
+				Attributes = new List<DAttribute>{new Modifier(DTokens.Static),new Modifier(DTokens.Const)}
 			};
-
-			__ctfe.Attributes.Add(new Modifier(DTokens.Static));
-			__ctfe.Attributes.Add(new Modifier(DTokens.Const));
 		}
 		#endregion
 
@@ -166,8 +164,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 							}
 
 							var dm3 = n as DMethod; // Only show normal & delegate methods
-							if (
-								!CanAddMemberOfType(VisibleMembers, n) ||
+							if (!CanAddMemberOfType(VisibleMembers, n) ||
 								(dm3 != null && !(dm3.SpecialType == DMethod.MethodType.Normal || dm3.SpecialType == DMethod.MethodType.Delegate)))
 								continue;
 
@@ -525,7 +522,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		
 		bool MatchesCompilationEnv(StaticStatement ss)
 		{
-			return ss.Conditions == null || ctxt.CurrentContext.MatchesDeclarationEnvironment(ss.Conditions);
+			return ss.Attributes == null || ctxt.CurrentContext.MatchesDeclarationEnvironment(ss.Attributes);
 		}
 
 		bool HandleNonAliasedImport(ImportStatement.Import imp, MemberFilter VisibleMembers)
@@ -554,52 +551,50 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					if (HandleItem(module))
 						return true;
 
-					ctxt.PushNewScope(module);
+					//ctxt.PushNewScope(module);
 
-					var ch = PrefilterSubnodes(module);
-					if (ch != null)
-						foreach (var i in ch)
-						{
-							var dn = i as DNode;
-							if (dn != null)
-							{
-								// Add anonymous enums' items
-								if (dn is DEnum &&
-									string.IsNullOrEmpty(i.Name) &&
-									dn.IsPublic &&
-									!dn.ContainsAttribute(DTokens.Package) &&
-									CanAddMemberOfType(VisibleMembers, i))
-								{
-									if (HandleItems((i as DEnum).Children))
-									{
-										ctxt.Pop();
-										return true;
-									}
-									continue;
-								}
-
-								if (dn.IsPublic && !dn.ContainsAttribute(DTokens.Package) &&
-									CanAddMemberOfType(VisibleMembers, dn))
-									if (HandleItem(dn))
-									{
-										ctxt.Pop();
-										return true;
-									}
-							}
-							else
-								if (HandleItem(i))
-								{
-									ctxt.Pop();
-									return true;
-								}
-						}
-
-					ctxt.Pop();
-
-					if (HandleDBlockNode(module as DBlockNode, VisibleMembers, true))
+					if(ScanImportedModule(module,VisibleMembers))
+					{
+						//ctxt.Pop();
 						return true;
+					}
+					
+					//ctxt.Pop();
 				}
 			return false;
+		}
+		
+		bool ScanImportedModule(IAbstractSyntaxTree module, MemberFilter VisibleMembers)
+		{
+			var ch = PrefilterSubnodes(module);
+			if (ch != null)
+				foreach (var i in ch)
+				{
+					var dn = i as DNode;
+					if (dn != null)
+					{
+						// Add anonymous enums' items
+						if (dn is DEnum &&
+						    string.IsNullOrEmpty(i.Name) && 
+						    CanShowMember(dn, ctxt.ScopedBlock) && 
+						    CanAddMemberOfType(VisibleMembers, i))
+						{
+							if (HandleItems((i as DEnum).Children))
+								return true;
+							continue;
+						}
+
+						if (CanShowMember(dn, ctxt.ScopedBlock) &&
+							CanAddMemberOfType(VisibleMembers, dn) &&
+							HandleItem(dn))
+								return true;
+					}
+					else
+						if (HandleItem(i))
+							return true;
+				}
+
+			return HandleDBlockNode(module as DBlockNode, VisibleMembers, true);
 		}
 		#endregion
 		
@@ -610,13 +605,19 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		/// </summary>
 		bool HandleMixin(MixinStatement mx, bool parseDeclDefs, MemberFilter vis)
 		{
+			ctxt.PushNewScope(mx.ParentNode as IBlockNode, mx);
+			
+			var x = mx.MixinExpression;
+			ISemantic v;
 			try // 'try' because there is always a risk of e.g. not having something implemented or having an evaluation exception...
 			{
-			// Evaluate the mixin expression
-			var x = mx.MixinExpression;
-			var v = Evaluation.EvaluateValue(x, ctxt);
-			if(v is VariableValue)
-				v = Evaluation.EvaluateValue(x=((VariableValue)v).Variable.Initializer, ctxt);
+				// Evaluate the mixin expression
+				v = Evaluation.EvaluateValue(x, ctxt);
+				if(v is VariableValue)
+					v = Evaluation.EvaluateValue(x=((VariableValue)v).Variable.Initializer, ctxt);
+			}catch{ctxt.Pop(); return false;}
+			
+			ctxt.Pop();
 			
 			// Ensure it's a string literal
 			var av = v as ArrayValue;
@@ -626,14 +627,43 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				if(parseDeclDefs)
 				{
 					// parse it as a module
-					var ast = DParser.ParseString(av.StringValue, true);
+					var ast = (DModule)DParser.ParseString(av.StringValue, true);
 					
-					foreach(var ch in ast)
+					foreach(var ch in ast){
+						if(mx.Attributes!=null)
+						{
+							var dn = ch as DNode;
+							if(dn!=null)
+							{
+								if(dn.Attributes==null)
+									dn.Attributes = new List<DAttribute>(mx.Attributes);
+								else
+									dn.Attributes.AddRange(mx.Attributes);
+							}
+						}
 						ch.Parent = mx.ParentNode;
+					}
+					
+					if(mx.Attributes!=null)
+					{
+						foreach(var ss in ast.StaticStatements)
+						{
+							if(ss.Attributes == null)
+								ss.Attributes = mx.Attributes;
+							else{
+								var attrs = new DAttribute[mx.Attributes.Length + ss.Attributes.Length];
+								mx.Attributes.CopyTo(attrs,0);
+								ss.Attributes.CopyTo(attrs,mx.Attributes.Length);
+							}
+						}
+					}
 					
 					// take ast.Endlocation because the cursor must be beyond the actual mixin expression 
 					// - and therewith _after_ each declaration
-					return ScanBlockUpward(ast, ast.EndLocation, vis);
+					if(ctxt.ScopedBlock == mx.ParentNode.NodeRoot)
+						return ScanBlockUpward(ast, ast.EndLocation, vis);
+					else
+						return ScanImportedModule(ast, vis);
 				}
 				else // => MixinStatement
 				{
@@ -646,8 +676,6 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					return IterateThroughItemHierarchy(statements, CodeLocation.Empty, vis);
 				}
 			}
-			
-			}catch{}
 			return false;
 		}
 		

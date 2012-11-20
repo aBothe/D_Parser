@@ -198,9 +198,9 @@ namespace D_Parser.Parser
 				VersionSpecification vs = null;
 
 				if (laKind == Version)
-					LastParsedObject = vs = new VersionSpecification { Location = la.Location, Conditions = GetDeclConditions() };
+					LastParsedObject = vs = new VersionSpecification { Location = la.Location, Attributes = GetCurrentAttributeSet_Array() };
 				else
-					LastParsedObject = ds = new DebugSpecification { Location = la.Location, Conditions = GetDeclConditions() };
+					LastParsedObject = ds = new DebugSpecification { Location = la.Location, Attributes = GetCurrentAttributeSet_Array() };
 				
 				Step();
 				Step();
@@ -251,7 +251,7 @@ namespace D_Parser.Parser
 				if (!Modifier.ContainsAttribute(DeclarationAttributes, Static))
 					SynErr(Static, "Static assert statements must be explicitly marked as static");
 
-				var ass = new StaticAssertStatement { Conditions = GetDeclConditions(), Location = t.Location };
+				var ass = new StaticAssertStatement { Attributes = GetCurrentAttributeSet_Array(), Location = t.Location };
 
 				if (Expect(OpenParenthesis))
 				{
@@ -551,7 +551,7 @@ namespace D_Parser.Parser
 
 			Expect(Import);
 
-			var importStatement = new ImportStatement { Conditions = GetDeclConditions(), Location=t.Location, IsStatic = isStatic, IsPublic = isPublic };
+			var importStatement = new ImportStatement { Attributes = GetCurrentAttributeSet_Array(), Location=t.Location, IsStatic = isStatic, IsPublic = isPublic };
 			
 			DeclarationAttributes.Clear();
 			
@@ -644,7 +644,7 @@ namespace D_Parser.Parser
 		MixinStatement MixinDeclaration(IBlockNode Scope, IStatement StmtScope)
 		{
 			var mx = new MixinStatement{
-				Conditions = GetDeclConditions(),
+				Attributes = GetCurrentAttributeSet_Array(),
 				Location = la.Location,
 				Parent = StmtScope,
 				ParentNode = Scope
@@ -4554,7 +4554,7 @@ namespace D_Parser.Parser
 		{
 			// mixin TemplateIdentifier !( TemplateArgumentList ) MixinIdentifier ;
 			//							|<--			optional			 -->|
-			var r = new TemplateMixin { Conditions = GetDeclConditions() };
+			var r = new TemplateMixin { Attributes = GetCurrentAttributeSet_Array() };
 			LastParsedObject = r;
 			ITypeDeclaration preQualifier = null;
 

@@ -266,8 +266,20 @@ namespace D_Parser.Parser
 
         void ApplyAttributes(DNode n)
         {
+        	n.Attributes = GetCurrentAttributeSet();
+        }
+        
+        DAttribute[] GetCurrentAttributeSet_Array()
+        {
+        	var attrs = GetCurrentAttributeSet();
+        	return attrs.Count == 0 ? null : attrs.ToArray();
+        }
+        
+        List<DAttribute> GetCurrentAttributeSet()
+        {
+        	var attrs = new List<DAttribute>();
 			foreach (var attr in BlockAttributes.ToArray())
-					n.Attributes.Add(attr);
+					attrs.Add(attr);
 
             while (DeclarationAttributes.Count > 0)
             {
@@ -278,35 +290,17 @@ namespace D_Parser.Parser
 				{
 					// If accessor already in attribute array, remove it
 					if (DTokens.VisModifiers[m.Token])
-						Modifier.CleanupAccessorAttributes(n.Attributes);
+						Modifier.CleanupAccessorAttributes(attrs);
 
-					if (m.IsProperty || !Modifier.ContainsAttribute(n.Attributes.ToArray(), m.Token))
-						n.Attributes.Add(attr);
+					if (m.IsProperty || !Modifier.ContainsAttribute(attrs, m.Token))
+						attrs.Add(attr);
 				}
 				else
-					n.Attributes.Add(attr);
+					attrs.Add(attr);
             }
+            
+            return attrs;
         }
-
-		DeclarationCondition[] GetDeclConditions()
-		{
-			var l = new List<DeclarationCondition>();
-
-			foreach (var a in BlockAttributes)
-				if (a is DeclarationCondition)
-					l.Add((DeclarationCondition)a);
-
-			while (DeclarationAttributes.Count != 0)
-			{
-				if (DeclarationAttributes.Peek() is DeclarationCondition)
-					l.Add((DeclarationCondition)DeclarationAttributes.Pop());
-				else
-					DeclarationAttributes.Pop(); // TODO What to do with it? Highlight it as useless?
-			}
-
-			return l.Count == 0 ? null : l.ToArray();
-		}
-
 
         void OverPeekBrackets(int OpenBracketKind,bool LAIsOpenBracket = false)
         {

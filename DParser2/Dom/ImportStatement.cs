@@ -22,15 +22,15 @@ namespace D_Parser.Dom
 			return vis.Visit(this);
 		}
 
-		public DeclarationCondition[] Conditions
+		public DAttribute[] Attributes
 		{
-			get { return null; }
+			get { return null; } set{}
 		}
 	}
 
 	public class ImportStatement:AbstractStatement, IDeclarationContainingStatement, StaticStatement
 	{
-		public DeclarationCondition[] Conditions { get; set; }
+		public DAttribute[] Attributes { get; set; }
 		public bool IsStatic;
 		public bool IsPublic;
 
