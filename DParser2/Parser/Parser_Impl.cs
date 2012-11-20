@@ -4863,7 +4863,12 @@ namespace D_Parser.Parser
 				IExpression arg= null;
 
 				if (t.Kind == Literal)
-					arg = new IdentifierExpression(t.LiteralValue, LiteralFormat.Scalar)
+					arg = new IdentifierExpression(t.LiteralFormat == LiteralFormat.StringLiteral || 
+					                               t.LiteralFormat == LiteralFormat.VerbatimStringLiteral ? 
+					                               t.Value :
+					                               t.LiteralValue,
+					                               t.LiteralFormat, 
+					                               t.Subformat)
 					{
 						Location = t.Location,
 						EndLocation = t.EndLocation
