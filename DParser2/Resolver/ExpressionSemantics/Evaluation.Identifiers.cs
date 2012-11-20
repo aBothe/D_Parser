@@ -1,11 +1,13 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
 using D_Parser.Resolver.ExpressionSemantics.CTFE;
+using D_Parser.Resolver.Templates;
 using D_Parser.Resolver.TypeResolution;
-using System.Linq;
-using System;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
@@ -26,7 +28,15 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var r = overloads[0];
 			var ex = new EvaluationException(idOrTemplateInstance, "Ambiguous expression", overloads);
 
-			if (r is MemberSymbol)
+			if(r is TemplateParameterSymbol)
+			{
+				var tps = (TemplateParameterSymbol)r;
+				
+				if(tps.Parameter is TemplateValueParameter)
+					return tps.ParameterValue;
+				//TODO: Are there other evaluable template parameters?
+			}
+			else if (r is MemberSymbol)
 			{
 				var mr = (MemberSymbol)r;
 

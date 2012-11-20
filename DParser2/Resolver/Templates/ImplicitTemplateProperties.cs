@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using D_Parser.Dom;
+using D_Parser.Dom.Statements;
 using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Resolver.Templates
@@ -17,7 +18,7 @@ namespace D_Parser.Resolver.Templates
 		{
 			//Edit: The actual dmd implementation differs from the spec immensely:
 			// It's only required that there are items called like dc, nothing else.
-			return dc != null && dc[dc.Name].Count != 0;
+			return dc != null && (dc[dc.Name] != null || dc.StaticStatements.Count != 0); //HACK: There might be mixins that build up items called exactly like the parent template..
 		}
 
 		public static bool TryGetImplicitProperty(TemplateType template, ResolutionContext ctxt, out AbstractType[] matchingChild)
@@ -40,10 +41,32 @@ namespace D_Parser.Resolver.Templates
 			var rawOverloads = template.Definition[template.Name];
 
 			// Pre-check version/debug conditions
-			var overloads = new List<INode>(rawOverloads.Count);
-			foreach(var oo in rawOverloads)
-				if(oo is DNode && ctxt.CurrentContext.MatchesDeclarationEnvironment((DNode)oo))
-				   overloads.Add(oo);
+			var overloads = new List<INode>();
+			if(rawOverloads!=null)
+				foreach(var oo in rawOverloads) //TODO: Private/Package check
+					if(oo is DNode && ctxt.CurrentContext.MatchesDeclarationEnvironment((DNode)oo))
+					   overloads.Add(oo);
+			
+			if(template.Definition.StaticStatements != null &&
+			   template.Definition.StaticStatements.Count != 0)
+			{
+				foreach(var ss in template.Definition.StaticStatements){
+					if(ss is MixinStatement && (
+						ss.Attributes == null || 
+						ctxt.CurrentContext.MatchesDeclarationEnvironment(ss.Attributes)))
+					{
+						var ast = MixinAnalysis.ParseMixinDeclaration((MixinStatement)ss, ctxt);
+						if(ast==null)
+							continue;
+						
+						rawOverloads = ast[template.Name];
+						if(rawOverloads != null)
+							foreach(var oo in rawOverloads) //TODO: Private/Package check
+								if(oo is DNode && ctxt.CurrentContext.MatchesDeclarationEnvironment((DNode)oo))
+								   overloads.Add(oo);
+					}
+				}
+			}
 			
 			// resolve them
 			var resolvedOverloads = TypeDeclarationResolver.HandleNodeMatches(overloads, ctxt, null, template.DeclarationOrExpressionBase);

@@ -851,5 +851,21 @@ void main()
 			x = TypeDeclarationResolver.ResolveIdentifier("y", ctxt, stmt);
 			Assert.That(x.Length, Is.EqualTo(0));
 		}
+		
+		[Test]
+		public void Mixins3()
+		{
+			var pcl = ResolutionTests.CreateCache(@"module A;
+template Temp(string v)
+{
+	mixin(v);
+}");
+			var A =pcl[0]["A"];
+			var ctxt = ResolutionTests.CreateDefCtxt(pcl, A);
+			
+			var ex = DParser.ParseExpression("Temp!\"int Temp;\"");
+			var x = Evaluation.EvaluateType(ex,ctxt);
+			Assert.That(x, Is.InstanceOf(typeof(MemberSymbol)));
+		}
 	}
 }

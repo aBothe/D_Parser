@@ -605,80 +605,32 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		/// </summary>
 		bool HandleMixin(MixinStatement mx, bool parseDeclDefs, MemberFilter vis)
 		{
-			ctxt.PushNewScope(mx.ParentNode as IBlockNode, mx);
-			
-			var x = mx.MixinExpression;
-			ISemantic v;
-			try // 'try' because there is always a risk of e.g. not having something implemented or having an evaluation exception...
+			// If in a class/module block => MixinDeclaration
+			if(parseDeclDefs)
 			{
-				// Evaluate the mixin expression
-				v = Evaluation.EvaluateValue(x, ctxt);
-				if(v is VariableValue)
-					v = Evaluation.EvaluateValue(x=((VariableValue)v).Variable.Initializer, ctxt);
-			}catch{ctxt.Pop(); return false;}
-			
-			ctxt.Pop();
-			
-			// Ensure it's a string literal
-			var av = v as ArrayValue;
-			if(av != null && av.IsString)
+				var ast = MixinAnalysis.ParseMixinDeclaration(mx, ctxt);
+				
+				if(ast ==null)
+					return false;
+				
+				// take ast.Endlocation because the cursor must be beyond the actual mixin expression 
+				// - and therewith _after_ each declaration
+				if(ctxt.ScopedBlock == mx.ParentNode.NodeRoot)
+					return ScanBlockUpward(ast, ast.EndLocation, vis);
+				else
+					return ScanImportedModule(ast, vis);
+			}
+			else // => MixinStatement
 			{
-				// If in a class/module block => MixinDeclaration
-				if(parseDeclDefs)
-				{
-					// parse it as a module
-					var ast = (DModule)DParser.ParseString(av.StringValue, true);
-					
-					foreach(var ch in ast){
-						if(mx.Attributes!=null)
-						{
-							var dn = ch as DNode;
-							if(dn!=null)
-							{
-								if(dn.Attributes==null)
-									dn.Attributes = new List<DAttribute>(mx.Attributes);
-								else
-									dn.Attributes.AddRange(mx.Attributes);
-							}
-						}
-						ch.Parent = mx.ParentNode;
-					}
-					
-					if(mx.Attributes!=null)
-					{
-						foreach(var ss in ast.StaticStatements)
-						{
-							if(ss.Attributes == null)
-								ss.Attributes = mx.Attributes;
-							else{
-								var attrs = new DAttribute[mx.Attributes.Length + ss.Attributes.Length];
-								mx.Attributes.CopyTo(attrs,0);
-								ss.Attributes.CopyTo(attrs,mx.Attributes.Length);
-							}
-						}
-					}
-					
-					// take ast.Endlocation because the cursor must be beyond the actual mixin expression 
-					// - and therewith _after_ each declaration
-					if(ctxt.ScopedBlock == mx.ParentNode.NodeRoot)
-						return ScanBlockUpward(ast, ast.EndLocation, vis);
-					else
-						return ScanImportedModule(ast, vis);
-				}
-				else // => MixinStatement
-				{
-					// parse it as a list of statements
-					var statements = DParser.ParseBlockStatement("{"+av.StringValue+"}", mx.ParentNode);
-					//statements.Parent = mx.Parent; //Dont' do this to avoid StackOverflows
-					
-					// as above, disregard the caret position because 1) caret and parsed code do not match 
-					// and 2) the caret must be located somewhere after the mixin statement's end
-					return IterateThroughItemHierarchy(statements, CodeLocation.Empty, vis);
-				}
+				var bs = MixinAnalysis.ParseMixinStatement(mx, ctxt);
+				
+				// As above, disregard the caret position because 1) caret and parsed code do not match 
+				// and 2) the caret must be located somewhere after the mixin statement's end
+				if(bs!=null)
+					return IterateThroughItemHierarchy(bs, CodeLocation.Empty, vis);
 			}
 			return false;
 		}
-		
 		#endregion
 	}
 }
