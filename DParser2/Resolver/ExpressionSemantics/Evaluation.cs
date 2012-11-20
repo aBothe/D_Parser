@@ -79,17 +79,18 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// HACK: SO prevention
 		/// </summary>
 		[ThreadStatic]
-		static int evaluationDepth = 0;
+		static uint evaluationDepth = 0;
 		
 		ISemantic E(IExpression x)
 		{
-			if(evaluationDepth > 20){
+			if(evaluationDepth > 10){
 				evaluationDepth = 0;
 				return null;
 			}
 			evaluationDepth++;
 			
 			ISemantic ret = null;
+			try{
 			if (x is Expression) // a,b,c;
 			{
 				var ex = (Expression)x;
@@ -136,9 +137,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			else if (x is PrimaryExpression)
 				ret= E((PrimaryExpression)x);
-
-			evaluationDepth--;
-			
+			}
+			finally{
+				if(evaluationDepth != 1)
+					evaluationDepth--;
+			}
 			return ret;
 		}
 
