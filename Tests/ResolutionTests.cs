@@ -789,5 +789,32 @@ else
 			x = TypeDeclarationResolver.ResolveIdentifier("y", ctxt, null);
 			Assert.That(x.Length, Is.EqualTo(1));
 		}
+		
+		[Test]
+		public void Mixins2()
+		{
+			var pcl = ResolutionTests.CreateCache(@"module A; 
+
+void main()
+{
+	mixin(""int x;"");
+	
+	derp;
+	
+	mixin(""int y;"");
+}
+");
+			
+			var A = pcl[0]["A"];
+			var main = A["main"][0] as DMethod;
+			var stmt = main.Body.SubStatements[1];
+			var ctxt = ResolutionTests.CreateDefCtxt(pcl, main, stmt);
+			
+			var x = TypeDeclarationResolver.ResolveIdentifier("x", ctxt, stmt);
+			Assert.That(x.Length, Is.EqualTo(1));
+			
+			x = TypeDeclarationResolver.ResolveIdentifier("y", ctxt, stmt);
+			Assert.That(x.Length, Is.EqualTo(0));
+		}
 	}
 }
