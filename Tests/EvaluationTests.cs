@@ -311,6 +311,20 @@ A a;");
 class A {}
 class B : A {}
 class C : A {}
+
+struct DynArg(int i) {
+        static assert (i >= 0);
+
+        alias i argNr;
+}
+
+template isDynArg(T) {
+        static if (is(typeof(T.argNr))) {                               // must have the argNr field
+                static if(is(T : DynArg!(T.argNr))) {           // now check the exact type
+                        static const bool isDynArg = true;
+                } else static const bool isDynArg = false;
+        } else static const bool isDynArg = false;
+}
 ");
 
 			var vp = new StandardValueProvider(ResolutionContext.Create(pcl, null,pcl[0]["modA"]));
@@ -327,6 +341,8 @@ class C : A {}
 			Assert.IsTrue(EvalIsExpression("immutable(char) == immutable", vp));
 			Assert.IsFalse(EvalIsExpression("string == immutable", vp));
 			Assert.IsTrue(EvalIsExpression("A == class", vp));
+			Assert.IsTrue(EvalIsExpression("typeof(A)", vp));
+			Assert.IsFalse(EvalIsExpression("typeof(D)", vp));
 		}
 	}
 }

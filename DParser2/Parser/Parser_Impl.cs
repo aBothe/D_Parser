@@ -1191,8 +1191,7 @@ namespace D_Parser.Parser
 						{
 							ITemplateParameter[] _unused2 = null;
 							List<INode> _unused = null;
-							List<DAttribute> _unused3 = new List<DAttribute>();
-							ttd = DeclaratorSuffixes(out _unused2, out _unused, _unused3);
+							ttd = DeclaratorSuffixes(out _unused2, out _unused, ref ret.Attributes);
 
 							if (ttd != null)
 							{
@@ -1238,7 +1237,7 @@ namespace D_Parser.Parser
 
 				// DeclaratorSuffixes
 				List<INode> _Parameters;
-				ttd = DeclaratorSuffixes(out ret.TemplateParameters, out _Parameters, ret.Attributes);
+				ttd = DeclaratorSuffixes(out ret.TemplateParameters, out _Parameters, ref ret.Attributes);
 				if (ttd != null)
 				{
 					ttd.InnerDeclaration = ret.Type;
@@ -1274,13 +1273,13 @@ namespace D_Parser.Parser
 		/// 
 		/// TemplateParameterList[opt] Parameters MemberFunctionAttributes[opt]
 		/// </summary>
-		ITypeDeclaration DeclaratorSuffixes(out ITemplateParameter[] TemplateParameters, out List<INode> _Parameters, List<DAttribute> attributes)
+		ITypeDeclaration DeclaratorSuffixes(out ITemplateParameter[] TemplateParameters, out List<INode> _Parameters,ref List<DAttribute> attributes)
 		{
 			ITypeDeclaration td = null;
 			TemplateParameters = null;
 			_Parameters = null;
 
-			FunctionAttributes(attributes);
+			FunctionAttributes(ref attributes);
 
 			while (laKind == (OpenSquareBracket))
 			{
@@ -1332,7 +1331,7 @@ namespace D_Parser.Parser
 				}*/
 			}
 
-			FunctionAttributes(attributes);
+			FunctionAttributes(ref attributes);
 			return td;
 		}
 
@@ -1433,8 +1432,11 @@ namespace D_Parser.Parser
 				{
 					List<INode> _unused = null;
 					ITemplateParameter[] _unused2 = null;
-					List<DAttribute> _unused3 = new List<DAttribute>();
-					DeclaratorSuffixes(out _unused2, out _unused,_unused3);
+					List<DAttribute> _unused3 = null;
+					DeclaratorSuffixes(out _unused2, out _unused,ref _unused3);
+					if(_unused3!=null)
+						foreach(var i in _unused3)
+							DeclarationAttributes.Push(i);
 				}
 				return td;
 			}
@@ -1542,9 +1544,13 @@ namespace D_Parser.Parser
 			var ret = Declarator(td,true, Scope);
 			ret.Location = startLocation;
 
-			if (attr.Count > 0) 
-				(ret as DNode).Attributes.AddRange(attr);
-
+			if (attr.Count > 0) {
+				if(ret.Attributes == null)
+					ret.Attributes = new List<DAttribute>(attr);
+				else
+					ret.Attributes.AddRange(attr);
+			}
+			
 			// DefaultInitializerExpression
 			if (laKind == (Assign))
 			{
@@ -1879,17 +1885,16 @@ namespace D_Parser.Parser
 			if (!MemberFunctionAttribute[laKind])
 				return;
 
-			if (n.Attributes == null)
-				n.Attributes = new List<DAttribute>();
-
-			FunctionAttributes(n.Attributes);
+			FunctionAttributes(ref n.Attributes);
 		}
 
-		void FunctionAttributes(List<DAttribute> attributes)
+		void FunctionAttributes(ref List<DAttribute> attributes)
 		{
 			Modifier attr = null;
 			while (MemberFunctionAttribute[laKind])
 			{
+                if (attributes == null)
+                    attributes = new List<DAttribute>();
 				attributes.Add(attr = new Modifier(laKind, la.Value) { Location = la.Location, EndLocation = la.EndLocation });
 				LastParsedObject = attr;
 				Step();
@@ -3871,6 +3876,8 @@ namespace D_Parser.Parser
 				if (laKind == Ref || laKind == InOut)
 				{
 					Step();
+					if(forEachVar.Attributes == null)
+						forEachVar.Attributes = new List<DAttribute>();
 					forEachVar.Attributes.Add(new Modifier(t.Kind));
 				}
 				
@@ -3891,7 +3898,11 @@ namespace D_Parser.Parser
 					var type = BasicType();
 					
 					var tnode = Declarator(type, false, Scope);
-					tnode.Attributes.AddRange(forEachVar.Attributes);
+					if(forEachVar.Attributes != null)
+						if(tnode.Attributes == null)
+							tnode.Attributes = new List<DAttribute>(forEachVar.Attributes);
+						else
+							tnode.Attributes.AddRange(forEachVar.Attributes);
 					tnode.Location = forEachVar.Location;
 					forEachVar = (DVariable)tnode;
 				}
@@ -4335,7 +4346,7 @@ namespace D_Parser.Parser
 			if (IsDeclaratorSuffix)
 			{
 				var _unused = new List<INode>();
-				var bt2=DeclaratorSuffixes(out mye.TemplateParameters, out _unused, mye.Attributes);
+				var bt2=DeclaratorSuffixes(out mye.TemplateParameters, out _unused, ref mye.Attributes);
 
 				if (bt2 != null)
 				{

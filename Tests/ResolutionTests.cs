@@ -777,6 +777,26 @@ else
 		}
 		
 		[Test]
+		public void DeclConditions2()
+		{
+			var pcl = ResolutionTests.CreateCache(@"module A;
+class cl{}",
+@"module B;
+version(Windows)
+	static if(!is(typeof(cl)))
+		import C;
+import A;
+",
+@"module C;
+class imp{}");
+			
+			var ctxt = CreateDefCtxt(pcl, pcl[0]["B"]);
+			
+			var x = TypeDeclarationResolver.ResolveIdentifier("imp",ctxt,null);
+			Assert.That(x.Length, Is.EqualTo(1));
+		}
+		
+		[Test]
 		public void Mixins1()
 		{
 			var pcl = ResolutionTests.CreateCache(@"module A;

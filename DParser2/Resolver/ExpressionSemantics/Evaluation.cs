@@ -83,7 +83,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		
 		ISemantic E(IExpression x)
 		{
-			if(evaluationDepth > 10){
+			if(evaluationDepth > 6){
 				evaluationDepth = 0;
 				return null;
 			}
