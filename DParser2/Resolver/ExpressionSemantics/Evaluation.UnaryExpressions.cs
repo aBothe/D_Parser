@@ -225,7 +225,19 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		ISemantic E(UnaryExpression_Not x)
 		{
-			return E(x.UnaryExpression);
+			var v = E(x.UnaryExpression);
+			
+			if(eval)
+			{
+				if(v is VariableValue)
+					v = ValueProvider[((VariableValue)v).Variable];
+				var pv = v as PrimitiveValue;
+				if(pv == null)
+					throw new EvaluationException(x.UnaryExpression, "Expression must be a primitive value",v);
+				
+				return new PrimitiveValue(!IsFalseZeroOrNull(pv),x);
+			}
+			return v;			
 		}
 
 		ISemantic E(UnaryExpression_Mul x)
