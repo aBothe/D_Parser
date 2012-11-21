@@ -782,17 +782,26 @@ else
 			var pcl = ResolutionTests.CreateCache(@"module A;
 class cl{}",
 @"module B;
-version(Windows)
-	static if(!is(typeof(cl)))
-		import C;
-import A;
+
+class home {}
+
+static if(!is(typeof(asd)))
+	import C;
+static if(is(typeof(home)))
+	import A;
+
+void bar();
 ",
 @"module C;
 class imp{}");
 			
-			var ctxt = CreateDefCtxt(pcl, pcl[0]["B"]);
+			var B = (DModule)pcl[0]["B"];
+			var ctxt = CreateDefCtxt(pcl, B["bar"][0] as DMethod);
 			
-			var x = TypeDeclarationResolver.ResolveIdentifier("imp",ctxt,null);
+			var x = TypeDeclarationResolver.ResolveIdentifier("imp",ctxt, null);
+			Assert.That(x.Length, Is.EqualTo(0));
+			
+			x = TypeDeclarationResolver.ResolveIdentifier("cl",ctxt,null);
 			Assert.That(x.Length, Is.EqualTo(1));
 		}
 		

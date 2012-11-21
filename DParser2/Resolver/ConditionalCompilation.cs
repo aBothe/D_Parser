@@ -11,6 +11,7 @@ namespace D_Parser.Resolver
 		{
 			public readonly ConditionalCompilationFlags GlobalFlags;
 			public ConditionalCompilationFlags LocalFlags;
+			List<DeclarationCondition> conditionsBeingChecked = new List<DeclarationCondition>();
 
 			public ConditionSet(ConditionalCompilationFlags gFLags, ConditionalCompilationFlags lFlags = null)
 			{
@@ -31,15 +32,39 @@ namespace D_Parser.Resolver
 			
 			public bool IsMatching(DeclarationCondition dc, ResolutionContext ctxt)
 			{
+				var r = true;
+
 				if(dc is NegatedDeclarationCondition)
 				{
-					if (!(GlobalFlags.IsMatching(dc,ctxt) && LocalFlags.IsMatching(dc,ctxt)))
-						return false;
+					var ng = (NegatedDeclarationCondition)dc;
+					if(ng.FirstCondition is StaticIfCondition){
+						if(!conditionsBeingChecked.Contains(ng.FirstCondition))
+							conditionsBeingChecked.Add(ng.FirstCondition);
+						else
+							return false;
+						
+						r = !GlobalFlags.IsMatching((StaticIfCondition)ng.FirstCondition, ctxt);
+						
+						conditionsBeingChecked.Remove(ng.FirstCondition);
+					}
+					else
+						r = (GlobalFlags.IsMatching(dc,ctxt) && LocalFlags.IsMatching(dc,ctxt));
 				}
-				else if(!(GlobalFlags.IsMatching(dc,ctxt) || LocalFlags.IsMatching(dc,ctxt)))
-					return false;
-				
-				return true;
+				else {
+					if(dc is StaticIfCondition){
+						if(!conditionsBeingChecked.Contains(dc))
+							conditionsBeingChecked.Add(dc);
+						else
+							return false;
+						
+						r = GlobalFlags.IsMatching((StaticIfCondition)dc, ctxt);
+						
+						conditionsBeingChecked.Remove(dc);
+					}
+					else
+						r = (GlobalFlags.IsMatching(dc,ctxt) || LocalFlags.IsMatching(dc,ctxt));
+				}
+				return r;
 			}
 		}
 
