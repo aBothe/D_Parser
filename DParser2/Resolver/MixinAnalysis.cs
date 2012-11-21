@@ -12,14 +12,22 @@ namespace D_Parser.Resolver
 	/// </summary>
 	public class MixinAnalysis
 	{
+		static List<MixinStatement> stmtsBeingAnalysed = new List<MixinStatement>();
+		
 		static string GetMixinContent(MixinStatement mx, ResolutionContext ctxt)
 		{
+			lock(stmtsBeingAnalysed)
+			{
+				if(stmtsBeingAnalysed.Contains(mx))
+					return null;
+				stmtsBeingAnalysed.Add(mx);
+			}
 			bool pop;
 			if(pop = ctxt.ScopedBlock != mx.ParentNode)
 				ctxt.PushNewScope(mx.ParentNode as IBlockNode, mx);
 			
 			var x = mx.MixinExpression;
-			ISemantic v;
+			ISemantic v = null;
 			try // 'try' because there is always a risk of e.g. not having something implemented or having an evaluation exception...
 			{
 				// Evaluate the mixin expression
@@ -27,12 +35,10 @@ namespace D_Parser.Resolver
 				if(v is VariableValue)
 					v = Evaluation.EvaluateValue(x=((VariableValue)v).Variable.Initializer, ctxt);
 			}
-			catch
-			{
-				if(pop) 
-					ctxt.Pop(); 
-				return null;
-			}
+			catch{}
+			
+			lock(stmtsBeingAnalysed)
+				stmtsBeingAnalysed.Remove(mx);
 			
 			if(pop) 
 				ctxt.Pop();
