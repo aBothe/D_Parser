@@ -16,12 +16,24 @@ Everything that still needs to be handled by D_Parser comes right in here:
 CTFE caching concept:
 
 Store a tuple of input values and the returned value.
-Calculate hash sum of a method.
+->	Calculate hash sum of a method.
 
 
 Mixin caching:
 
-Cache expression string
+- Inter-parsing caching:
+->	Calculate a hash of the mixed-in expression:
+	-> [Done] Overload all GetHashCode() methods of expression classes
+
+- Avoid re-analyzing mixins during one resolution (including sub-resolutions):
+->	Store a tuple of the template parameters (param name => param node) which were introduced 
+	in the res context (so far until PrevContextIsInSameHierarchy is false) 
+	and the actual mixin string/ast/blockstatement
+->	Reuse the mixin if all template parameters do match
+
+- Parsing the mixin string is fast:
+- It's needed to cache the mixin string then
+- Optimize string concatination --- Pass string builder instance between concat operations?
 
 =======================================
 

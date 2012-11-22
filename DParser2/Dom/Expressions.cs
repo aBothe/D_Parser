@@ -46,6 +46,20 @@ namespace D_Parser.Dom.Expressions
 
 		public abstract void Accept(ExpressionVisitor v);
 		public abstract R Accept<R>(ExpressionVisitor<R> v);
+		
+		public override int GetHashCode()
+		{
+			int hashCode = 0;
+			unchecked {
+				if (LeftOperand != null)
+					hashCode += 1000000007 * LeftOperand.GetHashCode();
+				if (RightOperand != null)
+					hashCode += 1000000009 * RightOperand.GetHashCode();
+				hashCode += 1000000021 * OperatorToken.GetHashCode();
+			}
+			return hashCode;
+		}
+
 	}
 
 	public class Expression : IExpression, IEnumerable<IExpression>, ContainerExpression
@@ -92,6 +106,18 @@ namespace D_Parser.Dom.Expressions
 
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
+		
+		public override int GetHashCode()
+		{
+			int hashCode = 0;
+			unchecked {
+				if (Expressions != null && Expressions.Count > 0)
+					for(int i = Expressions.Count; i!=0;)
+						hashCode += 1000000007 * i * Expressions[--i].GetHashCode();
+			}
+			return hashCode;
+		}
+
 	}
 
 	/// <summary>
@@ -139,6 +165,21 @@ namespace D_Parser.Dom.Expressions
 
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
+		
+		public override int GetHashCode()
+		{
+			int hashCode = 0;
+			unchecked {
+				if (OrOrExpression != null)
+					hashCode += 1000000007 * OrOrExpression.GetHashCode();
+				if (TrueCaseExpression != null)
+					hashCode += 1000000009 * TrueCaseExpression.GetHashCode();
+				if (FalseCaseExpression != null)
+					hashCode += 1000000021 * FalseCaseExpression.GetHashCode();
+			}
+			return hashCode;
+		}
+
 	}
 
 	/// <summary>
@@ -223,6 +264,15 @@ namespace D_Parser.Dom.Expressions
 
 		public override void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public override R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
+		
+		public override int GetHashCode()
+		{
+			int hashCode = base.GetHashCode();
+			unchecked {
+				hashCode += 1000000007 * Not.GetHashCode();
+			}
+			return hashCode;
+		}
 	}
 
 	/// <summary>
@@ -252,6 +302,15 @@ namespace D_Parser.Dom.Expressions
 
 		public override void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public override R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
+		
+		public override int GetHashCode()
+		{
+			int hashCode = base.GetHashCode();
+			unchecked {
+				hashCode += 1000000007 * Not.GetHashCode();
+			}
+			return hashCode;
+		}
 	}
 
 	/// <summary>
@@ -336,6 +395,18 @@ namespace D_Parser.Dom.Expressions
 
 		public abstract void Accept(ExpressionVisitor vis);
 		public abstract R Accept<R>(ExpressionVisitor<R> vis);
+		
+		public override int GetHashCode()
+		{
+			int hashCode;
+			unchecked {
+				hashCode = 1000000007 * ForeToken;
+				if (UnaryExpression != null)
+					hashCode += 1000000009 * UnaryExpression.GetHashCode();
+			}
+			return hashCode;
+		}
+
 	}
 
 	/// <summary>
@@ -467,6 +538,19 @@ namespace D_Parser.Dom.Expressions
 
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
+		
+		public override int GetHashCode()
+		{
+			int hashCode = 0;
+			unchecked {
+				if (Type != null)
+					hashCode += 1000000007 * Type.GetHashCode();
+				if (AccessIdentifier != null)
+					hashCode += 1000000009 * AccessIdentifier.GetHashCode();
+			}
+			return hashCode;
+		}
+
 	}
 
 
@@ -542,6 +626,23 @@ namespace D_Parser.Dom.Expressions
 
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
+		
+		public override int GetHashCode()
+		{
+			int hashCode = 0;
+			unchecked {
+				if (Type != null)
+					hashCode += 1000000007 * Type.GetHashCode();
+				if (NewArguments != null && NewArguments.Length != 0)
+					for(int i = NewArguments.Length; i!= 0;)
+						hashCode += 1000000009 * i * NewArguments[--i].GetHashCode();
+				if (Arguments != null && Arguments.Length != 0)
+					for(int i = Arguments.Length; i!= 0;)
+						hashCode += 1000000021 * i * Arguments[--i].GetHashCode();
+			}
+			return hashCode;
+		}
+
 	}
 
 	/// <summary>
@@ -628,6 +729,22 @@ namespace D_Parser.Dom.Expressions
 
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
+		
+		public override int GetHashCode()
+		{
+			int hashCode = 0;
+			unchecked {
+				if (NewArguments != null)
+					for(int i = NewArguments.Length; i!= 0;)
+						hashCode += 1000000007 * i * NewArguments[--i].GetHashCode();
+				if (AnonymousClass != null)
+					hashCode += 1000000009 * AnonymousClass.GetHashCode();
+				for(int i = ClassArguments.Length; i!= 0;)
+						hashCode += 1000000021 * i * ClassArguments[--i].GetHashCode();
+			}
+			return hashCode;
+		}
+
 	}
 
 	public class DeleteExpression : SimpleUnaryExpression
@@ -698,6 +815,22 @@ namespace D_Parser.Dom.Expressions
 
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
+		
+		public override int GetHashCode()
+		{
+			int hashCode = 0;
+			unchecked {
+				if (UnaryExpression != null)
+					hashCode += 1000000007 * UnaryExpression.GetHashCode();
+				if (Type != null)
+					hashCode += 1000000009 * Type.ToString().GetHashCode();
+				if (CastParamTokens != null && CastParamTokens.Length != 0)
+					for(int i= CastParamTokens.Length; i!=0;)
+						hashCode += 1000000021 * i * CastParamTokens[--i].GetHashCode();
+			}
+			return hashCode;
+		}
+
 	}
 
 	public abstract class PostfixExpression : IExpression, ContainerExpression
@@ -718,6 +851,17 @@ namespace D_Parser.Dom.Expressions
 
 		public abstract void Accept(ExpressionVisitor vis);
 		public abstract R Accept<R>(ExpressionVisitor<R> vis);
+		
+		public override int GetHashCode()
+		{
+			int hashCode = 0;
+			unchecked {
+				if (PostfixForeExpression != null)
+					hashCode += 1000000007 * PostfixForeExpression.GetHashCode();
+			}
+			return hashCode;
+		}
+
 	}
 
 	/// <summary>
@@ -761,6 +905,16 @@ namespace D_Parser.Dom.Expressions
 
 		public override void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public override R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
+		
+		public override int GetHashCode()
+		{
+			int hashCode = base.GetHashCode();
+			unchecked {
+				if (AccessExpression != null)
+					hashCode += 1000000009 * AccessExpression.GetHashCode();
+			}
+			return hashCode;
+		}
 	}
 
 	public class PostfixExpression_Increment : PostfixExpression
@@ -778,6 +932,15 @@ namespace D_Parser.Dom.Expressions
 
 		public override void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public override R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
+		
+		public override int GetHashCode()
+		{
+			var hashCode = base.GetHashCode();
+			unchecked {
+				hashCode += 1000000021;
+			}
+			return hashCode;
+		}
 	}
 
 	public class PostfixExpression_Decrement : PostfixExpression
@@ -795,6 +958,15 @@ namespace D_Parser.Dom.Expressions
 
 		public override void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public override R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
+		
+		public override int GetHashCode()
+		{
+			var hashCode = base.GetHashCode();
+			unchecked {
+				hashCode += 1000000021;
+			}
+			return hashCode;
+		}
 	}
 
 	/// <summary>
@@ -845,6 +1017,17 @@ namespace D_Parser.Dom.Expressions
 
 		public override void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public override R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
+		
+		public override int GetHashCode()
+		{
+			var hashCode = base.GetHashCode();
+			unchecked {
+				if(Arguments!=null)
+					for(int i = Arguments.Length; i!=0;)
+						hashCode += 1000000038 * i * Arguments[--i].GetHashCode();
+			}
+			return hashCode;
+		}
 	}
 
 	/// <summary>
@@ -891,6 +1074,17 @@ namespace D_Parser.Dom.Expressions
 
 		public override void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public override R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
+		
+		public override int GetHashCode()
+		{
+			var hashCode = base.GetHashCode();
+			unchecked {
+				if(Arguments!=null)
+					for(int i = Arguments.Length; i!=0;)
+						hashCode += 1000000083 * i * Arguments[--i].GetHashCode();
+			}
+			return hashCode;
+		}
 	}
 
 
@@ -938,6 +1132,19 @@ namespace D_Parser.Dom.Expressions
 
 		public override void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public override R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
+		
+		public override int GetHashCode()
+		{
+			int hashCode = base.GetHashCode();
+			unchecked {
+				if (FromExpression != null)
+					hashCode += 1000000007 * FromExpression.GetHashCode();
+				if (ToExpression != null)
+					hashCode += 1000000009 * ToExpression.GetHashCode();
+			}
+			return hashCode;
+		}
+
 	}
 
 	#region Primary Expressions
@@ -982,6 +1189,20 @@ namespace D_Parser.Dom.Expressions
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
 		public override void Accept(TypeDeclarationVisitor vis) {	vis.Visit(this); }
 		public override R Accept<R>(TypeDeclarationVisitor<R> vis) { return vis.Visit(this); }
+		
+		public override int GetHashCode()
+		{
+			int hashCode = 0;
+			unchecked {
+				if (TemplateIdentifier != null)
+					hashCode += 1000000007 * TemplateIdentifier.GetHashCode();
+				if (Arguments != null)
+					for(int i = Arguments.Length; i != 0;)
+						hashCode += 1000000009 * i * Arguments[--i].GetHashCode();
+			}
+			return hashCode;
+		}
+
 	}
 
 	/// <summary>
@@ -1032,6 +1253,20 @@ namespace D_Parser.Dom.Expressions
 
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
+		
+		public override int GetHashCode()
+		{
+			int hashCode = 0;
+			unchecked {
+				hashCode += 1000000007 * ModuleScoped.GetHashCode();
+				if (Value != null)
+					hashCode += 1000000009 * Value.GetHashCode();
+				hashCode += 1000000021 * Format.GetHashCode();
+				hashCode += 1000000033 * Subformat.GetHashCode();
+			}
+			return hashCode;
+		}
+
 	}
 
 	public class TokenExpression : PrimaryExpression
@@ -1060,6 +1295,14 @@ namespace D_Parser.Dom.Expressions
 
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
+		
+		public override int GetHashCode()
+		{
+			unchecked {
+				return 1000000007 * Token.GetHashCode();
+			}
+		}
+
 	}
 
 	/// <summary>
@@ -1089,6 +1332,16 @@ namespace D_Parser.Dom.Expressions
 
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
+		
+		public override int GetHashCode()
+		{
+			unchecked {
+				if (Declaration != null)
+					return 1000000007 * Declaration.GetHashCode();
+			}
+			return 0;
+		}
+
 	}
 
 	/// <summary>
@@ -1134,6 +1387,18 @@ namespace D_Parser.Dom.Expressions
 
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
+		
+		public override int GetHashCode()
+		{
+			int hashCode = DTokens.OpenSquareBracket; // because it's like an Expression
+			unchecked {
+				if (Elements != null)
+					for(int i = Elements.Count; i!=0;)
+						hashCode += 1000000007 * i * Elements[--i].GetHashCode();
+			}
+			return hashCode;
+		}
+
 	}
 
 	/// <summary>
@@ -1183,6 +1448,21 @@ namespace D_Parser.Dom.Expressions
 
 		public virtual void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public virtual R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
+		
+		public override int GetHashCode()
+		{
+			int hashCode = 0;
+			unchecked {
+				if (Elements != null && Elements.Count != 0)
+					foreach(var e in Elements)
+					{
+						hashCode += 1000000007 * e.Key.GetHashCode();
+						hashCode += 1000000009 * e.Value.GetHashCode();
+					}
+			}
+			return hashCode;
+		}
+
 	}
 
 	public class FunctionLiteral : PrimaryExpression
@@ -1241,6 +1521,19 @@ namespace D_Parser.Dom.Expressions
 
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
+		
+		public override int GetHashCode()
+		{
+			int hashCode = 0;
+			unchecked {
+				hashCode += 1000000007 * LiteralToken.GetHashCode();
+				hashCode += 1000000009 * IsLambda.GetHashCode();
+				if (AnonymousMethod != null) //TODO: Hash entire method bodies?
+					hashCode += 1000000021 * AnonymousMethod.GetHashCode();
+			}
+			return hashCode;
+		}
+
 	}
 
 	public class AssertExpression : PrimaryExpression,ContainerExpression
@@ -1276,6 +1569,18 @@ namespace D_Parser.Dom.Expressions
 
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
+		
+		public override int GetHashCode()
+		{
+			int hashCode = 0;
+			unchecked {
+				if (AssignExpressions != null)
+					for(int i = AssignExpressions.Length; i!=0;)
+						hashCode += 1000000007 * i * AssignExpressions[i].GetHashCode();
+			}
+			return hashCode;
+		}
+
 	}
 
 	public class MixinExpression : PrimaryExpression,ContainerExpression
@@ -1306,6 +1611,17 @@ namespace D_Parser.Dom.Expressions
 
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
+		
+		public override int GetHashCode()
+		{
+			int hashCode = DTokens.Mixin;
+			unchecked {
+				if (AssignExpression != null)
+					hashCode += 1000000007 * AssignExpression.GetHashCode();
+			}
+			return hashCode;
+		}
+
 	}
 
 	public class ImportExpression : PrimaryExpression,ContainerExpression
@@ -1336,6 +1652,17 @@ namespace D_Parser.Dom.Expressions
 
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
+		
+		public override int GetHashCode()
+		{
+			int hashCode = DTokens.Import;
+			unchecked {
+				if (AssignExpression != null)
+					hashCode += 1000000007 * AssignExpression.GetHashCode();
+			}
+			return hashCode;
+		}
+
 	}
 
 	public class TypeidExpression : PrimaryExpression,ContainerExpression
@@ -1373,6 +1700,19 @@ namespace D_Parser.Dom.Expressions
 
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
+		
+		public override int GetHashCode()
+		{
+			int hashCode = DTokens.Typeid;
+			unchecked {
+				if (Type != null)
+					hashCode += 1000000007 * Type.GetHashCode();
+				if (Expression != null)
+					hashCode += 1000000009 * Expression.GetHashCode();
+			}
+			return hashCode;
+		}
+
 	}
 
 	public class IsExpression : PrimaryExpression,ContainerExpression
@@ -1457,6 +1797,28 @@ namespace D_Parser.Dom.Expressions
 
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
+		
+		public override int GetHashCode()
+		{
+			int hashCode = DTokens.Is;
+			unchecked {
+				if (TestedType != null)
+					hashCode += 1000000007 * TestedType.GetHashCode();
+				if (TypeAliasIdentifier != null)
+					hashCode += 1000000009 * TypeAliasIdentifier.GetHashCode();
+				if (ptp != null)//TODO: Create hash functions of template type parameters
+					hashCode += 1000000021 * ptp.ToString().GetHashCode();
+				hashCode += 1000000033 * EqualityTest.GetHashCode();
+				if (TypeSpecialization != null)
+					hashCode += 1000000087 * TypeSpecialization.GetHashCode();
+				hashCode += 1000000093 * TypeSpecializationToken.GetHashCode();
+				if (TemplateParameterList != null)
+					for(int i=TemplateParameterList.Length; i!=0;)
+						hashCode += 1000000097 * i * TemplateParameterList[--i].GetHashCode();
+			}
+			return hashCode;
+		}
+
 	}
 
 	public class TraitsExpression : PrimaryExpression
@@ -1490,6 +1852,23 @@ namespace D_Parser.Dom.Expressions
 
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
+		
+		public override int GetHashCode()
+		{
+			int hashCode = DTokens.__traits;
+			unchecked {
+				if (Keyword != null)
+					hashCode += 1000000007 * Keyword.GetHashCode();
+				if (Arguments != null)
+				{
+					int i=1;
+					foreach(var arg in Arguments)
+						hashCode += 1000000009 * i++ * arg.GetHashCode();
+				}
+			}
+			return hashCode;
+		}
+
 	}
 
 	public class TraitsArgument : ISyntaxRegion, IVisitable<ExpressionVisitor>
@@ -1523,6 +1902,19 @@ namespace D_Parser.Dom.Expressions
 		{
 			return vis.Visit(this);
 		}
+		
+		public override int GetHashCode()
+		{
+			int hashCode = 0;
+			unchecked {
+				if (Type != null)
+					hashCode += 1000000007 * Type.GetHashCode();
+				if (AssignExpression != null)
+					hashCode += 1000000009 * AssignExpression.GetHashCode();
+			}
+			return hashCode;
+		}
+
 	}
 
 	/// <summary>
@@ -1556,6 +1948,17 @@ namespace D_Parser.Dom.Expressions
 
 		public void Accept(ExpressionVisitor vis) {	vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
+		
+		public override int GetHashCode()
+		{
+			int hashCode = DTokens.OpenParenthesis;
+			unchecked {
+				if (Expression != null)
+					hashCode += 1000000007 * Expression.GetHashCode();
+			}
+			return hashCode;
+		}
+
 	}
 	#endregion
 
@@ -1565,6 +1968,7 @@ namespace D_Parser.Dom.Expressions
 
 	public abstract class AbstractVariableInitializer : IVariableInitializer,IExpression
 	{
+		public const int AbstractInitializerHash = 1234;
 		public CodeLocation Location
 		{
 			get;
@@ -1587,11 +1991,21 @@ namespace D_Parser.Dom.Expressions
 
 		public override void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public override R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
+		
+		public override int GetHashCode()
+		{
+			return AbstractInitializerHash + DTokens.Void;
+		}
 	}
 
 	public class ArrayInitializer : AssocArrayExpression,IVariableInitializer {
 		public override void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public override R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
+		
+		public override int GetHashCode()
+		{
+			return AbstractVariableInitializer.AbstractInitializerHash + base.GetHashCode();
+		}
 	}
 
 	public class StructInitializer : AbstractVariableInitializer, ContainerExpression
@@ -1627,6 +2041,18 @@ namespace D_Parser.Dom.Expressions
 
 		public override void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public override R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
+		
+		public override int GetHashCode()
+		{
+			int hashCode = AbstractInitializerHash + DTokens.Struct + DTokens.OpenCurlyBrace;
+			unchecked {
+				if (MemberInitializers != null)
+					for(int i = MemberInitializers.Length; i!=0;)
+						hashCode += 1000000007 * i * MemberInitializers[--i].GetHashCode();
+			}
+			return hashCode;
+		}
+
 	}
 
 	public class StructMemberInitializer : ISyntaxRegion, IVisitable<ExpressionVisitor>
@@ -1660,6 +2086,19 @@ namespace D_Parser.Dom.Expressions
 		{
 			return vis.Visit(this);
 		}
+		
+		public override int GetHashCode()
+		{
+			int hashCode = AbstractVariableInitializer.AbstractInitializerHash;
+			unchecked {
+				if (MemberName != null)
+					hashCode += 1000000007 * MemberName.GetHashCode();
+				if (Value != null)
+					hashCode += 1000000009 * Value.GetHashCode();
+			}
+			return hashCode;
+		}
+
 	}
 	#endregion
 }
