@@ -14,8 +14,9 @@ namespace D_Parser.Resolver
 	{
 		static List<MixinStatement> stmtsBeingAnalysed = new List<MixinStatement>();
 		
-		static string GetMixinContent(MixinStatement mx, ResolutionContext ctxt)
+		static string GetMixinContent(MixinStatement mx, ResolutionContext ctxt,out ISyntaxRegion cachedContent)
 		{
+			cachedContent = null;
 			lock(stmtsBeingAnalysed)
 			{
 				if(stmtsBeingAnalysed.Contains(mx))
@@ -25,6 +26,26 @@ namespace D_Parser.Resolver
 			bool pop;
 			if(pop = ctxt.ScopedBlock != mx.ParentNode)
 				ctxt.PushNewScope(mx.ParentNode as IBlockNode, mx);
+			
+			var tStk = new Stack<ContextFrame>();
+			while(ctxt.CurrentContext != null)
+			{
+				if(ctxt.CurrentContext.MixinCache.TryGetValue(mx,out cachedContent) ||
+				  !ctxt.PrevContextIsInSameHierarchy)
+					break;
+				tStk.Push(ctxt.Pop());
+			}
+			for(int i = tStk.Count; i!=0;i--)
+				ctxt.Push(tStk.Pop());
+			
+			if(cachedContent != null)
+			{
+				lock(stmtsBeingAnalysed)
+					stmtsBeingAnalysed.Remove(mx);
+				if(pop)
+					ctxt.Pop();
+				return null;
+			}
 			
 			var x = mx.MixinExpression;
 			ISemantic v = null;
@@ -53,16 +74,27 @@ namespace D_Parser.Resolver
 		
 		public static BlockStatement ParseMixinStatement(MixinStatement mx, ResolutionContext ctxt)
 		{
-			var literal = GetMixinContent(mx, ctxt);
+			ISyntaxRegion sr;
+			var literal = GetMixinContent(mx, ctxt, out sr);
 			
-			return literal == null ? null : (BlockStatement)DParser.ParseBlockStatement("{"+literal+"}", mx.ParentNode);
+			if(sr is BlockStatement)
+				return (BlockStatement)sr;
+			else if(literal == null)
+				return null;
+			
+			var bs = (BlockStatement)DParser.ParseBlockStatement("{"+literal+"}", mx.ParentNode);
+			ctxt.CurrentContext.MixinCache[mx]=bs;
+			return bs;
 		}
 		
 		public static DModule ParseMixinDeclaration(MixinStatement mx, ResolutionContext ctxt)
 		{
-			var literal = GetMixinContent(mx, ctxt);
+			ISyntaxRegion sr;
+			var literal = GetMixinContent(mx, ctxt, out sr);
 			
-			if(literal == null)
+			if(sr is DModule)
+				return (DModule)sr;
+			else if(literal == null)
 				return null;
 			
 			var ast = (DModule)DParser.ParseString(literal, true);
@@ -98,6 +130,7 @@ namespace D_Parser.Resolver
 					}
 				}
 			
+			ctxt.CurrentContext.MixinCache[mx]=ast;
 			return ast;
 		}
 	}

@@ -21,9 +21,13 @@ Store a tuple of input values and the returned value.
 
 Mixin caching:
 
+mixin("some A"~cnstA~ctfeSomeThing(23,T));
+
 - Inter-parsing caching:
-->	Calculate a hash of the mixed-in expression:
-	-> [Done] Overload all GetHashCode() methods of expression classes
+	->	Calculate a hash of the mixed-in expression
+	Store Mixin Hash => 
+		[ParsedStatement/ParsedAst, 
+		Executed CTFE functions (method hash; arg hashes are included in the mixin hash already)]
 
 - Avoid re-analyzing mixins during one resolution (including sub-resolutions):
 ->	Store a tuple of the template parameters (param name => param node) which were introduced 
@@ -34,6 +38,10 @@ Mixin caching:
 - Parsing the mixin string is fast:
 - It's needed to cache the mixin string then
 - Optimize string concatination --- Pass string builder instance between concat operations?
+
+Evaluation caching:
+	While evaluating an expression,
+		store all accessed symbols and the hash of the e 
 
 =======================================
 

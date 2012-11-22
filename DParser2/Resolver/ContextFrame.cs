@@ -17,6 +17,8 @@ namespace D_Parser.Resolver
 		
 		public IBlockNode ScopedBlock{get{ return scopedBlock; }}
 		public IStatement ScopedStatement{get{return scopedStmt;}}
+		
+		internal Dictionary<MixinStatement,ISyntaxRegion> MixinCache = new Dictionary<MixinStatement,ISyntaxRegion>();
 		#endregion
 		
 		public ContextFrame(ResolutionContext ctxt, IBlockNode b, IStatement stmt = null)
@@ -86,5 +88,4 @@ namespace D_Parser.Resolver
 			return scopedBlock.ToString() + " // " + (scopedStmt == null ? "" : scopedStmt.ToString());
 		}
 	}
-
 }
