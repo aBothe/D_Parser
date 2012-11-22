@@ -806,6 +806,48 @@ class imp{}");
 		}
 		
 		[Test]
+		public void DeclConstraints3()
+		{
+			var pcl = CreateCache(@"module A;
+class cl(T) if(is(T==int))
+{}
+
+class aa(T) if(is(T==float)) {}
+class aa(T) if(is(T==int)) {}");
+			var A = pcl[0]["A"];
+			var ctxt = CreateDefCtxt(pcl, A);
+			
+			var x = TypeDeclarationResolver.Resolve(new IdentifierDeclaration("cl"),ctxt,null,true);
+			Assert.That(x, Is.Null);
+			
+			var ex = DParser.ParseAssignExpression("cl!int");
+			x = Evaluation.EvaluateTypes(ex, ctxt);
+			Assert.That(x.Length, Is.EqualTo(1));
+			
+			ex = DParser.ParseAssignExpression("cl!float");
+			x = Evaluation.EvaluateTypes(ex, ctxt);
+			Assert.That(x, Is.Null);
+			
+			ex = DParser.ParseAssignExpression("aa!float");
+			x = Evaluation.EvaluateTypes(ex, ctxt);
+			Assert.That(x.Length, Is.EqualTo(1));
+			var t = x[0] as ClassType;
+			Assert.That(t, Is.Not.Null);
+			Assert.That(t.Definition, Is.EqualTo(A["aa"][0]));
+			
+			ex = DParser.ParseAssignExpression("aa!int");
+			x = Evaluation.EvaluateTypes(ex, ctxt);
+			Assert.That(x.Length, Is.EqualTo(1));
+			t = x[0] as ClassType;
+			Assert.That(t, Is.Not.Null);
+			Assert.That(t.Definition, Is.EqualTo(A["aa"][1]));
+			
+			ex = DParser.ParseAssignExpression("aa!string");
+			x = Evaluation.EvaluateTypes(ex, ctxt);
+			Assert.That(x, Is.Null);
+		}
+		
+		[Test]
 		public void Mixins1()
 		{
 			var pcl = ResolutionTests.CreateCache(@"module A;

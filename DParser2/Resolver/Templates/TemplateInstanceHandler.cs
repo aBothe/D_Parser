@@ -101,6 +101,32 @@ namespace D_Parser.Resolver.TypeResolution
 				sortedAndFilteredOverloads = new[] { filteredOverloads[0] };
 			else
 				return null;
+			
+			if(sortedAndFilteredOverloads!=null)
+			{
+				filteredOverloads.Clear();
+				foreach(var oo in sortedAndFilteredOverloads)
+				{
+					var ds = oo as DSymbol;
+					if(ds != null && ds.Definition.TemplateConstraint != null)
+					{
+						ctxt.CurrentContext.IntroduceTemplateParameterTypes(ds);
+						try{
+							var v = Evaluation.EvaluateValue(ds.Definition.TemplateConstraint, ctxt);
+							if(v is VariableValue)
+								v = new StandardValueProvider(ctxt)[((VariableValue)v).Variable];
+							if(!Evaluation.IsFalseZeroOrNull(v))
+								filteredOverloads.Add(ds);
+						}catch{} //TODO: Handle eval exceptions
+						ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(ds);
+					}
+					else
+						filteredOverloads.Add(oo);
+				}
+				if(filteredOverloads.Count == 0)
+					return null;
+				sortedAndFilteredOverloads = filteredOverloads.ToArray();
+			}
 
 			if (sortedAndFilteredOverloads != null &&
 				sortedAndFilteredOverloads.Length == 1 && 
