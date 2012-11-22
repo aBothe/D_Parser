@@ -67,7 +67,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (t is InternalOverloadValue)
 				return ((InternalOverloadValue)t).Overloads;
 
-			return new[]{ AbstractType.Get(t) };
+			return t == null ? null : new[]{ AbstractType.Get(t) };
 		}
 
 		public static AbstractType EvaluateType(IExpression x, ResolutionContext ctxt)
@@ -151,7 +151,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (pv != null)
 				try
 				{
-					return !Convert.ToBoolean(pv.Value);
+					return pv.Value == 0m;
 				}
 				catch { }
 			else

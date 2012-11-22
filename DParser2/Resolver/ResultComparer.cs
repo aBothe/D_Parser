@@ -18,6 +18,11 @@ namespace D_Parser.Resolver
 		/// </summary>
 		public static bool IsEqual(ISemantic r1, ISemantic r2)
 		{
+			if(r1 is TemplateParameterSymbol)
+				r1 = ((TemplateParameterSymbol)r1).Base;
+			if(r2 is TemplateParameterSymbol)
+				r2 = ((TemplateParameterSymbol)r2).Base;
+			
 			if (r1 is ISymbolValue && r2 is ISymbolValue)
 				return SymbolValueComparer.IsEqual((ISymbolValue)r1, (ISymbolValue)r2);
 
