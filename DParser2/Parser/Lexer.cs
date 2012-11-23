@@ -19,10 +19,10 @@ namespace D_Parser.Parser
 		DToken peekToken = null;
 
 		StringBuilder sb = new StringBuilder();
-		/// <summary>
+		/// <asummary>
 		/// used for the original value of strings (with escape sequences).
-		/// </summary>
-		StringBuilder originalValue = new StringBuilder();
+		/// </asummary>
+		//StringBuilder originalValue = new StringBuilder();
 		char[] escapeSequenceBuffer = new char[12];
 
 		// The C# compiler has a fixed size length therefore we'll use a fixed size char array for identifiers
@@ -75,7 +75,7 @@ namespace D_Parser.Parser
 		{
 			reader = null;
 			prevToken = curToken = lookaheadToken = peekToken = null;
-			sb = originalValue = null;
+			//sb = originalValue = null;
 			escapeSequenceBuffer = null;
 			identBuffer = null;
 			LexerErrors = null;
@@ -419,7 +419,7 @@ namespace D_Parser.Parser
 						x = Col - 1;
 						y = Line;
 						var lit = ReadEscapeSequence(out ch, out surr);
-						token = new DToken(DTokens.Literal, x, y, lit.Length + 1, lit, ch.ToString(), LiteralFormat.StringLiteral);
+						token = new DToken(DTokens.Literal, x, y, lit.Length + 1, lit/*, ch.ToString()*/, LiteralFormat.StringLiteral);
 						OnError(y, x, "Escape sequence strings are deprecated!");
 						break;
 					case '\'':
@@ -473,7 +473,7 @@ namespace D_Parser.Parser
 										break;
 								}
 
-								return new DToken(DTokens.Literal, Col - 1, Line, numString.Length + 1, ParseFloatValue(numString, 16), numString, LiteralFormat.Scalar);
+								return new DToken(DTokens.Literal, Col - 1, Line, numString.Length + 1, ParseFloatValue(numString, 16), /*numString,*/ LiteralFormat.Scalar);
 							}
 						}
 						else if (ch == 'q') // Token strings
@@ -561,7 +561,7 @@ namespace D_Parser.Parser
 									}
 								}
 
-								return new DToken(DTokens.Literal, x, y, Col, Line, tokenString, tokenString, LiteralFormat.VerbatimStringLiteral);
+								return new DToken(DTokens.Literal, x, y, Col, Line, tokenString, /*tokenString,*/ LiteralFormat.VerbatimStringLiteral);
 							}
 						}
 
@@ -612,7 +612,7 @@ namespace D_Parser.Parser
 									if (literalFormat != 0)
 										return new DToken(DTokens.Literal, x, y, s.Length,
 											literalValue,
-											literalValue is string ? (string)literalValue : literalValue.ToString(),
+											//literalValue is string ? (string)literalValue : literalValue.ToString(),
 											literalFormat,
 											subFormat);
 								}
@@ -964,7 +964,7 @@ namespace D_Parser.Parser
 
 				#endregion
 
-				token = new DToken(DTokens.Literal, x, y, stringValue.Length, val, stringValue,
+				token = new DToken(DTokens.Literal, x, y, stringValue.Length, val,/* stringValue,*/
 					subFmt.HasFlag(LiteralSubformat.Float) || subFmt.HasFlag(LiteralSubformat.Imaginary) || HasDot ?
 						(LiteralFormat.FloatingPoint | LiteralFormat.Scalar) :
 						LiteralFormat.Scalar,
@@ -983,8 +983,8 @@ namespace D_Parser.Parser
 			int y = Line;
 
 			sb.Length = 0;
-			originalValue.Length = 0;
-			originalValue.Append((char)initialChar);
+			//originalValue.Length = 0;
+			//originalValue.Append((char)initialChar);
 			bool doneNormally = false;
 			int nextChar;
 			var subFmt = LiteralSubformat.Utf8;
@@ -995,7 +995,7 @@ namespace D_Parser.Parser
 				if (nextChar == initialChar)
 				{
 					doneNormally = true;
-					originalValue.Append((char)nextChar);
+					//originalValue.Append((char)nextChar);
 					// Skip string literals
 					ch = (char)this.ReaderPeek();
 					if (ch == 'c' || ch == 'w' || ch == 'd')
@@ -1011,10 +1011,11 @@ namespace D_Parser.Parser
 				HandleLineEnd(ch);
 				if (ch == '\\')
 				{
-					originalValue.Append('\\');
+					//originalValue.Append('\\');
 					string surrogatePair;
 
-					originalValue.Append(ReadEscapeSequence(out ch, out surrogatePair));
+					//originalValue.Append(ReadEscapeSequence(out ch, out surrogatePair));
+					ReadEscapeSequence(out ch, out surrogatePair);
 					if (surrogatePair != null)
 					{
 						sb.Append(surrogatePair);
@@ -1026,7 +1027,7 @@ namespace D_Parser.Parser
 				}
 				else
 				{
-					originalValue.Append(ch);
+					//originalValue.Append(ch);
 					sb.Append(ch);
 				}
 			}
@@ -1036,24 +1037,24 @@ namespace D_Parser.Parser
 				OnError(y, x, String.Format("End of file reached inside string literal"));
 			}
 
-			return new DToken(DTokens.Literal, x, y, Col, Line, originalValue.ToString(), sb.ToString(), LiteralFormat.StringLiteral, subFmt);
+			return new DToken(DTokens.Literal, x, y, Col, Line, /*originalValue.ToString(),*/ sb.ToString(), LiteralFormat.StringLiteral, subFmt);
 		}
 
 		DToken ReadVerbatimString(int EndingChar)
 		{
 			sb.Length = 0;
-			originalValue.Length = 0;
+			//originalValue.Length = 0;
 			int x = Col - 2; // r and " already read
 			int y = Line;
 			int nextChar;
 
 			if (EndingChar == (int)'"')
 			{
-				originalValue.Append("r\"");
+				//originalValue.Append("r\"");
 			}
 			else
 			{
-				originalValue.Append((char)EndingChar);
+				//originalValue.Append((char)EndingChar);
 				x = Col - 1;
 			}
 			while ((nextChar = ReaderRead()) != -1)
@@ -1064,23 +1065,22 @@ namespace D_Parser.Parser
 				{
 					if (ReaderPeek() != (char)EndingChar)
 					{
-						originalValue.Append((char)EndingChar);
+						//originalValue.Append((char)EndingChar);
 						break;
 					}
-					originalValue.Append((char)EndingChar);
-					originalValue.Append((char)EndingChar);
+					//originalValue.Append((char)EndingChar);					originalValue.Append((char)EndingChar);
 					sb.Append((char)EndingChar);
 					ReaderRead();
 				}
 				else if (HandleLineEnd(ch))
 				{
 					sb.Append("\r\n");
-					originalValue.Append("\r\n");
+					//originalValue.Append("\r\n");
 				}
 				else
 				{
 					sb.Append(ch);
-					originalValue.Append(ch);
+					//originalValue.Append(ch);
 				}
 			}
 
@@ -1103,7 +1103,7 @@ namespace D_Parser.Parser
 				}
 			}
 
-			return new DToken(DTokens.Literal, x, y, Col, Line, originalValue.ToString(), sb.ToString(), LiteralFormat.VerbatimStringLiteral, subFmt);
+			return new DToken(DTokens.Literal, x, y, Col, Line, /*originalValue.ToString(),*/ sb.ToString(), LiteralFormat.VerbatimStringLiteral, subFmt);
 		}
 
 		/// <summary>
@@ -1346,7 +1346,7 @@ namespace D_Parser.Parser
 					OnError(y, x, String.Format("Char not terminated"));
 				}
 			}
-			return new DToken(DTokens.Literal, x, y, Col, Line, string.IsNullOrEmpty(surrogatePair) ? (object)chValue : surrogatePair, "'" + ch + escapeSequence + "'", LiteralFormat.CharLiteral);
+			return new DToken(DTokens.Literal, x, y, Col, Line, string.IsNullOrEmpty(surrogatePair) ? (object)chValue : surrogatePair/*, "'" + ch + escapeSequence + "'"*/, LiteralFormat.CharLiteral);
 		}
 
 		DToken ReadOperator(char ch)

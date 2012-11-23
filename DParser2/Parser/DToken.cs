@@ -48,20 +48,19 @@ namespace D_Parser.Parser
 		/// </summary>
 		public readonly LiteralSubformat Subformat;
         public readonly object LiteralValue;
-        public readonly string Value;
+        //public readonly string Value;
+        public string Value {get{return LiteralValue as string;}}
         internal DToken next;
 
 		public DToken Next
 		{
 			get { return next; }
-		}
-
-		
+		}		
 		#endregion
 
 		#region Constructors
 		public DToken(int kind, int startLocation_Col, int startLocation_Line, int tokenLength,
-			object literalValue, string value, LiteralFormat literalFormat = 0, LiteralSubformat literalSubFormat = 0)
+			object literalValue,/* string value,*/ LiteralFormat literalFormat = 0, LiteralSubformat literalSubFormat = 0)
 		{
 			Line = startLocation_Line;
 			Location = new CodeLocation(startLocation_Col, startLocation_Line);
@@ -71,11 +70,11 @@ namespace D_Parser.Parser
 			LiteralFormat = literalFormat;
 			Subformat = literalSubFormat;
 			LiteralValue = literalValue;
-			Value = value;
+			//Value = value;
 		}
 
 		public DToken(int kind, int startLocation_Col, int startLocation_Line, int endLocation_Col, int endLocation_Line,
-			object literalValue, string value, LiteralFormat literalFormat = 0, LiteralSubformat literalSubFormat = 0)
+			object literalValue,/* string value,*/ LiteralFormat literalFormat = 0, LiteralSubformat literalSubFormat = 0)
 		{
 			Line = startLocation_Line;
 			Location = new CodeLocation(startLocation_Col, startLocation_Line);
@@ -85,7 +84,7 @@ namespace D_Parser.Parser
 			LiteralFormat = literalFormat;
 			Subformat = literalSubFormat;
 			LiteralValue = literalValue;
-			Value = value;
+			//Value = value;
 		}
 
 		public DToken(int kind, int startLocation_Col, int startLocation_Line, int tokenLength = 1)
@@ -104,7 +103,8 @@ namespace D_Parser.Parser
 			Line = line;
 			Location = new CodeLocation(col,line);
 			EndLocation = new CodeLocation(col + (val == null ? 1 : val.Length), line);
-			Value = val;
+			LiteralValue = val;
+			//Value = val;
 		}
 		#endregion
 
