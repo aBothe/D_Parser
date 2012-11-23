@@ -329,5 +329,13 @@ void foo()
 
 			Assert.AreEqual(0, m.ParseErrors.Count);
 		}
+		
+		[Test]
+		public void AliasInitializerList()
+		{
+			var m = DParser.ParseString(@"alias str = immutable(char)[]");
+
+			Assert.AreEqual(0, m.ParseErrors.Count);
+		}
 	}
 }

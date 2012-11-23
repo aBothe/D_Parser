@@ -697,34 +697,56 @@ namespace D_Parser.Parser
 			// Enum possible storage class attributes
 			bool HasStorageClassModifiers = CheckForStorageClasses(Scope as DBlockNode);
 
+			#region Aliases
 			if (laKind == (Alias) || laKind == Typedef)
 			{
 				Step();
 				// _t is just a synthetic node which holds possible following attributes
 				var _t = new DVariable();
 				ApplyAttributes(_t);
+				_t.Description = GetComments();
 
 				// AliasThis
-				if (laKind == Identifier && Lexer.CurrentPeekToken.Kind == This)
+				bool secondWay=false;
+				if ((laKind == Identifier && Lexer.CurrentPeekToken.Kind == This) ||
+				    (secondWay=(laKind == This && Lexer.CurrentPeekToken.Kind == Assign)))
 				{
                     var dv = new DVariable { 
-                        Description = GetComments(),
+                        Description = _t.Description,
                         Location=t.Location, 
                         IsAlias=true, 
                         Name="this",
-						Parent = Scope
+						Parent = Scope,
+						Attributes = _t.Attributes
                     };
 					LastParsedObject = dv;
-
-                    Step();
-                    dv.Type = new IdentifierDeclaration(t.Value)
-                    {
-                        Location=t.Location, 
-                        EndLocation=t.EndLocation 
-                    };
-
-                    Step();
-                    dv.NameLocation = t.Location;
+					
+					// alias this = Identifier
+					if(secondWay)
+					{
+						Step(); // Step beyond 'this'
+						Step(); // Step beyong '='
+						if(Expect(Identifier))
+						{
+							dv.Type= new IdentifierDeclaration(t.Value)
+							{
+								Location = dv.NameLocation = t.Location,
+								EndLocation = t.EndLocation
+							};
+						}
+					}
+					else
+					{
+	                    Step(); // Step beyond Identifier
+	                    dv.Type = new IdentifierDeclaration(t.Value)
+	                    {
+	                        Location=dv.NameLocation =t.Location, 
+	                        EndLocation=t.EndLocation 
+	                    };
+	
+	                    Step(); // Step beyond 'this'
+					}
+                    
 					dv.EndLocation = t.EndLocation;
 					
 					Expect(Semicolon);
@@ -732,21 +754,49 @@ namespace D_Parser.Parser
 
 					return new[]{dv};
 				}
-
-				var decls=Decl(HasStorageClassModifiers,Scope);
-
-				if(decls!=null && decls.Length>0)
-					foreach (var n in decls)
-					{
-						if (n is DNode)
-							((DNode)n).Attributes.AddRange(_t.Attributes);
-
-						if (n is DVariable)
-							((DVariable)n).IsAlias = true;
+				
+				// AliasInitializerList
+				else if(laKind == Identifier && Lexer.CurrentPeekToken.Kind == Assign)
+				{
+					var decls = new List<INode>();
+					do{
+						Expect(Identifier);
+						var dv = new DVariable{
+							IsAlias = true,
+							Attributes = _t.Attributes,
+							Description = _t.Description,
+							Name = t.Value,
+							NameLocation = t.Location,
+							Location = t.Location,
+							Parent = Scope
+						};
+						if(Expect(Assign))
+							dv.Type = Type();
+						decls.Add(dv);
 					}
+					while(laKind == Comma);
+					
+					decls[decls.Count-1].Description += CheckForPostSemicolonComment();
+					return decls.ToArray();
+				}
+				else // alias BasicType Declarator
+				{
+					var decls=Decl(HasStorageClassModifiers,Scope);
 
-				return decls;
+					if(decls!=null && decls.Length>0){
+						foreach (var n in decls)
+							if (n is DVariable){
+								((DNode)n).Attributes.AddRange(_t.Attributes);
+								((DVariable)n).IsAlias = true;
+							}
+						
+						decls[decls.Length-1].Description += CheckForPostSemicolonComment();
+					}
+					return decls;
+				}
 			}
+			#endregion
+			
 			else if (laKind == (Struct) || laKind == (Union))
 				return new[]{ AggregateDeclaration(Scope)};
 			else if (laKind == Enum)
@@ -837,7 +887,7 @@ namespace D_Parser.Parser
 			firstNode.Description = initialComment;
 			firstNode.Location = startLocation;
 
-			ApplyAttributes(firstNode as DNode);
+			ApplyAttributes(firstNode);
 
 			// Check for declaration constraints
 			if (laKind == (If))
