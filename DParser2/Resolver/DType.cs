@@ -22,12 +22,12 @@ namespace D_Parser.Resolver
 		/// </summary>
 		public virtual ITypeDeclaration TypeDeclarationOf{get{	return DeclarationOrExpressionBase as ITypeDeclaration;	}}
 
-		protected int modifier;
+		protected byte modifier;
 
 		/// <summary>
 		/// e.g. const, immutable
 		/// </summary>
-		public virtual int Modifier
+		public virtual byte Modifier
 		{
 			get
 			{
@@ -75,15 +75,15 @@ namespace D_Parser.Resolver
 
 	public class PrimitiveType : AbstractType
 	{
-		public readonly int TypeToken;
+		public readonly byte TypeToken;
 
-		public PrimitiveType(int TypeToken, int Modifier = 0)
+		public PrimitiveType(byte TypeToken, byte Modifier = 0)
 		{
 			this.TypeToken = TypeToken;
 			this.modifier = Modifier;
 		}
 
-		public PrimitiveType(int TypeToken, int Modifier, ISyntaxRegion td)
+		public PrimitiveType(byte TypeToken, byte Modifier, ISyntaxRegion td)
 			: base(td)
 		{
 			this.TypeToken = TypeToken;

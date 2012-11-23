@@ -7,7 +7,7 @@ namespace D_Parser.Completion
 		/// <summary>
 		/// Adds a token entry
 		/// </summary>
-		void Add(int Token);
+		void Add(byte Token);
 
 		/// <summary>
 		/// Adds a property attribute

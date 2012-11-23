@@ -27,17 +27,17 @@ namespace D_Parser.Dom
     /// </summary>
     public class Modifier : DAttribute
     {
-        public int Token;
+        public byte Token;
         public object LiteralContent;
-        public static readonly Modifier Empty = new Modifier(-1);
+        public static readonly Modifier Empty = new Modifier(0xff);
 
-        public Modifier(int Token)
+        public Modifier(byte Token)
         {
             this.Token = Token;
             LiteralContent = null;
         }
 
-        public Modifier(int Token, object Content)
+        public Modifier(byte Token, object Content)
         {
             this.Token = Token;
             this.LiteralContent = Content;

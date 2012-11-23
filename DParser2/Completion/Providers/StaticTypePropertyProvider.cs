@@ -104,7 +104,7 @@ namespace D_Parser.Resolver
 		/// <summary>
 		/// Adds init, max, min to the completion list
 		/// </summary>
-		public static void AddIntegralTypeProperties(int TypeToken, ISemantic rr, ICompletionDataGenerator cdg, INode relatedNode = null, bool DontAddInitProperty = false)
+		public static void AddIntegralTypeProperties(byte TypeToken, ISemantic rr, ICompletionDataGenerator cdg, INode relatedNode = null, bool DontAddInitProperty = false)
 		{
 			var intType = new DTokenDeclaration(TypeToken);
 
@@ -125,7 +125,7 @@ namespace D_Parser.Resolver
 			CreateArtificialProperties(IntegralProps, cdg, intType);
 		}
 
-		public static void AddFloatingTypeProperties(int TypeToken, ISemantic rr, ICompletionDataGenerator cdg, INode relatedNode = null, bool DontAddInitProperty = false)
+		public static void AddFloatingTypeProperties(byte TypeToken, ISemantic rr, ICompletionDataGenerator cdg, INode relatedNode = null, bool DontAddInitProperty = false)
 		{
 			var intType = new DTokenDeclaration(TypeToken);
 

@@ -8,227 +8,227 @@ namespace D_Parser.Parser
     public class DTokens
     {
         // ----- terminal classes -----
-        public const int EOF = 0;
-        public const int Identifier = 1;
-        public const int Literal = 2;
+        public const byte EOF = 0;
+        public const byte Identifier = 1;
+        public const byte Literal = 2;
 
         // ----- special character -----
-        public const int Assign = 3;
-        public const int Plus = 4;
-        public const int Minus = 5;
-        public const int Times = 6;
-        public const int Div = 7;
-        public const int Mod = 8;
-        public const int Colon = 9;
-        public const int DoubleDot = 10; // ..
-        public const int Semicolon = 11;
-        public const int Question = 12;
-        public const int Dollar = 13;
-        public const int Comma = 14;
-        public const int Dot = 15;
-        public const int OpenCurlyBrace = 16;
-        public const int CloseCurlyBrace = 17;
-        public const int OpenSquareBracket = 18;
-        public const int CloseSquareBracket = 19;
-        public const int OpenParenthesis = 20;
-        public const int CloseParenthesis = 21;
-        public const int GreaterThan = 22;
-        public const int LessThan = 23;
-        public const int Not = 24;
-        public const int LogicalAnd = 25;
-        public const int LogicalOr = 26;
-        public const int Tilde = 27;
-        public const int BitwiseAnd = 28;
-        public const int BitwiseOr = 29;
-        public const int Xor = 30;
-        public const int Increment = 31;
-        public const int Decrement = 32;
-        public const int Equal = 33;
-        public const int NotEqual = 34;
-        public const int GreaterEqual = 35;
-        public const int LessEqual = 36;
-        public const int ShiftLeft = 37;
-        public const int PlusAssign = 38;
-        public const int MinusAssign = 39;
-        public const int TimesAssign = 40;
-        public const int DivAssign = 41;
-        public const int ModAssign = 42;
-        public const int BitwiseAndAssign = 43;
-        public const int BitwiseOrAssign = 44;
-        public const int XorAssign = 45;
-        public const int ShiftLeftAssign = 46;
-        public const int TildeAssign = 47;
-        public const int ShiftRightAssign = 48;
-        public const int TripleRightShiftAssign = 49;
+        public const byte Assign = 3;
+        public const byte Plus = 4;
+        public const byte Minus = 5;
+        public const byte Times = 6;
+        public const byte Div = 7;
+        public const byte Mod = 8;
+        public const byte Colon = 9;
+        public const byte DoubleDot = 10; // ..
+        public const byte Semicolon = 11;
+        public const byte Question = 12;
+        public const byte Dollar = 13;
+        public const byte Comma = 14;
+        public const byte Dot = 15;
+        public const byte OpenCurlyBrace = 16;
+        public const byte CloseCurlyBrace = 17;
+        public const byte OpenSquareBracket = 18;
+        public const byte CloseSquareBracket = 19;
+        public const byte OpenParenthesis = 20;
+        public const byte CloseParenthesis = 21;
+        public const byte GreaterThan = 22;
+        public const byte LessThan = 23;
+        public const byte Not = 24;
+        public const byte LogicalAnd = 25;
+        public const byte LogicalOr = 26;
+        public const byte Tilde = 27;
+        public const byte BitwiseAnd = 28;
+        public const byte BitwiseOr = 29;
+        public const byte Xor = 30;
+        public const byte Increment = 31;
+        public const byte Decrement = 32;
+        public const byte Equal = 33;
+        public const byte NotEqual = 34;
+        public const byte GreaterEqual = 35;
+        public const byte LessEqual = 36;
+        public const byte ShiftLeft = 37;
+        public const byte PlusAssign = 38;
+        public const byte MinusAssign = 39;
+        public const byte TimesAssign = 40;
+        public const byte DivAssign = 41;
+        public const byte ModAssign = 42;
+        public const byte BitwiseAndAssign = 43;
+        public const byte BitwiseOrAssign = 44;
+        public const byte XorAssign = 45;
+        public const byte ShiftLeftAssign = 46;
+        public const byte TildeAssign = 47;
+        public const byte ShiftRightAssign = 48;
+        public const byte TripleRightShiftAssign = 49;
 
         // ----- keywords -----
-        public const int Align = 50;
-        public const int Asm = 51;
-        public const int Assert = 52;
-        public const int Auto = 53;
-        public const int Body = 54;
-        public const int Bool = 55;
-        public const int Break = 56;
-        public const int Byte = 57;
-        public const int Case = 58;
-        public const int Cast = 59;
-        public const int Catch = 60;
-        public const int Cdouble = 61;
-        public const int Cent = 62;
-        public const int Cfloat = 63;
-        public const int Char = 64;
-        public const int Class = 65;
-        public const int Const = 66;
-        public const int Continue = 67;
-        public const int Creal = 68;
-        public const int Dchar = 69;
-        public const int Debug = 70;
-        public const int Default = 71;
-        public const int Delegate = 72;
-        public const int Delete = 73;
-        public const int Deprecated = 74;
-        public const int Do = 75;
-        public const int Double = 76;
-        public const int Else = 77;
-        public const int Enum = 78;
-        public const int Export = 79;
-        public const int Extern = 80;
-        public const int False = 81;
-        public const int Final = 82;
-        public const int Finally = 83;
-        public const int Float = 84;
-        public const int For = 85;
-        public const int Foreach = 86;
-        public const int Foreach_Reverse = 87;
-        public const int Function = 88;
-        public const int Goto = 89;
-        public const int Idouble = 90;
-        public const int If = 91;
-        public const int Ifloat = 92;
-        public const int Import = 93;
-        public const int Immutable = 94;
-        public const int In = 95;
-        public const int InOut = 96;
-        public const int Int = 97;
-        public const int Interface = 98;
-        public const int Invariant = 99;
-        public const int Ireal = 100;
-        public const int Is = 101;
-        public const int Lazy = 102;
-        public const int Long = 103;
-        public const int empty1 = 104;
-        public const int Mixin = 105;
-        public const int Module = 106;
-        public const int New = 107;
-        public const int Nothrow = 108;
-        public const int Null = 109;
-        public const int Out = 110;
-        public const int Override = 111;
-        public const int Package = 112;
-        public const int Pragma = 113;
-        public const int Private = 114;
-        public const int Protected = 115;
-        public const int Public = 116;
-        public const int Pure = 117;
-        public const int Real = 118;
-        public const int Ref = 119;
-        public const int Return = 120;
-        public const int Scope = 121;
-        public const int Shared = 122;
-        public const int Short = 123;
-        public const int Static = 124;
-        public const int Struct = 125;
-        public const int Super = 126;
-        public const int Switch = 127;
-        public const int Synchronized = 128;
-        public const int Template = 129;
-        public const int This = 130;
-        public const int Throw = 131;
-        public const int True = 132;
-        public const int Try = 133;
-        public const int Typedef = 134;
-        public const int Typeid = 135;
-        public const int Typeof = 136;
-        public const int Ubyte = 137;
-        public const int Ucent = 138;
-        public const int Uint = 139;
-        public const int Ulong = 140;
-        public const int Union = 141;
-        public const int Unittest = 142;
-        public const int Ushort = 143;
-        public const int Version = 144;
-        public const int Void = 145;
-        public const int Volatile = 146;
-        public const int Wchar = 147;
-        public const int While = 148;
-        public const int With = 149;
-        public const int __gshared = 150;
-        //public const int __thread = 151;
-        public const int __traits = 152;
-        public const int Abstract = 153;
-        public const int Alias = 154;
-        public const int PropertyAttribute = 155;
-        public const int GoesTo = 156; // =>  (lambda expressions)
-        public const int INVALID = 157;
-        public const int __vector = 158;
+        public const byte Align = 50;
+        public const byte Asm = 51;
+        public const byte Assert = 52;
+        public const byte Auto = 53;
+        public const byte Body = 54;
+        public const byte Bool = 55;
+        public const byte Break = 56;
+        public const byte Byte = 57;
+        public const byte Case = 58;
+        public const byte Cast = 59;
+        public const byte Catch = 60;
+        public const byte Cdouble = 61;
+        public const byte Cent = 62;
+        public const byte Cfloat = 63;
+        public const byte Char = 64;
+        public const byte Class = 65;
+        public const byte Const = 66;
+        public const byte Continue = 67;
+        public const byte Creal = 68;
+        public const byte Dchar = 69;
+        public const byte Debug = 70;
+        public const byte Default = 71;
+        public const byte Delegate = 72;
+        public const byte Delete = 73;
+        public const byte Deprecated = 74;
+        public const byte Do = 75;
+        public const byte Double = 76;
+        public const byte Else = 77;
+        public const byte Enum = 78;
+        public const byte Export = 79;
+        public const byte Extern = 80;
+        public const byte False = 81;
+        public const byte Final = 82;
+        public const byte Finally = 83;
+        public const byte Float = 84;
+        public const byte For = 85;
+        public const byte Foreach = 86;
+        public const byte Foreach_Reverse = 87;
+        public const byte Function = 88;
+        public const byte Goto = 89;
+        public const byte Idouble = 90;
+        public const byte If = 91;
+        public const byte Ifloat = 92;
+        public const byte Import = 93;
+        public const byte Immutable = 94;
+        public const byte In = 95;
+        public const byte InOut = 96;
+        public const byte Int = 97;
+        public const byte Interface = 98;
+        public const byte Invariant = 99;
+        public const byte Ireal = 100;
+        public const byte Is = 101;
+        public const byte Lazy = 102;
+        public const byte Long = 103;
+        public const byte empty1 = 104;
+        public const byte Mixin = 105;
+        public const byte Module = 106;
+        public const byte New = 107;
+        public const byte Nothrow = 108;
+        public const byte Null = 109;
+        public const byte Out = 110;
+        public const byte Override = 111;
+        public const byte Package = 112;
+        public const byte Pragma = 113;
+        public const byte Private = 114;
+        public const byte Protected = 115;
+        public const byte Public = 116;
+        public const byte Pure = 117;
+        public const byte Real = 118;
+        public const byte Ref = 119;
+        public const byte Return = 120;
+        public const byte Scope = 121;
+        public const byte Shared = 122;
+        public const byte Short = 123;
+        public const byte Static = 124;
+        public const byte Struct = 125;
+        public const byte Super = 126;
+        public const byte Switch = 127;
+        public const byte Synchronized = 128;
+        public const byte Template = 129;
+        public const byte This = 130;
+        public const byte Throw = 131;
+        public const byte True = 132;
+        public const byte Try = 133;
+        public const byte Typedef = 134;
+        public const byte Typeid = 135;
+        public const byte Typeof = 136;
+        public const byte Ubyte = 137;
+        public const byte Ucent = 138;
+        public const byte Uint = 139;
+        public const byte Ulong = 140;
+        public const byte Union = 141;
+        public const byte Unittest = 142;
+        public const byte Ushort = 143;
+        public const byte Version = 144;
+        public const byte Void = 145;
+        public const byte Volatile = 146;
+        public const byte Wchar = 147;
+        public const byte While = 148;
+        public const byte With = 149;
+        public const byte __gshared = 150;
+        //public const byte __thread = 151;
+        public const byte __traits = 152;
+        public const byte Abstract = 153;
+        public const byte Alias = 154;
+        public const byte PropertyAttribute = 155;
+        public const byte GoesTo = 156; // =>  (lambda expressions)
+        public const byte INVALID = 157;
+        public const byte __vector = 158;
 
         // Additional operators
 		/// <summary>
 		/// ^^=
 		/// </summary>
-        public const int PowAssign = 159;
+        public const byte PowAssign = 159;
 		/// <summary>
 		/// !&lt;&gt;=
 		/// </summary>
-        public const int Unordered = 160;
+        public const byte Unordered = 160;
 		/// <summary>
 		/// !&lt;&gt;
 		/// </summary>
-        public const int UnorderedOrEqual = 161;
-        public const int LessOrGreater = 162; // <>
-        public const int LessEqualOrGreater = 163; // <>=
-        public const int UnorderedGreaterOrEqual = 164; // !<
-        public const int UnorderedOrLess = 165; // !>=
+        public const byte UnorderedOrEqual = 161;
+        public const byte LessOrGreater = 162; // <>
+        public const byte LessEqualOrGreater = 163; // <>=
+        public const byte UnorderedGreaterOrEqual = 164; // !<
+        public const byte UnorderedOrLess = 165; // !>=
 		/// <summary>
 		/// !&gt;
 		/// </summary>
-        public const int UnorderedLessOrEqual = 166; // !>
-        public const int UnorderedOrGreater = 167; // !<=
+        public const byte UnorderedLessOrEqual = 166; // !>
+        public const byte UnorderedOrGreater = 167; // !<=
 		/// <summary>
 		/// &gt;&gt;
 		/// </summary>
-        public const int ShiftRight = 168; // >>
+        public const byte ShiftRight = 168; // >>
 		/// <summary>
 		/// &gt;&gt;&gt;
 		/// </summary>
-        public const int ShiftRightUnsigned = 169;
-        public const int Pow = 170; // ^^
+        public const byte ShiftRightUnsigned = 169;
+        public const byte Pow = 170; // ^^
 
-        public const int TripleDot = 171; // ...
+        public const byte TripleDot = 171; // ...
 
 		// Meta tokens
-        public const int __VERSION__ = 172;
-        public const int __FILE__ = 173;
-        public const int __LINE__ = 174;
-        public const int __EOF__ = 175;
+        public const byte __VERSION__ = 172;
+        public const byte __FILE__ = 173;
+        public const byte __LINE__ = 174;
+        public const byte __EOF__ = 175;
 
-		public const int __DATE__ = 176;
-		public const int __TIME__ = 177;
-		public const int __TIMESTAMP__ = 178;
-		public const int __VENDOR__ = 179;
+		public const byte __DATE__ = 176;
+		public const byte __TIME__ = 177;
+		public const byte __TIMESTAMP__ = 178;
+		public const byte __VENDOR__ = 179;
 
-        public const int MaxToken = 180;
-        public static BitArray NewSet(params int[] values)
+        public const byte MaxToken = 180;
+        public static BitArray NewSet(params byte[] values)
         {
             BitArray bitArray = new BitArray(MaxToken);
-            foreach (int val in values)
+            foreach (byte val in values)
             {
                 bitArray[val] = true;
             }
             return bitArray;
         }
 
-        public static readonly Dictionary<int, string> Keywords = new Dictionary<int, string>
+        public static readonly Dictionary<byte, string> Keywords = new Dictionary<byte, string>
         {
             {__gshared,"__gshared"},
            // {__thread,	    "__thread"},
@@ -364,7 +364,7 @@ namespace D_Parser.Parser
     {While,	"while"},
     {With,	"with"}
         };
-		public static Dictionary<string, int> Keywords_Lookup = new Dictionary<string, int>();
+		public static Dictionary<string, byte> Keywords_Lookup = new Dictionary<string, byte>();
 
 		static DTokens()
 		{
@@ -377,7 +377,7 @@ namespace D_Parser.Parser
         public static BitArray ParamModifiers = NewSet(In, Out, InOut, Ref, Lazy, Scope);
         public static BitArray ClassLike = NewSet(Class, Template, Interface, Struct, Union);
 
-		public static int[] BasicTypes_Array = new[] { Bool, Byte, Ubyte, Short, Ushort, Int, Uint, Long, Ulong, Char, Wchar, Dchar, Float, Double, Real, Ifloat, Idouble, Ireal, Cfloat, Cdouble, Creal, Void };
+		public static byte[] BasicTypes_Array = new[] { Bool, Byte, Ubyte, Short, Ushort, Int, Uint, Long, Ulong, Char, Wchar, Dchar, Float, Double, Real, Ifloat, Idouble, Ireal, Cfloat, Cdouble, Creal, Void };
 
         public static BitArray BasicTypes = NewSet(Bool, Byte, Ubyte, Short, Ushort, Int, Uint, Long, Ulong, Char, Wchar, Dchar, Float, Double, Real, Ifloat, Idouble, Ireal, Cfloat, Cdouble, Creal, Void);
 
@@ -480,7 +480,7 @@ namespace D_Parser.Parser
         }
 
 
-        public static bool ContainsVisMod(List<int> mods)
+        public static bool ContainsVisMod(List<byte> mods)
         {
             return
             mods.Contains(Public) ||
@@ -489,7 +489,7 @@ namespace D_Parser.Parser
             mods.Contains(Protected);
         }
 
-        public static void RemoveVisMod(List<int> mods)
+        public static void RemoveVisMod(List<byte> mods)
         {
             while (mods.Contains(Public))
                 mods.Remove(Public);
@@ -501,7 +501,7 @@ namespace D_Parser.Parser
                 mods.Remove(Package);
         }
 
-		static Dictionary<int, string> NonKeywords = new Dictionary<int, string> {
+		static Dictionary<byte, string> NonKeywords = new Dictionary<byte, string> {
 			// Meta
 			{INVALID,"<Invalid Token>"},
 			{EOF,"<EOF>"},
@@ -586,7 +586,7 @@ namespace D_Parser.Parser
 			{GoesTo,"=>"}
 		};
 
-        public static string GetTokenString(int token)
+        public static string GetTokenString(byte token)
         {
 			if (Keywords.ContainsKey(token))
 				return Keywords[token];
@@ -596,9 +596,9 @@ namespace D_Parser.Parser
 			return "<Unknown>";
         }
 
-        public static int GetTokenID(string token)
+        public static byte GetTokenID(string token)
         {
-			int k = -1;
+			byte k;
 			if (Keywords_Lookup.TryGetValue(token, out k) || token == null || token.Length < 1)
 				return k;
 
@@ -606,7 +606,7 @@ namespace D_Parser.Parser
 				if (kv.Value == token)
 					return kv.Key;
 
-            return -1;
+            return INVALID;
         }
 
         public static string GetDescription(string token)
@@ -692,7 +692,7 @@ Sys­tem func­tions are not co­vari­ant with trusted or safe func­tions.";
             return GetDescription(GetTokenID(token));
         }
 
-        public static string GetDescription(int token)
+        public static string GetDescription(byte token)
         {
             switch (token)
             {

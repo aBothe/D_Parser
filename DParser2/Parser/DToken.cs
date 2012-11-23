@@ -4,7 +4,7 @@ using D_Parser.Dom;
 namespace D_Parser.Parser
 {
 	[Flags]
-	public enum LiteralFormat
+	public enum LiteralFormat : byte
 	{
 		None = 0,
 		Scalar = 1,
@@ -15,7 +15,7 @@ namespace D_Parser.Parser
 	}
 
 	[Flags]
-	public enum LiteralSubformat
+	public enum LiteralSubformat : ushort
 	{
 		None = 0,
 
@@ -37,10 +37,19 @@ namespace D_Parser.Parser
 	{
 		#region Properties
 		public readonly int Line;
-		public readonly CodeLocation Location;
-		public readonly CodeLocation EndLocation;
+		public readonly int Column;
+		public readonly ushort EndLineDifference; // A token shouldn't be greater than 65536, right?
+		public readonly int EndColumn;
+		public CodeLocation Location
+		{
+			get{return new CodeLocation(Column, Line);}
+		}
+		public CodeLocation EndLocation
+		{
+			get{return new CodeLocation(EndColumn, Line+EndLineDifference);}
+		}
 
-		public readonly int Kind;
+		public readonly byte Kind;
         public readonly LiteralFormat LiteralFormat;
 		/// <summary>
 		/// Used for scalar, floating and string literals.
@@ -59,12 +68,12 @@ namespace D_Parser.Parser
 		#endregion
 
 		#region Constructors
-		public DToken(int kind, int startLocation_Col, int startLocation_Line, int tokenLength,
+		public DToken(byte kind, int startLocation_Col, int startLocation_Line, int tokenLength,
 			object literalValue,/* string value,*/ LiteralFormat literalFormat = 0, LiteralSubformat literalSubFormat = 0)
 		{
 			Line = startLocation_Line;
-			Location = new CodeLocation(startLocation_Col, startLocation_Line);
-			EndLocation = new CodeLocation(Location.Column + tokenLength, Line);
+			Column = startLocation_Col;
+			EndColumn = startLocation_Col + tokenLength;
 
 			Kind = kind;
 			LiteralFormat = literalFormat;
@@ -73,12 +82,14 @@ namespace D_Parser.Parser
 			//Value = value;
 		}
 
-		public DToken(int kind, int startLocation_Col, int startLocation_Line, int endLocation_Col, int endLocation_Line,
+		public DToken(byte kind, int startLocation_Col, int startLocation_Line, int endLocation_Col, int endLocation_Line,
 			object literalValue,/* string value,*/ LiteralFormat literalFormat = 0, LiteralSubformat literalSubFormat = 0)
 		{
 			Line = startLocation_Line;
-			Location = new CodeLocation(startLocation_Col, startLocation_Line);
-			EndLocation = new CodeLocation(endLocation_Col, endLocation_Line);
+			Column = startLocation_Col;
+			
+			EndLineDifference = (ushort)(endLocation_Line-startLocation_Line);
+			EndColumn = endLocation_Col;
 
 			Kind = kind;
 			LiteralFormat = literalFormat;
@@ -87,22 +98,22 @@ namespace D_Parser.Parser
 			//Value = value;
 		}
 
-		public DToken(int kind, int startLocation_Col, int startLocation_Line, int tokenLength = 1)
+		public DToken(byte kind, int startLocation_Col, int startLocation_Line, int tokenLength = 1)
 		{
 			Kind = kind;
 
 			Line = startLocation_Line;
-			Location = new CodeLocation(startLocation_Col, startLocation_Line);
-			EndLocation = new CodeLocation(Location.Column + tokenLength, Line);
+			Column = startLocation_Col;
+			EndColumn = startLocation_Col + tokenLength;
 		}
 
-		public DToken(int kind, int col, int line, string val)
+		public DToken(byte kind, int col, int line, string val)
 		{
 			Kind = kind;
 
 			Line = line;
-			Location = new CodeLocation(col,line);
-			EndLocation = new CodeLocation(col + (val == null ? 1 : val.Length), line);
+			Column = col;
+			EndColumn = col + (val == null ? 1 : val.Length);
 			LiteralValue = val;
 			//Value = val;
 		}
@@ -111,7 +122,7 @@ namespace D_Parser.Parser
 		public override string ToString()
         {
             if (Kind == DTokens.Identifier || Kind == DTokens.Literal)
-                return Value;
+            	return LiteralValue is string ? (string)LiteralValue : LiteralValue.ToString();
             return DTokens.GetTokenString(Kind);
         }
     }

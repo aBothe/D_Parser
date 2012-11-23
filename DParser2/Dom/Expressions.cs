@@ -22,7 +22,7 @@ namespace D_Parser.Dom.Expressions
 	{
 		public virtual IExpression LeftOperand { get; set; }
 		public virtual IExpression RightOperand { get; set; }
-		public int OperatorToken { get; protected set; }
+		public byte OperatorToken { get; protected set; }
 
 		public override string ToString()
 		{
@@ -127,7 +127,7 @@ namespace D_Parser.Dom.Expressions
 	/// </summary>
 	public class AssignExpression : OperatorBasedExpression
 	{
-		public AssignExpression(int opToken) { OperatorToken = opToken; }
+		public AssignExpression(byte opToken) { OperatorToken = opToken; }
 
 		public override void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public override R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
@@ -280,7 +280,7 @@ namespace D_Parser.Dom.Expressions
 	/// </summary>
 	public class RelExpression : OperatorBasedExpression
 	{
-		public RelExpression(int relationalOperator) { OperatorToken = relationalOperator; }
+		public RelExpression(byte relationalOperator) { OperatorToken = relationalOperator; }
 
 		public override void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public override R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
@@ -318,7 +318,7 @@ namespace D_Parser.Dom.Expressions
 	/// </summary>
 	public class ShiftExpression : OperatorBasedExpression
 	{
-		public ShiftExpression(int shiftOperator) { OperatorToken = shiftOperator; }
+		public ShiftExpression(byte shiftOperator) { OperatorToken = shiftOperator; }
 
 		public override void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public override R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
@@ -340,7 +340,7 @@ namespace D_Parser.Dom.Expressions
 	/// </summary>
 	public class MulExpression : OperatorBasedExpression
 	{
-		public MulExpression(int mulOperator) { OperatorToken = mulOperator; }
+		public MulExpression(byte mulOperator) { OperatorToken = mulOperator; }
 
 		public override void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public override R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
@@ -369,7 +369,7 @@ namespace D_Parser.Dom.Expressions
 
 	public abstract class SimpleUnaryExpression : UnaryExpression, ContainerExpression
 	{
-		public abstract int ForeToken { get; }
+		public abstract byte ForeToken { get; }
 		public IExpression UnaryExpression { get; set; }
 
 		public override string ToString()
@@ -414,7 +414,7 @@ namespace D_Parser.Dom.Expressions
 	/// </summary>
 	public class UnaryExpression_And : SimpleUnaryExpression
 	{
-		public override int ForeToken
+		public override byte ForeToken
 		{
 			get { return DTokens.BitwiseAnd; }
 		}
@@ -425,7 +425,7 @@ namespace D_Parser.Dom.Expressions
 
 	public class UnaryExpression_Increment : SimpleUnaryExpression
 	{
-		public override int ForeToken
+		public override byte ForeToken
 		{
 			get { return DTokens.Increment; }
 		}
@@ -436,7 +436,7 @@ namespace D_Parser.Dom.Expressions
 
 	public class UnaryExpression_Decrement : SimpleUnaryExpression
 	{
-		public override int ForeToken
+		public override byte ForeToken
 		{
 			get { return DTokens.Decrement; }
 		}
@@ -450,7 +450,7 @@ namespace D_Parser.Dom.Expressions
 	/// </summary>
 	public class UnaryExpression_Mul : SimpleUnaryExpression
 	{
-		public override int ForeToken
+		public override byte ForeToken
 		{
 			get { return DTokens.Times; }
 		}
@@ -461,7 +461,7 @@ namespace D_Parser.Dom.Expressions
 
 	public class UnaryExpression_Add : SimpleUnaryExpression
 	{
-		public override int ForeToken
+		public override byte ForeToken
 		{
 			get { return DTokens.Plus; }
 		}
@@ -472,7 +472,7 @@ namespace D_Parser.Dom.Expressions
 
 	public class UnaryExpression_Sub : SimpleUnaryExpression
 	{
-		public override int ForeToken
+		public override byte ForeToken
 		{
 			get { return DTokens.Minus; }
 		}
@@ -483,7 +483,7 @@ namespace D_Parser.Dom.Expressions
 
 	public class UnaryExpression_Not : SimpleUnaryExpression
 	{
-		public override int ForeToken
+		public override byte ForeToken
 		{
 			get { return DTokens.Not; }
 		}
@@ -502,7 +502,7 @@ namespace D_Parser.Dom.Expressions
 	/// </summary>
 	public class UnaryExpression_Cat : SimpleUnaryExpression
 	{
-		public override int ForeToken
+		public override byte ForeToken
 		{
 			get { return DTokens.Tilde; }
 		}
@@ -749,7 +749,7 @@ namespace D_Parser.Dom.Expressions
 
 	public class DeleteExpression : SimpleUnaryExpression
 	{
-		public override int ForeToken
+		public override byte ForeToken
 		{
 			get { return DTokens.Delete; }
 		}
@@ -772,7 +772,7 @@ namespace D_Parser.Dom.Expressions
 		public IExpression UnaryExpression;
 
 		public ITypeDeclaration Type { get; set; }
-		public int[] CastParamTokens { get; set; }
+		public byte[] CastParamTokens { get; set; }
 
 		public override string ToString()
 		{
@@ -1271,10 +1271,10 @@ namespace D_Parser.Dom.Expressions
 
 	public class TokenExpression : PrimaryExpression
 	{
-		public int Token=DTokens.INVALID;
+		public byte Token=DTokens.INVALID;
 
 		public TokenExpression() { }
-		public TokenExpression(int T) { Token = T; }
+		public TokenExpression(byte T) { Token = T; }
 
 		public override string ToString()
 		{
@@ -1467,13 +1467,13 @@ namespace D_Parser.Dom.Expressions
 
 	public class FunctionLiteral : PrimaryExpression
 	{
-		public int LiteralToken = DTokens.Delegate;
+		public byte LiteralToken = DTokens.Delegate;
 		public bool IsLambda = false;
 
 		public DMethod AnonymousMethod = new DMethod(DMethod.MethodType.AnonymousDelegate);
 
 		public FunctionLiteral() { }
-		public FunctionLiteral(int InitialLiteral) { LiteralToken = InitialLiteral; }
+		public FunctionLiteral(byte InitialLiteral) { LiteralToken = InitialLiteral; }
 
 		public override string ToString()
 		{
@@ -1744,7 +1744,7 @@ namespace D_Parser.Dom.Expressions
 		public bool EqualityTest;
 
 		public ITypeDeclaration TypeSpecialization;
-		public int TypeSpecializationToken;
+		public byte TypeSpecializationToken;
 
 		public ITemplateParameter[] TemplateParameterList;
 

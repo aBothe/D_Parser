@@ -117,7 +117,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		ISemantic EvaluateLiteral(IdentifierExpression id)
 		{
-			int tt = 0;
+			byte tt = 0;
 
 			switch (id.Format)
 			{

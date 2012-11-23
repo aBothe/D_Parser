@@ -617,7 +617,7 @@ namespace D_Parser.Parser
 											subFormat);
 								}
 
-								int key;
+								byte key;
 								if(DTokens.Keywords_Lookup.TryGetValue(s,out key))
 									return new DToken(key, x, y, s.Length);
 							}

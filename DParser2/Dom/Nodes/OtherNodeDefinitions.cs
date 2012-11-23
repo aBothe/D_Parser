@@ -277,10 +277,10 @@ namespace D_Parser.Dom
 		public bool IsAnonymousClass = false;
 
 		public List<ITypeDeclaration> BaseClasses = new List<ITypeDeclaration>();
-		public int ClassType = DTokens.Class;
+		public byte ClassType = DTokens.Class;
 
 		public DClassLike() { }
-		public DClassLike(int ClassType)
+		public DClassLike(byte ClassType)
 		{
 			this.ClassType = ClassType;
 		}

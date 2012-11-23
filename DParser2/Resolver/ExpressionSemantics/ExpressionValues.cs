@@ -10,7 +10,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public class PrimitiveValue : ExpressionValue
 	{
-		public readonly int BaseTypeToken;
+		public readonly byte BaseTypeToken;
 
 		/// <summary>
 		/// To make math operations etc. more efficient, use the largest available structure to store scalar values.
@@ -25,7 +25,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public PrimitiveValue(bool Value, IExpression Expression)
 			: this(DTokens.Bool, Value ? 1 : 0, Expression) { }
 
-		public PrimitiveValue(int BaseTypeToken, decimal Value, IExpression Expression, decimal ImaginaryPart = 0M)
+		public PrimitiveValue(byte BaseTypeToken, decimal Value, IExpression Expression, decimal ImaginaryPart = 0M)
 			: base(ExpressionValueType.Primitive, new PrimitiveType(BaseTypeToken,0, Expression))
 		{
 			this.BaseTypeToken = BaseTypeToken;
@@ -36,7 +36,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// <summary>
 		/// NaN constructor
 		/// </summary>
-		private PrimitiveValue(int baseType,IExpression x)
+		private PrimitiveValue(byte baseType,IExpression x)
 			: base(ExpressionValueType.Primitive, new PrimitiveType(baseType, 0, x))
 		{
 			IsNaN = true;
@@ -44,7 +44,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public readonly bool IsNaN;
 
-		public static PrimitiveValue CreateNaNValue(IExpression x, int baseType = DTokens.Float)
+		public static PrimitiveValue CreateNaNValue(IExpression x, byte baseType = DTokens.Float)
 		{
 			return new PrimitiveValue(baseType, x);
 		}

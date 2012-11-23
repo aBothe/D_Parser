@@ -138,10 +138,10 @@ namespace D_Parser.Dom
 	/// </summary>
     public class DTokenDeclaration : AbstractTypeDeclaration
     {
-        public int Token;
+        public byte Token;
 
         public DTokenDeclaration() { }
-        public DTokenDeclaration(int Token)
+        public DTokenDeclaration(byte Token)
         { this.Token = Token; }
 
         /// <summary>
@@ -149,7 +149,7 @@ namespace D_Parser.Dom
         /// </summary>
         /// <param name="p">The token</param>
         /// <param name="td">Its base token</param>
-        public DTokenDeclaration(int p, ITypeDeclaration td)
+        public DTokenDeclaration(byte p, ITypeDeclaration td)
         {
             Token = p;
             InnerDeclaration = td;
@@ -325,12 +325,12 @@ namespace D_Parser.Dom
         /// <summary>
         /// Equals <see cref="Token"/>
         /// </summary>
-		public int Modifier=DTokens.Const;
+		public byte Modifier=DTokens.Const;
 
         public ITypeDeclaration InnerType;
 
         public MemberFunctionAttributeDecl() { }
-        public MemberFunctionAttributeDecl(int ModifierToken) { this.Modifier = ModifierToken; }
+        public MemberFunctionAttributeDecl(byte ModifierToken) { this.Modifier = ModifierToken; }
 
 		public override string ToString(bool IncludesBase)
         {

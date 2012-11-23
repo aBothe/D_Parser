@@ -81,7 +81,7 @@ namespace D_Parser.Parser
 				laKind = value.Kind;
 			}
 		}
-		int laKind = 0;
+		byte laKind;
 
 		bool IsEOF
 		{
@@ -302,7 +302,7 @@ namespace D_Parser.Parser
             return attrs;
         }
 
-        void OverPeekBrackets(int OpenBracketKind,bool LAIsOpenBracket = false)
+        void OverPeekBrackets(byte OpenBracketKind,bool LAIsOpenBracket = false)
         {
             int CloseBracket = CloseParenthesis;
 
@@ -330,7 +330,7 @@ namespace D_Parser.Parser
             }
         }
 
-        private bool Expect(int n)
+        private bool Expect(byte n)
         {
 			if(n == Identifier)
 				ExpectingIdentifier = true;
@@ -410,7 +410,7 @@ namespace D_Parser.Parser
         }
         
         #region Error handlers
-        void SynErr(int n, string msg)
+        void SynErr(byte n, string msg)
         {
 			if (ParseErrors.Count > MaxParseErrorsBeforeFailure)
 			{
@@ -421,12 +421,12 @@ namespace D_Parser.Parser
 
 			ParseErrors.Add(new ParserError(false,msg,n,t==null?la.Location:t.EndLocation));
         }
-        void SynErr(int n)
+        void SynErr(byte n)
 		{
 			SynErr(n, DTokens.GetTokenString(n) + " expected" + (t!=null?(", "+DTokens.GetTokenString(t.Kind)+" found"):""));
         }
 
-        void SemErr(int n, string msg)
+        void SemErr(byte n, string msg)
         {
 			ParseErrors.Add(new ParserError(true, msg, n, t == null ? la.Location : t.EndLocation));
         }
