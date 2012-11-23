@@ -1431,8 +1431,8 @@ namespace D_Parser.Parser
 			laKind == (Scope) ||
 			laKind == (Static) ||
 			laKind == (Synchronized) ||
-			laKind == __gshared ||
-			laKind == __thread;
+			laKind == __gshared /*||
+			laKind == __thread*/;
 			}
 		}
 

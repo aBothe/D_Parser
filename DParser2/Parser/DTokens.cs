@@ -163,7 +163,7 @@ namespace D_Parser.Parser
         public const int While = 148;
         public const int With = 149;
         public const int __gshared = 150;
-        public const int __thread = 151;
+        //public const int __thread = 151;
         public const int __traits = 152;
         public const int Abstract = 153;
         public const int Alias = 154;
@@ -231,7 +231,7 @@ namespace D_Parser.Parser
         public static readonly Dictionary<int, string> Keywords = new Dictionary<int, string>
         {
             {__gshared,"__gshared"},
-            {__thread,	    "__thread"},
+           // {__thread,	    "__thread"},
             {__traits,	    "__traits"},
 			{__vector, "__vector"},
 
@@ -439,7 +439,7 @@ namespace D_Parser.Parser
             Deprecated,
             Scope,
             __gshared,
-            __thread,
+            //__thread,
             Lazy,
             Nothrow
             );
