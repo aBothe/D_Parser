@@ -434,6 +434,45 @@ namespace D_Parser.Resolver
 			Dictionary<string, TemplateParameterSymbol> deducedTypes)
 			: base(member, memberType, deducedTypes, td) { }
 	}
+	
+	public class TemplateParameterSymbol : MemberSymbol
+	{
+		/// <summary>
+		/// Only used for template value parameters.
+		/// </summary>
+		public readonly ISymbolValue ParameterValue;
+		public readonly ITemplateParameter Parameter;
+
+		public TemplateParameterSymbol(TemplateParameterNode tpn, ISemantic typeOrValue, ISyntaxRegion paramIdentifier = null)
+			: base(tpn, AbstractType.Get(typeOrValue), paramIdentifier)
+		{
+			this.Parameter = tpn.TemplateParameter;
+			this.ParameterValue = typeOrValue as ISymbolValue;
+		}
+
+		public TemplateParameterSymbol(ITemplateParameter tp,
+			ISemantic representedTypeOrValue,
+			ISyntaxRegion originalParameterIdentifier = null,
+			DNode parentNode = null)
+			: base(new TemplateParameterNode(tp) { Parent = parentNode },
+			AbstractType.Get(representedTypeOrValue), originalParameterIdentifier ?? tp)
+		{
+			this.Parameter = tp;
+			this.ParameterValue = representedTypeOrValue as ISymbolValue;
+		}
+		
+		public override string ToCode()
+		{
+			if(ParameterValue!=null)
+				return ParameterValue.ToCode();
+			return Base == null ? Parameter.Name : Base.ToCode(); //FIXME: It's not actually code but currently needed for correct ToString() representation in e.g. parameter insight
+		}
+
+		public override string ToString()
+		{
+			return "<"+Parameter.Name+">"+(ParameterValue!=null ? ParameterValue.ToString() : (Base==null ? "" : Base.ToString()));
+		}
+	}
 
 	public class ModuleSymbol : DSymbol
 	{

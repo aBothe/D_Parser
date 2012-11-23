@@ -70,7 +70,7 @@ namespace D_Parser.Resolver.TypeResolution
 			else
 			{
 				var tstk = new Stack<ContextFrame>();
-				D_Parser.Resolver.Templates.TemplateParameterSymbol dedTemplateParam = null;
+				TemplateParameterSymbol dedTemplateParam = null;
 				while (!ctxt.CurrentContext.DeducedTemplateParameters.TryGetValue(id, out dedTemplateParam))
 				{
 					if (ctxt.PrevContextIsInSameHierarchy)
