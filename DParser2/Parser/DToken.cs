@@ -15,7 +15,7 @@ namespace D_Parser.Parser
 	}
 
 	[Flags]
-	public enum LiteralSubformat : ushort
+	public enum LiteralSubformat : byte
 	{
 		None = 0,
 
@@ -29,8 +29,8 @@ namespace D_Parser.Parser
 		Imaginary = 64,
 
 		Utf8=128,
-		Utf16=256,
-		Utf32=512,
+		Utf16=129,
+		Utf32=130,
 	}
 
     public class DToken
@@ -46,7 +46,7 @@ namespace D_Parser.Parser
 		}
 		public CodeLocation EndLocation
 		{
-			get{return new CodeLocation(EndColumn, Line+EndLineDifference);}
+			get{return new CodeLocation(EndColumn, unchecked(Line+EndLineDifference));}
 		}
 
 		public readonly byte Kind;
@@ -73,7 +73,7 @@ namespace D_Parser.Parser
 		{
 			Line = startLocation_Line;
 			Column = startLocation_Col;
-			EndColumn = startLocation_Col + tokenLength;
+			EndColumn = unchecked(startLocation_Col + tokenLength);
 
 			Kind = kind;
 			LiteralFormat = literalFormat;
@@ -88,7 +88,7 @@ namespace D_Parser.Parser
 			Line = startLocation_Line;
 			Column = startLocation_Col;
 			
-			EndLineDifference = (ushort)(endLocation_Line-startLocation_Line);
+			EndLineDifference = (ushort)unchecked(endLocation_Line-startLocation_Line);
 			EndColumn = endLocation_Col;
 
 			Kind = kind;
@@ -104,7 +104,7 @@ namespace D_Parser.Parser
 
 			Line = startLocation_Line;
 			Column = startLocation_Col;
-			EndColumn = startLocation_Col + tokenLength;
+			EndColumn = unchecked(startLocation_Col + tokenLength);
 		}
 
 		public DToken(byte kind, int col, int line, string val)
@@ -122,7 +122,7 @@ namespace D_Parser.Parser
 		public override string ToString()
         {
             if (Kind == DTokens.Identifier || Kind == DTokens.Literal)
-            	return LiteralValue is string ? (string)LiteralValue : LiteralValue.ToString();
+            	return LiteralValue is string ? LiteralValue as string : LiteralValue.ToString();
             return DTokens.GetTokenString(Kind);
         }
     }
@@ -130,7 +130,7 @@ namespace D_Parser.Parser
     public class Comment
     {
 		[Flags]
-        public enum Type
+		public enum Type : byte
         {
             Block=1,
             SingleLine=2,
