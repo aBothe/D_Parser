@@ -375,7 +375,17 @@ namespace D_Parser.Resolver.TypeResolution
 			ctxt.CheckForSingleResult(returnTypes, dg.ReturnType);
 
 			if (returnTypes != null && returnTypes.Length != 0)
-				return new DelegateType(returnTypes[0], dg); // Parameter types will be resolved later on
+			{
+				List<AbstractType> paramTypes=null;
+				if(dg.Parameters!=null && 
+				   dg.Parameters.Count != 0)
+				{	
+					paramTypes = new List<AbstractType>();
+					foreach(var par in dg.Parameters)
+						paramTypes.Add(ResolveSingle(par.Type, ctxt));
+				}
+				return new DelegateType(returnTypes[0], dg, paramTypes);
+			}
 			return null;
 		}
 

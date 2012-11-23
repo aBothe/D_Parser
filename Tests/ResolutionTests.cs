@@ -340,6 +340,28 @@ class D : C!B {}");
 
 			Assert.AreEqual(1, ct.DeducedTypes.Count);
 		}
+		
+		[Test]
+		public void TestParamDeduction7()
+		{
+			var pcl = CreateCache(@"module A;
+U genA(U)();
+T delegate(T dgParam) genDelegate(T)();");
+			
+			var A = pcl[0]["A"];
+			var ctxt = CreateDefCtxt(pcl, A);
+			
+			var ex = DParser.ParseExpression("genDelegate!int()");
+			var t = Evaluation.EvaluateType(ex,ctxt);
+			Assert.That(t, Is.TypeOf(typeof(DelegateType)));
+			var dt = (DelegateType)t;
+			Assert.That(dt.Base, Is.Not.Null);
+			Assert.That(dt.Parameters, Is.Not.Null);
+			
+			ex = DParser.ParseExpression("genA!int()");
+			t = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
+		}
 
 		[Test]
 		public void Ctors()
