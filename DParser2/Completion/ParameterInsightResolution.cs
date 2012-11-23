@@ -190,7 +190,7 @@ namespace D_Parser.Completion
 			 * myDeleg2( -- allowed neither!
 			 */
 			if (res.ResolvedTypesOrMethods != null)
-				res.ResolvedTypesOrMethods = DResolver.StripMemberSymbols(res.ResolvedTypesOrMethods);
+				res.ResolvedTypesOrMethods = DResolver.StripAliasSymbols(res.ResolvedTypesOrMethods);
 
 			return res;
 		}
