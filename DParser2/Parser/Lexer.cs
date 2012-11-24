@@ -87,6 +87,7 @@ namespace D_Parser.Parser
 			tk.LiteralFormat = literalFormat;
 			tk.Subformat = literalSubFormat;
 			tk.LiteralValue = literalValue;
+			tk.RawCodeRepresentation = null;
 			
 			return tk;
 		}
@@ -105,6 +106,7 @@ namespace D_Parser.Parser
 			tk.LiteralFormat = literalFormat;
 			tk.Subformat = literalSubFormat;
 			tk.LiteralValue = literalValue;
+			tk.RawCodeRepresentation = null;
 			
 			return tk;
 		}
@@ -122,6 +124,7 @@ namespace D_Parser.Parser
 			tk.LiteralFormat = 0;
 			tk.Subformat = 0;
 			tk.LiteralValue = null;
+			tk.RawCodeRepresentation = null;
 			return tk;
 		}
 
@@ -136,6 +139,7 @@ namespace D_Parser.Parser
 			tk.LiteralValue = val;
 			tk.LiteralFormat = 0;
 			tk.Subformat = 0;
+			tk.RawCodeRepresentation = null;
 			return tk;
 		}
 		#endregion
@@ -540,6 +544,7 @@ namespace D_Parser.Parser
 						y = Line;
 						var lit = ReadEscapeSequence(out ch, out surr);
 						token = Token(DTokens.Literal, x, y, lit.Length + 1, lit/*, ch.ToString()*/, LiteralFormat.StringLiteral);
+						token.RawCodeRepresentation = ch.ToString();
 						OnError(y, x, "Escape sequence strings are deprecated!");
 						break;
 					case '\'':

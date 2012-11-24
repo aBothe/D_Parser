@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
+
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
@@ -2776,13 +2778,13 @@ namespace D_Parser.Parser
 				// Concatenate multiple string literals here
 				if (t.LiteralFormat == LiteralFormat.StringLiteral || t.LiteralFormat == LiteralFormat.VerbatimStringLiteral)
 				{
-					var a = t.Value;
+					var sb = new StringBuilder(t.RawCodeRepresentation ?? t.Value);
 					while (la.LiteralFormat == LiteralFormat.StringLiteral || la.LiteralFormat == LiteralFormat.VerbatimStringLiteral)
 					{
 						Step();
-						a += t.Value;
+						sb.Append(t.RawCodeRepresentation ?? t.Value);
 					}
-					return new IdentifierExpression(a, t.LiteralFormat, t.Subformat) { Location = startLoc, EndLocation = t.EndLocation };
+					return new IdentifierExpression(sb.ToString(), t.LiteralFormat, t.Subformat) { Location = startLoc, EndLocation = t.EndLocation };
 				}
 				//else if (t.LiteralFormat == LiteralFormat.CharLiteral)return new IdentifierExpression(t.LiteralValue) { LiteralFormat=t.LiteralFormat,Location = startLoc, EndLocation = t.EndLocation };
 				return new IdentifierExpression(t.LiteralValue, t.LiteralFormat, t.Subformat) { Location = startLoc, EndLocation = t.EndLocation };

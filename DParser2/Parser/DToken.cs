@@ -59,6 +59,7 @@ namespace D_Parser.Parser
         public object LiteralValue;
         //public readonly string Value;
         public string Value {get{return LiteralValue as string;}}
+        internal string RawCodeRepresentation;
         internal DToken next;
 
 		public DToken Next
