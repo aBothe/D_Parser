@@ -1086,7 +1086,7 @@ namespace D_Parser.Parser
 				ITypeDeclaration cd = null;
 
 				// [ Type ]
-				var la_backup = la;
+				Lexer.PushLookAheadBackup();
 				bool weaktype = AllowWeakTypeParsing;
 				AllowWeakTypeParsing = true;
 
@@ -1094,13 +1094,15 @@ namespace D_Parser.Parser
 
 				AllowWeakTypeParsing = weaktype;
 
-				if (keyType != null && laKind == CloseSquareBracket && !(keyType is IdentifierDeclaration)) 
+				if (keyType != null && laKind == CloseSquareBracket && !(keyType is IdentifierDeclaration))
+				{
 					//HACK: Both new int[size_t] as well as new int[someConstNumber] are legal. So better treat them as expressions.
 					cd = new ArrayDecl() { KeyType = keyType, ClampsEmpty = false, Location = startLoc };
+					Lexer.PopLookAheadBackup();
+				}
 				else
 				{
-					la = la_backup;
-					Peek(1);
+					Lexer.RestoreLookAheadBackup();
 
 					var fromExpression = AssignExpression();
 
@@ -1341,10 +1343,9 @@ namespace D_Parser.Parser
 				{
 					ad.ClampsEmpty = false;
 					ITypeDeclaration keyType=null;
-					var la_backup = la;
+					Lexer.PushLookAheadBackup();
 					if (!IsAssignExpression())
 					{
-						
 						var weakType = AllowWeakTypeParsing;
 						AllowWeakTypeParsing = true;
 						
@@ -1354,10 +1355,12 @@ namespace D_Parser.Parser
 					}
 					if (keyType == null || laKind != CloseSquareBracket)
 					{
+						Lexer.RestoreLookAheadBackup();
 						keyType = ad.KeyType = null;
-						la = la_backup;
 						ad.KeyExpression = AssignExpression();
 					}
+					else
+						Lexer.PopLookAheadBackup();
 				}
 				Expect(CloseSquareBracket);
 				ad.EndLocation = t.EndLocation;
@@ -2320,6 +2323,9 @@ namespace D_Parser.Parser
 					case Not:
 						ae = new UnaryExpression_Not();
 						break;
+					default:
+						SynErr(t.Kind, "Illegal token for unary expressions");
+						return null;
 				}
 
 				LastParsedObject = ae;
@@ -2336,8 +2342,9 @@ namespace D_Parser.Parser
 			{
 				var wkParsing = AllowWeakTypeParsing;
 				AllowWeakTypeParsing = true;
-				var curLA = la;
+				Lexer.PushLookAheadBackup();
 				Step();
+				var startLoc = t.Location;
 				var td = Type();
 
 				AllowWeakTypeParsing = wkParsing;
@@ -2345,24 +2352,20 @@ namespace D_Parser.Parser
 				if (td!=null && ((t.Kind!=OpenParenthesis && laKind == CloseParenthesis && Peek(1).Kind == Dot && Peek(2).Kind == Identifier) || 
 					(IsEOF || Peek(1).Kind==EOF || Peek(2).Kind==EOF))) // Also take it as a type declaration if there's nothing following (see Expression Resolving)
 				{
+					Lexer.PopLookAheadBackup();
 					Step();  // Skip to )
 					Step();  // Skip to .
 					Step();  // Skip to identifier
 
-					var accExpr = new UnaryExpression_Type() { Type=td, AccessIdentifier=t.Value };
-
-					accExpr.Location = curLA.Location;
-					accExpr.EndLocation = t.EndLocation;
-
-					return accExpr;
+					return new UnaryExpression_Type() { 
+						Type=td, 
+						AccessIdentifier=t.Value, 
+						Location = startLoc, 
+						EndLocation = t.EndLocation 
+					};
 				}
 				else
-				{
-					// Reset the current token with the earlier one to enable Expression parsing
-					la = curLA;
-					Peek(1);
-				}
-
+					Lexer.RestoreLookAheadBackup();
 			}
 
 			// CastExpression
@@ -2989,17 +2992,19 @@ namespace D_Parser.Parser
 					ce.Expression = AssignExpression(Scope);
 				else
 				{
-					var laBackup = la;
+					Lexer.PushLookAheadBackup();
 					AllowWeakTypeParsing = true;
 					ce.Type = Type();
 					AllowWeakTypeParsing = false;
 
 					if (ce.Type == null || laKind != CloseParenthesis)
 					{
-						la = laBackup;
+						Lexer.RestoreLookAheadBackup();
 						Lexer.StartPeek();
 						ce.Expression = AssignExpression();
 					}
+					else
+						Lexer.PopLookAheadBackup();
 				}
 
 				if (!Expect(CloseParenthesis) && IsEOF)
@@ -3223,7 +3228,7 @@ namespace D_Parser.Parser
 			var wkType = AllowWeakTypeParsing;
 			AllowWeakTypeParsing = true;
 			
-			var la_backup = la;
+			Lexer.PushLookAheadBackup();
 
 			ITypeDeclaration tp = null;
 			if (laKind == Auto)
@@ -3242,6 +3247,7 @@ namespace D_Parser.Parser
 				Lexer.CurrentPeekToken.Kind == Comma ||
 				Lexer.CurrentPeekToken.Kind == CloseParenthesis))
 			{
+				Lexer.PopLookAheadBackup();
 				var ifVars = new List<DVariable>();
 				do
 				{
@@ -3268,7 +3274,7 @@ namespace D_Parser.Parser
 			}
 			else
 			{
-				la = la_backup;
+				Lexer.RestoreLookAheadBackup();
 				par.IfCondition = Expression();
 			}
 		}
@@ -3674,13 +3680,16 @@ namespace D_Parser.Parser
 						{
 							var catchVar = new DVariable { Parent = Scope };
 							LastParsedObject = catchVar;
-							var tt = la; //TODO?
+							Lexer.PushLookAheadBackup();
 							catchVar.Type = BasicType();
 							if (laKind != Identifier)
 							{
-								la = tt;
+								Lexer.RestoreLookAheadBackup();
 								catchVar.Type = new IdentifierDeclaration("Exception");
 							}
+							else
+								Lexer.PopLookAheadBackup();
+							
 							if(Expect(Identifier))
 								catchVar.Name = t.Value;
 							Expect(CloseParenthesis);
@@ -4043,10 +4052,7 @@ namespace D_Parser.Parser
 			if (Expect(OpenCurlyBrace))
 			{
 				if (ParseStructureOnly && laKind != CloseCurlyBrace)
-				{
 					Lexer.SkipCurrentBlock();
-					laKind = la.Kind;
-				}
 				else
 				{
 					while (!IsEOF && laKind != (CloseCurlyBrace))
@@ -4879,8 +4885,8 @@ namespace D_Parser.Parser
 							args.Add(new TokenExpression(DTokens.INVALID) { Location= la.Location, EndLocation=la.EndLocation });
 							break;
 						}
-
-						var la_Backup = la;
+						
+						Lexer.PushLookAheadBackup();
 
 						bool wp = AllowWeakTypeParsing;
 						AllowWeakTypeParsing = true;
@@ -4889,12 +4895,12 @@ namespace D_Parser.Parser
 
 						AllowWeakTypeParsing = wp;
 
-						if (typeArg != null && (laKind == CloseParenthesis || laKind==Comma))
+						if (typeArg != null && (laKind == CloseParenthesis || laKind==Comma)){
+							Lexer.PopLookAheadBackup();
 							args.Add(new TypeDeclarationExpression(typeArg));
-						else
+						}else
 						{
-							la = la_Backup;
-							Peek(1);
+							Lexer.RestoreLookAheadBackup();
 
 							args.Add(AssignExpression());
 						}

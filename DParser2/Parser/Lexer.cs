@@ -12,11 +12,12 @@ namespace D_Parser.Parser
 		TextReader reader;
 		int Col = 1;
 		int Line = 1;
+		public byte laKind;
 
-		DToken prevToken = null;
-		DToken curToken = null;
-		DToken lookaheadToken = null;
-		DToken peekToken = null;
+		DToken prevToken;
+		DToken curToken;
+		DToken lookaheadToken;
+		DToken peekToken;
 
 		StringBuilder sb = new StringBuilder();
 		/// <asummary>
@@ -51,6 +52,8 @@ namespace D_Parser.Parser
 					lookaheadToken.Kind == DTokens.__EOF__;
 			}
 		}
+		
+		Stack<DToken> laBackup = new Stack<DToken>();
 		#endregion
 
 		#region Constructor / Init
@@ -121,14 +124,6 @@ namespace D_Parser.Parser
 			{
 				return curToken;
 			}
-			set
-			{
-				if (value == null) return;
-				curToken = value;
-				lookaheadToken = curToken.next;
-				if (lookaheadToken != null)
-					peekToken = lookaheadToken.next;
-			}
 		}
 
 		/// <summary>
@@ -139,12 +134,6 @@ namespace D_Parser.Parser
 			get
 			{
 				return lookaheadToken;
-			}
-			set
-			{
-				if (value == null) return;
-				lookaheadToken = value;
-				peekToken = lookaheadToken.next;
 			}
 		}
 
@@ -173,6 +162,21 @@ namespace D_Parser.Parser
 			peekToken = peekToken.next;
 			return peekToken;
 		}
+		
+		public void PushLookAheadBackup()
+		{
+			laBackup.Push(lookaheadToken);
+		}
+		
+		public void PopLookAheadBackup(){laBackup.Pop();}
+		
+		public void RestoreLookAheadBackup()
+		{
+			lookaheadToken = laBackup.Pop();
+			laKind = lookaheadToken.Kind;
+			StartPeek();
+			Peek();
+		}
 
 		/// <summary>
 		/// Reads the next token and gives it back.
@@ -180,8 +184,11 @@ namespace D_Parser.Parser
 		/// <returns>An <see cref="CurrentToken"/> object.</returns>
 		public void NextToken()
 		{
-			if (lookaheadToken == null)
+			if (lookaheadToken == null){
 				lookaheadToken = Next();
+				laKind = lookaheadToken.Kind;
+				Peek();
+			}
 			else
 			{
 				prevToken = curToken;
@@ -192,7 +199,9 @@ namespace D_Parser.Parser
 					lookaheadToken.next = Next();
 
 				lookaheadToken = lookaheadToken.next;
+				laKind = lookaheadToken.Kind;
 				StartPeek();
+				Peek();
 			}
 		}
 
@@ -288,6 +297,7 @@ namespace D_Parser.Parser
 					if (braceCount < 0)
 					{
 						lookaheadToken = tok;
+						laKind = lookaheadToken.Kind;
 						return;
 					}
 				}
@@ -343,7 +353,7 @@ namespace D_Parser.Parser
 						braceCount--;
 						if (braceCount < 0)
 						{
-							lookaheadToken = new DToken(DTokens.CloseCurlyBrace, Col - 1, Line);
+							lookaheadToken = new DToken(laKind = DTokens.CloseCurlyBrace, Col - 1, Line);
 							StartPeek();
 							Peek();
 							return;

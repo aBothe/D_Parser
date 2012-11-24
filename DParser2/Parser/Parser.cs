@@ -69,19 +69,13 @@ namespace D_Parser.Parser
 		/// </summary>
 		DToken la
 		{
-			[System.Diagnostics.DebuggerStepThrough]
 			get
 			{
 				return Lexer.LookAhead;
 			}
-
-			set
-			{
-				Lexer.LookAhead = value;
-				laKind = value.Kind;
-			}
 		}
-		byte laKind;
+		
+		byte laKind {get{return Lexer.laKind;}}
 
 		bool IsEOF
 		{
@@ -381,11 +375,6 @@ namespace D_Parser.Parser
 		public void Step()
 		{ 
 			Lexer.NextToken();
-
-			Lexer.StartPeek();
-			Lexer.Peek();
- 
-			laKind = la.Kind;
 		}
 
         [DebuggerStepThrough()]
