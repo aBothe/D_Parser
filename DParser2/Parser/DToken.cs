@@ -33,13 +33,13 @@ namespace D_Parser.Parser
 		Utf32=130,
 	}
 
-    public class DToken
+	public class DToken
 	{
 		#region Properties
-		public readonly int Line;
-		public readonly int Column;
-		public readonly ushort EndLineDifference; // A token shouldn't be greater than 65536, right?
-		public readonly int EndColumn;
+		public int Line;
+		internal int Column;
+		internal ushort EndLineDifference; // A token shouldn't be greater than 65536, right?
+		internal int EndColumn;
 		public CodeLocation Location
 		{
 			get{return new CodeLocation(Column, Line);}
@@ -49,14 +49,14 @@ namespace D_Parser.Parser
 			get{return new CodeLocation(EndColumn, unchecked(Line+EndLineDifference));}
 		}
 
-		public readonly byte Kind;
-        public readonly LiteralFormat LiteralFormat;
+		public byte Kind;
+        public LiteralFormat LiteralFormat;
 		/// <summary>
 		/// Used for scalar, floating and string literals.
 		/// Marks special formats such as explicit unsigned-ness, wide char or dchar-based strings etc.
 		/// </summary>
-		public readonly LiteralSubformat Subformat;
-        public readonly object LiteralValue;
+		public LiteralSubformat Subformat;
+        public object LiteralValue;
         //public readonly string Value;
         public string Value {get{return LiteralValue as string;}}
         internal DToken next;
@@ -65,58 +65,6 @@ namespace D_Parser.Parser
 		{
 			get { return next; }
 		}		
-		#endregion
-
-		#region Constructors
-		public DToken(byte kind, int startLocation_Col, int startLocation_Line, int tokenLength,
-			object literalValue,/* string value,*/ LiteralFormat literalFormat = 0, LiteralSubformat literalSubFormat = 0)
-		{
-			Line = startLocation_Line;
-			Column = startLocation_Col;
-			EndColumn = unchecked(startLocation_Col + tokenLength);
-
-			Kind = kind;
-			LiteralFormat = literalFormat;
-			Subformat = literalSubFormat;
-			LiteralValue = literalValue;
-			//Value = value;
-		}
-
-		public DToken(byte kind, int startLocation_Col, int startLocation_Line, int endLocation_Col, int endLocation_Line,
-			object literalValue,/* string value,*/ LiteralFormat literalFormat = 0, LiteralSubformat literalSubFormat = 0)
-		{
-			Line = startLocation_Line;
-			Column = startLocation_Col;
-			
-			EndLineDifference = (ushort)unchecked(endLocation_Line-startLocation_Line);
-			EndColumn = endLocation_Col;
-
-			Kind = kind;
-			LiteralFormat = literalFormat;
-			Subformat = literalSubFormat;
-			LiteralValue = literalValue;
-			//Value = value;
-		}
-
-		public DToken(byte kind, int startLocation_Col, int startLocation_Line, int tokenLength = 1)
-		{
-			Kind = kind;
-
-			Line = startLocation_Line;
-			Column = startLocation_Col;
-			EndColumn = unchecked(startLocation_Col + tokenLength);
-		}
-
-		public DToken(byte kind, int col, int line, string val)
-		{
-			Kind = kind;
-
-			Line = line;
-			Column = col;
-			EndColumn = col + (val == null ? 1 : val.Length);
-			LiteralValue = val;
-			//Value = val;
-		}
 		#endregion
 
 		public override string ToString()

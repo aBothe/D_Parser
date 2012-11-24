@@ -1472,7 +1472,6 @@ namespace D_Parser.Parser
 			if (laKind == (OpenParenthesis))
 			{
 				Step();
-
 				td = Declarator2();
 				
 				if (AllowWeakTypeParsing && (td == null||(t.Kind==OpenParenthesis && laKind==CloseParenthesis) /* -- means if an argumentless function call has been made, return null because this would be an expression */|| laKind!=CloseParenthesis))
@@ -3000,7 +2999,6 @@ namespace D_Parser.Parser
 					if (ce.Type == null || laKind != CloseParenthesis)
 					{
 						Lexer.RestoreLookAheadBackup();
-						Lexer.StartPeek();
 						ce.Expression = AssignExpression();
 					}
 					else
@@ -4286,12 +4284,12 @@ namespace D_Parser.Parser
 		INode Destructor()
 		{
 			Expect(Tilde);
+			var dm = new DMethod{ Location = t.Location };
 			Expect(This);
-			var dm = new DMethod();
+			
 			LastParsedObject = dm;
 
 			dm.SpecialType = DMethod.MethodType.Destructor;
-			dm.Location = Lexer.LastToken.Location;
 			dm.Name = "~this";
 
 			if (IsTemplateParameterList())
@@ -4901,7 +4899,6 @@ namespace D_Parser.Parser
 						}else
 						{
 							Lexer.RestoreLookAheadBackup();
-
 							args.Add(AssignExpression());
 						}
 					}

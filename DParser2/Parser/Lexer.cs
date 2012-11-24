@@ -54,6 +54,90 @@ namespace D_Parser.Parser
 		}
 		
 		Stack<DToken> laBackup = new Stack<DToken>();
+		Stack<DToken> tokenPool = new Stack<DToken>(40);
+		#endregion
+		
+		#region Token pooling
+		DToken tok() {
+			/*if(tokenPool.Count != 0 && tokenPool.Peek() == lookaheadToken)
+			{
+				return null;
+			}*/
+			return tokenPool.Count == 0 ? new DToken() : tokenPool.Pop();
+		}
+		void recyclePrevToken()
+		{
+			if(laBackup.Count == 0 && prevToken != null)
+			{
+				prevToken.next = null;
+				//prevToken.LiteralValue = null;
+				tokenPool.Push(prevToken);
+			}
+		}
+		DToken Token(byte kind, int startLocation_Col, int startLocation_Line, int tokenLength,
+			object literalValue,/* string value,*/ LiteralFormat literalFormat = 0, LiteralSubformat literalSubFormat = 0)
+		{
+			var tk = tok();
+			tk.Line = startLocation_Line;
+			tk.Column = startLocation_Col;
+			tk.EndLineDifference = 0;
+			tk.EndColumn = unchecked(startLocation_Col + tokenLength);
+
+			tk.Kind = kind;
+			tk.LiteralFormat = literalFormat;
+			tk.Subformat = literalSubFormat;
+			tk.LiteralValue = literalValue;
+			
+			return tk;
+		}
+
+		DToken Token(byte kind, int startLocation_Col, int startLocation_Line, int endLocation_Col, int endLocation_Line,
+			object literalValue,/* string value,*/ LiteralFormat literalFormat = 0, LiteralSubformat literalSubFormat = 0)
+		{
+			var tk = tok();
+			tk.Line = startLocation_Line;
+			tk.Column = startLocation_Col;
+			
+			tk.EndLineDifference = (ushort)unchecked(endLocation_Line-startLocation_Line);
+			tk.EndColumn = endLocation_Col;
+			
+			tk.Kind = kind;
+			tk.LiteralFormat = literalFormat;
+			tk.Subformat = literalSubFormat;
+			tk.LiteralValue = literalValue;
+			
+			return tk;
+		}
+
+		DToken Token(byte kind, int startLocation_Col, int startLocation_Line, int tokenLength = 1)
+		{
+			var tk = tok();
+			tk.Kind = kind;
+
+			tk.Line = startLocation_Line;
+			tk.Column = startLocation_Col;
+			tk.EndLineDifference = 0;
+			tk.EndColumn = unchecked(startLocation_Col + tokenLength);
+			
+			tk.LiteralFormat = 0;
+			tk.Subformat = 0;
+			tk.LiteralValue = null;
+			return tk;
+		}
+
+		DToken Token(byte kind, int col, int line, string val)
+		{
+			var tk = tok();
+			tk.Kind = kind;
+
+			tk.Line = line;
+			tk.Column = col;
+			tk.EndColumn = unchecked(col + (val == null ? 1 : val.Length));
+			tk.LiteralValue = val;
+			tk.LiteralFormat = 0;
+			tk.Subformat = 0;
+			return tk;
+		}
 		#endregion
 
 		#region Constructor / Init
@@ -168,12 +252,36 @@ namespace D_Parser.Parser
 			laBackup.Push(lookaheadToken);
 		}
 		
-		public void PopLookAheadBackup(){laBackup.Pop();}
+		public void PopLookAheadBackup()
+		{
+			prevToken = null;
+			curToken = null;
+			laBackup.Pop();
+			/*
+			var bk = laBackup.Pop();
+			
+			if(laBackup.Count == 0)
+			{
+				while(bk != lookaheadToken)
+				{
+					var n = bk.next;
+					bk.next = null;
+					bk.LiteralValue = null;
+					tokenPool.Push(bk);
+					if((bk = n) == null)
+						return;
+				}
+			}*/
+		}
 		
 		public void RestoreLookAheadBackup()
 		{
+			prevToken = null;
+			curToken = null;
+			
 			lookaheadToken = laBackup.Pop();
 			laKind = lookaheadToken.Kind;
+			
 			StartPeek();
 			Peek();
 		}
@@ -191,6 +299,7 @@ namespace D_Parser.Parser
 			}
 			else
 			{
+				recyclePrevToken();
 				prevToken = curToken;
 
 				curToken = lookaheadToken;
@@ -297,7 +406,7 @@ namespace D_Parser.Parser
 					if (braceCount < 0)
 					{
 						lookaheadToken = tok;
-						laKind = lookaheadToken.Kind;
+						laKind = tok.Kind;
 						return;
 					}
 				}
@@ -305,6 +414,7 @@ namespace D_Parser.Parser
 			}
 
 			// Scan/proceed tokens rawly (skip them only until braceCount<0)
+			//recyclePrevToken();
 			prevToken = LookAhead;
 			int nextChar;
 			while ((nextChar = ReaderRead()) != -1)
@@ -353,7 +463,7 @@ namespace D_Parser.Parser
 						braceCount--;
 						if (braceCount < 0)
 						{
-							lookaheadToken = new DToken(laKind = DTokens.CloseCurlyBrace, Col - 1, Line);
+							lookaheadToken = Token(laKind = DTokens.CloseCurlyBrace, Col - 1, Line);
 							StartPeek();
 							Peek();
 							return;
@@ -429,7 +539,7 @@ namespace D_Parser.Parser
 						x = Col - 1;
 						y = Line;
 						var lit = ReadEscapeSequence(out ch, out surr);
-						token = new DToken(DTokens.Literal, x, y, lit.Length + 1, lit/*, ch.ToString()*/, LiteralFormat.StringLiteral);
+						token = Token(DTokens.Literal, x, y, lit.Length + 1, lit/*, ch.ToString()*/, LiteralFormat.StringLiteral);
 						OnError(y, x, "Escape sequence strings are deprecated!");
 						break;
 					case '\'':
@@ -452,7 +562,7 @@ namespace D_Parser.Parser
 								bool canBeKeyword;
 								var ident = ReadIdent(ch, out canBeKeyword);
 
-								token = new DToken(DTokens.PropertyAttribute, x - 1, y, ident);
+								token = Token(DTokens.PropertyAttribute, x - 1, y, ident);
 							}
 							else
 							{
@@ -483,7 +593,7 @@ namespace D_Parser.Parser
 										break;
 								}
 
-								return new DToken(DTokens.Literal, Col - 1, Line, numString.Length + 1, ParseFloatValue(numString, 16), /*numString,*/ LiteralFormat.Scalar);
+								return Token(DTokens.Literal, Col - 1, Line, numString.Length + 1, ParseFloatValue(numString, 16), /*numString,*/ LiteralFormat.Scalar);
 							}
 						}
 						else if (ch == 'q') // Token strings
@@ -571,7 +681,7 @@ namespace D_Parser.Parser
 									}
 								}
 
-								return new DToken(DTokens.Literal, x, y, Col, Line, tokenString, /*tokenString,*/ LiteralFormat.VerbatimStringLiteral);
+								return Token(DTokens.Literal, x, y, Col, Line, tokenString, /*tokenString,*/ LiteralFormat.VerbatimStringLiteral);
 							}
 						}
 
@@ -620,7 +730,7 @@ namespace D_Parser.Parser
 									}
 
 									if (literalFormat != 0)
-										return new DToken(DTokens.Literal, x, y, s.Length,
+										return Token(DTokens.Literal, x, y, s.Length,
 											literalValue,
 											//literalValue is string ? (string)literalValue : literalValue.ToString(),
 											literalFormat,
@@ -629,9 +739,9 @@ namespace D_Parser.Parser
 
 								byte key;
 								if(DTokens.Keywords_Lookup.TryGetValue(s,out key))
-									return new DToken(key, x, y, s.Length);
+									return Token(key, x, y, s.Length);
 							}
-							return new DToken(DTokens.Identifier, x, y, s);
+							return Token(DTokens.Identifier, x, y, s);
 						}
 						else if (Char.IsDigit(ch))
 							token = ReadDigit(ch, Col - 1);
@@ -654,7 +764,7 @@ namespace D_Parser.Parser
 				}
 			}
 
-			return new DToken(DTokens.EOF, Col, Line, 0);
+			return Token(DTokens.EOF, Col, Line, 0);
 		}
 
 		string ReadIdent(char ch, out bool canBeKeyword)
@@ -832,10 +942,10 @@ namespace D_Parser.Parser
 						if (peek == '.')
 						{
 							ReaderRead();
-							nextToken = new DToken(DTokens.DoubleDot, Col - 1, Line, 2);
+							nextToken = Token(DTokens.DoubleDot, Col - 1, Line, 2);
 						}
 						else if (IsIdentifierPart(peek))
-							nextToken = new DToken(DTokens.Dot, Col - 1, Line, 1);
+							nextToken = Token(DTokens.Dot, Col - 1, Line, 1);
 
 						AllowSuffixes = false;
 					}
@@ -974,7 +1084,7 @@ namespace D_Parser.Parser
 
 				#endregion
 
-				token = new DToken(DTokens.Literal, x, y, stringValue.Length, val,/* stringValue,*/
+				token = Token(DTokens.Literal, x, y, stringValue.Length, val,/* stringValue,*/
 					subFmt.HasFlag(LiteralSubformat.Float) || subFmt.HasFlag(LiteralSubformat.Imaginary) || HasDot ?
 						(LiteralFormat.FloatingPoint | LiteralFormat.Scalar) :
 						LiteralFormat.Scalar,
@@ -1047,7 +1157,7 @@ namespace D_Parser.Parser
 				OnError(y, x, String.Format("End of file reached inside string literal"));
 			}
 
-			return new DToken(DTokens.Literal, x, y, Col, Line, /*originalValue.ToString(),*/ sb.ToString(), LiteralFormat.StringLiteral, subFmt);
+			return Token(DTokens.Literal, x, y, Col, Line, /*originalValue.ToString(),*/ sb.ToString(), LiteralFormat.StringLiteral, subFmt);
 		}
 
 		DToken ReadVerbatimString(int EndingChar)
@@ -1113,7 +1223,7 @@ namespace D_Parser.Parser
 				}
 			}
 
-			return new DToken(DTokens.Literal, x, y, Col, Line, /*originalValue.ToString(),*/ sb.ToString(), LiteralFormat.VerbatimStringLiteral, subFmt);
+			return Token(DTokens.Literal, x, y, Col, Line, /*originalValue.ToString(),*/ sb.ToString(), LiteralFormat.VerbatimStringLiteral, subFmt);
 		}
 
 		/// <summary>
@@ -1346,7 +1456,7 @@ namespace D_Parser.Parser
 			}
 			else if (ch == '\'')
 			{
-				return new DToken(DTokens.Literal, x, y, 2, char.MinValue, "''", LiteralFormat.CharLiteral);
+				return Token(DTokens.Literal, x, y, 2, char.MinValue, "''", LiteralFormat.CharLiteral);
 			}
 
 			unchecked
@@ -1356,7 +1466,7 @@ namespace D_Parser.Parser
 					OnError(y, x, String.Format("Char not terminated"));
 				}
 			}
-			return new DToken(DTokens.Literal, x, y, Col, Line, string.IsNullOrEmpty(surrogatePair) ? (object)chValue : surrogatePair/*, "'" + ch + escapeSequence + "'"*/, LiteralFormat.CharLiteral);
+			return Token(DTokens.Literal, x, y, Col, Line, string.IsNullOrEmpty(surrogatePair) ? (object)chValue : surrogatePair/*, "'" + ch + escapeSequence + "'"*/, LiteralFormat.CharLiteral);
 		}
 
 		DToken ReadOperator(char ch)
@@ -1370,96 +1480,96 @@ namespace D_Parser.Parser
 					{
 						case '+':
 							ReaderRead();
-							return new DToken(DTokens.Increment, x, y);
+							return Token(DTokens.Increment, x, y);
 						case '=':
 							ReaderRead();
-							return new DToken(DTokens.PlusAssign, x, y);
+							return Token(DTokens.PlusAssign, x, y);
 					}
-					return new DToken(DTokens.Plus, x, y);
+					return Token(DTokens.Plus, x, y);
 				case '-':
 					switch (ReaderPeek())
 					{
 						case '-':
 							ReaderRead();
-							return new DToken(DTokens.Decrement, x, y);
+							return Token(DTokens.Decrement, x, y);
 						case '=':
 							ReaderRead();
-							return new DToken(DTokens.MinusAssign, x, y);
+							return Token(DTokens.MinusAssign, x, y);
 						case '>':
 							ReaderRead();
-							return new DToken(DTokens.TildeAssign, x, y);
+							return Token(DTokens.TildeAssign, x, y);
 					}
-					return new DToken(DTokens.Minus, x, y);
+					return Token(DTokens.Minus, x, y);
 				case '*':
 					switch (ReaderPeek())
 					{
 						case '=':
 							ReaderRead();
-							return new DToken(DTokens.TimesAssign, x, y, 2);
+							return Token(DTokens.TimesAssign, x, y, 2);
 						default:
 							break;
 					}
-					return new DToken(DTokens.Times, x, y);
+					return Token(DTokens.Times, x, y);
 				case '/':
 					switch (ReaderPeek())
 					{
 						case '=':
 							ReaderRead();
-							return new DToken(DTokens.DivAssign, x, y, 2);
+							return Token(DTokens.DivAssign, x, y, 2);
 					}
-					return new DToken(DTokens.Div, x, y);
+					return Token(DTokens.Div, x, y);
 				case '%':
 					switch (ReaderPeek())
 					{
 						case '=':
 							ReaderRead();
-							return new DToken(DTokens.ModAssign, x, y, 2);
+							return Token(DTokens.ModAssign, x, y, 2);
 					}
-					return new DToken(DTokens.Mod, x, y);
+					return Token(DTokens.Mod, x, y);
 				case '&':
 					switch (ReaderPeek())
 					{
 						case '&':
 							ReaderRead();
-							return new DToken(DTokens.LogicalAnd, x, y, 2);
+							return Token(DTokens.LogicalAnd, x, y, 2);
 						case '=':
 							ReaderRead();
-							return new DToken(DTokens.BitwiseAndAssign, x, y, 2);
+							return Token(DTokens.BitwiseAndAssign, x, y, 2);
 					}
-					return new DToken(DTokens.BitwiseAnd, x, y);
+					return Token(DTokens.BitwiseAnd, x, y);
 				case '|':
 					switch (ReaderPeek())
 					{
 						case '|':
 							ReaderRead();
-							return new DToken(DTokens.LogicalOr, x, y, 2);
+							return Token(DTokens.LogicalOr, x, y, 2);
 						case '=':
 							ReaderRead();
-							return new DToken(DTokens.BitwiseOrAssign, x, y, 2);
+							return Token(DTokens.BitwiseOrAssign, x, y, 2);
 					}
-					return new DToken(DTokens.BitwiseOr, x, y);
+					return Token(DTokens.BitwiseOr, x, y);
 				case '^':
 					switch (ReaderPeek())
 					{
 						case '=':
 							ReaderRead();
-							return new DToken(DTokens.XorAssign, x, y, 2);
+							return Token(DTokens.XorAssign, x, y, 2);
 						case '^':
 							ReaderRead();
 							if (ReaderPeek() == '=')
 							{
 								ReaderRead();
-								return new DToken(DTokens.PowAssign, x, y, 3);
+								return Token(DTokens.PowAssign, x, y, 3);
 							}
-							return new DToken(DTokens.Pow, x, y, 2);
+							return Token(DTokens.Pow, x, y, 2);
 					}
-					return new DToken(DTokens.Xor, x, y);
+					return Token(DTokens.Xor, x, y);
 				case '!':
 					switch (ReaderPeek())
 					{
 						case '=':
 							ReaderRead();
-							return new DToken(DTokens.NotEqual, x, y, 2); // !=
+							return Token(DTokens.NotEqual, x, y, 2); // !=
 
 						case '<':
 							ReaderRead();
@@ -1467,18 +1577,18 @@ namespace D_Parser.Parser
 							{
 								case '=':
 									ReaderRead();
-									return new DToken(DTokens.UnorderedOrGreater, x, y, 3); // !<=
+									return Token(DTokens.UnorderedOrGreater, x, y, 3); // !<=
 								case '>':
 									ReaderRead();
 									switch (ReaderPeek())
 									{
 										case '=':
 											ReaderRead();
-											return new DToken(DTokens.Unordered, x, y, 4); // !<>=
+											return Token(DTokens.Unordered, x, y, 4); // !<>=
 									}
-									return new DToken(DTokens.UnorderedOrEqual, x, y, 3); // !<>
+									return Token(DTokens.UnorderedOrEqual, x, y, 3); // !<>
 							}
-							return new DToken(DTokens.UnorderedGreaterOrEqual, x, y, 2); // !<
+							return Token(DTokens.UnorderedGreaterOrEqual, x, y, 2); // !<
 
 						case '>':
 							ReaderRead();
@@ -1486,33 +1596,33 @@ namespace D_Parser.Parser
 							{
 								case '=':
 									ReaderRead();
-									return new DToken(DTokens.UnorderedOrLess, x, y, 3); // !>=
+									return Token(DTokens.UnorderedOrLess, x, y, 3); // !>=
 								default:
 									break;
 							}
-							return new DToken(DTokens.UnorderedLessOrEqual, x, y, 2); // !>
+							return Token(DTokens.UnorderedLessOrEqual, x, y, 2); // !>
 
 					}
-					return new DToken(DTokens.Not, x, y);
+					return Token(DTokens.Not, x, y);
 				case '~':
 					switch (ReaderPeek())
 					{
 						case '=':
 							ReaderRead();
-							return new DToken(DTokens.TildeAssign, x, y, 2);
+							return Token(DTokens.TildeAssign, x, y, 2);
 					}
-					return new DToken(DTokens.Tilde, x, y);
+					return Token(DTokens.Tilde, x, y);
 				case '=':
 					switch (ReaderPeek())
 					{
 						case '=':
 							ReaderRead();
-							return new DToken(DTokens.Equal, x, y, 2);
+							return Token(DTokens.Equal, x, y, 2);
 						case '>':
 							ReaderRead();
-							return new DToken(DTokens.GoesTo, x, y, 2);
+							return Token(DTokens.GoesTo, x, y, 2);
 					}
-					return new DToken(DTokens.Assign, x, y);
+					return Token(DTokens.Assign, x, y);
 				case '<':
 					switch (ReaderPeek())
 					{
@@ -1522,27 +1632,27 @@ namespace D_Parser.Parser
 							{
 								case '=':
 									ReaderRead();
-									return new DToken(DTokens.ShiftLeftAssign, x, y, 3);
+									return Token(DTokens.ShiftLeftAssign, x, y, 3);
 								default:
 									break;
 							}
-							return new DToken(DTokens.ShiftLeft, x, y, 2);
+							return Token(DTokens.ShiftLeft, x, y, 2);
 						case '>':
 							ReaderRead();
 							switch (ReaderPeek())
 							{
 								case '=':
 									ReaderRead();
-									return new DToken(DTokens.LessEqualOrGreater, x, y, 3);
+									return Token(DTokens.LessEqualOrGreater, x, y, 3);
 								default:
 									break;
 							}
-							return new DToken(DTokens.LessOrGreater, x, y, 2);
+							return Token(DTokens.LessOrGreater, x, y, 2);
 						case '=':
 							ReaderRead();
-							return new DToken(DTokens.LessEqual, x, y, 2);
+							return Token(DTokens.LessEqual, x, y, 2);
 					}
-					return new DToken(DTokens.LessThan, x, y);
+					return Token(DTokens.LessThan, x, y);
 				case '>':
 					switch (ReaderPeek())
 					{
@@ -1554,7 +1664,7 @@ namespace D_Parser.Parser
 								{
 									case '=':
 										ReaderRead();
-										return new DToken(DTokens.ShiftRightAssign, x, y, 3);
+										return Token(DTokens.ShiftRightAssign, x, y, 3);
 									case '>':
 										ReaderRead();
 										if (ReaderPeek() != -1)
@@ -1563,29 +1673,29 @@ namespace D_Parser.Parser
 											{
 												case '=':
 													ReaderRead();
-													return new DToken(DTokens.TripleRightShiftAssign, x, y, 4);
+													return Token(DTokens.TripleRightShiftAssign, x, y, 4);
 											}
-											return new DToken(DTokens.ShiftRightUnsigned, x, y, 3); // >>>
+											return Token(DTokens.ShiftRightUnsigned, x, y, 3); // >>>
 										}
 										break;
 								}
 							}
-							return new DToken(DTokens.ShiftRight, x, y, 2);
+							return Token(DTokens.ShiftRight, x, y, 2);
 						case '=':
 							ReaderRead();
-							return new DToken(DTokens.GreaterEqual, x, y, 2);
+							return Token(DTokens.GreaterEqual, x, y, 2);
 					}
-					return new DToken(DTokens.GreaterThan, x, y);
+					return Token(DTokens.GreaterThan, x, y);
 				case '?':
-					return new DToken(DTokens.Question, x, y);
+					return Token(DTokens.Question, x, y);
 				case '$':
-					return new DToken(DTokens.Dollar, x, y);
+					return Token(DTokens.Dollar, x, y);
 				case ';':
-					return new DToken(DTokens.Semicolon, x, y);
+					return Token(DTokens.Semicolon, x, y);
 				case ':':
-					return new DToken(DTokens.Colon, x, y);
+					return Token(DTokens.Colon, x, y);
 				case ',':
-					return new DToken(DTokens.Comma, x, y);
+					return Token(DTokens.Comma, x, y);
 				case '.':
 					// Prevent OverflowException when ReaderPeek returns -1
 					int tmp = ReaderPeek();
@@ -1597,23 +1707,23 @@ namespace D_Parser.Parser
 						if ((char)ReaderPeek() == '.') // Triple dot
 						{
 							ReaderRead();
-							return new DToken(DTokens.TripleDot, x, y, 3);
+							return Token(DTokens.TripleDot, x, y, 3);
 						}
-						return new DToken(DTokens.DoubleDot, x, y, 2);
+						return Token(DTokens.DoubleDot, x, y, 2);
 					}
-					return new DToken(DTokens.Dot, x, y);
+					return Token(DTokens.Dot, x, y);
 				case ')':
-					return new DToken(DTokens.CloseParenthesis, x, y);
+					return Token(DTokens.CloseParenthesis, x, y);
 				case '(':
-					return new DToken(DTokens.OpenParenthesis, x, y);
+					return Token(DTokens.OpenParenthesis, x, y);
 				case ']':
-					return new DToken(DTokens.CloseSquareBracket, x, y);
+					return Token(DTokens.CloseSquareBracket, x, y);
 				case '[':
-					return new DToken(DTokens.OpenSquareBracket, x, y);
+					return Token(DTokens.OpenSquareBracket, x, y);
 				case '}':
-					return new DToken(DTokens.CloseCurlyBrace, x, y);
+					return Token(DTokens.CloseCurlyBrace, x, y);
 				case '{':
-					return new DToken(DTokens.OpenCurlyBrace, x, y);
+					return Token(DTokens.OpenCurlyBrace, x, y);
 				default:
 					return null;
 			}

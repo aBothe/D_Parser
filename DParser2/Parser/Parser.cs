@@ -84,7 +84,6 @@ namespace D_Parser.Parser
 
 		public List<ParserError> ParseErrors = new List<ParserError>();
 		public const int MaxParseErrorsBeforeFailure = 100;
-
 		#endregion
 
 		public void Dispose()
