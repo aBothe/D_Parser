@@ -50,7 +50,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				possibleTypes = TypeDeclarationResolver.Resolve((IdentifierDeclaration)nex.Type, ctxt, filterForTemplateArgs: false);
 			else
 				possibleTypes = TypeDeclarationResolver.Resolve(nex.Type, ctxt);
-
+			
 			var ctors = new Dictionary<DMethod, TemplateIntermediateType>();
 
 			if (possibleTypes == null)
@@ -58,7 +58,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			foreach (var t in possibleTypes)
 			{
-				var ct = t as TemplateIntermediateType;
+				var ct = DResolver.StripAliasSymbol(t as AbstractType) as TemplateIntermediateType;
 				if (ct!=null && 
 					!ct.Definition.ContainsAttribute(DTokens.Abstract))
 					foreach (var ctor in GetConstructors(ct))

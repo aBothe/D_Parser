@@ -64,6 +64,40 @@ class foo {}");
 
 			Assert.AreEqual("foo", ct.Name);
 		}
+		
+		[Test]
+		public void BasicResolution2()
+		{
+			var pcl = CreateCache(@"module A;
+struct Thing(T)
+{
+	public T property;
+}
+
+alias Thing!(int) IntThing;");
+			
+			var ctxt = CreateDefCtxt(pcl, pcl[0]["A"]);
+			
+			var ex = DParser.ParseExpression("Thing!int");
+			var t = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(StructType)));
+			
+			ex = DParser.ParseExpression("IntThing");
+			t = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(AliasedType)));
+			t = DResolver.StripAliasSymbol(t);
+			Assert.That(t, Is.TypeOf(typeof(StructType)));
+			
+			ex = DParser.ParseExpression("new Thing!int");
+			t = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol))); // Returns the ctor
+			Assert.That(((DSymbol)t).Name, Is.EqualTo(DMethod.ConstructorIdentifier));
+			
+			ex = DParser.ParseExpression("new IntThing");
+			t = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That(((DSymbol)t).Name, Is.EqualTo(DMethod.ConstructorIdentifier));
+		}
 
 		[Test]
 		public void TestMultiModuleResolution1()
