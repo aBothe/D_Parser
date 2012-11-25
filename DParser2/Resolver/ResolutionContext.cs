@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using D_Parser.Completion;
 using D_Parser.Dom;
+using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
 using D_Parser.Misc;
 using D_Parser.Resolver.TypeResolution;
@@ -46,25 +47,18 @@ namespace D_Parser.Resolver
 				return CurrentContext.ScopedStatement;
 			}
 		}
-
-		Dictionary<object, Dictionary<string, ISemantic[]>> resolvedTypes = new Dictionary<object, Dictionary<string, ISemantic[]>>();
-
-		/// <summary>
-		/// Stores scoped-block dependent type dictionaries, which store all types that were already resolved once
-		/// </summary>
-		public Dictionary<object, Dictionary<string, ISemantic[]>> ResolvedTypes
-		{
-			get { return resolvedTypes; }
-		}
-
+		
 		public ContextFrame CurrentContext
 		{
 			get {
 				return stack.Peek();
 			}
 		}
+		
+		internal readonly List<INode> NodesBeingResolved = new List<INode>(); // a List is faster than a HashSet o_O
 		#endregion
 
+		#region Init/Constructor
 		public static ResolutionContext Create(IEditorData editor, ConditionalCompilationFlags globalConditions = null)
 		{
 			IStatement stmt = null;
@@ -87,7 +81,9 @@ namespace D_Parser.Resolver
 			
 			stack.Push(initCtxt);
 		}
-
+		#endregion
+		
+		#region ContextFrame stacking
 		public ContextFrame Pop()
 		{
 			if(stack.Count>0)
@@ -104,64 +100,7 @@ namespace D_Parser.Resolver
 		{
 			stack.Push(new ContextFrame(this, scope, stmt));
 		}
-
-		/// <summary>
-		/// Returns either the nearest block statement that is containing the scoped statement or the 
-		/// currently scoped block if no statement scope is given.
-		/// </summary>
-		object GetMostFittingBlock()
-		{
-			if (CurrentContext == null)
-				return null;
-
-			if (CurrentContext.ScopedStatement != null)
-			{
-				var r = CurrentContext.ScopedStatement;
-
-				while (r != null)
-				{
-					if (r is BlockStatement)
-						return r;
-					else
-						r = r.Parent;
-				}
-			}
-			
-			return CurrentContext.ScopedBlock;
-		}
-		/* TODO: Resolution caching
-		public void TryCacheResults(string TypeDeclarationString, ISemantic[] NodeMatches)
-		{
-			var ScopedType = GetMostFittingBlock();
-
-			Dictionary<string, ISemantic[]> subDict = null;
-
-			if (!resolvedTypes.TryGetValue(ScopedType, out subDict))
-				resolvedTypes.Add(ScopedType, subDict = new Dictionary<string, ISemantic[]>());
-
-			if (!subDict.ContainsKey(TypeDeclarationString))
-				subDict.Add(TypeDeclarationString, NodeMatches);
-		}
-
-		public bool TryGetAlreadyResolvedType(string TypeDeclarationString, out ISemantic[] NodeMatches)
-		{
-			var ScopedType = GetMostFittingBlock();
-
-			Dictionary<string, ISemantic[]> subDict = null;
-
-			if (ScopedType != null && !resolvedTypes.TryGetValue(ScopedType, out subDict))
-			{
-				NodeMatches = null;
-				return false;
-			}
-
-			if (subDict != null)
-				return subDict.TryGetValue(TypeDeclarationString, out NodeMatches);
-
-			NodeMatches = null;
-			return false;
-		}
-*/
+		
 		/// <summary>
 		/// Returns true if the the context that is stacked below the current context represents the parent item of the current block scope
 		/// </summary>
@@ -200,6 +139,7 @@ namespace D_Parser.Resolver
 
 			return false;
 		}
+		#endregion
 
 		/// <summary>
 		/// Returns true if 'results' only contains one valid item
@@ -224,6 +164,16 @@ namespace D_Parser.Resolver
 			return results[0] != null;
 		}
 
+		#region Result caching
+		public bool TryGetCachedResult(INode n, out AbstractType type, params IExpression[] templateArguments)
+		{
+			type = null;
+			
+			return false;
+		}
+		#endregion
+		
+		#region Error handling
 		public void LogError(ResolutionError err)
 		{
 			ResolutionErrors.Add(err);
@@ -233,5 +183,6 @@ namespace D_Parser.Resolver
 		{
 			ResolutionErrors.Add(new ResolutionError(syntaxObj,msg));
 		}
+		#endregion
 	}
 }
