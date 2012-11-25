@@ -98,6 +98,19 @@ alias Thing!(int) IntThing;");
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That(((DSymbol)t).Name, Is.EqualTo(DMethod.ConstructorIdentifier));
 		}
+		
+		[Test]
+		public void BasicResolution3()
+		{
+			var pcl = CreateCache(@"module A;
+class Blupp : Blah!(Blupp) {}
+class Blah(T){ T b; }");
+			
+			var ctxt = CreateDefCtxt(pcl, pcl[0]["A"]);
+			
+			var ex = DParser.ParseExpression("Blah!Blupp");
+			var t = Evaluation.EvaluateType(ex, ctxt);
+		}
 
 		[Test]
 		public void TestMultiModuleResolution1()

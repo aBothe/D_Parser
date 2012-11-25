@@ -460,6 +460,7 @@ namespace D_Parser.Resolver.TypeResolution
 		#region Intermediate methods
 		[ThreadStatic]
 		static Dictionary<INode, int> stackCalls;
+		
 		/// <summary>
 		/// The variable's or method's base type will be resolved (if auto type, the intializer's type will be taken).
 		/// A class' base class will be searched.
@@ -624,12 +625,7 @@ namespace D_Parser.Resolver.TypeResolution
 				}
 
 				if (dc.ClassType == DTokens.Class || dc.ClassType == DTokens.Interface)
-				{
-					if (!ctxt.Options.HasFlag(ResolutionOptions.DontResolveBaseClasses))
-						ret = DResolver.ResolveBaseClasses(udt, ctxt);
-					else
-						ret = udt;
-				}
+					ret = DoResolveBaseType ? DResolver.ResolveBaseClasses(udt, ctxt) : udt;
 			}
 			else if (m is IAbstractSyntaxTree)
 			{
@@ -663,7 +659,7 @@ namespace D_Parser.Resolver.TypeResolution
 			if (stkC == 1)
 				stackCalls.Remove(m);
 			else
-				stackCalls[m] = stkC--;
+				stackCalls[m] = stkC-1;
 
 			return ret;
 		}
