@@ -154,6 +154,22 @@ class Blah(T){ T b; }");
 			Assert.IsInstanceOfType(typeof(DMethod),mr.Definition);
 			Assert.AreEqual(mr.Name, "fooC");
 		}
+		
+		[Test]
+		public void Imports2()
+		{
+			var pcl = CreateCache(@"module A; import B;", @"module B; import C;",@"module C; public import D;",@"module D; void foo(){}",
+			                     @"module E; import F;", @"module F; public import C;");
+			
+			var ctxt = CreateDefCtxt(pcl, pcl[0]["A"]);
+			
+			var t = TypeDeclarationResolver.ResolveIdentifier("foo",ctxt,null);
+			Assert.That(t.Length, Is.EqualTo(0));
+			
+			ctxt.CurrentContext.Set(pcl[0]["E"]);
+			t = TypeDeclarationResolver.ResolveIdentifier("foo",ctxt,null);
+			Assert.That(t.Length, Is.EqualTo(1));
+		}
 
 		[Test]
 		public void TestParamDeduction1()

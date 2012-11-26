@@ -439,36 +439,6 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		}
 
 		#region Imports
-
-		/* 
-		 * public imports only affect the directly superior module:
-		 *
-		 * module A:
-		 * import B;
-		 * 
-		 * foo(); // Will fail, because foo wasn't found
-		 * 
-		 * ---------------------------
-		 * module B:
-		 * import C;
-		 * 
-		 * ---------------------------
-		 * module C:
-		 * public import D;
-		 * 
-		 * ---------------------------
-		 * module D:
-		 * void foo() {}
-		 * 
-		 * ---------------------------
-		 * Whereas
-		 * module B:
-		 * public import C;
-		 * 
-		 * -- will compile because we have a closed import hierarchy in which all imports are public.
-		 * 
-		 */
-
 		/// <summary>
 		/// Handle the node's static statements (but not the node itself)
 		/// </summary>
