@@ -155,7 +155,7 @@ namespace D_Parser.Resolver.TypeResolution
 			if (rawOverloadList == null)
 				return filteredOverloads;
 
-			foreach (var o in DResolver.StripAliasSymbols(rawOverloadList))
+			foreach (var o in rawOverloadList)
 			{
 				if (!(o is DSymbol))
 				{

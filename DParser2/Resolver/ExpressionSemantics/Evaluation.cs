@@ -179,7 +179,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (foreExpression is TemplateInstanceExpression)
 				overloads = Evaluation.GetOverloads((TemplateInstanceExpression)foreExpression, ctxt, null);
 			else if (foreExpression is IdentifierExpression)
-				overloads = Evaluation.GetOverloads((IdentifierExpression)foreExpression, ctxt);
+				overloads = Evaluation.GetOverloads((IdentifierExpression)foreExpression, ctxt, false);
 			else if (foreExpression is PostfixExpression_Access)
 			{
 				bool ufcs = false; // TODO?

@@ -382,7 +382,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					if (call.PostfixForeExpression is TemplateInstanceExpression)
 						baseExpression = GetOverloads(tix = (TemplateInstanceExpression)call.PostfixForeExpression, null, false);
 					else if (call.PostfixForeExpression is IdentifierExpression)
-						baseExpression = GetOverloads((IdentifierExpression)call.PostfixForeExpression);
+						baseExpression = GetOverloads((IdentifierExpression)call.PostfixForeExpression, false);
 					else
 						baseExpression = new[] { AbstractType.Get(E(call.PostfixForeExpression)) };
 				}

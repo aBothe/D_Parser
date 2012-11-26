@@ -187,16 +187,22 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				TemplateInstanceHandler.DeduceParamsAndFilterOverloads(res, tix, ctxt) : res;
 		}
 
-		public AbstractType[] GetOverloads(IdentifierExpression id)
+		public AbstractType[] GetOverloads(IdentifierExpression id, bool deduceParameters = true)
 		{
-			return GetOverloads(id, ctxt);
+			return GetOverloads(id, ctxt, deduceParameters);
 		}
 
-		public static AbstractType[] GetOverloads(IdentifierExpression id, ResolutionContext ctxt)
+		public static AbstractType[] GetOverloads(IdentifierExpression id, ResolutionContext ctxt, bool deduceParameters = true)
 		{
 			var raw=TypeDeclarationResolver.ResolveIdentifier(id.Value as string, ctxt, id, id.ModuleScoped);
 			var f = DResolver.FilterOutByResultPriority(ctxt, raw);
-			return f==null ? null : f.ToArray();
+			
+			if(f==null)
+				return null;
+			
+			return !ctxt.Options.HasFlag(ResolutionOptions.NoTemplateParameterDeduction) && deduceParameters ?
+				TemplateInstanceHandler.DeduceParamsAndFilterOverloads(f, null, false, ctxt) : 
+				f.ToArray();
 		}
 	}
 }

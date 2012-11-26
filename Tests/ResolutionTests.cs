@@ -425,6 +425,35 @@ T delegate(T dgParam) genDelegate(T)();");
 			t = Evaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 		}
+		
+		[Test]
+		public void IdentifierOnlyTemplateDeduction()
+		{
+			var pcl = CreateCache(@"module A;
+class Too(T:int)
+{ int foo1;}
+class Too(T:float)
+{ int foo2;}");
+			
+			var ctxt = CreateDefCtxt(pcl, pcl[0]["A"]);
+			
+			var ex = DParser.ParseExpression("Too");
+			var t = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(t, Is.Null);
+			
+			ex = DParser.ParseExpression("Too!int");
+			t = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(ClassType)));
+			
+			DToken tk;
+			var ty = DParser.ParseBasicType("Too",out tk);
+			t = TypeDeclarationResolver.ResolveSingle(ty,ctxt);
+			Assert.That(t, Is.Null);
+			
+			ty = DParser.ParseBasicType("Too!int",out tk);
+			t = TypeDeclarationResolver.ResolveSingle(ty,ctxt);
+			Assert.That(t, Is.TypeOf(typeof(ClassType)));
+		}
 
 		[Test]
 		public void Ctors()
