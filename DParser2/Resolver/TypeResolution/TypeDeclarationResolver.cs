@@ -162,78 +162,41 @@ namespace D_Parser.Resolver.TypeResolution
 			ResolutionContext ctxt,
 			object typeIdObject = null)
 		{
-			if ((resultBases = DResolver.StripAliasSymbols(resultBases)) == null)
+			if ((resultBases = DResolver.StripMemberSymbols(resultBases)) == null)
 				return null;
 
 			var r = new List<AbstractType>();
 
-			var nextResults = new List<AbstractType>();
-			foreach (var b in resultBases)
+			foreach(var b in resultBases)
 			{
-				IEnumerable<AbstractType> scanResults = new[] { b };
-
-				do
+				if (b is UserDefinedType)
 				{
-					foreach (var scanResult in scanResults)
-					{
-						// First filter out all alias and member results..so that there will be only (Static-)Type or Module results left..
-						if (scanResult is MemberSymbol)
-						{
-							var mr = (MemberSymbol)scanResult;
+					var udt = b as UserDefinedType;
+					var bn = udt.Definition as IBlockNode;
+					
+					bool pop = !(b is MixinTemplateType);
+					if(!pop)
+						ctxt.PushNewScope(bn);
+					ctxt.CurrentContext.IntroduceTemplateParameterTypes(udt);
 
-							if (mr.Base != null)
-								nextResults.Add(mr.Base);
-						}
+					r.AddRange(SingleNodeNameScan.SearchChildrenAndResolve(ctxt, b, bn, nextIdentifier, typeIdObject));
 
-						else if (scanResult is UserDefinedType)
-						{
-							var udt = (UserDefinedType)scanResult;
-							var bn = udt.Definition as IBlockNode;
-							var nodeMatches = NameScan.ScanNodeForIdentifier(bn, nextIdentifier, ctxt);
-
-							bool pop = !(scanResult is MixinTemplateType);
-							if(!pop)
-								ctxt.PushNewScope(bn);
-							ctxt.CurrentContext.IntroduceTemplateParameterTypes(udt);
-
-							var results = HandleNodeMatches(nodeMatches, ctxt, b, typeIdObject);
-
-							if (results != null)
-								foreach (var res in results)
-									r.Add(AbstractType.Get(res));
-
-							ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(udt);
-							if(!pop)
-								ctxt.Pop();
-						}
-						else if (scanResult is PackageSymbol)
-						{
-							var pack = ((PackageSymbol)scanResult).Package;
-
-							IAbstractSyntaxTree accessedModule = null;
-							if (pack.Modules.TryGetValue(nextIdentifier, out accessedModule))
-								r.Add(new ModuleSymbol(accessedModule as DModule, typeIdObject as ISyntaxRegion, (PackageSymbol)scanResult));
-							else if (pack.Packages.TryGetValue(nextIdentifier, out pack))
-								r.Add(new PackageSymbol(pack, typeIdObject as ISyntaxRegion));
-						}
-						else if (scanResult is ModuleSymbol)
-						{
-							var modRes = (ModuleSymbol)scanResult;
-
-							var matches = NameScan.ScanNodeForIdentifier(modRes.Definition, nextIdentifier, ctxt);
-
-							var results = HandleNodeMatches(matches, ctxt, b, typeIdObject);
-
-							if (results != null)
-								foreach (var res in results)
-									r.Add(AbstractType.Get(res));
-						}
-					}
-
-					scanResults = DResolver.FilterOutByResultPriority(ctxt, nextResults);
-					nextResults = new List<AbstractType>();
+					ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(udt);
+					if(!pop)
+						ctxt.Pop();
 				}
-				while (scanResults != null);
+				else if (b is PackageSymbol)
+				{
+					var pack = (b as PackageSymbol).Package;
+
+					IAbstractSyntaxTree accessedModule = null;
+					if (pack.Modules.TryGetValue(nextIdentifier, out accessedModule))
+						r.Add(new ModuleSymbol(accessedModule as DModule, typeIdObject as ISyntaxRegion, b as PackageSymbol));
+					else if (pack.Packages.TryGetValue(nextIdentifier, out pack))
+						r.Add(new PackageSymbol(pack, typeIdObject as ISyntaxRegion));
+				}
+				else if (b is ModuleSymbol)
+					r.AddRange(SingleNodeNameScan.SearchChildrenAndResolve(ctxt, b, (b as ModuleSymbol).Definition, nextIdentifier, typeIdObject));
 			}
 
 			return r.Count == 0 ? null : r.ToArray();

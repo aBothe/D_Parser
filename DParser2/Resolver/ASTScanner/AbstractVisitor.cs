@@ -20,11 +20,7 @@ namespace D_Parser.Resolver.ASTScanner
 			ModuleIdentifier = new IdentifierDeclaration("object")
 		};
 
-		ResolutionContext ctxt;
-		public ResolutionContext Context
-		{
-			get { return ctxt; }
-		}
+		protected readonly ResolutionContext ctxt;
 		#endregion
 
 		#region Constructor
@@ -91,96 +87,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			// 2)
 			while (curScope != null)
 			{
-				// Walk up inheritance hierarchy
-				if (curScope is DClassLike)
-				{
-					if (DeepScanClass((DClassLike)curScope, VisibleMembers, ref breakOnNextScope))
-						return true;
-				}
-				else if (curScope is DMethod)
-				{
-					var dm = curScope as DMethod;
-
-					// Add 'out' variable if typing in the out test block currently
-					if (dm.OutResultVariable != null && dm.Out != null && dm.GetSubBlockAt(Caret) == dm.Out &&
-						(breakOnNextScope = HandleItem(new DVariable // Create pseudo-variable
-							{
-								Name = dm.OutResultVariable.Id as string,
-								NameLocation = dm.OutResultVariable.Location,
-								Type = dm.Type, // TODO: What to do on auto functions?
-								Parent = dm,
-								Location = dm.OutResultVariable.Location,
-								EndLocation = dm.OutResultVariable.EndLocation,
-							})) &&
-							breakImmediately)
-						return true;
-
-					if (VisibleMembers.HasFlag(MemberFilter.Variables) &&
-						(breakOnNextScope = HandleItems(dm.Parameters)) &&
-						breakImmediately)
-						return true;
-
-					if (dm.TemplateParameters != null &&
-						(breakOnNextScope = HandleItems(dm.TemplateParameterNodes as IEnumerable<INode>)) &&
-						breakImmediately)
-						return true;
-
-					// The method's declaration children are handled above already via BlockStatement.GetItemHierarchy().
-					// except AdditionalChildren:
-					foreach (var ch in dm.AdditionalChildren)
-						if (CanAddMemberOfType(VisibleMembers, ch) &&
-							(breakOnNextScope = HandleItem(ch) && breakImmediately))
-							return true;
-
-					// If the method is a nested method,
-					// this method won't be 'linked' to the parent statement tree directly - 
-					// so, we've to gather the parent method and add its locals to the return list
-					if (dm.Parent is DMethod)
-					{
-						var nestedBlock = (dm.Parent as DMethod).GetSubBlockAt(Caret);
-
-						// Search for the deepest statement scope and add all declarations done in the entire hierarchy
-						if (nestedBlock != null &&
-							(breakOnNextScope = IterateThroughItemHierarchy(nestedBlock.SearchStatementDeeply(Caret), Caret, VisibleMembers)) &&
-							breakImmediately)
-							return true;
-					}
-				}
-				else
-				{
-					var ch = PrefilterSubnodes(curScope);
-					if (ch != null)
-						foreach (var n in ch)
-						{
-							if(n is DNode && !ctxt.CurrentContext.MatchesDeclarationEnvironment((DNode)n))	
-								continue;
-
-							// Add anonymous enums' items
-							if (n is DEnum && string.IsNullOrEmpty(n.Name) && CanAddMemberOfType(VisibleMembers, n))
-							{
-								if ((breakOnNextScope = HandleItems(((DEnum)n).Children)) && breakImmediately)
-									return true;
-								continue;
-							}
-
-							var dm3 = n as DMethod; // Only show normal & delegate methods
-							if (!CanAddMemberOfType(VisibleMembers, n) ||
-								(dm3 != null && !(dm3.SpecialType == DMethod.MethodType.Normal || dm3.SpecialType == DMethod.MethodType.Delegate)))
-								continue;
-
-							if ((breakOnNextScope = HandleItem(n)) && breakImmediately)
-								return true;
-						}
-				}
-
-				// Handle imports
-				if (curScope is DBlockNode)
-					if ((breakOnNextScope = HandleDBlockNode((DBlockNode)curScope, VisibleMembers)) && breakImmediately)
-						return true;
-
-				if (breakOnNextScope && ctxt.Options.HasFlag(ResolutionOptions.StopAfterFirstOverloads))
+				if(ScanBlock(curScope, Caret, VisibleMembers, ref breakOnNextScope))
 					return true;
-
+				
 				curScope = curScope.Parent as IBlockNode;
 			}
 
@@ -193,6 +102,98 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			return false;
 		}
 
+		protected bool ScanBlock(IBlockNode curScope, CodeLocation Caret, MemberFilter VisibleMembers, ref bool breakOnNextScope)
+		{
+			if (curScope is DClassLike)
+			{
+				if (DeepScanClass((DClassLike)curScope, VisibleMembers, ref breakOnNextScope))
+					return true;
+			}
+			else if (curScope is DMethod)
+			{
+				var dm = curScope as DMethod;
+
+				// Add 'out' variable if typing in the out test block currently
+				if (dm.OutResultVariable != null && dm.Out != null && dm.GetSubBlockAt(Caret) == dm.Out &&
+					(breakOnNextScope = HandleItem(new DVariable // Create pseudo-variable
+						{
+							Name = dm.OutResultVariable.Id as string,
+							NameLocation = dm.OutResultVariable.Location,
+							Type = dm.Type, // TODO: What to do on auto functions?
+							Parent = dm,
+							Location = dm.OutResultVariable.Location,
+							EndLocation = dm.OutResultVariable.EndLocation,
+						})) &&
+						breakImmediately)
+					return true;
+
+				if (VisibleMembers.HasFlag(MemberFilter.Variables) &&
+					(breakOnNextScope = HandleItems(dm.Parameters)) &&
+					breakImmediately)
+					return true;
+
+				if (dm.TemplateParameters != null &&
+					(breakOnNextScope = HandleItems(dm.TemplateParameterNodes as IEnumerable<INode>)) &&
+					breakImmediately)
+					return true;
+
+				// The method's declaration children are handled above already via BlockStatement.GetItemHierarchy().
+				// except AdditionalChildren:
+				foreach (var ch in dm.AdditionalChildren)
+					if (CanAddMemberOfType(VisibleMembers, ch) &&
+						(breakOnNextScope = HandleItem(ch) && breakImmediately))
+						return true;
+
+				// If the method is a nested method,
+				// this method won't be 'linked' to the parent statement tree directly - 
+				// so, we've to gather the parent method and add its locals to the return list
+				if (dm.Parent is DMethod)
+				{
+					var nestedBlock = (dm.Parent as DMethod).GetSubBlockAt(Caret);
+
+					// Search for the deepest statement scope and add all declarations done in the entire hierarchy
+					if (nestedBlock != null &&
+						(breakOnNextScope = IterateThroughItemHierarchy(nestedBlock.SearchStatementDeeply(Caret), Caret, VisibleMembers)) &&
+						breakImmediately)
+						return true;
+				}
+			}
+			else
+			{
+				var ch = PrefilterSubnodes(curScope);
+				if (ch != null)
+					foreach (var n in ch)
+					{
+						if(n is DNode && !ctxt.CurrentContext.MatchesDeclarationEnvironment((DNode)n))	
+							continue;
+
+						// Add anonymous enums' items
+						if (n is DEnum && string.IsNullOrEmpty(n.Name) && CanAddMemberOfType(VisibleMembers, n))
+						{
+							var ch2 = PrefilterSubnodes(n as DEnum);
+							if (ch2 != null && (breakOnNextScope = HandleItems(ch2) && breakImmediately))
+								return true;
+							continue;
+						}
+
+						var dm3 = n as DMethod; // Only show normal & delegate methods
+						if (!CanAddMemberOfType(VisibleMembers, n) ||
+							(dm3 != null && !(dm3.SpecialType == DMethod.MethodType.Normal || dm3.SpecialType == DMethod.MethodType.Delegate)))
+							continue;
+
+						if ((breakOnNextScope = HandleItem(n)) && breakImmediately)
+							return true;
+					}
+			}
+
+			// Handle imports and other static statements
+			if (curScope is DBlockNode)
+				if ((breakOnNextScope = HandleDBlockNode((DBlockNode)curScope, VisibleMembers)) && breakImmediately)
+					return true;
+
+			return breakOnNextScope && ctxt.Options.HasFlag(ResolutionOptions.StopAfterFirstOverloads);
+		}
+		
 		bool DeepScanClass(DClassLike cls, MemberFilter VisibleMembers, ref bool breakOnNextScope)
 		{
 			var curWatchedClass = cls;

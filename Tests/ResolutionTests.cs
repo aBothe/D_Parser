@@ -1102,6 +1102,44 @@ mixin Mx!float myTempMx;");
 			Assert.That(ms.Base, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			Assert.That((ms.Base as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 		}
+		
+		[Test]
+		public void TemplateMixins2()
+		{
+			var pcl = ResolutionTests.CreateCache(@"module A;
+mixin template Foo() {
+  int[] func() { writefln(""Foo.func()""); }
+}
+
+class Bar {
+  mixin Foo;
+}
+
+class Code : Bar {
+  float func() { writefln(""Code.func()""); }
+}
+
+void test() {
+  Bar b = new Bar();
+  b.func();      // calls Foo.func()
+
+  b = new Code();
+  b.func();      // calls Code.func()
+}");
+			
+			var A =pcl[0]["A"];
+			var ctxt = ResolutionTests.CreateDefCtxt(pcl, A);
+			
+			var ex = DParser.ParseExpression("(new Code()).func");
+			var x = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(x, Is.InstanceOf(typeof(MemberSymbol)));
+			Assert.That((x as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+			
+			ex = DParser.ParseExpression("(new Bar()).func");
+			x = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(x, Is.InstanceOf(typeof(MemberSymbol)));
+			Assert.That((x as MemberSymbol).Base, Is.TypeOf(typeof(ArrayType)));
+		}
 		#endregion
 	}
 }

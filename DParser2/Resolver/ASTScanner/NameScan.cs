@@ -7,21 +7,25 @@ namespace D_Parser.Resolver.ASTScanner
 {
 	public class NameScan : AbstractVisitor
 	{
-		string filterId;
-		object idObject;
-		List<AbstractType> matches_types;
+		protected readonly string filterId;
+		protected readonly object idObject;
+		protected readonly List<AbstractType> matches_types = new List<AbstractType>();
 
-		private NameScan(ResolutionContext ctxt) : base(ctxt) { }
+		protected NameScan(ResolutionContext ctxt, string filterId, object idObject) : base(ctxt)
+		{
+			this.filterId = filterId;
+			this.idObject = idObject;
+		}
 
 		public static List<AbstractType> SearchAndResolve(ResolutionContext ctxt, CodeLocation caret, string name, object idObject=null)
 		{
-			var scan = new NameScan(ctxt) { filterId=name, matches_types = new List<AbstractType>(), idObject = idObject };
+			var scan = new NameScan(ctxt, name, idObject);
 
 			scan.IterateThroughScopeLayers(caret);
 
 			return scan.matches_types;
 		}
-
+		
 		public override IEnumerable<INode> PrefilterSubnodes(IBlockNode bn)
 		{
 			return bn.Children[filterId];
@@ -31,9 +35,9 @@ namespace D_Parser.Resolver.ASTScanner
 		{
             if (n != null && n.Name == filterId)
             {
-            	matches_types.Add(TypeDeclarationResolver.HandleNodeMatch(n, Context, null, idObject));
+            	matches_types.Add(TypeDeclarationResolver.HandleNodeMatch(n, ctxt, null, idObject));
 
-                if (Context.Options.HasFlag(ResolutionOptions.StopAfterFirstMatch))
+                if (ctxt.Options.HasFlag(ResolutionOptions.StopAfterFirstMatch))
                     return true;
             }
 
@@ -60,9 +64,9 @@ namespace D_Parser.Resolver.ASTScanner
 
                     if (canAdd)
                     {
-		            	matches_types.Add(TypeDeclarationResolver.HandleNodeMatch(n, Context, null, idObject));
+		            	matches_types.Add(TypeDeclarationResolver.HandleNodeMatch(n, ctxt, null, idObject));
 
-                        if (Context.Options.HasFlag(ResolutionOptions.StopAfterFirstMatch))
+                        if (ctxt.Options.HasFlag(ResolutionOptions.StopAfterFirstMatch))
                             return true;
                     }
                 }
@@ -70,97 +74,37 @@ namespace D_Parser.Resolver.ASTScanner
 
             return false;
 		}
-
-		static int __stack = 0;
+	}
+	
+	public class SingleNodeNameScan : NameScan
+	{
+		AbstractType resultBase;
+		protected SingleNodeNameScan(ResolutionContext ctxt, string filter, object idObject) : base(ctxt, filter, idObject) {}
+		
 		/// <summary>
-		/// Scans through the node. Also checks if n is a DClassLike or an other kind of type node and checks their specific child and/or base class nodes.
+		/// Scans a block node. Not working with DMethods.
+		/// Automatically resolves node matches so base types etc. will be specified directly after the search operation.
 		/// </summary>
-		/// <param name="parseCache">Needed when trying to search base classes</param>
-		public static INode[] ScanNodeForIdentifier(IBlockNode curScope, string name, ResolutionContext ctxt)
+		public static List<AbstractType> SearchChildrenAndResolve(ResolutionContext ctxt, AbstractType resultBase, IBlockNode block, string name, object idObject = null)
 		{
-			if (__stack > 40)
-				return null;
+			var scan = new SingleNodeNameScan(ctxt, name, idObject) { resultBase = resultBase };
 
-			__stack++;
+			bool _unused=false;
+			scan.ScanBlock(block, CodeLocation.Empty, MemberFilter.All, ref _unused);
 
-			var matches = new List<INode>();
+			return scan.matches_types;
+		}
+		
+		protected override bool HandleItem(INode n)
+		{
+			if (n != null && n.Name == filterId)
+            {
+            	matches_types.Add(TypeDeclarationResolver.HandleNodeMatch(n, ctxt, resultBase, idObject));
 
-			// Watch for anonymous enums
-			var children = curScope[string.Empty];
-
-			if(children!=null)
-				foreach(var n in children)
-					if (n is DEnum)
-					{
-						var de = (DEnum)n;
-
-						var enumChildren = de[name];
-
-						if (enumChildren != null)
-							matches.AddRange(enumChildren);
-					}
-
-			// Scan for normal members called 'name'
-			if ((children = curScope[name]) != null)
-				matches.AddRange(children);
-
-			// If our current Level node is a class-like, also attempt to search in its baseclass!
-			if (curScope is DClassLike)
-			{
-				var dc = (DClassLike)curScope;
-
-				if (dc.ClassType == DTokens.Class)
-				{
-					var tr=DResolver.ResolveBaseClasses(new ClassType(dc, dc, null), ctxt, true);
-					var tit = tr.Base as TemplateIntermediateType;
-					if (tit!=null && tit.Definition != dc)
-						{
-							// Search for items called name in the base class(es)
-							var r = ScanNodeForIdentifier(tit.Definition, name, ctxt);
-
-							if (r != null)
-								matches.AddRange(r);
-						}
-				}
-				else if (dc.ClassType == DTokens.Interface)
-				{
-					var tr = DResolver.ResolveBaseClasses(new InterfaceType(dc, dc), ctxt) as InterfaceType;
-					if (tr != null && tr.BaseInterfaces != null && tr.BaseInterfaces.Length != 0)
-						foreach (var I in tr.BaseInterfaces)
-						{
-							if (I.Definition == dc)
-								break;
-
-							// Search for items called name in the base class(es)
-							var r = ScanNodeForIdentifier(I.Definition, name, ctxt);
-
-							if (r != null)
-								matches.AddRange(r);
-						}
-				}
-			}
-
-			// Check parameters
-			var dn = curScope as DNode;
-
-			if (dn != null)
-			{
-				var dm = dn as DMethod;
-				if (dm != null && dm.Parameters != null && dm.Parameters.Count != 0)
-					foreach (var ch in ((DMethod)curScope).Parameters)
-						if (name == ch.Name)
-							matches.Add(ch);
-
-				// and template parameters
-				if (dn.TemplateParameters != null)
-					foreach (var ch in dn.TemplateParameters)
-						if (name == ch.Name)
-							matches.Add(new TemplateParameterNode(ch) { Parent = curScope });
-			}
-
-			__stack--;
-
-			return matches.Count > 0 ? matches.ToArray() : null;
+                if (ctxt.Options.HasFlag(ResolutionOptions.StopAfterFirstMatch))
+                    return true;
+            }
+			return false;
 		}
 	}
 }
