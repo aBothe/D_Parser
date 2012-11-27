@@ -385,6 +385,12 @@ namespace D_Parser.Resolver
 		public TemplateType(DClassLike dc, ISyntaxRegion td, Dictionary<string, TemplateParameterSymbol> inheritedTypeParams = null) : base(dc, td, null, null, inheritedTypeParams) { }
 		public TemplateType(DClassLike dc, ISyntaxRegion td, ReadOnlyCollection<KeyValuePair<string, TemplateParameterSymbol>> inheritedTypeParams = null) : base(dc, td, null, null, inheritedTypeParams) { }
 	}
+	
+	public class MixinTemplateType : TemplateType
+	{
+		public MixinTemplateType(DClassLike dc, ISyntaxRegion td, Dictionary<string, TemplateParameterSymbol> inheritedTypeParams = null) : base(dc, td, inheritedTypeParams) { }
+		public MixinTemplateType(DClassLike dc, ISyntaxRegion td, ReadOnlyCollection<KeyValuePair<string, TemplateParameterSymbol>> inheritedTypeParams = null) : base(dc, td, inheritedTypeParams) { }
+	}
 
 	public class TemplateIntermediateType : UserDefinedType
 	{

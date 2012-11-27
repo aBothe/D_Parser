@@ -131,7 +131,11 @@ namespace D_Parser.Resolver.TypeResolution
 			if (sortedAndFilteredOverloads != null &&
 				sortedAndFilteredOverloads.Length == 1 && 
 				sortedAndFilteredOverloads[0] is TemplateType)
-				ImplicitTemplateProperties.TryGetImplicitProperty((TemplateType)sortedAndFilteredOverloads[0], ctxt, out sortedAndFilteredOverloads);
+			{
+				AbstractType[] matchingChild;
+				if(ImplicitTemplateProperties.TryGetImplicitProperty(sortedAndFilteredOverloads[0] as TemplateType, ctxt, out matchingChild))
+					return matchingChild;
+			}
 
 			return sortedAndFilteredOverloads;
 		}
@@ -157,14 +161,14 @@ namespace D_Parser.Resolver.TypeResolution
 
 			foreach (var o in rawOverloadList)
 			{
-				if (!(o is DSymbol))
+				var overload = o as DSymbol;
+				if (overload == null)
 				{
 					if(!hasTemplateArgsPassed)
 						filteredOverloads.Add(o);
 					continue;
 				}
 
-				var overload = (DSymbol)o;
 				var tplNode = overload.Definition;
 
 				// Generically, the node should never be null -- except for TemplateParameterNodes that encapsule such params

@@ -1250,6 +1250,7 @@ namespace D_Parser.Dom.Statements
 	{
 		public ITypeDeclaration Qualifier;
 		public string MixinId;
+		public CodeLocation IdLocation;
 
 		public override string ToCode()
 		{

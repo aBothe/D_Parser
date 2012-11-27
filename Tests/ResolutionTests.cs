@@ -961,6 +961,7 @@ class aa(T) if(is(T==int)) {}");
 			Assert.That(x, Is.Null);
 		}
 		
+		#region Mixins
 		[Test]
 		public void Mixins1()
 		{
@@ -1052,5 +1053,40 @@ template Temp(string v)
 			var x = Evaluation.EvaluateType(ex,ctxt);
 			Assert.That(x, Is.InstanceOf(typeof(MemberSymbol)));
 		}
+		#endregion
+		
+		#region Template Mixins
+		[Test]
+		public void TemplateMixins1()
+		{
+			var pcl = ResolutionTests.CreateCache(@"module A;
+mixin template Mx(T)
+{
+	T myFoo;
+}
+
+mixin template Mx1
+{
+	int someProp;
+}
+mixin Mx1;
+mixin Mx!int;");
+			
+			var A =pcl[0]["A"];
+			var ctxt = ResolutionTests.CreateDefCtxt(pcl, A);
+			
+			var ex = DParser.ParseExpression("someProp");
+			var x = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(x, Is.InstanceOf(typeof(MemberSymbol)));
+			Assert.That((x as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+			
+			ex = DParser.ParseExpression("myFoo");
+			x = Evaluation.EvaluateType(ex,ctxt);
+			Assert.That(x, Is.InstanceOf(typeof(MemberSymbol)));
+			var ms = x as MemberSymbol;
+			Assert.That(ms.Base, Is.TypeOf(typeof(TemplateParameterSymbol)));
+			Assert.That((ms.Base as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+		}
+		#endregion
 	}
 }

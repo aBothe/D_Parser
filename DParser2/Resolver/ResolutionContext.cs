@@ -55,7 +55,7 @@ namespace D_Parser.Resolver
 			}
 		}
 		
-		internal readonly List<INode> NodesBeingResolved = new List<INode>(); // a List is faster than a HashSet o_O
+		internal readonly List<INode> NodesBeingResolved = new List<INode>();
 		#endregion
 
 		#region Init/Constructor

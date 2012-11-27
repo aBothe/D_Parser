@@ -4628,12 +4628,14 @@ namespace D_Parser.Parser
 			Expect(Mixin);
 			r.Location = t.Location;
 			
+			bool modScope = false;
 			if (laKind == Dot)
 			{
+				modScope = true;
 				Step();
 			}
 			else if(laKind!=Identifier)
-			{
+			{// See Dsymbol *Parser::parseMixin()
 				if (laKind == Typeof)
 				{
 					preQualifier=TypeOf();
@@ -4651,11 +4653,21 @@ namespace D_Parser.Parser
 				r.Qualifier.InnerMost.InnerDeclaration = preQualifier;
 			else
 				r.Qualifier = preQualifier;
+			
+			if(modScope)
+			{
+				var innerMost = r.Qualifier.InnerMost;
+				if(innerMost is IdentifierExpression)	
+					(innerMost as IdentifierExpression).ModuleScoped = true;
+				else if(innerMost is TemplateInstanceExpression)
+					(innerMost as TemplateInstanceExpression).TemplateIdentifier.ModuleScoped = true;
+			}
 
 			// MixinIdentifier
 			if (laKind == Identifier)
 			{
 				Step();
+				r.IdLocation = t.Location;
 				r.MixinId = t.Value;
 			}
 

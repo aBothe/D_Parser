@@ -451,7 +451,8 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					var dstmt = stmt as IDeclarationContainingStatement;
 					if (dstmt != null)
 					{
-						if ((takePublicImportsOnly && dstmt is ImportStatement && !((ImportStatement)dstmt).IsPublic) ||
+						var impStmt = dstmt as ImportStatement;
+						if ((takePublicImportsOnly && impStmt!=null && !impStmt.IsPublic) ||
 						    !MatchesCompilationEnv(stmt))
 							continue;
 
@@ -463,20 +464,22 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 								if (HandleItem(d)) //TODO: Handle visibility?
 									return true;
 
-						if (dstmt is ImportStatement)
+						if (impStmt!=null)
 						{
-							var impStmt = (ImportStatement)dstmt;
-
 							foreach (var imp in impStmt.Imports)
 								if (string.IsNullOrEmpty(imp.ModuleAlias))
 									if (HandleNonAliasedImport(imp, VisibleMembers))
 										return true;
 						}
-						
 					}
 					else if(stmt is MixinStatement)
 					{
-						if(MatchesCompilationEnv(stmt) && HandleMixin((MixinStatement)stmt,true,VisibleMembers))
+						if(MatchesCompilationEnv(stmt) && HandleMixin(stmt as MixinStatement,true,VisibleMembers))
+							return true;
+					}
+					else if(stmt is TemplateMixin)
+					{
+						if(MatchesCompilationEnv(stmt) && HandleTemplateMixin(stmt as TemplateMixin, true, VisibleMembers))
 							return true;
 					}
 				}
@@ -600,6 +603,43 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					return IterateThroughItemHierarchy(bs, CodeLocation.Empty, vis);
 			}
 			return false;
+		}
+		
+		static List<TemplateMixin> templateMixinsBeingAnalyzed = new List<TemplateMixin>();
+		
+		bool HandleTemplateMixin(TemplateMixin tmx, bool treatAsDeclBlock, MemberFilter vis)
+		{
+			if(string.IsNullOrEmpty(tmx.MixinId))
+			{
+				lock(templateMixinsBeingAnalyzed)
+				{
+					if(templateMixinsBeingAnalyzed.Contains(tmx))
+						return false;
+					templateMixinsBeingAnalyzed.Add(tmx);
+				}
+				
+				var t = TypeDeclarationResolver.ResolveSingle(tmx.Qualifier, ctxt);
+				var tmxTemplate = t as MixinTemplateType;
+				
+				bool res = false;
+				if(tmxTemplate== null)
+					ctxt.LogError(tmx.Qualifier, "Mixin qualifier must resolve to a mixin template declaration.");
+				else
+				{
+					ctxt.CurrentContext.IntroduceTemplateParameterTypes(tmxTemplate);
+					res =	DeepScanClass(tmxTemplate.Definition, vis, ref res) || res ||
+							HandleDBlockNode(tmxTemplate.Definition, vis);
+					ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(tmxTemplate);
+				}
+				
+				templateMixinsBeingAnalyzed.Remove(tmx);
+				return res;
+			}
+			else
+			{
+				var tmxNode = new NamedTemplateMixinNode(tmx);
+				return CanAddMemberOfType(vis, tmxNode) && HandleItem(tmxNode);
+			}
 		}
 		#endregion
 	}

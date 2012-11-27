@@ -59,6 +59,10 @@ namespace D_Parser.Resolver.TypeResolution
 			return null;
 		}
 
+		/// <summary>
+		/// Resolves an identifier and returns the definition + its base type.
+		/// Does not deduce any template parameters or nor filters out unfitting template specifications!
+		/// </summary>
 		public static AbstractType[] ResolveIdentifier(string id, ResolutionContext ctxt, object idObject, bool ModuleScope = false)
 		{
 			var loc = idObject is ISyntaxRegion ? ((ISyntaxRegion)idObject).Location : CodeLocation.Empty;
@@ -86,16 +90,17 @@ namespace D_Parser.Resolver.TypeResolution
 					return new[] { dedTemplateParam };
 			}
 
-			var matches = NameScan.SearchMatchesAlongNodeHierarchy(ctxt, loc, id);
-
-			var res = HandleNodeMatches(matches, ctxt, null, idObject);
+			var res = NameScan.SearchAndResolve(ctxt, loc, id, idObject);
 
 			if (ModuleScope)
 				ctxt.Pop();
 
-			return res;
+			return /*res.Count == 0 ? null :*/ res.ToArray();
 		}
 
+		/// <summary>
+		/// See <see cref="ResolveIdentifier"/>
+		/// </summary>
 		public static AbstractType ResolveSingle(string id, ResolutionContext ctxt, object idObject, bool ModuleScope = false)
 		{
 			var r = ResolveIdentifier(id, ctxt, idObject, ModuleScope);
@@ -105,7 +110,9 @@ namespace D_Parser.Resolver.TypeResolution
 			return r != null && r.Length != 0 ? r[0] : null;
 		}
 
-
+		/// <summary>
+		/// See <see cref="Resolve"/>
+		/// </summary>
 		public static AbstractType ResolveSingle(IdentifierDeclaration id, ResolutionContext ctxt, AbstractType[] resultBases = null, bool filterForTemplateArgs = true)
 		{
 			var r = Resolve(id, ctxt, resultBases, filterForTemplateArgs);
@@ -184,7 +191,9 @@ namespace D_Parser.Resolver.TypeResolution
 							var bn = udt.Definition as IBlockNode;
 							var nodeMatches = NameScan.ScanNodeForIdentifier(bn, nextIdentifier, ctxt);
 
-							ctxt.PushNewScope(bn);
+							bool pop = !(scanResult is MixinTemplateType);
+							if(!pop)
+								ctxt.PushNewScope(bn);
 							ctxt.CurrentContext.IntroduceTemplateParameterTypes(udt);
 
 							var results = HandleNodeMatches(nodeMatches, ctxt, b, typeIdObject);
@@ -194,7 +203,8 @@ namespace D_Parser.Resolver.TypeResolution
 									r.Add(AbstractType.Get(res));
 
 							ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(udt);
-							ctxt.Pop();
+							if(!pop)
+								ctxt.Pop();
 						}
 						else if (scanResult is PackageSymbol)
 						{
@@ -460,7 +470,7 @@ namespace D_Parser.Resolver.TypeResolution
 		#region Intermediate methods
 		[ThreadStatic]
 		static Dictionary<INode, int> stackCalls;
-		
+
 		/// <summary>
 		/// The variable's or method's base type will be resolved (if auto type, the intializer's type will be taken).
 		/// A class' base class will be searched.
@@ -496,7 +506,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 			var DoResolveBaseType = stkC < 10 && !ctxt.Options.HasFlag(ResolutionOptions.DontResolveBaseClasses) &&
 				(m.Type == null || m.Type.ToString(false) != m.Name);
-
+			
 			// To support resolving type parameters to concrete types if the context allows this, introduce all deduced parameters to the current context
 			if (resultBase is DSymbol)
 				ctxt.CurrentContext.IntroduceTemplateParameterTypes((DSymbol)resultBase);
@@ -545,7 +555,7 @@ namespace D_Parser.Resolver.TypeResolution
 			}
 			else if (m is DVariable)
 			{
-				var v = (DVariable)m;
+				var v = m as DVariable;
 				AbstractType bt = null;
 
 				if (DoResolveBaseType)
@@ -566,7 +576,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 				// Note: Also works for aliases! In this case, we simply try to resolve the aliased type, otherwise the variable's base type
 				ret = v.IsAlias ?
-					(DSymbol)new AliasedType(v, bt, typeBase as ISyntaxRegion) :
+					new AliasedType(v, bt, typeBase as ISyntaxRegion) as MemberSymbol :
 					new MemberSymbol(v, bt, typeBase as ISyntaxRegion);
 			}
 			else if (m is DMethod)
@@ -617,7 +627,10 @@ namespace D_Parser.Resolver.TypeResolution
 						udt = new InterfaceType(dc, typeBase as ISyntaxRegion, null, invisibleTypeParams);
 						break;
 					case DTokens.Template:
-						ret = new TemplateType(dc, typeBase as ISyntaxRegion, invisibleTypeParams);
+						if(dc.ContainsAttribute(DTokens.Mixin))
+							ret = new MixinTemplateType(dc, typeBase as ISyntaxRegion, invisibleTypeParams);
+						else
+							ret = new TemplateType(dc, typeBase as ISyntaxRegion, invisibleTypeParams);
 						break;
 					default:
 						ctxt.LogError(new ResolutionError(m, "Unknown type (" + DTokens.GetTokenString(dc.ClassType) + ")"));
@@ -648,6 +661,11 @@ namespace D_Parser.Resolver.TypeResolution
 				//TODO: Resolve the specialization type
 				//var templateParameterType = TemplateInstanceHandler.ResolveTypeSpecialization(tmp, ctxt);
 				ret = new TemplateParameterSymbol((TemplateParameterNode)m, null, typeBase as ISyntaxRegion);
+			}
+			else if(m is NamedTemplateMixinNode)
+			{
+				var tmxNode = m as NamedTemplateMixinNode;
+				ret = new MemberSymbol(tmxNode, DoResolveBaseType ? ResolveSingle(tmxNode.Type, ctxt) : null, typeBase as ISyntaxRegion);
 			}
 
 			if (resultBase is DSymbol)
@@ -687,6 +705,7 @@ namespace D_Parser.Resolver.TypeResolution
 					if (res != null)
 						rl.Add(res);
 				}
+			
 			return rl.ToArray();
 		}
 

@@ -8,17 +8,18 @@ namespace D_Parser.Resolver.ASTScanner
 	public class NameScan : AbstractVisitor
 	{
 		string filterId;
-		public List<INode> Matches = new List<INode>();
+		object idObject;
+		List<AbstractType> matches_types;
 
 		NameScan(ResolutionContext ctxt) : base(ctxt) { }
 
-		public static IEnumerable<INode> SearchMatchesAlongNodeHierarchy(ResolutionContext ctxt, CodeLocation caret, string name)
+		public static List<AbstractType> SearchAndResolve(ResolutionContext ctxt, CodeLocation caret, string name, object idObject=null)
 		{
-			var scan = new NameScan(ctxt) { filterId=name };
+			var scan = new NameScan(ctxt) { filterId=name, matches_types = new List<AbstractType>(), idObject = idObject };
 
 			scan.IterateThroughScopeLayers(caret);
 
-			return scan.Matches;
+			return scan.matches_types;
 		}
 
 		public override IEnumerable<INode> PrefilterSubnodes(IBlockNode bn)
@@ -30,7 +31,7 @@ namespace D_Parser.Resolver.ASTScanner
 		{
             if (n != null && n.Name == filterId)
             {
-                Matches.Add(n);
+            	matches_types.Add(TypeDeclarationResolver.HandleNodeMatch(n, Context, null, idObject));
 
                 if (Context.Options.HasFlag(ResolutionOptions.StopAfterFirstMatch))
                     return true;
@@ -50,8 +51,8 @@ namespace D_Parser.Resolver.ASTScanner
                 {
                     bool canAdd = true;
 
-                    foreach (var m in Matches)
-                        if (m is IAbstractSyntaxTree)
+                    foreach (var m in matches_types)
+                        if (m is ModuleSymbol)
                         {
                             canAdd = false;
                             break;
@@ -59,7 +60,7 @@ namespace D_Parser.Resolver.ASTScanner
 
                     if (canAdd)
                     {
-                        Matches.Add(n);
+		            	matches_types.Add(TypeDeclarationResolver.HandleNodeMatch(n, Context, null, idObject));
 
                         if (Context.Options.HasFlag(ResolutionOptions.StopAfterFirstMatch))
                             return true;

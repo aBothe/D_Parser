@@ -351,4 +351,47 @@ namespace D_Parser.Dom
 			return vis.Visit(this);
 		}
 	}
+	
+	public class NamedTemplateMixinNode : DNode
+	{
+		public TemplateMixin _mixin;
+		public TemplateMixin Mixin
+		{
+			get{return _mixin;}
+			set{
+				_mixin=value;
+				Name = value.MixinId;
+				Type = value.Qualifier;
+				Location = value.Location;
+				EndLocation = value.EndLocation;
+				if(value.Attributes!=null)
+					Attributes = new List<DAttribute>(value.Attributes);
+				Parent = value.ParentNode;
+			}
+		}
+		
+		public NamedTemplateMixinNode(TemplateMixin tmx)
+		{
+			Mixin = tmx;
+		}
+		
+		public override void AssignFrom(INode other)
+		{
+			base.AssignFrom(other);
+			
+			var tmxNode = other as NamedTemplateMixinNode;
+			if(tmxNode != null)
+				Mixin = tmxNode.Mixin;
+		}
+		
+		public override R Accept<R>(NodeVisitor<R> vis)
+		{
+			throw new System.NotImplementedException();
+		}
+		
+		public override void Accept(NodeVisitor vis)
+		{
+			throw new System.NotImplementedException();
+		}
+	}
 }
