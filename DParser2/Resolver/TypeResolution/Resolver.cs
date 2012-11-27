@@ -483,7 +483,7 @@ namespace D_Parser.Resolver.TypeResolution
 			r = StripAliasSymbol(r);
 
 			if(r is MemberSymbol)
-				r = ((DSymbol)r).Base;
+				r = (r as DerivedDataType).Base;
 
 			return StripAliasSymbol(r);
 		}

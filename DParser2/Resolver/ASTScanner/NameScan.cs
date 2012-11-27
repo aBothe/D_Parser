@@ -36,9 +36,7 @@ namespace D_Parser.Resolver.ASTScanner
             if (n != null && n.Name == filterId)
             {
             	matches_types.Add(TypeDeclarationResolver.HandleNodeMatch(n, ctxt, null, idObject));
-
-                if (ctxt.Options.HasFlag(ResolutionOptions.StopAfterFirstMatch))
-                    return true;
+            	return true;
             }
 
             /*
@@ -50,25 +48,15 @@ namespace D_Parser.Resolver.ASTScanner
              */
             else if (n is IAbstractSyntaxTree)
             {
-                var modName = ((IAbstractSyntaxTree)n).ModuleName;
+                var modName = (n as IAbstractSyntaxTree).ModuleName;
                 if (modName.Split('.')[0] == filterId)
                 {
-                    bool canAdd = true;
-
                     foreach (var m in matches_types)
                         if (m is ModuleSymbol)
-                        {
-                            canAdd = false;
-                            break;
-                        }
-
-                    if (canAdd)
-                    {
-		            	matches_types.Add(TypeDeclarationResolver.HandleNodeMatch(n, ctxt, null, idObject));
-
-                        if (ctxt.Options.HasFlag(ResolutionOptions.StopAfterFirstMatch))
-                            return true;
-                    }
+                            return false;
+                    
+	            	matches_types.Add(TypeDeclarationResolver.HandleNodeMatch(n, ctxt, null, idObject));
+	            	return true;
                 }
             }
 
@@ -97,13 +85,10 @@ namespace D_Parser.Resolver.ASTScanner
 		
 		protected override bool HandleItem(INode n)
 		{
-			if (n != null && n.Name == filterId)
-            {
+			if (n != null && n.Name == filterId){
             	matches_types.Add(TypeDeclarationResolver.HandleNodeMatch(n, ctxt, resultBase, idObject));
-
-                if (ctxt.Options.HasFlag(ResolutionOptions.StopAfterFirstMatch))
-                    return true;
-            }
+            	return true;
+			}
 			return false;
 		}
 	}

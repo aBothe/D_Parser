@@ -66,7 +66,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			return false;
 		}
 
-		bool breakImmediately { get { return ctxt.Options == ResolutionOptions.StopAfterFirstMatch; } }
+		bool breakImmediately { get { return ctxt.Options.HasFlag(ResolutionOptions.StopAfterFirstMatch); } }
 
 		public virtual void IterateThroughScopeLayers(CodeLocation Caret, MemberFilter VisibleMembers = MemberFilter.All)
 		{
@@ -85,13 +85,14 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			bool breakOnNextScope = false;
 
 			// 2)
-			while (curScope != null)
+			do
 			{
 				if(ScanBlock(curScope, Caret, VisibleMembers, ref breakOnNextScope))
 					return true;
 				
 				curScope = curScope.Parent as IBlockNode;
 			}
+			while (curScope != null);
 
 			// Add __ctfe variable
 			if (!breakOnNextScope && 
@@ -106,7 +107,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		{
 			if (curScope is DClassLike)
 			{
-				if (DeepScanClass((DClassLike)curScope, VisibleMembers, ref breakOnNextScope))
+				if (DeepScanClass(curScope as DClassLike, VisibleMembers, ref breakOnNextScope))
 					return true;
 			}
 			else if (curScope is DMethod)
@@ -164,19 +165,20 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				if (ch != null)
 					foreach (var n in ch)
 					{
-						if(n is DNode && !ctxt.CurrentContext.MatchesDeclarationEnvironment((DNode)n))	
+						var dn = n as DNode;
+						if(dn!=null && !ctxt.CurrentContext.MatchesDeclarationEnvironment(dn))	
 							continue;
 
 						// Add anonymous enums' items
-						if (n is DEnum && string.IsNullOrEmpty(n.Name) && CanAddMemberOfType(VisibleMembers, n))
+						if (dn is DEnum && string.IsNullOrEmpty(dn.Name) && CanAddMemberOfType(VisibleMembers, dn))
 						{
-							var ch2 = PrefilterSubnodes(n as DEnum);
+							var ch2 = PrefilterSubnodes(dn as DEnum);
 							if (ch2 != null && (breakOnNextScope = HandleItems(ch2) && breakImmediately))
 								return true;
 							continue;
 						}
 
-						var dm3 = n as DMethod; // Only show normal & delegate methods
+						var dm3 = dn as DMethod; // Only show normal & delegate methods
 						if (!CanAddMemberOfType(VisibleMembers, n) ||
 							(dm3 != null && !(dm3.SpecialType == DMethod.MethodType.Normal || dm3.SpecialType == DMethod.MethodType.Delegate)))
 							continue;
@@ -188,7 +190,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 			// Handle imports and other static statements
 			if (curScope is DBlockNode)
-				if ((breakOnNextScope = HandleDBlockNode((DBlockNode)curScope, VisibleMembers)) && breakImmediately)
+				if ((breakOnNextScope = HandleDBlockNode(curScope as DBlockNode, VisibleMembers)) && breakImmediately)
 					return true;
 
 			return breakOnNextScope && ctxt.Options.HasFlag(ResolutionOptions.StopAfterFirstOverloads);
@@ -231,7 +233,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 					if (tr.Base is TemplateIntermediateType)
 					{
-						curWatchedClass = ((TemplateIntermediateType)tr.Base).Definition;
+						curWatchedClass = (tr.Base as TemplateIntermediateType).Definition;
 
 						//TODO: Switch declaration condition set
 					}
@@ -246,14 +248,14 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 		static bool CanShowMember(DNode dn, IBlockNode scope)
 		{
-			if (dn.IsStatic || ((dn is DVariable) && ((DVariable)dn).IsConst))
+			if (dn.IsStatic || ((dn is DVariable) && (dn as DVariable).IsConst))
 				return true;
 
 			if (dn.ContainsAttribute(DTokens.Private))
 				return dn.NodeRoot == scope.NodeRoot;
 			else if (dn.ContainsAttribute(DTokens.Package))
-				return ModuleNameHelper.ExtractPackageName(((IAbstractSyntaxTree)dn.NodeRoot).ModuleName) ==
-						ModuleNameHelper.ExtractPackageName(((IAbstractSyntaxTree)scope.NodeRoot).ModuleName);
+				return ModuleNameHelper.ExtractPackageName((dn.NodeRoot as IAbstractSyntaxTree).ModuleName) ==
+						ModuleNameHelper.ExtractPackageName((dn.NodeRoot as IAbstractSyntaxTree).ModuleName);
 
 			return true;
 		}
@@ -263,7 +265,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			if (n is DMethod)
 				return !string.IsNullOrEmpty(n.Name) && VisibleMembers.HasFlag(MemberFilter.Methods);
 
-			if (n is DVariable)
+			else if (n is DVariable)
 			{
 				var d = n as DVariable;
 
@@ -277,10 +279,10 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				return VisibleMembers.HasFlag(MemberFilter.Variables);
 			}
 
-			if (n is DClassLike)
+			else if (n is DClassLike)
 				return VisibleMembers.HasFlag(MemberFilter.Types);
 
-			if (n is DEnum)
+			else if (n is DEnum)
 			{
 				var d = n as DEnum;
 
@@ -288,8 +290,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				return (d.IsAnonymous ? false : VisibleMembers.HasFlag(MemberFilter.Types)) ||
 					VisibleMembers.HasFlag(MemberFilter.Variables);
 			}
-			
-			if(n is NamedTemplateMixinNode)
+			else if(n is NamedTemplateMixinNode)
 				return VisibleMembers.HasFlag(MemberFilter.Variables) || VisibleMembers.HasFlag(MemberFilter.Types);
 
 			return false;

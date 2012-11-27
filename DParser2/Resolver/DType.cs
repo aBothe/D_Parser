@@ -65,9 +65,9 @@ namespace D_Parser.Resolver
 		{
 			//FIXME: What to do with the other overloads?
 			if (s is InternalOverloadValue)
-				return ((InternalOverloadValue)s).Overloads[0];
+				return (s as InternalOverloadValue).Overloads[0];
 			if (s is ISymbolValue)
-				return ((ISymbolValue)s).RepresentedType;
+				return (s as ISymbolValue).RepresentedType;
 			
 			return s as AbstractType;
 		}
