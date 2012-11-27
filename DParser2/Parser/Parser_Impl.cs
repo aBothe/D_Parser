@@ -280,7 +280,13 @@ namespace D_Parser.Parser
 
 				//TemplateMixin
 				else if (Lexer.CurrentPeekToken.Kind == Identifier)
-					module.Add(TemplateMixin());
+				{
+					var tmx = TemplateMixin(module);
+					if(tmx.MixinId==null)
+						module.Add(tmx);
+					else
+						module.Add(new NamedTemplateMixinNode(tmx));
+				}
 
 				//MixinDeclaration
 				else if (Lexer.CurrentPeekToken.Kind == OpenParenthesis)
@@ -3794,7 +3800,13 @@ namespace D_Parser.Parser
 				if (Peek(1).Kind == OpenParenthesis)
 					return MixinDeclaration(Scope,Parent);
 				else
-					return TemplateMixin();
+				{
+					var tmx = TemplateMixin(Scope,Parent);
+					if(tmx.MixinId == null)
+						return tmx;
+					else
+						return new DeclarationStatement{ Declarations=new[]{new NamedTemplateMixinNode(tmx)} };
+				}
 			}
 			#endregion
 
@@ -4617,11 +4629,15 @@ namespace D_Parser.Parser
 			return dc;
 		}
 
-		TemplateMixin TemplateMixin()
+		TemplateMixin TemplateMixin(INode Scope, IStatement Parent = null)
 		{
 			// mixin TemplateIdentifier !( TemplateArgumentList ) MixinIdentifier ;
 			//							|<--			optional			 -->|
 			var r = new TemplateMixin { Attributes = GetCurrentAttributeSet_Array() };
+			if(Parent == null)
+				r.ParentNode = Scope;
+			else
+				r.Parent = Parent;
 			LastParsedObject = r;
 			ITypeDeclaration preQualifier = null;
 
@@ -4673,7 +4689,7 @@ namespace D_Parser.Parser
 
 			Expect(Semicolon);
 			r.EndLocation = t.EndLocation;
-
+			
 			return r;
 		}
 
@@ -4714,7 +4730,7 @@ namespace D_Parser.Parser
 			if (laKind == (CloseParenthesis))
 			{
 				Step();
-				return ret.ToArray();
+				return null;
 			}
 
 			bool init = true;

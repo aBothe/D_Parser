@@ -287,6 +287,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				return (d.IsAnonymous ? false : VisibleMembers.HasFlag(MemberFilter.Types)) ||
 					VisibleMembers.HasFlag(MemberFilter.Variables);
 			}
+			
+			if(n is NamedTemplateMixinNode)
+				return VisibleMembers.HasFlag(MemberFilter.Variables) || VisibleMembers.HasFlag(MemberFilter.Types);
 
 			return false;
 		}
@@ -479,7 +482,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					}
 					else if(stmt is TemplateMixin)
 					{
-						if(MatchesCompilationEnv(stmt) && HandleTemplateMixin(stmt as TemplateMixin, true, VisibleMembers))
+						if(MatchesCompilationEnv(stmt) && HandleUnnamedTemplateMixin(stmt as TemplateMixin, true, VisibleMembers))
 							return true;
 					}
 				}
@@ -607,39 +610,31 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		
 		static List<TemplateMixin> templateMixinsBeingAnalyzed = new List<TemplateMixin>();
 		
-		bool HandleTemplateMixin(TemplateMixin tmx, bool treatAsDeclBlock, MemberFilter vis)
+		bool HandleUnnamedTemplateMixin(TemplateMixin tmx, bool treatAsDeclBlock, MemberFilter vis)
 		{
-			if(string.IsNullOrEmpty(tmx.MixinId))
+			lock(templateMixinsBeingAnalyzed)
 			{
-				lock(templateMixinsBeingAnalyzed)
-				{
-					if(templateMixinsBeingAnalyzed.Contains(tmx))
-						return false;
-					templateMixinsBeingAnalyzed.Add(tmx);
-				}
-				
-				var t = TypeDeclarationResolver.ResolveSingle(tmx.Qualifier, ctxt);
-				var tmxTemplate = t as MixinTemplateType;
-				
-				bool res = false;
-				if(tmxTemplate== null)
-					ctxt.LogError(tmx.Qualifier, "Mixin qualifier must resolve to a mixin template declaration.");
-				else
-				{
-					ctxt.CurrentContext.IntroduceTemplateParameterTypes(tmxTemplate);
-					res =	DeepScanClass(tmxTemplate.Definition, vis, ref res) || res ||
-							HandleDBlockNode(tmxTemplate.Definition, vis);
-					ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(tmxTemplate);
-				}
-				
-				templateMixinsBeingAnalyzed.Remove(tmx);
-				return res;
+				if(templateMixinsBeingAnalyzed.Contains(tmx))
+					return false;
+				templateMixinsBeingAnalyzed.Add(tmx);
 			}
+			
+			var t = TypeDeclarationResolver.ResolveSingle(tmx.Qualifier, ctxt);
+			var tmxTemplate = t as MixinTemplateType;
+			
+			bool res = false;
+			if(tmxTemplate== null)
+				ctxt.LogError(tmx.Qualifier, "Mixin qualifier must resolve to a mixin template declaration.");
 			else
 			{
-				var tmxNode = new NamedTemplateMixinNode(tmx);
-				return CanAddMemberOfType(vis, tmxNode) && HandleItem(tmxNode);
+				ctxt.CurrentContext.IntroduceTemplateParameterTypes(tmxTemplate);
+				res =	DeepScanClass(tmxTemplate.Definition, vis, ref res) || res ||
+						HandleDBlockNode(tmxTemplate.Definition, vis);
+				ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(tmxTemplate);
 			}
+			
+			templateMixinsBeingAnalyzed.Remove(tmx);
+			return res;
 		}
 		#endregion
 	}

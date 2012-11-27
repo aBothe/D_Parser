@@ -11,7 +11,7 @@ namespace D_Parser.Resolver.ASTScanner
 		object idObject;
 		List<AbstractType> matches_types;
 
-		NameScan(ResolutionContext ctxt) : base(ctxt) { }
+		private NameScan(ResolutionContext ctxt) : base(ctxt) { }
 
 		public static List<AbstractType> SearchAndResolve(ResolutionContext ctxt, CodeLocation caret, string name, object idObject=null)
 		{

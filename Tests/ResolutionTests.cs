@@ -1065,12 +1065,15 @@ mixin template Mx(T)
 	T myFoo;
 }
 
-mixin template Mx1
+mixin template Mx1()
 {
 	int someProp;
 }
 mixin Mx1;
-mixin Mx!int;");
+mixin Mx!int;
+
+mixin Mx1 myMx;
+mixin Mx!float myTempMx;");
 			
 			var A =pcl[0]["A"];
 			var ctxt = ResolutionTests.CreateDefCtxt(pcl, A);
@@ -1084,6 +1087,18 @@ mixin Mx!int;");
 			x = Evaluation.EvaluateType(ex,ctxt);
 			Assert.That(x, Is.InstanceOf(typeof(MemberSymbol)));
 			var ms = x as MemberSymbol;
+			Assert.That(ms.Base, Is.TypeOf(typeof(TemplateParameterSymbol)));
+			Assert.That((ms.Base as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+			
+			ex = DParser.ParseExpression("myMx.someProp;");
+			x = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(x, Is.InstanceOf(typeof(MemberSymbol)));
+			Assert.That((x as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+			
+			ex = DParser.ParseExpression("myTempMx.myFoo");
+			x = Evaluation.EvaluateType(ex,ctxt);
+			Assert.That(x, Is.InstanceOf(typeof(MemberSymbol)));
+			ms = x as MemberSymbol;
 			Assert.That(ms.Base, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			Assert.That((ms.Base as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 		}
