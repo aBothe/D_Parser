@@ -255,7 +255,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				return dn.NodeRoot == scope.NodeRoot;
 			else if (dn.ContainsAttribute(DTokens.Package))
 				return ModuleNameHelper.ExtractPackageName((dn.NodeRoot as IAbstractSyntaxTree).ModuleName) ==
-						ModuleNameHelper.ExtractPackageName((dn.NodeRoot as IAbstractSyntaxTree).ModuleName);
+						ModuleNameHelper.ExtractPackageName((scope.NodeRoot as IAbstractSyntaxTree).ModuleName);
 
 			return true;
 		}
