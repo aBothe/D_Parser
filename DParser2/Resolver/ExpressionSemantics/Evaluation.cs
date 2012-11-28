@@ -127,16 +127,16 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				ret= E((ConditionalExpression)x);
 
 			else if (x is OperatorBasedExpression)
-				ret= E((OperatorBasedExpression)x);
+				ret= E(x as OperatorBasedExpression);
 
 			else if (x is UnaryExpression)
-				ret= E((UnaryExpression)x);
+				ret= E(x as UnaryExpression);
 
 			else if (x is PostfixExpression)
-				ret= E((PostfixExpression)x);
+				ret= E(x as PostfixExpression);
 
 			else if (x is PrimaryExpression)
-				ret= E((PrimaryExpression)x);
+				ret= E(x as PrimaryExpression);
 			}
 			finally{
 				if(evaluationDepth != 1)
@@ -167,7 +167,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public static ISymbolValue GetVariableContents(ISymbolValue v, AbstractSymbolValueProvider vp)
 		{
 			while (v is VariableValue)
-				v = vp[((VariableValue)v).Variable];
+				v = vp[(v as VariableValue).Variable];
 
 			return v;
 		}
@@ -177,9 +177,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			AbstractType[] overloads = null;
 
 			if (foreExpression is TemplateInstanceExpression)
-				overloads = Evaluation.GetOverloads((TemplateInstanceExpression)foreExpression, ctxt, null);
+				overloads = Evaluation.GetOverloads(foreExpression as TemplateInstanceExpression, ctxt, null);
 			else if (foreExpression is IdentifierExpression)
-				overloads = Evaluation.GetOverloads((IdentifierExpression)foreExpression, ctxt, false);
+				overloads = Evaluation.GetOverloads(foreExpression as IdentifierExpression, ctxt, false);
 			else if (foreExpression is PostfixExpression_Access)
 			{
 				bool ufcs = false; // TODO?
@@ -195,7 +195,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			foreach (var ov in overloads)
 				if (ov is TemplateIntermediateType)
 				{
-					var tit = (TemplateIntermediateType)ov;
+					var tit = ov as TemplateIntermediateType;
 					
 					var m = TypeDeclarationResolver.HandleNodeMatches(
 						GetOpCalls(tit), ctxt,

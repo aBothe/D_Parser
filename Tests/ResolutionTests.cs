@@ -454,6 +454,20 @@ class Too(T:float)
 			t = TypeDeclarationResolver.ResolveSingle(ty,ctxt);
 			Assert.That(t, Is.TypeOf(typeof(ClassType)));
 		}
+		
+		[Test]
+		public void EmptyTypeTuple()
+		{
+			var pcl = CreateCache(@"module A;
+void writeln(T...)(T t)
+{
+}");
+			var ctxt = CreateDefCtxt(pcl, pcl[0]["A"]);
+			
+			var ex = DParser.ParseExpression("writeln()");
+			var x = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(x, Is.TypeOf(typeof(PrimitiveType)));
+		}
 
 		[Test]
 		public void Ctors()
@@ -539,6 +553,7 @@ template Baz(B)
 			Assert.That(((DSymbol)s).Base, Is.TypeOf(typeof(PointerType)));
 		}
 
+		#region Declaration conditions & constraints
 		[Test]
 		public void DeclCond1()
 		{
@@ -960,6 +975,7 @@ class aa(T) if(is(T==int)) {}");
 			x = Evaluation.EvaluateTypes(ex, ctxt);
 			Assert.That(x, Is.Null);
 		}
+		#endregion
 		
 		#region Mixins
 		[Test]

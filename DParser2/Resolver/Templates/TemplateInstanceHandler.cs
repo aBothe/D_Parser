@@ -283,6 +283,11 @@ namespace D_Parser.Resolver.TypeResolution
 				else
 					return false;
 			}
+			else if(expectedParam is TemplateTupleParameter)
+			{
+				if(!CheckAndDeduceTypeTuple(expectedParam as TemplateTupleParameter, null, deducedTypes, ctxt))
+					return false;
+			}
 			// There might be too few args - but that doesn't mean that it's not correct - it's only required that all parameters got satisfied with a type
 			else if (!AllParamatersSatisfied(deducedTypes))
 				return false;

@@ -248,7 +248,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				{
 					if (ov is MemberSymbol)
 					{
-						var ms = (MemberSymbol)ov;
+						var ms = ov as MemberSymbol;
 						var dm = ms.Definition as DMethod;
 						bool add = false;
 
@@ -263,14 +263,38 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							else
 								for (int i=0; i< dm.Parameters.Count; i++)
 								{
-									var paramType = TypeDeclarationResolver.ResolveSingle(dm.Parameters[i].Type, ctxt);
+									var paramType = DResolver.StripMemberSymbols(TypeDeclarationResolver.ResolveSingle(dm.Parameters[i].Type, ctxt));
 								
-									// TODO: Expression tuples & variable argument lengths
-									if (i >= callArguments.Count ||
-										!ResultComparer.IsImplicitlyConvertible(callArguments[i], paramType, ctxt))
-										continue;
-
-									add = true;
+									if(paramType is TypeTuple && i == dm.Parameters.Count-1)
+									{
+										var tup = paramType as TypeTuple;
+										if(tup.Items == null || tup.Items.Length == 0)
+										{
+											// writeln!()() -- got one type&expression tuple but no further arguments.
+											// writeln!()("herp",1234) -- arguments, but none for the type tuple => No match! 
+											if(callArguments.Count <= dm.Parameters.Count){
+												add = true;
+												break;
+											}
+										}
+										else
+										{
+											add = true;
+											for(int j = tup.Items.Length; j != 0; j--)
+											{
+												if(callArguments.Count <= i+j ||
+												  !ResultComparer.IsImplicitlyConvertible(callArguments[i+j], tup.Items[j], ctxt))
+												{
+													add = false;
+													break;
+												}
+											}
+										}
+									}
+									
+									else if (i < callArguments.Count &&
+										ResultComparer.IsImplicitlyConvertible(callArguments[i], paramType, ctxt))
+										add = true;
 								}
 
 							if (add)

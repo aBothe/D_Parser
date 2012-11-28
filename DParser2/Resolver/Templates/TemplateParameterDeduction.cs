@@ -91,26 +91,19 @@ namespace D_Parser.Resolver.Templates
 
 		public bool Handle(TemplateTupleParameter p, IEnumerable<ISemantic> arguments)
 		{
-			if (arguments == null)
-				return false;
-
-			var args= arguments.ToArray();
-
-			if (args.Length < 1)
-				return false;
-
 			var l = new List<AbstractType>();
 
-			foreach (var arg in arguments)
-				if (arg is AbstractType)
-					l.Add((AbstractType)arg);
-				else
-				{
-					// Error: Argument must be a type
-					break;
-				}					
+			if(arguments != null)
+				foreach (var arg in arguments)
+					if (arg is AbstractType)
+						l.Add(arg as AbstractType);
+					else
+					{
+						// Error: Argument must be a type
+						break;
+					}					
 
-			return Set(p, new TypeTuple(p, l));
+			return Set(p, new TypeTuple(p, l.Count == 0 ? null : l));
 		}
 
 		/// <summary>
