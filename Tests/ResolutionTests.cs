@@ -1061,12 +1061,21 @@ void main()
 template Temp(string v)
 {
 	mixin(v);
+}
+
+class cl
+{
+	mixin(""int someInt=345;"");
 }");
 			var A =pcl[0]["A"];
 			var ctxt = ResolutionTests.CreateDefCtxt(pcl, A);
 			
 			var ex = DParser.ParseExpression("Temp!\"int Temp;\"");
 			var x = Evaluation.EvaluateType(ex,ctxt);
+			Assert.That(x, Is.InstanceOf(typeof(MemberSymbol)));
+			
+			ex = DParser.ParseExpression("(new cl()).someInt");
+			x = Evaluation.EvaluateType(ex, ctxt);
 			Assert.That(x, Is.InstanceOf(typeof(MemberSymbol)));
 		}
 		#endregion
