@@ -421,22 +421,13 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					}
 					else if (s is MixinStatement)
 					{
-						if(HandleMixin((MixinStatement)s, false, VisibleMembers))
+						if(HandleMixin(s as MixinStatement, false, VisibleMembers))
 							return true;
 					}
 					else if (s is TemplateMixin)
 					{
-						// http://dlang.org/template-mixin.html#TemplateMixin
-						var tm = s as TemplateMixin;
-
-						if (string.IsNullOrEmpty(tm.MixinId))
-						{
-
-						}
-						else
-						{
-
-						}
+						if(HandleUnnamedTemplateMixin(s as TemplateMixin, false, VisibleMembers))
+							return true;
 					}
 				}
 
@@ -611,7 +602,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		}
 		
 		static List<TemplateMixin> templateMixinsBeingAnalyzed = new List<TemplateMixin>();
-		
+		// http://dlang.org/template-mixin.html#TemplateMixin
 		bool HandleUnnamedTemplateMixin(TemplateMixin tmx, bool treatAsDeclBlock, MemberFilter vis)
 		{
 			lock(templateMixinsBeingAnalyzed)

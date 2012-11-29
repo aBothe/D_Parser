@@ -1165,6 +1165,32 @@ void test() {
 			Assert.That(x, Is.InstanceOf(typeof(MemberSymbol)));
 			Assert.That((x as MemberSymbol).Base, Is.TypeOf(typeof(ArrayType)));
 		}
+		
+		[Test]
+		public void TemplateMixins3()
+		{
+			var pcl = ResolutionTests.CreateCache(@"module A;
+mixin template Foo() {
+  int localDerp;
+}
+
+void foo() {
+	localDerp;
+	mixin Foo;
+	localDerp;
+}");
+			
+			var A =pcl[0]["A"]["foo"][0] as DMethod;
+			var ctxt = ResolutionTests.CreateDefCtxt(pcl, A, A.Body);
+			
+			var t = Evaluation.EvaluateType((A.Body.SubStatements[0] as ExpressionStatement).Expression,ctxt);
+			Assert.That(t, Is.Null);
+			
+			t = Evaluation.EvaluateType((A.Body.SubStatements[2] as ExpressionStatement).Expression,ctxt);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			var ms = t as MemberSymbol;
+			Assert.That(ms.Base, Is.TypeOf(typeof(PrimitiveType)));
+		}
 		#endregion
 	}
 }
