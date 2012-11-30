@@ -43,21 +43,22 @@ namespace D_Parser.Resolver.Templates
 			#endregion
 
 			#region Given argument must be a symbol - so no built-in type but a reference to a node or an expression
-			var t=TypeDeclarationResolver.Convert(arg);
-
+			var t=AbstractType.Get(arg);
+			
 			if (t == null)
 				return false;
-
-			while (t != null)
-			{
-				if (t is PrimitiveType) // arg must not base on a primitive type.
-					return false;
-
-				if (t is DerivedDataType)
-					t = ((DerivedDataType)t).Base;
-				else
-					break;
-			}
+			
+			if(!(t is DSymbol))
+				while (t != null)
+				{
+					if (t is PrimitiveType) // arg must not base on a primitive type.
+						return false;
+	
+					if (t is DerivedDataType)
+						t = ((DerivedDataType)t).Base;
+					else
+						break;
+				}
 			#endregion
 
 			#region Specialization check

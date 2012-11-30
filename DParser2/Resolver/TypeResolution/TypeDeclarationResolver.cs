@@ -50,15 +50,6 @@ namespace D_Parser.Resolver.TypeResolution
 			return l.ToArray();
 		}
 
-		public static AbstractType Convert(ISemantic s)
-		{
-			if (s is AbstractType)
-				return (AbstractType)s;
-			else if (s is ISymbolValue)
-				return ((ISymbolValue)s).RepresentedType;
-			return null;
-		}
-
 		/// <summary>
 		/// Resolves an identifier and returns the definition + its base type.
 		/// Does not deduce any template parameters or nor filters out unfitting template specifications!

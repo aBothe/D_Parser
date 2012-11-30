@@ -230,7 +230,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				if (arg is VariableValue)
 					tplParamDeductionArguments.Add(ValueProvider[((VariableValue)arg).Variable]);
 				else if(arg is AbstractType)
-					tplParamDeductionArguments.Add(DResolver.StripMemberSymbols((AbstractType)arg));
+					tplParamDeductionArguments.Add(DResolver.StripAliasSymbol(arg as AbstractType));
 				else
 					tplParamDeductionArguments.Add(arg);
 

@@ -294,7 +294,7 @@ void f(T:U[n], U,int n)(T o) {}
 
 char[5] arr;
 
-void foo(T)(T a) {}
+double foo(T)(T a) {}
 
 int delegate(int b) myDeleg;
 
@@ -339,6 +339,7 @@ int delegate(int b) myDeleg;
 			x = DParser.ParseExpression("foo(myDeleg(123))");
 			r = Evaluation.EvaluateType(x, ctxt);
 			Assert.IsInstanceOfType(typeof(MemberSymbol),r);
+			Assert.That((r as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 		}
 
 		[Test]
