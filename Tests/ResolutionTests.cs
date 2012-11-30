@@ -66,6 +66,29 @@ class foo {}");
 		}
 		
 		[Test]
+		public void BasicResolution1()
+		{
+			var pcl = CreateCache(@"module A;
+
+class cl
+{
+	int* a;
+}
+
+void foo()
+{
+	auto o = new cl();
+	o.a;
+}");
+			var foo = pcl[0]["A"]["foo"][0] as DMethod;
+			var ctxt = CreateDefCtxt(pcl, foo, foo.Body);
+			
+			var t = Evaluation.EvaluateType((foo.Body.SubStatements[1] as ExpressionStatement).Expression, ctxt);
+			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
+			Assert.That((t as MemberSymbol).Base, Is.InstanceOf(typeof(PointerType)));
+		}
+		
+		[Test]
 		public void BasicResolution2()
 		{
 			var pcl = CreateCache(@"module A;

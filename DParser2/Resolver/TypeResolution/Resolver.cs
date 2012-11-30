@@ -482,8 +482,15 @@ namespace D_Parser.Resolver.TypeResolution
 		{
 			r = StripAliasSymbol(r);
 
-			if(r is MemberSymbol)
-				r = (r as DerivedDataType).Base;
+			var ms = r as MemberSymbol;
+			if(ms != null)
+				r = (ms as DerivedDataType).Base;
+
+			// There's one special case to handle (TODO: are there further cases?):
+			// auto o = new Class(); -- o will be MemberSymbol and its base type will be a MemberSymbol either (i.e. the constructor reference)
+			ms = r as MemberSymbol;			
+			if(ms!=null && ms.Definition is DMethod && ms.Name == DMethod.ConstructorIdentifier)
+				r = ms.Base;
 
 			return StripAliasSymbol(r);
 		}
