@@ -620,10 +620,16 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				ctxt.LogError(tmx.Qualifier, "Mixin qualifier must resolve to a mixin template declaration.");
 			else
 			{
+				bool pop = !ctxt.NodeIsInCurrentScopeHierarchy(tmxTemplate.Definition);
+				if(pop)
+					ctxt.PushNewScope(tmxTemplate.Definition);
 				ctxt.CurrentContext.IntroduceTemplateParameterTypes(tmxTemplate);
 				res =	DeepScanClass(tmxTemplate.Definition, vis, ref res) || res ||
 						HandleDBlockNode(tmxTemplate.Definition, vis);
-				ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(tmxTemplate);
+				if(pop)
+					ctxt.Pop();
+				else
+					ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(tmxTemplate);
 			}
 			
 			templateMixinsBeingAnalyzed.Remove(tmx);

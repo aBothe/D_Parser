@@ -1170,14 +1170,16 @@ void test() {
 		public void TemplateMixins3()
 		{
 			var pcl = ResolutionTests.CreateCache(@"module A;
-mixin template Foo() {
+mixin template Foo(T) {
   int localDerp;
+  T[] arrayTest;
 }
 
 void foo() {
 	localDerp;
-	mixin Foo;
+	mixin Foo!int;
 	localDerp;
+	arrayTest[0];
 }");
 			
 			var A =pcl[0]["A"]["foo"][0] as DMethod;
@@ -1190,6 +1192,10 @@ void foo() {
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			var ms = t as MemberSymbol;
 			Assert.That(ms.Base, Is.TypeOf(typeof(PrimitiveType)));
+			
+			t = Evaluation.EvaluateType((A.Body.SubStatements[3] as ExpressionStatement).Expression,ctxt);
+			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
+			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 		}
 		#endregion
 	}
