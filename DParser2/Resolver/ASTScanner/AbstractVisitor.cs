@@ -211,9 +211,12 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					foreach (var m in ch)
 					{
 						var dm2 = m as DNode;
-						var dm3 = m as DMethod; // Only show normal & delegate methods
-						if (!CanAddMemberOfType(VisibleMembers, m) || dm2 == null ||
-							(dm3 != null && !(dm3.SpecialType == DMethod.MethodType.Normal || dm3.SpecialType == DMethod.MethodType.Delegate)))
+						if(!CanAddMemberOfType(VisibleMembers, m) || dm2 == null)
+							continue;
+						
+						// Only show ordinary & delegate methods, no ctors or dtors etc.
+						var dm3 = m as DMethod;
+						if (dm3 != null && !(dm3.SpecialType == DMethod.MethodType.Normal || dm3.SpecialType == DMethod.MethodType.Delegate))
 							continue;
 
 						if (!ctxt.CurrentContext.MatchesDeclarationEnvironment(dm2))
@@ -221,7 +224,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 						// Add static and non-private members of all base classes; 
 						// Add everything if we're still handling the currently scoped class
-						if (curWatchedClass == cls || CanShowMember(dm2, ctxt.ScopedBlock))
+						if (curWatchedClass == cls || (CanShowMember(dm2, ctxt.ScopedBlock) || IsConstOrStatic(dm2)))
 							if ((breakOnNextScope = HandleItem(m)) && breakImmediately)
 								return true;
 					}
@@ -245,18 +248,19 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			}
 			return false;
 		}
+		
+		static bool IsConstOrStatic(DNode dn)
+		{
+			return dn != null && (dn.IsStatic || ((dn is DVariable) && (dn as DVariable).IsConst));
+		}
 
 		static bool CanShowMember(DNode dn, IBlockNode scope)
 		{
-			if (dn.IsStatic || ((dn is DVariable) && (dn as DVariable).IsConst))
-				return true;
-
 			if (dn.ContainsAttribute(DTokens.Private))
 				return dn.NodeRoot == scope.NodeRoot;
 			else if (dn.ContainsAttribute(DTokens.Package))
 				return ModuleNameHelper.ExtractPackageName((dn.NodeRoot as IAbstractSyntaxTree).ModuleName) ==
 						ModuleNameHelper.ExtractPackageName((scope.NodeRoot as IAbstractSyntaxTree).ModuleName);
-
 			return true;
 		}
 

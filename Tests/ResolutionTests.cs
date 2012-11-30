@@ -50,19 +50,31 @@ namespace Tests
 		public void BasicResolution()
 		{
 			var pcl = CreateCache(@"module modA;
+import B;
+class foo : baseFoo {
+	
+}",
+			                      @"module B; 
+private const int privConst = 1234;
 
-class foo {}");
+class baseFoo
+{
+	private static int heyHo = 234;
+}");
 
-			var ctxt = CreateDefCtxt(pcl, pcl[0]["modA"]);
+			var modA = pcl[0]["modA"];
+			var ctxt = CreateDefCtxt(pcl, modA);
 
-			var id = new IdentifierDeclaration("foo");
-
-			var foo = TypeDeclarationResolver.ResolveSingle(id, ctxt);
-
-			Assert.IsInstanceOfType(typeof(ClassType),foo);
-			var ct = (ClassType)foo;
-
-			Assert.AreEqual("foo", ct.Name);
+			var t = TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration("foo"), ctxt);
+			Assert.That(t, Is.TypeOf(typeof(ClassType)));
+			Assert.AreEqual("foo", (t as ClassType).Name);
+			
+			t = TypeDeclarationResolver.ResolveSingle("privConst", ctxt, null);
+			Assert.That(t, Is.Null);
+			
+			ctxt.CurrentContext.Set(modA["foo"][0] as IBlockNode);
+			t = TypeDeclarationResolver.ResolveSingle("heyHo", ctxt, null);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 		}
 		
 		[Test]
