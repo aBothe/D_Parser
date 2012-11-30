@@ -49,6 +49,27 @@ namespace D_Parser.Resolver
 
 				return IsEqual(ar1.Base, ar2.Base);
 			}
+			else if(r1 is DelegateType && r2 is DelegateType)
+			{
+				var dg1 = r1 as DelegateType;
+				var dg2 = r2 as DelegateType;
+				
+				if(dg1.IsFunctionLiteral != dg2.IsFunctionLiteral || 
+				   !IsEqual(dg1.ReturnType, dg2.ReturnType))
+					return false;
+				
+				if(dg1.Parameters == null || dg1.Parameters.Length == 0)
+					return dg2.Parameters == null || dg2.Parameters.Length==0;
+				else if(dg2.Parameters == null)
+					return dg1.Parameters == null || dg1.Parameters.Length==0;
+				else if(dg1.Parameters.Length == dg2.Parameters.Length)
+				{
+					for(int i = dg1.Parameters.Length-1; i != 0; i--)
+						if(!IsEqual(dg1.Parameters[i], dg2.Parameters[i]))
+							return false;
+					return true;
+				}
+			}
 
 			//TODO: Handle other types
 
@@ -114,9 +135,7 @@ namespace D_Parser.Resolver
 			else if (resToCheck is UserDefinedType && targetType is UserDefinedType)
 				return IsImplicitlyConvertible((UserDefinedType)resToCheck, (UserDefinedType)targetType);
 			else if (resToCheck is DelegateType && targetType is DelegateType)
-			{
-				//TODO
-			}
+				return IsEqual(resToCheck, targetType); //TODO: Can non-equal delegates be converted into each other?
 			else if (resToCheck is ArrayType && targetType is ArrayType)
 			{
 				var ar1 = (ArrayType)resToCheck;
