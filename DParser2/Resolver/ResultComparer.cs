@@ -88,7 +88,7 @@ namespace D_Parser.Resolver
 			if(_r==null)
 				return IsEqual(resToCheck,targetType);
 			resToCheck = _r;
-
+			
 			targetType = DResolver.StripAliasSymbol(targetType);
 
 			if (targetType is DSymbol)

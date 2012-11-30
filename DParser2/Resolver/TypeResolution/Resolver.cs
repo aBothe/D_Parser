@@ -485,6 +485,9 @@ namespace D_Parser.Resolver.TypeResolution
 			var ms = r as MemberSymbol;
 			if(ms != null)
 				r = (ms as DerivedDataType).Base;
+			
+			if(r is TemplateParameterSymbol)
+				r = (r as TemplateParameterSymbol).Base;
 
 			// There's one special case to handle (TODO: are there further cases?):
 			// auto o = new Class(); -- o will be MemberSymbol and its base type will be a MemberSymbol either (i.e. the constructor reference)
