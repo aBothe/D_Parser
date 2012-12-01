@@ -3369,7 +3369,8 @@ namespace D_Parser.Parser
 					dbs.ElseStatement = Statement(Scope: Scope, Parent: dbs);
 				}
 
-				dbs.EndLocation = t.EndLocation;
+				if(t != null)
+					dbs.EndLocation = t.EndLocation;
 
 				return dbs;
 			}
