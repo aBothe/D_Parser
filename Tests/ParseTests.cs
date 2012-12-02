@@ -1,18 +1,20 @@
 ﻿using System;
-using System.Text;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
-using NUnit.Framework;
+using System.Text;
+
+using D_Parser.Dom;
+using D_Parser.Dom.Expressions;
+using D_Parser.Dom.Statements;
 using D_Parser.Misc;
 using D_Parser.Parser;
-using System.Diagnostics;
-using D_Parser.Resolver.ASTScanner;
-using D_Parser.Dom.Expressions;
-using D_Parser.Dom;
 using D_Parser.Resolver;
+using D_Parser.Resolver.ASTScanner;
 using D_Parser.Resolver.ExpressionSemantics;
-using D_Parser.Dom.Statements;
 using D_Parser.Resolver.TypeResolution;
+using NUnit.Framework;
 
 namespace Tests
 {
@@ -113,6 +115,26 @@ else int C;");
 			Assert.AreEqual(1, A.Attributes.Count);
 			Assert.AreEqual(2,B.Attributes.Count);
 			Assert.AreEqual(2, C.Attributes.Count);
+		}
+		
+		//[Test]
+		public void LexingPerformance()
+		{
+			var f = File.ReadAllText(@"D:\D\dmd2\src\phobos\std\string.d");
+			
+			var lx = new Lexer(new StringReader(f));
+			var sw = new Stopwatch();
+			sw.Start();
+			
+			while(true)
+			{
+				lx.NextToken();
+				if(lx.IsEOF)
+					break;
+			}
+			
+			sw.Stop();
+			Debug.WriteLine(sw.ElapsedMilliseconds);
 		}
 
 		//[Test]
