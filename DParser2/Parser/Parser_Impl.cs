@@ -3444,7 +3444,8 @@ namespace D_Parser.Parser
 				dbs.SwitchExpression = Expression(Scope);
 				Expect(CloseParenthesis);
 
-				dbs.ScopedStatement = Statement(Scope: Scope, Parent: dbs);
+				if(!IsEOF)
+					dbs.ScopedStatement = Statement(Scope: Scope, Parent: dbs);
 				dbs.EndLocation = t.EndLocation;
 
 				return dbs;
