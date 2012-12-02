@@ -55,12 +55,13 @@ namespace D_Parser.Parser
 
 		public ParserTrackerVariables TrackerVariables = new ParserTrackerVariables();
 
+		DToken _backupt = new DToken();
 		DToken t
 		{
 			[System.Diagnostics.DebuggerStepThrough]
 			get
 			{
-				return (DToken)Lexer.CurrentToken;
+				return Lexer.CurrentToken ?? _backupt;
 			}
 		}
 
