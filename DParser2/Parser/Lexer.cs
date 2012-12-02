@@ -1845,9 +1845,31 @@ namespace D_Parser.Parser
 		#region Helpers
 		public static bool IsIdentifierPart(int ch)
 		{
-			if (ch == 95) return true;  // 95 = '_'
-			if (ch == -1) return false;
-			return char.IsLetterOrDigit((char)ch); // accept unicode letters
+			if((ch >= 'a' && ch<='z') || 
+			   (ch >= 'A' && ch<='Z') ||
+			   (ch >= '0' && ch<='9') ||
+			  	ch == '_')
+				return true;
+			
+			switch(ch)
+			{
+				case ' ':
+				case '@':
+				case '/':
+				case '(':
+				case ')':
+				case '[':
+				case ']':
+				case '{':
+				case '}':
+				case '=':
+				case '\"':
+				case '\'':
+				case -1:
+					return false;
+				default:
+					return char.IsLetterOrDigit((char)ch); // accept unicode letters
+			}
 		}
 
 		public static bool IsOct(char digit)
