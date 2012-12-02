@@ -859,6 +859,10 @@ namespace D_Parser.Parser
 
 				bool HasDot = false;
 				LiteralSubformat subFmt = 0;
+				bool isFloat = false;
+				bool isImaginary = false;
+				bool isUnsigned = false;
+				bool isLong = false;
 				int NumBase = 0; // Set it to 0 initially - it'll be set to another value later for sure
 
 				char peek = (char)ReaderPeek();
@@ -981,7 +985,7 @@ namespace D_Parser.Parser
 					if (peek == '-' || peek == '+')
 						expSuffix += (char)ReaderRead();
 					peek = (char)ReaderPeek();
-					while (Char.IsDigit(peek) || peek == '_')
+					while ((peek >= '0' && peek<='9') || peek == '_')
 					{ // read exponent value
 						if (peek == '_')
 							ReaderRead();
@@ -991,7 +995,7 @@ namespace D_Parser.Parser
 					}
 
 					// Exponents just can be decimal integers
-					exponent = int.Parse(expSuffix);
+					int.TryParse(expSuffix,out exponent);
 					expSuffix = suff + expSuffix;
 					peek = (char)ReaderPeek();
 				}
@@ -1006,6 +1010,7 @@ namespace D_Parser.Parser
 						ReaderRead();
 						suffix += "u";
 						subFmt |= LiteralSubformat.Unsigned;
+						isUnsigned = true;
 						peek = (char)ReaderPeek();
 					}
 
@@ -1014,7 +1019,7 @@ namespace D_Parser.Parser
 						subFmt |= LiteralSubformat.Long;
 						ReaderRead();
 						suffix += "L";
-						//islong = true;
+						isLong = true;
 						peek = (char)ReaderPeek();
 						if (!subFmt.HasFlag(LiteralSubformat.Unsigned) && (peek == 'u' || peek == 'U'))
 							goto unsigned;
@@ -1027,6 +1032,7 @@ namespace D_Parser.Parser
 					{ // float value
 						ReaderRead();
 						suffix += "f";
+						isFloat = true;
 						subFmt |= LiteralSubformat.Float;
 						peek = (char)ReaderPeek();
 					}
@@ -1045,17 +1051,18 @@ namespace D_Parser.Parser
 					suffix += "i";
 
 					subFmt |= LiteralSubformat.Imaginary;
+					isImaginary = true;
 				}
 				#endregion
 
-				string digit = sb.ToString();
-				string stringValue = prefix + digit + expSuffix + suffix;
+				//string digit = sb.ToString();
+				//string stringValue = prefix + digit + expSuffix + suffix;
 
 				DToken token = null;
 
 				#region Parse the digit string
 
-				var num = ParseFloatValue(digit, NumBase);
+				var num = ParseFloatValue(sb.ToString(), NumBase);
 
 				if (exponent != 1)
 					num *= Math.Pow(NumBase == 16 ? 2 : 10, exponent);
@@ -1064,23 +1071,23 @@ namespace D_Parser.Parser
 
 				if (HasDot)
 				{
-					if (subFmt.HasFlag(LiteralSubformat.Float))
+					if (isFloat)
 						val = (float)num;
 					else
 						val = (double)num;
 				}
 				else
 				{
-					if (subFmt.HasFlag(LiteralSubformat.Unsigned))
+					if (isUnsigned)
 					{
-						if (subFmt.HasFlag(LiteralSubformat.Long))
+						if (isLong)
 							val = (ulong)num;
 						else
 							val = (uint)num;
 					}
 					else
 					{
-						if (subFmt.HasFlag(LiteralSubformat.Long))
+						if (isLong)
 							val = (long)num;
 						else
 							val = (int)num;
@@ -1089,10 +1096,8 @@ namespace D_Parser.Parser
 
 				#endregion
 
-				token = Token(DTokens.Literal, x, y, stringValue.Length, val,/* stringValue,*/
-					subFmt.HasFlag(LiteralSubformat.Float) || subFmt.HasFlag(LiteralSubformat.Imaginary) || HasDot ?
-						(LiteralFormat.FloatingPoint | LiteralFormat.Scalar) :
-						LiteralFormat.Scalar,
+				token = Token(DTokens.Literal, x, y, Col-x/*stringValue.Length*/, val,/* stringValue,*/
+					HasDot || isFloat || isImaginary ? (LiteralFormat.FloatingPoint | LiteralFormat.Scalar) : LiteralFormat.Scalar,
 					subFmt);
 
 				if (token != null)
@@ -1845,9 +1850,31 @@ namespace D_Parser.Parser
 		#region Helpers
 		public static bool IsIdentifierPart(int ch)
 		{
-			if (ch == 95) return true;  // 95 = '_'
-			if (ch == -1) return false;
-			return char.IsLetterOrDigit((char)ch); // accept unicode letters
+			if((ch >= 'a' && ch<='z') || 
+			   (ch >= 'A' && ch<='Z') ||
+			   (ch >= '0' && ch<='9') ||
+			  	ch == '_')
+				return true;
+			
+			switch(ch)
+			{
+				case ' ':
+				case '@':
+				case '/':
+				case '(':
+				case ')':
+				case '[':
+				case ']':
+				case '{':
+				case '}':
+				case '=':
+				case '\"':
+				case '\'':
+				case -1:
+					return false;
+				default:
+					return char.IsLetterOrDigit((char)ch); // accept unicode letters
+			}
 		}
 
 		public static bool IsOct(char digit)
@@ -1857,7 +1884,7 @@ namespace D_Parser.Parser
 
 		public static bool IsHex(char digit)
 		{
-			return Char.IsDigit(digit) || ('A' <= digit && digit <= 'F') || ('a' <= digit && digit <= 'f');
+			return (digit >= '0' && digit<='9') || ('A' <= digit && digit <= 'F') || ('a' <= digit && digit <= 'f');
 		}
 
 		public static bool IsBin(char digit)
@@ -1878,12 +1905,12 @@ namespace D_Parser.Parser
 		/// <returns></returns>
 		public static bool IsLegalDigit(char d, int NumBase)
 		{
-			return (NumBase == 10 && Char.IsDigit(d)) || (NumBase == 2 && IsBin(d)) /* (NumBase == 8 && IsOct(d)) || */|| (NumBase == 16 && IsHex(d)) || d == '_';
+			return (NumBase == 10 && (d >= '0' && d<='9')) || (NumBase == 2 && IsBin(d)) /* (NumBase == 8 && IsOct(d)) || */|| (NumBase == 16 && IsHex(d)) || d == '_';
 		}
 
 		public static int GetHexNumber(char digit)
 		{
-			if (Char.IsDigit(digit))
+			if (digit >= '0' && digit <= '9')
 			{
 				return digit - '0';
 			}
