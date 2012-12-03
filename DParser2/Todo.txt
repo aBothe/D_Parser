@@ -1,12 +1,7 @@
 ﻿
 Everything that still needs to be handled by D_Parser comes right in here:
 
-* UFCS -- assert("fdas" == "asdf".reverse()); and stuff -- very complex & time-intensive!
 * CTFE
-* Implement declaration condition checks
-	- omit debug/versioned declarations 
-	  if not fitting to environment dependencies
-	  ([debug/release] or [Windows/Mac/Unix/BSD] etc.)
 * Interface/Abstract class implementation
 
 * Make Mixin analysis etc. multi-threaded!
@@ -15,7 +10,6 @@ Completion bugs:
 * If module and type are named equally, a module must not be preferred!
 * Disable completion on module statements/offer package identifiers
 * Typing in D-IDE is often very slow.
-* Check do ... while(); -- throws invalid error
 
 =======================================
 
@@ -57,7 +51,6 @@ Evaluation caching:
 Resolver:
 	- .tupleof for structs
 	- .offsetof for struct fields
-	- new MyClass() should return the ctor member instead - that has the actual class as its return type
 	- Handle argument-parameter match
 
 Template parameter deduction:
