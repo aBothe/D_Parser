@@ -2913,6 +2913,10 @@ namespace D_Parser.Parser
 					while (FunctionAttribute[laKind])
 					{
 						Step();
+
+						if(fl.AnonymousMethod.Attributes == null)
+							fl.AnonymousMethod.Attributes = new List<DAttribute>();
+						
 						fl.AnonymousMethod.Attributes.Add(new Modifier(t.Kind, t.Value) { Location = t.Location, EndLocation = t.EndLocation });
 					}
 				}

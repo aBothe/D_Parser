@@ -162,7 +162,9 @@ namespace D_Parser.Completion
 			{
 				var nameStubs = new Dictionary<string, string>();
 				var availModules = new List<IAbstractSyntaxTree>();
-
+				var ast = Editor.SyntaxTree;
+				
+				if(ast!=null && ast.StaticStatements!=null)
 				foreach (var sstmt in Editor.SyntaxTree.StaticStatements)
 					if (sstmt is ImportStatement)
 					{
