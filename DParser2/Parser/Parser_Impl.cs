@@ -3196,10 +3196,10 @@ namespace D_Parser.Parser
 				var p = new DVariable { 
 					Name = t.Value, 
 					Location = t.Location, 
-					EndLocation = t.EndLocation };
+					EndLocation = t.EndLocation,
+					Attributes =  new List<DAttribute>{new Modifier(Auto)}
+				};
 
-				p.Attributes.Add(new Modifier(Auto));
-				
 				fl.AnonymousMethod.Parameters.Add(p);
 			}
 			else if (laKind == OpenParenthesis)
