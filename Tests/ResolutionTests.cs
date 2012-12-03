@@ -146,6 +146,35 @@ class Blah(T){ T b; }");
 			var ex = DParser.ParseExpression("Blah!Blupp");
 			var t = Evaluation.EvaluateType(ex, ctxt);
 		}
+		
+		[Test]
+		public void SwitchLocals()
+		{
+			var pcl = CreateCache(@"module A;
+void foo()
+{
+	int i=0;
+	switch(i)
+	{
+		case 0:
+			break;
+		case 1:
+			int col;
+			col;
+	}
+}");
+			
+			var A = pcl[0]["A"];
+			var foo = A["foo"][0] as DMethod;
+			var case1 = ((foo.Body.SubStatements[1] as SwitchStatement).ScopedStatement as BlockStatement).SubStatements[1] as SwitchStatement.CaseStatement;
+			var colStmt = case1.SubStatements[1] as ExpressionStatement;
+			
+			var ctxt = CreateDefCtxt(pcl, foo, colStmt);
+			
+			var t = Evaluation.EvaluateType(colStmt.Expression, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+		}
 
 		[Test]
 		public void TestMultiModuleResolution1()

@@ -117,6 +117,23 @@ namespace D_Parser.Dom.Statements
 				return _Statements.ToArray(); ;
 			}
 		}
+		
+		public static List<INode> GetDeclarations(IEnumerable<IStatement> stmts)
+		{
+			var l = new List<INode>();
+
+			foreach (var s in stmts)
+				if (s is BlockStatement ||
+					s is DeclarationStatement ||
+					s is ImportStatement)
+				{
+					var decls = (s as IDeclarationContainingStatement).Declarations;
+					if (decls != null && decls.Length > 0)
+						l.AddRange(decls);
+				}
+
+			return l;
+		}
 
 		/// <summary>
 		/// Returns all child nodes inside the current scope.
@@ -127,30 +144,7 @@ namespace D_Parser.Dom.Statements
 		{
 			get
 			{
-				var l = new List<INode>();
-
-				var stmts = new List<IStatement>( _Statements);
-				var next = new List<IStatement>();
-				while (stmts.Count != 0)
-				{
-					foreach (var s in stmts)
-						if (s is BlockStatement ||
-							s is DeclarationStatement ||
-							s is ImportStatement)
-						{
-							var decls = (s as IDeclarationContainingStatement).Declarations;
-							if (decls != null && decls.Length > 0)
-								l.AddRange(decls);
-						}
-
-					if (next.Count == 0)
-						break;
-					stmts.Clear();
-					stmts.AddRange(next);
-					next.Clear();
-				}
-
-				return l.ToArray();
+				return GetDeclarations(_Statements).ToArray();
 			}
 		}
 
@@ -547,7 +541,7 @@ namespace D_Parser.Dom.Statements
 			return vis.Visit(this);
 		}
 
-		public class CaseStatement : StatementContainingStatement, IExpressionContainingStatement
+		public class CaseStatement : StatementContainingStatement, IExpressionContainingStatement, IDeclarationContainingStatement
 		{
 			public bool IsCaseRange
 			{
@@ -595,9 +589,17 @@ namespace D_Parser.Dom.Statements
 			{
 				return vis.Visit(this);
 			}
+			
+			public INode[] Declarations
+			{
+				get
+				{
+					return BlockStatement.GetDeclarations(ScopeStatementList).ToArray();
+				}
+			}
 		}
 
-		public class DefaultStatement : StatementContainingStatement
+		public class DefaultStatement : StatementContainingStatement, IDeclarationContainingStatement
 		{
 			public IStatement[] ScopeStatementList;
 
@@ -627,6 +629,14 @@ namespace D_Parser.Dom.Statements
 			public override R Accept<R>(StatementVisitor<R> vis)
 			{
 				return vis.Visit(this);
+			}
+			
+			public INode[] Declarations
+			{
+				get
+				{
+					return BlockStatement.GetDeclarations(ScopeStatementList).ToArray();
+				}
 			}
 		}
 	}

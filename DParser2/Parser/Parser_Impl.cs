@@ -3396,8 +3396,11 @@ namespace D_Parser.Parser
 				dbs.Condition = Expression(Scope);
 				Expect(CloseParenthesis);
 
-				dbs.ScopedStatement = Statement(Scope: Scope, Parent: dbs);
-				dbs.EndLocation = t.EndLocation;
+				if(!IsEOF)
+				{
+					dbs.ScopedStatement = Statement(Scope: Scope, Parent: dbs);
+					dbs.EndLocation = t.EndLocation;
+				}
 
 				return dbs;
 			}
@@ -3410,14 +3413,17 @@ namespace D_Parser.Parser
 
 				var dbs = new WhileStatement() { Location = t.Location, Parent = Parent };
 				LastParsedObject = dbs;
-				dbs.ScopedStatement = Statement(Scope: Scope, Parent: dbs);
+				if(!IsEOF)
+					dbs.ScopedStatement = Statement(true, false, Scope, dbs);
 
-				Expect(While);
-				Expect(OpenParenthesis);
-				dbs.Condition = Expression(Scope);
-				Expect(CloseParenthesis);
-
-				dbs.EndLocation = t.EndLocation;
+				if(Expect(While) && Expect(OpenParenthesis))
+				{
+					dbs.Condition = Expression(Scope);
+					Expect(CloseParenthesis);
+					Expect(Semicolon);
+	
+					dbs.EndLocation = t.EndLocation;
+				}
 
 				return dbs;
 			}
@@ -3621,15 +3627,16 @@ namespace D_Parser.Parser
 
 				var dbs = new WithStatement() { Location = t.Location, Parent = Parent };
 				LastParsedObject = dbs;
-				Expect(OpenParenthesis);
-
-				// Symbol
-				dbs.WithExpression = Expression(Scope);
-
-				Expect(CloseParenthesis);
-
-				dbs.ScopedStatement = Statement(Scope: Scope, Parent: dbs);
-
+				if(Expect(OpenParenthesis))
+				{
+					// Symbol
+					dbs.WithExpression = Expression(Scope);
+	
+					Expect(CloseParenthesis);
+	
+					if(!IsEOF)
+						dbs.ScopedStatement = Statement(Scope: Scope, Parent: dbs);
+				}
 				dbs.EndLocation = t.EndLocation;
 				return dbs;
 			}
@@ -3649,9 +3656,10 @@ namespace D_Parser.Parser
 					Expect(CloseParenthesis);
 				}
 
-				dbs.ScopedStatement = Statement(Scope: Scope, Parent: dbs);
-
+				if(!IsEOF)
+					dbs.ScopedStatement = Statement(Scope: Scope, Parent: dbs);
 				dbs.EndLocation = t.EndLocation;
+				
 				return dbs;
 			}
 			#endregion
@@ -3710,7 +3718,8 @@ namespace D_Parser.Parser
 						}
 					}
 
-					c.ScopedStatement = Statement(Scope: Scope, Parent: c);
+					if(!IsEOF)
+						c.ScopedStatement = Statement(Scope: Scope, Parent: c);
 					c.EndLocation = t.EndLocation;
 
 					catches.Add(c);
@@ -3835,8 +3844,8 @@ namespace D_Parser.Parser
 				if (Expect(OpenParenthesis))
 				{
 					s.AssertedExpression = Expression(Scope);
-					Expect(CloseParenthesis);
-					Expect(Semicolon);
+					if(Expect(CloseParenthesis))
+						Expect(Semicolon);
 				}
 				s.EndLocation = t.EndLocation;
 
