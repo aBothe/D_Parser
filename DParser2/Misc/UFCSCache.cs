@@ -176,9 +176,13 @@ namespace D_Parser.Resolver.ASTScanner
 
 			bool dontUseNameFilter = nameFilter == null;
 
+			if(firstArgument is MemberSymbol)
+				firstArgument = DResolver.StripMemberSymbols(firstArgument as AbstractType);
+			
 			lock(CachedMethods)
 				foreach (var kv in CachedMethods)
 				{
+					
 					// First test if arg is matching the parameter
 					if ((dontUseNameFilter || kv.Key.Name == nameFilter) &&
 						ResultComparer.IsImplicitlyConvertible(firstArgument, kv.Value, ctxt))
