@@ -90,6 +90,7 @@
     <Compile Include="Completion\Providers\CtrlSpaceCompletionProvider.cs" />
     <Compile Include="Completion\Providers\ImportStatementCompletionProvider.cs" />
     <Compile Include="Completion\Providers\MemberCompletionProvider.cs" />
+    <Compile Include="Completion\Providers\ModuleStatementCompletionProvider.cs" />
     <Compile Include="Completion\Providers\PropertyAttributeCompletionProvider.cs" />
     <Compile Include="Completion\Providers\UFCSCompletionProvider.cs" />
     <Compile Include="Dom\IDeclarationCondition.cs" />

@@ -8,7 +8,6 @@ Everything that still needs to be handled by D_Parser comes right in here:
 
 Completion bugs:
 * If module and type are named equally, a module must not be preferred!
-* Disable completion on module statements/offer package identifiers
 * Typing in D-IDE is often very slow.
 
 =======================================
