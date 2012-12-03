@@ -145,21 +145,26 @@ namespace D_Parser.Misc
 					pack = kv.Item2;
 				}
 
+				IAbstractSyntaxTree ast;
 				try
 				{
 					// If no debugger attached, save time + memory by skipping function bodies
-					var ast = DParser.ParseFile(file, skipFunctionBodies);
-
-					if (!(pack is RootPackage))
-						ast.ModuleName = pack.Path + "." + Path.GetFileNameWithoutExtension(file);
-
-					ast.FileName = file;
-					pack.Modules[ModuleNameHelper.ExtractModuleName(ast.ModuleName)] = ast;
+					ast = DParser.ParseFile(file, skipFunctionBodies);
 				}
 				catch (Exception ex)
 				{
+					ast = new DModule{ ParseErrors = new System.Collections.ObjectModel.ReadOnlyCollection<ParserError>(
+						new List<ParserError>{
+							new ParserError(false, ex.Message + "\n\n" + ex.StackTrace, DTokens.Invariant, CodeLocation.Empty)
+					       }) };
 					LastException = ex;
 				}
+				
+				if (!(pack is RootPackage))
+					ast.ModuleName = pack.Path + "." + Path.GetFileNameWithoutExtension(file);
+
+				ast.FileName = file;
+				pack.Modules[ModuleNameHelper.ExtractModuleName(ast.ModuleName)] = ast;
 			}
 		}
 	}
