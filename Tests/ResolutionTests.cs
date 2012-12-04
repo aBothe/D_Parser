@@ -1174,13 +1174,20 @@ class cl
 		public void Mixins4()
 		{
 			var pcl = ResolutionTests.CreateCache(@"module A; enum mixinStuff = q{import C;};",
-			                                      @"module B; import A; mixin(mixinStuff);",
+			                                      @"module B; import A; mixin(mixinStuff); class cl{ void bar(){  } }",
 			                                      @"module C; void CFoo() {}");
 			
 			var B =pcl[0]["B"];
 			var ctxt = ResolutionTests.CreateDefCtxt(pcl, B);
 			
 			var t = TypeDeclarationResolver.ResolveSingle("CFoo", ctxt, null);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That((t as MemberSymbol).Definition, Is.TypeOf(typeof(DMethod)));
+			
+			var bar = (B["cl"][0] as DClassLike)["bar"][0] as DMethod;
+			ctxt.CurrentContext.Set(bar, bar.Body);
+			
+			t = TypeDeclarationResolver.ResolveSingle("CFoo", ctxt, null);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That((t as MemberSymbol).Definition, Is.TypeOf(typeof(DMethod)));
 		}

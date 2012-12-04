@@ -572,7 +572,10 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				if(ctxt.ScopedBlock == mx.ParentNode.NodeRoot)
 					return ScanBlockUpward(ast, ast.EndLocation, vis);
 				else
-					return ScanImportedModule(ast, vis);
+				{
+					bool _u = false;
+					return scanChildren(ast, vis, ref _u);
+				}
 			}
 			else // => MixinStatement
 			{
