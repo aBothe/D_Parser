@@ -492,6 +492,32 @@ T delegate(T dgParam) genDelegate(T)();");
 		}
 		
 		[Test]
+		public void TestParamDeduction8()
+		{
+			var pcl = CreateCache(@"module A;
+struct Appender(A:E[],E) { A data; }
+
+Appender!(E[]) appender(A : E[], E)(A array = null)
+{
+    return Appender!(E[])(array);
+}");
+			
+			var A = pcl[0]["A"];
+			var ctxt = CreateDefCtxt(pcl, A);
+			
+			var ex = DParser.ParseExpression("new Appender!(double[])()");
+			var t = Evaluation.EvaluateType(ex,ctxt);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol))); // ctor
+			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(StructType)));
+			
+			ex = DParser.ParseExpression("appender!(double[])()");
+			t = Evaluation.EvaluateType(ex,ctxt);
+			Assert.That(t, Is.TypeOf(typeof(StructType)));
+			var ss = t as StructType;
+			Assert.That(ss.DeducedTypes.Count, Is.GreaterThan(0));
+		}
+		
+		[Test]
 		public void IdentifierOnlyTemplateDeduction()
 		{
 			var pcl = CreateCache(@"module A;

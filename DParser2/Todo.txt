@@ -9,6 +9,8 @@ Everything that still needs to be handled by D_Parser comes right in here:
 Completion bugs:
 * If module and type are named equally, a module must not be preferred!
 * Typing in D-IDE is often very slow.
+* indentation in lambdas
+
 
 =======================================
 

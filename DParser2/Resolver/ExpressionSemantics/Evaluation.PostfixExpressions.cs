@@ -292,9 +292,19 @@ namespace D_Parser.Resolver.ExpressionSemantics
 										}
 									}
 									
-									else if (i < callArguments.Count &&
-										ResultComparer.IsImplicitlyConvertible(callArguments[i], paramType, ctxt))
-										add = true;
+									else if (i < callArguments.Count)
+									{
+										if(ResultComparer.IsImplicitlyConvertible(callArguments[i], paramType, ctxt))
+											add = true;
+									}
+									else
+									{
+										// If there are more parameters than arguments given, check if the param has default values
+										if(dm.Parameters[i] is DVariable && (dm.Parameters[i] as DVariable).Initializer!=null)
+											add = true;
+										// Assume that all further method parameters do have default values - and don't check further parameters
+										break;
+									}
 								}
 
 							if (add)
