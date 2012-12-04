@@ -162,20 +162,16 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			else if(scanChildren(curScope as DBlockNode, VisibleMembers, ref breakOnNextScope))
 					return true;
 
-			// Handle imports and other static statements
-			if (curScope is DBlockNode)
-				if ((breakOnNextScope = HandleDBlockNode(curScope as DBlockNode, VisibleMembers)) && breakImmediately)
-					return true;
-
 			return breakOnNextScope && ((ctxt.Options & ResolutionOptions.StopAfterFirstOverloads) == ResolutionOptions.StopAfterFirstOverloads);
 		}
 		
 		bool DeepScanClass(DClassLike cls, MemberFilter VisibleMembers, ref bool breakOnNextScope)
 		{
+			bool isBase = false;
 			// MyClass > BaseA > BaseB > Object
 			while (cls != null)
 			{
-				if(scanChildren(cls, VisibleMembers, ref breakOnNextScope))
+				if(scanChildren(cls, VisibleMembers, ref breakOnNextScope, false, isBase))
 					return true;
 
 				// 3)
@@ -186,6 +182,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					if (tr.Base is TemplateIntermediateType)
 					{
 						cls = (tr.Base as TemplateIntermediateType).Definition;
+						isBase = true;
 
 						//TODO: Switch declaration condition set
 					}
@@ -200,20 +197,27 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		
 		protected bool DeepScanClass(UserDefinedType udt, MemberFilter vis, ref bool breakOnNextScope)
 		{
+			bool isBase = false;
 			while(udt!= null)
 			{
-				if(scanChildren(udt.Definition as DBlockNode, vis, ref breakOnNextScope))
+				if(scanChildren(udt.Definition as DBlockNode, vis, ref breakOnNextScope, false, isBase))
 					return true;
 				
-				if(udt is ClassType)
+				if(udt is TemplateIntermediateType){
 					udt = udt.Base as UserDefinedType;
+					isBase = true;
+				}
 				else
 					break;
 			}
 			return false;
 		}
 		
-		bool scanChildren(DBlockNode curScope, MemberFilter VisibleMembers, ref bool breakOnNextScope)
+		bool scanChildren(DBlockNode curScope, 
+		                  MemberFilter VisibleMembers, 
+		                  ref bool breakOnNextScope,
+		                  bool publicImports = false,
+		                  bool isBaseClass = false)
 		{
 			if (curScope.TemplateParameters != null && 
 			    (breakOnNextScope = HandleItems(curScope.TemplateParameterNodes as IEnumerable<INode>)) &&
@@ -225,7 +229,10 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				foreach (var n in ch)
 				{
 					var dn = n as DNode;
-					if(dn!=null && !ctxt.CurrentContext.MatchesDeclarationEnvironment(dn))	
+					if(dn!=null && !ctxt.CurrentContext.MatchesDeclarationEnvironment(dn))
+						continue;
+					
+					if(!(CanShowMember(dn, ctxt.ScopedBlock) || (publicImports ? false : (!isBaseClass || IsConstOrStatic(dn)))))
 						continue;
 
 					// Add anonymous enums' items
@@ -245,7 +252,8 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					if ((breakOnNextScope = HandleItem(n)) && breakImmediately)
 						return true;
 				}
-			return false;
+			
+			return (breakOnNextScope = HandleDBlockNode(curScope, VisibleMembers, publicImports)) && breakImmediately;
 		}
 		
 		static bool IsConstOrStatic(DNode dn)
@@ -525,7 +533,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 					//ctxt.PushNewScope(module);
 
-					if(ScanImportedModule(module,VisibleMembers))
+					if(ScanImportedModule(module as DModule,VisibleMembers))
 					{
 						//ctxt.Pop();
 						return true;
@@ -536,37 +544,10 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			return false;
 		}
 		
-		bool ScanImportedModule(IAbstractSyntaxTree module, MemberFilter VisibleMembers)
+		bool ScanImportedModule(DModule module, MemberFilter VisibleMembers)
 		{
-			var ch = PrefilterSubnodes(module);
-			if (ch != null)
-				foreach (var i in ch)
-				{
-					var dn = i as DNode;
-					if (dn != null)
-					{
-						// Add anonymous enums' items
-						if (dn is DEnum &&
-						    string.IsNullOrEmpty(i.Name) && 
-						    CanShowMember(dn, ctxt.ScopedBlock) && 
-						    CanAddMemberOfType(VisibleMembers, i))
-						{
-							if (HandleItems((i as DEnum).Children))
-								return true;
-							continue;
-						}
-
-						if (CanShowMember(dn, ctxt.ScopedBlock) &&
-							CanAddMemberOfType(VisibleMembers, dn) &&
-							HandleItem(dn))
-								return true;
-					}
-					else
-						if (HandleItem(i))
-							return true;
-				}
-
-			return HandleDBlockNode(module as DBlockNode, VisibleMembers, true);
+			bool _u = false;
+			return scanChildren(module, VisibleMembers, ref _u, true);
 		}
 		#endregion
 		
@@ -627,8 +608,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				if(pop)
 					ctxt.PushNewScope(tmxTemplate.Definition);
 				ctxt.CurrentContext.IntroduceTemplateParameterTypes(tmxTemplate);
-				res =	DeepScanClass(tmxTemplate.Definition, vis, ref res) || res ||
-						HandleDBlockNode(tmxTemplate.Definition, vis);
+				res |= DeepScanClass(tmxTemplate, vis, ref res);
 				if(pop)
 					ctxt.Pop();
 				else
