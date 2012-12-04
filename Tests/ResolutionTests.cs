@@ -1276,9 +1276,18 @@ void test() {
 		public void TemplateMixins3()
 		{
 			var pcl = ResolutionTests.CreateCache(@"module A;
+mixin template Singleton(I) {
+	static I getInstance() {}
+}
+
 mixin template Foo(T) {
   int localDerp;
   T[] arrayTest;
+}
+
+class clA
+{
+	mixin Singleton!clA;
 }
 
 void foo() {
@@ -1302,6 +1311,10 @@ void foo() {
 			t = Evaluation.EvaluateType((A.Body.SubStatements[3] as ExpressionStatement).Expression,ctxt);
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+			
+			var ex = DParser.ParseExpression("clA.getInstance");
+			t = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 		}
 		
 		[Test]
@@ -1311,7 +1324,7 @@ void foo() {
 mixin template mixedInImports()
 {
 	import C;
-}",			                                      @"module B; import A; mixin mixedInImports;",
+}",			                                      @"module B; import A; mixin mixedInImports; class cl{ void bar(){  } }",
 			                                      @"module C;
 void CFoo() {}");
 			
@@ -1319,6 +1332,13 @@ void CFoo() {}");
 			var ctxt = ResolutionTests.CreateDefCtxt(pcl, B);
 			
 			var t = TypeDeclarationResolver.ResolveSingle("CFoo", ctxt, null);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That((t as MemberSymbol).Definition, Is.TypeOf(typeof(DMethod)));
+			
+			var bar = (B["cl"][0] as DClassLike)["bar"][0] as DMethod;
+			ctxt.CurrentContext.Set(bar, bar.Body);
+			
+			t = TypeDeclarationResolver.ResolveSingle("CFoo", ctxt, null);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That((t as MemberSymbol).Definition, Is.TypeOf(typeof(DMethod)));
 		}

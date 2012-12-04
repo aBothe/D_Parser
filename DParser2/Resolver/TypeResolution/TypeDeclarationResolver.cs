@@ -458,8 +458,7 @@ namespace D_Parser.Resolver.TypeResolution
 			if (popAfterwards)
 				ctxt.PushNewScope(m is IBlockNode ? (IBlockNode)m : m.Parent as IBlockNode);
 
-			var DoResolveBaseType = stkC < 10 && !ctxt.Options.HasFlag(ResolutionOptions.DontResolveBaseClasses) &&
-				(m.Type == null || m.Type.ToString(false) != m.Name);
+			var canResolveBase = stkC < 10 && (m.Type == null || m.Type.ToString(false) != m.Name);
 			
 			// To support resolving type parameters to concrete types if the context allows this, introduce all deduced parameters to the current context
 			if (resultBase is DSymbol)
@@ -512,7 +511,7 @@ namespace D_Parser.Resolver.TypeResolution
 				var v = m as DVariable;
 				AbstractType bt = null;
 
-				if (DoResolveBaseType)
+				if (canResolveBase && ((ctxt.Options & ResolutionOptions.DontResolveBaseTypes) != ResolutionOptions.DontResolveBaseTypes))
 				{
 					var bts = TypeDeclarationResolver.Resolve(v.Type, ctxt);
 
@@ -536,7 +535,8 @@ namespace D_Parser.Resolver.TypeResolution
 			else if (m is DMethod)
 			{
 				ret = new MemberSymbol((DNode)m,
-					DoResolveBaseType ? GetMethodReturnType((DMethod)m, ctxt) : null
+					canResolveBase && ((ctxt.Options & ResolutionOptions.DontResolveBaseTypes) != ResolutionOptions.DontResolveBaseTypes) ? 
+					GetMethodReturnType((DMethod)m, ctxt) : null
 					, typeBase as ISyntaxRegion);
 			}
 			else if (m is DClassLike)
@@ -592,7 +592,8 @@ namespace D_Parser.Resolver.TypeResolution
 				}
 
 				if (dc.ClassType == DTokens.Class || dc.ClassType == DTokens.Interface)
-					ret = DoResolveBaseType ? DResolver.ResolveBaseClasses(udt, ctxt) : udt;
+					ret = canResolveBase && ((ctxt.Options & ResolutionOptions.DontResolveBaseClasses) != ResolutionOptions.DontResolveBaseClasses) ? 
+						DResolver.ResolveBaseClasses(udt, ctxt) : udt;
 			}
 			else if (m is IAbstractSyntaxTree)
 			{
@@ -619,7 +620,9 @@ namespace D_Parser.Resolver.TypeResolution
 			else if(m is NamedTemplateMixinNode)
 			{
 				var tmxNode = m as NamedTemplateMixinNode;
-				ret = new MemberSymbol(tmxNode, DoResolveBaseType ? ResolveSingle(tmxNode.Type, ctxt) : null, typeBase as ISyntaxRegion);
+				ret = new MemberSymbol(tmxNode, canResolveBase && ((ctxt.Options & ResolutionOptions.DontResolveBaseTypes) != ResolutionOptions.DontResolveBaseTypes) ? 
+				                       ResolveSingle(tmxNode.Type, ctxt) : null, 
+				                       typeBase as ISyntaxRegion);
 			}
 
 			if (resultBase is DSymbol)

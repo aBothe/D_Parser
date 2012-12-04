@@ -159,84 +159,33 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 						return true;
 				}
 			}
-			else
-			{
-				var ch = PrefilterSubnodes(curScope);
-				if (ch != null)
-					foreach (var n in ch)
-					{
-						var dn = n as DNode;
-						if(dn!=null && !ctxt.CurrentContext.MatchesDeclarationEnvironment(dn))	
-							continue;
-
-						// Add anonymous enums' items
-						if (dn is DEnum && string.IsNullOrEmpty(dn.Name) && CanAddMemberOfType(VisibleMembers, dn))
-						{
-							var ch2 = PrefilterSubnodes(dn as DEnum);
-							if (ch2 != null && (breakOnNextScope = HandleItems(ch2) && breakImmediately))
-								return true;
-							continue;
-						}
-
-						var dm3 = dn as DMethod; // Only show normal & delegate methods
-						if (!CanAddMemberOfType(VisibleMembers, n) ||
-							(dm3 != null && !(dm3.SpecialType == DMethod.MethodType.Normal || dm3.SpecialType == DMethod.MethodType.Delegate)))
-							continue;
-
-						if ((breakOnNextScope = HandleItem(n)) && breakImmediately)
-							return true;
-					}
-			}
+			else if(scanChildren(curScope as DBlockNode, VisibleMembers, ref breakOnNextScope))
+					return true;
 
 			// Handle imports and other static statements
 			if (curScope is DBlockNode)
 				if ((breakOnNextScope = HandleDBlockNode(curScope as DBlockNode, VisibleMembers)) && breakImmediately)
 					return true;
 
-			return breakOnNextScope && ctxt.Options.HasFlag(ResolutionOptions.StopAfterFirstOverloads);
+			return breakOnNextScope && ((ctxt.Options & ResolutionOptions.StopAfterFirstOverloads) == ResolutionOptions.StopAfterFirstOverloads);
 		}
 		
 		bool DeepScanClass(DClassLike cls, MemberFilter VisibleMembers, ref bool breakOnNextScope)
 		{
-			var curWatchedClass = cls;
 			// MyClass > BaseA > BaseB > Object
-			while (curWatchedClass != null)
+			while (cls != null)
 			{
-				if (curWatchedClass.TemplateParameters != null &&
-					(breakOnNextScope = HandleItems(curWatchedClass.TemplateParameterNodes as IEnumerable<INode>)) && breakImmediately)
+				if(scanChildren(cls, VisibleMembers, ref breakOnNextScope))
 					return true;
-
-				var ch = PrefilterSubnodes(curWatchedClass);
-				if (ch != null)
-					foreach (var m in ch)
-					{
-						var dm2 = m as DNode;
-						if(!CanAddMemberOfType(VisibleMembers, m) || dm2 == null)
-							continue;
-						
-						// Only show ordinary & delegate methods, no ctors or dtors etc.
-						var dm3 = m as DMethod;
-						if (dm3 != null && !(dm3.SpecialType == DMethod.MethodType.Normal || dm3.SpecialType == DMethod.MethodType.Delegate))
-							continue;
-
-						if (!ctxt.CurrentContext.MatchesDeclarationEnvironment(dm2))
-							continue;
-
-						// Add static and non-private members of all base classes; 
-						// Add everything if we're still handling the currently scoped class
-						if (curWatchedClass == cls || (CanShowMember(dm2, ctxt.ScopedBlock) || IsConstOrStatic(dm2)))
-							if ((breakOnNextScope = HandleItem(m)) && breakImmediately)
-								return true;
-					}
 
 				// 3)
 				if (cls.ClassType == DTokens.Class)
 				{
-					var tr = DResolver.ResolveBaseClasses(new ClassType(curWatchedClass, curWatchedClass, null), ctxt, true);
+					var tr = DResolver.ResolveBaseClasses(new ClassType(cls, cls, null), ctxt, true);
 
 					if (tr.Base is TemplateIntermediateType)
 					{
-						curWatchedClass = (tr.Base as TemplateIntermediateType).Definition;
+						cls = (tr.Base as TemplateIntermediateType).Definition;
 
 						//TODO: Switch declaration condition set
 					}
@@ -246,6 +195,56 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				else
 					break;
 			}
+			return false;
+		}
+		
+		protected bool DeepScanClass(UserDefinedType udt, MemberFilter vis, ref bool breakOnNextScope)
+		{
+			while(udt!= null)
+			{
+				if(scanChildren(udt.Definition as DBlockNode, vis, ref breakOnNextScope))
+					return true;
+				
+				if(udt is ClassType)
+					udt = udt.Base as UserDefinedType;
+				else
+					break;
+			}
+			return false;
+		}
+		
+		bool scanChildren(DBlockNode curScope, MemberFilter VisibleMembers, ref bool breakOnNextScope)
+		{
+			if (curScope.TemplateParameters != null && 
+			    (breakOnNextScope = HandleItems(curScope.TemplateParameterNodes as IEnumerable<INode>)) &&
+			    breakImmediately)
+					return true;
+			
+			var ch = PrefilterSubnodes(curScope);
+			if (ch != null)
+				foreach (var n in ch)
+				{
+					var dn = n as DNode;
+					if(dn!=null && !ctxt.CurrentContext.MatchesDeclarationEnvironment(dn))	
+						continue;
+
+					// Add anonymous enums' items
+					if (dn is DEnum && string.IsNullOrEmpty(dn.Name) && CanAddMemberOfType(VisibleMembers, dn))
+					{
+						var ch2 = PrefilterSubnodes(dn as DEnum);
+						if (ch2 != null && (breakOnNextScope = HandleItems(ch2) && breakImmediately))
+							return true;
+						continue;
+					}
+
+					var dm3 = dn as DMethod; // Only show normal & delegate methods
+					if (!CanAddMemberOfType(VisibleMembers, n) ||
+						(dm3 != null && !(dm3.SpecialType == DMethod.MethodType.Normal || dm3.SpecialType == DMethod.MethodType.Delegate)))
+						continue;
+
+					if ((breakOnNextScope = HandleItem(n)) && breakImmediately)
+						return true;
+				}
 			return false;
 		}
 		
@@ -486,7 +485,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			}
 
 			// Every module imports 'object' implicitly
-			if (!takePublicImportsOnly)
+			if (dbn is IAbstractSyntaxTree && !takePublicImportsOnly)
 				if (HandleNonAliasedImport(_objectImport, VisibleMembers))
 					return true;
 

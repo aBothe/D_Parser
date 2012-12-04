@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using D_Parser.Misc;
+
+using D_Parser.Completion;
 using D_Parser.Dom;
 using D_Parser.Dom.Statements;
+using D_Parser.Misc;
 
 namespace D_Parser.Resolver.ASTScanner
 {
@@ -50,7 +52,7 @@ namespace D_Parser.Resolver.ASTScanner
 			return en.Nodes.Count <1 ? null : en.Nodes;
 		}
 
-		public List<INode> Nodes = new List<INode>();
+		List<INode> Nodes = new List<INode>();
 		protected override bool HandleItem(INode n)
 		{
 			Nodes.Add(n);
@@ -60,6 +62,49 @@ namespace D_Parser.Resolver.ASTScanner
 		protected override bool HandleItems(IEnumerable<INode> nodes)
 		{
 			Nodes.AddRange(nodes);
+			return false;
+		}
+		
+		public static List<INode> EnumChildren(ResolutionContext ctxt, IBlockNode block, MemberFilter filter = MemberFilter.All)
+		{
+			var scan = new ItemEnumeration(ctxt);
+
+			bool _unused=false;
+			scan.ScanBlock(block, CodeLocation.Empty, MemberFilter.All, ref _unused);
+
+			return scan.Nodes;
+		}
+	}
+	
+	public class MemberCompletionEnumeration : AbstractVisitor
+	{
+		bool isVarInst;
+		readonly ICompletionDataGenerator gen;
+		protected MemberCompletionEnumeration(ResolutionContext ctxt, ICompletionDataGenerator gen) : base(ctxt) 
+		{
+			this.gen = gen;
+		}
+		
+		public static void EnumChildren(ICompletionDataGenerator cdgen,ResolutionContext ctxt, UserDefinedType udt, bool isVarInstance)
+		{
+			var scan = new MemberCompletionEnumeration(ctxt, cdgen) { isVarInst = isVarInstance };
+
+			bool _unused=false;
+			scan.DeepScanClass(udt, MemberFilter.Methods | MemberFilter.Types | MemberFilter.Variables, ref _unused);
+		}
+		
+		public static void EnumChildren(ICompletionDataGenerator cdgen,ResolutionContext ctxt, IBlockNode block, bool isVarInstance)
+		{
+			var scan = new MemberCompletionEnumeration(ctxt, cdgen) { isVarInst = isVarInstance };
+
+			bool _unused=false;
+			scan.ScanBlock(block, CodeLocation.Empty, MemberFilter.Methods | MemberFilter.Types | MemberFilter.Variables, ref _unused);
+		}
+		
+		protected override bool HandleItem(INode n)
+		{
+			if(isVarInst || !(n is DMethod || n is DVariable) || (n as DNode).IsStatic)
+				gen.Add(n);
 			return false;
 		}
 	}

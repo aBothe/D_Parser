@@ -3,11 +3,12 @@ using D_Parser.Completion.Providers;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
+using D_Parser.Misc;
 using D_Parser.Parser;
 using D_Parser.Resolver;
-using D_Parser.Resolver.TypeResolution;
+using D_Parser.Resolver.ASTScanner;
 using D_Parser.Resolver.ExpressionSemantics;
-using D_Parser.Misc;
+using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Completion
 {
@@ -20,19 +21,10 @@ namespace D_Parser.Completion
 
 		public MemberCompletionProvider(ICompletionDataGenerator cdg) : base(cdg) { }
 
-		public enum ItemVisibility
-		{
-			None = 0,
-			StaticOnly = 1,
-			NonPrivate = 2,
-			NonProtected = 4,
-			NonPackage = 8
-		}
-
 		protected override void BuildCompletionDataInternal(IEditorData Editor, string EnteredText)
 		{
 			ctxt = ResolutionContext.Create(Editor.ParseCache, new ConditionalCompilationFlags(Editor), ScopedBlock, ScopedStatement);
-
+			
 			var ex = AccessExpression.AccessExpression == null ? AccessExpression.PostfixForeExpression : AccessExpression;
 
 			var r = Evaluation.EvaluateType(ex, ctxt);
@@ -88,12 +80,7 @@ namespace D_Parser.Completion
 					
 					isVariableInstance = token == DTokens.This || token == DTokens.Super;
 				}
-
-				var vis = isVariableInstance ? 
-					(HaveSameAncestors(tr.Definition, currentlyScopedBlock) ? ItemVisibility.None : ItemVisibility.NonProtected) : 
-						ItemVisibility.StaticOnly;
-				AdjustPrivatePackageFilter(tr.Definition, currentlyScopedBlock, ref vis);
-
+				
 				// Cases:
 
 				// myVar. (located in basetype definition)		<-- Show everything
@@ -103,7 +90,7 @@ namespace D_Parser.Completion
 				// myClass. (not located in myClass)			<-- Show all static members
 				// myClass. (located in myClass)				<-- Show all static members
 
-				BuildCompletionData(tr, vis);
+				BuildCompletionData(tr, isVariableInstance);
 
 				if (resultParent == null)
 					StaticTypePropertyProvider.AddGenericProperties(rr, CompletionDataGenerator, tr.Definition);
@@ -194,113 +181,9 @@ namespace D_Parser.Completion
 			}
 		}
 
-		void AdjustPrivatePackageFilter(INode n, INode n2, ref ItemVisibility vis)
+		void BuildCompletionData(UserDefinedType tr, bool showInstanceItems)
 		{
-			var curLevelAst = n.NodeRoot as IAbstractSyntaxTree;
-			var nRoot = n2.NodeRoot as IAbstractSyntaxTree;
-
-			if (curLevelAst != nRoot && curLevelAst != null && nRoot != null)
-			{
-				vis |= ItemVisibility.NonPrivate;
-
-				if (ModuleNameHelper.ExtractPackageName(curLevelAst.ModuleName) !=
-					ModuleNameHelper.ExtractPackageName(nRoot.ModuleName))
-					vis |= ItemVisibility.NonPackage;
-			}
-		}
-
-		void BuildCompletionData(UserDefinedType tr, ItemVisibility visMod)
-		{
-			var n = tr.Definition;
-			if (n is DClassLike) // Add public static members of the class and including all base classes
-			{
-				var propertyMethodsToIgnore = new List<string>();
-
-				var curlevel = tr;
-				var tvisMod = visMod;
-				while (curlevel != null)
-				{
-					foreach (var i in curlevel.Definition as DBlockNode)
-					{
-						var dn = i as DNode;
-
-						if (i != null && dn == null)
-						{
-							CompletionDataGenerator.Add(i);
-							continue;
-						}
-
-						bool add = true;
-
-						if (tvisMod == 0 || dn.IsStatic || ((dn is DVariable) && ((DVariable)dn).IsConst) || IsTypeNode(i))
-							add = true;
-						else
-						{
-							if (tvisMod.HasFlag(ItemVisibility.StaticOnly))
-								add = false;
-							else
-							{
-								if (tvisMod.HasFlag(ItemVisibility.NonPrivate))
-									add &= !dn.ContainsAttribute(DTokens.Private);
-								if (tvisMod.HasFlag(ItemVisibility.NonProtected))
-									add &= !dn.ContainsAttribute(DTokens.Protected);
-								if (tvisMod.HasFlag(ItemVisibility.NonPackage))
-									add &= !dn.ContainsAttribute(DTokens.Package);
-							}
-						}
-
-						if (add)
-						{
-							if (CanItemBeShownGenerally(dn))
-							{
-								// Convert @property getters&setters to one unique property
-								if (dn is DMethod && dn.ContainsPropertyAttribute())
-								{
-									if (!propertyMethodsToIgnore.Contains(dn.Name))
-									{
-										var dm = dn as DMethod;
-										bool isGetter = dm.Parameters.Count < 1;
-
-										var virtPropNode = new DVariable();
-
-										virtPropNode.AssignFrom(dn);
-
-										if (!isGetter)
-											virtPropNode.Type = dm.Parameters[0].Type;
-
-										CompletionDataGenerator.Add(virtPropNode);
-
-										propertyMethodsToIgnore.Add(dn.Name);
-									}
-								}
-								else
-									CompletionDataGenerator.Add(dn);
-							}
-
-							// Add members of anonymous enums
-							else if (dn is DEnum && string.IsNullOrEmpty(dn.Name))
-							{
-								foreach (var k in dn as DEnum)
-									CompletionDataGenerator.Add(k);
-							}
-						}
-					}
-
-					if ((curlevel = curlevel.Base as UserDefinedType) != null)
-					{
-						AdjustPrivatePackageFilter(n, curlevel.Definition, ref tvisMod);
-						tvisMod &= ~ItemVisibility.NonProtected;
-					}
-				}
-			}
-			else if (n is DEnum)
-			{
-				var de = n as DEnum;
-
-				foreach (var i in de)
-					if (i is DEnumValue)
-						CompletionDataGenerator.Add(i);
-			}
+			MemberCompletionEnumeration.EnumChildren(CompletionDataGenerator, ctxt, tr, showInstanceItems);
 		}
 	}
 }
