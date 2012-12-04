@@ -1169,6 +1169,21 @@ class cl
 			x = Evaluation.EvaluateType(ex, ctxt);
 			Assert.That(x, Is.InstanceOf(typeof(MemberSymbol)));
 		}
+		
+		[Test]
+		public void Mixins4()
+		{
+			var pcl = ResolutionTests.CreateCache(@"module A; enum mixinStuff = q{import C;};",
+			                                      @"module B; import A; mixin(mixinStuff);",
+			                                      @"module C; void CFoo() {}");
+			
+			var B =pcl[0]["B"];
+			var ctxt = ResolutionTests.CreateDefCtxt(pcl, B);
+			
+			var t = TypeDeclarationResolver.ResolveSingle("CFoo", ctxt, null);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That((t as MemberSymbol).Definition, Is.TypeOf(typeof(DMethod)));
+		}
 		#endregion
 		
 		#region Template Mixins
@@ -1287,6 +1302,25 @@ void foo() {
 			t = Evaluation.EvaluateType((A.Body.SubStatements[3] as ExpressionStatement).Expression,ctxt);
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+		}
+		
+		[Test]
+		public void TemplateMixins4()
+		{
+			var pcl = ResolutionTests.CreateCache(@"module A;
+mixin template mixedInImports()
+{
+	import C;
+}",			                                      @"module B; import A; mixin mixedInImports;",
+			                                      @"module C;
+void CFoo() {}");
+			
+			var B =pcl[0]["B"];
+			var ctxt = ResolutionTests.CreateDefCtxt(pcl, B);
+			
+			var t = TypeDeclarationResolver.ResolveSingle("CFoo", ctxt, null);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That((t as MemberSymbol).Definition, Is.TypeOf(typeof(DMethod)));
 		}
 		#endregion
 	}
