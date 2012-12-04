@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+
 using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
-using System.Linq;
-using System.Collections.Generic;
 using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Resolver.ExpressionSemantics
@@ -22,11 +24,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		private readonly AbstractSymbolValueProvider ValueProvider;
 		bool resolveConstOnly { get { return ValueProvider == null || ValueProvider.ConstantOnly; } set { if(ValueProvider!=null) ValueProvider.ConstantOnly = value; } }
 
+		[DebuggerStepThrough]
 		private Evaluation(AbstractSymbolValueProvider vp) { 
 			this.ValueProvider = vp; 
 			this.eval = true;
 			this.ctxt = vp.ResolutionContext;
 		}
+		[DebuggerStepThrough]
 		private Evaluation(ResolutionContext ctxt) {
 			this.ctxt = ctxt;
 		}
@@ -70,6 +74,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return t == null ? null : new[]{ AbstractType.Get(t) };
 		}
 
+		[DebuggerStepThrough]
 		public static AbstractType EvaluateType(IExpression x, ResolutionContext ctxt)
 		{
 			return AbstractType.Get(new Evaluation(ctxt).E(x));

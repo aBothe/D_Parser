@@ -4,6 +4,7 @@ using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
 using D_Parser.Misc;
+using System.Diagnostics;
 using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Resolver
@@ -22,6 +23,7 @@ namespace D_Parser.Resolver
 
 		public ResolutionOptions Options
 		{
+			[DebuggerStepThrough]
 			get { return ContextIndependentOptions | CurrentContext.ContextDependentOptions; }
 		}
 
