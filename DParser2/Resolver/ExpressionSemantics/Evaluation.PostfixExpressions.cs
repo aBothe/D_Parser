@@ -219,31 +219,38 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					callArguments.Add(E(arg));
 
 			#region Deduce template parameters and filter out unmatching overloads
+			bool hasUndeterminedArgs = false;
+			AbstractType[] templateParamFilteredOverloads = null;
 			// First add optionally given template params
 			// http://dlang.org/template.html#function-templates
 			var tplParamDeductionArguments = tix == null ?
 				new List<ISemantic>() :
-				TemplateInstanceHandler.PreResolveTemplateArgs(tix, ctxt);
+				TemplateInstanceHandler.PreResolveTemplateArgs(tix, ctxt, out hasUndeterminedArgs);
 
-			// Then add the arguments[' member types]
-			foreach (var arg in callArguments)
-				if (arg is VariableValue)
-					tplParamDeductionArguments.Add(ValueProvider[((VariableValue)arg).Variable]);
-				else if(arg is AbstractType)
-					tplParamDeductionArguments.Add(DResolver.StripAliasSymbol(arg as AbstractType));
-				else
-					tplParamDeductionArguments.Add(arg);
-
-			var templateParamFilteredOverloads= TemplateInstanceHandler.DeduceParamsAndFilterOverloads(
-				methodOverloads,
-				tplParamDeductionArguments.Count > 0 ? tplParamDeductionArguments.ToArray() : null,
-				true, ctxt);
+			if(!hasUndeterminedArgs)
+			{
+				// Then add the arguments[' member types]
+				foreach (var arg in callArguments)
+					if (arg is VariableValue)
+						tplParamDeductionArguments.Add(ValueProvider[((VariableValue)arg).Variable]);
+					else if(arg is AbstractType)
+						tplParamDeductionArguments.Add(DResolver.StripAliasSymbol(arg as AbstractType));
+					else
+						tplParamDeductionArguments.Add(arg);
+	
+				templateParamFilteredOverloads= TemplateInstanceHandler.DeduceParamsAndFilterOverloads(
+					methodOverloads,
+					tplParamDeductionArguments.Count > 0 ? tplParamDeductionArguments.ToArray() : null,
+					true, ctxt);
+			}
 			#endregion
 
 			#region Filter by parameter-argument comparison
 			var argTypeFilteredOverloads = new List<AbstractType>();
 
-			if (templateParamFilteredOverloads != null)
+			if(hasUndeterminedArgs)
+				argTypeFilteredOverloads.AddRange(methodOverloads);
+			else if (templateParamFilteredOverloads != null)
 				foreach (var ov in templateParamFilteredOverloads)
 				{
 					if (ov is MemberSymbol)

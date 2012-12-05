@@ -103,7 +103,7 @@ namespace D_Parser.Resolver.ASTScanner
 		
 		protected override bool HandleItem(INode n)
 		{
-			if(isVarInst || !(n is DMethod || n is DVariable) || (n as DNode).IsStatic)
+			if(isVarInst || !(n is DMethod || n is DVariable || n is TemplateParameterNode) || (n as DNode).IsStatic)
 				gen.Add(n);
 			return false;
 		}

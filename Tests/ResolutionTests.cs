@@ -568,6 +568,40 @@ class Too(T:float)
 		}
 		
 		[Test]
+		public void TemplateParameterPrototypeRecognition()
+		{
+			var pcl = CreateCache(@"module A;
+static void tmplFoo(T)() {}
+static void tmplFoo2(T : U[], U)() {}
+static void tmplBar(T)(T t) {}
+
+void foo(U)(U u)
+{
+	tmplFoo!U;
+	tmplFoo2!U;
+	tmplBar!U(u);
+}");
+			
+			var foo = pcl[0]["A"]["foo"][0] as DMethod;
+			var ctxt = CreateDefCtxt(pcl, foo, foo.Body);
+			
+			var ex = (foo.Body.SubStatements[0] as ExpressionStatement).Expression;
+			var t = Evaluation.GetOverloads(ex  as TemplateInstanceExpression, ctxt, null, true);
+			Assert.That(t, Is.Not.Null);
+			Assert.That(t.Length, Is.EqualTo(1));
+			
+			ex = (foo.Body.SubStatements[1] as ExpressionStatement).Expression;
+			t = Evaluation.GetOverloads(ex  as TemplateInstanceExpression, ctxt, null, true);
+			Assert.That(t, Is.Not.Null);
+			Assert.That(t.Length, Is.EqualTo(1));
+			
+			ex = (foo.Body.SubStatements[2] as ExpressionStatement).Expression;
+			t = Evaluation.GetOverloads((ex as PostfixExpression_MethodCall).PostfixForeExpression as TemplateInstanceExpression, ctxt, null, true);
+			Assert.That(t, Is.Not.Null);
+			Assert.That(t.Length, Is.EqualTo(1));
+		}
+		
+		[Test]
 		public void EmptyTypeTuple()
 		{
 			var pcl = CreateCache(@"module A;

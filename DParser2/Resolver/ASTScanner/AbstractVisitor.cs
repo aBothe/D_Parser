@@ -220,7 +220,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		                  bool isBaseClass = false,
 		                  bool isMixinAst = false)
 		{
-			if (curScope.TemplateParameters != null && 
+			if (curScope.TemplateParameters != null && ctxt.NodeIsInCurrentScopeHierarchy(curScope) &&
 			    (breakOnNextScope = HandleItems(curScope.TemplateParameterNodes as IEnumerable<INode>)) &&
 			    breakImmediately)
 					return true;

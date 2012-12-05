@@ -26,7 +26,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				throw new EvaluationException(idOrTemplateInstance, "No symbols found");
 
 			var r = overloads[0];
-			var ex = new EvaluationException(idOrTemplateInstance, "Ambiguous expression", overloads);
+			const string ambigousExprMsg = "Ambiguous expression";
 
 			if(r is TemplateParameterSymbol)
 			{
@@ -36,6 +36,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					return tps.ParameterValue;
 				else if(tps.Parameter is TemplateTupleParameter)
 					return new TypeValue(tps.Base, idOrTemplateInstance);
+				else if(tps.Parameter is TemplateTypeParameter && tps.Base == null)
+					return new TypeValue(r, idOrTemplateInstance);
 				//TODO: Are there other evaluable template parameters?
 			}
 			else if (r is MemberSymbol)
@@ -48,7 +50,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					if (ImplicitlyExecute)
 					{
 						if (overloads.Length > 1)
-							throw ex;
+							throw  new EvaluationException(idOrTemplateInstance, ambigousExprMsg, overloads);
 						return FunctionEvaluation.Execute((DMethod)mr.Definition, executionArguments, ValueProvider);
 					}
 					
@@ -57,14 +59,14 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				else if (mr.Definition is DVariable)
 				{
 					if (overloads.Length > 1)
-						throw ex;
+						throw  new EvaluationException(idOrTemplateInstance, ambigousExprMsg, overloads);
 					return new VariableValue((DVariable)mr.Definition, mr.Base, idOrTemplateInstance);
 				}
 			}
 			else if (r is UserDefinedType)
 			{
 				if (overloads.Length > 1)
-					throw ex;
+					throw  new EvaluationException(idOrTemplateInstance, ambigousExprMsg, overloads);
 				return new TypeValue(r, idOrTemplateInstance);
 			}
 
