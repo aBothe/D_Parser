@@ -85,6 +85,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			get { return true; }
 			set { }
 		}
+		
+		List<DVariable> varsBeingResolved = new List<DVariable>();
 
 		public override ISymbolValue this[DVariable n]
 		{
@@ -95,8 +97,17 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 				if (n.IsConst)
 				{
+					if(varsBeingResolved.Contains(n))
+						throw new EvaluationException(n.Initializer, "Cannot reference itself");
+					varsBeingResolved.Add(n);
 					// .. resolve it's pre-compile time value and make the returned value the given argument
-					var val = Evaluation.EvaluateValue(n.Initializer, this);
+					ISymbolValue val;
+					try{
+						val = Evaluation.EvaluateValue(n.Initializer, this);
+					}
+					finally{
+						varsBeingResolved.Remove(n);
+					}
 
 					// If it's null, then the initializer is null - which is equal to e.g. 0 or null !;
 
