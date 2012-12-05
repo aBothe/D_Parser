@@ -95,7 +95,13 @@ namespace D_Parser.Resolver.Templates
 
 			if(arguments != null)
 				foreach (var arg in arguments)
-					if (arg is AbstractType)
+					if(arg is TypeTuple) // If a type tuple was given already, add its items instead of the tuple itself
+					{
+						var tt = arg as TypeTuple;
+						if(tt.Items != null)
+							l.AddRange(tt.Items);
+					}
+					else if (arg is AbstractType)
 						l.Add(arg as AbstractType);
 					else
 					{

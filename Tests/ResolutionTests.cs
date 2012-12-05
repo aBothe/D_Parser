@@ -559,6 +559,37 @@ void writeln(T...)(T t)
 			var x = Evaluation.EvaluateType(ex, ctxt);
 			Assert.That(x, Is.TypeOf(typeof(PrimitiveType)));
 		}
+		
+		[Test]
+		public void TypeTupleAsArgument()
+		{
+			var pcl = CreateCache(@"module A;
+template bar(T...) {
+    static if(T.length == 1) {
+        enum bar = ['a','g','h'];
+    } else {
+        enum bar = 0u;
+    }
+}
+
+auto foo() {
+    
+}");
+			var foo = pcl[0]["A"]["foo"][0] as DMethod;
+			var ctxt = CreateDefCtxt(pcl, foo, foo.Body);
+			
+			var ex = DParser.ParseExpression("bar!int");
+			var t = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			var ms = t as MemberSymbol;
+			Assert.That(ms.Base, Is.TypeOf(typeof(ArrayType)));
+			
+			ex = DParser.ParseExpression("bar");
+			t = Evaluation.EvaluateType(ex, ctxt);
+			ms = t as MemberSymbol;
+			Assert.That(ms.Base, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.That((ms.Base as PrimitiveType).TypeToken, Is.EqualTo(DTokens.Uint));
+		}
 
 		[Test]
 		public void Ctors()

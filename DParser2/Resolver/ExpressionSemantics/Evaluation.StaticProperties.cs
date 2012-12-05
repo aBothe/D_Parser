@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
@@ -41,6 +41,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				relatedNode = ((MemberSymbol)InitialResult).Definition;
 				InitialResult = DResolver.StripMemberSymbols((AbstractType)InitialResult);
 			}
+			
+			if(InitialResult is TypeValue)
+				InitialResult = (InitialResult as TypeValue).RepresentedType;
 
 			/*
 			 * Parameter configurations:
@@ -191,6 +194,18 @@ namespace D_Parser.Resolver.ExpressionSemantics
 										}, new[]{ aat.KeyType, aat.ValueType }),
 										relatedNode, idContainter);
 							break;
+					}
+				}
+				else if(InitialResult is TypeTuple)
+				{
+					var tt = InitialResult as TypeTuple;
+					
+					if(propertyIdentifier == "length"){
+						if(Evaluate)
+							return new PrimitiveValue(DTokens.Uint, tt.Items == null ? 0m : (decimal)tt.Items.Length, null, 0m);
+						return new StaticProperty("length",
+							"Returns number of values in the type tuple.",
+							ctxt.ParseCache.SizeT, relatedNode, idContainter);							
 					}
 				}
 				else if(InitialResult is DelegateType)

@@ -34,6 +34,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				
 				if(tps.Parameter is TemplateValueParameter)
 					return tps.ParameterValue;
+				else if(tps.Parameter is TemplateTupleParameter)
+					return new TypeValue(tps.Base, idOrTemplateInstance);
 				//TODO: Are there other evaluable template parameters?
 			}
 			else if (r is MemberSymbol)
