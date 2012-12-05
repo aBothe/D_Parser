@@ -217,7 +217,8 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		                  MemberFilter VisibleMembers, 
 		                  ref bool breakOnNextScope,
 		                  bool publicImports = false,
-		                  bool isBaseClass = false)
+		                  bool isBaseClass = false,
+		                  bool isMixinAst = false)
 		{
 			if (curScope.TemplateParameters != null && 
 			    (breakOnNextScope = HandleItems(curScope.TemplateParameterNodes as IEnumerable<INode>)) &&
@@ -232,7 +233,12 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					if(dn!=null && !ctxt.CurrentContext.MatchesDeclarationEnvironment(dn))
 						continue;
 					
-					if(!(CanShowMember(dn, ctxt.ScopedBlock) || (publicImports ? false : (!isBaseClass || IsConstOrStatic(dn)))))
+					if((CanShowMember(dn, ctxt.ScopedBlock) || isBaseClass && !isMixinAst) && (!publicImports || !isBaseClass || IsConstOrStatic(dn)))
+					{
+						if(!CheckForProtectedAttribute(dn,ctxt.ScopedBlock))
+							continue;
+					}
+					else
 						continue;
 
 					// Add anonymous enums' items
@@ -269,7 +275,31 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				return dn.NodeRoot is IAbstractSyntaxTree &&
 					ModuleNameHelper.ExtractPackageName((dn.NodeRoot as IAbstractSyntaxTree).ModuleName) ==
 						ModuleNameHelper.ExtractPackageName((scope.NodeRoot as IAbstractSyntaxTree).ModuleName);
+			else if(dn.ContainsAttribute(DTokens.Protected))
+			{
+				while(scope!=null)
+				{
+					if(dn == scope || dn.Parent == scope)
+						return true;
+					scope = scope.Parent as IBlockNode;
+				}
+				return false;
+			}
 			return true;
+		}
+		
+		static bool CheckForProtectedAttribute(DNode dn, IBlockNode scope)
+		{
+			if(!dn.ContainsAttribute(DTokens.Protected))
+				return true;
+			
+			while(scope!=null)
+			{
+				if(dn == scope || dn.Parent == scope)
+					return true;
+				scope = scope.Parent as IBlockNode;
+			}
+			return false;
 		}
 
 		static bool CanAddMemberOfType(MemberFilter VisibleMembers, INode n)
@@ -408,9 +438,25 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					 * 
 					 * }
 					 */
-					if (s == null || Caret < s.Location && Caret != CodeLocation.Empty)
+					if (s == null || 
+					    Caret < s.Location && Caret != CodeLocation.Empty ||
+					    s is ModuleStatement)
 						continue;
+					
+					if (s is StatementCondition)
+					{
+						var sc = (StatementCondition)s;
 
+						if (ctxt.CurrentContext.MatchesDeclarationEnvironment(sc.Condition))
+							return HandleSingleStatement(sc.ScopedStatement, Caret, VisibleMembers);
+						else if (sc.ElseStatement != null)
+							return HandleSingleStatement(sc.ElseStatement, Caret, VisibleMembers);
+					}
+					
+					var ss = s as StaticStatement;
+					if(ss==null || !ctxt.CurrentContext.MatchesDeclarationEnvironment(ss.Attributes))
+						continue;
+					
 					if (s is ImportStatement)
 					{
 						// Selective imports were handled in the upper section already!
@@ -421,15 +467,6 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 							if (string.IsNullOrEmpty(imp.ModuleAlias))
 								if (HandleNonAliasedImport(imp, VisibleMembers))
 									return true;
-					}
-					else if (s is StatementCondition)
-					{
-						var sc = (StatementCondition)s;
-
-						if (ctxt.CurrentContext.MatchesDeclarationEnvironment(sc.Condition))
-							return HandleSingleStatement(sc.ScopedStatement, Caret, VisibleMembers);
-						else if (sc.ElseStatement != null)
-							return HandleSingleStatement(sc.ElseStatement, Caret, VisibleMembers);
 					}
 					else if (s is MixinStatement)
 					{
@@ -460,8 +497,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					if (dstmt != null)
 					{
 						var impStmt = dstmt as ImportStatement;
-						if ((takePublicImportsOnly && impStmt!=null && !impStmt.IsPublic) ||
-						    !MatchesCompilationEnv(stmt))
+						if ((takePublicImportsOnly && impStmt!=null && !impStmt.IsPublic) || !MatchesCompilationEnv(stmt))
 							continue;
 
 						/*
@@ -574,7 +610,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				else
 				{
 					bool _u = false;
-					return scanChildren(ast, vis, ref _u);
+					return scanChildren(ast, vis, ref _u, isMixinAst:true);
 				}
 			}
 			else // => MixinStatement

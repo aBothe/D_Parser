@@ -85,19 +85,40 @@ class baseFoo
 class cl
 {
 	int* a;
+	protected int b;
+	private int c;
 }
 
 void foo()
 {
 	auto o = new cl();
 	o.a;
-}");
+	o.b;
+	o.c;
+}", @"module B; import A; cl inst;");
 			var foo = pcl[0]["A"]["foo"][0] as DMethod;
 			var ctxt = CreateDefCtxt(pcl, foo, foo.Body);
 			
 			var t = Evaluation.EvaluateType((foo.Body.SubStatements[1] as ExpressionStatement).Expression, ctxt);
 			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
 			Assert.That((t as MemberSymbol).Base, Is.InstanceOf(typeof(PointerType)));
+			
+			t = Evaluation.EvaluateType((foo.Body.SubStatements[2] as ExpressionStatement).Expression, ctxt);
+			Assert.That(t, Is.Null);
+			
+			t = Evaluation.EvaluateType((foo.Body.SubStatements[3] as ExpressionStatement).Expression, ctxt);
+			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
+			Assert.That((t as MemberSymbol).Base, Is.InstanceOf(typeof(PrimitiveType)));
+			
+			ctxt.CurrentContext.Set(pcl[0]["B"]);
+			
+			var ex = DParser.ParseExpression("inst.b");
+			t = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(t, Is.Null);
+			
+			ex = DParser.ParseExpression("inst.c");
+			t = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(t, Is.Null);
 		}
 		
 		[Test]
@@ -1141,6 +1162,9 @@ import A;",
 			Assert.That(x.Length, Is.EqualTo(0));
 			
 			ctxt.CurrentContext.Set(pcl[0]["C"]);
+			
+			x = TypeDeclarationResolver.ResolveIdentifier("privA", ctxt, null);
+			Assert.That(x.Length, Is.EqualTo(0));
 			
 			x = TypeDeclarationResolver.ResolveIdentifier("packAA", ctxt, null);
 			Assert.That(x.Length, Is.EqualTo(1));
