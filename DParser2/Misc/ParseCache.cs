@@ -217,7 +217,7 @@ namespace D_Parser.Misc
 		/// </summary>
 		public void AddOrUpdate(IAbstractSyntaxTree ast)
 		{
-			if (ast == null)
+			if (ast == null || string.IsNullOrEmpty(ast.ModuleName))
 				return;
 
 			var packName = ModuleNameHelper.ExtractPackageName(ast.ModuleName);
