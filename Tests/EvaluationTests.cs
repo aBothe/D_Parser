@@ -39,7 +39,7 @@ namespace Tests
 			ResolutionContext ctxt = null;
 
 			if (ProvideObjModule)
-				ctxt = ResolutionContext.Create(ResolutionTests.CreateCache(), null, null);
+				ctxt = ResolutionTests.CreateDefCtxt(ResolutionTests.CreateCache(), null);
 
 			var x = DParser.ParseExpression(literal);
 
@@ -349,15 +349,15 @@ template isDynArg(T) {
 		public void HashingTests()
 		{
 			testHash("is(typeof(TTT))");
-			testHash("['a':123, 'b':456]","['b':456,'a':123]"); //TODO: Is it acceptable to build dictionaries' hashes by ignoring the order?
+			testHash("['a':123, 'b':456]","['a':123,'b':456]"); //TODO: Is it acceptable to build dictionaries' hashes by ignoring the order?
 		}
 		
 		void testHash(string expressionCode, string eqExpressionCode = null)
 		{
 			var x = DParser.ParseExpression(expressionCode);
 			var x2 = eqExpressionCode == null ? x : DParser.ParseExpression(eqExpressionCode);
-			var h1 = x.GetHashCode();
-			var h2 = x2.GetHashCode();
+			var h1 = x.GetHash();
+			var h2 = x2.GetHash();
 			
 			Assert.That(h1, Is.EqualTo(h2));
 		}

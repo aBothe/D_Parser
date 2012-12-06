@@ -24,7 +24,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (foreExpr == null)
 			{
 				if (eval)
-					throw new EvaluationException(ex.PostfixForeExpression, "Evaluation returned empty result");
+					return null;
 				else
 				{
 					ctxt.LogError(new NothingFoundError(ex.PostfixForeExpression));
@@ -99,8 +99,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 									nextResults.Add(dgVal.Definition);
 									continue;
 								}
-								else
-									throw new EvaluationException(call, "Variable must be a delegate, not anything else", mr);
+								else{
+									EvalError(call, "Variable must be a delegate, not anything else", mr);
+									return null;
+								}
 							}
 							else
 							{
@@ -152,8 +154,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						else
 						{
 							// If it's just wanted to pass back the delegate's return type, skip the remaining parts of this method.
-							if (eval) 
-								throw new EvaluationException(call, "TODO", dg);
+							if (eval) {
+								EvalError(call, "TODO", dg);
+								return null;
+							}
 							//TODO
 							//if(returnBaseTypeOnly)
 							//TODO: Check for multiple definitions. Also, make a parameter-argument check to inform the user about wrong arguments.

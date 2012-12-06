@@ -17,6 +17,7 @@ namespace D_Parser.Resolver.ASTScanner
 	{
 		#region Properties
 		public bool IsProcessing { get; private set; }
+		public static bool SingleThreaded = false;
 		
 		ConditionalCompilationFlags gFlags_shared;
 		Stack<DMethod> queue = new Stack<DMethod>();
@@ -57,27 +58,35 @@ namespace D_Parser.Resolver.ASTScanner
 						foreach (var module in pc)
 							PrepareQueue(module);
 
-				var sw = new Stopwatch();
-				sw.Start();
-
-				var threads = new Thread[ThreadedDirectoryParser.numThreads];
-				for (int i = 0; i < ThreadedDirectoryParser.numThreads; i++)
+				if(queue.Count != 0)
 				{
-					var th = threads[i] = new Thread(parseThread)
+					var sw = new Stopwatch();
+					sw.Start();
+	
+					if(SingleThreaded)
+						parseThread(pcList);
+					else
 					{
-						IsBackground = true,
-						Priority = ThreadPriority.Lowest,
-						Name = "UFCS Analysis thread #" + i
-					};
-					th.Start(pcList);
+						var threads = new Thread[ThreadedDirectoryParser.numThreads];
+						for (int i = 0; i < ThreadedDirectoryParser.numThreads; i++)
+						{
+							var th = threads[i] = new Thread(parseThread)
+							{
+								IsBackground = true,
+								Priority = ThreadPriority.Lowest,
+								Name = "UFCS Analysis thread #" + i
+							};
+							th.Start(pcList);
+						}
+		
+						for (int i = 0; i < ThreadedDirectoryParser.numThreads; i++)
+							if (threads[i].IsAlive)
+								threads[i].Join(10000);
+					}
+	
+					sw.Stop();
+					CachingDuration = sw.Elapsed;
 				}
-
-				for (int i = 0; i < ThreadedDirectoryParser.numThreads; i++)
-					if (threads[i].IsAlive)
-						threads[i].Join(10000);
-
-				sw.Stop();
-				CachingDuration = sw.Elapsed;
 			}
 			finally
 			{

@@ -18,6 +18,14 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// </summary>
 		private readonly bool eval;
 		private readonly ResolutionContext ctxt;
+		private List<EvaluationException> errors = new List<EvaluationException>();
+		
+		public EvaluationException[] Errors
+		{
+			get{
+				return errors.ToArray();
+			}
+		}
 		/// <summary>
 		/// Is not null if the expression value shall be evaluated.
 		/// </summary>
@@ -35,6 +43,18 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			this.ctxt = ctxt;
 		}
 		#endregion
+		
+		#region Errors
+		void EvalError(IExpression x, string msg, ISemantic[] lastResults = null)
+		{
+			errors.Add(new EvaluationException(x,msg,lastResults));
+		}
+		
+		void EvalError(IExpression x, string msg, ISemantic lastResult)
+		{
+			errors.Add(new EvaluationException(x,msg,new[]{lastResult}));
+		}
+		#endregion
 
 		/// <summary>
 		/// Uses the standard value provider for expression value evaluation
@@ -45,7 +65,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			{
 				return EvaluateValue(x, new StandardValueProvider(ctxt));
 			}
-			catch
+			catch(Exception ex)
 			{
 				//TODO Redirect evaluation exception to some outer logging service
 			}
@@ -118,8 +138,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						}
 					}
 
-					if(ret == null)
-						throw new EvaluationException(x, "There must be at least one expression in the expression chain");
+					if(ret == null){
+						EvalError(x, "There must be at least one expression in the expression chain");
+						return null;
+					}
 				}
 				else
 					ret = ex.Expressions.Count == 0 ? null : E(ex.Expressions[ex.Expressions.Count - 1]);

@@ -174,6 +174,7 @@ else int C;");
 			var dmdBase = @"A:\D\dmd2\src";
 
 			var pc = new ParseCache();
+			UFCSCache.SingleThreaded = true;
 			pc.EnableUfcsCaching = ufcs;
 			pc.FinishedParsing += new ParseCache.ParseFinishedHandler(pc_FinishedParsing);
 			pc.FinishedUfcsCaching += new Action(() =>

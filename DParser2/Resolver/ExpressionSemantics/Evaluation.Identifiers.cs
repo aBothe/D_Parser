@@ -22,8 +22,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// </summary>
 		ISemantic TryDoCTFEOrGetValueRefs(AbstractType[] overloads, IExpression idOrTemplateInstance, bool ImplicitlyExecute = true, ISymbolValue[] executionArguments=null)
 		{
-			if (overloads == null || overloads.Length == 0)
-				throw new EvaluationException(idOrTemplateInstance, "No symbols found");
+			if (overloads == null || overloads.Length == 0){
+				EvalError(idOrTemplateInstance, "No symbols found");
+				return null;
+			}
 
 			var r = overloads[0];
 			const string ambigousExprMsg = "Ambiguous expression";
@@ -49,8 +51,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				{
 					if (ImplicitlyExecute)
 					{
-						if (overloads.Length > 1)
-							throw  new EvaluationException(idOrTemplateInstance, ambigousExprMsg, overloads);
+						if (overloads.Length > 1){
+							EvalError(idOrTemplateInstance, ambigousExprMsg, overloads);
+							return null;
+						}
 						return FunctionEvaluation.Execute((DMethod)mr.Definition, executionArguments, ValueProvider);
 					}
 					
@@ -59,14 +63,20 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				else if (mr.Definition is DVariable)
 				{
 					if (overloads.Length > 1)
-						throw  new EvaluationException(idOrTemplateInstance, ambigousExprMsg, overloads);
+					{
+						EvalError(idOrTemplateInstance, ambigousExprMsg, overloads);
+						return null;
+					}
 					return new VariableValue((DVariable)mr.Definition, mr.Base);
 				}
 			}
 			else if (r is UserDefinedType)
 			{
 				if (overloads.Length > 1)
-					throw  new EvaluationException(idOrTemplateInstance, ambigousExprMsg, overloads);
+				{
+					EvalError(idOrTemplateInstance, ambigousExprMsg, overloads);
+					return null;
+				}
 				return new TypeValue(r);
 			}
 
@@ -166,7 +176,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				case Parser.LiteralFormat.VerbatimStringLiteral:
 
 					var _t = GetStringType(id.Subformat);
-					return eval ? (ISemantic)new ArrayValue(_t) : _t;
+					return eval ? (ISemantic)new ArrayValue(_t, id) : _t;
 			}
 			return null;
 		}

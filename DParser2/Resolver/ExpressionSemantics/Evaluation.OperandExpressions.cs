@@ -185,7 +185,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				 * http://dlang.org/expression.html#AddExpression
 				 */
 
-				throw new EvaluationException(x, "Left value must evaluate to a constant scalar value. Operator overloads aren't supported yet", lValue);
+				EvalError(x, "Left value must evaluate to a constant scalar value. Operator overloads aren't supported yet", new[]{lValue});
+				return null;
 			}
 
 			//TODO: Operator overloading
@@ -193,24 +194,38 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			// Note: a * b + c is theoretically treated as a * (b + c), but it's needed to evaluate it as (a * b) + c !
 			if (x is MulExpression || x is PowExpression)
 			{
+				try{
 				if (x.RightOperand is OperatorBasedExpression && !(x.RightOperand is AssignExpression)) //TODO: This must be true only if it's a math expression, so not an assign expression etc.
 				{
 					var sx = (OperatorBasedExpression)x.RightOperand;
 
 					// Now multiply/divide/mod expression 'l' with sx.LeftOperand
+					try{
 					var intermediateResult = HandleSingleMathOp(x, l, E(sx.LeftOperand), mult);
 
 					// afterwards, evaluate the operation between the result just returned and the sx.RightOperand.
 					return E(sx, intermediateResult);
+					}catch(DivideByZeroException d)
+					{
+						EvalError(sx, "Divide by 0");
+						return null;
+					}
 				}
 
 				return HandleSingleMathOp(x, l, rValue ?? E(x.RightOperand), mult);
+				}catch(DivideByZeroException d)
+				{
+					EvalError(x, "Divide by 0");
+					return null;
+				}
 			}
 
 			var r = TryGetValue(rValue ?? E(x.RightOperand));
 
-			if(r == null)
-				throw new EvaluationException(x, "Right operand must evaluate to a value", lValue);
+			if(r == null){
+				EvalError(x, "Right operand must evaluate to a value", new[]{lValue});
+				return null;
+			}
 
 			/*
 			 * TODO: Handle invalid values/value ranges.
@@ -219,32 +234,38 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (x is XorExpression)
 			{
 				return HandleSingleMathOp(x, l,r, (a,b)=>{
-					EnsureIntegralType(a);EnsureIntegralType(b);
-					return (long)a.Value ^ (long)b.Value;
+				                          	if(EnsureIntegralType(x.LeftOperand,a) && EnsureIntegralType(x.RightOperand,b))
+												return (long)a.Value ^ (long)b.Value;
+				                          	return 0L;
 				});
 			}
 			else if (x is OrExpression)
 			{
 				return HandleSingleMathOp(x, l, r, (a, b) =>
 				{
-					EnsureIntegralType(a); EnsureIntegralType(b);
-					return (long)a.Value | (long)b.Value;
+					if(EnsureIntegralType(x.LeftOperand,a) && EnsureIntegralType(x.RightOperand,b))
+						return (long)a.Value | (long)b.Value;
+                  	return 0L;
 				});
 			}
 			else if (x is AndExpression)
 			{
 				return HandleSingleMathOp(x, l, r, (a, b) =>
 				{
-					EnsureIntegralType(a); EnsureIntegralType(b);
-					return (long)a.Value & (long)b.Value;
+					if(EnsureIntegralType(x.LeftOperand,a) && EnsureIntegralType(x.RightOperand,b))
+												return (long)a.Value & (long)b.Value;
+				                          	return 0L;
 				});
 			}
 			else if (x is ShiftExpression) 
 				return HandleSingleMathOp(x, l, r, (a, b) =>
 				{
-					EnsureIntegralType(a); EnsureIntegralType(b);
-					if (b.Value < 0 || b.Value > 31)
-						throw new EvaluationException(x, "Shift operand must be between 0 and 31", b);
+				                          	if(!EnsureIntegralType(x.LeftOperand, a) || !EnsureIntegralType(x.RightOperand, b))
+				                          		return 0L;
+					if (b.Value < 0 || b.Value > 31){
+						EvalError(x, "Shift operand must be between 0 and 31", new[]{b});
+						return 0m;
+					}
 
 					switch(x.OperatorToken)
 					{
@@ -256,7 +277,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							return (ulong)a.Value >> (int)(uint)b.Value;
 					}
 
-					throw new EvaluationException(x, "Invalid token for shift expression", l,r);
+					EvalError(x, "Invalid token for shift expression", new[]{l,r});
+					return 0m;
 				});
 			else if (x is AddExpression)
 				return HandleSingleMathOp(x, l, r, (a, b, op) =>
@@ -269,7 +291,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							return new PrimitiveValue(a.BaseTypeToken, a.Value - b.Value, x, a.ImaginaryPart - b.ImaginaryPart);
 					}
 
-					throw new EvaluationException(x, "Invalid token for add/sub expression", l, r);
+					EvalError(x, "Invalid token for add/sub expression", new[]{l,r});
+					return null;
 				});
 			else if (x is CatExpression)
 			{
@@ -281,8 +304,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				if (av_l!=null && av_r!=null)
 				{
 					// Ensure that both arrays are of the same type
-					if(!ResultComparer.IsEqual(av_l.RepresentedType, av_r.RepresentedType))
-						throw new EvaluationException(x, "Both arrays must be of same type", l,r);
+					if(!ResultComparer.IsEqual(av_l.RepresentedType, av_r.RepresentedType)){
+						EvalError(x, "Both arrays must be of same type", new[]{l,r});
+						return null;
+					}
 
 					// Might be a string
 					if (av_l.IsString && av_r.IsString)
@@ -320,7 +345,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					return new ArrayValue(at, elements);
 				}
 
-				throw new EvaluationException(x, "At least one operand must be an (non-associative) array. If so, the other operand must be of the array's element type.", l, r);
+				EvalError(x, "At least one operand must be an (non-associative) array. If so, the other operand must be of the array's element type.", new[]{l,r});
+				return null;
 			}
 			
 			throw new WrongEvaluationArgException();
@@ -350,7 +376,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					break;
 				case DTokens.Div:
 					if ((a.Value!=0 && b.Value == 0) || (a.ImaginaryPart!=0 && b.ImaginaryPart==0))
-						throw new EvaluationException(x, "Right operand must not be 0");
+						throw new DivideByZeroException();
 					if(b.Value!=0)
 						v= a.Value / b.Value;
 					if(b.ImaginaryPart!=0)
@@ -358,23 +384,27 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					break;
 				case DTokens.Mod:
 					if ((a.Value!=0 && b.Value == 0) || (a.ImaginaryPart!=0 && b.ImaginaryPart==0))
-						throw new EvaluationException(x, "Right operand must not be 0");
+						throw new DivideByZeroException();
 					if(b.Value!=0)
 						v= a.Value % b.Value;
 					if(b.ImaginaryPart!=0)
 						im=a.ImaginaryPart % b.ImaginaryPart;
 					break;
 				default:
-					throw new EvaluationException(x, "Invalid token for multiplication expression (*,/,% only)");
+					return null;
+					//EvalError(x, "Invalid token for multiplication expression (*,/,% only)");
 			}
 
 			return new PrimitiveValue(a.BaseTypeToken, v, x, im);
 		}
 
-		void EnsureIntegralType(PrimitiveValue v)
+		bool EnsureIntegralType(IExpression x,PrimitiveValue v)
 		{
-			if (!DTokens.BasicTypes_Integral[v.BaseTypeToken])
-				throw new EvaluationException("Literal must be of integral type",v);
+			if (!DTokens.BasicTypes_Integral[v.BaseTypeToken]){
+				EvalError(x,"Literal must be of integral type",new[]{(ISemantic)v});
+				return false;
+			}
+			return true;
 		}
 
 		delegate decimal MathOp(PrimitiveValue x, PrimitiveValue y) ;

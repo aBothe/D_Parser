@@ -1,17 +1,19 @@
 ﻿using System;
-using System.Text;
 using System.Collections.Generic;
 using System.Linq;
-using NUnit.Framework;
-using D_Parser.Parser;
-using D_Parser.Misc;
-using D_Parser.Resolver;
-using D_Parser.Resolver.TypeResolution;
-using D_Parser.Dom.Expressions;
+using System.Text;
+
 using D_Parser.Dom;
+using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
+using D_Parser.Misc;
+using D_Parser.Parser;
+using D_Parser.Resolver;
+using D_Parser.Resolver.ASTScanner;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.Templates;
+using D_Parser.Resolver.TypeResolution;
+using NUnit.Framework;
 
 namespace Tests
 {
@@ -35,6 +37,7 @@ namespace Tests
 			foreach (var code in moduleCodes)
 				pc.AddOrUpdate(DParser.ParseString(code));
 
+			UFCSCache.SingleThreaded = true;
 			pc.UfcsCache.Update(pcl, null, pc);
 
 			return pcl;

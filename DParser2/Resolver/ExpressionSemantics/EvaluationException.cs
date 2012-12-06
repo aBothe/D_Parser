@@ -7,27 +7,31 @@ using D_Parser.Resolver;
 
 namespace D_Parser.Resolver
 {
-	public class DParserException : Exception {
-		public DParserException() { }
-		public DParserException(string Msg) : base(Msg) { }
+	public class DParserException {
+		public readonly string Message;
+		
+		public readonly string Module;
+		public readonly ISyntaxRegion TargetSite;
+		
+		public DParserException(ISyntaxRegion x,string Msg) {
+			TargetSite = x;
+			Message = Msg;
+		}
 	}
 
 	public class ResolutionException : DParserException
 	{
-		public ISyntaxRegion ObjectToResolve { get; protected set; }
 		public ISemantic[] LastSubResults { get; protected set; }
 
 		public ResolutionException(ISyntaxRegion ObjToResolve, string Message, IEnumerable<ISemantic> LastSubresults)
-			: base(Message)
+			: base(ObjToResolve,Message)
 		{
-			this.ObjectToResolve=ObjToResolve;
 			this.LastSubResults = LastSubresults.ToArray();
 		}
 
 		public ResolutionException(ISyntaxRegion ObjToResolve, string Message, params ISemantic[] LastSubresult)
-			: base(Message)
+			: base(ObjToResolve,Message)
 		{
-			this.ObjectToResolve=ObjToResolve;
 			this.LastSubResults = LastSubresult;
 		}
 	}
@@ -36,7 +40,7 @@ namespace D_Parser.Resolver
 	{
 		public IExpression EvaluatedExpression
 		{
-			get { return ObjectToResolve as IExpression; }
+			get { return TargetSite as IExpression; }
 		}
 		
 		public EvaluationException(IExpression x,string Message, params ISemantic[] LastSubresults)
