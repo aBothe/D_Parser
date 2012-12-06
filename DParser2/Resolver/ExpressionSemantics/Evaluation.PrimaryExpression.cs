@@ -106,7 +106,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				// References current class scope
 				case DTokens.This:
 					if (eval && resolveConstOnly) 
-						throw new NoConstException(x);
+					{
+						EvalError(new NoConstException(x));
+							return null;
+					}
 
 					var classDef = ctxt.ScopedBlock;
 
@@ -126,7 +129,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					// References super type of currently scoped class declaration
 
 					if (eval && resolveConstOnly) 
-						throw new NoConstException(x);
+					{
+						EvalError(new NoConstException(x));
+						return null;
+					}
 
 					classDef = ctxt.ScopedBlock;
 
@@ -153,7 +159,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 				case DTokens.Null:
 					if (eval && resolveConstOnly)
-						throw new NoConstException(x);
+					{
+						EvalError(new NoConstException(x));
+						return null;
+					}
 
 					if (eval)
 					{
@@ -167,7 +176,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					if (ValueProvider.CurrentArrayLength != -1)
 						return new PrimitiveValue(DTokens.Int, ValueProvider.CurrentArrayLength, x);
 					else
-						throw new EvaluationException(x, "Dollar not allowed here!");
+					{
+						EvalError(x, "Dollar not allowed here!");
+						return null;
+					}
 
 				case DTokens.True:
 					return new PrimitiveValue(DTokens.Bool, 1, x);
@@ -208,12 +220,16 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					var assertMsg_v = E(x.AssignExpressions[1]) as ArrayValue;
 
 					if (assertMsg_v == null || !assertMsg_v.IsString)
-						throw new InvalidStringException(x.AssignExpressions[1]);
+					{
+						EvalError(new InvalidStringException(x.AssignExpressions[1]));
+						return null;
+					}
 
 					assertMsg = assertMsg_v.StringValue;
 				}
 
-				throw new AssertException(x, assertMsg);
+				EvalError(new AssertException(x, assertMsg));
+				return null;
 			}
 
 			return null;
@@ -227,14 +243,18 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var v = E(((MixinExpression)x).AssignExpression) as ArrayValue;
 			resolveConstOnly = cnst;
 
-			if (v == null || !v.IsString)
-				throw new InvalidStringException(x);
+			if (v == null || !v.IsString){
+				EvalError( new InvalidStringException(x));
+				return null;
+			}
 
 			// 2) Parse it as an expression
 			var ex = DParser.ParseAssignExpression(v.StringValue);
 
-			if (ex == null)
-				throw new EvaluationException(x, "Invalid expression code given");
+			if (ex == null){
+				EvalError( new EvaluationException(x, "Invalid expression code given"));
+				return null;
+			}
 			//TODO: Excessive caching
 			// 3) Evaluate the expression's type/value
 			return E(ex);
@@ -251,15 +271,19 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				var v = E(((ImportExpression)x).AssignExpression) as ArrayValue;
 				resolveConstOnly = cnst;
 
-				if (v == null || !v.IsString)
-					throw new InvalidStringException(x);
+				if (v == null || !v.IsString){
+					EvalError( new InvalidStringException(x));
+					return null;
+				}
 
 				var fn = Path.IsPathRooted(v.StringValue) ? v.StringValue :
 							Path.Combine(Path.GetDirectoryName((ctxt.ScopedBlock.NodeRoot as IAbstractSyntaxTree).FileName),
 							v.StringValue);
 
-				if (!File.Exists(fn))
-					throw new EvaluationException(x, "Could not find \"" + fn + "\"");
+				if (!File.Exists(fn)){
+					EvalError(x, "Could not find \"" + fn + "\"");
+					return null;
+				}
 
 				var text = File.ReadAllText(fn);
 
@@ -279,8 +303,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				foreach (var e in arr.Elements)
 					elements.Add(E(e) as ISymbolValue);
 
-				if(elements.Count == 0)
-					throw new EvaluationException(arr, "Array literal must contain at least one element.");
+				if(elements.Count == 0){
+					EvalError(arr, "Array literal must contain at least one element.");
+					return null;
+				}
 
 				return new ArrayValue(new ArrayType(elements[0].RepresentedType, arr), elements.ToArray());
 			}

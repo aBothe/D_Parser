@@ -232,8 +232,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				if(v is VariableValue)
 					v = ValueProvider[((VariableValue)v).Variable];
 				var pv = v as PrimitiveValue;
-				if(pv == null)
-					throw new EvaluationException(x.UnaryExpression, "Expression must be a primitive value",v);
+				if(pv == null){
+					EvalError(x.UnaryExpression, "Expression must be a primitive value",v);
+					return null;
+				}
 				
 				return new PrimitiveValue(!IsFalseZeroOrNull(pv),x);
 			}

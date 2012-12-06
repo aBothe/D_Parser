@@ -35,6 +35,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		[DebuggerStepThrough]
 		private Evaluation(AbstractSymbolValueProvider vp) { 
 			this.ValueProvider = vp; 
+			if(vp!=null)
+				vp.ev = this;
 			this.eval = true;
 			this.ctxt = vp.ResolutionContext;
 		}
@@ -45,12 +47,17 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		#endregion
 		
 		#region Errors
-		void EvalError(IExpression x, string msg, ISemantic[] lastResults = null)
+		internal void EvalError(EvaluationException ex)
+		{
+			errors.Add(ex);
+		}
+		
+		internal void EvalError(IExpression x, string msg, ISemantic[] lastResults = null)
 		{
 			errors.Add(new EvaluationException(x,msg,lastResults));
 		}
 		
-		void EvalError(IExpression x, string msg, ISemantic lastResult)
+		internal void EvalError(IExpression x, string msg, ISemantic lastResult)
 		{
 			errors.Add(new EvaluationException(x,msg,new[]{lastResult}));
 		}

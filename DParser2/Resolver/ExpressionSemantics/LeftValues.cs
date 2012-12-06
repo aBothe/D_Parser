@@ -48,7 +48,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public override void Set(AbstractSymbolValueProvider vp, ISymbolValue value)
 		{
-			throw new EvaluationException("Cannot assign a value to a static property.", this, value);
+			if(vp != null && vp.ev != null)
+				vp.ev.EvalError(null,"Cannot assign a value to a static property.", new[]{this, value});
 			//TODO: What about array.length?
 		}
 	}
@@ -84,8 +85,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					var newElements = new ISymbolValue[av.Elements.Length + (ItemNumber<0 ? 1:0)];
 					av.Elements.CopyTo(newElements, 0);
 
-					if (!ResultComparer.IsImplicitlyConvertible(value.RepresentedType, at.ValueType))
-						throw new EvaluationException(value.ToCode() + " must be implicitly convertible to the array's value type!", value);
+					if (!ResultComparer.IsImplicitlyConvertible(value.RepresentedType, at.ValueType)){
+						if(vp.ev!=null)
+							vp.ev.EvalError(null,value.ToCode() + " must be implicitly convertible to the array's value type!", value);
+						return;
+					}
 
 					// Add..
 					if (ItemNumber < 0)
@@ -96,8 +100,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					vp[Variable] = new ArrayValue(at, newElements);
 				}
 			}
-			else
-				throw new EvaluationException("Type of accessed item must be an array", oldV);
+			else{
+				if(vp.ev!=null)
+					vp.ev.EvalError(null,"Type of accessed item must be an array", oldV);
+			}
 		}
 
 		/// <summary>
@@ -155,11 +161,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					// Finally, make a new associative array containing the new elements
 					vp[Variable] = new AssociativeArrayValue(aa.RepresentedType as AssocArrayType, newElements);
 				}
-				else
-					throw new EvaluationException("Key expression must not be null", Key);
+				else{
+					if(vp.ev !=null) vp.ev.EvalError(null,"Key expression must not be null", Key);
+				}
 			}
-			else
-				throw new EvaluationException("Type of accessed item must be an associative array", oldV);
+			else{
+				if(vp.ev != null) vp.ev.EvalError(null,"Type of accessed item must be an associative array", oldV);
+			}
 		}
 	}
 

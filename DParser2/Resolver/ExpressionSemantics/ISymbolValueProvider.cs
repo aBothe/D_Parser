@@ -11,6 +11,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public abstract class AbstractSymbolValueProvider
 	{
+		internal Evaluation ev;
+		
 		public ResolutionContext ResolutionContext { get; protected set; }
 
 		public ISymbolValue this[IdentifierExpression id]
@@ -92,13 +94,17 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			get
 			{
-				if (n == null)
-					throw new ArgumentNullException("There must be a valid variable node given in order to retrieve its value");
+				if (n == null){
+					if(ev!=null)ev.EvalError(null,"There must be a valid variable node given in order to retrieve its value");
+					return null;
+				}
 
 				if (n.IsConst)
 				{
-					if(varsBeingResolved.Contains(n))
-						throw new EvaluationException(n.Initializer, "Cannot reference itself");
+					if(varsBeingResolved.Contains(n)){
+						if(ev!=null)ev.EvalError(n.Initializer, "Cannot reference itself");
+						return null;
+					}
 					varsBeingResolved.Add(n);
 					// .. resolve it's pre-compile time value and make the returned value the given argument
 					ISymbolValue val;
@@ -115,7 +121,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						return val;
 				}
 
-				throw new ArgumentException(n+" must have a constant initializer");
+				if(ev!=null)ev.EvalError(null,n+" must have a constant initializer");
+				return null;
 			}
 			set
 			{
@@ -140,7 +147,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					return(DVariable)mr.Definition;
 			}
 
-			throw new EvaluationException(id ?? new IdentifierExpression(LocalName), LocalName + " must represent a local variable or a parameter", res);
+			if(ev != null)
+				ev.EvalError(id ?? new IdentifierExpression(LocalName), LocalName + " must represent a local variable or a parameter", res);
+			return null;
 		}
 	}
 }
