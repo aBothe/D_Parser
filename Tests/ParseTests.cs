@@ -117,6 +117,16 @@ else int C;");
 			Assert.AreEqual(2, C.Attributes.Count);
 		}
 		
+		[Test]
+		public void AccessExpression1()
+		{
+			var e1 = DParser.ParseExpression("a.b!c");
+			var e2 = DParser.ParseExpression("a.b");
+			
+			Assert.That(e1, Is.TypeOf(typeof(PostfixExpression_Access)));
+			Assert.That(e2, Is.TypeOf(typeof(PostfixExpression_Access)));
+		}
+		
 		//[Test]
 		public void LexingPerformance()
 		{
@@ -137,27 +147,26 @@ else int C;");
 			Debug.WriteLine(sw.ElapsedMilliseconds);
 		}
 
-		//[Test]
+		[Test]
 		public void TestPhobos()
 		{
 			var pc = ParsePhobos();
 			bool hadErrors = false;
+			var sb = new StringBuilder();
 			foreach (var mod in pc)
 			{
 				if (mod.ParseErrors.Count != 0)
 				{
-					Trace.WriteLine(mod.FileName);
-					Trace.Indent();
+					sb.AppendLine(mod.FileName);
 
 					foreach (var err in mod.ParseErrors)
-						Trace.WriteLine(err.Location.ToString() + "\t" + err.Message);
+						sb.AppendLine("\t"+err.Location.ToString() + "\t" + err.Message);
 
-					Trace.Unindent();
 					hadErrors = true;
 				}
 			}
-			if(hadErrors)
-				Assert.Fail("Parse process failed!");
+			
+			Assert.That(sb.ToString(), Is.Empty);
 		}
 
 		public static ParseCache ParsePhobos(bool ufcs=true)
@@ -175,8 +184,9 @@ else int C;");
 			});
 
 			pc.BeginParse(new[] { 
-				dmdBase+@"\druntime\import",
-				dmdBase+@"\phobos",
+			    @"D:\Projects\tutorial.lib\gfm-master"
+				//dmdBase+@"\druntime\import",
+				//dmdBase+@"\phobos",
 				//@"A:\Projects\fxLib\src"
 				//@"A:\D\tango-d2\tngo"
 			},dmdBase+@"\phobos");

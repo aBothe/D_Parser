@@ -174,7 +174,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				case DTokens.False:
 					return new PrimitiveValue(DTokens.Bool, 0, x);
 				case DTokens.__FILE__:
-					return new ArrayValue(GetStringType(), x, (ctxt.ScopedBlock.NodeRoot as IAbstractSyntaxTree).FileName);
+					return new ArrayValue(GetStringType(), (ctxt.ScopedBlock.NodeRoot as IAbstractSyntaxTree).FileName);
 				case DTokens.__LINE__:
 					return new PrimitiveValue(DTokens.Int, x.Location.Line, x);
 			}
@@ -263,7 +263,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 				var text = File.ReadAllText(fn);
 
-				return new ArrayValue(GetStringType(), x, text);
+				return new ArrayValue(GetStringType(), text);
 			}
 			else
 				return strType;
@@ -311,7 +311,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					elements.Add(new KeyValuePair<ISymbolValue, ISymbolValue>(keyVal, valVal));
 				}
 
-				return new AssociativeArrayValue(new AssocArrayType(elements[0].Value.RepresentedType, elements[0].Key.RepresentedType, aa), aa, elements);
+				return new AssociativeArrayValue(new AssocArrayType(elements[0].Value.RepresentedType, elements[0].Key.RepresentedType, aa), elements);
 			}
 
 			if (aa.Elements != null && aa.Elements.Count > 0)

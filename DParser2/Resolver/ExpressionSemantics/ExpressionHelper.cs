@@ -47,8 +47,16 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						 * a.b -- take the entire access expression instead of b only in order to be able to resolve it correctly
 						 */
 						var pfa = e as PostfixExpression_Access;
-						if (pfa != null && pfa.AccessExpression == se && !(pfa.AccessExpression is ContainerExpression))
+						if (pfa != null && pfa.AccessExpression == se)
+						{
+							if(pfa.AccessExpression is TemplateInstanceExpression)
+							{
+								var tix = pfa.AccessExpression as TemplateInstanceExpression;
+								if(Where >= tix.TemplateIdentifier.Location && Where <= tix.TemplateIdentifier.EndLocation)
+									continue;
+							}
 							continue;
+						}
 
 						if (WatchForParamSensitiveExpressions && IsParamRelatedExpression(se))
 							lastParamSensExpr = se;

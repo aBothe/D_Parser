@@ -51,20 +51,29 @@ namespace D_Parser.Resolver.TypeResolution
 
 								templateArguments.Add(eval==null ? (ISemantic)mr : eval);
 							}
-							else
+							else{
+								if(!hasNonFinalArgument)
+									hasNonFinalArgument = IsNonFinalArgument(res[0]);
 								templateArguments.Add(res[0]);
+							}
 						}
 					}
 					else
 					{
 						var v = Evaluation.EvaluateValue(arg, ctxt);
-						if(v is TypeValue && (v as TypeValue).RepresentedType is TemplateParameterSymbol)
-							hasNonFinalArgument = true;
+						if(!hasNonFinalArgument)
+							hasNonFinalArgument = IsNonFinalArgument(v);
 						templateArguments.Add(v);
 					}
 				}
 
 			return templateArguments;
+		}
+		
+		static bool IsNonFinalArgument(ISemantic v)
+		{
+			return (v is TypeValue && (v as TypeValue).RepresentedType is TemplateParameterSymbol) ||
+				(v is TemplateParameterSymbol && (v as TemplateParameterSymbol).Base == null);
 		}
 
 		public static AbstractType[] DeduceParamsAndFilterOverloads(IEnumerable<AbstractType> rawOverloadList,
@@ -72,7 +81,8 @@ namespace D_Parser.Resolver.TypeResolution
 			ResolutionContext ctxt)
 		{
 			bool hasUndeterminedArgs;
-			return DeduceParamsAndFilterOverloads(rawOverloadList, PreResolveTemplateArgs(templateInstanceExpr, ctxt, out hasUndeterminedArgs), false, ctxt, hasUndeterminedArgs);
+			var args = PreResolveTemplateArgs(templateInstanceExpr, ctxt, out hasUndeterminedArgs);
+			return hasUndeterminedArgs ? rawOverloadList.ToArray() : DeduceParamsAndFilterOverloads(rawOverloadList, args, false, ctxt);
 		}
 
 		/// <summary>

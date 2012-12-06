@@ -12,8 +12,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	/// </summary>
 	public abstract class LValue : ExpressionValue
 	{
-		public LValue(AbstractType nodeType, IExpression baseExpression)
-			: base(ExpressionValueType.None, nodeType, baseExpression) { }
+		public LValue(AbstractType nodeType) : base(nodeType) { }
 
 		public abstract void Set(AbstractSymbolValueProvider vp, ISymbolValue value);
 	}
@@ -26,8 +25,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	{
 		public readonly DVariable Variable;
 
-		public VariableValue(DVariable variable, AbstractType variableType, IExpression baseExpression)
-			: base(variableType, baseExpression)
+		public VariableValue(DVariable variable, AbstractType variableType) : base(variableType)
 		{
 			this.Variable = variable;
 		}
@@ -39,18 +37,18 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public override string ToCode()
 		{
-			return BaseExpression== null ? (Variable==null ?"null":Variable.ToString(false)) : BaseExpression.ToString();
+			return Variable==null ?"null":Variable.ToString(false);
 		}
 	}
 
 	public class StaticVariableValue : VariableValue
 	{
-		public StaticVariableValue(DVariable artificialVariable, AbstractType propType, IExpression baseExpression)
-			: base(artificialVariable, propType, baseExpression) { }
+		public StaticVariableValue(DVariable artificialVariable, AbstractType propType)
+			: base(artificialVariable, propType) { }
 
 		public override void Set(AbstractSymbolValueProvider vp, ISymbolValue value)
 		{
-			throw new EvaluationException(BaseExpression, "Cannot assign a value to a static property.", value);
+			throw new EvaluationException("Cannot assign a value to a static property.", this, value);
 			//TODO: What about array.length?
 		}
 	}
@@ -87,7 +85,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					av.Elements.CopyTo(newElements, 0);
 
 					if (!ResultComparer.IsImplicitlyConvertible(value.RepresentedType, at.ValueType))
-						throw new EvaluationException(BaseExpression, value.ToCode() + " must be implicitly convertible to the array's value type!", value);
+						throw new EvaluationException(value.ToCode() + " must be implicitly convertible to the array's value type!", value);
 
 					// Add..
 					if (ItemNumber < 0)
@@ -99,15 +97,15 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				}
 			}
 			else
-				throw new EvaluationException(BaseExpression, "Type of accessed item must be an array", oldV);
+				throw new EvaluationException("Type of accessed item must be an array", oldV);
 		}
 
 		/// <summary>
 		/// Array ctor.
 		/// </summary>
 		/// <param name="accessedItem">0 - the array's length-1; -1 when adding the item is wished.</param>
-		public ArrayPointer(DVariable accessedArray, ArrayType arrayType, int accessedItem, IExpression baseExpression)
-			: base(accessedArray, arrayType, baseExpression)
+		public ArrayPointer(DVariable accessedArray, ArrayType arrayType, int accessedItem)
+			: base(accessedArray, arrayType)
 		{
 			ItemNumber = accessedItem;
 		}
@@ -120,8 +118,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// </summary>
 		public readonly ISymbolValue Key;
 		
-		public AssocArrayPointer(DVariable accessedArray, AssocArrayType arrayType, ISymbolValue accessedItemKey, IExpression baseExpression)
-			: base(accessedArray, arrayType, baseExpression)
+		public AssocArrayPointer(DVariable accessedArray, AssocArrayType arrayType, ISymbolValue accessedItemKey)
+			: base(accessedArray, arrayType)
 		{
 			Key = accessedItemKey;
 		}
@@ -155,13 +153,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						newElements[newElements.Length - 1] = new KeyValuePair<ISymbolValue, ISymbolValue>(Key, value);
 
 					// Finally, make a new associative array containing the new elements
-					vp[Variable] = new AssociativeArrayValue(aa.RepresentedType as AssocArrayType, aa.BaseExpression, newElements);
+					vp[Variable] = new AssociativeArrayValue(aa.RepresentedType as AssocArrayType, newElements);
 				}
 				else
-					throw new EvaluationException(BaseExpression, "Key expression must not be null", Key);
+					throw new EvaluationException("Key expression must not be null", Key);
 			}
 			else
-				throw new EvaluationException(BaseExpression, "Type of accessed item must be an associative array", oldV);
+				throw new EvaluationException("Type of accessed item must be an associative array", oldV);
 		}
 	}
 

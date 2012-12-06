@@ -38,12 +38,16 @@ namespace D_Parser.Resolver
 		{
 			get { return ObjectToResolve as IExpression; }
 		}
+		
+		public EvaluationException(IExpression x,string Message, params ISemantic[] LastSubresults)
+			: base(x, Message, LastSubresults)
+		{ }
 
-		public EvaluationException(IExpression EvaluatedExpression, string Message, IEnumerable<ISemantic> LastSubresults)
-			: base(EvaluatedExpression, Message, LastSubresults) { }
+		public EvaluationException(string Message, IEnumerable<ISemantic> LastSubresults)
+			: base(null, Message, LastSubresults) { }
 
-		public EvaluationException(IExpression EvaluatedExpression, string Message, params ISemantic[] LastSubresults)
-			: base(EvaluatedExpression, Message, LastSubresults)
+		public EvaluationException(string Message, params ISemantic[] LastSubresults)
+			: base(null, Message, LastSubresults)
 		{ }
 	}
 

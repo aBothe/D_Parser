@@ -35,9 +35,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				if(tps.Parameter is TemplateValueParameter)
 					return tps.ParameterValue;
 				else if(tps.Parameter is TemplateTupleParameter)
-					return new TypeValue(tps.Base, idOrTemplateInstance);
+					return new TypeValue(tps.Base);
 				else if(tps.Parameter is TemplateTypeParameter && tps.Base == null)
-					return new TypeValue(r, idOrTemplateInstance);
+					return new TypeValue(r);
 				//TODO: Are there other evaluable template parameters?
 			}
 			else if (r is MemberSymbol)
@@ -54,20 +54,20 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						return FunctionEvaluation.Execute((DMethod)mr.Definition, executionArguments, ValueProvider);
 					}
 					
-					return new InternalOverloadValue(overloads, idOrTemplateInstance);
+					return new InternalOverloadValue(overloads);
 				}
 				else if (mr.Definition is DVariable)
 				{
 					if (overloads.Length > 1)
 						throw  new EvaluationException(idOrTemplateInstance, ambigousExprMsg, overloads);
-					return new VariableValue((DVariable)mr.Definition, mr.Base, idOrTemplateInstance);
+					return new VariableValue((DVariable)mr.Definition, mr.Base);
 				}
 			}
 			else if (r is UserDefinedType)
 			{
 				if (overloads.Length > 1)
 					throw  new EvaluationException(idOrTemplateInstance, ambigousExprMsg, overloads);
-				return new TypeValue(r, idOrTemplateInstance);
+				return new TypeValue(r);
 			}
 
 			return null;
@@ -86,7 +86,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					if (o.Length == 1)
 						return o[0];
 					else if (o.Length > 1)
-						return new InternalOverloadValue(o, tix);
+						return new InternalOverloadValue(o);
 				return null;
 			}
 		}
@@ -111,7 +111,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						if (o.Length == 1)
 							return o[0];
 						else if (o.Length > 1)
-							return new InternalOverloadValue(o, id);
+							return new InternalOverloadValue(o);
 					return null;
 				}
 			}
@@ -166,7 +166,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				case Parser.LiteralFormat.VerbatimStringLiteral:
 
 					var _t = GetStringType(id.Subformat);
-					return eval ? (ISemantic)new ArrayValue(_t, id) : _t;
+					return eval ? (ISemantic)new ArrayValue(_t) : _t;
 			}
 			return null;
 		}

@@ -244,7 +244,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				{
 					EnsureIntegralType(a); EnsureIntegralType(b);
 					if (b.Value < 0 || b.Value > 31)
-						throw new EvaluationException(b.BaseExpression, "Shift operand must be between 0 and 31", b);
+						throw new EvaluationException(x, "Shift operand must be between 0 and 31", b);
 
 					switch(x.OperatorToken)
 					{
@@ -286,7 +286,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 					// Might be a string
 					if (av_l.IsString && av_r.IsString)
-						return new ArrayValue(av_l.RepresentedType as ArrayType, x, av_l.StringValue + av_r.StringValue);
+						return new ArrayValue(av_l.RepresentedType as ArrayType, av_l.StringValue + av_r.StringValue);
 					else
 					{
 						var elements = new ISymbolValue[av_l.Elements.Length + av_r.Elements.Length];
@@ -374,7 +374,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		void EnsureIntegralType(PrimitiveValue v)
 		{
 			if (!DTokens.BasicTypes_Integral[v.BaseTypeToken])
-				throw new EvaluationException(v.BaseExpression, "Literal must be of integral type",v);
+				throw new EvaluationException("Literal must be of integral type",v);
 		}
 
 		delegate decimal MathOp(PrimitiveValue x, PrimitiveValue y) ;

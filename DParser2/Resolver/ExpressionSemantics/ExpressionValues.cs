@@ -26,7 +26,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			: this(DTokens.Bool, Value ? 1 : 0, Expression) { }
 
 		public PrimitiveValue(byte BaseTypeToken, decimal Value, IExpression Expression, decimal ImaginaryPart = 0M)
-			: base(ExpressionValueType.Primitive, new PrimitiveType(BaseTypeToken,0, Expression))
+			: base(new PrimitiveType(BaseTypeToken,0, Expression))
 		{
 			this.BaseTypeToken = BaseTypeToken;
 			this.Value = Value;
@@ -37,7 +37,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// NaN constructor
 		/// </summary>
 		private PrimitiveValue(byte baseType,IExpression x)
-			: base(ExpressionValueType.Primitive, new PrimitiveType(baseType, 0, x))
+			: base(new PrimitiveType(baseType, 0, x))
 		{
 			IsNaN = true;
 		}
@@ -101,8 +101,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// String constructor.
 		/// Given result stores both type and idenfitierexpression whose Value is used as content
 		/// </summary>
-		public ArrayValue(ArrayType stringLiteralResult, IdentifierExpression stringLiteral=null)
-			: base(ExpressionValueType.Array, stringLiteralResult, stringLiteral)
+		public ArrayValue(ArrayType stringLiteralResult, IdentifierExpression stringLiteral = null)
+			: base(stringLiteralResult)
 		{
 			StringFormat = LiteralSubformat.Utf8;
 			if (stringLiteralResult.DeclarationOrExpressionBase is IdentifierExpression)
@@ -118,15 +118,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// String constructor.
 		/// Used for generating string results 'internally'.
 		/// </summary>
-		public ArrayValue(ArrayType stringTypeResult, IExpression baseExpression, string content)
-			: base(ExpressionValueType.Array, stringTypeResult, baseExpression)
+		public ArrayValue(ArrayType stringTypeResult, string content) : base(stringTypeResult)
 		{
 			StringFormat = LiteralSubformat.Utf8;
 			StringValue = content;
 		}
 
-		public ArrayValue(ArrayType resolvedArrayType, params ISymbolValue[] elements)
-			: base(ExpressionValueType.Array, resolvedArrayType)
+		public ArrayValue(ArrayType resolvedArrayType, params ISymbolValue[] elements) : base(resolvedArrayType)
 		{
 			Elements = elements;
 		}
@@ -167,8 +165,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			private set;
 		}
 
-		public AssociativeArrayValue(AssocArrayType baseType, IExpression baseExpression,IList<KeyValuePair<ISymbolValue,ISymbolValue>> Elements)
-			: base(ExpressionValueType.AssocArray, baseType, baseExpression)
+		public AssociativeArrayValue(AssocArrayType baseType, IList<KeyValuePair<ISymbolValue,ISymbolValue>> Elements)
+			: base(baseType)
 		{
 			this.Elements = new ReadOnlyCollection<KeyValuePair<ISymbolValue, ISymbolValue>>(Elements);
 		}
@@ -196,7 +194,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	public class DelegateValue : ExpressionValue
 	{
 		public AbstractType Definition { get; private set; }
-		public bool IsFunction { get { return base.Type == ExpressionValueType.Function; } }
+		public bool IsFunction{get;protected set;}
 
 		public DMethod Method
 		{
@@ -213,15 +211,15 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 		}
 
-		public DelegateValue(DelegateType Dg)
-			: base(ExpressionValueType.Delegate, Dg)
+		public DelegateValue(DelegateType Dg) : base(Dg)
 		{
 			this.Definition = Dg;
 		}
 
 		public DelegateValue(AbstractType Definition, AbstractType ReturnType, bool IsFunction = false)
-			: base(IsFunction ? ExpressionValueType.Function : ExpressionValueType.Delegate, ReturnType, Definition.DeclarationOrExpressionBase as IExpression)
+			: base(ReturnType)
 		{
+			this.IsFunction = IsFunction;
 			this.Definition = Definition;
 		}
 
@@ -240,8 +238,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public Dictionary<DVariable, ISymbolValue> Members = new Dictionary<DVariable, ISymbolValue>();
 		public Dictionary<DVariable, AbstractType> MemberTypes = new Dictionary<DVariable, AbstractType>();
 
-		public InstanceValue(DClassLike Class, AbstractType ClassType, IExpression instanceExpression)
-			: base(Class, ClassType, instanceExpression)
+		public InstanceValue(DClassLike Class, AbstractType ClassType)
+			: base(Class, ClassType)
 		{
 
 		}
@@ -260,12 +258,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	/// </summary>
 	public class TypeValue : ExpressionValue
 	{
-		public TypeValue(AbstractType r, IExpression x)
-			: base(ExpressionValueType.Type, r, x) { }
+		public TypeValue(AbstractType r) : base(r) { }
 
 		public override string ToCode()
 		{
-			return BaseExpression != null ? BaseExpression.ToString() : RepresentedType != null ? RepresentedType.ToString() : "null";
+			return RepresentedType != null ? RepresentedType.ToString() : "null";
 		}
 	}
 
@@ -273,8 +270,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	{
 		INode referencedNode;
 
-		public ReferenceValue(INode Node, AbstractType type, IExpression x)
-			: base(ExpressionValueType.None, type, x)
+		public ReferenceValue(INode Node, AbstractType type) : base(type)
 		{
 		}
 	}
@@ -313,7 +309,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 	public class NullValue : ReferenceValue
 	{
-		public NullValue(IExpression x) : base(null, null, x) { }
+		public NullValue() : base(null,null) { }
 
 		public override string ToCode()
 		{
@@ -330,8 +326,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	{
 		public AbstractType[] Overloads { get; private set; }
 
-		public InternalOverloadValue(AbstractType[] overloads, IExpression x)
-			: base(ExpressionValueType.None, null, x)
+		public InternalOverloadValue(AbstractType[] overloads) : base(null)
 		{
 			this.Overloads = overloads;
 		}

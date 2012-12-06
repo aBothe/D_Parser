@@ -8,6 +8,8 @@ namespace D_Parser.Dom.Expressions
 	public interface IExpression : ISyntaxRegion, IVisitable<ExpressionVisitor>
 	{
 		R Accept<R>(ExpressionVisitor<R> vis);
+		
+		ulong GetHash();
 	}
 
 	/// <summary>
@@ -47,19 +49,18 @@ namespace D_Parser.Dom.Expressions
 		public abstract void Accept(ExpressionVisitor v);
 		public abstract R Accept<R>(ExpressionVisitor<R> v);
 		
-		public override int GetHashCode()
+		public virtual ulong GetHash()
 		{
-			int hashCode = 0;
+			ulong hashCode = 0uL;
 			unchecked {
 				if (LeftOperand != null)
-					hashCode += 1000000007 * LeftOperand.GetHashCode();
+					hashCode += 1000000007 * LeftOperand.GetHash();
 				if (RightOperand != null)
-					hashCode += 1000000009 * RightOperand.GetHashCode();
-				hashCode += 1000000021 * OperatorToken.GetHashCode();
+					hashCode += 1000000009 * RightOperand.GetHash();
+				hashCode += 1000000021 * (ulong)OperatorToken;
 			}
 			return hashCode;
 		}
-
 	}
 
 	public class Expression : IExpression, IEnumerable<IExpression>, ContainerExpression
@@ -107,13 +108,13 @@ namespace D_Parser.Dom.Expressions
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
 		
-		public override int GetHashCode()
+		public ulong GetHash()
 		{
-			int hashCode = 0;
+			ulong hashCode = 0uL;
 			unchecked {
 				if (Expressions != null && Expressions.Count > 0)
-					for(int i = Expressions.Count; i!=0;)
-						hashCode += 1000000007 * i * Expressions[--i].GetHashCode();
+					for(ulong i = (ulong)Expressions.Count; i!=0;)
+						hashCode += 1000000007uL * i * Expressions[(int)--i].GetHash();
 			}
 			return hashCode;
 		}
@@ -166,16 +167,16 @@ namespace D_Parser.Dom.Expressions
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
 		
-		public override int GetHashCode()
+		public ulong GetHash()
 		{
-			int hashCode = 0;
+			ulong hashCode = 0uL;
 			unchecked {
 				if (OrOrExpression != null)
-					hashCode += 1000000007 * OrOrExpression.GetHashCode();
+					hashCode += 1000000007 * OrOrExpression.GetHash();
 				if (TrueCaseExpression != null)
-					hashCode += 1000000009 * TrueCaseExpression.GetHashCode();
+					hashCode += 1000000009 * TrueCaseExpression.GetHash();
 				if (FalseCaseExpression != null)
-					hashCode += 1000000021 * FalseCaseExpression.GetHashCode();
+					hashCode += 1000000021 * FalseCaseExpression.GetHash();
 			}
 			return hashCode;
 		}
@@ -265,13 +266,11 @@ namespace D_Parser.Dom.Expressions
 		public override void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public override R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
 		
-		public override int GetHashCode()
+		public override ulong GetHash()
 		{
-			int hashCode = base.GetHashCode();
 			unchecked {
-				hashCode += 1000000007 * Not.GetHashCode();
+				return base.GetHash() + 1000000007uL * (Not ? 2uL : 1uL);
 			}
-			return hashCode;
 		}
 	}
 
@@ -303,13 +302,11 @@ namespace D_Parser.Dom.Expressions
 		public override void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public override R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
 		
-		public override int GetHashCode()
+		public override ulong GetHash()
 		{
-			int hashCode = base.GetHashCode();
 			unchecked {
-				hashCode += 1000000007 * Not.GetHashCode();
+				return base.GetHash() + 1000000007uL * (Not ? 2uL : 1uL);
 			}
-			return hashCode;
 		}
 	}
 
@@ -396,13 +393,13 @@ namespace D_Parser.Dom.Expressions
 		public abstract void Accept(ExpressionVisitor vis);
 		public abstract R Accept<R>(ExpressionVisitor<R> vis);
 		
-		public override int GetHashCode()
+		public ulong GetHash()
 		{
-			int hashCode;
+			ulong hashCode;
 			unchecked {
-				hashCode = 1000000007 * ForeToken;
+				hashCode = 1000000007 * (ulong)ForeToken;
 				if (UnaryExpression != null)
-					hashCode += 1000000009 * UnaryExpression.GetHashCode();
+					hashCode += 1000000009 * UnaryExpression.GetHash();
 			}
 			return hashCode;
 		}
@@ -539,14 +536,14 @@ namespace D_Parser.Dom.Expressions
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
 		
-		public override int GetHashCode()
+		public ulong GetHash()
 		{
-			int hashCode = 0;
+			ulong hashCode = 0uL;
 			unchecked {
 				if (Type != null)
-					hashCode += 1000000007 * Type.GetHashCode();
+					hashCode += 1000000007 * (ulong)Type.GetHashCode();
 				if (AccessIdentifier != null)
-					hashCode += 1000000009 * AccessIdentifier.GetHashCode();
+					hashCode += 1000000009 * (ulong)AccessIdentifier.GetHashCode();
 			}
 			return hashCode;
 		}
@@ -627,18 +624,18 @@ namespace D_Parser.Dom.Expressions
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
 		
-		public override int GetHashCode()
+		public ulong GetHash()
 		{
-			int hashCode = 0;
+			ulong hashCode = 0uL;
 			unchecked {
 				if (Type != null)
-					hashCode += 1000000007 * Type.GetHashCode();
+					hashCode += 1000000007 * (ulong)Type.GetHashCode();
 				if (NewArguments != null && NewArguments.Length != 0)
 					for(int i = NewArguments.Length; i!= 0;)
-						hashCode += 1000000009 * i * NewArguments[--i].GetHashCode();
+						hashCode += 1000000009 * (ulong)i * NewArguments[--i].GetHash();
 				if (Arguments != null && Arguments.Length != 0)
 					for(int i = Arguments.Length; i!= 0;)
-						hashCode += 1000000021 * i * Arguments[--i].GetHashCode();
+						hashCode += 1000000021 * (ulong)i * Arguments[--i].GetHash();
 			}
 			return hashCode;
 		}
@@ -730,17 +727,17 @@ namespace D_Parser.Dom.Expressions
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
 		
-		public override int GetHashCode()
+		public ulong GetHash()
 		{
-			int hashCode = 0;
+			ulong hashCode = 0uL;
 			unchecked {
 				if (NewArguments != null)
 					for(int i = NewArguments.Length; i!= 0;)
-						hashCode += 1000000007 * i * NewArguments[--i].GetHashCode();
+						hashCode += 1000000007 * (ulong)i * NewArguments[--i].GetHash();
 				if (AnonymousClass != null)
-					hashCode += 1000000009 * AnonymousClass.GetHashCode();
+					hashCode += 1000000009 * (ulong)AnonymousClass.GetHashCode();
 				for(int i = ClassArguments.Length; i!= 0;)
-						hashCode += 1000000021 * i * ClassArguments[--i].GetHashCode();
+					hashCode += 1000000021 * (ulong)i * ClassArguments[--i].GetHash();
 			}
 			return hashCode;
 		}
@@ -816,17 +813,17 @@ namespace D_Parser.Dom.Expressions
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
 		
-		public override int GetHashCode()
+		public ulong GetHash()
 		{
-			int hashCode = 0;
+			ulong hashCode = 0uL;
 			unchecked {
 				if (UnaryExpression != null)
-					hashCode += 1000000007 * UnaryExpression.GetHashCode();
+					hashCode += 1000000007 * UnaryExpression.GetHash();
 				if (Type != null)
-					hashCode += 1000000009 * Type.ToString().GetHashCode();
+					hashCode += 1000000009 * Type.GetHash();
 				if (CastParamTokens != null && CastParamTokens.Length != 0)
 					for(int i= CastParamTokens.Length; i!=0;)
-						hashCode += 1000000021 * i * CastParamTokens[--i].GetHashCode();
+						hashCode += 1000000021 * (ulong)i * (ulong)CastParamTokens[--i];
 			}
 			return hashCode;
 		}
@@ -852,12 +849,12 @@ namespace D_Parser.Dom.Expressions
 		public abstract void Accept(ExpressionVisitor vis);
 		public abstract R Accept<R>(ExpressionVisitor<R> vis);
 		
-		public override int GetHashCode()
+		public virtual ulong GetHash()
 		{
-			int hashCode = 0;
+			ulong hashCode = 0uL;
 			unchecked {
 				if (PostfixForeExpression != null)
-					hashCode += 1000000007 * PostfixForeExpression.GetHashCode();
+					hashCode += 1000000007 * PostfixForeExpression.GetHash();
 			}
 			return hashCode;
 		}
@@ -906,12 +903,12 @@ namespace D_Parser.Dom.Expressions
 		public override void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public override R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
 		
-		public override int GetHashCode()
+		public override ulong GetHash()
 		{
-			int hashCode = base.GetHashCode();
+			ulong hashCode = base.GetHash();
 			unchecked {
 				if (AccessExpression != null)
-					hashCode += 1000000009 * AccessExpression.GetHashCode();
+					hashCode += 1000000009 * AccessExpression.GetHash();
 			}
 			return hashCode;
 		}
@@ -933,9 +930,9 @@ namespace D_Parser.Dom.Expressions
 		public override void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public override R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
 		
-		public override int GetHashCode()
+		public override ulong GetHash()
 		{
-			var hashCode = base.GetHashCode();
+			var hashCode = base.GetHash();
 			unchecked {
 				hashCode += 1000000021;
 			}
@@ -959,9 +956,9 @@ namespace D_Parser.Dom.Expressions
 		public override void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public override R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
 		
-		public override int GetHashCode()
+		public override ulong GetHash()
 		{
-			var hashCode = base.GetHashCode();
+			var hashCode = base.GetHash();
 			unchecked {
 				hashCode += 1000000021;
 			}
@@ -1018,13 +1015,13 @@ namespace D_Parser.Dom.Expressions
 		public override void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public override R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
 		
-		public override int GetHashCode()
+		public override ulong GetHash()
 		{
-			var hashCode = base.GetHashCode();
+			var hashCode = base.GetHash();
 			unchecked {
 				if(Arguments!=null)
-					for(int i = Arguments.Length; i!=0;)
-						hashCode += 1000000038 * i * Arguments[--i].GetHashCode();
+					for(ulong i = (ulong)Arguments.Length; i!=0;)
+						hashCode += 1000000038 * i * Arguments[(int)--i].GetHash();
 			}
 			return hashCode;
 		}
@@ -1075,13 +1072,13 @@ namespace D_Parser.Dom.Expressions
 		public override void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public override R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
 		
-		public override int GetHashCode()
+		public override ulong GetHash()
 		{
-			var hashCode = base.GetHashCode();
+			var hashCode = base.GetHash();
 			unchecked {
 				if(Arguments!=null)
-					for(int i = Arguments.Length; i!=0;)
-						hashCode += 1000000083 * i * Arguments[--i].GetHashCode();
+					for(ulong i = (ulong)Arguments.Length; i!=0;)
+						hashCode += 1000000083 * i * Arguments[(int)--i].GetHash();
 			}
 			return hashCode;
 		}
@@ -1133,14 +1130,14 @@ namespace D_Parser.Dom.Expressions
 		public override void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public override R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
 		
-		public override int GetHashCode()
+		public override ulong GetHash()
 		{
-			int hashCode = base.GetHashCode();
+			ulong hashCode = base.GetHash();
 			unchecked {
 				if (FromExpression != null)
-					hashCode += 1000000007 * FromExpression.GetHashCode();
+					hashCode += 1000000007 * FromExpression.GetHash();
 				if (ToExpression != null)
-					hashCode += 1000000009 * ToExpression.GetHashCode();
+					hashCode += 1000000009 * ToExpression.GetHash();
 			}
 			return hashCode;
 		}
@@ -1190,15 +1187,15 @@ namespace D_Parser.Dom.Expressions
 		public override void Accept(TypeDeclarationVisitor vis) {	vis.Visit(this); }
 		public override R Accept<R>(TypeDeclarationVisitor<R> vis) { return vis.Visit(this); }
 		
-		public override int GetHashCode()
+		public override ulong GetHash()
 		{
-			int hashCode = 0;
+			ulong hashCode = 0uL;
 			unchecked {
 				if (TemplateIdentifier != null)
-					hashCode += 1000000007 * TemplateIdentifier.GetHashCode();
+					hashCode += 1000000007 * TemplateIdentifier.GetHash();
 				if (Arguments != null)
-					for(int i = Arguments.Length; i != 0;)
-						hashCode += 1000000009 * i * Arguments[--i].GetHashCode();
+					for(ulong i = (ulong)Arguments.Length; i!=0;)
+						hashCode += 1000000009 * i * Arguments[(int)--i].GetHash();
 			}
 			return hashCode;
 		}
@@ -1254,15 +1251,15 @@ namespace D_Parser.Dom.Expressions
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
 		
-		public override int GetHashCode()
+		public ulong GetHash()
 		{
-			int hashCode = 0;
+			ulong hashCode = 0uL;
 			unchecked {
-				hashCode += 1000000007 * ModuleScoped.GetHashCode();
+				hashCode += 1000000007uL * (ModuleScoped ? 2uL :1uL);
 				if (Value != null)
-					hashCode += 1000000009 * Value.GetHashCode();
-				hashCode += 1000000021 * Format.GetHashCode();
-				hashCode += 1000000033 * Subformat.GetHashCode();
+					hashCode += 1000000009 * (ulong)Value.GetHashCode();
+				hashCode += 1000000021 * (ulong)Format;
+				hashCode += 1000000033 * (ulong)Subformat;
 			}
 			return hashCode;
 		}
@@ -1296,10 +1293,10 @@ namespace D_Parser.Dom.Expressions
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
 		
-		public override int GetHashCode()
+		public ulong GetHash()
 		{
 			unchecked {
-				return 1000000007 * Token.GetHashCode();
+				return 1000000007 * (ulong)Token;
 			}
 		}
 
@@ -1333,11 +1330,11 @@ namespace D_Parser.Dom.Expressions
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
 		
-		public override int GetHashCode()
+		public ulong GetHash()
 		{
 			unchecked {
 				if (Declaration != null)
-					return 1000000007 * Declaration.GetHashCode();
+					return 1000000007 * Declaration.GetHash();
 			}
 			return 0;
 		}
@@ -1388,13 +1385,13 @@ namespace D_Parser.Dom.Expressions
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
 		
-		public override int GetHashCode()
+		public ulong GetHash()
 		{
-			int hashCode = DTokens.OpenSquareBracket; // because it's like an Expression
+			ulong hashCode = DTokens.OpenSquareBracket; // because it's like an Expression
 			unchecked {
 				if (Elements != null)
 					for(int i = Elements.Count; i!=0;)
-						hashCode += 1000000007 * i * Elements[--i].GetHashCode();
+						hashCode += 1000000007 * (ulong)i * Elements[--i].GetHash();
 			}
 			return hashCode;
 		}
@@ -1449,15 +1446,15 @@ namespace D_Parser.Dom.Expressions
 		public virtual void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public virtual R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
 		
-		public override int GetHashCode()
+		public virtual ulong GetHash()
 		{
-			int hashCode = 0;
+			ulong hashCode = 0uL;
 			unchecked {
 				if (Elements != null && Elements.Count != 0)
 					foreach(var e in Elements)
 					{
-						hashCode += 1000000007 * e.Key.GetHashCode();
-						hashCode += 1000000009 * e.Value.GetHashCode();
+						hashCode += 1000000007 * e.Key.GetHash();
+						hashCode += 1000000009 * e.Value.GetHash();
 					}
 			}
 			return hashCode;
@@ -1522,14 +1519,14 @@ namespace D_Parser.Dom.Expressions
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
 		
-		public override int GetHashCode()
+		public ulong GetHash()
 		{
-			int hashCode = 0;
+			ulong hashCode = 0uL;
 			unchecked {
-				hashCode += 1000000007 * LiteralToken.GetHashCode();
-				hashCode += 1000000009 * IsLambda.GetHashCode();
+				hashCode += 1000000007 * (ulong)LiteralToken;
+				hashCode += 1000000009uL * (IsLambda ? 2uL : 1uL);
 				if (AnonymousMethod != null) //TODO: Hash entire method bodies?
-					hashCode += 1000000021 * AnonymousMethod.GetHashCode();
+					hashCode += 1000000021 * (ulong)AnonymousMethod.GetHashCode();
 			}
 			return hashCode;
 		}
@@ -1570,13 +1567,13 @@ namespace D_Parser.Dom.Expressions
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
 		
-		public override int GetHashCode()
+		public ulong GetHash()
 		{
-			int hashCode = 0;
+			ulong hashCode = 0uL;
 			unchecked {
 				if (AssignExpressions != null)
 					for(int i = AssignExpressions.Length; i!=0;)
-						hashCode += 1000000007 * i * AssignExpressions[i].GetHashCode();
+						hashCode += 1000000007 * (ulong)i * AssignExpressions[i].GetHash();
 			}
 			return hashCode;
 		}
@@ -1612,12 +1609,12 @@ namespace D_Parser.Dom.Expressions
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
 		
-		public override int GetHashCode()
+		public ulong GetHash()
 		{
-			int hashCode = DTokens.Mixin;
+			ulong hashCode = DTokens.Mixin;
 			unchecked {
 				if (AssignExpression != null)
-					hashCode += 1000000007 * AssignExpression.GetHashCode();
+					hashCode += 1000000007 * AssignExpression.GetHash();
 			}
 			return hashCode;
 		}
@@ -1653,12 +1650,12 @@ namespace D_Parser.Dom.Expressions
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
 		
-		public override int GetHashCode()
+		public ulong GetHash()
 		{
-			int hashCode = DTokens.Import;
+			ulong hashCode = DTokens.Import;
 			unchecked {
 				if (AssignExpression != null)
-					hashCode += 1000000007 * AssignExpression.GetHashCode();
+					hashCode += 1000000007 * AssignExpression.GetHash();
 			}
 			return hashCode;
 		}
@@ -1701,14 +1698,14 @@ namespace D_Parser.Dom.Expressions
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
 		
-		public override int GetHashCode()
+		public ulong GetHash()
 		{
-			int hashCode = DTokens.Typeid;
+			ulong hashCode = DTokens.Typeid;
 			unchecked {
 				if (Type != null)
-					hashCode += 1000000007 * Type.GetHashCode();
+					hashCode += 1000000007 * Type.GetHash();
 				if (Expression != null)
-					hashCode += 1000000009 * Expression.GetHashCode();
+					hashCode += 1000000009 * Expression.GetHash();
 			}
 			return hashCode;
 		}
@@ -1798,23 +1795,23 @@ namespace D_Parser.Dom.Expressions
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
 		
-		public override int GetHashCode()
+		public ulong GetHash()
 		{
-			int hashCode = DTokens.Is;
+			ulong hashCode = DTokens.Is;
 			unchecked {
 				if (TestedType != null)
-					hashCode += 1000000007 * TestedType.GetHashCode();
+					hashCode += 1000000007 * TestedType.GetHash();
 				if (TypeAliasIdentifier != null)
-					hashCode += 1000000009 * TypeAliasIdentifier.GetHashCode();
+					hashCode += 1000000009 * (ulong)TypeAliasIdentifier.GetHashCode();
 				if (ptp != null)//TODO: Create hash functions of template type parameters
-					hashCode += 1000000021 * ptp.ToString().GetHashCode();
-				hashCode += 1000000033 * EqualityTest.GetHashCode();
+					hashCode += 1000000021 * (ulong)ptp.ToString().GetHashCode();
+				hashCode += 1000000033uL * (EqualityTest?2uL:1uL);
 				if (TypeSpecialization != null)
-					hashCode += 1000000087 * TypeSpecialization.GetHashCode();
-				hashCode += 1000000093 * TypeSpecializationToken.GetHashCode();
+					hashCode += 1000000087 * TypeSpecialization.GetHash();
+				hashCode += 1000000093 * (ulong)TypeSpecializationToken;
 				if (TemplateParameterList != null)
 					for(int i=TemplateParameterList.Length; i!=0;)
-						hashCode += 1000000097 * i * TemplateParameterList[--i].GetHashCode();
+						hashCode += 1000000097 * (ulong)(i * TemplateParameterList[--i].ToString().GetHashCode());
 			}
 			return hashCode;
 		}
@@ -1853,17 +1850,17 @@ namespace D_Parser.Dom.Expressions
 		public void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
 		
-		public override int GetHashCode()
+		public ulong GetHash()
 		{
-			int hashCode = DTokens.__traits;
+			ulong hashCode = DTokens.__traits;
 			unchecked {
 				if (Keyword != null)
-					hashCode += 1000000007 * Keyword.GetHashCode();
+					hashCode += 1000000007 * (ulong)Keyword.GetHashCode();
 				if (Arguments != null)
 				{
-					int i=1;
+					ulong i=1;
 					foreach(var arg in Arguments)
-						hashCode += 1000000009 * i++ * arg.GetHashCode();
+						hashCode += 1000000009 * i++ * arg.GetHash();
 				}
 			}
 			return hashCode;
@@ -1903,14 +1900,14 @@ namespace D_Parser.Dom.Expressions
 			return vis.Visit(this);
 		}
 		
-		public override int GetHashCode()
+		public ulong GetHash()
 		{
-			int hashCode = 0;
+			ulong hashCode = 0uL;
 			unchecked {
 				if (Type != null)
-					hashCode += 1000000007 * Type.GetHashCode();
+					hashCode += 1000000007 * Type.GetHash();
 				if (AssignExpression != null)
-					hashCode += 1000000009 * AssignExpression.GetHashCode();
+					hashCode += 1000000009 * AssignExpression.GetHash();
 			}
 			return hashCode;
 		}
@@ -1949,12 +1946,12 @@ namespace D_Parser.Dom.Expressions
 		public void Accept(ExpressionVisitor vis) {	vis.Visit(this); }
 		public R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
 		
-		public override int GetHashCode()
+		public ulong GetHash()
 		{
-			int hashCode = DTokens.OpenParenthesis;
+			ulong hashCode = DTokens.OpenParenthesis;
 			unchecked {
 				if (Expression != null)
-					hashCode += 1000000007 * Expression.GetHashCode();
+					hashCode += 1000000007 * Expression.GetHash();
 			}
 			return hashCode;
 		}
@@ -1983,6 +1980,8 @@ namespace D_Parser.Dom.Expressions
 
 		public abstract void Accept(ExpressionVisitor vis);
 		public abstract R Accept<R>(ExpressionVisitor<R> vis);
+		
+		public abstract ulong GetHash();
 	}
 
 	public class VoidInitializer : AbstractVariableInitializer
@@ -1992,7 +1991,7 @@ namespace D_Parser.Dom.Expressions
 		public override void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public override R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
 		
-		public override int GetHashCode()
+		public override ulong GetHash()
 		{
 			return AbstractInitializerHash + DTokens.Void;
 		}
@@ -2002,9 +2001,9 @@ namespace D_Parser.Dom.Expressions
 		public override void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public override R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
 		
-		public override int GetHashCode()
+		public override ulong GetHash()
 		{
-			return AbstractVariableInitializer.AbstractInitializerHash + base.GetHashCode();
+			return AbstractVariableInitializer.AbstractInitializerHash + base.GetHash();
 		}
 	}
 
@@ -2042,13 +2041,13 @@ namespace D_Parser.Dom.Expressions
 		public override void Accept(ExpressionVisitor vis) { vis.Visit(this); }
 		public override R Accept<R>(ExpressionVisitor<R> vis) { return vis.Visit(this); }
 		
-		public override int GetHashCode()
+		public override ulong GetHash()
 		{
-			int hashCode = AbstractInitializerHash + DTokens.Struct + DTokens.OpenCurlyBrace;
+			ulong hashCode = AbstractInitializerHash + DTokens.Struct + DTokens.OpenCurlyBrace;
 			unchecked {
 				if (MemberInitializers != null)
 					for(int i = MemberInitializers.Length; i!=0;)
-						hashCode += 1000000007 * i * MemberInitializers[--i].GetHashCode();
+						hashCode += 1000000007 * (ulong)i * MemberInitializers[--i].GetHash();
 			}
 			return hashCode;
 		}
@@ -2087,14 +2086,14 @@ namespace D_Parser.Dom.Expressions
 			return vis.Visit(this);
 		}
 		
-		public override int GetHashCode()
+		public ulong GetHash()
 		{
-			int hashCode = AbstractVariableInitializer.AbstractInitializerHash;
+			ulong hashCode = AbstractVariableInitializer.AbstractInitializerHash;
 			unchecked {
 				if (MemberName != null)
-					hashCode += 1000000007 * MemberName.GetHashCode();
+					hashCode += 1000000007 * (ulong)MemberName.GetHashCode();
 				if (Value != null)
-					hashCode += 1000000009 * Value.GetHashCode();
+					hashCode += 1000000009 * Value.GetHash();
 			}
 			return hashCode;
 		}

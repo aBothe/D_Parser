@@ -14,65 +14,21 @@ namespace D_Parser.Dom
 	///		u. -- now the type of u is needed. A ITemplateParameterDeclaration will be returned which holds U.
 	/// }
 	/// </summary>
-	public class ITemplateParameterDeclaration : ITypeDeclaration
+	public class ITemplateParameterDeclaration : AbstractTypeDeclaration
 	{
 		public ITemplateParameter TemplateParameter;
 
-		public CodeLocation Location
-		{
-			get			{				return TemplateParameter.Location;			}
-			set			{}
-		}
-
-		public CodeLocation EndLocation
-		{
-			get			{				return TemplateParameter.EndLocation;			}
-			set			{}
-		}
-
-		public ITypeDeclaration InnerDeclaration
-		{
-			get
-			{
-				return null;
-			}
-			set
-			{
-				
-			}
-		}
-
-		public ITypeDeclaration InnerMost
-		{
-			get
-			{
-				return this;
-			}
-			set
-			{}
-		}
-
-		public bool ExpressesVariableAccess
-		{
-			get
-			{
-				return false;
-			}
-			set
-			{}
-		}
-
-		public string ToString(bool IncludesBase)
+		public override string ToString(bool IncludesBase)
 		{
 			return TemplateParameter.ToString();
 		}
 
-		public void Accept(TypeDeclarationVisitor vis)
+		public override void Accept(TypeDeclarationVisitor vis)
 		{
 			vis.Visit(this);
 		}
 
-		public R Accept<R>(TypeDeclarationVisitor<R> vis)
+		public override R Accept<R>(TypeDeclarationVisitor<R> vis)
 		{
 			return vis.Visit(this);
 		}
