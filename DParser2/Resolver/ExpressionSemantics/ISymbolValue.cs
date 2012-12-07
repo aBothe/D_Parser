@@ -7,6 +7,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	public interface ISymbolValue : IEquatable<ISymbolValue>, ISemantic
 	{
 		AbstractType RepresentedType { get; }
+		ulong GetHash();
 	}
 
 	public abstract class ExpressionValue : ISymbolValue
@@ -40,5 +41,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return null; 
 			}
 		}
+		
+		public abstract ulong GetHash();
 	}
 }

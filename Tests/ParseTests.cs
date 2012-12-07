@@ -147,7 +147,7 @@ else int C;");
 			Debug.WriteLine(sw.ElapsedMilliseconds);
 		}
 
-		[Test]
+		//[Test]
 		public void TestPhobos()
 		{
 			var pc = ParsePhobos();

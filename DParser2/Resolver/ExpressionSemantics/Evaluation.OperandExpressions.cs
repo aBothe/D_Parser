@@ -226,6 +226,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				EvalError(x, "Right operand must evaluate to a value", new[]{lValue});
 				return null;
 			}
+			
+			var v = cache.TryGetValue(x, l as ISymbolValue, r as ISymbolValue);
+			if(v != null)
+				return v;
 
 			/*
 			 * TODO: Handle invalid values/value ranges.
@@ -311,7 +315,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 					// Might be a string
 					if (av_l.IsString && av_r.IsString)
-						return new ArrayValue(av_l.RepresentedType as ArrayType, av_l.StringValue + av_r.StringValue);
+						return Cache(x, new ArrayValue(av_l.RepresentedType as ArrayType, av_l.StringValue + av_r.StringValue), l,r);
 					else
 					{
 						var elements = new ISymbolValue[av_l.Elements.Length + av_r.Elements.Length];

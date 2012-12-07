@@ -5,6 +5,7 @@ using System.Linq;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
+using D_Parser.Resolver.ExpressionSemantics.Caching;
 using D_Parser.Resolver.ExpressionSemantics.CTFE;
 using D_Parser.Resolver.Templates;
 using D_Parser.Resolver.TypeResolution;
@@ -131,6 +132,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		ISemantic EvaluateLiteral(IdentifierExpression id)
 		{
+			if(eval)
+			{
+				var v =cache.TryGetValue(id);
+				if(v != null)
+					return v;
+			}
 			byte tt = 0;
 
 			switch (id.Format)
@@ -141,7 +148,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						DTokens.Char;
 
 					if (eval)
-						return new PrimitiveValue(tk, Convert.ToDecimal((int)(char)id.Value), id);
+						return cache.Cache(id,new PrimitiveValue(tk, Convert.ToDecimal((int)(char)id.Value), id));
 					else
 						return new PrimitiveType(tk, 0, id);
 
@@ -158,7 +165,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					var v = Convert.ToDecimal(id.Value);
 
 					if (eval)
-						return new PrimitiveValue(tt, im ? 0 : v, id, im? v : 0);
+						return cache.Cache(id,new PrimitiveValue(tt, im ? 0 : v, id, im? v : 0));
 					else
 						return new PrimitiveType(tt, 0, id);
 
@@ -170,13 +177,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					else
 						tt = unsigned ? DTokens.Uint : DTokens.Int;
 
-					return eval ? (ISemantic)new PrimitiveValue(tt, Convert.ToDecimal(id.Value), id) : new PrimitiveType(tt, 0, id);
+					return eval ? (ISemantic)cache.Cache(id,new PrimitiveValue(tt, Convert.ToDecimal(id.Value), id)) : new PrimitiveType(tt, 0, id);
 
 				case Parser.LiteralFormat.StringLiteral:
 				case Parser.LiteralFormat.VerbatimStringLiteral:
 
 					var _t = GetStringType(id.Subformat);
-					return eval ? (ISemantic)new ArrayValue(_t, id) : _t;
+					return eval ? (ISemantic)cache.Cache(id,new ArrayValue(_t, id)) : _t;
 			}
 			return null;
 		}

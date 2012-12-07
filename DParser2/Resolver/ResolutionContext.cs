@@ -58,6 +58,7 @@ namespace D_Parser.Resolver
 		}
 		
 		internal readonly List<INode> NodesBeingResolved = new List<INode>();
+		
 		#endregion
 
 		#region Init/Constructor

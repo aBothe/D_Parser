@@ -5,6 +5,7 @@ using System.Linq;
 
 using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
+using D_Parser.Resolver.ExpressionSemantics.Caching;
 using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Resolver.ExpressionSemantics
@@ -18,6 +19,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// </summary>
 		private readonly bool eval;
 		private readonly ResolutionContext ctxt;
+		ExpressionCache cache = ExpressionCache.Instance;
 		private List<EvaluationException> errors = new List<EvaluationException>();
 		
 		public EvaluationException[] Errors
@@ -50,16 +52,24 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		internal void EvalError(EvaluationException ex)
 		{
 			errors.Add(ex);
+			cache.Cache(ex.EvaluatedExpression, errors.ToArray(), ex.Arguments);
 		}
 		
 		internal void EvalError(IExpression x, string msg, ISemantic[] lastResults = null)
 		{
-			errors.Add(new EvaluationException(x,msg,lastResults));
+			EvalError(new EvaluationException(x,msg,lastResults));
 		}
 		
 		internal void EvalError(IExpression x, string msg, ISemantic lastResult)
 		{
-			errors.Add(new EvaluationException(x,msg,new[]{lastResult}));
+			EvalError(new EvaluationException(x,msg,new[]{lastResult}));
+		}
+		#endregion
+		
+		#region Caching
+		ISymbolValue Cache(IExpression x, ISymbolValue v, params ISymbolValue[] args)
+		{
+			return cache.Cache(x, v, null, args);
 		}
 		#endregion
 

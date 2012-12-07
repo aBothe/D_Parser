@@ -39,6 +39,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			return Variable==null ?"null":Variable.ToString(false);
 		}
+		
+		public override ulong GetHash()
+		{
+			throw new NotImplementedException();
+		}
 	}
 
 	public class StaticVariableValue : VariableValue

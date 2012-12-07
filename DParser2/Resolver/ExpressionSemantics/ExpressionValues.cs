@@ -1,10 +1,12 @@
 ﻿using System;
-using D_Parser.Dom.Expressions;
-using D_Parser.Dom;
-using D_Parser.Parser;
-using D_Parser.Resolver;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+
+using D_Parser.Dom;
+using D_Parser.Dom.Expressions;
+using D_Parser.Misc;
+using D_Parser.Parser;
+using D_Parser.Resolver;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
@@ -65,6 +67,21 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			return Value.ToString() + (ImaginaryPart == 0 ? "" : ("+"+ImaginaryPart.ToString()+"i"));
 		}
+		
+		public override ulong GetHash()
+		{
+			unchecked{
+			var h = HashPrimes.GetH(1) + (ulong)BaseTypeToken;
+			
+			h += HashPrimes.GetH(2) * (IsNaN ? 2uL:1uL);
+			
+			h += HashPrimes.GetH(3) * (ulong)Value;
+			
+			h += HashPrimes.GetH(4) * (ulong)ImaginaryPart;
+			
+			return h;
+			}
+		}
 	}
 
 	public class VoidValue : PrimitiveValue
@@ -72,6 +89,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public VoidValue(IExpression x)
 			: base(DTokens.Void, 0M, x)
 		{ }
+		
+		public override ulong GetHash()
+		{
+			unchecked{
+			return base.GetHash()+HashPrimes.GetH(5);
+			}
+		}
 	}
 
 	#region Derived data types
@@ -155,6 +179,27 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			return s.TrimEnd(',',' ') + "]";
 		}
+		
+		public override ulong GetHash()
+		{
+			unchecked{
+				var h = HashPrimes.GetH(6) * (IsString ? 2uL : 1uL);
+				
+				if(IsString){
+					h += (ulong)StringValue.GetHashCode();
+					h += HashPrimes.GetH(7) * ((ulong)StringFormat);
+				}
+				else if(Elements != null)
+				{
+					for(int i = Elements.Length; i!=0;)
+						h += HashPrimes.GetH(8+i) * (ulong)i * Elements[--i].GetHash();
+				}
+				else 
+					h += HashPrimes.GetH(9);
+				
+				return h;
+			}
+		}
 	}
 
 	public class AssociativeArrayValue : ExpressionValue
@@ -185,6 +230,23 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				}
 
 			return s.TrimEnd(',',' ') + "]";
+		}
+		
+		public override ulong GetHash()
+		{
+			unchecked{
+			var h = HashPrimes.GetH(10);
+			
+			if(Elements == null || Elements.Count == 0)
+				h += HashPrimes.GetH(11);
+			else for(int i = Elements.Count; i != 0; i--)
+			{
+				var e = Elements[i];
+				h += HashPrimes.GetH(12+i) * (ulong)i * e.Key.GetHash() * e.Value.GetHash();
+			}
+			
+			return h;
+			}
 		}
 	}
 
@@ -227,6 +289,14 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			return Definition == null ? "[null delegate]" : Definition.ToCode();
 		}
+		
+		public override ulong GetHash()
+		{
+			unchecked{
+				return HashPrimes.GetH(13) * (IsFunction ? HashPrimes.GetH(14) : 1uL) +
+					(Definition == null ? HashPrimes.Get(15) : (ulong)Definition.ToCode().GetHashCode());
+			}
+		}
 	}
 	#endregion
 
@@ -251,6 +321,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 
 		}
+		
+		public override ulong GetHash()
+		{
+			throw new NotImplementedException();
+		}
 	}
 
 	/// <summary>
@@ -264,6 +339,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			return RepresentedType != null ? RepresentedType.ToString() : "null";
 		}
+		
+		public override ulong GetHash()
+		{
+			unchecked{//TODO: Gen hash codes of DTypes
+			return HashPrimes.GetH(16) * (ulong)RepresentedType.ToCode().GetHashCode();
+			}
+		}
 	}
 
 	public abstract class ReferenceValue : ExpressionValue
@@ -272,6 +354,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public ReferenceValue(INode Node, AbstractType type) : base(type)
 		{
+		}
+		
+		public override ulong GetHash()
+		{
+			throw new NotImplementedException();
 		}
 	}
 	/*
@@ -315,6 +402,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			return "null";
 		}
+		
+		public override ulong GetHash()
+		{
+			return HashPrimes.GetH(17);
+		}
 	}
 	#endregion
 
@@ -340,6 +432,16 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					s += o.ToCode() + ",";
 
 			return s.TrimEnd(',') + "]";
+		}
+		
+		public override ulong GetHash()
+		{
+			unchecked{
+				var h = HashPrimes.GetH(18);
+				for(int i = Overloads.Length; i!=0; i--)
+					h+= HashPrimes.GetH(19+i) * (ulong)Overloads[i].ToCode().GetHashCode();
+				return h;
+			}
 		}
 	}
 }

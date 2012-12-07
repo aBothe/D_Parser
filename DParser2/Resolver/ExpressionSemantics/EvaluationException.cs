@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Resolver;
+using D_Parser.Resolver.ExpressionSemantics;
 
 namespace D_Parser.Resolver
 {
@@ -22,6 +24,20 @@ namespace D_Parser.Resolver
 	public class ResolutionException : DParserException
 	{
 		public ISemantic[] LastSubResults { get; protected set; }
+		
+		public ISymbolValue[] Arguments
+		{
+			get
+			{
+				if(LastSubResults==null)
+					return null;
+				
+				var l = new List<ISymbolValue>();
+				foreach(var a in LastSubResults)
+					l.Add(a as ISymbolValue);
+				return l.ToArray();
+			}
+		}
 
 		public ResolutionException(ISyntaxRegion ObjToResolve, string Message, IEnumerable<ISemantic> LastSubresults)
 			: base(ObjToResolve,Message)

@@ -54,7 +54,7 @@ namespace D_Parser.Resolver
 				// Evaluate the mixin expression
 				v = Evaluation.EvaluateValue(x, ctxt);
 				if(v is VariableValue)
-					v = Evaluation.EvaluateValue(x=((VariableValue)v).Variable.Initializer, ctxt);
+					v = Evaluation.EvaluateValue(x=(v as VariableValue).Variable.Initializer, ctxt);
 			}
 			catch{}
 			
@@ -132,6 +132,16 @@ namespace D_Parser.Resolver
 			
 			ctxt.CurrentContext.MixinCache[mx]=ast;
 			return ast;
+		}
+	}
+	
+	public class MixinCache
+	{
+		class CEntry
+		{
+			public AbstractType[] TemplateParameters;
+			
+			public DBlockNode MixedInAst;
 		}
 	}
 }
