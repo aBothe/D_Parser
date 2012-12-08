@@ -4055,6 +4055,7 @@ namespace D_Parser.Parser
 			c.EndLocation = t.EndLocation;
 			var sc = new StatementCondition {
 				Condition = c,
+				Location = sl,
 			};
 
 			sc.ScopedStatement = Statement(true, false, Scope, sc);
@@ -4064,6 +4065,11 @@ namespace D_Parser.Parser
 				Step();
 				sc.ElseStatement = Statement(true, false, Scope, sc);
 			}
+			
+			if(IsEOF)
+				sc.EndLocation = la.Location;
+			else
+				sc.EndLocation = t.EndLocation;
 
 			return sc;
 		}

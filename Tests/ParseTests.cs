@@ -185,9 +185,9 @@ else int C;");
 			});
 
 			pc.BeginParse(new[] { 
-			    @"D:\Projects\tutorial.lib\gfm-master"
-				//dmdBase+@"\druntime\import",
-				//dmdBase+@"\phobos",
+			    //@"D:\Projects\tutorial.lib\gfm-master"
+				dmdBase+@"\druntime\import",
+				dmdBase+@"\phobos",
 				//@"A:\Projects\fxLib\src"
 				//@"A:\D\tango-d2\tngo"
 			},dmdBase+@"\phobos");
