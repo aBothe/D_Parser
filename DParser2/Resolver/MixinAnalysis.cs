@@ -27,16 +27,7 @@ namespace D_Parser.Resolver
 			if(pop = ctxt.ScopedBlock != mx.ParentNode)
 				ctxt.PushNewScope(mx.ParentNode as IBlockNode, mx);
 			
-			var tStk = new Stack<ContextFrame>();
-			while(ctxt.CurrentContext != null)
-			{
-				if(ctxt.CurrentContext.MixinCache.TryGetValue(mx,out cachedContent) ||
-				  !ctxt.PrevContextIsInSameHierarchy)
-					break;
-				tStk.Push(ctxt.Pop());
-			}
-			for(int i = tStk.Count; i!=0;i--)
-				ctxt.Push(tStk.Pop());
+			cachedContent = ctxt.MixinCache.Get<ISyntaxRegion>(mx);
 			
 			if(cachedContent != null)
 			{
@@ -83,7 +74,7 @@ namespace D_Parser.Resolver
 				return null;
 			
 			var bs = (BlockStatement)DParser.ParseBlockStatement("{"+literal+"}", mx.ParentNode);
-			ctxt.CurrentContext.MixinCache[mx]=bs;
+			ctxt.MixinCache.Cache(mx, bs);
 			return bs;
 		}
 		
@@ -130,8 +121,106 @@ namespace D_Parser.Resolver
 					}
 				}
 			
-			ctxt.CurrentContext.MixinCache[mx]=ast;
+			ctxt.MixinCache.Cache(mx, ast);
 			return ast;
+		}
+	}
+	
+	public class MixinCache
+	{
+		ResolutionContext ctxt;
+		Dictionary<MixinStatement, List<MxEntry>> cache = new Dictionary<MixinStatement, List<MxEntry>>();
+		
+		public MixinCache(ResolutionContext ctxt)
+		{
+			this.ctxt = ctxt;
+		}
+		
+		class MxEntry
+		{
+			public TemplateParameterSymbol[] templateParams;
+			
+			public ISyntaxRegion mixinContent;
+		}
+		
+		public void Cache(MixinStatement mx, ISyntaxRegion mixedInContent)
+		{
+			List<MxEntry> mxList;
+			if(!cache.TryGetValue(mx,out mxList))
+				cache[mx] = mxList = new List<MxEntry>();
+			
+			var parms = GetParameters(mx);
+			var e = new MxEntry{ templateParams = parms.Count == 0 ? null : parms.ToArray(), mixinContent = mixedInContent };
+			mxList.Add(e);
+		}
+		
+		public T Get<T>(MixinStatement mx) where T : ISyntaxRegion
+		{
+			List<MxEntry> mxList;
+			if(!cache.TryGetValue(mx,out mxList))
+				return default(T);
+			
+			foreach(var e in mxList)
+			{
+				if(e.templateParams == null)
+					return (T)e.mixinContent;
+				
+				var l = GetParameters(mx);
+				bool add = true;
+				
+				foreach(var p in e.templateParams)
+				{
+					for(int i = 0; i<l.Count; i++)
+					{
+						var ex = l[i];
+						if(p.Parameter == ex.Parameter)
+						{
+							l.Remove(ex);
+							if(!ResultComparer.IsEqual(p.Base,ex.Base)){
+								add = false;
+								goto br;
+							}
+						}
+					}
+					
+					continue;
+				br:break;
+				}
+				
+				if(add)
+					return (T)e.mixinContent;
+			}
+			
+			return default(T);
+		}
+		
+		List<TemplateParameterSymbol> GetParameters(MixinStatement mx)
+		{
+			var l = new List<TemplateParameterSymbol>();
+			var curBn = mx.ParentNode;
+			while(curBn!= null)
+			{
+				if(ctxt.ScopedBlock == curBn)
+					break;
+				curBn = curBn.Parent;
+			}
+			
+			if(curBn == null)
+				return l;
+			
+			var stk = new Stack<ContextFrame>();
+			while(ctxt.CurrentContext != null)
+			{
+				l.AddRange(ctxt.CurrentContext.DeducedTemplateParameters.Values);
+				if(!ctxt.PrevContextIsInSameHierarchy)
+					break;
+				stk.Push(ctxt.Pop());
+			}
+			
+			while(stk.Count != 0)
+				ctxt.Push(stk.Pop());
+			
+			return l;
 		}
 	}
 }
