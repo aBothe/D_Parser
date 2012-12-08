@@ -127,7 +127,7 @@ else int C;");
 			Assert.That(e2, Is.TypeOf(typeof(PostfixExpression_Access)));
 		}
 		
-		//[Test]
+		[Test]
 		public void LexingPerformance()
 		{
 			var f = File.ReadAllText(@"D:\D\dmd2\src\phobos\std\string.d");
@@ -185,9 +185,9 @@ else int C;");
 			});
 
 			pc.BeginParse(new[] { 
-			    //@"D:\Projects\tutorial.lib\gfm-master"
-				dmdBase+@"\druntime\import",
-				dmdBase+@"\phobos",
+			    @"D:\Projects\tutorial.lib\gfm-master",
+				//dmdBase+@"\druntime\import",
+				//dmdBase+@"\phobos",
 				//@"A:\Projects\fxLib\src"
 				//@"A:\D\tango-d2\tngo"
 			},dmdBase+@"\phobos");

@@ -13,16 +13,23 @@ namespace D_Parser.Resolver
 	public class MixinAnalysis
 	{
 		static List<MixinStatement> stmtsBeingAnalysed = new List<MixinStatement>();
+		[ThreadStatic]
+		static uint stk;
 		
 		static string GetMixinContent(MixinStatement mx, ResolutionContext ctxt,out ISyntaxRegion cachedContent)
 		{
 			cachedContent = null;
+			if(stk > 3)
+				return null;
+			
 			lock(stmtsBeingAnalysed)
 			{
 				if(stmtsBeingAnalysed.Contains(mx))
 					return null;
 				stmtsBeingAnalysed.Add(mx);
 			}
+			stk++;
+			
 			bool pop;
 			if(pop = ctxt.ScopedBlock != mx.ParentNode)
 				ctxt.PushNewScope(mx.ParentNode as IBlockNode, mx);
@@ -35,6 +42,7 @@ namespace D_Parser.Resolver
 					stmtsBeingAnalysed.Remove(mx);
 				if(pop)
 					ctxt.Pop();
+				stk--;
 				return null;
 			}
 			
@@ -55,6 +63,7 @@ namespace D_Parser.Resolver
 			if(pop) 
 				ctxt.Pop();
 			
+			stk--;
 			// Ensure it's a string literal
 			var av = v as ArrayValue;
 			if(av != null && av.IsString)

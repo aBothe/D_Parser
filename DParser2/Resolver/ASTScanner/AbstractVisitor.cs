@@ -619,9 +619,11 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				
 				// As above, disregard the caret position because 1) caret and parsed code do not match 
 				// and 2) the caret must be located somewhere after the mixin statement's end
-				if(bs!=null)
+				if(bs!=null){
 					return IterateThroughItemHierarchy(bs, CodeLocation.Empty, vis);
+				}
 			}
+			
 			return false;
 		}
 		

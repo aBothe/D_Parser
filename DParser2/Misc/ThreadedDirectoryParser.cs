@@ -162,6 +162,8 @@ namespace D_Parser.Misc
 				
 				if (!(pack is RootPackage))
 					ast.ModuleName = pack.Path + "." + Path.GetFileNameWithoutExtension(file);
+				else if(string.IsNullOrEmpty(ast.ModuleName))
+					ast.ModuleName = Path.GetFileNameWithoutExtension(file);
 
 				ast.FileName = file;
 				pack.Modules[ModuleNameHelper.ExtractModuleName(ast.ModuleName)] = ast;
