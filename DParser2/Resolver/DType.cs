@@ -425,8 +425,6 @@ namespace D_Parser.Resolver
 		{
 			
 		}
-
-
 	}
 
 	public class MemberSymbol : DSymbol
@@ -478,6 +476,15 @@ namespace D_Parser.Resolver
 		{
 			return "<"+Parameter.Name+">"+(ParameterValue!=null ? ParameterValue.ToString() : (Base==null ? "" : Base.ToString()));
 		}
+	}
+	
+	/// <summary>
+	/// Intermediate result when evaluating e.g. myArray[0]
+	/// </summary>
+	public class ArrayAccessSymbol : MemberSymbol
+	{
+		public ArrayAccessSymbol(PostfixExpression_Index indexExpr, AbstractType arrayValueType):
+			base(null,arrayValueType,indexExpr)	{ }
 	}
 
 	public class ModuleSymbol : DSymbol

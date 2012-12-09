@@ -199,6 +199,40 @@ void foo()
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 		}
+		
+		[Test]
+		public void ArrayIndexer()
+		{
+			var pcl = CreateCache(@"module A;
+class Obj
+{
+	int myProp;
+}
+
+auto arr = new Obj[];
+auto o = new Obj();
+");
+			
+			var ctxt = CreateDefCtxt(pcl, pcl[0]["A"]);
+			
+			var ex = DParser.ParseExpression("arr[0]");
+			var t = Evaluation.EvaluateType(ex, ctxt);
+			
+			Assert.That(t, Is.TypeOf(typeof(ArrayAccessSymbol)));
+			Assert.That((t as ArrayAccessSymbol).Base, Is.TypeOf(typeof(ClassType)));
+			
+			ex = DParser.ParseExpression("arr[0].myProp");
+			t = Evaluation.EvaluateType(ex, ctxt);
+			
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+			
+			ex = DParser.ParseExpression("o.myProp");
+			t = Evaluation.EvaluateType(ex, ctxt);
+			
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+		}
 
 		[Test]
 		public void TestMultiModuleResolution1()
@@ -1408,6 +1442,8 @@ void foo() {
 			Assert.That(ms.Base, Is.TypeOf(typeof(PrimitiveType)));
 			
 			t = Evaluation.EvaluateType((A.Body.SubStatements[3] as ExpressionStatement).Expression,ctxt);
+			Assert.That(t, Is.TypeOf(typeof(ArrayAccessSymbol)));
+			t = (t as ArrayAccessSymbol).Base;
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 			

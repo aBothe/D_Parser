@@ -607,7 +607,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					 */
 					//TODO: Handle opIndex overloads
 
-					return ar.ValueType;
+					return new ArrayAccessSymbol(x,ar.ValueType);
 				}
 				/*
 				 * int* a = new int[10];
@@ -615,7 +615,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				 * a[0] = 12;
 				 */
 				else if (foreExpression is PointerType)
-					return ((PointerType)foreExpression).Base;
+					return new ArrayAccessSymbol(x,((PointerType)foreExpression).Base);
 
 				ctxt.LogError(new ResolutionError(x, "Invalid base type for index expression"));
 			}
