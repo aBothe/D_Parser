@@ -774,7 +774,7 @@ namespace D_Parser.Resolver.TypeResolution
 								ctxt.CurrentContext.DeducedTemplateParameters[kv.Key] = kv.Value;
 					}
 
-					var t = Evaluation.EvaluateType(returnStmt.ReturnExpression, ctxt);
+					var t =DResolver.StripMemberSymbols(Evaluation.EvaluateType(returnStmt.ReturnExpression, ctxt));
 
 					if (pushMethodScope)
 						ctxt.Pop();

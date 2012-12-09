@@ -23,8 +23,6 @@ namespace D_Parser.Completion
 			try
 			{
 				var ctxt=ResolutionContext.Create(Editor);
-				// In the case we've got a method or something, don't return its base type, only the reference to it
-				ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
 				var rr = DResolver.ResolveType(Editor, ctxt, DResolver.AstReparseOptions.AlsoParseBeyondCaret);
 
 				if (rr.Length < 1)
