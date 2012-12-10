@@ -666,26 +666,6 @@ namespace D_Parser.Resolver.TypeResolution
 			return rl.ToArray();
 		}
 
-		public static MemberSymbol FillMethodReturnType(MemberSymbol mr, ResolutionContext ctxt)
-		{
-			if (mr == null || ctxt == null)
-				return mr;
-
-			var dm = mr.Definition as DMethod;
-
-			ctxt.CurrentContext.IntroduceTemplateParameterTypes(mr);
-
-			if (dm != null)
-			{
-				var returnType = GetMethodReturnType(dm, ctxt);
-				mr = new MemberSymbol(dm, returnType, mr.DeclarationOrExpressionBase);
-			}
-
-			ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(mr);
-
-			return mr;
-		}
-
 		public static AbstractType GetMethodReturnType(DelegateType dg, ResolutionContext ctxt)
 		{
 			if (dg == null || ctxt == null)
