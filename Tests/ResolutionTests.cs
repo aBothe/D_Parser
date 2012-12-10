@@ -608,15 +608,16 @@ class Too(T:float)
 		public void TemplateParameterPrototypeRecognition()
 		{
 			var pcl = CreateCache(@"module A;
-static void tmplFoo(T)() {}
-static void tmplFoo2(T : U[], U)() {}
-static void tmplBar(T)(T t) {}
+static int tmplFoo(T)() {}
+static int[] tmplFoo2(T : U[], U)(int oo) {}
+static int* tmplBar(T)(T t) {}
 
 void foo(U)(U u)
 {
 	tmplFoo!U;
 	tmplFoo2!U;
 	tmplBar!U(u);
+	tmplFoo2!U(123);
 }");
 			
 			var foo = pcl[0]["A"]["foo"][0] as DMethod;
@@ -627,15 +628,34 @@ void foo(U)(U u)
 			Assert.That(t, Is.Not.Null);
 			Assert.That(t.Length, Is.EqualTo(1));
 			
+			var t_ = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(t_ , Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That((t_ as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+			
 			ex = (foo.Body.SubStatements[1] as ExpressionStatement).Expression;
 			t = Evaluation.GetOverloads(ex  as TemplateInstanceExpression, ctxt, null, true);
 			Assert.That(t, Is.Not.Null);
 			Assert.That(t.Length, Is.EqualTo(1));
 			
+			t_ = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(t_ , Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That((t_ as MemberSymbol).Base, Is.TypeOf(typeof(ArrayType)));
+			
 			ex = (foo.Body.SubStatements[2] as ExpressionStatement).Expression;
 			t = Evaluation.GetOverloads((ex as PostfixExpression_MethodCall).PostfixForeExpression as TemplateInstanceExpression, ctxt, null, true);
 			Assert.That(t, Is.Not.Null);
 			Assert.That(t.Length, Is.EqualTo(1));
+			Assert.That(t[0], Is.TypeOf(typeof(MemberSymbol)));
+			
+			t_ = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(t_ , Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That((t_ as MemberSymbol).Base, Is.TypeOf(typeof(PointerType)));
+			
+			ex = (foo.Body.SubStatements[3] as ExpressionStatement).Expression;
+			
+			t_ = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(t_ , Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That((t_ as MemberSymbol).Base, Is.TypeOf(typeof(ArrayType)));
 		}
 		
 		[Test]

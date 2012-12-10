@@ -349,6 +349,27 @@ class C
 			n = DResolver.SearchBlockAt(m, loc, out s);
 			Assert.AreEqual("main", n.Name);
 		}
+		
+		[Test]
+		public void ExpressionHierarchySearch()
+		{
+			TestExpressionEnd<TemplateInstanceExpression>("tokenize!");
+			TestExpressionEnd<IdentifierExpression>("tokenize!Token");
+			TestExpressionEnd<TemplateInstanceExpression>("tokenize!Token(");
+			TestExpressionEnd<PostfixExpression_Access>("Lexer.tokenize!Token(");
+			TestExpressionEnd<TemplateInstanceExpression>("tokenize!Token(12, true, ");
+			TestExpressionEnd<PostfixExpression_Access>("Lexer.tokenize!Token(12, true, ");
+			TestExpressionEnd<TokenExpression>("Lexer.tokenize!Token(12, true");
+			TestExpressionEnd<PostfixExpression_Access>("Lexer!HeyHo.tokenize!Token(");
+		}
+		
+		void TestExpressionEnd<T>(string expression)
+		{
+			var ex = DParser.ParseExpression(expression);
+			
+			var x = ExpressionHelper.SearchExpressionDeeply(ex, ex.EndLocation, false);
+			Assert.That(x, Is.TypeOf(typeof(T)));
+		}
 
 		[Test]
 		public void StaticIf()
