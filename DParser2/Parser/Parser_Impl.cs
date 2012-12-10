@@ -2631,11 +2631,19 @@ namespace D_Parser.Parser
 					LastParsedObject = ae;
 					ae.PostfixForeExpression = leftExpr;
 					leftExpr = ae;
-
-					if (laKind != CloseParenthesis)
+					
+					if (laKind == CloseParenthesis)
+						Step();
+					else
+					{
 						ae.Arguments = ArgumentList(Scope).ToArray();
-					Step();
-					ae.EndLocation = t.EndLocation;
+						Expect(CloseParenthesis);
+					}
+					
+					if(IsEOF)
+						ae.EndLocation = CodeLocation.Empty;
+					else
+						ae.EndLocation = t.EndLocation;
 				}
 
 				// IndexExpression | SliceExpression

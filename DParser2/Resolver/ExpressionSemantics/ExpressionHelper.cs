@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using D_Parser.Dom.Expressions;
+
 using D_Parser.Dom;
+using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
+using D_Parser.Parser;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
@@ -27,6 +29,19 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public static IExpression SearchExpressionDeeply(IExpression e, CodeLocation Where, bool WatchForParamSensitiveExpressions = false)
 		{
 			IExpression lastParamSensExpr = e;
+			
+			if(e is PostfixExpression_MethodCall)
+			{
+				var mc = e as PostfixExpression_MethodCall;
+				IExpression arg;
+				if(mc.Arguments!=null && mc.Arguments.Length!=0 && ((arg = mc.Arguments[mc.Arguments.Length-1]) is TokenExpression) &&
+				   (arg as TokenExpression).Token == DTokens.INVALID)
+				{
+					// ...(| or
+					// ...(someArg0, someArg1, |
+					return WatchForParamSensitiveExpressions ? mc : mc.PostfixForeExpression;
+				}
+			}
 
 			while (e is ContainerExpression)
 			{
@@ -49,9 +64,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						var pfa = e as PostfixExpression_Access;
 						if (pfa != null && pfa.AccessExpression == se)
 						{
-							if(pfa.AccessExpression is TemplateInstanceExpression)
+							var tix = pfa.AccessExpression as TemplateInstanceExpression;
+							if(tix != null)
 							{
-								var tix = pfa.AccessExpression as TemplateInstanceExpression;
 								if(Where >= tix.TemplateIdentifier.Location && Where <= tix.TemplateIdentifier.EndLocation)
 									continue;
 							}
@@ -89,7 +104,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 					if (exprs != null && exprs.Length > 0)
 						foreach (var expr in exprs)
-							if (expr != null && Caret >= expr.Location && Caret <= expr.EndLocation)
+							if (expr != null && Caret >= expr.Location && (Caret <= expr.EndLocation || expr.EndLocation.IsEmpty))
 							{
 								curExpression = expr;
 								break;
@@ -151,44 +166,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				//TODO: Watch the node's type! Over there, there also can be template instances..
 			}
 
-			if (curExpression != null)
-			{
-				IExpression curMethodOrTemplateInstance = null;
-
-				while (curExpression != null)
-				{
-					if (!(curExpression.Location <= Caret || curExpression.EndLocation >= Caret))
-						break;
-
-					if (IsParamRelatedExpression(curExpression))
-						curMethodOrTemplateInstance = curExpression;
-
-					if (curExpression is ContainerExpression)
-					{
-						var currentContainer = curExpression as ContainerExpression;
-
-						var subExpressions = currentContainer.SubExpressions;
-						bool foundMatch = false;
-						if (subExpressions != null && subExpressions.Length > 0)
-							foreach (var se in subExpressions)
-								if (se != null && Caret >= se.Location && Caret <= se.EndLocation)
-								{
-									curExpression = se;
-									foundMatch = true;
-									break;
-								}
-
-						if (foundMatch)
-							continue;
-					}
-					break;
-				}
-
-				return curMethodOrTemplateInstance;
-			}
-
-
-			return null;
+			return curExpression == null ? null : SearchExpressionDeeply(curExpression, Caret, true);
 		}
 	}
 }

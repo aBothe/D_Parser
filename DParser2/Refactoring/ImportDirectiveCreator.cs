@@ -54,8 +54,7 @@ namespace D_Parser.Refactoring
 			var l = new List<INode>();
 
 			var ctxt = ResolutionContext.Create(ed);
-			ctxt.ContextIndependentOptions = ResolutionOptions.ReturnMethodReferencesOnly |
-				ResolutionOptions.DontResolveBaseTypes |
+			ctxt.ContextIndependentOptions = ResolutionOptions.DontResolveBaseTypes |
 				ResolutionOptions.DontResolveAliases | ResolutionOptions.NoTemplateParameterDeduction;
 
 			// Get scoped object.

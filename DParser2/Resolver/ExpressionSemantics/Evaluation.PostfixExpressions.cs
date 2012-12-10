@@ -494,7 +494,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				{
 					var tix = (TemplateInstanceExpression)acc.AccessExpression;
 					// Do not deduce and filter if superior expression is a method call since call arguments' types also count as template arguments!
-					overloads = GetOverloads(tix, resultBase == null ? null : new[] { AbstractType.Get(resultBase) }, EvalAndFilterOverloads);
+					overloads = GetOverloads(tix, new[] { AbstractType.Get(baseExpression) }, EvalAndFilterOverloads);
 				}
 
 				else if (acc.AccessExpression is IdentifierExpression)
@@ -598,6 +598,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 			else
 			{
+				foreExpression = DResolver.StripMemberSymbols(AbstractType.Get(foreExpression));
+				
 				if (foreExpression is AssocArrayType)
 				{
 					var ar = (AssocArrayType)foreExpression;
