@@ -85,11 +85,25 @@ class baseFoo
 		{
 			var pcl = CreateCache(@"module A;
 
-class cl
+int globalVar;
+
+class otherClass {}
+
+class bcl
+{
+	int baseA;
+	static statBase;
+	protected int baseB;
+}
+
+class cl : bcl
 {
 	int* a;
 	protected int b;
 	private int c;
+	static int statVar;
+	
+	static void bar(){}
 }
 
 void foo()
@@ -98,6 +112,10 @@ void foo()
 	o.a;
 	o.b;
 	o.c;
+	o.baseA;
+	o.statVar;
+	o.statBase;
+	o.baseB;
 }", @"module B; import A; cl inst;");
 			var foo = pcl[0]["A"]["foo"][0] as DMethod;
 			var ctxt = CreateDefCtxt(pcl, foo, foo.Body);
@@ -113,6 +131,18 @@ void foo()
 			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
 			Assert.That((t as MemberSymbol).Base, Is.InstanceOf(typeof(PrimitiveType)));
 			
+			t = Evaluation.EvaluateType((foo.Body.SubStatements[4] as ExpressionStatement).Expression, ctxt);
+			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
+			
+			t = Evaluation.EvaluateType((foo.Body.SubStatements[5] as ExpressionStatement).Expression, ctxt);
+			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
+			
+			t = Evaluation.EvaluateType((foo.Body.SubStatements[6] as ExpressionStatement).Expression, ctxt);
+			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
+			
+			t = Evaluation.EvaluateType((foo.Body.SubStatements[7] as ExpressionStatement).Expression, ctxt);
+			Assert.That(t, Is.Null);
+			
 			ctxt.CurrentContext.Set(pcl[0]["B"]);
 			
 			var ex = DParser.ParseExpression("inst.b");
@@ -122,6 +152,40 @@ void foo()
 			ex = DParser.ParseExpression("inst.c");
 			t = Evaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.Null);
+			
+			ctxt.CurrentContext.Set((pcl[0]["A"]["cl"][0] as DClassLike)["bar"][0] as DMethod);
+			
+			ex = DParser.ParseExpression("statVar");
+			t = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
+			
+			ex = DParser.ParseExpression("a");
+			t = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(t, Is.Null);
+			
+			ex = DParser.ParseExpression("b");
+			t = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(t, Is.Null);
+			
+			ex = DParser.ParseExpression("c");
+			t = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(t, Is.Null);
+			
+			ex = DParser.ParseExpression("statBase");
+			t = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
+			
+			ex = DParser.ParseExpression("baseA");
+			t = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(t, Is.Null);
+			
+			ex = DParser.ParseExpression("otherClass");
+			t = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(t, Is.InstanceOf(typeof(ClassType)));
+			
+			ex = DParser.ParseExpression("globalVar");
+			t = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
 		}
 		
 		[Test]

@@ -165,46 +165,46 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			return breakOnNextScope && ((ctxt.Options & ResolutionOptions.StopAfterFirstOverloads) == ResolutionOptions.StopAfterFirstOverloads);
 		}
 		
+		
 		bool DeepScanClass(DClassLike cls, MemberFilter VisibleMembers, ref bool breakOnNextScope)
 		{
-			bool isBase = false;
-			// MyClass > BaseA > BaseB > Object
-			while (cls != null)
-			{
-				if(scanChildren(cls, VisibleMembers, ref breakOnNextScope, false, isBase))
-					return true;
-
-				// 3)
-				if (cls.ClassType == DTokens.Class)
-				{
-					var tr = DResolver.ResolveBaseClasses(new ClassType(cls, cls, null), ctxt, true);
-
-					if (tr.Base is TemplateIntermediateType)
-					{
-						cls = (tr.Base as TemplateIntermediateType).Definition;
-						isBase = true;
-
-						//TODO: Switch declaration condition set
-					}
-					else
-						break;
-				}
-				else
-					break;
-			}
-			return false;
+			return DeepScanClass(new ClassType(cls, null, null), VisibleMembers, ref breakOnNextScope, true);
 		}
 		
-		protected bool DeepScanClass(UserDefinedType udt, MemberFilter vis, ref bool breakOnNextScope)
+		protected bool DeepScanClass(UserDefinedType udt, MemberFilter vis, ref bool breakOnNextScope, bool resolveBaseClassIfRequired = false)
 		{
 			bool isBase = false;
+			
+			bool takeStaticChildrenOnly = ctxt.ScopedBlock is DMethod && (ctxt.ScopedBlock as DMethod).IsStatic;
+			
+			// Check if the scoped node's parent is the current class
+			if(takeStaticChildrenOnly)
+			{
+				takeStaticChildrenOnly = false;
+				var sc = udt.Definition as IBlockNode;
+				while(sc != null)
+				{
+					if(ctxt.ScopedBlock.Parent == sc)
+					{
+						takeStaticChildrenOnly = true;
+						break;
+					}
+					sc = sc.Parent as IBlockNode;
+				}
+			}
+			
 			while(udt!= null)
 			{
-				if(scanChildren(udt.Definition as DBlockNode, vis, ref breakOnNextScope, false, isBase))
+				if(scanChildren(udt.Definition as DBlockNode, vis, ref breakOnNextScope, false, isBase, false, takeStaticChildrenOnly))
 					return true;
 				
 				if(udt is TemplateIntermediateType){
+					if(resolveBaseClassIfRequired && udt.Base == null && 
+					   udt.Definition is DClassLike && (udt.Definition as DClassLike).ClassType == DTokens.Class)
+						udt = DResolver.ResolveBaseClasses(udt, ctxt, true);
+					
 					udt = udt.Base as UserDefinedType;
+					
 					isBase = true;
 				}
 				else
@@ -218,7 +218,8 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		                  ref bool breakOnNextScope,
 		                  bool publicImports = false,
 		                  bool isBaseClass = false,
-		                  bool isMixinAst = false)
+		                  bool isMixinAst = false,
+		                 bool takeStaticChildrenOnly = false)
 		{
 			if (curScope.TemplateParameters != null && ctxt.NodeIsInCurrentScopeHierarchy(curScope) &&
 			    (breakOnNextScope = HandleItems(curScope.TemplateParameterNodes as IEnumerable<INode>)) &&
@@ -233,7 +234,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					if(dn!=null && !ctxt.CurrentContext.MatchesDeclarationEnvironment(dn))
 						continue;
 					
-					if((CanShowMember(dn, ctxt.ScopedBlock) || isBaseClass && !isMixinAst) && (!publicImports || !isBaseClass || IsConstOrStatic(dn)))
+					if((CanShowMember(dn, ctxt.ScopedBlock) || isBaseClass && !isMixinAst) && ((!takeStaticChildrenOnly && (!publicImports || !isBaseClass)) || IsConstOrStatic(dn)))
 					{
 						if(!CheckForProtectedAttribute(dn,ctxt.ScopedBlock))
 							continue;
