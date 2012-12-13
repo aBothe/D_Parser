@@ -5051,13 +5051,16 @@ namespace D_Parser.Parser
 					Step();
 
 					if (IsAssignExpression())
-						al.Add(new TraitsArgument(){AssignExpression= AssignExpression()});
+						al.Add(new TraitsArgument(AssignExpression()));
 					else
-						al.Add(new TraitsArgument(){Type= Type()});
+						al.Add(new TraitsArgument(Type()));
 				}
 
 				if (Expect(CloseParenthesis))
 					TrackerVariables.ExpectingIdentifier = false;
+				
+				if(al.Count != 0)
+					ce.Arguments = al.ToArray();
 			}
 			ce.EndLocation = t.EndLocation;
 			return ce;

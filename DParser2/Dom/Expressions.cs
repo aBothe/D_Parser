@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+
 using D_Parser.Dom.Statements;
 using D_Parser.Parser;
 
@@ -1822,7 +1824,7 @@ namespace D_Parser.Dom.Expressions
 	{
 		public string Keyword;
 
-		public IEnumerable<TraitsArgument> Arguments;
+		public TraitsArgument[] Arguments;
 
 		public override string ToString()
 		{
@@ -1870,9 +1872,19 @@ namespace D_Parser.Dom.Expressions
 
 	public class TraitsArgument : ISyntaxRegion, IVisitable<ExpressionVisitor>
 	{
-		public ITypeDeclaration Type;
-		public IExpression AssignExpression;
+		public readonly ITypeDeclaration Type;
+		public readonly IExpression AssignExpression;
 
+		public TraitsArgument(ITypeDeclaration t)
+		{
+			this.Type = t;
+		}
+		
+		public TraitsArgument(IExpression x)
+		{
+			this.AssignExpression = x;
+		}
+		
 		public override string ToString()
 		{
 			return Type != null ? Type.ToString() : AssignExpression.ToString();
