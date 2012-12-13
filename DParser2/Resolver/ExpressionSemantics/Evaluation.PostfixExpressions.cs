@@ -34,8 +34,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			if (ex is PostfixExpression_Access)
 			{
-				bool ufcs=false;
-				var r = E((PostfixExpression_Access)ex, out ufcs, foreExpr, true);
+				var r = E((PostfixExpression_Access)ex, foreExpr, true);
 				ctxt.CheckForSingleResult(r, ex);
 				return r != null && r.Length != 0 ? r[0] : null;
 			}
@@ -63,9 +62,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			AbstractType[] baseExpression = null;
 			ISymbolValue baseValue = null;
 			TemplateInstanceExpression tix = null;
-			bool isUFCSFunction = false;
-
-			GetRawCallOverloads(call, out baseExpression, out baseValue, out tix, out isUFCSFunction);
+			
+			GetRawCallOverloads(call, out baseExpression, out baseValue, out tix);
 
 			var methodOverloads = new List<AbstractType>();
 
@@ -214,10 +212,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			// Get all arguments' types
 			var callArguments = new List<ISemantic>();
 
-			// If it's sure that we got a ufcs call here, add the base expression's type as first argument type
-			if (isUFCSFunction)
-				callArguments.Add(eval ? (ISemantic)baseValue : ((MemberSymbol)baseExpression[0]).Base);
-
 			if (call.Arguments != null)
 				foreach (var arg in call.Arguments)
 					callArguments.Add(E(arg));
@@ -250,6 +244,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			#endregion
 
 			#region Filter by parameter-argument comparison
+			bool hasHandledUfcsResultBefore = false;
 			var argTypeFilteredOverloads = new List<AbstractType>();
 
 			if(hasUndeterminedArgs)
@@ -265,6 +260,17 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 						if (dm != null)
 						{
+							// If it's sure that we got a ufcs call here, add the base expression's type as first argument type
+							if(ms.IsUFCSResult && !hasUndeterminedArgs){
+								callArguments.Insert(0, eval ? (ISemantic)baseValue : ((MemberSymbol)baseExpression[0]).Base);
+								hasUndeterminedArgs = true;
+							}
+							else if(!ms.IsUFCSResult && hasUndeterminedArgs) // In the rare case of having a ufcs result occuring _after_ a normal member result, remove the initial arg again
+							{
+								callArguments.RemoveAt(0);
+								hasUndeterminedArgs = false;
+							}
+							
 							ctxt.CurrentContext.IntroduceTemplateParameterTypes(ms);
 
 							add = false;
@@ -368,13 +374,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		void GetRawCallOverloads(PostfixExpression_MethodCall call, 
 			out AbstractType[] baseExpression, 
 			out ISymbolValue baseValue, 
-			out TemplateInstanceExpression tix, 
-			out bool isUFCSFunction)
+			out TemplateInstanceExpression tix)
 		{
 			baseExpression = null;
 			baseValue = null;
 			tix = null;
-			isUFCSFunction = false;
 
 			// Explicitly don't resolve the methods' return types - it'll be done after filtering to e.g. resolve template types to the deduced one
 			var optBackup = ctxt.CurrentContext.ContextDependentOptions;
@@ -386,7 +390,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				if (pac.AccessExpression is TemplateInstanceExpression)
 					tix = (TemplateInstanceExpression)pac.AccessExpression;
 
-				var vs = E(pac, out isUFCSFunction, null, false);
+				var vs = E(pac, null, false);
 
 				if (vs != null && vs.Length != 0)
 				{
@@ -436,10 +440,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			ctxt.CurrentContext.ContextDependentOptions = optBackup;
 		}
 
-		public static AbstractType[] GetAccessedOverloads(PostfixExpression_Access acc, ResolutionContext ctxt, out bool IsUFCS,
+		public static AbstractType[] GetAccessedOverloads(PostfixExpression_Access acc, ResolutionContext ctxt,
 			ISemantic resultBase = null, bool DeducePostfixTemplateParams = true)
 		{
-			return TypeDeclarationResolver.Convert(new Evaluation(ctxt).E(acc, out IsUFCS, resultBase, DeducePostfixTemplateParams));
+			return TypeDeclarationResolver.Convert(new Evaluation(ctxt).E(acc, resultBase, DeducePostfixTemplateParams));
 		}
 
 		/// <summary>
@@ -449,11 +453,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// which stores the return value of the property function b that is executed without arguments.
 		/// Also handles UFCS - so if filtering is wanted, the function becom
 		/// </summary>
-		ISemantic[] E(PostfixExpression_Access acc, out bool IsUFCS,
+		ISemantic[] E(PostfixExpression_Access acc,
 			ISemantic resultBase = null, bool EvalAndFilterOverloads = true)
 		{
-			IsUFCS = false;
-
 			if (acc == null)
 				return null;
 
@@ -465,6 +467,41 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				 * This can be both a normal new-Expression as well as an anonymous class declaration!
 				 */
 				//TODO!
+				return null;
+			}
+			
+			
+			AbstractType[] overloads;
+			
+			if (acc.AccessExpression is TemplateInstanceExpression)
+			{
+				var tix = (TemplateInstanceExpression)acc.AccessExpression;
+				// Do not deduce and filter if superior expression is a method call since call arguments' types also count as template arguments!
+				overloads = GetOverloads(tix, new[] { AbstractType.Get(baseExpression) }, EvalAndFilterOverloads);
+			}
+
+			else if (acc.AccessExpression is IdentifierExpression)
+			{
+				var id = (acc.AccessExpression as IdentifierExpression).Value as string;
+
+				overloads = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(id, new[] { AbstractType.Get(baseExpression) }, ctxt, acc.AccessExpression);
+
+				// Might be a static property
+				if (overloads == null)
+				{
+					var staticTypeProperty = StaticPropertyResolver.TryResolveStaticProperties(baseExpression, id, ctxt, eval);
+
+					if (staticTypeProperty != null)
+						return new[] { staticTypeProperty };
+				}
+			}
+			else
+			{
+				if (eval){
+					EvalError(acc, "Invalid access expression");
+					return null;
+				}
+				ctxt.LogError(acc, "Invalid post-dot expression");
 				return null;
 			}
 
@@ -486,44 +523,20 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			 * Probably also worth to notice is the property syntax..are property functions rather preferred than ufcs ones?
 			 * }
 			 */
-			var	overloads = UFCSResolver.TryResolveUFCS(baseExpression, acc, ctxt) as AbstractType[];
-
-			if (overloads == null)
+			if(overloads == null || EvalAndFilterOverloads)
 			{
-				if (acc.AccessExpression is TemplateInstanceExpression)
+				var	oo = UFCSResolver.TryResolveUFCS(baseExpression, acc, ctxt) as AbstractType[];
+	
+				if(oo != null)
 				{
-					var tix = (TemplateInstanceExpression)acc.AccessExpression;
-					// Do not deduce and filter if superior expression is a method call since call arguments' types also count as template arguments!
-					overloads = GetOverloads(tix, new[] { AbstractType.Get(baseExpression) }, EvalAndFilterOverloads);
-				}
-
-				else if (acc.AccessExpression is IdentifierExpression)
-				{
-					var id = (acc.AccessExpression as IdentifierExpression).Value as string;
-
-					overloads = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(id, new[] { AbstractType.Get(baseExpression) }, ctxt, acc.AccessExpression);
-
-					// Might be a static property
-					if (overloads == null)
-					{
-						var staticTypeProperty = StaticPropertyResolver.TryResolveStaticProperties(baseExpression, id, ctxt, eval);
-
-						if (staticTypeProperty != null)
-							return new[] { staticTypeProperty };
-					}
-				}
-				else
-				{
-					if (eval){
-						EvalError(acc, "Invalid access expression");
-						return null;
-					}
-					ctxt.LogError(acc, "Invalid post-dot expression");
-					return null;
+					int overloadsLength = overloads == null ? 0 : overloads.Length;
+					var newArr = new AbstractType[overloadsLength + oo.Length];
+					if(overloadsLength != 0)
+						overloads.CopyTo(newArr,0);
+					oo.CopyTo(newArr, overloadsLength);
+					overloads = newArr;
 				}
 			}
-			else
-				IsUFCS = true;
 
 			// If evaluation active and the access expression is stand-alone, return a single item only.
 			if (EvalAndFilterOverloads && eval)

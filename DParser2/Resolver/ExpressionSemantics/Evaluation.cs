@@ -216,8 +216,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				overloads = Evaluation.GetOverloads(foreExpression as IdentifierExpression, ctxt, false);
 			else if (foreExpression is PostfixExpression_Access)
 			{
-				bool ufcs = false; // TODO?
-				overloads = Evaluation.GetAccessedOverloads((PostfixExpression_Access)foreExpression, ctxt, out ufcs, null, false);
+				overloads = Evaluation.GetAccessedOverloads((PostfixExpression_Access)foreExpression, ctxt, null, false);
 			}
 			else if (foreExpression is TokenExpression)
 				overloads = GetResolvedConstructorOverloads((TokenExpression)foreExpression, ctxt);

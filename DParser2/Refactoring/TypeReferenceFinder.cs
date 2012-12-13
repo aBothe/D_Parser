@@ -258,8 +258,7 @@ namespace D_Parser.Refactoring
 					HandleResult(acc.PostfixForeExpression, pfType);
 			}
 			
-			bool ufcs=false;
-			var accessedMembers = Evaluation.GetAccessedOverloads(acc, ctxt, out ufcs, pfType);
+			var accessedMembers = Evaluation.GetAccessedOverloads(acc, ctxt, pfType);
 			ctxt.CheckForSingleResult(accessedMembers, acc);
 
 			if (accessedMembers != null && accessedMembers.Length != 0)
