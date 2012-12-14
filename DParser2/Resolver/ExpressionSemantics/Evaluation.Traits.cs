@@ -12,106 +12,133 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	{
 		ISemantic E(TraitsExpression te)
 		{
-			if(eval)
+			switch(te.Keyword)
 			{
-				switch(te.Keyword)
+				case "hasMember":
+					break;
+				case "identifier":
+					break;
+				case "getMember":
+					break;
+				case "getOverloads":
+					break;
+				case "getProtection":
+					break;
+				case "getVirtualFunctions":
+					break;
+				case "getVirtualMethods":
+					break;
+				case "parent":
+					break;
+				case "classInstanceSize":
+					break;
+				case "allMembers":
+					break;
+				case "derivedMembers":
+					break;
+				case "isSame":
+					break;
+				case "compiles":
+					break;
+			}
+			
+			if(te.Keyword.StartsWith("is"))
+			{
+				if(eval)
 				{
-					case "isAbstractClass":
-						if(te.Arguments == null)
-							return new PrimitiveValue(false, te);
-						
-						foreach(var arg in te.Arguments)
+					bool ret = false;
+					
+					if(te.Arguments != null)
+					foreach(var arg in te.Arguments)
+					{
+						AbstractType t;
+						if(arg.Type != null)
 						{
-							AbstractType t;
-							if(arg.Type != null)
-							{
-								t = TypeDeclarationResolver.ResolveSingle(arg.Type, ctxt);
-							}
-							else if(arg.AssignExpression != null)
-							{
-								t = DResolver.StripMemberSymbols(EvaluateType(arg.AssignExpression, ctxt));
-							}
-							else
-							{
-								EvalError(te, "Argument must be a type or an expression!");
-								return new PrimitiveValue(false, te);
-							}
+							t = TypeDeclarationResolver.ResolveSingle(arg.Type, ctxt);
 						}
-						break;
-					case "isArithmetic":
-						break;
-					case "isArithmeticArray":
-						break;
-					case "isFinalClass":
-						break;
-					case "isFloating":
-						break;
-					case "isIntegral":
-						break;
-					case "isScalar":
-						break;
-					case "isStaticArray":
-						break;
-					case "isUnsigned":
-						break;
-					case "isVirtualFunction":
-						break;
-					case "isVirtualMethod":
-						break;
-					case "isAbstractFunction":
-						break;
-					case "isFinalFunction":
-						break;
-					case "isStaticFunction":
-						break;
-					case "isRef":
-						break;
-					case "isOut":
-						break;
-					case "isLazy":
-						break;
-					case "hasMember":
-						break;
-					case "identifier":
-						break;
-					case "getMember":
-						break;
-					case "getOverloads":
-						break;
-					case "getProtection":
-						break;
-					case "getVirtualFunctions":
-						break;
-					case "getVirtualMethods":
-						break;
-					case "parent":
-						break;
-					case "classInstanceSize":
-						break;
-					case "allMembers":
-						break;
-					case "derivedMembers":
-						break;
-					case "isSame":
-						break;
-					case "compiles":
-						break;
-					default:
-						EvalError(te, "Illegal trait token");
-						return null;
+						else if(arg.AssignExpression != null)
+						{
+							t = DResolver.StripMemberSymbols(EvaluateType(arg.AssignExpression, ctxt));
+						}
+						else
+						{
+							EvalError(te, "Argument must be a type or an expression!");
+							return new PrimitiveValue(false, te);
+						}
+						
+						switch(te.Keyword)
+						{
+							case "isArithmetic":
+								var pt = t as PrimitiveType;
+								ret = pt != null && (
+									DTokens.BasicTypes_Integral[pt.TypeToken] || 
+									DTokens.BasicTypes_FloatingPoint[pt.TypeToken]);
+								break;
+							case "isFloating":
+								pt = t as PrimitiveType;
+								ret = pt != null && DTokens.BasicTypes_FloatingPoint[pt.TypeToken];
+								break;
+							case "isIntegral":
+								pt = t as PrimitiveType;
+								ret = pt != null && DTokens.BasicTypes_Integral[pt.TypeToken];
+								break;
+							case "isScalar":
+								pt = t as PrimitiveType;
+								ret = pt != null && DTokens.BasicTypes[pt.TypeToken];
+								break;
+							case "isUnsigned":
+								pt = t as PrimitiveType;
+								ret = pt != null && DTokens.BasicTypes_Unsigned[pt.TypeToken];
+								break;
+								
+							case "isAbstractClass":
+								ret = t is ClassType && (t as ClassType).Definition.ContainsAttribute(DTokens.Abstract);
+								break;
+							case "isFinalClass":
+								ret = t is ClassType && (t as ClassType).Definition.ContainsAttribute(DTokens.Final);
+								break;
+							
+							case "isAssociativeArray":
+								ret = t is AssocArrayType && !(t is ArrayType);
+								break;
+							case "isStaticArray":
+								ret = t is ArrayType && (t as ArrayType).IsStaticArray;
+								break;
+							
+							case "isVirtualFunction":
+								break;
+							case "isVirtualMethod":
+								break;
+							case "isAbstractFunction":
+								break;
+							case "isFinalFunction":
+								break;
+							case "isStaticFunction":
+								break;
+								
+							case "isRef":
+								break;
+							case "isOut":
+								break;
+							case "isLazy":
+								break;
+						}
+						
+						if(!ret)
+							break;
+					}
+					
+					return new PrimitiveValue(ret, te);
 				}
+				else
+					return new PrimitiveType(DTokens.Bool, 0, te);
 			}
 			else
 			{
-				if(te.Keyword.StartsWith("is") || 
-				   te.Keyword.StartsWith("has") ||
-				   te.Keyword == "compiles")
-				{
-					return new PrimitiveType(DTokens.Bool, 0, te);
-				}
+				if(eval)
+					EvalError(te, "Illegal trait token");
+				return null;
 			}
-			// TODO: Return either bools, strings, array (pointers) to members or stuff
-			return null;
 		}
 	}
 }

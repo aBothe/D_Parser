@@ -361,5 +361,54 @@ template isDynArg(T) {
 			
 			Assert.That(h1, Is.EqualTo(h2));
 		}
+		
+		#region Traits
+		[Test]
+		public void Traits()
+		{
+			var pcl = ResolutionTests.CreateCache(@"module A;
+int i;
+string s;
+
+abstract class C { int foo(); }
+class NC { int foo(); }
+
+C c;
+int[] dynArr;
+int[5] statArr;
+auto assocArr = ['c' : 23, 'b' : 84];
+");
+			var ctxt = ResolutionTests.CreateDefCtxt(pcl, pcl[0]["A"], null);
+			
+			BoolTrait(ctxt, "isArithmetic, int");
+			BoolTrait(ctxt, "isArithmetic, i, i+1, int");
+			BoolTrait(ctxt, "isArithmetic", false);
+			BoolTrait(ctxt, "isArithmetic, int*", false);
+			BoolTrait(ctxt, "isArithmetic, s, 123", false);
+			BoolTrait(ctxt, "isArithmetic, 123, s", false);
+			
+			BoolTrait(ctxt, "isAbstractClass, C, c");
+			BoolTrait(ctxt, "isAbstractClass, C");
+			BoolTrait(ctxt, "isAbstractClass, int", false);
+			BoolTrait(ctxt, "isAbstractClass, NC", false);
+			BoolTrait(ctxt, "isAbstractClass", false);
+			
+			BoolTrait(ctxt, "isAssociativeArray, assocArr");
+			BoolTrait(ctxt, "isAssociativeArray, dynArr", false);
+			BoolTrait(ctxt, "isStaticArray, statArr");
+			BoolTrait(ctxt, "isStaticArray, dynArr",false);
+		}
+		
+		void BoolTrait(ResolutionContext ctxt,string traitCode, bool shallReturnTrue = true)
+		{
+			var x = DParser.ParseExpression("__traits("+traitCode+")");
+			var v = Evaluation.EvaluateValue(x, ctxt);
+			
+			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			Assert.That((v as PrimitiveValue).BaseTypeToken, Is.EqualTo(DTokens.Bool));
+			Assert.That((v as PrimitiveValue).Value, Is.EqualTo(shallReturnTrue ? 1m : 0m));
+		}
+		
+		#endregion
 	}
 }
