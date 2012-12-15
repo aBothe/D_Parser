@@ -4,8 +4,8 @@ D_Parser - A library for D code analysis and completion mechanics
 by Alexander Bothe
 
 
-Released under the GPL.
-http://www.gnu.org/licenses/gpl-3.0
+For license info,
+see license.txt
 
 
 ==========================

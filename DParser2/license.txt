@@ -1,0 +1,7 @@
+﻿
+License for the D_Parser engine:
+
+You may use the compiled binaries or the source code (i.e. the entire code and/or parts) of this project
+for anything you want to do, as long as you mention me, Alexander Bothe, as the author of the original
+code + the url to where you found the original code 
+somewhere in your project's respective readme/license section.
