@@ -143,20 +143,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var l = TryGetValue(lValue ?? E(x.LeftOperand));
 			var r = TryGetValue(rValue ?? E(x.RightOperand));
 
-			bool isEq = false;
-
-			// If they are integral values or pointers, equality is defined as the bit pattern of the type matches exactly
-			if (l is PrimitiveValue && r is PrimitiveValue)
-			{
-				var pv_l = (PrimitiveValue)l;
-				var pv_r = (PrimitiveValue)r;
-
-				isEq = pv_l.Value == pv_r.Value && pv_l.ImaginaryPart == pv_r.ImaginaryPart;
-			}
-
-			/*
-			 * Furthermore TODO: object comparison, pointer content comparison
-			 */
+			var isEq = SymbolValueComparer.IsEqual(l, r);
 
 			return new PrimitiveValue(x.OperatorToken == DTokens.Equal ? isEq : !isEq, x);
 		}
