@@ -15,6 +15,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			switch(te.Keyword)
 			{
+				case "":
+				case null:
+					return null;
 				case "hasMember":
 					if(!eval)
 						return new PrimitiveType(DTokens.Bool, 0);
@@ -61,8 +64,51 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					return new PrimitiveValue(ret, te);
 					
 				case "identifier":
+					if(!eval)
+						return GetStringType();
+					
+					if(te.Arguments!=null && te.Arguments.Length == 1)
+						return new ArrayValue(GetStringType(), te.Arguments[0].ToString());
 					break;
+					
 				case "getMember":
+					
+					if(te.Arguments != null && te.Arguments.Length == 2)
+					{
+						var tEx = te.Arguments[0];
+						var t = DResolver.StripMemberSymbols(E(tEx,te));
+						
+						if(te.Arguments[1].AssignExpression != null)
+						{
+							var litEx = te.Arguments[1].AssignExpression;
+							var eval_Backup = eval;
+							eval = true;
+							var v = E(litEx);
+							eval = eval_Backup;
+							
+							if(v is ArrayValue && (v as ArrayValue).IsString)
+							{
+								var av = v as ArrayValue;
+								
+								// Mock up a postfix_access expression to ensure static properties & ufcs methods are checked either
+								var pfa = new PostfixExpression_Access{ 
+									PostfixForeExpression = tEx.AssignExpression ?? new TypeDeclarationExpression(tEx.Type),
+									AccessExpression = new IdentifierExpression(av.StringValue) {
+										Location = litEx.Location, 
+										EndLocation = litEx.EndLocation},
+									EndLocation = litEx.EndLocation};
+								var vs = E(pfa,t);
+								if(vs == null || vs.Length == 0)
+									return null;
+								return vs[0];
+							}
+							else
+								EvalError(te.Arguments[1].AssignExpression, "Second traits argument must evaluate to a string literal", v);
+						}
+						else
+							EvalError(te, "Second traits argument must be an expression");
+					}
+					
 					break;
 				case "getOverloads":
 					break;

@@ -1887,7 +1887,7 @@ namespace D_Parser.Dom.Expressions
 		
 		public override string ToString()
 		{
-			return Type != null ? Type.ToString() : AssignExpression.ToString();
+			return Type != null ? Type.ToString(false) : AssignExpression.ToString();
 		}
 
 		public CodeLocation Location

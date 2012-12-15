@@ -161,6 +161,9 @@ namespace Tests
 			TestBool("1 == 1 ? true : 2 == 1");
 			TestBool("false && true ? false : true");
 			TestBool("false && (true ? false: true)", false);
+			
+			TestBool("\"def\" == \"def\"");
+			TestBool("\"def\" != \"abc\"");
 		}
 
 		[Test]
@@ -450,6 +453,19 @@ template Tmpl(){
 			BoolTrait(ctxt, "hasMember, c, \"foo\"");
 			BoolTrait(ctxt, "hasMember, C, \"noFoo\"", false);
 			BoolTrait(ctxt, "hasMember, int, \"sizeof\"");
+			
+			var x = DParser.ParseExpression(@"__traits(identifier, C.aso.derp)");
+			var v = Evaluation.EvaluateValue(x, ctxt);
+			
+			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+			var av = v as ArrayValue;
+			Assert.That(av.IsString, Is.True);
+			Assert.That(av.StringValue, Is.EqualTo("C.aso.derp"));
+			
+			x = DParser.ParseExpression("__traits(getMember, c, \"foo\")");
+			var t = Evaluation.EvaluateType(x, ctxt);
+			
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 		}
 		
 		void BoolTrait(ResolutionContext ctxt,string traitCode, bool shallReturnTrue = true)
