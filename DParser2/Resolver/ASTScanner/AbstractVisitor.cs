@@ -234,13 +234,15 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					if(dn!=null && !ctxt.CurrentContext.MatchesDeclarationEnvironment(dn))
 						continue;
 					
-					if((CanShowMember(dn, ctxt.ScopedBlock) || isBaseClass && !isMixinAst) && ((!takeStaticChildrenOnly && (!publicImports || !isBaseClass)) || IsConstOrStatic(dn)))
-					{
-						if(!CheckForProtectedAttribute(dn,ctxt.ScopedBlock))
+					if((ctxt.Options & ResolutionOptions.IgnoreAllProtectionAttributes) != ResolutionOptions.IgnoreAllProtectionAttributes){
+						if((CanShowMember(dn, ctxt.ScopedBlock) || isBaseClass && !isMixinAst) && ((!takeStaticChildrenOnly && (!publicImports || !isBaseClass)) || IsConstOrStatic(dn)))
+						{
+							if(!CheckForProtectedAttribute(dn,ctxt.ScopedBlock))
+								continue;
+						}
+						else
 							continue;
 					}
-					else
-						continue;
 
 					// Add anonymous enums' items
 					if (dn is DEnum && string.IsNullOrEmpty(dn.Name) && CanAddMemberOfType(VisibleMembers, dn))

@@ -377,6 +377,34 @@ C c;
 int[] dynArr;
 int[5] statArr;
 auto assocArr = ['c' : 23, 'b' : 84];
+
+struct S {
+  void bar() { }
+}
+
+class D {
+	void bar() { }
+	abstract void absBar();
+	static void statFoo() {}
+	final void finBar() {};
+}
+
+class E : D{
+	final override void absBar()
+	{
+		
+	}
+	
+	final void bar() {}
+}
+
+interface I {
+  void bar();
+}
+
+template Tmpl(){
+	void bar();
+}
 ");
 			var ctxt = ResolutionTests.CreateDefCtxt(pcl, pcl[0]["A"], null);
 			
@@ -397,6 +425,31 @@ auto assocArr = ['c' : 23, 'b' : 84];
 			BoolTrait(ctxt, "isAssociativeArray, dynArr", false);
 			BoolTrait(ctxt, "isStaticArray, statArr");
 			BoolTrait(ctxt, "isStaticArray, dynArr",false);
+			
+			BoolTrait(ctxt, "isVirtualMethod, D.bar");
+			BoolTrait(ctxt, "isVirtualMethod, D.absBar");
+			BoolTrait(ctxt, "isVirtualMethod, I.bar");
+			BoolTrait(ctxt, "isVirtualMethod, Tmpl!().bar");
+			//BoolTrait(ctxt, "isVirtualMethod, E.bar");
+			//BoolTrait(ctxt, "isVirtualMethod, E.absBar");
+			BoolTrait(ctxt, "isVirtualMethod, S.bar", false);
+			BoolTrait(ctxt, "isVirtualMethod, D.statFoo", false);
+			BoolTrait(ctxt, "isVirtualMethod, D.finBar", false);
+			
+			BoolTrait(ctxt, "isVirtualFunction, D.bar");
+			BoolTrait(ctxt, "isVirtualFunction, D.absBar");
+			BoolTrait(ctxt, "isVirtualFunction, I.bar");
+			BoolTrait(ctxt, "isVirtualFunction, Tmpl!().bar");
+			//BoolTrait(ctxt, "isVirtualFunction, E.bar");
+			//BoolTrait(ctxt, "isVirtualFunction, E.absBar");
+			BoolTrait(ctxt, "isVirtualFunction, S.bar", false);
+			BoolTrait(ctxt, "isVirtualFunction, D.statFoo", false);
+			BoolTrait(ctxt, "isVirtualFunction, D.finBar");
+			
+			BoolTrait(ctxt, "hasMember, C, \"foo\"");
+			BoolTrait(ctxt, "hasMember, c, \"foo\"");
+			BoolTrait(ctxt, "hasMember, C, \"noFoo\"", false);
+			BoolTrait(ctxt, "hasMember, int, \"sizeof\"");
 		}
 		
 		void BoolTrait(ResolutionContext ctxt,string traitCode, bool shallReturnTrue = true)

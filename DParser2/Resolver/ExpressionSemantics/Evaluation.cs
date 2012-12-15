@@ -16,7 +16,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// True, if the expression's value shall be evaluated.
 		/// False, if the expression's type is wanted only.
 		/// </summary>
-		private readonly bool eval;
+		private bool eval;
 		private readonly ResolutionContext ctxt;
 		private List<EvaluationException> errors = new List<EvaluationException>();
 		
@@ -47,19 +47,23 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		#endregion
 		
 		#region Errors
+		bool ignoreErrors = false;
 		internal void EvalError(EvaluationException ex)
 		{
-			errors.Add(ex);
+			if(!ignoreErrors)
+				errors.Add(ex);
 		}
 		
 		internal void EvalError(IExpression x, string msg, ISemantic[] lastResults = null)
 		{
-			errors.Add(new EvaluationException(x,msg,lastResults));
+			if(!ignoreErrors)
+				errors.Add(new EvaluationException(x,msg,lastResults));
 		}
 		
 		internal void EvalError(IExpression x, string msg, ISemantic lastResult)
 		{
-			errors.Add(new EvaluationException(x,msg,new[]{lastResult}));
+			if(!ignoreErrors)
+				errors.Add(new EvaluationException(x,msg,new[]{lastResult}));
 		}
 		#endregion
 
@@ -171,6 +175,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			else if (x is PrimaryExpression)
 				ret= E(x as PrimaryExpression);
+			}
+			catch(Exception ex)
+			{
+				
 			}
 			finally{
 				if(evaluationDepth != 1)
