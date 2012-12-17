@@ -1,12 +1,14 @@
 ﻿using System;
-using System.Text;
 using System.Collections.Generic;
 using System.Linq;
-using NUnit.Framework;
+using System.Text;
+
 using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
+using D_Parser.Resolver.TypeResolution;
+using NUnit.Framework;
 
 namespace Tests
 {
@@ -383,6 +385,8 @@ auto assocArr = ['c' : 23, 'b' : 84];
 
 struct S {
   void bar() { }
+  void bar(int i) {}
+  void bar(string s) {}
 }
 
 class D {
@@ -466,6 +470,16 @@ template Tmpl(){
 			var t = Evaluation.EvaluateType(x, ctxt);
 			
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			
+			
+			
+			x = DParser.ParseExpression("__traits(getOverloads, S, \"bar\")");
+			v = Evaluation.EvaluateValue(x, ctxt);
+			Assert.That(v, Is.TypeOf(typeof(TypeValue)));
+			Assert.That((v as TypeValue).RepresentedType, Is.TypeOf(typeof(TypeTuple)));
+			
+			t = Evaluation.EvaluateType(x, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(TypeTuple)));
 		}
 		
 		void BoolTrait(ResolutionContext ctxt,string traitCode, bool shallReturnTrue = true)

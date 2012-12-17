@@ -18,6 +18,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				case "":
 				case null:
 					return null;
+					
 				case "hasMember":
 					if(!eval)
 						return new PrimitiveType(DTokens.Bool, 0);
@@ -26,42 +27,20 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					var optionsBackup = ctxt.ContextIndependentOptions;
 					ctxt.ContextIndependentOptions = ResolutionOptions.IgnoreAllProtectionAttributes;
 					
-					if(te.Arguments != null && te.Arguments.Length == 2)
-					{
-						var tEx = te.Arguments[0];
-						var t = DResolver.StripMemberSymbols(E(tEx,te));
-						
-						if(te.Arguments[1].AssignExpression != null)
-						{
-							var litEx = te.Arguments[1].AssignExpression;
-							var v = E(litEx);
-							
-							if(v is ArrayValue && (v as ArrayValue).IsString)
-							{
-								var av = v as ArrayValue;
-								
-								// Mock up a postfix_access expression to ensure static properties & ufcs methods are checked either
-								var pfa = new PostfixExpression_Access{ 
-									PostfixForeExpression = tEx.AssignExpression ?? new TypeDeclarationExpression(tEx.Type),
-									AccessExpression = new IdentifierExpression(av.StringValue) {
-										Location = litEx.Location, 
-										EndLocation = litEx.EndLocation},
-									EndLocation = litEx.EndLocation};
-								ignoreErrors = true;
-								eval = false;
-								ret = E(pfa, t, false) != null;
-								eval = true;
-								ignoreErrors = false;
-							}
-							else
-								EvalError(te.Arguments[1].AssignExpression, "Second traits argument must evaluate to a string literal", v);
-						}
-						else
-							EvalError(te, "Second traits argument must be an expression");
-					}
+					AbstractType t;
+					var pfa = prepareMemberTraitExpression(te, out t);
 					
+					if(pfa != null && t != null)
+					{
+						ignoreErrors = true;
+						eval = false;
+						ret = E(pfa, t, false) != null;
+						eval = true;
+						ignoreErrors = false;
+					}
 					ctxt.ContextIndependentOptions = optionsBackup;
 					return new PrimitiveValue(ret, te);
+					
 					
 				case "identifier":
 					if(!eval)
@@ -71,49 +50,68 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						return new ArrayValue(GetStringType(), te.Arguments[0].ToString());
 					break;
 					
-				case "getMember":
 					
-					if(te.Arguments != null && te.Arguments.Length == 2)
+				case "getMember":
+					pfa = prepareMemberTraitExpression(te, out t);
+					
+					if(pfa == null ||t == null)
+						break;
+					
+					var vs = E(pfa,t);
+					if(vs == null || vs.Length == 0)
+						return null;
+					return vs[0];
+					
+					
+				case "getOverloads":
+					optionsBackup = ctxt.ContextIndependentOptions;
+					ctxt.ContextIndependentOptions = ResolutionOptions.IgnoreAllProtectionAttributes;
+					
+					pfa = prepareMemberTraitExpression(te, out t);
+					
+					if(pfa != null  && t != null)
 					{
-						var tEx = te.Arguments[0];
-						var t = DResolver.StripMemberSymbols(E(tEx,te));
+						var evalBak = eval;
+						eval = false;
+						vs = E(pfa,t);
+						eval = evalBak;
+					}
+					else
+						vs = null;
+					
+					var l = new List<AbstractType>();
+					if(vs != null)
+						foreach(var sym in vs)
+							l.Add(AbstractType.Get(sym));
+					
+					ctxt.ContextIndependentOptions = optionsBackup;
+					
+					return eval ? new TypeValue(new TypeTuple(te, l)) as ISemantic : new TypeTuple(te, l);
+					
+					
+				case "getProtection":
+					if(!eval)
+						return GetStringType();
+					
+					optionsBackup = ctxt.ContextIndependentOptions;
+					ctxt.ContextIndependentOptions = ResolutionOptions.IgnoreAllProtectionAttributes;
+					
+					var prot = "public";
+					
+					if(te.Arguments == null || te.Arguments.Length != 1 || te.Arguments[0] == null)
+					{
+						EvalError(te, "First trait argument must be a symbol identifier");
+					}
+					else
+					{
 						
-						if(te.Arguments[1].AssignExpression != null)
-						{
-							var litEx = te.Arguments[1].AssignExpression;
-							var eval_Backup = eval;
-							eval = true;
-							var v = E(litEx);
-							eval = eval_Backup;
-							
-							if(v is ArrayValue && (v as ArrayValue).IsString)
-							{
-								var av = v as ArrayValue;
-								
-								// Mock up a postfix_access expression to ensure static properties & ufcs methods are checked either
-								var pfa = new PostfixExpression_Access{ 
-									PostfixForeExpression = tEx.AssignExpression ?? new TypeDeclarationExpression(tEx.Type),
-									AccessExpression = new IdentifierExpression(av.StringValue) {
-										Location = litEx.Location, 
-										EndLocation = litEx.EndLocation},
-									EndLocation = litEx.EndLocation};
-								var vs = E(pfa,t);
-								if(vs == null || vs.Length == 0)
-									return null;
-								return vs[0];
-							}
-							else
-								EvalError(te.Arguments[1].AssignExpression, "Second traits argument must evaluate to a string literal", v);
-						}
-						else
-							EvalError(te, "Second traits argument must be an expression");
 					}
 					
+					ctxt.ContextIndependentOptions = optionsBackup;
+					return new ArrayValue(GetStringType(), prot);
 					break;
-				case "getOverloads":
-					break;
-				case "getProtection":
-					break;
+					
+					
 				case "getVirtualFunctions":
 					break;
 				case "getVirtualMethods":
@@ -132,6 +130,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					break;
 			}
 			
+			#region isXYZ-traits
 			if(te.Keyword.StartsWith("is"))
 			{
 				if(eval)
@@ -258,6 +257,53 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					EvalError(te, "Illegal trait token");
 				return null;
 			}
+			#endregion
+		}
+		
+		/// <summary>
+		/// Used when evaluating traits.
+		/// Evaluates the first argument to <param name="t">t</param>, 
+		/// takes the second traits argument, tries to evaluate it to a string, and puts it + the first arg into an postfix_access expression
+		/// </summary>
+		PostfixExpression_Access prepareMemberTraitExpression(TraitsExpression te,out AbstractType t)
+		{
+			if(te.Arguments != null && te.Arguments.Length == 2)
+			{
+				var tEx = te.Arguments[0];
+				t = DResolver.StripMemberSymbols(E(tEx,te));
+				
+				if(t == null)
+					EvalError(te, "First argument didn't resolve to a type");
+				else if(te.Arguments[1].AssignExpression != null)
+				{
+					var litEx = te.Arguments[1].AssignExpression;
+					var eval_Backup = eval;
+					eval = true;
+					var v = E(litEx);
+					eval = eval_Backup;
+					
+					if(v is ArrayValue && (v as ArrayValue).IsString)
+					{
+						var av = v as ArrayValue;
+						
+						// Mock up a postfix_access expression to ensure static properties & ufcs methods are checked either
+						return new PostfixExpression_Access{ 
+							PostfixForeExpression = tEx.AssignExpression ?? new TypeDeclarationExpression(tEx.Type),
+							AccessExpression = new IdentifierExpression(av.StringValue) {
+								Location = litEx.Location, 
+								EndLocation = litEx.EndLocation},
+							EndLocation = litEx.EndLocation
+						};
+					}
+					else
+						EvalError(te.Arguments[1].AssignExpression, "Second traits argument must evaluate to a string literal", v);
+				}
+				else
+					EvalError(te, "Second traits argument must be an expression");
+			}
+			
+			t = null;
+			return null;
 		}
 		
 		AbstractType E(TraitsArgument arg, TraitsExpression te)
