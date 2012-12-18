@@ -194,7 +194,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="readme.txt" />
-    <Content Include="Todo.txt" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resolver\ExpressionSemantics\Caching" />
