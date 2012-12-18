@@ -394,6 +394,8 @@ class D {
 	abstract void absBar();
 	static void statFoo() {}
 	final void finBar() {};
+	private int privInt;
+	package int packInt;
 }
 
 class E : D{
@@ -480,6 +482,31 @@ template Tmpl(){
 			
 			t = Evaluation.EvaluateType(x, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(TypeTuple)));
+			
+			
+			x = DParser.ParseExpression("__traits(getProtection, D.privInt)");
+			v = Evaluation.EvaluateValue(x, ctxt);
+			
+			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+			av = v as ArrayValue;
+			Assert.That(av.IsString, Is.True);
+			Assert.That(av.StringValue, Is.EqualTo("private"));
+			
+			x = DParser.ParseExpression("__traits(getProtection, D)");
+			v = Evaluation.EvaluateValue(x, ctxt);
+			
+			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+			av = v as ArrayValue;
+			Assert.That(av.IsString, Is.True);
+			Assert.That(av.StringValue, Is.EqualTo("public"));
+			
+			x = DParser.ParseExpression("__traits(getProtection, D.packInt)");
+			v = Evaluation.EvaluateValue(x, ctxt);
+			
+			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+			av = v as ArrayValue;
+			Assert.That(av.IsString, Is.True);
+			Assert.That(av.StringValue, Is.EqualTo("package"));
 		}
 		
 		void BoolTrait(ResolutionContext ctxt,string traitCode, bool shallReturnTrue = true)

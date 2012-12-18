@@ -99,12 +99,26 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					var prot = "public";
 					
 					if(te.Arguments == null || te.Arguments.Length != 1 || te.Arguments[0] == null)
-					{
 						EvalError(te, "First trait argument must be a symbol identifier");
-					}
 					else
 					{
+						t = E(te.Arguments[0], te);
 						
+						if(t is DSymbol)
+						{
+							var dn = (t as DSymbol).Definition;
+							
+							if(dn.ContainsAttribute(DTokens.Private))
+								prot = "private";
+							else if(dn.ContainsAttribute(DTokens.Protected))
+								prot = "protected";
+							else if(dn.ContainsAttribute(DTokens.Package))
+								prot = "package";
+							else if(dn.ContainsAttribute(DTokens.Export))
+								prot = "export";
+						}
+						else
+							EvalError(te, "First argument must evaluate to an existing code symbol");
 					}
 					
 					ctxt.ContextIndependentOptions = optionsBackup;
