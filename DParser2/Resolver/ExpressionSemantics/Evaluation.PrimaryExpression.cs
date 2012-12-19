@@ -366,9 +366,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		ISemantic E(TypeDeclarationExpression x)
 		{
+			var t = TypeDeclarationResolver.ResolveSingle(x.Declaration, ctxt);
+			
 			if (eval)
-				throw new NotImplementedException("TODO: Handle static properties and ufcs functionality on type declaration expressions");
-			return TypeDeclarationResolver.ResolveSingle(((TypeDeclarationExpression)x).Declaration, ctxt);
+				return new TypeValue(t);
+			return t;
 		}
 	}
 }

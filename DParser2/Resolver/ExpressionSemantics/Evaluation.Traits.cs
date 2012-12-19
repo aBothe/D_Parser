@@ -138,10 +138,49 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					break;
 				case "derivedMembers":
 					break;
+					
 				case "isSame":
-					break;
+					if(!eval)
+						return new PrimitiveType(DTokens.Bool);
+					
+					ret = false;
+					
+					if(te.Arguments == null || te.Arguments.Length < 2)
+					{
+						EvalError(te, "isSame requires two arguments to compare");
+					}
+					else
+					{
+						t = E(te.Arguments[0], te);
+						
+						if(t != null)
+						{
+							var t2 = E(te.Arguments[1], te);
+							
+							if(t2 != null)
+								ret = Resolver.ResultComparer.IsEqual(t,t2);
+						}
+					}
+					
+					return new PrimitiveValue(ret, te);
+					
 				case "compiles":
-					break;
+					if(!eval)
+						return new PrimitiveType(DTokens.Bool);
+					
+					ret = false;
+					
+					if(te.Arguments != null){
+						foreach(var arg in te.Arguments)
+						{
+							ret = E(arg, te) != null;
+							
+							if(!ret)
+								break;
+						}
+					}
+						
+					return new PrimitiveValue(ret, te);
 			}
 			
 			#region isXYZ-traits

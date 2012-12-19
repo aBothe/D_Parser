@@ -196,16 +196,16 @@ namespace D_Parser.Resolver.TypeResolution
 		public static AbstractType Resolve(TypeOfDeclaration typeOf, ResolutionContext ctxt)
 		{
 			// typeof(return)
-			if (typeOf.InstanceId is TokenExpression && (typeOf.InstanceId as TokenExpression).Token == DTokens.Return)
+			if (typeOf.Expression is TokenExpression && (typeOf.Expression as TokenExpression).Token == DTokens.Return)
 			{
 				var m = HandleNodeMatch(ctxt.ScopedBlock, ctxt, null, typeOf);
 				if (m != null)
 					return m;
 			}
 			// typeOf(myInt)  =>  int
-			else if (typeOf.InstanceId != null)
+			else if (typeOf.Expression != null)
 			{
-				var wantedTypes = Evaluation.EvaluateType(typeOf.InstanceId, ctxt);
+				var wantedTypes = Evaluation.EvaluateType(typeOf.Expression, ctxt);
 				return DResolver.StripMemberSymbols(wantedTypes);
 			}
 

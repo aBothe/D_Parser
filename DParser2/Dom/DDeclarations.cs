@@ -253,11 +253,11 @@ namespace D_Parser.Dom
     /// </summary>
     public class TypeOfDeclaration : AbstractTypeDeclaration
     {
-    	public IExpression InstanceId;
+    	public IExpression Expression;
     	
 		public override string ToString(bool IncludesBase)
 		{
-			return (IncludesBase&& InnerDeclaration != null ? (InnerDeclaration.ToString()+" ") : "") + "typeof(" + (InstanceId != null ? InstanceId.ToString() : "") + ")";
+			return (IncludesBase&& InnerDeclaration != null ? (InnerDeclaration.ToString()+" ") : "") + "typeof(" + (Expression != null ? Expression.ToString() : "") + ")";
 		}
 
 		public override void Accept(TypeDeclarationVisitor vis)

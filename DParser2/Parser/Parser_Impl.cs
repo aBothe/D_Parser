@@ -1753,10 +1753,10 @@ namespace D_Parser.Parser
 				if (laKind == Return)
 				{
 					Step();
-					md.InstanceId = new TokenExpression(Return) { Location = t.Location, EndLocation = t.EndLocation };
+					md.Expression = new TokenExpression(Return) { Location = t.Location, EndLocation = t.EndLocation };
 				}
 				else
-					md.InstanceId = Expression();
+					md.Expression = Expression();
 				Expect(CloseParenthesis);
 			}
 			md.EndLocation = t.EndLocation;

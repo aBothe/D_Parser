@@ -795,8 +795,8 @@ namespace D_Parser.Dom
 		{
 			VisitInner(td);
 
-			if (td.InstanceId != null)
-				td.InstanceId.Accept(this);
+			if (td.Expression != null)
+				td.Expression.Accept(this);
 		}
 
 		public virtual void Visit(VectorDeclaration td)

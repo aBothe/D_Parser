@@ -387,6 +387,7 @@ struct S {
   void bar() { }
   void bar(int i) {}
   void bar(string s) {}
+  static int statInt;
 }
 
 class D {
@@ -414,7 +415,7 @@ interface I {
 template Tmpl(){
 	void bar();
 }
-");
+", @"module std.someStd;");
 			var ctxt = ResolutionTests.CreateDefCtxt(pcl, pcl[0]["A"], null);
 			
 			BoolTrait(ctxt, "isArithmetic, int");
@@ -507,6 +508,23 @@ template Tmpl(){
 			av = v as ArrayValue;
 			Assert.That(av.IsString, Is.True);
 			Assert.That(av.StringValue, Is.EqualTo("package"));
+			
+			BoolTrait(ctxt, "isSame, int, int");
+			BoolTrait(ctxt, "isSame, int, double", false);
+			BoolTrait(ctxt, "isSame, C, D", false);
+			BoolTrait(ctxt, "isSame, D, D");
+			
+			BoolTrait(ctxt, "compiles", false);
+			BoolTrait(ctxt, "compiles, asd.herp", false);
+			BoolTrait(ctxt, "compiles, i");
+			BoolTrait(ctxt, "compiles, i + 1");
+			//BoolTrait(ctxt, "compiles, &i + 1", false); //TODO: Check if both operand types match..is this still efficient?
+			BoolTrait(ctxt, "compiles, typeof(1)");
+			BoolTrait(ctxt, "compiles, S.bar", false); //TODO: Make the resolver not resolve non-static items implicitly (i.e. without explicit resolution option)
+			BoolTrait(ctxt, "compiles, S.statInt");
+			BoolTrait(ctxt, "compiles, 1,2,3,int,long,std");
+			BoolTrait(ctxt, "compiles, 1,2,3,int,long,3[1]");
+			BoolTrait(ctxt, "compiles, 3[1]", false);
 		}
 		
 		void BoolTrait(ResolutionContext ctxt,string traitCode, bool shallReturnTrue = true)
