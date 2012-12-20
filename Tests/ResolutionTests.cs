@@ -356,6 +356,20 @@ auto o = new Obj();
 			t = TypeDeclarationResolver.ResolveIdentifier("foo",ctxt,null);
 			Assert.That(t.Length, Is.EqualTo(1));
 		}
+		
+		[Test]
+		public void ExplicitModuleNames()
+		{
+			var pcl = CreateCache(@"module A; void aFoo();", @"module std.B; void bFoo();",@"module C;");
+			
+			var ctxt = CreateDefCtxt(pcl, pcl[0]["C"]);
+			
+			DToken tk;
+			var id = DParser.ParseBasicType("A.aFoo", out tk);
+			var t = TypeDeclarationResolver.ResolveSingle(id, ctxt);
+			
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+		}
 
 		[Test]
 		public void TestParamDeduction1()
