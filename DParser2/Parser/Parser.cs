@@ -216,6 +216,28 @@ namespace D_Parser.Parser
 				return m;
         	}
         }
+        
+        public static DMethod ParseMethodDeclarationHeader(string headerCode, out ITypeDeclaration identifierChain)
+        {
+        	using(var sr = new StringReader(headerCode))
+        	{
+	            var p = Create(sr);
+	            p.Step();
+	            
+	            var n = new DMethod();
+	            p.FunctionAttributes(n);
+	            
+	            n.Type = p.Type();
+	            
+	            identifierChain = p.IdentifierList();
+	            if(identifierChain is IdentifierDeclaration)
+	            	n.Name = (identifierChain as IdentifierDeclaration).Id;
+	            
+	            p.Parameters(n);
+	            
+	            return n;
+        	}
+        }
 
         /// <summary>
         /// Parses the module again
