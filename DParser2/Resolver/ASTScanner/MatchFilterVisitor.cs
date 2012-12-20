@@ -47,5 +47,11 @@ namespace D_Parser.Resolver.ASTScanner
 
 			return false;
 		}
+		
+		protected override bool HandleItem(PackageSymbol pack)
+		{
+			// HACK: Since UFCS isn't about packages, there's no need for handling anything in here (-> MatchFilterVisitor is only used in UFCSCache!)
+			return false;
+		}
 	}
 }

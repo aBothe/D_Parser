@@ -30,6 +30,20 @@ namespace D_Parser.Resolver.ASTScanner
 		{
 			return bn.Children[filterId];
 		}
+		
+		public override IEnumerable<IAbstractSyntaxTree> PrefilterSubnodes(ModulePackage pack, out ModulePackage[] subPackages)
+		{
+			ModulePackage subPack;
+			if(pack.Packages.TryGetValue(filterId, out subPack))
+				subPackages = new[]{ subPack };
+			else
+				subPackages = null;
+			
+			IAbstractSyntaxTree ast;
+			if(pack.Modules.TryGetValue(filterId, out ast))
+				return new[]{ast};
+			return null;
+		}
 
 		protected override bool HandleItem(INode n)
 		{
@@ -39,28 +53,13 @@ namespace D_Parser.Resolver.ASTScanner
             	return true;
             }
 
-            /*
-             * Can't tell if workaround .. or just nice idea:
-             * 
-             * To still be able to show sub-packages e.g. when std. has been typed,
-             * take the first import that begins with std.
-             * In HandleNodeMatch, it'll be converted to a module package result then.
-             */
-            else if (n is IAbstractSyntaxTree)
-            {
-                var modName = (n as IAbstractSyntaxTree).ModuleName;
-                if (modName.Split('.')[0] == filterId)
-                {
-                    foreach (var m in matches_types)
-                        if (m is ModuleSymbol)
-                            return false;
-                    
-	            	matches_types.Add(TypeDeclarationResolver.HandleNodeMatch(n, ctxt, null, idObject));
-	            	return true;
-                }
-            }
-
             return false;
+		}
+		
+		protected override bool HandleItem(PackageSymbol pack)
+		{
+			matches_types.Add(pack);
+			return true;
 		}
 	}
 	
@@ -81,15 +80,6 @@ namespace D_Parser.Resolver.ASTScanner
 			scan.ScanBlock(block, CodeLocation.Empty, MemberFilter.All, ref _unused);
 
 			return scan.matches_types;
-		}
-		
-		protected override bool HandleItem(INode n)
-		{
-			if (n != null && n.Name == filterId){
-            	matches_types.Add(TypeDeclarationResolver.HandleNodeMatch(n, ctxt, resultBase, idObject));
-            	return true;
-			}
-			return false;
 		}
 	}
 }

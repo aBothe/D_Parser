@@ -29,17 +29,6 @@ namespace D_Parser.Resolver.ASTScanner
 	{
 		protected ItemEnumeration(ResolutionContext ctxt): base(ctxt) { }
 
-		public static IEnumerable<INode> EnumAllAvailableMembers(IBlockNode ScopedBlock
-			, IStatement ScopedStatement,
-			CodeLocation Caret,
-			ParseCacheList CodeCache,
-			MemberFilter VisibleMembers,
-			ConditionalCompilationFlags compilationEnvironment = null)
-		{
-			var ctxt = ResolutionContext.Create(CodeCache, compilationEnvironment, ScopedBlock, ScopedStatement);
-			return EnumAllAvailableMembers(ctxt, Caret, VisibleMembers);
-		}
-
 		public static IEnumerable<INode> EnumAllAvailableMembers(
 			ResolutionContext ctxt,
 			CodeLocation Caret,
@@ -65,14 +54,9 @@ namespace D_Parser.Resolver.ASTScanner
 			return false;
 		}
 		
-		public static List<INode> EnumChildren(ResolutionContext ctxt, IBlockNode block, MemberFilter filter = MemberFilter.All)
+		protected override bool HandleItem(PackageSymbol pack)
 		{
-			var scan = new ItemEnumeration(ctxt);
-
-			bool _unused=false;
-			scan.ScanBlock(block, CodeLocation.Empty, MemberFilter.All, ref _unused);
-
-			return scan.Nodes;
+			return false;
 		}
 	}
 	
@@ -83,6 +67,20 @@ namespace D_Parser.Resolver.ASTScanner
 		protected MemberCompletionEnumeration(ResolutionContext ctxt, ICompletionDataGenerator gen) : base(ctxt) 
 		{
 			this.gen = gen;
+		}
+		
+		public static void EnumAllAvailableMembers(ICompletionDataGenerator cdgen, IBlockNode ScopedBlock
+			, IStatement ScopedStatement,
+			CodeLocation Caret,
+			ParseCacheList CodeCache,
+			MemberFilter VisibleMembers,
+			ConditionalCompilationFlags compilationEnvironment = null)
+		{
+			var ctxt = ResolutionContext.Create(CodeCache, compilationEnvironment, ScopedBlock, ScopedStatement);
+			
+			var en = new MemberCompletionEnumeration(ctxt, cdgen);
+
+			en.IterateThroughScopeLayers(Caret, VisibleMembers);
 		}
 		
 		public static void EnumChildren(ICompletionDataGenerator cdgen,ResolutionContext ctxt, UserDefinedType udt, bool isVarInstance)
@@ -105,6 +103,12 @@ namespace D_Parser.Resolver.ASTScanner
 		{
 			if(isVarInst || !(n is DMethod || n is DVariable || n is TemplateParameterNode) || (n as DNode).IsStatic)
 				gen.Add(n);
+			return false;
+		}
+		
+		protected override bool HandleItem(PackageSymbol pack)
+		{
+			gen.Add(pack.Package.Name, null, pack.Package.Path);
 			return false;
 		}
 	}

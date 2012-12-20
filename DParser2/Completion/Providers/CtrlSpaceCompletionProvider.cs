@@ -19,7 +19,7 @@ namespace D_Parser.Completion
 
 		protected override void BuildCompletionDataInternal(IEditorData Editor, string EnteredText)
 		{
-			IEnumerable<INode> listedItems = null;
+			//IEnumerable<INode> listedItems = null;
 			var visibleMembers = MemberFilter.All;
 
 			IStatement curStmt = null;
@@ -44,7 +44,14 @@ namespace D_Parser.Completion
 				// --> Happens if no actual declaration syntax given --> Show types/imports/keywords anyway
 				visibleMembers = MemberFilter.Imports | MemberFilter.Types | MemberFilter.Keywords;
 
-				listedItems = ItemEnumeration.EnumAllAvailableMembers(curBlock, null, Editor.CaretLocation, Editor.ParseCache, visibleMembers, new ConditionalCompilationFlags(Editor));
+				MemberCompletionEnumeration.EnumAllAvailableMembers(
+					CompletionDataGenerator,
+					curBlock, 
+					null, 
+					Editor.CaretLocation, 
+					Editor.ParseCache, 
+					visibleMembers, 
+					new ConditionalCompilationFlags(Editor));
 			}
 			else
 			{
@@ -132,12 +139,19 @@ namespace D_Parser.Completion
 					curStmt = null;
 
 
-				if (visibleMembers != MemberFilter.Imports) // Do not pass the curStmt because we already inserted all updated locals a few lines before!
-					listedItems = ItemEnumeration.EnumAllAvailableMembers(curBlock, curStmt, Editor.CaretLocation, Editor.ParseCache, visibleMembers, new ConditionalCompilationFlags(Editor));
+				//if (visibleMembers != MemberFilter.Imports) // Do not pass the curStmt because we already inserted all updated locals a few lines before!
+				MemberCompletionEnumeration.EnumAllAvailableMembers(
+					CompletionDataGenerator,
+				    curBlock, 
+				    curStmt, 
+				    Editor.CaretLocation, 
+				    Editor.ParseCache, 
+				    visibleMembers, 
+				    new ConditionalCompilationFlags(Editor));
 			}
 
 			// Add all found items to the referenced list
-			if (listedItems != null)
+/*			if (listedItems != null)
 				foreach (var i in listedItems)
 				{
 					if (i is IAbstractSyntaxTree) // Modules and stuff will be added later on
@@ -146,7 +160,7 @@ namespace D_Parser.Completion
 					if (CanItemBeShownGenerally(i))
 						CompletionDataGenerator.Add(i);
 				}
-
+*/
 			//TODO: Split the keywords into such that are allowed within block statements and non-block statements
 			// Insert typable keywords
 			if (visibleMembers.HasFlag(MemberFilter.Keywords))
@@ -158,7 +172,7 @@ namespace D_Parser.Completion
 					CompletionDataGenerator.Add(kv);
 
 			#region Add module name stubs of importable modules
-			if (visibleMembers.HasFlag(MemberFilter.Imports))
+			/*if (visibleMembers.HasFlag(MemberFilter.Imports))
 			{
 				var nameStubs = new Dictionary<string, string>();
 				var availModules = new List<IAbstractSyntaxTree>();
@@ -202,7 +216,7 @@ namespace D_Parser.Completion
 
 				foreach (var mod in availModules)
 					CompletionDataGenerator.Add(mod.ModuleName, mod);
-			}
+			}*/
 			#endregion
 		}
 

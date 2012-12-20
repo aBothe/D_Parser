@@ -52,11 +52,29 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		{
 			return bn.Children;
 		}
+		
+		public virtual IEnumerable<IAbstractSyntaxTree> PrefilterSubnodes(ModulePackage pack, out ModulePackage[] subPackages)
+		{
+			var mods = new IAbstractSyntaxTree[pack.Modules.Values.Count];
+			pack.Modules.Values.CopyTo(mods,0);
+			
+			if(pack.Packages.Count != 0)
+			{
+				subPackages = new ModulePackage[pack.Packages.Count];
+				pack.Packages.Values.CopyTo(subPackages, 0);
+			}
+			else
+				subPackages = null;
+			
+			return mods;
+		}
 
 		/// <summary>
 		/// Return true if search shall stop(!), false if search shall go on
 		/// </summary>
 		protected abstract bool HandleItem(INode n);
+		
+		protected abstract bool HandleItem(PackageSymbol pack);
 
 		protected virtual bool HandleItems(IEnumerable<INode> nodes)
 		{
@@ -97,8 +115,22 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			// Add __ctfe variable
 			if (!breakOnNextScope && 
 			    CanAddMemberOfType(VisibleMembers, __ctfe) &&
-			    HandleItem(__ctfe))
+			    HandleItem(__ctfe) && breakImmediately)
 					return true;
+			
+			// Handle root modules/packages
+			foreach(var pc in ctxt.ParseCache)
+			{
+				ModulePackage[] packs;
+				var mods = PrefilterSubnodes(pc.Root, out packs);
+				
+				if(packs != null)
+					foreach(var pack in packs)
+						HandleItem(new PackageSymbol(pack, null));
+				
+				if(mods != null)
+					HandleItems(mods);
+			}
 			
 			return false;
 		}
