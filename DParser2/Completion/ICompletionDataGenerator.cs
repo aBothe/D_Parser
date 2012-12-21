@@ -22,11 +22,7 @@ namespace D_Parser.Completion
 		/// <param name="Node"></param>
 		void Add(INode Node);
 
-		/// <summary>
-		/// Adds a module (name stub) to the completion data
-		/// </summary>
-		/// <param name="ModuleName"></param>
-		/// <param name="AssocModule"></param>
-		void Add(string ModuleName, IAbstractSyntaxTree Module = null, string PathOverride = null);
+		void AddModule(IAbstractSyntaxTree module,string nameOverride = null);
+		void AddPackage(string packageName);
 	}
 }

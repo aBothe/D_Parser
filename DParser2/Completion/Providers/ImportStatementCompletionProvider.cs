@@ -49,10 +49,10 @@ namespace D_Parser.Completion.Providers
 				foreach (var p in Editor.ParseCache.LookupPackage(pack))
 				{
 					foreach (var kv_pack in p.Packages)
-						CompletionDataGenerator.Add(kv_pack.Key);
+						CompletionDataGenerator.AddPackage(kv_pack.Key);
 
 					foreach (var kv_mod in p.Modules)
-						CompletionDataGenerator.Add(kv_mod.Key, kv_mod.Value);
+						CompletionDataGenerator.AddModule(kv_mod.Value, kv_mod.Key);
 				}
 			}
 			else if (impBind != null)

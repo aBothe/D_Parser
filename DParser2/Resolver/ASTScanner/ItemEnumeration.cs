@@ -13,16 +13,14 @@ namespace D_Parser.Resolver.ASTScanner
 	/// <summary>
 	/// A whitelisting filter for members to show in completion menus.
 	/// </summary>
-	[Flags]
 	public enum MemberFilter
 	{
-		Imports = 1,
-		Variables = 1 << 1,
-		Methods = 1 << 2,
-		Types = 1 << 3,
-		Keywords = 1 << 4,
+		Variables = 2,
+		Methods = 4,
+		Types = 8,
+		Keywords = 16,
 
-		All = Imports | Variables | Methods | Types | Keywords
+		All = Variables | Methods | Types | Keywords
 	}
 
 	public class ItemEnumeration : AbstractVisitor
@@ -78,7 +76,7 @@ namespace D_Parser.Resolver.ASTScanner
 		{
 			var ctxt = ResolutionContext.Create(CodeCache, compilationEnvironment, ScopedBlock, ScopedStatement);
 			
-			var en = new MemberCompletionEnumeration(ctxt, cdgen);
+			var en = new MemberCompletionEnumeration(ctxt, cdgen) {isVarInst = true};
 
 			en.IterateThroughScopeLayers(Caret, VisibleMembers);
 		}
@@ -102,13 +100,18 @@ namespace D_Parser.Resolver.ASTScanner
 		protected override bool HandleItem(INode n)
 		{
 			if(isVarInst || !(n is DMethod || n is DVariable || n is TemplateParameterNode) || (n as DNode).IsStatic)
-				gen.Add(n);
+			{
+				if(n is IAbstractSyntaxTree)
+					gen.AddModule(n as IAbstractSyntaxTree);
+				else
+					gen.Add(n);
+			}
 			return false;
 		}
 		
 		protected override bool HandleItem(PackageSymbol pack)
 		{
-			gen.Add(pack.Package.Name, null, pack.Package.Path);
+			gen.AddPackage(pack.Package.Name);
 			return false;
 		}
 	}

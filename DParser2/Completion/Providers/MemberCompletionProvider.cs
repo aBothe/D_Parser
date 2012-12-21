@@ -158,10 +158,10 @@ namespace D_Parser.Completion
 		void BuildCompletionData(PackageSymbol mpr)
 		{
 			foreach (var kv in mpr.Package.Packages)
-				CompletionDataGenerator.Add(kv.Key);
+				CompletionDataGenerator.AddPackage(kv.Key);
 
 			foreach (var kv in mpr.Package.Modules)
-				CompletionDataGenerator.Add(kv.Key, kv.Value);
+				CompletionDataGenerator.AddModule(kv.Value,kv.Key);
 		}
 
 		void BuildCompletionData(ModuleSymbol tr)

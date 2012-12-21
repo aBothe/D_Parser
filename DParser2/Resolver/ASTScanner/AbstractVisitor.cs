@@ -55,9 +55,6 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		
 		public virtual IEnumerable<IAbstractSyntaxTree> PrefilterSubnodes(ModulePackage pack, out ModulePackage[] subPackages)
 		{
-			var mods = new IAbstractSyntaxTree[pack.Modules.Values.Count];
-			pack.Modules.Values.CopyTo(mods,0);
-			
 			if(pack.Packages.Count != 0)
 			{
 				subPackages = new ModulePackage[pack.Packages.Count];
@@ -66,7 +63,13 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			else
 				subPackages = null;
 			
-			return mods;
+			if(pack.Modules.Values.Count != 0)
+			{
+				var mods = new IAbstractSyntaxTree[pack.Modules.Values.Count];
+				pack.Modules.Values.CopyTo(mods,0);
+				return mods;
+			}
+			return null;
 		}
 
 		/// <summary>
@@ -88,14 +91,42 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 		public virtual void IterateThroughScopeLayers(CodeLocation Caret, MemberFilter VisibleMembers = MemberFilter.All)
 		{
-			// 1)
 			if (ctxt.ScopedStatement != null &&
 				IterateThroughItemHierarchy(ctxt.ScopedStatement, Caret, VisibleMembers) &&
 					(ctxt.Options.HasFlag(ResolutionOptions.StopAfterFirstOverloads) ||
 					ctxt.Options.HasFlag(ResolutionOptions.StopAfterFirstMatch)))
 				return;
 
-			ScanBlockUpward(ctxt.ScopedBlock, Caret, VisibleMembers);			
+			if(ScanBlockUpward(ctxt.ScopedBlock, Caret, VisibleMembers))
+				return;
+			
+			// On the root level, add __ctfe variable
+			if (CanAddMemberOfType(VisibleMembers, __ctfe) && HandleItem(__ctfe) && breakImmediately)
+				return;
+			
+			// and all root modules/packages
+			var nameStubs = new List<string>();
+			foreach(var pc in ctxt.ParseCache)
+			{
+				ModulePackage[] packs;
+				var mods = PrefilterSubnodes(pc.Root, out packs);
+				
+				if(packs != null){
+					foreach(var pack in packs)
+					{
+						if(nameStubs.Contains(pack.Name))
+							continue;
+						
+						HandleItem(new PackageSymbol(pack, null));
+						nameStubs.Add(pack.Name);
+					}
+				}
+				
+				if(mods != null)
+				{
+					HandleItems(mods);
+				}
+			}
 		}
 		
 		bool ScanBlockUpward(IBlockNode curScope, CodeLocation Caret, MemberFilter VisibleMembers)
@@ -111,28 +142,8 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				curScope = curScope.Parent as IBlockNode;
 			}
 			while (curScope != null);
-
-			// Add __ctfe variable
-			if (!breakOnNextScope && 
-			    CanAddMemberOfType(VisibleMembers, __ctfe) &&
-			    HandleItem(__ctfe) && breakImmediately)
-					return true;
 			
-			// Handle root modules/packages
-			foreach(var pc in ctxt.ParseCache)
-			{
-				ModulePackage[] packs;
-				var mods = PrefilterSubnodes(pc.Root, out packs);
-				
-				if(packs != null)
-					foreach(var pack in packs)
-						HandleItem(new PackageSymbol(pack, null));
-				
-				if(mods != null)
-					HandleItems(mods);
-			}
-			
-			return false;
+			return breakOnNextScope;
 		}
 
 		protected bool ScanBlock(IBlockNode curScope, CodeLocation Caret, MemberFilter VisibleMembers, ref bool breakOnNextScope)
@@ -160,7 +171,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 						breakImmediately)
 					return true;
 
-				if (VisibleMembers.HasFlag(MemberFilter.Variables) &&
+				if (((VisibleMembers & MemberFilter.Variables) == MemberFilter.Variables) &&
 					(breakOnNextScope = HandleItems(dm.Parameters)) &&
 					breakImmediately)
 					return true;
@@ -337,10 +348,10 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			return false;
 		}
 
-		static bool CanAddMemberOfType(MemberFilter VisibleMembers, INode n)
+		static bool CanAddMemberOfType(MemberFilter vis, INode n)
 		{
 			if (n is DMethod)
-				return !string.IsNullOrEmpty(n.Name) && VisibleMembers.HasFlag(MemberFilter.Methods);
+				return !string.IsNullOrEmpty(n.Name) && ((vis & MemberFilter.Methods) == MemberFilter.Methods);
 
 			else if (n is DVariable)
 			{
@@ -349,27 +360,27 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				// Only add aliases if at least types,methods or variables shall be shown.
 				if (d.IsAlias)
 					return
-						VisibleMembers.HasFlag(MemberFilter.Methods) ||
-						VisibleMembers.HasFlag(MemberFilter.Types) ||
-						VisibleMembers.HasFlag(MemberFilter.Variables);
+						vis.HasFlag(MemberFilter.Methods) ||
+						vis.HasFlag(MemberFilter.Types) ||
+						vis.HasFlag(MemberFilter.Variables);
 
-				return VisibleMembers.HasFlag(MemberFilter.Variables);
+				return (vis & MemberFilter.Variables) == MemberFilter.Variables;
 			}
 
 			else if (n is DClassLike)
-				return VisibleMembers.HasFlag(MemberFilter.Types);
+				return (vis & MemberFilter.Types) == MemberFilter.Types;
 
 			else if (n is DEnum)
 			{
 				var d = n as DEnum;
 
 				// Only show enums if a) they're named and types are allowed or b) variables are allowed
-				return (d.IsAnonymous ? false : VisibleMembers.HasFlag(MemberFilter.Types)) ||
-					VisibleMembers.HasFlag(MemberFilter.Variables);
+				return (d.IsAnonymous ? false : vis.HasFlag(MemberFilter.Types)) ||
+					vis.HasFlag(MemberFilter.Variables);
 			}
 			else if(n is NamedTemplateMixinNode)
-				return VisibleMembers.HasFlag(MemberFilter.Variables) || VisibleMembers.HasFlag(MemberFilter.Types);
-
+				return (vis & (MemberFilter.Variables | MemberFilter.Types)) == (MemberFilter.Variables | MemberFilter.Types);
+			
 			return false;
 		}
 
@@ -599,9 +610,6 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					var scAst = ctxt.ScopedBlock.NodeRoot as IAbstractSyntaxTree;
 					if (module == null || (scAst != null && module.FileName == scAst.FileName && module.FileName != null))
 						continue;
-
-					if (HandleItem(module))
-						return true;
 
 					//ctxt.PushNewScope(module);
 

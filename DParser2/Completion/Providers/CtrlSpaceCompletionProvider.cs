@@ -19,7 +19,6 @@ namespace D_Parser.Completion
 
 		protected override void BuildCompletionDataInternal(IEditorData Editor, string EnteredText)
 		{
-			//IEnumerable<INode> listedItems = null;
 			var visibleMembers = MemberFilter.All;
 
 			IStatement curStmt = null;
@@ -41,8 +40,8 @@ namespace D_Parser.Completion
 			// 2) If in declaration and if node identifier is expected, do not show any data
 			if (trackVars == null)
 			{
-				// --> Happens if no actual declaration syntax given --> Show types/imports/keywords anyway
-				visibleMembers = MemberFilter.Imports | MemberFilter.Types | MemberFilter.Keywords;
+				// --> Happens if no actual declaration syntax given --> Show types/keywords anyway
+				visibleMembers = MemberFilter.Types | MemberFilter.Keywords;
 
 				MemberCompletionEnumeration.EnumAllAvailableMembers(
 					CompletionDataGenerator,
@@ -78,16 +77,14 @@ namespace D_Parser.Completion
 						return;
 				}
 
-				if (trackVars.LastParsedObject is ImportStatement)
-					visibleMembers = MemberFilter.Imports;
-				else if ((trackVars.LastParsedObject is NewExpression && trackVars.IsParsingInitializer) ||
+				if ((trackVars.LastParsedObject is NewExpression && trackVars.IsParsingInitializer) ||
 					trackVars.LastParsedObject is TemplateInstanceExpression && ((TemplateInstanceExpression)trackVars.LastParsedObject).Arguments == null)
-					visibleMembers = MemberFilter.Imports | MemberFilter.Types;
+					visibleMembers = MemberFilter.Types;
 				else if (EnteredText == " ")
 					return;
 				// In class bodies, do not show variables
 				else if (!(parsedBlock is BlockStatement || trackVars.IsParsingInitializer))
-					visibleMembers = MemberFilter.Imports | MemberFilter.Types | MemberFilter.Keywords;
+					visibleMembers = MemberFilter.Types | MemberFilter.Keywords;
 
 				/*
 				 * Handle module-scoped things:
@@ -138,8 +135,6 @@ namespace D_Parser.Completion
 				else
 					curStmt = null;
 
-
-				//if (visibleMembers != MemberFilter.Imports) // Do not pass the curStmt because we already inserted all updated locals a few lines before!
 				MemberCompletionEnumeration.EnumAllAvailableMembers(
 					CompletionDataGenerator,
 				    curBlock, 
@@ -150,17 +145,6 @@ namespace D_Parser.Completion
 				    new ConditionalCompilationFlags(Editor));
 			}
 
-			// Add all found items to the referenced list
-/*			if (listedItems != null)
-				foreach (var i in listedItems)
-				{
-					if (i is IAbstractSyntaxTree) // Modules and stuff will be added later on
-						continue;
-
-					if (CanItemBeShownGenerally(i))
-						CompletionDataGenerator.Add(i);
-				}
-*/
 			//TODO: Split the keywords into such that are allowed within block statements and non-block statements
 			// Insert typable keywords
 			if (visibleMembers.HasFlag(MemberFilter.Keywords))
@@ -170,54 +154,6 @@ namespace D_Parser.Completion
 			else if (visibleMembers.HasFlag(MemberFilter.Types))
 				foreach (var kv in DTokens.BasicTypes_Array)
 					CompletionDataGenerator.Add(kv);
-
-			#region Add module name stubs of importable modules
-			/*if (visibleMembers.HasFlag(MemberFilter.Imports))
-			{
-				var nameStubs = new Dictionary<string, string>();
-				var availModules = new List<IAbstractSyntaxTree>();
-				var ast = Editor.SyntaxTree;
-				
-				if(ast!=null && ast.StaticStatements!=null)
-				foreach (var sstmt in Editor.SyntaxTree.StaticStatements)
-					if (sstmt is ImportStatement)
-					{
-						var impStmt = (ImportStatement)sstmt;
-
-						foreach (var imp in impStmt.Imports)
-							if (string.IsNullOrEmpty(imp.ModuleAlias))
-							{
-								var id = imp.ModuleIdentifier.ToString();
-
-								IAbstractSyntaxTree mod = null;
-								foreach (var m in Editor.ParseCache.LookupModuleName(id))
-								{
-									mod = m;
-									break;
-								}
-
-								if (mod == null || string.IsNullOrEmpty(mod.ModuleName))
-									continue;
-
-								var stub = imp.ModuleIdentifier.InnerMost.ToString();
-
-								if (!nameStubs.ContainsKey(stub) && !availModules.Contains(mod))
-								{
-									if (stub == mod.ModuleName)
-										availModules.Add(mod);
-									else
-										nameStubs.Add(stub, GetModulePath(mod.FileName, id.Split('.').Length, 1));
-								}
-							}
-					}
-
-				foreach (var kv in nameStubs)
-					CompletionDataGenerator.Add(kv.Key, null, kv.Value);
-
-				foreach (var mod in availModules)
-					CompletionDataGenerator.Add(mod.ModuleName, mod);
-			}*/
-			#endregion
 		}
 
 		/// <returns>Either CurrentScope, a BlockStatement object that is associated with the parent method or a complete new DModule object</returns>
