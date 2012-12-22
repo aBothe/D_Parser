@@ -361,6 +361,7 @@ class C
 			TestExpressionEnd<PostfixExpression_Access>("Lexer.tokenize!Token(12, true, ");
 			//TestExpressionEnd<TokenExpression>("Lexer.tokenize!Token(12, true");
 			TestExpressionEnd<PostfixExpression_Access>("Lexer!HeyHo.tokenize!Token(");
+			TestExpressionEnd<TemplateInstanceExpression>("writeln(foo!int(");
 		}
 		
 		void TestExpressionEnd<T>(string expression)

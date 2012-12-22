@@ -225,6 +225,8 @@ namespace D_Parser.Parser
 	            p.Step();
 	            
 	            var n = new DMethod();
+	            p.CheckForStorageClasses(p.doc);
+	            p.ApplyAttributes(n);
 	            p.FunctionAttributes(n);
 	            
 	            n.Type = p.Type();
@@ -233,7 +235,8 @@ namespace D_Parser.Parser
 	            if(identifierChain is IdentifierDeclaration)
 	            	n.Name = (identifierChain as IdentifierDeclaration).Id;
 	            
-	            p.Parameters(n);
+	            
+	            n.Parameters = p.Parameters(n);
 	            
 	            return n;
         	}
