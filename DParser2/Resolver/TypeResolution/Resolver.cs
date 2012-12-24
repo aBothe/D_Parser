@@ -61,7 +61,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 				if (exprs != null)
 					foreach (var ex in exprs)
-						if ((targetExpr = ExpressionHelper.SearchExpressionDeeply(ex, editor.CaretLocation, true))
+						if ((targetExpr = ExpressionHelper.SearchExpressionDeeply(ex, editor.CaretLocation, Options.HasFlag(AstReparseOptions.WatchForParamExpressions)))
 							!= ex)
 							break;
 

@@ -14,12 +14,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	{
 		public static bool IsParamRelatedExpression(IExpression subEx)
 		{
+			var pfa = subEx as PostfixExpression_Access;
 			return subEx is PostfixExpression_MethodCall ||
 							subEx is TemplateInstanceExpression ||
 							subEx is NewExpression ||
-							(subEx is PostfixExpression_Access &&
-								(((PostfixExpression_Access)subEx).AccessExpression is NewExpression ||
-								((PostfixExpression_Access)subEx).AccessExpression is TemplateInstanceExpression));
+							(pfa != null &&
+								(pfa.AccessExpression is NewExpression || pfa.AccessExpression is TemplateInstanceExpression));
 		}
 
 		/// <summary>
@@ -33,13 +33,18 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if(e is PostfixExpression_MethodCall)
 			{
 				var mc = e as PostfixExpression_MethodCall;
+				
 				IExpression arg;
-				if(mc.Arguments!=null && mc.Arguments.Length!=0 && ((arg = mc.Arguments[mc.Arguments.Length-1]) is TokenExpression) &&
-				   (arg as TokenExpression).Token == DTokens.INVALID)
+				// A (-1;-1) is assumed as a safe indicator for handling the last expression in an expression chain!
+				if(mc.EndLocation.Line < 0)
 				{
-					// ...(| or
-					// ...(someArg0, someArg1, |
-					return WatchForParamSensitiveExpressions ? mc : mc.PostfixForeExpression;
+					if(mc.Arguments!=null && mc.Arguments.Length != 0){
+						arg = SearchExpressionDeeply(mc.Arguments[mc.Arguments.Length-1], Where, WatchForParamSensitiveExpressions);
+						
+						if(!WatchForParamSensitiveExpressions || IsParamRelatedExpression(arg))
+							return arg;
+					}
+					return mc;
 				}
 			}
 
@@ -55,8 +60,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				if (subExpressions == null || subExpressions.Length < 1)
 					break;
 				bool foundOne = false;
-				foreach (var se in subExpressions)
-					if (se != null && Where >= se.Location && Where <= se.EndLocation)
+				foreach (var se_ in subExpressions)
+				{
+					var se = se_;
+					if (se != null && (Where >= se.Location && Where <= se.EndLocation) || se.EndLocation.Line < 0)
 					{
 						/*
 						 * a.b -- take the entire access expression instead of b only in order to be able to resolve it correctly
@@ -72,13 +79,16 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							}
 							continue;
 						}
+						
+						se = SearchExpressionDeeply(se, Where, WatchForParamSensitiveExpressions);
 
-						if (WatchForParamSensitiveExpressions && IsParamRelatedExpression(se))
+						if (IsParamRelatedExpression(se))
 							lastParamSensExpr = se;
 						e = se;
 						foundOne = true;
 						break;
 					}
+				}
 
 				if (!foundOne)
 					break;

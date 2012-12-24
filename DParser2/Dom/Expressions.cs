@@ -1820,7 +1820,7 @@ namespace D_Parser.Dom.Expressions
 
 	}
 
-	public class TraitsExpression : PrimaryExpression
+	public class TraitsExpression : PrimaryExpression, ContainerExpression
 	{
 		public string Keyword;
 
@@ -1868,6 +1868,18 @@ namespace D_Parser.Dom.Expressions
 			return hashCode;
 		}
 
+		
+		public IExpression[] SubExpressions {
+			get {
+				if(Arguments == null || Arguments.Length == 0)
+					return null;
+				
+				var exs = new IExpression[Arguments.Length];
+				for(int i = Arguments.Length -1; i>=0; i--)
+					exs[i] = Arguments[i].AssignExpression;
+				return exs;
+			}
+		}
 	}
 
 	public class TraitsArgument : ISyntaxRegion, IVisitable<ExpressionVisitor>
@@ -1923,7 +1935,6 @@ namespace D_Parser.Dom.Expressions
 			}
 			return hashCode;
 		}
-
 	}
 
 	/// <summary>
