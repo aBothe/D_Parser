@@ -123,19 +123,7 @@ namespace D_Parser.Completion
 				res.ResolvedTypesOrMethods = Evaluation.GetUnfilteredMethodOverloads(call.PostfixForeExpression, ctxt, call);
 
 				if (call.Arguments != null)
-				{
-					int i = 0;
-					foreach (var arg in call.Arguments)
-					{
-						if (Editor.CaretLocation >= arg.Location && Editor.CaretLocation <= arg.EndLocation)
-						{
-							res.CurrentlyTypedArgumentIndex = i;
-							break;
-						}
-						i++;
-					}
-				}
-
+					res.CurrentlyTypedArgumentIndex = call.ArgumentCount;
 			}
 			// 3)
 			else if (lastParamExpression is TemplateInstanceExpression)
@@ -148,18 +136,7 @@ namespace D_Parser.Completion
 				res.ResolvedTypesOrMethods = Evaluation.GetOverloads(templ, ctxt, null, false);
 
 				if (templ.Arguments != null)
-				{
-					int i = 0;
-					foreach (var arg in templ.Arguments)
-					{
-						if (Editor.CaretLocation >= arg.Location && Editor.CaretLocation <= arg.EndLocation)
-						{
-							res.CurrentlyTypedArgumentIndex = i;
-							break;
-						}
-						i++;
-					}
-				}
+					res.CurrentlyTypedArgumentIndex = templ.Arguments.Length;
 			}
 			else if (lastParamExpression is PostfixExpression_Access)
 			{
@@ -275,7 +252,8 @@ namespace D_Parser.Completion
 			IEnumerable<AbstractType> resultBases=null)
 		{
 			if (nex.Arguments != null)
-			{
+				res.CurrentlyTypedArgumentIndex = nex.Arguments.Length;
+				/*{
 				int i = 0;
 				foreach (var arg in nex.Arguments)
 				{
@@ -286,7 +264,7 @@ namespace D_Parser.Completion
 					}
 					i++;
 				}
-			}
+			}*/
 		}
 
 		public static ArgumentsResolutionResult ResolveArgumentContext(IEditorData editorData)
