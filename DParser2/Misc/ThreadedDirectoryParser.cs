@@ -160,10 +160,13 @@ namespace D_Parser.Misc
 					LastException = ex;
 				}
 				
-				if (!(pack is RootPackage))
-					ast.ModuleName = pack.Path + "." + Path.GetFileNameWithoutExtension(file);
-				else if(string.IsNullOrEmpty(ast.ModuleName))
-					ast.ModuleName = Path.GetFileNameWithoutExtension(file);
+				if(!string.IsNullOrEmpty(ast.ModuleName))
+				{
+					if (pack is RootPackage)
+						ast.ModuleName = Path.GetFileNameWithoutExtension(file);
+					else
+						ast.ModuleName = pack.Path + "." + Path.GetFileNameWithoutExtension(file);
+				}
 
 				ast.FileName = file;
 				pack.Modules[ModuleNameHelper.ExtractModuleName(ast.ModuleName)] = ast;

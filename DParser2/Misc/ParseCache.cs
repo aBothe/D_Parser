@@ -18,6 +18,10 @@ namespace D_Parser.Misc
 		public bool IsParsing { get { return parseThread != null && parseThread.IsAlive; } }
 		Thread parseThread;
 
+		/// <summary>
+		/// FIXME: Make a fileLookup-package constraint that enforces a module naming consistency
+		/// </summary>
+		Dictionary<string, IAbstractSyntaxTree> fileLookup = new Dictionary<string, IAbstractSyntaxTree>();
 		public RootPackage Root = new RootPackage();
 
 		public bool EnableUfcsCaching = true;
@@ -220,6 +224,9 @@ namespace D_Parser.Misc
 			if (ast == null || string.IsNullOrEmpty(ast.ModuleName))
 				return;
 
+			if(!string.IsNullOrEmpty(ast.FileName))
+				fileLookup[ast.FileName] = ast;
+				
 			var packName = ModuleNameHelper.ExtractPackageName(ast.ModuleName);
 
 			if (string.IsNullOrEmpty(packName))
@@ -263,6 +270,9 @@ namespace D_Parser.Misc
 			if (string.IsNullOrEmpty(ast.ModuleName))
 				return Root.Modules.ContainsValue(ast) && Root.Modules.Remove("");
 
+			if(!string.IsNullOrEmpty(ast.FileName))
+				fileLookup.Remove(ast.FileName);
+			
 			return _remFromPack(Root, ast);
 		}
 
@@ -283,25 +293,11 @@ namespace D_Parser.Misc
 			return false;
 		}
 
-
-		public bool Remove(string moduleName)
-		{
-			var packName = ModuleNameHelper.ExtractPackageName(moduleName);
-			var pack = Root.GetOrCreateSubPackage(packName, false);
-
-			return pack != null && pack.Modules.Remove(ModuleNameHelper.ExtractModuleName(moduleName));
-		}
-
-		public bool RemovePackage(string packName)
-		{
-			var superPack = ModuleNameHelper.ExtractPackageName(packName);
-			var pack = Root.GetOrCreateSubPackage(superPack);
-
-			return pack != null && pack.Packages.Remove(ModuleNameHelper.ExtractModuleName(packName));
-		}
-
 		public IAbstractSyntaxTree GetModuleByFileName(string file, string baseDirectory)
 		{
+			IAbstractSyntaxTree ast;
+			if(fileLookup.TryGetValue(file, out ast))
+				return ast;
 			return GetModule(DModule.GetModuleName(baseDirectory, file));
 		}
 

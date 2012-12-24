@@ -200,8 +200,8 @@ namespace D_Parser.Parser
         {
             using(var sr = new StringReader(ModuleCode))
         	{
-	            var p = Create(sr);
-	            return p.Parse(SkipFunctionBodies);
+            	using(var p = Create(sr))
+            		return p.Parse(SkipFunctionBodies);
         	}
         }
 
@@ -211,7 +211,8 @@ namespace D_Parser.Parser
 	            var p=Create(s);
 	            var m = p.Parse(SkipFunctionBodies);
 	            m.FileName = File;
-				m.ModuleName = Path.GetFileNameWithoutExtension(File);
+	            if(string.IsNullOrEmpty(m.ModuleName))
+					m.ModuleName = Path.GetFileNameWithoutExtension(File);
 				s.Close();
 				return m;
         	}
