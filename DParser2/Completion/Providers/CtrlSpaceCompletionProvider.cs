@@ -85,6 +85,11 @@ namespace D_Parser.Completion
 				// In class bodies, do not show variables
 				else if (!(parsedBlock is BlockStatement || trackVars.IsParsingInitializer))
 					visibleMembers = MemberFilter.Types | MemberFilter.Keywords;
+				
+				// Hide completion if having typed a '0.' literal
+				else if(trackVars.LastParsedObject is IdentifierExpression &&
+				       (trackVars.LastParsedObject as IdentifierExpression).Format == LiteralFormat.Scalar)
+					return;
 
 				/*
 				 * Handle module-scoped things:
