@@ -600,7 +600,7 @@ namespace D_Parser.Resolver.TypeResolution
 				var mod = (IAbstractSyntaxTree)m;
 				if (typeBase != null && typeBase.ToString() != mod.ModuleName)
 				{
-					var pack = ctxt.ParseCache.LookupPackage(typeBase.ToString()).First();
+					var pack = ctxt.ParseCache.LookupPackage(typeBase.ToString()).FirstOrDefault();
 					if (pack != null)
 						ret = new PackageSymbol(pack, typeBase as ISyntaxRegion);
 				}
