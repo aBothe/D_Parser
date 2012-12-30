@@ -72,7 +72,7 @@ namespace D_Parser.Dom
 		/// <summary>
 		/// Used to identify constructor methods. Since it'd be a token otherwise it cannot be used as a regular method's name.
 		/// </summary>
-		public const string ConstructorIdentifier = "this";
+		public const string ConstructorIdentifier = "__ctor";
 
 		public DMethod()
 		{
