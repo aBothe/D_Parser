@@ -69,7 +69,7 @@ namespace D_Parser.Dom
 			return false;
 		}
 
-        public bool ContainsAttribute(params int[] Token)
+        public bool ContainsAttribute(params byte[] Token)
         {
             return Modifier.ContainsAttribute(Attributes, Token);
         }

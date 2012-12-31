@@ -67,7 +67,7 @@ namespace D_Parser.Dom
 		/// <summary>
 		/// Removes all public,private,protected or package attributes from the stack
 		/// </summary>
-		public static void CleanupAccessorAttributes(Stack<DAttribute> HayStack, int furtherAttrToRemove = -1)
+		public static void CleanupAccessorAttributes(Stack<DAttribute> HayStack, byte furtherAttrToRemove = 0)
 		{
 			var l=new List<DAttribute>();
 
@@ -83,7 +83,7 @@ namespace D_Parser.Dom
 				HayStack.Push(i);
 		}
 
-		public static void RemoveFromStack(Stack<DAttribute> HayStack, int Token)
+		public static void RemoveFromStack(Stack<DAttribute> HayStack, byte Token)
 		{
 			var l = new List<DAttribute>();
 
@@ -106,30 +106,30 @@ namespace D_Parser.Dom
 			return false;
 		}
 
-        public static bool ContainsAttribute(DAttribute[] HayStack,params int[] NeedleToken)
+        public static bool ContainsAttribute(DAttribute[] HayStack,params byte[] NeedleToken)
         {
 			if (HayStack == null || HayStack.Length == 0)
 				return false;
 
-            var l = new List<int>(NeedleToken);
+            var l = new List<byte>(NeedleToken);
 			foreach (var attr in HayStack)
 				if (attr is Modifier && l.Contains(((Modifier)attr).Token))
 					return true;
             
 			return false;
         }
-        public static bool ContainsAttribute(List<DAttribute> HayStack,params int[] NeedleToken)
+        public static bool ContainsAttribute(List<DAttribute> HayStack,params byte[] NeedleToken)
         {
-            var l = new List<int>(NeedleToken);
+            var l = new List<byte>(NeedleToken);
             if(HayStack!=null)
 	            foreach (var attr in HayStack)
 					if (attr is Modifier && l.Contains(((Modifier)attr).Token))
 	                    return true;
             return false;
         }
-		public static bool ContainsAttribute(Stack<DAttribute> HayStack, params int[] NeedleToken)
+		public static bool ContainsAttribute(Stack<DAttribute> HayStack, params byte[] NeedleToken)
 		{
-			var l = new List<int>(NeedleToken);
+			var l = new List<byte>(NeedleToken);
 			foreach (var attr in HayStack)
 				if (attr is Modifier && l.Contains(((Modifier)attr).Token))
 					return true;

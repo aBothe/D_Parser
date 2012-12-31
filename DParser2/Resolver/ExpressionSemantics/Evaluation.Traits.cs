@@ -212,7 +212,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 								if(dc != null && dc.ClassType != DTokens.Struct)
 								{
 									bool includeFinalNonOverridingMethods = te.Keyword == "isVirtualFunction";
-									ret = !dm.ContainsAttribute(includeFinalNonOverridingMethods ? 0 : DTokens.Final, DTokens.Static);
+									ret = !dm.ContainsAttribute(includeFinalNonOverridingMethods ? (byte)0 : DTokens.Final, DTokens.Static);
 								}
 								break;
 							case "isAbstractFunction":
