@@ -160,6 +160,21 @@ namespace D_Parser.Dom
 			return vis.VisitAttribute(this);
 		}
 	}
+    
+    public class DeprecatedAttribute : Modifier
+    {
+    	public IExpression DeprecationMessage
+    	{
+    		get{return LiteralContent as IExpression;}
+    	}
+    	public DeprecatedAttribute(CodeLocation loc, CodeLocation endLoc, IExpression msg = null)
+    		: base(DTokens.Deprecated)
+    	{
+    		this.Location = loc;
+    		EndLocation =endLoc;
+    		LiteralContent = msg;
+    	}
+    }
 
 	public class PragmaAttribute : Modifier
 	{

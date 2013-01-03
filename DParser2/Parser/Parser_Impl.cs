@@ -1892,6 +1892,19 @@ namespace D_Parser.Parser
 				if (!Expect(CloseParenthesis))
 					return;
 			}
+			else if(laKind == Deprecated)
+			{
+				Step();
+				var loc = t.Location;
+				IExpression lc = null;
+				if(laKind == OpenParenthesis)
+				{
+					Step();
+					lc = AssignExpression(scope);
+					Expect(CloseParenthesis);
+				}
+				attr = new DeprecatedAttribute(loc, t.EndLocation, lc);
+			}
 			else if (laKind == Pragma)
 				 attr=_Pragma();
 			else
