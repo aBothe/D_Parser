@@ -784,6 +784,7 @@ namespace D_Parser.Parser
 					}
 					while(laKind == Comma);
 					
+					Expect(Semicolon);
 					decls[decls.Count-1].Description += CheckForPostSemicolonComment();
 					return decls.ToArray();
 				}
@@ -1157,7 +1158,7 @@ namespace D_Parser.Parser
 					LastParsedObject = lpo;
 
 				var attributes = new List<Modifier>();
-				while (FunctionAttribute[laKind])
+				while (FunctionAttribute[laKind] || MemberFunctionAttribute[laKind])
 				{
 					Step();
 					attributes.Add(new Modifier(t.Kind, t.Value) { Location = t.Location, EndLocation = t.EndLocation });
@@ -2058,8 +2059,18 @@ namespace D_Parser.Parser
 								}
 							}
 						}
-						else if ((laKind == (Typeof) || MemberFunctionAttribute[laKind]) && Lexer.CurrentPeekToken.Kind == OpenParenthesis)
+						else if(Lexer.CurrentPeekToken.Kind == OpenParenthesis)
+						{
+							if(MemberFunctionAttribute[laKind])
+							{
 								OverPeekBrackets(OpenParenthesis);
+								bool isPrimitiveExpr = Lexer.CurrentPeekToken.Kind == Dot;
+								Peek(1);
+								return isPrimitiveExpr;
+							}
+							else if (laKind == Typeof)
+								OverPeekBrackets(OpenParenthesis);
+						}
 					}
 				}
 				else if(Peek(1).Kind != Dot && Peek().Kind!=Identifier)
@@ -2931,7 +2942,7 @@ namespace D_Parser.Parser
 					if (laKind == OpenParenthesis)
 						fl.AnonymousMethod.Parameters = Parameters(fl.AnonymousMethod);
 
-					while (FunctionAttribute[laKind])
+					while (FunctionAttribute[laKind] || MemberFunctionAttribute[laKind])
 					{
 						Step();
 
@@ -2941,7 +2952,7 @@ namespace D_Parser.Parser
 						fl.AnonymousMethod.Attributes.Add(new Modifier(t.Kind, t.Value) { Location = t.Location, EndLocation = t.EndLocation });
 					}
 				}
-
+				
 				FunctionBody(fl.AnonymousMethod);
 
 				fl.EndLocation = t.EndLocation;
@@ -3149,9 +3160,9 @@ namespace D_Parser.Parser
 
 				var bt=BasicType();
 
-				if (bt is TypeOfDeclaration && laKind!=Dot)
+				if ((bt is TypeOfDeclaration || bt is MemberFunctionAttributeDecl) && laKind!=Dot)
 					return new TypeDeclarationExpression(bt);
-
+				
 				// Things like incomplete 'float.' expressions shall be parseable, too
 				if (Expect(Dot) && (Expect(Identifier) || IsEOF))
                     return new PostfixExpression_Access()
@@ -3177,15 +3188,18 @@ namespace D_Parser.Parser
 
 		bool IsLambaExpression()
 		{
-			if (laKind != OpenParenthesis)
+			Lexer.StartPeek();
+			
+			if(laKind == Function || laKind == Delegate)
+				Lexer.Peek();
+			
+			if (Lexer.CurrentPeekToken.Kind != OpenParenthesis)
 			{
-				if (laKind == Identifier && Peek(1).Kind == GoesTo)
+				if (Lexer.CurrentPeekToken.Kind == Identifier && Peek().Kind == GoesTo)
 					return true;
 
 				return false;
 			}
-
-			Lexer.StartPeek();
 
 			OverPeekBrackets(OpenParenthesis, false);
 
@@ -3207,8 +3221,14 @@ namespace D_Parser.Parser
 		FunctionLiteral LambaExpression(IBlockNode Scope=null)
 		{
 			var fl = new FunctionLiteral { IsLambda=true };
-
+			
 			fl.Location = fl.AnonymousMethod.Location = la.Location;
+			
+			if(laKind == Function || laKind == Delegate)
+			{
+				fl.LiteralToken = laKind;
+				Step();
+			}
 
 			if (laKind == Identifier)
 			{
