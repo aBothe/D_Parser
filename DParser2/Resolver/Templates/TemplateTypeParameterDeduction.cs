@@ -381,10 +381,7 @@ namespace D_Parser.Resolver.Templates
 
 						foreach (var attr in dn.Attributes)
 						{
-							var m = attr as Modifier;
-							if (m!=null && m.IsProperty ?
-								!dn_arg.ContainsPropertyAttribute(m.LiteralContent as string) :
-								!dn_arg.ContainsAttribute(m.Token))
+							if(!dn_arg.ContainsAttribute(attr))
 								return false;
 						}
 					}

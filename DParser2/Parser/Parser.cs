@@ -312,7 +312,7 @@ namespace D_Parser.Parser
 					if (DTokens.VisModifiers[m.Token])
 						Modifier.CleanupAccessorAttributes(attrs);
 
-					if (m.IsProperty || !Modifier.ContainsAttribute(attrs, m.Token))
+					if (!Modifier.ContainsAttribute(attrs, m.Token))
 						attrs.Add(attr);
 				}
 				else

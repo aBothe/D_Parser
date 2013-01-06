@@ -677,7 +677,7 @@ namespace D_Parser.Parser
 		bool CheckForStorageClasses(DBlockNode scope)
 		{
 			bool ret = false;
-			while (IsStorageClass || laKind==PropertyAttribute)
+			while (IsStorageClass )
 			{
 				if (IsAttributeSpecifier()) // extern, align
 					AttributeSpecifier(scope);
@@ -685,7 +685,7 @@ namespace D_Parser.Parser
 				{
 					Step();
 					// Always allow more than only one property DAttribute
-					if (t.Kind == PropertyAttribute || !Modifier.ContainsAttribute(DeclarationAttributes.ToArray(), t.Kind))
+					if (!Modifier.ContainsAttribute(DeclarationAttributes.ToArray(), t.Kind))
 						PushAttribute(new Modifier(t.Kind, t.Value) { Location = t.Location, EndLocation = t.EndLocation }, false);
 				}
 				ret = true;
@@ -854,21 +854,21 @@ namespace D_Parser.Parser
 			// Autodeclaration
 			var StorageClass = DTokens.ContainsStorageClass(DeclarationAttributes.ToArray());
 
-			if (StorageClass.Token == Modifier.Empty.Token && laKind == Enum)
+			if (laKind == Enum && StorageClass == Modifier.Empty)
 			{
 				Step();
 				PushAttribute(StorageClass = new Modifier(Enum) { Location = t.Location, EndLocation = t.EndLocation },false);
 			}
 			
 			// If there's no explicit type declaration, leave our node's type empty!
-			if ((StorageClass.Token != Modifier.Empty.Token && 
+			if ((StorageClass != Modifier.Empty && 
 				laKind == (Identifier) && DeclarationAttributes.Count > 0)) // public auto var=0; // const foo(...) {} 
 			{
 				if (Lexer.CurrentPeekToken.Kind == Assign || Lexer.CurrentPeekToken.Kind ==OpenParenthesis) 
 				{ }
 				else if (Lexer.CurrentPeekToken.Kind == Semicolon)
 				{
-					SemErr(StorageClass.Token, "Initializer expected for auto type, semicolon found!");
+					SemErr(t.Kind, "Initializer expected for auto type, semicolon found!");
 				}
 				else
 					ttd = BasicType();
@@ -979,7 +979,7 @@ namespace D_Parser.Parser
 			return 
 				BasicTypes[laKind] || 
 				laKind == (Typeof) || 
-				MemberFunctionAttribute[laKind] || 
+				IsFunctionAttribute ||
 				(laKind == (Dot) && Lexer.CurrentPeekToken.Kind == (Identifier)) || 
 				//BasicTypes[Lexer.CurrentPeekToken.Kind] || 
 				laKind == (Identifier);
@@ -1157,13 +1157,9 @@ namespace D_Parser.Parser
 				if (!IsEOF)
 					LastParsedObject = lpo;
 
-				var attributes = new List<Modifier>();
-				while (FunctionAttribute[laKind] || MemberFunctionAttribute[laKind])
-				{
-					Step();
-					attributes.Add(new Modifier(t.Kind, t.Value) { Location = t.Location, EndLocation = t.EndLocation });
-				}
-				dd.Modifiers= attributes.Count>0? attributes.ToArray() : null;
+				var attributes = new List<DAttribute>();
+				FunctionAttributes(ref attributes);
+				dd.Modifiers= attributes.Count > 0 ? attributes.ToArray() : null;
 
 				dd.EndLocation = t.EndLocation;
 				return dd;
@@ -1291,7 +1287,7 @@ namespace D_Parser.Parser
 				}
 			}
 
-			if (IsDeclaratorSuffix || MemberFunctionAttribute[laKind])
+			if (IsDeclaratorSuffix || IsFunctionAttribute)
 			{
 				var dm = new DMethod { Parent = parent };
 				LastParsedObject = dm;
@@ -1443,8 +1439,8 @@ namespace D_Parser.Parser
 			laKind == (Scope) ||
 			laKind == (Static) ||
 			laKind == (Synchronized) ||
-			laKind == __gshared /*||
-			laKind == __thread*/;
+			laKind == __gshared ||
+			IsAtAttribute;
 			}
 		}
 
@@ -1843,7 +1839,17 @@ namespace D_Parser.Parser
 			return (laKind == (Extern) || laKind == (Export) || laKind == (Align) || laKind == Pragma || laKind == (Deprecated) || IsProtectionAttribute(laKind)
 				|| laKind == (Static) || laKind == (Final) || laKind == (Override) || laKind == (Abstract) || laKind == (Scope) || laKind == (__gshared) || laKind==Synchronized
 				|| ((laKind == (Auto) || MemberFunctionAttribute[laKind]) && (peekTokenKind != OpenParenthesis && peekTokenKind != Identifier))
-				|| laKind==PropertyAttribute);
+				|| laKind == At);
+		}
+		
+		/// <summary>
+		/// True on e.g. @property or @"Hey ho my attribute"
+		/// </summary>
+		bool IsAtAttribute
+		{
+			get{
+				return laKind == At;
+			}
 		}
 
 		bool IsProtectionAttribute()
@@ -1858,41 +1864,11 @@ namespace D_Parser.Parser
 
 		private void AttributeSpecifier(DBlockNode scope)
 		{
-			var attr = new Modifier(laKind, la.Value) { Location = la.Location };
-			LastParsedObject = attr;
-			if (laKind == Extern && Lexer.CurrentPeekToken.Kind == OpenParenthesis)
-			{
-				Step(); // Skip extern
-				Step(); // Skip (
-
-				TrackerVariables.ExpectingIdentifier = true;
-				var n = "";
-				while (!IsEOF && laKind != CloseParenthesis)
-				{
-					Step();
-					n += t.ToString();
-
-					TrackerVariables.ExpectingIdentifier = false;
-
-					if (t.Kind == Identifier && laKind == Identifier)
-						n += ' ';
-				}
-
-				attr.LiteralContent = n;
-
-				if (!Expect(CloseParenthesis))
-					return;
-			}
-			else if (laKind == Align && Lexer.CurrentPeekToken.Kind == OpenParenthesis)
-			{
-				Step();
-				Step();
-				if (Expect(Literal))
-					attr.LiteralContent = new IdentifierExpression(t.LiteralValue, t.LiteralFormat);
-
-				if (!Expect(CloseParenthesis))
-					return;
-			}
+			DAttribute attr;
+			if(IsAtAttribute)
+				attr = AtAttribute(scope);
+			else if (laKind == Pragma)
+				 attr=_Pragma();
 			else if(laKind == Deprecated)
 			{
 				Step();
@@ -1906,12 +1882,49 @@ namespace D_Parser.Parser
 				}
 				attr = new DeprecatedAttribute(loc, t.EndLocation, lc);
 			}
-			else if (laKind == Pragma)
-				 attr=_Pragma();
 			else
-				Step();
-
-			attr.EndLocation = t.EndLocation;
+			{
+				var m = new Modifier(laKind, la.Value) { Location = la.Location };
+				attr = m;
+				LastParsedObject = attr;
+				if (laKind == Extern && Lexer.CurrentPeekToken.Kind == OpenParenthesis)
+				{
+					Step(); // Skip extern
+					Step(); // Skip (
+	
+					TrackerVariables.ExpectingIdentifier = true;
+					var n = "";
+					while (!IsEOF && laKind != CloseParenthesis)
+					{
+						Step();
+						n += t.ToString();
+	
+						TrackerVariables.ExpectingIdentifier = false;
+	
+						if (t.Kind == Identifier && laKind == Identifier)
+							n += ' ';
+					}
+	
+					m.LiteralContent = n;
+	
+					if (!Expect(CloseParenthesis))
+						return;
+				}
+				else if (laKind == Align && Lexer.CurrentPeekToken.Kind == OpenParenthesis)
+				{
+					Step();
+					Step();
+					if (Expect(Literal))
+						m.LiteralContent = new IdentifierExpression(t.LiteralValue, t.LiteralFormat);
+	
+					if (!Expect(CloseParenthesis))
+						return;
+				}
+				else
+					Step();
+	
+				m.EndLocation = t.EndLocation;
+			}
 
 			if (laKind == Colon)
 				LastParsedObject = null;
@@ -1919,6 +1932,54 @@ namespace D_Parser.Parser
 			//TODO: What about these semicolons after e.g. a pragma? Enlist these attributes anyway in the meta decl list?
 			if (laKind != Semicolon)
 				AttributeTrail(scope, attr);
+		}
+		
+		/// <summary>
+		/// Parses an attribute that starts with an @. Might be user-defined or a built-in attribute.
+		/// Due to the fact that
+		/// </summary>
+		AtAttribute AtAttribute(IBlockNode scope)
+		{
+			var sl = la.Location;
+			Expect(At);
+			
+			if(laKind == Identifier)
+			{
+				BuiltInAtAttribute.BuiltInAttributes att = 0;
+				switch(la.Value)
+				{
+					case "safe":
+						att = BuiltInAtAttribute.BuiltInAttributes.Safe;
+					break;
+					case "system":
+						att = BuiltInAtAttribute.BuiltInAttributes.System;
+					break;
+					case "trusted":
+						att = BuiltInAtAttribute.BuiltInAttributes.Trusted;
+					break;
+					case "property":
+						att = BuiltInAtAttribute.BuiltInAttributes.Property;
+					break;
+					case "disable":
+						att = BuiltInAtAttribute.BuiltInAttributes.Disable;
+					break;
+				}
+				
+				if(att != 0)
+				{
+					Step();
+					return new BuiltInAtAttribute(att){Location = sl, EndLocation = t.EndLocation};
+				}
+			}
+			else if(laKind == OpenParenthesis)
+			{
+				Step();
+				var args = ArgumentList(scope);
+				Expect(CloseParenthesis);
+				return new UserDeclarationAttribute(args.ToArray()){Location = sl, EndLocation = t.EndLocation};
+			}
+			
+			return new UserDeclarationAttribute(new[]{PostfixExpression(scope)});
 		}
 
 		/// <summary>
@@ -1953,26 +2014,34 @@ namespace D_Parser.Parser
 				return new AttributeMetaDeclaration(previouslyParsedAttribute) { EndLocation = previouslyParsedAttribute.EndLocation };
 			}
 		}
+		
+		bool IsFunctionAttribute
+		{
+			get{return MemberFunctionAttribute[laKind] || IsAtAttribute;}
+		}
 
 		void FunctionAttributes(DNode n)
 		{
-			if (!MemberFunctionAttribute[laKind])
-				return;
-
 			FunctionAttributes(ref n.Attributes);
 		}
 
 		void FunctionAttributes(ref List<DAttribute> attributes)
 		{
-			Modifier attr = null;
-			while (MemberFunctionAttribute[laKind])
+			DAttribute attr=null;
+			if (attributes == null)
+				attributes = new List<DAttribute>();
+			while (IsFunctionAttribute)
 			{
-                if (attributes == null)
-                    attributes = new List<DAttribute>();
-				attributes.Add(attr = new Modifier(laKind, la.Value) { Location = la.Location, EndLocation = la.EndLocation });
-				LastParsedObject = attr;
-				Step();
+                if(IsAtAttribute)
+                	attr = AtAttribute(null);
+                else
+                {
+					attributes.Add(attr = new Modifier(laKind, la.Value) { Location = la.Location, EndLocation = la.EndLocation });
+					Step();
+                }
 			}
+			if(attr != null)
+				LastParsedObject = attr;
 		}
 		#endregion
 
@@ -2061,7 +2130,7 @@ namespace D_Parser.Parser
 						}
 						else if(Lexer.CurrentPeekToken.Kind == OpenParenthesis)
 						{
-							if(MemberFunctionAttribute[laKind])
+							if(IsFunctionAttribute)
 							{
 								OverPeekBrackets(OpenParenthesis);
 								bool isPrimitiveExpr = Lexer.CurrentPeekToken.Kind == Dot;
@@ -2934,7 +3003,7 @@ namespace D_Parser.Parser
 				*/
 				if (laKind != OpenCurlyBrace) // foo( 1, {bar();} ); -> is a legal delegate
 				{
-					if (!MemberFunctionAttribute[laKind] && Lexer.CurrentPeekToken.Kind == OpenParenthesis)
+					if (!IsFunctionAttribute && Lexer.CurrentPeekToken.Kind == OpenParenthesis)
 						fl.AnonymousMethod.Type = BasicType();
 					else if (laKind != OpenParenthesis && laKind != OpenCurlyBrace)
 						fl.AnonymousMethod.Type = Type();
@@ -2942,15 +3011,7 @@ namespace D_Parser.Parser
 					if (laKind == OpenParenthesis)
 						fl.AnonymousMethod.Parameters = Parameters(fl.AnonymousMethod);
 
-					while (FunctionAttribute[laKind] || MemberFunctionAttribute[laKind])
-					{
-						Step();
-
-						if(fl.AnonymousMethod.Attributes == null)
-							fl.AnonymousMethod.Attributes = new List<DAttribute>();
-						
-						fl.AnonymousMethod.Attributes.Add(new Modifier(t.Kind, t.Value) { Location = t.Location, EndLocation = t.EndLocation });
-					}
+					FunctionAttributes(fl.AnonymousMethod);
 				}
 				
 				FunctionBody(fl.AnonymousMethod);
@@ -3916,7 +3977,7 @@ namespace D_Parser.Parser
 				return ImportDeclaration(Scope);
 			}
 
-			else if (!(ClassLike[laKind] || BasicTypes[laKind] || laKind == Enum || Modifiers[laKind] || laKind == PropertyAttribute || laKind == Alias || laKind == Typedef) && IsAssignExpression())
+			else if (!(ClassLike[laKind] || BasicTypes[laKind] || laKind == Enum || Modifiers[laKind] || IsAtAttribute || laKind == Alias || laKind == Typedef) && IsAssignExpression())
 			{
 				var s = new ExpressionStatement() { Location = la.Location, Parent = Parent, ParentNode = Scope };
 

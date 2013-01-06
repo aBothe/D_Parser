@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
+
 using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
 
@@ -20,6 +22,93 @@ namespace D_Parser.Dom
 		public abstract void Accept(NodeVisitor vis);
 		public abstract R Accept<R>(NodeVisitor<R> vis);
 	}
+	
+	public abstract class AtAttribute : DAttribute {}
+	
+	public class BuiltInAtAttribute : AtAttribute
+	{
+		public enum BuiltInAttributes
+		{
+			Disable,
+			System,
+			Safe,
+			Property,
+			Trusted
+		}
+		
+		public readonly BuiltInAttributes Kind;
+		
+		public BuiltInAtAttribute(BuiltInAttributes kind)
+		{
+			this.Kind = kind;
+		}
+		
+		public override string ToString()
+		{
+			switch(Kind)
+			{
+				case BuiltInAttributes.Disable:
+					return "@disable";
+				case BuiltInAttributes.Property:
+					return "@property";
+				case BuiltInAttributes.Safe:
+					return "@safe";
+					case BuiltInAttributes.System:
+					return "@system";
+				case BuiltInAttributes.Trusted:
+					return "@trusted";
+			}
+			return "@<invalid>";
+		}
+
+		
+		public override R Accept<R>(NodeVisitor<R> vis)
+		{
+			throw new NotImplementedException();
+		}
+		
+		public override void Accept(NodeVisitor vis)
+		{
+			throw new NotImplementedException();
+		}
+	}
+	
+	public class UserDeclarationAttribute : AtAttribute
+	{
+		public readonly IExpression[] AttributeExpression;
+		
+		public UserDeclarationAttribute(IExpression[] x)
+		{
+			AttributeExpression = x;
+		}
+		
+		public override string ToString()
+		{
+			if(AttributeExpression == null)
+				return "@()";
+			if(AttributeExpression.Length == 1)
+				return "@"+AttributeExpression[0];
+			var sb = new StringBuilder();
+			sb.Append("@(");
+			for(int i = 0; i<AttributeExpression.Length;i++){
+				sb.Append(AttributeExpression[i]);
+				sb.Append(',');
+			}
+			sb.Remove(sb.Length-1,1);
+			sb.Append(")");
+			return sb.ToString();
+		}
+		
+		public override R Accept<R>(NodeVisitor<R> vis)
+		{
+			throw new NotImplementedException();
+		}
+		
+		public override void Accept(NodeVisitor vis)
+		{
+			throw new NotImplementedException();
+		}
+	}
 
     /// <summary>
     /// Represents an attrribute a declaration may have or consists of.
@@ -27,7 +116,7 @@ namespace D_Parser.Dom
     /// </summary>
     public class Modifier : DAttribute
     {
-        public byte Token;
+        public readonly byte Token;
         public object LiteralContent;
         public static readonly Modifier Empty = new Modifier(0xff);
 
@@ -45,9 +134,7 @@ namespace D_Parser.Dom
 
         public override string ToString()
         {
-			if (Token == DTokens.PropertyAttribute)
-				return "@" + (LiteralContent==null?"": LiteralContent.ToString());
-            if (LiteralContent != null)
+			if (LiteralContent != null)
                 return DTokens.GetTokenString(Token) + "(" + LiteralContent.ToString() + ")";
 			return DTokens.GetTokenString(Token);
         }
@@ -144,11 +231,6 @@ namespace D_Parser.Dom
                 return DTokens.StorageClass[Token];
             }
         }
-
-		public bool IsProperty
-		{
-			get { return Token == DTokens.PropertyAttribute; }
-		}
 	
 		public override void Accept(NodeVisitor vis)
 		{

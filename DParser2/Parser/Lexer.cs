@@ -481,6 +481,7 @@ namespace D_Parser.Parser
 		#region Actual tokenizing
 		DToken Next()
 		{
+			int next;
 			int nextChar;
 			char ch;
 			bool hadLineEnd = false;
@@ -551,30 +552,7 @@ namespace D_Parser.Parser
 						token = ReadChar();
 						break;
 					case '@':
-						int next = ReaderRead();
-						if (next == -1)
-						{
-							OnError(Line, Col, String.Format("EOF after @"));
-							continue;
-						}
-						else
-						{
-							x = Col - 1;
-							y = Line;
-							ch = (char)next;
-							if (Char.IsLetterOrDigit(ch) || ch == '_')
-							{
-								bool canBeKeyword;
-								var ident = ReadIdent(ch, out canBeKeyword);
-
-								token = Token(DTokens.PropertyAttribute, x - 1, y, ident);
-							}
-							else
-							{
-								OnError(y, x, String.Format("Unexpected char in Lexer.Next() : {0}", ch));
-								continue;
-							}
-						}
+						token = Token(DTokens.At, x,y, 1);
 						break;
 					default:
 						ch = (char)nextChar;

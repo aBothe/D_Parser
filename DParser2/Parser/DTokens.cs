@@ -163,11 +163,14 @@ namespace D_Parser.Parser
         public const byte While = 148;
         public const byte With = 149;
         public const byte __gshared = 150;
-        //public const byte __thread = 151;
+        /// <summary>
+        /// @
+        /// </summary>
+        public const byte At = 151;
         public const byte __traits = 152;
         public const byte Abstract = 153;
         public const byte Alias = 154;
-        public const byte PropertyAttribute = 155;
+        public const byte _unused = 155;
         public const byte GoesTo = 156; // =>  (lambda expressions)
         public const byte INVALID = 157;
         public const byte __vector = 158;
@@ -372,8 +375,8 @@ namespace D_Parser.Parser
 				Keywords_Lookup[kv.Value] = kv.Key;
 		}
 
-        public static BitArray FunctionAttribute = NewSet(Pure, Nothrow, PropertyAttribute);
-        public static BitArray MemberFunctionAttribute = NewSet(Const, Immutable, Shared, InOut, Pure, Nothrow, PropertyAttribute);
+        public static BitArray FunctionAttribute = NewSet(Pure, Nothrow);
+        public static BitArray MemberFunctionAttribute = NewSet(Const, Immutable, Shared, InOut, Pure, Nothrow);
         public static BitArray ParamModifiers = NewSet(In, Out, InOut, Ref, Lazy, Scope);
         public static BitArray ClassLike = NewSet(Class, Template, Interface, Struct, Union);
 
@@ -468,14 +471,15 @@ namespace D_Parser.Parser
         /// </summary>
         /// <param name="mods"></param>
         /// <returns></returns>
-        public static Modifier ContainsStorageClass(DAttribute[] mods)
+        public static DAttribute ContainsStorageClass(DAttribute[] mods)
         {
-            Modifier r=null;
-            foreach (var attr in mods)
+            for(int i = mods.Length -1; i >= 0;i--)
             {
-				r = attr as Modifier;
-				if (r != null && (r.IsStorageClass || r.IsProperty))
-					return r;
+            	var m = mods[i];
+            	if(m is Modifier && ((m as Modifier).IsStorageClass))
+            		return m;
+            	else if(m is AtAttribute)
+            		return m;
             }
             return Modifier.Empty;
         }
@@ -584,7 +588,8 @@ namespace D_Parser.Parser
 			{UnorderedOrLess,"!>="},
 			{UnorderedOrGreater,"!<="},
 
-			{GoesTo,"=>"}
+			{GoesTo,"=>"},
+			{At, "@"}
 		};
 
         public static string GetTokenString(byte token)

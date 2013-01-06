@@ -68,21 +68,53 @@ namespace D_Parser.Dom
 
 			return false;
 		}
+		
+		public bool ContainsAttribute(DAttribute attr)
+		{
+			if(attr is Modifier)
+				return ContainsAttribute((attr as Modifier).Token);
+			else if(attr is BuiltInAtAttribute)
+				return ContainsPropertyAttribute((attr as BuiltInAtAttribute).Kind);
+			else if(attr is UserDeclarationAttribute)
+				return ContainsPropertyAttribute((attr as UserDeclarationAttribute).AttributeExpression);
+			return false;
+		}
 
         public bool ContainsAttribute(params byte[] Token)
         {
             return Modifier.ContainsAttribute(Attributes, Token);
         }
 
-		public bool ContainsPropertyAttribute(string prop="property")
+		public bool ContainsPropertyAttribute(BuiltInAtAttribute.BuiltInAttributes kind)
 		{
 			if(Attributes!=null)
 				foreach (var attr in Attributes)
 				{
-					var mod = attr as Modifier;
-					if (mod!=null && mod.LiteralContent is string && ((string)mod.LiteralContent) == prop)
+					var mod = attr as BuiltInAtAttribute;
+					if (mod!=null && mod.Kind == kind)
 						return true;
 				}
+			return false;
+		}
+		
+		public bool ContainsPropertyAttribute(params IExpression[] userDefinedAttributeExpression)
+		{
+			if(Attributes != null && userDefinedAttributeExpression != null)
+			{
+				var h = new List<ulong>(userDefinedAttributeExpression.Length);
+				for(int i = userDefinedAttributeExpression.Length -1; i >= 0; i--)
+					h.Add(userDefinedAttributeExpression[i].GetHash());
+				
+				foreach(var attr in Attributes)
+				if(attr is UserDeclarationAttribute)
+				{
+					var uda = attr as UserDeclarationAttribute;
+					foreach(var x in uda.AttributeExpression){
+						if(h.Contains(x.GetHash())) //FIXME: Only compare the raw & unevaluated expressions
+							return true;
+					}
+				}
+			}
 			return false;
 		}
 
