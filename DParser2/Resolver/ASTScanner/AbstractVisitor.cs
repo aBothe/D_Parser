@@ -106,27 +106,28 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			
 			// and all root modules/packages
 			var nameStubs = new List<string>();
-			foreach(var pc in ctxt.ParseCache)
-			{
-				ModulePackage[] packs;
-				var mods = PrefilterSubnodes(pc.Root, out packs);
-				
-				if(packs != null){
-					foreach(var pack in packs)
+			if(ctxt.ParseCache != null)
+				foreach(var pc in ctxt.ParseCache)
+				{
+					ModulePackage[] packs;
+					var mods = PrefilterSubnodes(pc.Root, out packs);
+					
+					if(packs != null){
+						foreach(var pack in packs)
+						{
+							if(nameStubs.Contains(pack.Name))
+								continue;
+							
+							HandleItem(new PackageSymbol(pack, null));
+							nameStubs.Add(pack.Name);
+						}
+					}
+					
+					if(mods != null)
 					{
-						if(nameStubs.Contains(pack.Name))
-							continue;
-						
-						HandleItem(new PackageSymbol(pack, null));
-						nameStubs.Add(pack.Name);
+						HandleItems(mods);
 					}
 				}
-				
-				if(mods != null)
-				{
-					HandleItems(mods);
-				}
-			}
 		}
 		
 		bool ScanBlockUpward(IBlockNode curScope, CodeLocation Caret, MemberFilter VisibleMembers)
