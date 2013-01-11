@@ -45,6 +45,13 @@ namespace D_Parser.Misc.Mangling
 			
 			td = QualifiedName();
 			
+			bool isStatic = true;
+			if(r.Peek() == 'M')
+			{
+				r.Read();
+				isStatic = false;
+			}
+			
 			var t = Type();
 			
 			if(t is DSymbol)
@@ -56,6 +63,9 @@ namespace D_Parser.Misc.Mangling
 						ds.Definition.Name = (td as IdentifierDeclaration).Id;
 					else if(td is TemplateInstanceExpression)
 						ds.Definition.Name = (td as TemplateInstanceExpression).TemplateIdentifier.Id;
+					
+					if(isStatic && ds.Definition is DMethod)
+						(ds.Definition as DMethod).Attributes.Add(new Modifier(DTokens.Static));
 				}
 			}
 			return t;

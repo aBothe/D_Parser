@@ -97,7 +97,8 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					ctxt.Options.HasFlag(ResolutionOptions.StopAfterFirstMatch)))
 				return;
 
-			if(ScanBlockUpward(ctxt.ScopedBlock, Caret, VisibleMembers))
+			if(ctxt.ScopedBlock != null && 
+			   ScanBlockUpward(ctxt.ScopedBlock, Caret, VisibleMembers))
 				return;
 			
 			// On the root level, add __ctfe variable
@@ -299,7 +300,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 					var dm3 = dn as DMethod; // Only show normal & delegate methods
 					if (!CanAddMemberOfType(VisibleMembers, n) ||
-						(dm3 != null && !(dm3.SpecialType == DMethod.MethodType.Normal || dm3.SpecialType == DMethod.MethodType.Delegate)))
+						(dm3 != null && !(dm3.SpecialType == DMethod.MethodType.Normal || dm3.SpecialType == DMethod.MethodType.Delegate || dm3.Name != null)))
 						continue;
 
 					if ((breakOnNextScope = HandleItem(n)) && breakImmediately)
@@ -594,7 +595,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			if (imp == null || imp.ModuleIdentifier == null)
 				return false;
 
-			var thisModuleName = ctxt.ScopedBlock.NodeRoot is IAbstractSyntaxTree ? ((IAbstractSyntaxTree)ctxt.ScopedBlock.NodeRoot).ModuleName : string.Empty;
+			var thisModuleName = (ctxt.ScopedBlock != null && ctxt.ScopedBlock.NodeRoot is IAbstractSyntaxTree) ? ((IAbstractSyntaxTree)ctxt.ScopedBlock.NodeRoot).ModuleName : string.Empty;
 			var moduleName = imp.ModuleIdentifier.ToString();
 
 			List<string> seenModules = null;
@@ -605,10 +606,10 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				return false;
 			seenModules.Add(moduleName);
 
+			var scAst = ctxt.ScopedBlock == null ? null : ctxt.ScopedBlock.NodeRoot as IAbstractSyntaxTree;
 			if (ctxt.ParseCache != null)
 				foreach (var module in ctxt.ParseCache.LookupModuleName(moduleName)) //TODO: Only take the first module? Notify the user about ambigous module names?
 				{
-					var scAst = ctxt.ScopedBlock.NodeRoot as IAbstractSyntaxTree;
 					if (module == null || (scAst != null && module.FileName == scAst.FileName && module.FileName != null))
 						continue;
 
