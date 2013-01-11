@@ -1349,6 +1349,11 @@ namespace D_Parser.Dom.Expressions
 	public class ArrayLiteralExpression : PrimaryExpression,ContainerExpression
 	{
 		public readonly List<IExpression> Elements = new List<IExpression>();
+		
+		public ArrayLiteralExpression(List<IExpression> elements)
+		{
+			Elements = elements;
+		}
 
 		public override string ToString()
 		{

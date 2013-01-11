@@ -108,6 +108,7 @@
     <Compile Include="Dom\TemplateParameters.cs" />
     <Compile Include="Formatting\DFormattingOptions.cs" />
     <Compile Include="Formatting\IndentationCalculator.cs" />
+    <Compile Include="Misc\Mangling\Demangler.cs" />
     <Compile Include="Misc\NameMangling.cs" />
     <Compile Include="Misc\StringView.cs" />
     <Compile Include="Refactoring\DeepASTVisitor.cs" />
@@ -196,6 +197,7 @@
     <Content Include="readme.txt" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Misc\Mangling" />
     <Folder Include="Resolver\ExpressionSemantics\Caching" />
   </ItemGroup>
   <ItemGroup>

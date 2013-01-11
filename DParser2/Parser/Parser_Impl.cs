@@ -2908,7 +2908,7 @@ namespace D_Parser.Parser
 				if (laKind == CloseSquareBracket)
 				{
 					Step();
-					return new ArrayLiteralExpression() {Location=startLoc, EndLocation = t.EndLocation };
+					return new ArrayLiteralExpression(null) {Location=startLoc, EndLocation = t.EndLocation };
 				}
 
 				/*
@@ -2956,22 +2956,21 @@ namespace D_Parser.Parser
 				}
 				else // Normal array literal
 				{
-					var ae = new ArrayLiteralExpression() { Location=startLoc };
+					var ae = new List<IExpression>();
 					LastParsedObject = ae;
 					
-					ae.Elements.Add(firstExpression);
+					ae.Add(firstExpression);
 
 					while (laKind == Comma)
 					{
 						Step();
 						if (laKind == CloseSquareBracket) // And again, empty expressions are allowed
 							break;
-						ae.Elements.Add(isInitializer? NonVoidInitializer(Scope) : AssignExpression(Scope));
+						ae.Add(isInitializer? NonVoidInitializer(Scope) : AssignExpression(Scope));
 					}
 
 					Expect(CloseSquareBracket);
-					ae.EndLocation = t.EndLocation;
-					return ae;
+					return new ArrayLiteralExpression(ae){ Location=startLoc, EndLocation = t.EndLocation };
 				}
 			}
 			#endregion
