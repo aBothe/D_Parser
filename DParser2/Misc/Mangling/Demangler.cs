@@ -1,12 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Collections.Generic;
+
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
 using D_Parser.Resolver;
+using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Misc.Mangling
 {
@@ -20,13 +22,81 @@ namespace D_Parser.Misc.Mangling
 		StringReader r;
 		StringBuilder sb = new StringBuilder();
 		
-		public static AbstractType Demangle(string mangledString, out ITypeDeclaration qualifier)
+		public static AbstractType DemangleAndResolve(string mangledString, ResolutionContext ctxt)
+		{
+			ITypeDeclaration q;
+			return DemangleAndResolve(mangledString, ctxt, out q);
+		}
+		
+		public static AbstractType DemangleAndResolve(string mangledString, ResolutionContext ctxt, out ITypeDeclaration qualifier)
+		{
+			bool isCFunction;
+			var sym = D_Parser.Misc.Mangling.Demangler.Demangle(mangledString, out qualifier, out isCFunction);
+			
+			if(qualifier is IdentifierDeclaration && qualifier.InnerDeclaration == null)
+			{
+				var id = (qualifier as IdentifierDeclaration).Id;
+				var extC = new Modifier(DTokens.Extern, "C");
+				foreach(var pc in ctxt.ParseCache)
+				{
+					foreach(var mod in pc)
+					{
+						var nodes = mod[id];
+						if(nodes != null && nodes.Count != 0)
+						{
+							foreach(var n in nodes){
+								if(n is DMethod)
+								{
+									var dm = n as DMethod;
+									if(!isCFunction || dm.ContainsAttribute(extC))
+										return TypeDeclarationResolver.HandleNodeMatch(n, ctxt, null, qualifier);
+								}
+							}
+						}
+					}
+				}
+			}
+			
+			bool seekCtor = false;
+			if(qualifier is IdentifierDeclaration)
+			{
+				var id = (qualifier as IdentifierDeclaration).Id;
+				if((seekCtor = (id == DMethod.ConstructorIdentifier)) || id == "__Class" || id =="__ModuleInfo")
+					qualifier = qualifier.InnerDeclaration;
+			}
+
+			var resSym = TypeDeclarationResolver.ResolveSingle(qualifier,ctxt);
+			
+			if(seekCtor && resSym is UserDefinedType)
+			{
+				var ctor = (resSym as TemplateIntermediateType).Definition[DMethod.ConstructorIdentifier].FirstOrDefault();
+				if(ctor!= null)
+					resSym = new MemberSymbol(ctor as DNode, null, null);
+			}
+			return resSym;
+		}
+		
+		public static AbstractType Demangle(string mangledString, out ITypeDeclaration qualifier, out bool isCFunction)
 		{
 			if(string.IsNullOrEmpty(mangledString))
 				throw new ArgumentException("input string must not be null or empty!");
 			
-			if(!mangledString.StartsWith("_D"))
-				throw new ArgumentException("_D expected to be in front of the mangled string");
+			if(!mangledString.StartsWith("_D") || mangledString == "_Dmain")
+			{
+				if(mangledString.StartsWith("__D"))
+				{
+					mangledString = mangledString.Substring(1);
+					isCFunction = true;
+				}
+				else if(mangledString.StartsWith("_"))
+				{
+					qualifier = new IdentifierDeclaration(mangledString.Substring(1));
+					isCFunction = true;
+					return null;
+				}
+			}
+			//TODO: What about C functions that start with 'D'?
+			isCFunction = false;
 			
 			var dmng = new Demangler(mangledString);
 			
