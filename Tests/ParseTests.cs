@@ -9,6 +9,7 @@ using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
 using D_Parser.Misc;
+using D_Parser.Misc.Mangling;
 using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ASTScanner;
@@ -397,6 +398,13 @@ void foo()
 			var m = DParser.ParseString(@"alias str = immutable(char)[];");
 
 			Assert.AreEqual(0, m.ParseErrors.Count);
+		}
+		
+		[Test]
+		public void Demangling()
+		{
+			ITypeDeclaration q;
+			var t = Demangler.Demangle("_D3std5stdio35__T7writelnTC3std6stream4FileTAAyaZ7writelnFC3std6stream4FileAAyaZv", out q);
 		}
 	}
 }

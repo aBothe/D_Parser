@@ -384,7 +384,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (propertyIdentifier == "mangleof")
 			{
 				if(Evaluate)
-					return new ArrayValue(Evaluation.GetStringType(ctxt), NameMangling.Mangle(AbstractType.Get(InitialResult)));
+					return new ArrayValue(Evaluation.GetStringType(ctxt), "<todo>"/*NameMangling.Mangle(AbstractType.Get(InitialResult))*/);
 				
 				return new StaticProperty(
 					"mangleof", 

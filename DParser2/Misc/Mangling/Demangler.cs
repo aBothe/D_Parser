@@ -12,18 +12,15 @@ namespace D_Parser.Misc.Mangling
 {
 	// For a spec, see http://dlang.org/abi.html
 	
-	
 	/// <summary>
 	/// Description of Demangler.
 	/// </summary>
-	internal class Demangler
+	public class Demangler
 	{
-		ResolutionContext ctxt;
 		StringReader r;
 		StringBuilder sb = new StringBuilder();
 		
-		
-		public static AbstractType Demangle(string mangledString, ResolutionContext ctxt, out ITypeDeclaration qualifier)
+		public static AbstractType Demangle(string mangledString, out ITypeDeclaration qualifier)
 		{
 			if(string.IsNullOrEmpty(mangledString))
 				throw new ArgumentException("input string must not be null or empty!");
@@ -31,15 +28,14 @@ namespace D_Parser.Misc.Mangling
 			if(!mangledString.StartsWith("_D"))
 				throw new ArgumentException("_D expected to be in front of the mangled string");
 			
-			var dmng = new Demangler(mangledString, ctxt);
+			var dmng = new Demangler(mangledString);
 			
 			return dmng.MangledName(out qualifier);
 		}
 		
-		Demangler(string s, ResolutionContext ctxt)
+		Demangler(string s)
 		{
 			r = new StringReader(s);
-			this.ctxt = ctxt;
 		}
 		
 		AbstractType MangledName(out ITypeDeclaration td)
@@ -49,7 +45,20 @@ namespace D_Parser.Misc.Mangling
 			
 			td = QualifiedName();
 			
-			return null;
+			var t = Type();
+			
+			if(t is DSymbol)
+			{
+				var ds = t as DSymbol;
+				if(ds.Definition != null && td != null)
+				{
+					if(td is IdentifierDeclaration)
+						ds.Definition.Name = (td as IdentifierDeclaration).Id;
+					else if(td is TemplateInstanceExpression)
+						ds.Definition.Name = (td as TemplateInstanceExpression).TemplateIdentifier.Id;
+				}
+			}
+			return t;
 		}
 		
 		ITypeDeclaration QualifiedName()
@@ -512,7 +521,8 @@ namespace D_Parser.Misc.Mangling
 		bool PeekIsDecNumber
 		{
 			get{
-				return Lexer.IsLegalDigit((char)r.Peek(),10);
+				var d = (char)r.Peek();
+				return Lexer.IsLegalDigit(d,10) && d != '_';
 			}
 		}
 		
