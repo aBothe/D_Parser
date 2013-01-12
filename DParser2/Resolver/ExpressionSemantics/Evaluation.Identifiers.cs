@@ -191,7 +191,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public static AbstractType[] GetOverloads(TemplateInstanceExpression tix, ResolutionContext ctxt, IEnumerable<AbstractType> resultBases = null, bool deduceParameters = true)
 		{
-			AbstractType[] res = null;
+			if(resultBases == null && tix.InnerDeclaration != null)
+				resultBases = TypeDeclarationResolver.Resolve(tix.InnerDeclaration, ctxt);
+			
+			AbstractType[] res;
 			if (resultBases == null)
 				res = TypeDeclarationResolver.ResolveIdentifier(tix.TemplateIdentifier.Id, ctxt, tix, tix.TemplateIdentifier.ModuleScoped);
 			else

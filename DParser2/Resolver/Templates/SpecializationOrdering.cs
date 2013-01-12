@@ -162,7 +162,9 @@ namespace D_Parser.Resolver.Templates
 		bool IsMoreSpecialized(ITypeDeclaration Spec, ITemplateParameter t2, Dictionary<string, ISemantic> t1_DummyParamList)
 		{
 			// Make a type out of t1's specialization
-			ctxt.PushNewScope(ctxt.ScopedBlock.Parent as IBlockNode);
+			var pop = ctxt.ScopedBlock != null;
+			if(pop)
+				ctxt.PushNewScope(ctxt.ScopedBlock.Parent as IBlockNode);
 			var frame = ctxt.CurrentContext;
 
 			// Make the T in e.g. T[] a virtual type so T will be replaced by it
@@ -172,10 +174,12 @@ namespace D_Parser.Resolver.Templates
 				frame.DeducedTemplateParameters[kv.Key] = new TemplateParameterSymbol(t2,dummyType);
 
 			var t1_TypeResults = Resolver.TypeResolution.TypeDeclarationResolver.Resolve(Spec, ctxt);
+			
+			if(pop)
+				ctxt.Pop();
+			
 			if (t1_TypeResults == null || t1_TypeResults.Length == 0)
 				return true;
-
-			ctxt.Pop();
 
 			// Now try to fit the virtual Type t2 into t1 - and return true if it's possible
 			return new TemplateParameterDeduction(new DeducedTypeDictionary(), ctxt).Handle(t2, t1_TypeResults[0]);

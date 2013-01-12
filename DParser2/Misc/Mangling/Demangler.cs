@@ -33,28 +33,11 @@ namespace D_Parser.Misc.Mangling
 			bool isCFunction;
 			var sym = D_Parser.Misc.Mangling.Demangler.Demangle(mangledString, out qualifier, out isCFunction);
 			
+			// Seek for C functions | Functions that have no direct module association (e.g. _Dmain)
 			if(qualifier is IdentifierDeclaration && qualifier.InnerDeclaration == null)
 			{
 				var id = (qualifier as IdentifierDeclaration).Id;
-				var extC = new Modifier(DTokens.Extern, "C");
-				foreach(var pc in ctxt.ParseCache)
-				{
-					foreach(var mod in pc)
-					{
-						var nodes = mod[id];
-						if(nodes != null && nodes.Count != 0)
-						{
-							foreach(var n in nodes){
-								if(n is DMethod)
-								{
-									var dm = n as DMethod;
-									if(!isCFunction || dm.ContainsAttribute(extC))
-										return TypeDeclarationResolver.HandleNodeMatch(n, ctxt, null, qualifier);
-								}
-							}
-						}
-					}
-				}
+				return Resolver.ASTScanner.NameScan.ScanForCFunction(ctxt, id, isCFunction);
 			}
 			
 			bool seekCtor = false;
@@ -192,6 +175,43 @@ namespace D_Parser.Misc.Mangling
 				ttd.InnerDeclaration = td;
 				td = ttd;
 			}
+			
+			return td;
+		}
+		
+		/// <summary>
+		/// Removes the second 'put' from std.stdio.File.LockingTextWriter.put!(char).put
+		/// </summary>
+		public static ITypeDeclaration RemoveNestedTemplateRefsFromQualifier(ITypeDeclaration td)
+		{
+			if(td == null)
+				return null;
+			
+			string id;
+			
+			if(td is IdentifierDeclaration)
+				id = (td as IdentifierDeclaration).Id;
+			else if(td is TemplateInstanceExpression)
+			{
+				var tix = td as TemplateInstanceExpression;
+				id = tix.TemplateIdentifier.Id;
+				
+				if(tix.Arguments!=null && tix.Arguments.Length != 0)
+					foreach(var arg in tix.Arguments)
+						if(arg is TypeDeclarationExpression)
+							(arg as TypeDeclarationExpression).Declaration = RemoveNestedTemplateRefsFromQualifier((arg as TypeDeclarationExpression).Declaration);
+			}
+			else{
+				td.InnerDeclaration = RemoveNestedTemplateRefsFromQualifier(td.InnerDeclaration);
+				return td;
+			}
+			
+			if(td.InnerDeclaration is IdentifierDeclaration &&
+			   (td.InnerDeclaration as IdentifierDeclaration).Id == id)
+				return td.InnerDeclaration;
+			if(td.InnerDeclaration is TemplateInstanceExpression &&
+			   (td.InnerDeclaration as TemplateInstanceExpression).TemplateIdentifier.Id == id)
+				return td.InnerDeclaration;
 			
 			return td;
 		}
