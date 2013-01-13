@@ -107,6 +107,7 @@
     <Compile Include="Dom\Nodes\NodeDictionary.cs" />
     <Compile Include="Dom\TemplateParameters.cs" />
     <Compile Include="Formatting\DFormattingOptions.cs" />
+    <Compile Include="Formatting\IncrementalIndentCalc.cs" />
     <Compile Include="Formatting\IndentationCalculator.cs" />
     <Compile Include="Misc\Mangling\Demangler.cs" />
     <Compile Include="Misc\StringView.cs" />

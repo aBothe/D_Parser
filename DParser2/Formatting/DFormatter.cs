@@ -105,12 +105,8 @@ namespace D_Parser.Formatting
 
 		public CodeBlock CalculateIndentation(string code, int line)
 		{
-			var sr=new StringReader(code);
-			var cb= CalculateIndentation(sr, line);
-
-			sr.Close();
-
-			return cb;
+			using(var sr=new StringReader(code))
+				return CalculateIndentation(sr, line);
 		}
 
 		public bool IsEOF
