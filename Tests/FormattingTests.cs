@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 
 using D_Parser;
+using D_Parser.Dom;
 using D_Parser.Formatting;
 using NUnit.Framework;
 
@@ -26,9 +27,8 @@ std", 1);
 			TestLastLine(@"import std;
 import std;
 ", 0);
-			// TODO
-			/*TestLastLine(@"import std.stdio,
-	std.conv;",1);*/
+			TestLastLine(@"import std.stdio,
+	std.conv;",1);
 			TestLastLine(@"import std;
 import
 ", 1);
@@ -46,24 +46,24 @@ import
 class A
 {
 	private:
-		int a;
-		", 2);
+	int a;
+	", 1);
 
 			TestLastLine(@"
 class A
 {
 	private:
-		int a;
-		int b;
+	int a;
+	int b;
 }", 0);
 
 			TestLastLine(@"
 class A
 {
 	private:
-		int a;
+	int a;
 	public:
-		", 2);
+	", 1);
 
 			TestLastLine(@"foo();", 0);
 
@@ -71,7 +71,7 @@ class A
 ", 0);
 
 			TestLastLine(@"foo(
-);", 1);
+	);", 1);
 			TestLastLine(@"foo(
 	a.lol", 1);
 			TestLastLine(@"foo(
@@ -423,26 +423,33 @@ void main(string[] args)
 		void TestLastLine(string code, int targetIndent)
 		{
 			var newInd = GetLastLineIndent(code);
-			Assert.AreEqual(newInd, targetIndent, code);
+			Assert.AreEqual(targetIndent , newInd, code);
 
 			newInd = GetLastLineIndent(code, true, true);
-			Assert.AreEqual(newInd, targetIndent, "[Additional Content]\n"+code);
+			Assert.AreEqual(targetIndent, newInd, "[Additional Content]\n"+code);
 		}
 
 		void TestLine(string code, int line, int targetIndent)
-		{
+		{/*
+			var caret = DocumentHelper.OffsetToLocation(code, code.Length);
 			var newInd = GetLineIndent(code, line);
-			Assert.AreEqual(newInd, targetIndent, code);
+			Assert.AreEqual(newInd, targetIndent, code);*/
 		}
 
 
-		static int GetLineIndent(string code, int line)
+		static int GetLineIndent(string code, CodeLocation caret)
 		{
+			var cols = IncrementalIndentCalc.GetIndent(new GenericTextDocument(code), caret);
+			
+			int tabs, spaces;
+			IncrementalIndentCalc.CalcIndentTabsAndSpaces(cols, 4, out tabs, out spaces);
+			return tabs;
+			/*
 			var fmt = new DFormatter();
 
 			var cb = fmt.CalculateIndentation(code, line);
 
-			return cb != null ? cb.GetLineIndentation(line) : 0;
+			return cb != null ? cb.GetLineIndentation(line) : 0;*/
 		}
 
 		static int GetLastLineIndent(string code, bool AddNewLines = false, bool AddSomeFinalCode = false)
@@ -455,7 +462,7 @@ void main(string[] args)
 			if (AddSomeFinalCode)
 				code += "StaticFinalContent;";
 
-			return GetLineIndent(code, caret.Line);
+			return GetLineIndent(code, caret);
 		}
 	}
 }

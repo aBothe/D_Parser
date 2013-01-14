@@ -9,9 +9,13 @@ using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Formatting
 {
-	public class TextDocument
+	public class GenericTextDocument
 	{
-		public virtual string Text{get{return string.Empty;}}
+		readonly string text;
+		public GenericTextDocument(){ text = string.Empty; }
+		public GenericTextDocument(string txt) { this.text = txt; }
+		
+		public virtual string Text{get{return text;}}
 		
 		public virtual int LocationToOffset(CodeLocation l)
 		{
@@ -42,16 +46,24 @@ namespace D_Parser.Formatting
 	
 	public class IncrementalIndentCalc
 	{
+		#region Properties
 		readonly Lexer lx;
 		readonly int SpacersPerTab;
 		/// <summary>
 		/// If e.g. an ) occurred but there was no fitting anti-parenthesis, this value will be decreased by one tab unit.
 		/// </summary>
 		int startColumn;
-		Stack<Indent> indentStack = new Stack<IncrementalIndentCalc.Indent>();
+		readonly int lastLine;
+		List<Indent> indentStack = new List<IncrementalIndentCalc.Indent>();
+		#endregion
 		
+		#region Internal structs
 		class Indent
 		{
+			/// <summary>
+			/// CodeLocation.Empty, if not.
+			/// </summary>
+			public CodeLocation followedIncompleteStatement;
 			public readonly IndentReason reason;
 			public readonly CodeLocation loc;
 			
@@ -64,6 +76,8 @@ namespace D_Parser.Formatting
 		
 		enum IndentReason
 		{
+			None=0,
+			
 			/// <summary>
 			/// asdf &lt;linebreak>
 			/// </summary>
@@ -83,17 +97,24 @@ namespace D_Parser.Formatting
 			/// <summary>
 			/// [...]
 			/// </summary>
-			ArrayBlock
+			ArrayBlock,
+			
+			Block = IndentReason.ArrayBlock | IndentReason.CurlyBlock | IndentReason.ParenBlock,
 		}
+		#endregion
 		
+		#region I/O
 		/// <summary>
 		/// Calculates indent for a line.
 		/// </summary>
 		/// <returns>Not the number of tabs but the column number (starting at 1). Tabs & Spaces shall be calculated by the target application.</returns>
-		public static int GetIndent(TextDocument doc, CodeLocation locationToIndent)
+		public static int GetIndent(GenericTextDocument doc, CodeLocation locationToIndent)
 		{
+			if(doc.TextLength == 0 || locationToIndent.Line < 2)
+				return 0;
+			
 			var offsetToIndent = doc.LocationToOffset(locationToIndent);
-			int lineToStartStartOffsetSearchFrom = locationToIndent.Line;
+			int lineToStartStartOffsetSearchFrom = locationToIndent.Line -1;
 			// Detect whether we're in a special code section (string, char, comment [single line, nested, block]).
 			int lastRegionStart, lastRegionEnd;
 			var context = CaretContextAnalyzer.GetTokenContext(doc.Text, offsetToIndent, out lastRegionStart, out lastRegionEnd);
@@ -111,7 +132,8 @@ namespace D_Parser.Formatting
 			if(context != TokenContext.None)
 				return prevIndent;
 			
-			var lastLineOffset = doc.LocationToOffset(new CodeLocation(1,lastLine));
+			var lastLineLocation = new CodeLocation(1,lastLine);
+			var lastLineOffset = doc.LocationToOffset(lastLineLocation);
 			
 			char c;
 			for(; offsetToIndent < doc.TextLength; offsetToIndent++)
@@ -119,14 +141,15 @@ namespace D_Parser.Formatting
 					break;
 			
 			// Calculate the indent from there on using DLexer etc
-			var iic = new IncrementalIndentCalc(new StringView(doc.Text,lastLineOffset, offsetToIndent - lastLineOffset), doc.SpacesPerTab, prevIndent);
+			var iic = new IncrementalIndentCalc(new StringView(doc.Text,lastLineOffset, offsetToIndent - lastLineOffset),
+			                                    locationToIndent.Line, doc.SpacesPerTab, lastLineLocation, prevIndent);
 			iic.Walkthrough();
 			
 			// Return calculated indent
 			return iic.ActualIndent;
 		}
 		
-		public static int GetLastCodeLine(TextDocument doc, int lineToStartFrom, out int indentCol)
+		public static int GetLastCodeLine(GenericTextDocument doc, int lineToStartFrom, out int indentCol)
 		{
 			while(lineToStartFrom > 0)
 			{
@@ -155,10 +178,28 @@ namespace D_Parser.Formatting
 			return 1;
 		}
 		
-		IncrementalIndentCalc(TextReader tr, int spacersPerTab, int initialIndent = 0)
+		public static void CalcIndentTabsAndSpaces(int column, int spacersPerTab, out int tabs, out int spaces)
+		{
+			// Make a text length (0-based) out of column (1-based)
+			if(column > 1)
+				column--;
+			
+			if(spacersPerTab == 0)
+			{
+				tabs = spaces = 0;
+				return;
+			}
+			tabs = column / spacersPerTab;
+			spaces = column % spacersPerTab;
+		}
+		#endregion
+		
+		IncrementalIndentCalc(TextReader tr, int lastLine, int spacersPerTab, CodeLocation initialLocation, int initialIndent = 0)
 		{
 			lx = new Lexer(tr);
+			lx.SetInitialLocation(initialLocation);
 			lx.NextToken();
+			this.lastLine = lastLine;
 			this.SpacersPerTab = spacersPerTab;
 			this.startColumn = initialIndent;
 		}
@@ -166,8 +207,127 @@ namespace D_Parser.Formatting
 		public int ActualIndent
 		{
 			get{
-				return 0;
+				if(indentStack.Count == 0)
+					return startColumn;
+				
+				var ind = indentStack[indentStack.Count-1];
+				
+				if(ind.reason == IndentReason.IncompleteStatement)
+				{
+					if(ind.loc.Line == lx.LookAhead.Line)
+						ind = indentStack[indentStack.Count-2];
+					
+					return ind.loc.Column + SpacersPerTab;
+				}
+				return ind.loc.Column;
 			}
+		}
+		
+		void _push(IndentReason r, IndentReason indentsToPop = IndentReason.None, bool popOneIndent = false)
+		{
+			var ind = new Indent(r, lx.LookAhead.Location) { 
+			                	followedIncompleteStatement = LastIndentReason == IndentReason.IncompleteStatement ? 
+			                		indentStack[indentStack.Count-1].loc : CodeLocation.Empty };
+			
+			if(popOneIndent)
+				popOne(indentsToPop);
+			else
+				popAll(indentsToPop);
+			
+			indentStack.Add(ind);
+		}
+		
+		void _pop()
+		{
+			if(indentStack.Count == 0){
+				startColumn -= SpacersPerTab;
+				if(startColumn<1)
+					startColumn=1;
+			}
+			else
+				indentStack.RemoveAt(indentStack.Count-1);
+		}
+		
+		void popOne(IndentReason conditions)
+		{
+			IndentReason ir;
+			if(indentStack.Count == 0 || (conditions & (ir=LastIndentReason)) == ir)
+				_pop();
+		}
+		
+		void popAll(IndentReason conditions)
+		{
+			if(indentStack.Count == 0)
+			{
+				_pop();
+				return;
+			}
+			
+			IndentReason ir;
+			while(indentStack.Count != 0 && (conditions & (ir=LastIndentReason)) == ir)
+				_pop();
+		}
+		
+		void Push(IndentReason r)
+		{
+			IndentReason ir;
+			switch(r)
+			{
+				case IndentReason.CaseLabel:
+					_push(r,IndentReason.IncompleteStatement | IndentReason.CaseLabel);
+					return;
+					
+				case IndentReason.ArrayBlock:
+				case IndentReason.CurlyBlock:
+				case IndentReason.ParenBlock:
+					_push(r,IndentReason.IncompleteStatement,true);
+					return;
+					
+				case IndentReason.IncompleteStatement:
+					if(!IsLastLine && (ir = LastIndentReason) != IndentReason.IncompleteStatement && ir != IndentReason.CaseLabel)
+						_push(r);
+					return;
+			}
+		}
+		
+		void Pop(IndentReason r)
+		{
+			switch(r)
+			{
+				case IndentReason.ArrayBlock:
+				case IndentReason.ParenBlock:
+					popAll(IndentReason.IncompleteStatement | IndentReason.CaseLabel);
+					popOne(r);
+					
+					// void ... (...)
+					//     | <- How is this done?
+					if(lx.Peek().Line > lx.LookAhead.Line){
+						lx.NextToken();
+						_push(IndentReason.IncompleteStatement);
+					}
+					return;
+				case IndentReason.CurlyBlock:
+					popAll(IndentReason.IncompleteStatement | IndentReason.CaseLabel);
+					popOne(r);
+					return;
+				
+				case IndentReason.IncompleteStatement:
+					popAll(r);
+					return;
+				case IndentReason.CaseLabel:
+					popOne(r);
+					return;
+			}
+		}
+		
+		bool IsLastLine
+		{
+			get{ return lx.LookAhead.Line == lastLine; }
+		}
+		
+		IndentReason LastIndentReason
+		{
+			get{return indentStack.Count == 0 ? IndentReason.None : indentStack[indentStack.Count-1].reason;}
 		}
 		
 		public void Walkthrough()
@@ -177,9 +337,42 @@ namespace D_Parser.Formatting
 				switch(lx.laKind)
 				{
 					case DTokens.OpenParenthesis:
-						
+						Push(IndentReason.ParenBlock);
+						break;
+					case DTokens.CloseParenthesis:
+						Pop(IndentReason.ParenBlock);
+						break;
+					case DTokens.OpenCurlyBrace:
+						Push(IndentReason.CurlyBlock);
+						break;
+					case DTokens.CloseCurlyBrace:
+						Pop(IndentReason.CurlyBlock);
+						break;
+					case DTokens.OpenSquareBracket:
+						Push(IndentReason.ArrayBlock);
+						break;
+					case DTokens.CloseSquareBracket:
+						Pop(IndentReason.ArrayBlock);
+						break;
+					case DTokens.Default:
+					case DTokens.Case:
+						Push(IndentReason.CaseLabel);
+						break;
+					case DTokens.Colon:
+						Pop(IndentReason.IncompleteStatement);
+						break;
+					//case DTokens.Comma:
+					case DTokens.Semicolon:
+						if(!IsLastLine)
+							Pop(IndentReason.IncompleteStatement);
+						break;
+					default:
+						if(LastIndentReason != IndentReason.IncompleteStatement)
+							Push(IndentReason.IncompleteStatement);
 						break;
 				}
+				
+				lx.NextToken();
 			}
 		}
 	}
