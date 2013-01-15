@@ -36,7 +36,9 @@ import
 import
 	std;", 1);
 
-			TestLastLine(@"class A{
+			TestLastLine(@"
+class A
+{
 	void foo()
 	{
 	}
@@ -430,26 +432,20 @@ void main(string[] args)
 		}
 
 		void TestLine(string code, int line, int targetIndent)
-		{/*
+		{
 			var caret = DocumentHelper.OffsetToLocation(code, code.Length);
 			var newInd = GetLineIndent(code, line);
-			Assert.AreEqual(newInd, targetIndent, code);*/
+			Assert.AreEqual(newInd, targetIndent, code);
 		}
 
 
-		static int GetLineIndent(string code, CodeLocation caret)
+		static int GetLineIndent(string code, int line)
 		{
-			var cols = IncrementalIndentCalc.GetIndent(new GenericTextDocument(code), caret);
-			
-			int tabs, spaces;
-			IncrementalIndentCalc.CalcIndentTabsAndSpaces(cols, 4, out tabs, out spaces);
-			return tabs;
-			/*
 			var fmt = new DFormatter();
 
 			var cb = fmt.CalculateIndentation(code, line);
 
-			return cb != null ? cb.GetLineIndentation(line) : 0;*/
+			return cb != null ? cb.GetLineIndentation(line) : 0;
 		}
 
 		static int GetLastLineIndent(string code, bool AddNewLines = false, bool AddSomeFinalCode = false)
@@ -462,7 +458,7 @@ void main(string[] args)
 			if (AddSomeFinalCode)
 				code += "StaticFinalContent;";
 
-			return GetLineIndent(code, caret);
+			return GetLineIndent(code, caret.Line);
 		}
 	}
 }
