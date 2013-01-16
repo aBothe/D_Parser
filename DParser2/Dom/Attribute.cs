@@ -111,7 +111,7 @@ namespace D_Parser.Dom
 	}
 
     /// <summary>
-    /// Represents an attrribute a declaration may have or consists of.
+    /// Represents an attribute a declaration may have or consists of.
 	/// A modifier or storage class.
     /// </summary>
     public class Modifier : DAttribute
@@ -256,6 +256,16 @@ namespace D_Parser.Dom
     		EndLocation =endLoc;
     		LiteralContent = msg;
     	}
+    	
+    	public override void Accept(NodeVisitor vis)
+		{
+			vis.VisitAttribute(this);
+		}
+
+		public override R Accept<R>(NodeVisitor<R> vis)
+		{
+			return vis.VisitAttribute(this);
+		}
     }
 
 	public class PragmaAttribute : Modifier
@@ -297,16 +307,6 @@ namespace D_Parser.Dom
 
 	public abstract class DeclarationCondition : DAttribute, IDeclarationCondition
 	{
-		public override void Accept(NodeVisitor vis)
-		{
- 			throw new NotImplementedException();
-		}
-
-		public override R Accept<R>(NodeVisitor<R> vis)
-		{
- 			throw new NotImplementedException();
-		}
-	
 		public abstract bool Equals(IDeclarationCondition other);
 	}
 
@@ -396,6 +396,16 @@ namespace D_Parser.Dom
 		{
 			return "static if(" + (Expression == null ? "" : Expression.ToString()) + ")";
 		}
+		
+		public override void Accept(NodeVisitor vis)
+		{
+			vis.VisitAttribute(this);
+		}
+
+		public override R Accept<R>(NodeVisitor<R> vis)
+		{
+			return vis.VisitAttribute(this);
+		}
 	}
 
 	public class NegatedDeclarationCondition : DeclarationCondition
@@ -416,6 +426,16 @@ namespace D_Parser.Dom
 		public override string ToString()
 		{
 			return "<not>"+FirstCondition.ToString();
+		}
+		
+		public override void Accept(NodeVisitor vis)
+		{
+			vis.VisitAttribute(this);
+		}
+
+		public override R Accept<R>(NodeVisitor<R> vis)
+		{
+			return vis.VisitAttribute(this);
 		}
 	}
 }

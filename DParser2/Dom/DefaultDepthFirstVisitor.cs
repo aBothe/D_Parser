@@ -93,6 +93,14 @@ namespace D_Parser.Dom
 
 			n.TemplateParameter.Accept(this);
 		}
+		
+		public virtual void Visit(NamedTemplateMixinNode n)
+		{
+			VisitDNode(n);
+			
+			if(n.Mixin != null)
+				n.Mixin.Accept(this);
+		}
 
 		public virtual void VisitDNode(DNode n)
 		{
@@ -128,6 +136,31 @@ namespace D_Parser.Dom
 		public void VisitAttribute(DebugCondition debugCondition)
 		{
 			
+		}
+		
+		public void VisitAttribute(DeprecatedAttribute a)
+		{
+			throw new NotImplementedException();
+		}
+		
+		public void VisitAttribute(BuiltInAtAttribute a)
+		{
+			throw new NotImplementedException();
+		}
+		
+		public void VisitAttribute(UserDeclarationAttribute a)
+		{
+			throw new NotImplementedException();
+		}
+		
+		public void VisitAttribute(StaticIfCondition a)
+		{
+			throw new NotImplementedException();
+		}
+		
+		public void VisitAttribute(NegatedDeclarationCondition a)
+		{
+			throw new NotImplementedException();
 		}
 		#endregion
 

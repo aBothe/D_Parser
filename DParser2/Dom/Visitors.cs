@@ -1,4 +1,5 @@
-﻿using D_Parser.Dom.Expressions;
+﻿using D_Parser.Dom;
+using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
 
 namespace D_Parser.Dom
@@ -19,6 +20,7 @@ namespace D_Parser.Dom
 
 	public interface DVisitor<out R> : 
 		NodeVisitor<R>,
+		MetaDeclarationVisitor<R>,
 		TemplateParameterVisitor<R>,
 		StatementVisitor<R>, 
 		ExpressionVisitor<R>, 
@@ -37,11 +39,18 @@ namespace D_Parser.Dom
 		void Visit(DModule dModule);
 		void VisitBlock(DBlockNode dBlockNode);
 		void Visit(TemplateParameterNode templateParameterNode);
+		void Visit(NamedTemplateMixinNode n);
 
 		void VisitAttribute(Modifier attribute);
+		void VisitAttribute(DeprecatedAttribute a);
 		void VisitAttribute(PragmaAttribute pragma);
-		void VisitAttribute(VersionCondition vis);
-		void VisitAttribute(DebugCondition debugCondition);
+		void VisitAttribute(BuiltInAtAttribute a);
+		void VisitAttribute(UserDeclarationAttribute a);
+		
+		void VisitAttribute(VersionCondition a);
+		void VisitAttribute(DebugCondition a);
+		void VisitAttribute(StaticIfCondition a);
+		void VisitAttribute(NegatedDeclarationCondition a);
 	}
 
 	public interface NodeVisitor<out R> : IVisitor<R>
@@ -54,11 +63,18 @@ namespace D_Parser.Dom
 		R Visit(DModule dModule);
 		R Visit(DBlockNode dBlockNode);
 		R Visit(TemplateParameterNode templateParameterNode);
+		R Visit(NamedTemplateMixinNode n);
 
 		R VisitAttribute(Modifier attr);
+		R VisitAttribute(DeprecatedAttribute a);
 		R VisitAttribute(PragmaAttribute attr);
-		R VisitAttribute(VersionCondition vis);
-		R VisitAttribute(DebugCondition debugCondition);
+		R VisitAttribute(BuiltInAtAttribute a);
+		R VisitAttribute(UserDeclarationAttribute a);
+		
+		R VisitAttribute(VersionCondition a);
+		R VisitAttribute(DebugCondition a);
+		R VisitAttribute(StaticIfCondition a);
+		R VisitAttribute(NegatedDeclarationCondition a);
 	}
 
 	public interface MetaDeclarationVisitor : IVisitor
@@ -69,6 +85,16 @@ namespace D_Parser.Dom
 		void Visit(ElseMetaDeclarationBlock elseMetaDeclarationBlock);
 		void Visit(ElseMetaDeclaration elseMetaDeclaration);
 		void Visit(AttributeMetaDeclaration attributeMetaDeclaration);
+	}
+	
+	public interface MetaDeclarationVisitor<out R> : IVisitor
+	{
+		R Visit(MetaDeclarationBlock metaDeclarationBlock);
+		R Visit(AttributeMetaDeclarationBlock attributeMetaDeclarationBlock);
+		R Visit(AttributeMetaDeclarationSection attributeMetaDeclarationSection);
+		R Visit(ElseMetaDeclarationBlock elseMetaDeclarationBlock);
+		R Visit(ElseMetaDeclaration elseMetaDeclaration);
+		R Visit(AttributeMetaDeclaration attributeMetaDeclaration);
 	}
 
 	public interface TemplateParameterVisitor : IVisitor

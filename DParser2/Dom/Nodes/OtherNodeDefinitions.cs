@@ -386,12 +386,12 @@ namespace D_Parser.Dom
 		
 		public override R Accept<R>(NodeVisitor<R> vis)
 		{
-			throw new System.NotImplementedException();
+			return vis.Visit(this);
 		}
 		
 		public override void Accept(NodeVisitor vis)
 		{
-			throw new System.NotImplementedException();
+			vis.Visit(this);
 		}
 	}
 }
