@@ -596,8 +596,12 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				return false;
 
 			var thisModuleName = (ctxt.ScopedBlock != null && ctxt.ScopedBlock.NodeRoot is IAbstractSyntaxTree) ? ((IAbstractSyntaxTree)ctxt.ScopedBlock.NodeRoot).ModuleName : string.Empty;
+			
+			if(string.IsNullOrEmpty(thisModuleName))
+				return false;
+			
 			var moduleName = imp.ModuleIdentifier.ToString();
-
+			
 			List<string> seenModules = null;
 
 			if (!scannedModules.TryGetValue(thisModuleName, out seenModules))
