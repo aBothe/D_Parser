@@ -1062,12 +1062,12 @@ namespace D_Parser.Dom.Statements
 
 		public override void Accept(StatementVisitor vis)
 		{
-			throw new NotImplementedException();
+			vis.VisitMixinStatement(this);
 		}
 
 		public override R Accept<R>(StatementVisitor<R> vis)
 		{
-			throw new NotImplementedException();
+			return vis.VisitMixinStatement(this);
 		}
 		
 		public DAttribute[] Attributes{get;set;}
@@ -1151,6 +1151,16 @@ namespace D_Parser.Dom.Statements
 		{
 			get;
 			set;
+		}
+		
+		public override void Accept(StatementVisitor vis)
+		{
+			vis.Visit(this);
+		}
+
+		public override R Accept<R>(StatementVisitor<R> vis)
+		{
+			return vis.Visit(this);
 		}
 	}
 

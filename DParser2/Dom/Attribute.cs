@@ -64,12 +64,12 @@ namespace D_Parser.Dom
 		
 		public override R Accept<R>(NodeVisitor<R> vis)
 		{
-			throw new NotImplementedException();
+			return vis.VisitAttribute(this);
 		}
 		
 		public override void Accept(NodeVisitor vis)
 		{
-			throw new NotImplementedException();
+			vis.VisitAttribute(this);
 		}
 	}
 	
@@ -101,12 +101,12 @@ namespace D_Parser.Dom
 		
 		public override R Accept<R>(NodeVisitor<R> vis)
 		{
-			throw new NotImplementedException();
+			return vis.VisitAttribute(this);
 		}
 		
 		public override void Accept(NodeVisitor vis)
 		{
-			throw new NotImplementedException();
+			vis.VisitAttribute(this);
 		}
 	}
 

@@ -36,14 +36,14 @@ namespace D_Parser.Dom
 
 		public virtual void Visit(DEnumValue n)
 		{
-			Visit((DVariable)n);
+			Visit(n as DVariable);
 		}
 
 		public virtual void Visit(DVariable n)
 		{
-			VisitDNode(n);
 			if (n.Initializer != null)
 				n.Initializer.Accept(this);
+			VisitDNode(n);
 		}
 
 		public virtual void Visit(DMethod n)
@@ -119,7 +119,7 @@ namespace D_Parser.Dom
 				n.Type.Accept(this);
 		}
 
-		public virtual void VisitAttribute(Modifier attribute) {}
+		public virtual void VisitAttribute(Modifier attribute) { }
 
 		public void VisitAttribute(PragmaAttribute pragma)
 		{
@@ -140,27 +140,30 @@ namespace D_Parser.Dom
 		
 		public void VisitAttribute(DeprecatedAttribute a)
 		{
-			throw new NotImplementedException();
+			
 		}
 		
 		public void VisitAttribute(BuiltInAtAttribute a)
 		{
-			throw new NotImplementedException();
+			
 		}
 		
 		public void VisitAttribute(UserDeclarationAttribute a)
 		{
-			throw new NotImplementedException();
+			if(a.AttributeExpression != null && a.AttributeExpression.Length != 0)
+				foreach(var x in a.AttributeExpression)
+					x.Accept(this);
 		}
 		
 		public void VisitAttribute(StaticIfCondition a)
 		{
-			throw new NotImplementedException();
+			if(a.Expression!=null)
+				a.Expression.Accept(this);
 		}
 		
 		public void VisitAttribute(NegatedDeclarationCondition a)
 		{
-			throw new NotImplementedException();
+			a.FirstCondition.Accept(this);
 		}
 		#endregion
 
@@ -407,6 +410,21 @@ namespace D_Parser.Dom
 		public virtual void Visit(Statements.DebugSpecification s)
 		{
 			VisitAbstractStmt(s);
+		}
+		
+		public void Visit(StaticAssertStatement s)
+		{
+			Visit(s as AssertStatement);
+		}
+		
+		public void VisitMixinStatement(MixinStatement s)
+		{
+			if(s.Attributes!=null && s.Attributes.Length != 0)
+				foreach(var attr in s.Attributes)
+					attr.Accept(this);
+			
+			if(s.MixinExpression != null)
+				s.MixinExpression.Accept(this);
 		}
 
 		public virtual void VisitAbstractStmt(AbstractStatement stmt)
