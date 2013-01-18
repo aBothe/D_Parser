@@ -1,25 +1,21 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
 using D_Parser;
-using D_Parser.Dom;
-using D_Parser.Formatting;
 using NUnit.Framework;
 
 namespace Tests
 {
 	[TestFixture]
-	public class FormattingTests
+	public class IndentationTests
 	{
 		[Test]
-		public void TestFormatter()
+		public void TestIndenter()
 		{
 			TestLastLine("", 0);
 
 			TestLastLine(@"import
 std", 1);
+			TestLastLine(@"import std.stdio,
+	std;", 1);
 			TestLastLine(@"import std;
 ", 0);
 			TestLastLine(@"import
@@ -441,11 +437,7 @@ void main(string[] args)
 
 		static int GetLineIndent(string code, int line)
 		{
-			var fmt = new DFormatter();
-
-			var cb = fmt.CalculateIndentation(code, line);
-
-			return cb != null ? cb.GetLineIndentation(line) : 0;
+			return D_Parser.Formatting.Indent.IndentEngineWrapper.CalculateIndent(code, line).Length;
 		}
 
 		static int GetLastLineIndent(string code, bool AddNewLines = false, bool AddSomeFinalCode = false)

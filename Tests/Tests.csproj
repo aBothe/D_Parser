@@ -59,7 +59,7 @@
   <ItemGroup>
     <Compile Include="CompletionTests.cs" />
     <Compile Include="EvaluationTests.cs" />
-    <Compile Include="FormattingTests.cs" />
+    <Compile Include="IndentationTests.cs" />
     <Compile Include="ImplicitConversionTests.cs" />
     <Compile Include="ParseTests.cs">
       <SubType>Code</SubType>

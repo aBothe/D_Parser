@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
+
 using D_Parser.Dom;
 
 namespace D_Parser.Formatting
@@ -11,6 +13,7 @@ namespace D_Parser.Formatting
 	
 	public class DFormattingVisitor : DefaultDepthFirstVisitor
 	{
+		#region Change management
 		sealed class TextReplaceAction
 		{
 			internal readonly int Offset;
@@ -52,10 +55,78 @@ namespace D_Parser.Formatting
 			}
 		}
 		
+		class ReplaceActionComparer : IComparer<TextReplaceAction>
+		{
+			public int Compare(DFormattingVisitor.TextReplaceAction x, DFormattingVisitor.TextReplaceAction y)
+			{
+				if(x.Offset == y.Offset)
+					return 0;
+				
+				return y.Offset > x.Offset ? 1 : -1;
+			}
+		}
+		
+		TextReplaceAction AddChange(int offset, int removedChars, string insertedText)
+		{
+			if (removedChars == 0 && string.IsNullOrEmpty (insertedText))
+				return null;
+			var action = new TextReplaceAction (offset, removedChars, insertedText);
+			changes.Add(action);
+			return action;
+		}
+		
+		public void ApplyChanges(Action<int, int, string> documentReplace, Func<int, int, string, bool> filter = null)
+		{
+			ApplyChanges(0, document.TextLength, documentReplace, filter);
+		}
+		
+		public void ApplyChanges(int startOffset, int length, Action<int, int, string> documentReplace, Func<int, int, string, bool> filter = null)
+		{
+			int endOffset = startOffset + length;
+			TextReplaceAction previousChange = null;
+			int delta = 0;
+			
+			var depChanges = new List<TextReplaceAction> ();
+			changes.Sort(new ReplaceActionComparer());
+			foreach (var change in changes) {
+				if (previousChange != null) {
+					if (change.Equals(previousChange)) {
+						// ignore duplicate changes
+						continue;
+					}
+					if (change.Offset < previousChange.Offset + previousChange.RemovalLength) {
+						#if DEBUG
+						Console.WriteLine ("change 1:" + change + " at " + document.ToLocation (change.Offset));
+						Console.WriteLine (change.StackTrace);
+
+						Console.WriteLine ("change 2:" + previousChange + " at " + document.ToLocation (previousChange.Offset));
+						Console.WriteLine (previousChange.StackTrace);
+						#endif
+						throw new InvalidOperationException ("Detected overlapping changes " + change + "/" + previousChange);
+					}
+				}
+				previousChange = change;
+				
+				bool skipChange = change.Offset < startOffset || change.Offset > endOffset;
+				skipChange |= filter != null && filter(change.Offset + delta, change.RemovalLength, change.NewText);
+				skipChange &= !depChanges.Contains(change);
+
+				if (!skipChange) {
+					documentReplace(change.Offset + delta, change.RemovalLength, change.NewText);
+					delta += change.NewText.Length - change.RemovalLength;
+					if (change.DependsOn != null) {
+						depChanges.Add(change.DependsOn);
+					}
+				}
+			}
+			changes.Clear();
+		}
+		#endregion
+		
 		#region Properties
 		DFormattingOptions policy;
 		IDocumentAdapter document;
-		List<TextReplaceAction> changes = new List<TextReplaceAction> ();
+		List<TextReplaceAction> changes = new List<TextReplaceAction>();
 		FormattingIndentStack curIndent;
 		readonly ITextEditorOptions options;
 		
@@ -69,11 +140,9 @@ namespace D_Parser.Formatting
 			set;
 		}
 
-		/*
-		public DomRegion FormattingRegion {
-			get;
-			set;
-		}*/
+		public CodeLocation FormattingStartLocation = CodeLocation.Empty;
+		public CodeLocation FormattingEndLocation = CodeLocation.Empty;
+		public bool CheckFormattingBoundaries = false;
 		#endregion
 		
 		#region Constructor / Init
@@ -91,6 +160,227 @@ namespace D_Parser.Formatting
 			curIndent = new FormattingIndentStack(this.options);
 		}
 		
+		#endregion
+		
+		#region Indentation helpers
+		string nextStatementIndent = null;
+
+		void FixStatementIndentation(CodeLocation location)
+		{
+			int offset = document.ToOffset(location);
+			if (offset <= 0) {
+				Console.WriteLine("possible wrong offset");
+				Console.WriteLine(Environment.StackTrace);
+				return;
+			}
+			bool isEmpty = IsLineIsEmptyUpToEol(offset);
+			int lineStart = SearchWhitespaceLineStart(offset);
+			string indentString = nextStatementIndent == null ? (isEmpty ? "" : this.options.EolMarker) + this.curIndent.IndentString : nextStatementIndent;
+			nextStatementIndent = null;
+			AddChange(lineStart, offset - lineStart, indentString);
+		}
+
+		void FixIndentation(CodeLocation location, int relOffset = 0)
+		{
+			if (location.Line < 1) {
+				Console.WriteLine("Invalid location " + location);
+				Console.WriteLine(Environment.StackTrace);
+				return;
+			}
+			
+			string lineIndent = GetIndentation(location.Line);
+			string indentString = this.curIndent.IndentString;
+			if (indentString != lineIndent && location.Column - 1 + relOffset == lineIndent.Length) {
+				AddChange(document.ToOffset(location.Line, 1), lineIndent.Length, indentString);
+			}
+		}
+
+		void FixIndentationForceNewLine(CodeLocation location)
+		{
+			string lineIndent = GetIndentation(location.Line);
+			string indentString = this.curIndent.IndentString;
+			if (location.Column - 1 == lineIndent.Length) {
+				AddChange(document.ToOffset(location.Line, 1), lineIndent.Length, indentString);
+			} else {
+				int offset = document.ToOffset(location);
+				int start = SearchWhitespaceLineStart(offset);
+				if (start > 0) {
+					char ch = document[start - 1];
+					if (ch == '\n') {
+						start--;
+						if (start > 1 && document[start - 1] == '\r') {
+							start--;
+						}
+					} else if (ch == '\r') {
+						start--;
+					}
+					AddChange(start, offset - start, this.options.EolMarker + indentString);
+				}
+			}
+		}
+		
+		string GetIndentation(int lineNumber)
+		{
+			var i = document.ToOffset(lineNumber, 1);
+			var b = new StringBuilder ();
+			int endOffset = document.TextLength;
+			for (; i < endOffset; i++) {
+				char c = document[i];
+				if (!IsSpacing(c)) {
+					break;
+				}
+				b.Append(c);
+			}
+			return b.ToString();
+		}
+		#endregion
+		
+		#region Helper methods
+		bool InsideFormattingRegion(ISyntaxRegion sr)
+		{
+			return CheckFormattingBoundaries && FormattingStartLocation <= sr.Location && FormattingEndLocation >= sr.EndLocation;
+		}
+		
+		int SearchWhitespaceStart(int startOffset)
+		{
+			if (startOffset < 0) {
+				throw new ArgumentOutOfRangeException ("startoffset", "value : " + startOffset);
+			}
+			for (int offset = startOffset - 1; offset >= 0; offset--) {
+				char ch = document[offset];
+				if (!char.IsWhiteSpace(ch)) {
+					return offset + 1;
+				}
+			}
+			return 0;
+		}
+
+		int SearchWhitespaceEnd(int startOffset)
+		{
+			if (startOffset > document.TextLength) {
+				throw new ArgumentOutOfRangeException ("startoffset", "value : " + startOffset);
+			}
+			for (int offset = startOffset + 1; offset < document.TextLength; offset++) {
+				char ch = document[offset];
+				if (!char.IsWhiteSpace(ch)) {
+					return offset + 1;
+				}
+			}
+			return document.TextLength - 1;
+		}
+
+		int SearchWhitespaceLineStart(int startOffset)
+		{
+			if (startOffset < 0) {
+				throw new ArgumentOutOfRangeException ("startoffset", "value : " + startOffset);
+			}
+			for (int offset = startOffset - 1; offset >= 0; offset--) {
+				char ch = document[offset];
+				if (ch != ' ' && ch != '\t') {
+					return offset + 1;
+				}
+			}
+			return 0;
+		}
+
+		
+		public bool IsLineIsEmptyUpToEol(CodeLocation startLocation)
+		{
+			return IsLineIsEmptyUpToEol(document.ToOffset(startLocation) - 1);
+		}
+		
+		/// <summary>
+		/// Counts backward from startOffset and returns true, if the entire line only consists of white spaces
+		/// </summary>
+		bool IsLineIsEmptyUpToEol(int startOffset)
+		{
+			for (startOffset--; startOffset >= 0; startOffset--) {
+				char ch = document[startOffset];
+				if (!IsSpacing(ch))
+					return ch == '\n' || ch == '\r';
+			}
+			return true;
+		}
+		
+		static bool IsSpacing(char ch)
+		{
+			return ch == ' ' || ch == '\t';
+		}
+		
+		bool IsSpacing(int startOffset, int endOffset)
+		{
+			for (; startOffset < endOffset; startOffset++) {
+				if (!IsSpacing(document[startOffset])) {
+					return false;
+				}
+			}
+			return true;
+		}
+		
+		int SearchLastNonWsChar(int startOffset, int endOffset)
+		{
+			startOffset = System.Math.Max(0, startOffset);
+			endOffset = System.Math.Max(startOffset, endOffset);
+			if (startOffset >= endOffset) {
+				return startOffset;
+			}
+			int result = -1;
+			bool inBlockComment = false;
+			int inNestedComment = 0;
+			var textLength = document.TextLength;
+			
+			for (int i = startOffset; i < endOffset && i < textLength; i++) {
+				char ch = document[i];
+				if (IsSpacing(ch)) {
+					continue;
+				}
+				
+				char peek;
+				if(i + 1 < textLength)
+					peek = document[i + 1];
+				else
+					peek='\0';
+				
+				if(ch == '/')
+				{
+					if(peek == '/')
+						return result;
+					else if(peek == '*' && inNestedComment < 1)
+					{
+						inBlockComment = true;
+						i++;
+						continue;
+					}
+					else if(peek == '+')
+					{
+						inNestedComment++;
+						i++;
+						continue;
+					}
+				}
+				
+				if(peek == '/')
+				{
+					if(ch == '*' && inBlockComment)
+					{
+						inBlockComment = false;
+						i++;
+						continue;
+					}
+					else if(ch == '+' && inNestedComment > 0)
+					{
+						inNestedComment--;
+						i++;
+						continue;
+					}
+				}
+
+				if (!inBlockComment && inNestedComment == 1) {
+					result = i;
+				}
+			}
+			return result;
+		}
 		#endregion
 	}
 }

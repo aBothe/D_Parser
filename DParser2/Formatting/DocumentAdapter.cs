@@ -5,7 +5,7 @@ namespace D_Parser.Formatting
 {
 	public interface IDocumentAdapter
 	{
-		char GetCharAt(int offset);
+		char this[int offset]{get;}
 		int ToOffset(CodeLocation loc);
 		int ToOffset(int line, int column);
 		CodeLocation ToLocation(int offset);
@@ -17,7 +17,7 @@ namespace D_Parser.Formatting
 	{
 		string text = string.Empty;
 		public string Text{get{return text;} set{text = value;}}
-		public char GetCharAt(int o) { return text[o]; }
+		public char this[int o] { get{ return text[o]; } }
 		
 		public int TextLength {
 			get {
@@ -37,7 +37,7 @@ namespace D_Parser.Formatting
 		
 		public CodeLocation ToLocation(int offset)
 		{
-			throw new NotImplementedException();
+			return DocumentHelper.OffsetToLocation(text, offset);
 		}
 	}
 }

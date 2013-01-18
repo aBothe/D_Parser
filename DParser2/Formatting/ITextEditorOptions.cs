@@ -4,6 +4,7 @@ namespace D_Parser.Formatting
 {
 	public interface ITextEditorOptions
 	{
+		string EolMarker {get;}
 		bool TabsToSpaces {get;}
 		int TabSize{get;}
 		
@@ -14,25 +15,12 @@ namespace D_Parser.Formatting
 	
 	public class TextEditorOptions : ITextEditorOptions
 	{
-		public bool TabsToSpaces {
-			get;set;
-		}
-		
-		public int TabSize {
-			get;set;
-		}
-		
-		public int IndentSize {
-			get;set;
-		}
-		
-		public int ContinuationIndent {
-			get;set;
-		}
-		
-		public int LabelIndent {
-			get;set;
-		}
+		public string EolMarker		{get;set;}
+		public bool TabsToSpaces	{get;set;}
+		public int TabSize			{get;set;}
+		public int IndentSize		{get;set;}
+		public int ContinuationIndent {get;set;}
+		public int LabelIndent		{get;set;}
 		
 		public static TextEditorOptions Default = new TextEditorOptions{ TabsToSpaces = false, TabSize = 4, IndentSize = 4, ContinuationIndent = 4, LabelIndent = 4 };
 	}

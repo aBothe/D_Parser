@@ -109,6 +109,7 @@
     <Compile Include="Formatting\DFormattingOptions.cs" />
     <Compile Include="Formatting\DFormattingVisitor.cs" />
     <Compile Include="Formatting\DocumentAdapter.cs" />
+    <Compile Include="Formatting\Formatter.cs" />
     <Compile Include="Formatting\FormattingIndentStack.cs" />
     <Compile Include="Formatting\Indent\IndentEngineWrapper.cs" />
     <Compile Include="Formatting\Indent\IndentEngine.cs" />
