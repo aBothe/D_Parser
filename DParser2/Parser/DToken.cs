@@ -90,7 +90,7 @@ namespace D_Parser.Parser
         public readonly string CommentText;
         public readonly CodeLocation StartPosition;
         public readonly CodeLocation EndPosition;
-
+        
         /// <value>
         /// Is true, when the comment is at line start or only whitespaces
         /// between line and comment start.

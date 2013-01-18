@@ -77,6 +77,8 @@ namespace D_Parser.Dom
 			get;
 			set;
 		}
+		
+		public Comment[] Comments;
 
 		/// <summary>
 		/// A module's first statement can be a module ABC; statement. If so, this variable will keep it.

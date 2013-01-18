@@ -20,6 +20,44 @@ namespace D_Parser.Formatting
 		Normal
 	}
 	
+	public enum BraceStyle
+	{
+		DoNotChange,
+		EndOfLine,
+		EndOfLineWithoutSpace,
+		NextLine,
+		NextLineShifted,
+		NextLineShifted2,
+		BannerStyle
+	}
+
+	public enum BraceForcement
+	{
+		DoNotChange,
+		RemoveBraces,
+		AddBraces
+	}
+
+	public enum PropertyFormatting
+	{
+		AllowOneLine,
+		ForceOneLine,
+		ForceNewLine
+	}
+
+	public enum Wrapping {
+		DoNotChange,
+		DoNotWrap,
+		WrapAlways,
+		WrapIfTooLong
+	}
+
+	public enum NewLinePlacement {
+		DoNotCare,
+		NewLine,
+		SameLine
+	}
+	
 	public interface DFormattingOptionsFactory
 	{
 		DFormattingOptions Options{get;}
@@ -27,16 +65,17 @@ namespace D_Parser.Formatting
 	
 	public class DFormattingOptions
 	{
-		public bool IndentSwitchBody;
-		public GotoLabelIndentStyle LabelIndentStyle;
+		/// <summary>
+		/// For classes, struct definitions etc.
+		/// </summary>
+		public BraceStyle TypeBlockBraces = BraceStyle.EndOfLine;
+		
+		public bool IndentSwitchBody = true;
+		public GotoLabelIndentStyle LabelIndentStyle = GotoLabelIndentStyle.OneLess;
 		
 		public static DFormattingOptions CreateDStandard()
 		{
-			return new DFormattingOptions()
-			{
-				LabelIndentStyle = GotoLabelIndentStyle.OneLess,
-				IndentSwitchBody = true
-			};
+			return new DFormattingOptions();
 		}
 	}
 }

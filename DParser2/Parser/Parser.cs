@@ -196,20 +196,20 @@ namespace D_Parser.Parser
             return bt;
         }
 
-        public static IAbstractSyntaxTree ParseString(string ModuleCode,bool SkipFunctionBodies=false)
+        public static IAbstractSyntaxTree ParseString(string ModuleCode,bool SkipFunctionBodies=false, bool KeepComments = true)
         {
             using(var sr = new StringReader(ModuleCode))
         	{
             	using(var p = Create(sr))
-            		return p.Parse(SkipFunctionBodies);
+            		return p.Parse(SkipFunctionBodies, KeepComments);
         	}
         }
 
-        public static IAbstractSyntaxTree ParseFile(string File, bool SkipFunctionBodies=false)
+        public static IAbstractSyntaxTree ParseFile(string File, bool SkipFunctionBodies=false, bool KeepComments = true)
         {
         	using(var s = new StreamReader(File)){
 	            var p=Create(s);
-	            var m = p.Parse(SkipFunctionBodies);
+	            var m = p.Parse(SkipFunctionBodies, KeepComments);
 	            m.FileName = File;
 	            if(string.IsNullOrEmpty(m.ModuleName))
 					m.ModuleName = Path.GetFileNameWithoutExtension(File);
@@ -415,11 +415,13 @@ namespace D_Parser.Parser
         /// <param name="imports">List of imports in the module</param>
         /// <param name="ParseStructureOnly">If true, all statements and non-declarations are ignored - useful for analysing libraries</param>
         /// <returns>Completely parsed module structure</returns>
-        public DModule Parse(bool ParseStructureOnly)
+        public DModule Parse(bool ParseStructureOnly, bool KeepComments = true)
         {
             this.ParseStructureOnly = ParseStructureOnly;
             doc=Root();
 			doc.ParseErrors = new System.Collections.ObjectModel.ReadOnlyCollection<ParserError>(ParseErrors);
+			if(KeepComments)
+				doc.Comments = Lexer.Comments.ToArray();
 			
             return doc;
         }

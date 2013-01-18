@@ -13,8 +13,9 @@ namespace D_Parser.Formatting
 			textStyle = textStyle ?? TextEditorOptions.Default;
 			ast = ast ?? DParser.ParseString(code) as DModule;
 			
-			var formattingVisitor = new DFormattingVisitor(options, new TextDocument{ Text = code }, textStyle);
-			ast.Accept(formattingVisitor);
+			var formattingVisitor = new DFormattingVisitor(options, new TextDocument{ Text = code }, ast, textStyle);
+			
+			formattingVisitor.WalkThroughAst();
 			
 			var sb = new StringBuilder(code);
 			

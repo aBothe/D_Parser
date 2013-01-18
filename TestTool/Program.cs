@@ -8,7 +8,10 @@ namespace TestTool
 		public static void Main(string[] args)
 		{
 			var code = @"
-class A{
+class A
+// someCommentttt
+
+{
 
 }";
 			Console.WriteLine(code);

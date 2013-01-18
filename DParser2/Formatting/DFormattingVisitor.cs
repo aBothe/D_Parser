@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 
 using D_Parser.Dom;
+using D_Parser.Parser;
 
 namespace D_Parser.Formatting
 {
@@ -11,7 +12,7 @@ namespace D_Parser.Formatting
 		Intrusive
 	}
 	
-	public class DFormattingVisitor : DefaultDepthFirstVisitor
+	public partial class DFormattingVisitor : DefaultDepthFirstVisitor
 	{
 		#region Change management
 		sealed class TextReplaceAction
@@ -124,6 +125,7 @@ namespace D_Parser.Formatting
 		#endregion
 		
 		#region Properties
+		readonly DModule ast;
 		DFormattingOptions policy;
 		IDocumentAdapter document;
 		List<TextReplaceAction> changes = new List<TextReplaceAction>();
@@ -146,7 +148,7 @@ namespace D_Parser.Formatting
 		#endregion
 		
 		#region Constructor / Init
-		public DFormattingVisitor(DFormattingOptions policy, IDocumentAdapter document, ITextEditorOptions options = null)
+		public DFormattingVisitor(DFormattingOptions policy, IDocumentAdapter document, DModule ast, ITextEditorOptions options = null)
 		{
 			if (policy == null) {
 				throw new ArgumentNullException("policy");
@@ -154,12 +156,139 @@ namespace D_Parser.Formatting
 			if (document == null) {
 				throw new ArgumentNullException("document");
 			}
+			this.ast = ast;
 			this.policy = policy;
 			this.document = document;
 			this.options = options ?? TextEditorOptions.Default;
 			curIndent = new FormattingIndentStack(this.options);
 		}
 		
+		/// <summary>
+		/// Use this method for letting this visitor visit the syntax tree.
+		/// </summary>
+		public void WalkThroughAst()
+		{
+			ast.Accept(this);
+		}
+		#endregion
+		
+		#region Formatting helpers
+		void EnforceBraceStyle(BraceStyle braceStyle, CodeLocation lBrace, int rBraceLine, int rBraceColumn)
+		{
+			if (lBrace.IsEmpty)
+				return;
+			
+			int lbraceOffset = document.ToOffset(lBrace);
+			int rbraceOffset = document.ToOffset(rBraceLine, rBraceColumn);
+			
+			int whitespaceStart = SearchWhitespaceStart(lbraceOffset);
+			int whitespaceEnd = SearchWhitespaceLineStart(rbraceOffset);
+			string startIndent = "";
+			string endIndent = "";
+			switch (braceStyle) {
+				case BraceStyle.DoNotChange:
+					startIndent = endIndent = null;
+					break;
+				case BraceStyle.EndOfLineWithoutSpace:
+					startIndent = "";
+					endIndent = IsLineIsEmptyUpToEol(rbraceOffset) ? curIndent.IndentString : this.options.EolMarker + curIndent.IndentString;
+					break;
+				case BraceStyle.BannerStyle:
+					int lastNonWs;
+					var lastComments = GetCommentsBefore(lBrace, out lastNonWs);
+					if(lastComments.Count != 0)
+					{
+						// delete old bracket
+						AddChange(whitespaceStart, lbraceOffset - whitespaceStart + 1, "");
+					
+						lbraceOffset = whitespaceStart = lastNonWs + 1;
+						startIndent = " {";
+					} else {
+						startIndent = " ";
+					}
+					curIndent.Push(IndentType.Block);
+					endIndent = IsLineIsEmptyUpToEol(rbraceOffset) ? curIndent.IndentString : this.options.EolMarker + curIndent.IndentString;
+					curIndent.Pop();
+					break;
+				case BraceStyle.EndOfLine:
+					lastComments = GetCommentsBefore(lBrace, out lastNonWs);
+					if(lastComments.Count != 0)
+					{
+						// delete old bracket
+						AddChange(whitespaceStart, lbraceOffset - whitespaceStart + 1, "");
+					
+						lbraceOffset = whitespaceStart = lastNonWs + 1;
+						startIndent = " {";
+					} else {
+						startIndent = " ";
+					}
+					endIndent = IsLineIsEmptyUpToEol(rbraceOffset) ? curIndent.IndentString : this.options.EolMarker + curIndent.IndentString;
+					break;
+				case BraceStyle.NextLine:
+					startIndent = this.options.EolMarker + curIndent.IndentString;
+					endIndent = IsLineIsEmptyUpToEol(rbraceOffset) ? curIndent.IndentString : this.options.EolMarker + curIndent.IndentString;
+					break;
+				case BraceStyle.NextLineShifted2:
+				case BraceStyle.NextLineShifted:
+					curIndent.Push(IndentType.Block);
+					startIndent = this.options.EolMarker + curIndent.IndentString;
+					endIndent = IsLineIsEmptyUpToEol(rbraceOffset) ? curIndent.IndentString : this.options.EolMarker + curIndent.IndentString;
+					curIndent.Pop ();
+					break;
+			}
+			
+			if (lbraceOffset > 0 && startIndent != null) {
+				AddChange(whitespaceStart, lbraceOffset - whitespaceStart, startIndent);
+			}
+			if (rbraceOffset > 0 && endIndent != null) {
+				AddChange(whitespaceEnd, rbraceOffset - whitespaceEnd, endIndent);
+			}
+		}
+		
+		/// <summary>
+		/// Returns a comment chain that is located right before 'where'
+		/// </summary>
+		List<Comment> GetCommentsBefore(CodeLocation where, out int firstNonWhiteSpaceOccurence)
+		{
+			firstNonWhiteSpaceOccurence = -1;
+			var l = new List<Comment>();
+			if(ast.Comments == null || ast.Comments.Length == 0)
+				return l;
+			
+			int lastComment=0;
+			
+			for(; lastComment < ast.Comments.Length; lastComment++)
+			{
+				if(ast.Comments[lastComment].EndPosition > where)
+				{
+					lastComment--;
+					break;
+				}
+			}
+			
+			if(lastComment < 0)
+				return l;
+			
+			// Ensure that there is nothing between where and the comments end
+			var whereOffset= document.ToOffset(where);
+			for(; lastComment >= 0; lastComment--)
+			{
+				var comm = ast.Comments[lastComment];
+				for(int i = document.ToOffset(comm.EndPosition); i < whereOffset; i++)
+				{
+					var c = document[i];
+					if(c == ' ' || c == '\t' || c=='\r' || c == '\n')
+						continue;
+					firstNonWhiteSpaceOccurence = i;
+					return l;
+				}
+				
+				l.Add(comm);
+				whereOffset= document.ToOffset(comm.StartPosition);
+			}
+			
+			return l;
+		}
 		#endregion
 		
 		#region Indentation helpers
@@ -382,5 +511,7 @@ namespace D_Parser.Formatting
 			return result;
 		}
 		#endregion
+		
+		// See DFormattingVisitor.Impl.cs for actual visiting
 	}
 }
