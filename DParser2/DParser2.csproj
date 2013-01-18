@@ -108,9 +108,12 @@
     <Compile Include="Dom\TemplateParameters.cs" />
     <Compile Include="Formatting\DFormattingOptions.cs" />
     <Compile Include="Formatting\DFormattingVisitor.cs" />
+    <Compile Include="Formatting\DocumentAdapter.cs" />
+    <Compile Include="Formatting\FormattingIndentStack.cs" />
     <Compile Include="Formatting\Indent\IndentEngineWrapper.cs" />
     <Compile Include="Formatting\Indent\IndentEngine.cs" />
     <Compile Include="Formatting\Indent\IndentStack.cs" />
+    <Compile Include="Formatting\ITextEditorOptions.cs" />
     <Compile Include="Misc\Mangling\Demangler.cs" />
     <Compile Include="Misc\StringView.cs" />
     <Compile Include="Refactoring\DeepASTVisitor.cs" />

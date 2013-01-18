@@ -25,20 +25,25 @@ namespace D_Parser
 
 			return new CodeLocation(col, line);
 		}
-
+		
 		public static int LocationToOffset(string Text, CodeLocation Location)
 		{
-			int line = 1;
+			return LocationToOffset(Text, Location.Line, Location.Column);
+		}
+
+		public static int LocationToOffset(string Text, int line, int column)
+		{
+			int curline = 1;
 			int col = 1;
 
 			int i = 0;
-			for (; i < Text.Length && !(line >= Location.Line && col >= Location.Column); i++)
+			for (; i < Text.Length && !(curline >= line && col >= column); i++)
 			{
 				col++;
 
 				if (Text[i] == '\n')
 				{
-					line++;
+					curline++;
 					col = 1;
 				}
 			}
