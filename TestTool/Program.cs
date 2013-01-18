@@ -7,16 +7,22 @@ namespace TestTool
 	{
 		public static void Main(string[] args)
 		{
+			var policy = new DFormattingOptions();
+			policy.TypeBlockBraces = BraceStyle.EndOfLine;
+			
 			var code = @"
 class A
 // someCommentttt
 
 {
 
+//class B {}
+
 }";
 			Console.WriteLine(code);
 			Console.WriteLine("## Formatting ##");
-			code = Formatter.FormatCode(code);
+			
+			code = Formatter.FormatCode(code, null, policy);
 			Console.WriteLine(code);
 			
 			Console.WriteLine();

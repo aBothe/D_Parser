@@ -27,8 +27,7 @@ namespace D_Parser.Formatting
 		EndOfLineWithoutSpace,
 		NextLine,
 		NextLineShifted,
-		NextLineShifted2,
-		BannerStyle
+		NextLineShifted2
 	}
 
 	public enum BraceForcement

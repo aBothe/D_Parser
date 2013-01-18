@@ -22,6 +22,12 @@ namespace D_Parser.Formatting
 		public int ContinuationIndent {get;set;}
 		public int LabelIndent		{get;set;}
 		
-		public static TextEditorOptions Default = new TextEditorOptions{ TabsToSpaces = false, TabSize = 4, IndentSize = 4, ContinuationIndent = 4, LabelIndent = 4 };
+		public static TextEditorOptions Default = new TextEditorOptions{ 
+			EolMarker = Environment.NewLine,
+			TabsToSpaces = false, 
+			TabSize = 4, 
+			IndentSize = 4, 
+			ContinuationIndent = 4, 
+			LabelIndent = 4 };
 	}
 }

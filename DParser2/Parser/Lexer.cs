@@ -1747,7 +1747,7 @@ namespace D_Parser.Parser
 
 		void ReadSingleLineComment(Comment.Type commentType)
 		{
-			var st = new CodeLocation(Col, Line);
+			var st = new CodeLocation(Col - ((commentType & Comment.Type.Documentation) != 0 ? 3 : 2), Line);
 			string comm = ReadToEndOfLine().TrimStart('/');
 			var end = new CodeLocation(Col, Line);
 
@@ -1759,7 +1759,7 @@ namespace D_Parser.Parser
 		{
 			int nestedCommentDepth = 1;
 			int nextChar;
-			CodeLocation st = new CodeLocation(Col, Line);
+			CodeLocation st = new CodeLocation(Col - ((commentType & Comment.Type.Documentation) != 0 ? 3 : 2), Line);
 			StringBuilder scCurWord = new StringBuilder(); // current word, (scTag == null) or comment (when scTag != null)
 			bool hadLineEnd = false;
 

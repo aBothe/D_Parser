@@ -63,7 +63,7 @@ namespace D_Parser.Formatting
 				if(x.Offset == y.Offset)
 					return 0;
 				
-				return y.Offset > x.Offset ? 1 : -1;
+				return y.Offset < x.Offset ? 1 : -1;
 			}
 		}
 		
@@ -193,25 +193,9 @@ namespace D_Parser.Formatting
 					startIndent = "";
 					endIndent = IsLineIsEmptyUpToEol(rbraceOffset) ? curIndent.IndentString : this.options.EolMarker + curIndent.IndentString;
 					break;
-				case BraceStyle.BannerStyle:
+				case BraceStyle.EndOfLine:
 					int lastNonWs;
 					var lastComments = GetCommentsBefore(lBrace, out lastNonWs);
-					if(lastComments.Count != 0)
-					{
-						// delete old bracket
-						AddChange(whitespaceStart, lbraceOffset - whitespaceStart + 1, "");
-					
-						lbraceOffset = whitespaceStart = lastNonWs + 1;
-						startIndent = " {";
-					} else {
-						startIndent = " ";
-					}
-					curIndent.Push(IndentType.Block);
-					endIndent = IsLineIsEmptyUpToEol(rbraceOffset) ? curIndent.IndentString : this.options.EolMarker + curIndent.IndentString;
-					curIndent.Pop();
-					break;
-				case BraceStyle.EndOfLine:
-					lastComments = GetCommentsBefore(lBrace, out lastNonWs);
 					if(lastComments.Count != 0)
 					{
 						// delete old bracket
@@ -261,10 +245,11 @@ namespace D_Parser.Formatting
 			{
 				if(ast.Comments[lastComment].EndPosition > where)
 				{
-					lastComment--;
 					break;
 				}
 			}
+			
+			lastComment--;
 			
 			if(lastComment < 0)
 				return l;
@@ -279,13 +264,15 @@ namespace D_Parser.Formatting
 					var c = document[i];
 					if(c == ' ' || c == '\t' || c=='\r' || c == '\n')
 						continue;
-					firstNonWhiteSpaceOccurence = i;
-					return l;
+					goto ret;
 				}
 				
 				l.Add(comm);
 				whereOffset= document.ToOffset(comm.StartPosition);
 			}
+			
+		ret:
+			firstNonWhiteSpaceOccurence = SearchWhitespaceStart(whereOffset) - 1;
 			
 			return l;
 		}

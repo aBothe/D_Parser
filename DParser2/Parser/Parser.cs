@@ -418,10 +418,13 @@ namespace D_Parser.Parser
         public DModule Parse(bool ParseStructureOnly, bool KeepComments = true)
         {
             this.ParseStructureOnly = ParseStructureOnly;
+            if(KeepComments)
+            	Lexer.OnlyEnlistDDocComments = false;
             doc=Root();
 			doc.ParseErrors = new System.Collections.ObjectModel.ReadOnlyCollection<ParserError>(ParseErrors);
-			if(KeepComments)
-				doc.Comments = Lexer.Comments.ToArray();
+			if(KeepComments){
+				doc.Comments = TrackerVariables.Comments.ToArray();
+			}
 			
             return doc;
         }

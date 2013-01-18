@@ -112,10 +112,10 @@ namespace D_Parser.Parser
 						break;
 
 					ret += c.CommentText + Environment.NewLine;
-					i++;
-
-					TrackerVariables.Comments.Add(c);
 				}
+				
+				i++;
+				TrackerVariables.Comments.Add(c);
 			}
 			Lexer.Comments.RemoveRange(0, i);
 
