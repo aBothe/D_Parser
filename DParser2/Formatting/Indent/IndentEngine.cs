@@ -837,10 +837,10 @@ namespace D_Parser.Formatting.Indent
 					// handled elsewhere
 					break;
 				case ',':
-					if(keyword == DTokens.Import)
-						PushFoldedStatement();
-					// avoid indenting if we are in a list
-					break;
+					if(stack.PeekInside(0) == Inside.Block && stack.PeekKeyword == DTokens.Enum)
+						break;
+					
+					goto default;
 				default:
 					if (stack.PeekLineNr (0) == curLineNr) {
 						// is this right? I don't remember why I did this...
