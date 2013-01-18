@@ -1979,7 +1979,7 @@ namespace D_Parser.Parser
 				return new UserDeclarationAttribute(args.ToArray()){Location = sl, EndLocation = t.EndLocation};
 			}
 			
-			return new UserDeclarationAttribute(new[]{PostfixExpression(scope)});
+			return new UserDeclarationAttribute(new[]{PostfixExpression(scope)}) { Location = sl, EndLocation = t.EndLocation };
 		}
 
 		/// <summary>

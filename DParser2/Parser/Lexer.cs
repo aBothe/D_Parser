@@ -552,7 +552,7 @@ namespace D_Parser.Parser
 						token = ReadChar();
 						break;
 					case '@':
-						token = Token(DTokens.At, x,y, 1);
+						token = Token(DTokens.At, Col-1, Line, 1);
 						break;
 					default:
 						ch = (char)nextChar;

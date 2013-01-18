@@ -11,12 +11,12 @@ namespace TestTool
 			policy.TypeBlockBraces = BraceStyle.EndOfLine;
 			
 			var code = @"
-class A
+			@safe @uda('\0') class A
 // someCommentttt
 
 {
 
-//class B {}
+public void class B {}
 
 }";
 			Console.WriteLine(code);
