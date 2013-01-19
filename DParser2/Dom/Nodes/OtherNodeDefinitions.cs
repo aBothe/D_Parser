@@ -110,6 +110,10 @@ namespace D_Parser.Dom
 			base.AssignFrom(other);
 		}
 
+		public CodeLocation InToken;
+		public CodeLocation OutToken;
+		public CodeLocation BodyToken;
+		
 		public BlockStatement In { get { return _In; } set { _In = value; UpdateChildrenArray(); } }
 		public BlockStatement Out { get { return _Out; } set { _Out = value; UpdateChildrenArray(); } }
 		public BlockStatement Body { get { return _Body; } set { _Body = value; UpdateChildrenArray(); } }

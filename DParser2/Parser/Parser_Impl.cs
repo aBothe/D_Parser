@@ -4672,6 +4672,7 @@ namespace D_Parser.Parser
 				if (laKind == In)
 				{
 					Step();
+					par.InToken = t.Location;
 
 					par.In = BlockStatement(par);
 				}
@@ -4679,6 +4680,7 @@ namespace D_Parser.Parser
 				if (laKind == Out)
 				{
 					Step();
+					par.OutToken = t.Location;
 
 					if (laKind == OpenParenthesis)
 					{
@@ -4695,8 +4697,10 @@ namespace D_Parser.Parser
 			}
 
 			// Although there can be in&out constraints, there doesn't have to be a direct body definition. Used on abstract class/interface methods.
-			if (laKind == Body)
+			if (laKind == Body){
 				Step();
+				par.BodyToken = t.Location;
+			}
 
 			if ((par.In==null && par.Out==null) || 
 				laKind == OpenCurlyBrace)

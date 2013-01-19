@@ -7,13 +7,13 @@ namespace D_Parser.Formatting
 {
 	public class Formatter
 	{
-		public static string FormatCode(string code, DModule ast = null, DFormattingOptions options = null, ITextEditorOptions textStyle = null)
+		public static string FormatCode(string code, DModule ast = null, IDocumentAdapter document = null, DFormattingOptions options = null, ITextEditorOptions textStyle = null)
 		{
 			options = options ?? DFormattingOptions.CreateDStandard();
 			textStyle = textStyle ?? TextEditorOptions.Default;
 			ast = ast ?? DParser.ParseString(code) as DModule;
 			
-			var formattingVisitor = new DFormattingVisitor(options, new TextDocument{ Text = code }, ast, textStyle);
+			var formattingVisitor = new DFormattingVisitor(options, document ?? new TextDocument{ Text = code }, ast, textStyle);
 			
 			formattingVisitor.WalkThroughAst();
 			

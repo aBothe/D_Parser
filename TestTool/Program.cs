@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using D_Parser.Formatting;
 
 namespace TestTool
@@ -8,22 +9,27 @@ namespace TestTool
 		public static void Main(string[] args)
 		{
 			var policy = new DFormattingOptions();
-			policy.TypeBlockBraces = BraceStyle.EndOfLine;
+			policy.TypeBlockBraces = BraceStyle.NextLine;
 			
 			var code = @"
-			@safe @uda('\0') class A
-// someCommentttt
-
+class A
 {
+///SomeDoc
+void main() in{}
+out(v){}
+body{}
 
-public void class B {}
-
+void foo() {}
 }";
 			Console.WriteLine(code);
 			Console.WriteLine("## Formatting ##");
 			
-			code = Formatter.FormatCode(code, null, policy);
+			var sw = new Stopwatch();
+			sw.Start();
+			code = Formatter.FormatCode(code, null, null, policy);
+			sw.Stop();
 			Console.WriteLine(code);
+			Console.WriteLine("Took {0}ms", sw.Elapsed.TotalMilliseconds);
 			
 			Console.WriteLine();
 			Console.Write("Press any key to continue . . . ");

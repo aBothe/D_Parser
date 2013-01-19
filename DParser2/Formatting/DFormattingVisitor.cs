@@ -311,14 +311,15 @@ namespace D_Parser.Formatting
 			}
 		}
 
-		void FixIndentationForceNewLine(CodeLocation location)
+		void FixIndentationForceNewLine(CodeLocation location, int offset = -1)
 		{
 			string lineIndent = GetIndentation(location.Line);
 			string indentString = this.curIndent.IndentString;
 			if (location.Column - 1 == lineIndent.Length) {
 				AddChange(document.ToOffset(location.Line, 1), lineIndent.Length, indentString);
 			} else {
-				int offset = document.ToOffset(location);
+				if(offset < 0)
+					offset = document.ToOffset(location);
 				int start = SearchWhitespaceLineStart(offset);
 				if (start > 0) {
 					char ch = document[start - 1];
