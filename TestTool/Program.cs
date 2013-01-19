@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using D_Parser.Dom;
 using D_Parser.Formatting;
 
 namespace TestTool
@@ -14,19 +15,25 @@ namespace TestTool
 			var code = @"
 class A
 {
-///SomeDoc
+//SomeDoc
 void main() in{}
 out(v){}
 body{}
+
+
+
+
 
 void foo() {}
 }";
 			Console.WriteLine(code);
 			Console.WriteLine("## Formatting ##");
 			
+			var ast = D_Parser.Parser.DParser.ParseString(code, true) as DModule;
+			
 			var sw = new Stopwatch();
 			sw.Start();
-			code = Formatter.FormatCode(code, null, null, policy);
+			code = Formatter.FormatCode(code, ast, null, policy);
 			sw.Stop();
 			Console.WriteLine(code);
 			Console.WriteLine("Took {0}ms", sw.Elapsed.TotalMilliseconds);

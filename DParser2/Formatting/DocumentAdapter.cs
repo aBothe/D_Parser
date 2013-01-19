@@ -11,6 +11,7 @@ namespace D_Parser.Formatting
 		int ToOffset(int line, int column);
 		CodeLocation ToLocation(int offset);
 		int TextLength{get;}
+		int LineCount{get;}
 		string Text{get;}
 	}
 	
@@ -23,6 +24,11 @@ namespace D_Parser.Formatting
 		/// Contains the start offsets of each line
 		/// </summary>
 		int[] lines;
+		
+		public int LineCount
+		{
+			get{ return lines != null ? lines.Length : 0; }
+		}
 		
 		public int TextLength {
 			get {

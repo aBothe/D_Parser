@@ -64,10 +64,14 @@ namespace D_Parser.Formatting
 	
 	public class DFormattingOptions
 	{
+		#region Nodes
 		/// <summary>
 		/// For classes, struct definitions etc.
 		/// </summary>
 		public BraceStyle TypeBlockBraces = BraceStyle.EndOfLine;
+		public int LinesBeforeNode = 1;
+		public int LinesAfterNode = 1;
+		#endregion
 		
 		public bool IndentSwitchBody = true;
 		public GotoLabelIndentStyle LabelIndentStyle = GotoLabelIndentStyle.OneLess;

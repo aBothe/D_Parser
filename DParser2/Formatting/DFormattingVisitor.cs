@@ -132,10 +132,7 @@ namespace D_Parser.Formatting
 		FormattingIndentStack curIndent;
 		readonly ITextEditorOptions options;
 		
-		public FormattingMode FormattingMode {
-			get;
-			set;
-		}
+		public FormattingMode FormattingMode = FormattingMode.Intrusive;
 
 		public bool HadErrors {
 			get;
@@ -227,6 +224,53 @@ namespace D_Parser.Formatting
 			if (rbraceOffset > 0 && endIndent != null) {
 				AddChange(whitespaceEnd, rbraceOffset - whitespaceEnd, endIndent);
 			}
+		}
+		
+		public void EnsureBlankLinesAfter(CodeLocation loc, int blankLines)
+		{
+			if (FormattingMode != FormattingMode.Intrusive)
+				return;
+			int line = loc.Line;
+			do {
+				line++;
+			} while (line < document.LineCount && IsSpacingLine(line));
+			var start = document.ToOffset(loc);
+			
+			int foundBlankLines = line - loc.Line - 1;
+			
+			var sb = new StringBuilder();
+			for (int i = 0; i < blankLines - foundBlankLines; i++) {
+				sb.Append(this.options.EolMarker);
+			}
+			
+			int ws = start;
+			while (ws < document.TextLength && IsSpacing (document[ws])) {
+				ws++;
+			}
+			int removedChars = ws - start;
+			if (foundBlankLines > blankLines) {
+				removedChars += GetLineEndOffset(loc.Line + foundBlankLines - blankLines) - GetLineEndOffset(loc.Line);
+			}
+			AddChange(start, removedChars, sb.ToString());
+		}
+
+		public void EnsureBlankLinesBefore(CodeLocation loc, int blankLines)
+		{
+			if (FormattingMode != FormattingMode.Intrusive)
+				return;
+			int line = loc.Line;
+			do {
+				line--;
+			} while (line > 0 && IsSpacingLine(line));
+			int end = document.ToOffset(loc.Line, 1);
+			int start = document.ToOffset(line + 1, 1);
+			var sb = new StringBuilder ();
+			for (int i = 0; i < blankLines; i++) {
+				sb.Append(this.options.EolMarker);
+			}
+			if (end - start == 0 && sb.Length == 0)
+				return;
+			AddChange(start, end - start, sb.ToString());
 		}
 		
 		/// <summary>
@@ -354,9 +398,22 @@ namespace D_Parser.Formatting
 		#endregion
 		
 		#region Helper methods
+		int GetLineEndOffset(int line)
+		{
+			if(line >= document.LineCount)
+				return document.TextLength - 1;
+
+			return document.ToOffset(line+1, 1) - 1;
+		}
+		
+		bool InsideFormattingRegion(CodeLocation start, CodeLocation end)
+		{
+			return !CheckFormattingBoundaries || FormattingStartLocation <= start && FormattingEndLocation >= end;
+		}
+		
 		bool InsideFormattingRegion(ISyntaxRegion sr)
 		{
-			return CheckFormattingBoundaries && FormattingStartLocation <= sr.Location && FormattingEndLocation >= sr.EndLocation;
+			return !CheckFormattingBoundaries || FormattingStartLocation <= sr.Location && FormattingEndLocation >= sr.EndLocation;
 		}
 		
 		int SearchWhitespaceStart(int startOffset)
@@ -431,6 +488,18 @@ namespace D_Parser.Formatting
 				if (!IsSpacing(document[startOffset])) {
 					return false;
 				}
+			}
+			return true;
+		}
+		
+		bool IsSpacingLine(int line)
+		{
+			var o = document.ToOffset(line,1);
+			for(; o < document.TextLength; o++)
+			{
+				char c = document[o];
+				if(!IsSpacing(c))
+					return c == '\r' || c == '\n';
 			}
 			return true;
 		}

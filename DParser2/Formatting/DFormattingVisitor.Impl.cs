@@ -31,6 +31,8 @@ namespace D_Parser.Formatting
 			}
 			
 			base.Visit(n);
+			
+			EnsureBlankLinesAfter(n.EndLocation, policy.LinesAfterNode);
 		}
 		
 		public override void Visit(DClassLike n)
@@ -60,6 +62,8 @@ namespace D_Parser.Formatting
 			base.VisitBlock(block);
 			
 			curIndent.Pop();
+			
+			EnsureBlankLinesAfter(block.EndLocation, policy.LinesAfterNode);
 		}
 		
 		public override void VisitDNode(DNode n)
