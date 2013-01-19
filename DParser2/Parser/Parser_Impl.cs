@@ -4720,10 +4720,16 @@ namespace D_Parser.Parser
 		private INode TemplateDeclaration(INode Parent)
 		{
 			var startLoc = la.Location;
+			
 			// TemplateMixinDeclaration
-			bool isTemplateMixinDecl = laKind == Mixin;
-			if (isTemplateMixinDecl)
+			Modifier mixinMod;
+			if (laKind == Mixin){
 				Step();
+				mixinMod = new Modifier(Mixin){ Location = t.Location, EndLocation = t.EndLocation };
+			}
+			else
+				mixinMod = null;
+			
 			Expect(Template);
 			var dc = new DClassLike(Template) {
 				Description=GetComments(),
@@ -4734,8 +4740,8 @@ namespace D_Parser.Parser
 
 			ApplyAttributes(dc);
 
-			if (isTemplateMixinDecl)
-				dc.Attributes.Add(new Modifier(Mixin));
+			if (mixinMod != null)
+				dc.Attributes.Add(mixinMod);
 
 			if (Expect(Identifier))
 			{

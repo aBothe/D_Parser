@@ -341,6 +341,7 @@ namespace D_Parser.Formatting
 			var i = document.ToOffset(lineNumber, 1);
 			var b = new StringBuilder ();
 			int endOffset = document.TextLength;
+			if(i>0)
 			for (; i < endOffset; i++) {
 				char c = document[i];
 				if (!IsSpacing(c)) {
