@@ -19,6 +19,27 @@ namespace D_Parser.Formatting
 		{
 			FormatAttributedNode(n);
 			
+			if(n.Type != null)
+				ForceSpacesBeforeRemoveNewLines(n.NameLocation, true);
+			
+			var nameLength = 0;
+			
+			switch(n.SpecialType)
+			{
+				case DMethod.MethodType.Destructor:
+				case DMethod.MethodType.Constructor:
+					nameLength = 4; // this
+					break;
+				case DMethod.MethodType.Normal:
+					nameLength = n.Name.Length;
+					break;
+			}
+			
+			if(nameLength > 0)
+				ForceSpacesAfterRemoveLines(new CodeLocation(n.NameLocation.Column + nameLength, n.NameLocation.Line),false);
+			
+			//MakeOnlySpacesToNextNonWs(name + nameLength - 1,0);
+			
 			// Find in, out(...) and body tokens
 			if(!n.InToken.IsEmpty){
 				FixIndentationForceNewLine(n.InToken);
@@ -42,7 +63,35 @@ namespace D_Parser.Formatting
 		
 		public override void Visit(DVariable n)
 		{
-			base.Visit(n);
+			//FormatAttributedNode(n);
+			
+			// Check if we're inside a multi-declaration like int a,b,c;			
+			if(n.Type != null)
+				n.Type.Accept(this);
+			
+			var lastNonWs = SearchWhitespaceStart(document.ToOffset(n.NameLocation)) - 1;
+			if(lastNonWs > 0 && document[lastNonWs] == ','){
+				switch(policy.MultiVariableDeclPlacement)
+				{
+					case NewLinePlacement.NewLine:
+						FixIndentationForceNewLine(n.NameLocation);
+						break;
+					case NewLinePlacement.SameLine:
+						ForceSpacesBeforeRemoveNewLines(n.NameLocation, true);
+						break;
+				}
+			}
+			
+			if(n.Initializer != null)
+			{
+				//MakeOnlySpacesToNextNonWs(nameOffset + n.Name.Length - 1, 1);
+				curIndent.Push(IndentType.Block);
+				if (n.NameLocation.Line != n.Initializer.Location.Line) {
+					FixStatementIndentation(n.Initializer.Location);
+				}
+				n.Initializer.Accept(this);
+				curIndent.Pop ();
+			}
 		}
 		
 		public override void VisitBlock(DBlockNode block)
@@ -79,7 +128,8 @@ namespace D_Parser.Formatting
 			if(n.Attributes != null)
 			foreach(var a in n.Attributes)
 			{
-				FixIndentationForceNewLine(a.Location);
+				if(a is AtAttribute)
+					FixIndentationForceNewLine(a.Location);
 			}
 			
 			FixIndentationForceNewLine(n.Location);
@@ -103,6 +153,22 @@ namespace D_Parser.Formatting
 			curIndent.Push(IndentType.Block);
 			base.Visit(s);
 			curIndent.Pop();
+		}
+		
+		public override void Visit(DeclarationStatement s)
+		{
+			FixStatementIndentation(s.Location);
+			FixSemicolon(s.EndLocation);
+			
+			base.Visit(s);
+		}
+		
+		public override void Visit(ExpressionStatement s)
+		{
+			FixStatementIndentation(s.Location);
+			FixSemicolon(s.EndLocation);
+			
+			base.Visit(s);
 		}
 		#endregion
 	}

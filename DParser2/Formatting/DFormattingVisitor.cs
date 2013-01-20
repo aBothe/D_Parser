@@ -127,6 +127,11 @@ namespace D_Parser.Formatting
 		#region Properties
 		readonly DModule ast;
 		DFormattingOptions policy;
+		/// <summary>
+		/// Keeps start locations of single line comments of the entire ast.
+		/// Used for checking whether offsets are inside those or not. Not null.
+		/// </summary>
+		CodeLocation[] SingleLineComments;
 		IDocumentAdapter document;
 		List<TextReplaceAction> changes = new List<TextReplaceAction>();
 		FormattingIndentStack curIndent;
@@ -158,6 +163,22 @@ namespace D_Parser.Formatting
 			this.document = document;
 			this.options = options ?? TextEditorOptions.Default;
 			curIndent = new FormattingIndentStack(this.options);
+		}
+		
+		void BuildSingleLineCommentDict()
+		{
+			if(ast.Comments != null && ast.Comments.Length != 0)
+			{
+				SingleLineComments = new CodeLocation[ast.Comments.Length];
+				int i=0;
+				foreach(var c in ast.Comments)
+				{
+					if((c.CommentType & Comment.Type.SingleLine) != 0)
+						SingleLineComments[i++]= c.StartPosition;
+				}
+			}
+			else 
+				SingleLineComments = new CodeLocation[0];
 		}
 		
 		/// <summary>
@@ -324,6 +345,22 @@ namespace D_Parser.Formatting
 		
 		#region Indentation helpers
 		string nextStatementIndent = null;
+		
+		public void FixSemicolon(CodeLocation statementEnd)
+		{
+			int endOffset = document.ToOffset(statementEnd);
+			endOffset--;
+			if(document[endOffset] != ';')
+				return;
+			
+			int offset = endOffset;
+			while (offset - 1 > 0 && char.IsWhiteSpace (document[offset - 1])) {
+				offset--;
+			}
+			if (offset < endOffset) {
+				AddChange(offset, endOffset - offset, null);
+			}
+		}
 
 		void FixStatementIndentation(CodeLocation location)
 		{
@@ -378,6 +415,66 @@ namespace D_Parser.Formatting
 					AddChange(start, offset - start, this.options.EolMarker + indentString);
 				}
 			}
+		}
+		
+		void ForceSpace(int startOffset, int endOffset, bool forceSpace)
+		{
+			int lastNonWs = SearchLastNonWsChar(startOffset, endOffset);
+			AddChange(lastNonWs + 1, System.Math.Max(0, endOffset - lastNonWs - 1), forceSpace ? " " : "");
+		}
+
+		void ForceSpacesAfter(CodeLocation loc, bool forceSpaces)
+		{
+			int offset = document.ToOffset(loc);
+
+			int i = offset;
+			while (i < document.TextLength && IsSpacing (document[i])) {
+				i++;
+			}
+			ForceSpace(offset - 1, i, forceSpaces);
+		}
+		
+		void ForceSpacesAfterRemoveLines(CodeLocation loc, bool forceSpaces = false)
+		{
+			int offset = document.ToOffset(loc);
+
+			int i = offset;
+			char c;
+			while (i < document.TextLength && (IsSpacing (c = document[i]) || c == '\r' || c == '\n')) {
+				i++;
+			}
+			ForceSpace(offset - 1, i, forceSpaces);
+		}
+		
+		int ForceSpacesBefore(CodeLocation location, bool forceSpaces)
+		{
+			// respect manual line breaks.
+			if (location.Column <= 1 || GetIndentation(location.Line).Length == location.Column - 1) {
+				return 0;
+			}
+			
+			int offset = document.ToOffset(location);
+			int i = offset - 1;
+			while (i >= 0 && IsSpacing (document[i])) {
+				i--;
+			}
+			ForceSpace(i, offset, forceSpaces);
+			return i;
+		}
+
+		int ForceSpacesBeforeRemoveNewLines(CodeLocation location, bool forceSpace = true)
+		{
+			int offset = document.ToOffset(location);
+			int i = offset - 1;
+			while (i >= 0) {
+				char ch = document[i];
+				if (!IsSpacing(ch) && ch != '\r' && ch != '\n')
+					break;
+				i--;
+			}
+			var length = System.Math.Max(0, (offset - 1) - i);
+			AddChange(i + 1, length, forceSpace ? " " : "");
+			return i;
 		}
 		
 		string GetIndentation(int lineNumber)
@@ -518,7 +615,7 @@ namespace D_Parser.Formatting
 			
 			for (int i = startOffset; i < endOffset && i < textLength; i++) {
 				char ch = document[i];
-				if (IsSpacing(ch)) {
+				if (char.IsWhiteSpace(ch)) {
 					continue;
 				}
 				
@@ -562,7 +659,7 @@ namespace D_Parser.Formatting
 					}
 				}
 
-				if (!inBlockComment && inNestedComment == 1) {
+				if (!inBlockComment && inNestedComment < 1) {
 					result = i;
 				}
 			}

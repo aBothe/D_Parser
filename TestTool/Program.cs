@@ -11,25 +11,35 @@ namespace TestTool
 		{
 			var policy = new DFormattingOptions();
 			policy.TypeBlockBraces = BraceStyle.NextLine;
+			policy.MultiVariableDeclPlacement = NewLinePlacement.SameLine;
 			
 			var code = @"
 class A
 {
 //SomeDoc
-void main() in{}
+void                main
+() in{}
 out(v){}
-body{}
+body{
 
+	int a = 123;
+	a++
 
+;
 
+}
+@safe int[] 
+d 
+=
+34;
+int a=12,b=23,c;
 
 
 void foo() {}
 }";
-			Console.WriteLine(code);
 			Console.WriteLine("## Formatting ##");
 			
-			var ast = D_Parser.Parser.DParser.ParseString(code, true) as DModule;
+			var ast = D_Parser.Parser.DParser.ParseString(code) as DModule;
 			
 			var sw = new Stopwatch();
 			sw.Start();

@@ -71,6 +71,11 @@ namespace D_Parser.Formatting
 		public BraceStyle TypeBlockBraces = BraceStyle.EndOfLine;
 		public int LinesBeforeNode = 1;
 		public int LinesAfterNode = 1;
+		
+		/// <summary>
+		/// int a, b, c; -- Should a,b,c be placed on the same line, or on a new line?
+		/// </summary>
+		public NewLinePlacement MultiVariableDeclPlacement = NewLinePlacement.NewLine;
 		#endregion
 		
 		public bool IndentSwitchBody = true;

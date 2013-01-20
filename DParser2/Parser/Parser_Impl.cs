@@ -698,7 +698,7 @@ namespace D_Parser.Parser
 			// Skip ref token
 			if (laKind == (Ref))
 			{
-				PushAttribute(new Modifier(Ref), false);
+				PushAttribute(new Modifier(Ref) { Location = la.Location, EndLocation = la.EndLocation }, false);
 				Step();
 			}
 
@@ -847,7 +847,7 @@ namespace D_Parser.Parser
 			if (laKind == (Ref))
 			{
 				if (!Modifier.ContainsAttribute(DeclarationAttributes, Ref))
-					PushAttribute(new Modifier(Ref), false);
+					PushAttribute(new Modifier(Ref) { Location = la.Location, EndLocation = la.EndLocation }, false);
 				Step();
 			}
 
@@ -4376,7 +4376,8 @@ namespace D_Parser.Parser
 				Parent = scope,
 				SpecialType = DMethod.MethodType.Constructor,
 				Location = t.Location,
-				Name = DMethod.ConstructorIdentifier
+				Name = DMethod.ConstructorIdentifier,
+				NameLocation = t.Location
 			};
 			dm.Description = GetComments();
 			LastParsedObject = dm;
@@ -4420,7 +4421,7 @@ namespace D_Parser.Parser
 		INode Destructor()
 		{
 			Expect(Tilde);
-			var dm = new DMethod{ Location = t.Location };
+			var dm = new DMethod{ Location = t.Location, NameLocation = la.Location };
 			Expect(This);
 			
 			LastParsedObject = dm;

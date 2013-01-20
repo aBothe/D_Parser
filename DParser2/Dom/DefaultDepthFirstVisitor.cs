@@ -173,9 +173,10 @@ namespace D_Parser.Dom
 		/// </summary>
 		public virtual void VisitChildren(StatementContainingStatement stmtContainer)
 		{
-			if (stmtContainer.SubStatements != null)
-				foreach (var s in stmtContainer.SubStatements)
-					s.Accept(this);
+			var ss = stmtContainer.SubStatements;
+			if (ss != null)
+				for(int i=0 ; i < ss.Length; i++)
+					ss[i].Accept(this);
 
 			VisitAbstractStmt(stmtContainer);
 		}
