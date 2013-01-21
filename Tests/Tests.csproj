@@ -59,6 +59,7 @@
   <ItemGroup>
     <Compile Include="CompletionTests.cs" />
     <Compile Include="EvaluationTests.cs" />
+    <Compile Include="FormatterTests.cs" />
     <Compile Include="IndentationTests.cs" />
     <Compile Include="ImplicitConversionTests.cs" />
     <Compile Include="ParseTests.cs">
@@ -73,6 +74,11 @@
       <Project>{0290A229-9AA1-41C3-B525-CAFB86D8BC42}</Project>
       <Name>DParser2</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="formatterTests.txt">
+      <LogicalName>formatterTests</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

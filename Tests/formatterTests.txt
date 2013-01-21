@@ -1,0 +1,12 @@
+﻿:: Comments must start at line start
+
+
+void main()
+{
+}
+##
+void main() {
+}
+##
+
+
