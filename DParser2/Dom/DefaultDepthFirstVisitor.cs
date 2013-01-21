@@ -436,8 +436,9 @@ namespace D_Parser.Dom
 		#region Expressions
 		public virtual void VisitChildren(ContainerExpression x)
 		{
-			foreach (var sx in x.SubExpressions)
-				sx.Accept(this);
+			if(x.SubExpressions != null)
+				foreach (var sx in x.SubExpressions)
+					sx.Accept(this);
 		}
 
 		public virtual void VisitOpBasedExpression(OperatorBasedExpression ox)
