@@ -46,5 +46,102 @@ namespace D_Parser.Formatting.Indent
 			
 			return eng.NewLineIndent;
 		}
+	
+		public static void CorrectIndent(TextReader code, int startOffset, int endOffset, Action<int, int, string> documentReplace, DFormattingOptions options = null, ITextEditorOptions textStyle = null, bool formatLastLine = true)
+		{
+			textStyle = textStyle ?? TextEditorOptions.Default;
+			
+			var eng = new IndentEngine(options ?? DFormattingOptions.CreateDStandard(), textStyle.TabsToSpaces, textStyle.IndentSize);
+			var replaceActions = new List<DFormattingVisitor.TextReplaceAction>();
+			
+			int originalIndent = 0;
+			bool hadLineBreak = true;
+			int n = 0;
+			
+			var i = startOffset;
+			while(i > 0){
+				n = code.Read();
+				i--;
+				eng.Push((char)n);
+				
+				if(n == '\r')
+				{
+					if(code.Peek() == '\n'){
+						code.Read();
+						eng.Push('\n');
+					}
+					hadLineBreak = true;
+					originalIndent = 0;
+				}
+				else if(n == '\n')
+				{
+					hadLineBreak = true;
+					originalIndent = 0;
+				}
+				else if(hadLineBreak)
+				{
+					if(n == ' ' || n== '\t')
+						originalIndent++;
+					else
+						hadLineBreak = false;
+				}
+			}
+			
+			i = endOffset - startOffset;
+			while(i > 0)
+			{
+				n = code.Read();
+				i--;
+
+				if(n == '\r')
+				{
+					hadLineBreak = true;
+					replaceActions.Add(new DFormattingVisitor.TextReplaceAction(eng.Position - eng.LineOffset,originalIndent, eng.ThisLineIndent));
+					originalIndent = 0;
+					
+					eng.Push('\r');
+					if(code.Peek() == '\n'){
+						code.Read();
+						eng.Push('\n');
+					}
+					
+					continue;
+				}
+				else if(n == '\n')
+				{
+					hadLineBreak = true;
+					replaceActions.Add(new DFormattingVisitor.TextReplaceAction(eng.Position - eng.LineOffset,originalIndent, eng.ThisLineIndent));
+					originalIndent = 0;
+					
+					eng.Push('\n');
+					continue;
+				}
+				else if(hadLineBreak)
+				{
+					if(n == ' ' || n == '\t')
+						originalIndent++;
+					else
+						hadLineBreak = false;
+				}
+				
+				eng.Push((char)n);
+			}
+			
+			// If there's code left, format the last line of the selection either
+			if(formatLastLine && code.Peek() > 0)
+			{
+				while((n=code.Read()) > 0 && n != '\r' && n != '\n')
+					eng.Push((char)n);
+				
+				replaceActions.Add(new DFormattingVisitor.TextReplaceAction(eng.Position - eng.LineOffset,originalIndent, eng.ThisLineIndent));
+			}
+			
+			// Perform replacements from the back of the document to the front - to ensure offset consistency
+			for(int k = replaceActions.Count - 1; k!=0; k--)
+			{
+				var rep = replaceActions[k];
+				documentReplace(rep.Offset, rep.RemovalLength, rep.NewText);
+			}
+		}
 	}
 }

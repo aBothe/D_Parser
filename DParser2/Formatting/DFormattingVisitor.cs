@@ -15,7 +15,7 @@ namespace D_Parser.Formatting
 	public partial class DFormattingVisitor : DefaultDepthFirstVisitor
 	{
 		#region Change management
-		sealed class TextReplaceAction
+		internal sealed class TextReplaceAction
 		{
 			internal readonly int Offset;
 			internal readonly int RemovalLength;
