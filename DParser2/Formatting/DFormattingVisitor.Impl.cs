@@ -9,7 +9,182 @@ namespace D_Parser.Formatting
 {
 	public partial class DFormattingVisitor : DefaultDepthFirstVisitor
 	{
+		List<DAttribute> AlreadyHandledAttributes = new List<DAttribute>();
+		
 		#region Nodes
+		public override void VisitChildren(IBlockNode block)
+		{
+			var children = new List<INode>(block.Children);
+			var staticStmts = new List<StaticStatement>();
+			if(block is DBlockNode)
+				staticStmts.AddRange((block as DBlockNode).StaticStatements);
+			
+			var dbn = block as DBlockNode;
+			if(dbn != null && dbn.MetaBlocks.Count != 0)
+			{
+				var mbStack = new Stack<AbstractMetaDeclaration>();
+				
+				for(int i = 0; i < dbn.MetaBlocks.Count; i++)
+				{
+					var mb = dbn.MetaBlocks[i];
+				handleElse:
+					
+					// If mb is inside the peek meta decl of mbStack, push mb on top of it
+					AbstractMetaDeclaration peekMb; 
+					if(mbStack.Count == 0 || (mb.Location > (peekMb = mbStack.Peek()).Location && 
+					                          mb.EndLocation < peekMb.EndLocation && 
+					                          !(peekMb is AttributeMetaDeclarationSection))){
+						mbStack.Push(mb);
+					}
+					else
+					{
+						while(mbStack.Count > 1 && curIndent.Peek == IndentType.Label)
+						{
+							VisitMetaBlockChildren(children, staticStmts, mbStack.Pop());
+							curIndent.Pop();
+						}
+						
+						VisitMetaBlockChildren(children, staticStmts, mbStack.Pop());
+						curIndent.Pop();
+					}
+					
+					// Format the header
+					
+					// private: or @asdf():
+					if(mb is AttributeMetaDeclarationSection)
+					{
+						if(curIndent.Peek == IndentType.Label)
+							curIndent.Pop();
+						
+						var mds = mb as AttributeMetaDeclarationSection;
+						switch(policy.LabelIndentStyle)
+						{
+							case GotoLabelIndentStyle.OneLess:
+								// Apply a negative indent to make it stick out one tab
+								curIndent.Push(IndentType.Negative);
+								FixIndentationForceNewLine(mds.Location);
+								curIndent.Pop();
+								break;
+							case GotoLabelIndentStyle.LeftJustify:
+								int originalIndent = curIndent.StackCount;
+								for(int k = originalIndent; k != 0; k--)
+									curIndent.Push(IndentType.Negative);
+								FixIndentationForceNewLine(mds.Location);
+								for(int k = originalIndent; k != 0; k--)
+									curIndent.Pop();
+								break;
+							default:
+								FixIndentationForceNewLine(mds.Location);
+								break;
+						}
+						
+						// Push the colon back to the last attribute's end location
+						ForceSpacesAfterRemoveLines(mds.AttributeOrCondition[mds.AttributeOrCondition.Length-1].EndLocation,false);
+						curIndent.Push(IndentType.Label);
+					}
+					else
+					{
+						FixIndentationForceNewLine(mb.Location);
+						
+						// Format braces for non-section meta blocks
+						
+						if(mb is IMetaDeclarationBlock)
+						{
+							var mdb = mb as IMetaDeclarationBlock;
+							if(mdb is MetaDeclarationBlock)
+							{
+								// Do not format the opener bracket
+								FixIndentationForceNewLine(mdb.EndLocation);
+							}
+							else
+							{
+								EnforceBraceStyle(policy.TypeBlockBraces, mdb.BlockStartLocation, mdb.EndLocation.Line, mdb.EndLocation.Column-1);
+							}
+						}
+						
+						curIndent.Push(IndentType.Block);
+					}
+					
+					if(mb is AttributeMetaDeclaration && (mb as AttributeMetaDeclaration).OptionalElseBlock != null)
+					{
+						mb = (mb as AttributeMetaDeclaration).OptionalElseBlock;
+						goto handleElse;
+					}
+				}
+				
+				while(mbStack.Count > 0)
+				{
+					VisitMetaBlockChildren(children, staticStmts, mbStack.Peek());
+					mbStack.Pop();
+					curIndent.Pop();
+				}
+			}
+			
+			// Handle all children that have not been handled yet.
+			for(int k = 0; k < children.Count; k++)
+				children[k].Accept(this);
+		}
+		
+		void VisitMetaBlockChildren(List<INode> children, List<StaticStatement> staticStatements, AbstractMetaDeclaration mb)
+		{
+			for(int k = 0; k < children.Count; k++)
+			{
+				var ch = children[k];
+				if(ch.Location > mb.Location)
+				{
+					if(ch.EndLocation < mb.EndLocation || mb is AttributeMetaDeclarationSection)
+					{
+						ch.Accept(this);
+						children.RemoveAt(k--);
+					}
+					else
+						break;
+				}
+			}
+			
+			for(int k = 0; k < staticStatements.Count; k++)
+			{
+				var ss = staticStatements[k];
+				if(ss.Location > mb.Location && (ss.EndLocation < mb.EndLocation || mb is AttributeMetaDeclarationSection))
+				{
+					ss.Accept(this);
+					staticStatements.RemoveAt(k--);
+				}
+			}
+		}
+		
+		#region Meta blocks
+		public override void Visit(AttributeMetaDeclaration md)
+		{
+			base.Visit(md);
+		}
+		
+		public override void Visit(MetaDeclarationBlock metaDeclarationBlock)
+		{
+			base.Visit(metaDeclarationBlock);
+		}
+		
+		public override void Visit(AttributeMetaDeclarationBlock attributeMetaDeclarationBlock)
+		{
+			base.Visit(attributeMetaDeclarationBlock);
+		}
+		
+		public override void Visit(AttributeMetaDeclarationSection attributeMetaDeclarationSection)
+		{
+			base.Visit(attributeMetaDeclarationSection);
+		}
+		
+		public override void Visit(ElseMetaDeclaration elseMetaDeclaration)
+		{
+			base.Visit(elseMetaDeclaration);
+		}
+		
+		public override void Visit(ElseMetaDeclarationBlock elseMetaDeclarationBlock)
+		{
+			base.Visit(elseMetaDeclarationBlock);
+		}
+		#endregion
+		
 		public override void Visit(DEnum n)
 		{
 			base.Visit(n);
@@ -63,34 +238,53 @@ namespace D_Parser.Formatting
 		
 		public override void Visit(DVariable n)
 		{
-			//FormatAttributedNode(n);
+			FormatAttributedNode(n);
 			
-			// Check if we're inside a multi-declaration like int a,b,c;			
 			if(n.Type != null)
 				n.Type.Accept(this);
 			
-			var lastNonWs = SearchWhitespaceStart(document.ToOffset(n.NameLocation)) - 1;
-			if(lastNonWs > 0 && document[lastNonWs] == ','){
-				switch(policy.MultiVariableDeclPlacement)
-				{
-					case NewLinePlacement.NewLine:
-						FixIndentationForceNewLine(n.NameLocation);
-						break;
-					case NewLinePlacement.SameLine:
-						ForceSpacesBeforeRemoveNewLines(n.NameLocation, true);
-						break;
-				}
-			}
-			
-			if(n.Initializer != null)
+			if(!n.NameLocation.IsEmpty)
 			{
-				//MakeOnlySpacesToNextNonWs(nameOffset + n.Name.Length - 1, 1);
-				curIndent.Push(IndentType.Block);
-				if (n.NameLocation.Line != n.Initializer.Location.Line) {
-					FixStatementIndentation(n.Initializer.Location);
+				// Check if we're inside a multi-declaration like int a,b,c;	
+				var lastNonWs = SearchWhitespaceStart(document.ToOffset(n.NameLocation)) - 1;
+				if(lastNonWs > 0 && document[lastNonWs] == ','){
+					switch(policy.MultiVariableDeclPlacement)
+					{
+						case NewLinePlacement.NewLine:
+							curIndent.Push(IndentType.Continuation);
+							FixIndentationForceNewLine(n.NameLocation);
+							curIndent.Pop();
+							break;
+						case NewLinePlacement.SameLine:
+							ForceSpacesBeforeRemoveNewLines(n.NameLocation, true);
+							break;
+					}
 				}
-				n.Initializer.Accept(this);
-				curIndent.Pop ();
+				else{
+					if(policy.ForceNodeNameOnSameLine)
+						ForceSpacesBeforeRemoveNewLines(n.NameLocation, true);
+				}
+				
+				if(n.Initializer != null)
+				{
+					// place '=' token
+					ForceSpacesAfterRemoveLines(new CodeLocation(n.NameLocation.Column+n.Name.Length,n.NameLocation.Line),true);
+					
+					if(policy.ForceVarInitializerOnSameLine)
+					{
+						ForceSpacesBeforeRemoveNewLines(n.Initializer.Location,true);
+						n.Initializer.Accept(this);
+					}
+					else
+					{
+						curIndent.Push(IndentType.Block);
+						if (n.NameLocation.Line != n.Initializer.Location.Line) {
+							FixStatementIndentation(n.Initializer.Location);
+						}
+						n.Initializer.Accept(this);
+						curIndent.Pop ();
+					}
+				}
 			}
 		}
 		
@@ -123,16 +317,21 @@ namespace D_Parser.Formatting
 		/// <summary>
 		/// Call before pushing a new indent level and before call base.Visit for the respective node!
 		/// </summary>
-		void FormatAttributedNode(DNode n)
+		void FormatAttributedNode(DNode n, bool fmtStartLocation = true)
 		{
 			if(n.Attributes != null)
 			foreach(var a in n.Attributes)
 			{
+				if(AlreadyHandledAttributes.Contains(a))
+					continue;
+				AlreadyHandledAttributes.Add(a);
+				
 				if(a is AtAttribute)
 					FixIndentationForceNewLine(a.Location);
 			}
 			
-			FixIndentationForceNewLine(n.Location);
+			if(fmtStartLocation)
+				FixIndentationForceNewLine(n.Location);
 		}
 		
 		void FormatParameters()
@@ -157,10 +356,11 @@ namespace D_Parser.Formatting
 		
 		public override void Visit(DeclarationStatement s)
 		{
-			FixStatementIndentation(s.Location);
+			base.Visit(s);
+			//FixStatementIndentation(s.Location);
 			FixSemicolon(s.EndLocation);
 			
-			base.Visit(s);
+			
 		}
 		
 		public override void Visit(ExpressionStatement s)

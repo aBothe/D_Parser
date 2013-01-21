@@ -73,6 +73,15 @@ namespace D_Parser.Formatting
 		public int LinesAfterNode = 1;
 		
 		/// <summary>
+		/// int a = 34; // Shall '= 34' be forced to reside on the same line as 'int a'?
+		/// </summary>
+		public bool ForceVarInitializerOnSameLine = true;
+		/// <summary>
+		/// Forces a declaration's name to stay on the same line as its type.
+		/// int a; // Shall 'a' be placed on the same line or could it stay somewhere else?
+		/// </summary>
+		public bool ForceNodeNameOnSameLine = true;
+		/// <summary>
 		/// int a, b, c; -- Should a,b,c be placed on the same line, or on a new line?
 		/// </summary>
 		public NewLinePlacement MultiVariableDeclPlacement = NewLinePlacement.NewLine;

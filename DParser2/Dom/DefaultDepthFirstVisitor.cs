@@ -48,7 +48,6 @@ namespace D_Parser.Dom
 
 		public virtual void Visit(DMethod n)
 		{
-			VisitChildren(n);
 			VisitDNode(n);
 
 			if(n.Parameters!=null)

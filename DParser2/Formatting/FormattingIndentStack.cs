@@ -31,7 +31,11 @@ namespace D_Parser.Formatting
 	public enum IndentType {
 		Block,
 		Continuation,
-		Label
+		Label,
+		/// <summary>
+		/// Negative block indent. Used for section attribute.
+		/// </summary>
+		Negative
 	}
 
 	public class FormattingIndentStack
@@ -46,6 +50,10 @@ namespace D_Parser.Formatting
 			this.options = options;
 		}
 
+		public int StackCount
+		{
+			get{ return indentStack.Count; }
+		}
 
 		public void Push(IndentType type)
 		{
@@ -59,6 +67,11 @@ namespace D_Parser.Formatting
 			curIndent -= GetIndent(indentStack.Pop());
 			Update();
 		}
+		
+		public IndentType Peek
+		{
+			get{ return indentStack.Peek(); }
+		}
 
 		int GetIndent(IndentType indentType)
 		{
@@ -69,6 +82,8 @@ namespace D_Parser.Formatting
 					return options.ContinuationIndent;
 				case IndentType.Label:
 					return options.LabelIndent;
+				case IndentType.Negative:
+					return -options.IndentSize;
 				default:
 					throw new ArgumentOutOfRangeException();
 			}

@@ -28,6 +28,6 @@ namespace D_Parser.Formatting
 			TabSize = 4, 
 			IndentSize = 4, 
 			ContinuationIndent = 4, 
-			LabelIndent = 4 };
+			LabelIndent = 0 };
 	}
 }

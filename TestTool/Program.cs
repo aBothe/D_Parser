@@ -16,6 +16,16 @@ namespace TestTool
 			var code = @"
 class A
 {
+
+private:
+
+int* privPtr = 2134;
+
+public
+{
+	int pubInt;
+}
+
 //SomeDoc
 void                main
 () in{}
@@ -33,6 +43,7 @@ d
 =
 34;
 int a=12,b=23,c;
+
 
 
 void foo() {}
