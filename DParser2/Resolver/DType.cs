@@ -264,7 +264,7 @@ namespace D_Parser.Resolver
 		/// Key: Type name
 		/// Value: Corresponding type
 		/// </summary>
-		public ReadOnlyCollection<KeyValuePair<string, TemplateParameterSymbol>> DeducedTypes;
+		public ReadOnlyCollection<TemplateParameterSymbol> DeducedTypes;
 
 
 		public string Name
@@ -277,18 +277,18 @@ namespace D_Parser.Resolver
 			}
 		}
 
-		public DSymbol(DNode Node, AbstractType BaseType, ReadOnlyCollection<KeyValuePair<string, TemplateParameterSymbol>> deducedTypes, ISyntaxRegion td)
+		public DSymbol(DNode Node, AbstractType BaseType, ReadOnlyCollection<TemplateParameterSymbol> deducedTypes, ISyntaxRegion td)
 			: base(BaseType, td)
 		{
 			this.DeducedTypes = deducedTypes;
 			this.Definition = Node;
 		}
 
-		public DSymbol(DNode Node, AbstractType BaseType, Dictionary<string, TemplateParameterSymbol> deducedTypes, ISyntaxRegion td)
+		public DSymbol(DNode Node, AbstractType BaseType, IEnumerable<TemplateParameterSymbol> deducedTypes, ISyntaxRegion td)
 			: base(BaseType, td)
 		{
 			if(deducedTypes!=null)
-				this.DeducedTypes = new ReadOnlyCollection<KeyValuePair<string, TemplateParameterSymbol>>(deducedTypes.ToArray());
+				this.DeducedTypes = new ReadOnlyCollection<TemplateParameterSymbol>(deducedTypes.ToArray());
 			this.Definition = Node;
 		}
 
@@ -301,14 +301,14 @@ namespace D_Parser.Resolver
 	#region User-defined types
 	public abstract class UserDefinedType : DSymbol
 	{
-		public UserDefinedType(DNode Node, AbstractType baseType, ReadOnlyCollection<KeyValuePair<string, TemplateParameterSymbol>> deducedTypes, ISyntaxRegion td) : base(Node, baseType, deducedTypes, td) { }
+		public UserDefinedType(DNode Node, AbstractType baseType, ReadOnlyCollection<TemplateParameterSymbol> deducedTypes, ISyntaxRegion td) : base(Node, baseType, deducedTypes, td) { }
 	}
 
 	public class AliasedType : MemberSymbol
 	{
 		public new DVariable Definition { get { return base.Definition as DVariable; } }
 
-		public AliasedType(DVariable AliasDefinition, AbstractType Type, ISyntaxRegion td, ReadOnlyCollection<KeyValuePair<string, TemplateParameterSymbol>> deducedTypes=null)
+		public AliasedType(DVariable AliasDefinition, AbstractType Type, ISyntaxRegion td, ReadOnlyCollection<TemplateParameterSymbol> deducedTypes=null)
 			: base(AliasDefinition,Type, td, deducedTypes) {}
 
 		public override string ToString()
@@ -332,7 +332,7 @@ namespace D_Parser.Resolver
 
 	public class StructType : TemplateIntermediateType
 	{
-		public StructType(DClassLike dc, ISyntaxRegion td, Dictionary<string, TemplateParameterSymbol> deducedTypes = null) : base(dc, td, null, null, deducedTypes) { }
+		public StructType(DClassLike dc, ISyntaxRegion td, IEnumerable<TemplateParameterSymbol> deducedTypes = null) : base(dc, td, null, null, deducedTypes) { }
 
 		public override string ToString()
 		{
@@ -342,7 +342,7 @@ namespace D_Parser.Resolver
 
 	public class UnionType : TemplateIntermediateType
 	{
-		public UnionType(DClassLike dc, ISyntaxRegion td, Dictionary<string, TemplateParameterSymbol> deducedTypes = null) : base(dc, td, null, null, deducedTypes) { }
+		public UnionType(DClassLike dc, ISyntaxRegion td, IEnumerable<TemplateParameterSymbol> deducedTypes = null) : base(dc, td, null, null, deducedTypes) { }
 
 		public override string ToString()
 		{
@@ -354,13 +354,13 @@ namespace D_Parser.Resolver
 	{
 		public ClassType(DClassLike dc, ISyntaxRegion td, 
 			TemplateIntermediateType baseType, InterfaceType[] baseInterfaces,
-			ReadOnlyCollection<KeyValuePair<string, TemplateParameterSymbol>> deducedTypes)
+			ReadOnlyCollection<TemplateParameterSymbol> deducedTypes)
 			: base(dc, td, baseType, baseInterfaces, deducedTypes)
 		{}
 
 		public ClassType(DClassLike dc, ISyntaxRegion td, 
 			TemplateIntermediateType baseType, InterfaceType[] baseInterfaces = null,
-			Dictionary<string, TemplateParameterSymbol> deducedTypes = null)
+			IEnumerable<TemplateParameterSymbol> deducedTypes = null)
 			: base(dc, td, baseType, baseInterfaces, deducedTypes)
 		{}
 
@@ -374,25 +374,25 @@ namespace D_Parser.Resolver
 	{
 		public InterfaceType(DClassLike dc, ISyntaxRegion td, 
 			InterfaceType[] baseInterfaces=null,
-			Dictionary<string, TemplateParameterSymbol> deducedTypes = null) 
+			IEnumerable<TemplateParameterSymbol> deducedTypes = null) 
 			: base(dc, td, null, baseInterfaces, deducedTypes) {}
 
 		public InterfaceType(DClassLike dc, ISyntaxRegion td,
 			InterfaceType[] baseInterfaces,
-			ReadOnlyCollection<KeyValuePair<string, TemplateParameterSymbol>> deducedTypes)
+			ReadOnlyCollection<TemplateParameterSymbol> deducedTypes)
 			: base(dc, td, null, baseInterfaces, deducedTypes) { }
 	}
 
 	public class TemplateType : TemplateIntermediateType
 	{
-		public TemplateType(DClassLike dc, ISyntaxRegion td, Dictionary<string, TemplateParameterSymbol> inheritedTypeParams = null) : base(dc, td, null, null, inheritedTypeParams) { }
-		public TemplateType(DClassLike dc, ISyntaxRegion td, ReadOnlyCollection<KeyValuePair<string, TemplateParameterSymbol>> inheritedTypeParams = null) : base(dc, td, null, null, inheritedTypeParams) { }
+		public TemplateType(DClassLike dc, ISyntaxRegion td, IEnumerable<TemplateParameterSymbol> inheritedTypeParams = null) : base(dc, td, null, null, inheritedTypeParams) { }
+		public TemplateType(DClassLike dc, ISyntaxRegion td, ReadOnlyCollection<TemplateParameterSymbol> inheritedTypeParams = null) : base(dc, td, null, null, inheritedTypeParams) { }
 	}
 	
 	public class MixinTemplateType : TemplateType
 	{
-		public MixinTemplateType(DClassLike dc, ISyntaxRegion td, Dictionary<string, TemplateParameterSymbol> inheritedTypeParams = null) : base(dc, td, inheritedTypeParams) { }
-		public MixinTemplateType(DClassLike dc, ISyntaxRegion td, ReadOnlyCollection<KeyValuePair<string, TemplateParameterSymbol>> inheritedTypeParams = null) : base(dc, td, inheritedTypeParams) { }
+		public MixinTemplateType(DClassLike dc, ISyntaxRegion td, IEnumerable<TemplateParameterSymbol> inheritedTypeParams = null) : base(dc, td, inheritedTypeParams) { }
+		public MixinTemplateType(DClassLike dc, ISyntaxRegion td, ReadOnlyCollection<TemplateParameterSymbol> inheritedTypeParams = null) : base(dc, td, inheritedTypeParams) { }
 	}
 
 	public class TemplateIntermediateType : UserDefinedType
@@ -403,7 +403,7 @@ namespace D_Parser.Resolver
 
 		public TemplateIntermediateType(DClassLike dc, ISyntaxRegion td, 
 			AbstractType baseType = null, InterfaceType[] baseInterfaces = null,
-			ReadOnlyCollection<KeyValuePair<string, TemplateParameterSymbol>> deducedTypes = null)
+			ReadOnlyCollection<TemplateParameterSymbol> deducedTypes = null)
 			: base(dc, baseType, deducedTypes, td)
 		{
 			this.BaseInterfaces = baseInterfaces;
@@ -411,9 +411,9 @@ namespace D_Parser.Resolver
 
 		public TemplateIntermediateType(DClassLike dc, ISyntaxRegion td, 
 			AbstractType baseType, InterfaceType[] baseInterfaces,
-			Dictionary<string, TemplateParameterSymbol> deducedTypes)
+			IEnumerable<TemplateParameterSymbol> deducedTypes)
 			: this(dc,td, baseType,baseInterfaces,
-			deducedTypes != null && deducedTypes.Count != 0 ? new ReadOnlyCollection<KeyValuePair<string, TemplateParameterSymbol>>(deducedTypes.ToArray()) : null)
+			deducedTypes != null ? new ReadOnlyCollection<TemplateParameterSymbol>(deducedTypes.ToArray()) : null)
 		{ }
 	}
 
@@ -434,26 +434,26 @@ namespace D_Parser.Resolver
 	{
 		public bool IsUFCSResult;
 		public MemberSymbol(DNode member, AbstractType memberType, ISyntaxRegion td,
-			ReadOnlyCollection<KeyValuePair<string, TemplateParameterSymbol>> deducedTypes = null)
+			ReadOnlyCollection<TemplateParameterSymbol> deducedTypes = null)
 			: base(member, memberType, deducedTypes, td) { }
 
 		public MemberSymbol(DNode member, AbstractType memberType, ISyntaxRegion td,
-			Dictionary<string, TemplateParameterSymbol> deducedTypes)
+			IEnumerable<TemplateParameterSymbol> deducedTypes)
 			: base(member, memberType, deducedTypes, td) { }
 	}
 	
 	public class TemplateParameterSymbol : MemberSymbol
 	{
+		public readonly ITemplateParameter Parameter;
 		/// <summary>
 		/// Only used for template value parameters.
 		/// </summary>
 		public readonly ISymbolValue ParameterValue;
-		public readonly ITemplateParameter Parameter;
 
 		public TemplateParameterSymbol(TemplateParameterNode tpn, ISemantic typeOrValue, ISyntaxRegion paramIdentifier = null)
 			: base(tpn, AbstractType.Get(typeOrValue), paramIdentifier)
 		{
-			this.Parameter = tpn.TemplateParameter;
+			this.Parameter = tpn != null ? tpn.TemplateParameter : null;
 			this.ParameterValue = typeOrValue as ISymbolValue;
 		}
 
@@ -472,12 +472,12 @@ namespace D_Parser.Resolver
 		{
 			if(ParameterValue!=null)
 				return ParameterValue.ToCode();
-			return Base == null ? Parameter.Name : Base.ToCode(); //FIXME: It's not actually code but currently needed for correct ToString() representation in e.g. parameter insight
+			return Base == null ? (Parameter == null ? "(unknown template parameter)" : Parameter.Name) : Base.ToCode(); //FIXME: It's not actually code but currently needed for correct ToString() representation in e.g. parameter insight
 		}
 
 		public override string ToString()
 		{
-			return "<"+Parameter.Name+">"+(ParameterValue!=null ? ParameterValue.ToString() : (Base==null ? "" : Base.ToString()));
+			return "<"+(Parameter == null ? "(unknown)" : Parameter.Name)+">"+(ParameterValue!=null ? ParameterValue.ToString() : (Base==null ? "" : Base.ToString()));
 		}
 	}
 	
@@ -494,7 +494,7 @@ namespace D_Parser.Resolver
 	{
 		public new DModule Definition { get { return base.Definition as DModule; } }
 
-		public ModuleSymbol(DModule mod, ISyntaxRegion td, PackageSymbol packageBase = null) : base(mod, packageBase, (Dictionary<string, TemplateParameterSymbol>)null, td) { }
+		public ModuleSymbol(DModule mod, ISyntaxRegion td, PackageSymbol packageBase = null) : base(mod, packageBase, (IEnumerable<TemplateParameterSymbol>)null, td) { }
 
 		public override string ToString()
 		{

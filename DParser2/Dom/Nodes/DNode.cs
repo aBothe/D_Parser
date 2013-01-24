@@ -58,12 +58,21 @@ namespace D_Parser.Dom
 			}
 		}
 		#endregion
+		
+		public bool ContainsTemplateParameter(ITemplateParameter p)
+		{
+			if(TemplateParameters != null)
+				for(int i = 0; i < TemplateParameters.Length; i++)
+					if(TemplateParameters[i] == p)
+						return true;
+			return false;
+		}
 
 		public bool ContainsTemplateParameter(string Name)
 		{
 			if (TemplateParameters != null)
-				foreach (var tp in TemplateParameters)
-					if (tp.Name == Name)
+				for(int i = 0; i < TemplateParameters.Length; i++)
+					if(TemplateParameters[i].Name == Name)
 						return true;
 
 			return false;

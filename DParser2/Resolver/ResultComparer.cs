@@ -120,7 +120,7 @@ namespace D_Parser.Resolver
 				var sr1 = (PrimitiveType)resToCheck;
 				var sr2 = (PrimitiveType)targetType;
 
-				if (sr1.TypeToken == sr2.TypeToken && sr1.Modifier == sr2.Modifier)
+				if (sr1.TypeToken == sr2.TypeToken /*&& sr1.Modifier == sr2.Modifier*/)
 					return true;
 
 				switch (sr2.TypeToken)

@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using D_Parser.Dom;
-using D_Parser.Misc;
-using D_Parser.Resolver.TypeResolution;
-using System.Linq;
-using D_Parser.Completion;
 using System.Threading;
 
-namespace D_Parser.Resolver.ASTScanner
+using D_Parser.Dom;
+using D_Parser.Resolver;
+using D_Parser.Resolver.ASTScanner;
+using D_Parser.Resolver.TypeResolution;
+
+namespace D_Parser.Misc
 {
 	/// <summary>
 	/// Contains resolution results of methods.

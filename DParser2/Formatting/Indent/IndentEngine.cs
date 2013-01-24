@@ -298,6 +298,8 @@ namespace D_Parser.Formatting.Indent
 			DTokens.Else);
 		
 		static BitArray interestingKeywords = DTokens.NewSet(
+			DTokens.At,
+			
 			DTokens.Import,
 			DTokens.Interface,
 			DTokens.Struct,
@@ -847,9 +849,20 @@ namespace D_Parser.Formatting.Indent
 						break;
 					}
 
+					if(linebuf.Length > 0){
+						int k=0;
+						for(; linebuf[k] == ' ' || linebuf[k] == '\t'; k++);
+						
+						if(linebuf[k] == '@')
+							break;
+					}
+					
 					if (inside == Inside.Block) {
 						var peekKw = stack.PeekKeyword;
-						if (peekKw == DTokens.Struct || peekKw == DTokens.Enum || peekKw == DTokens.Assign || peekKw == DTokens.Import) {
+						if (peekKw == DTokens.Struct || 
+						    peekKw == DTokens.Enum || 
+						    peekKw == DTokens.Assign || 
+						    peekKw == DTokens.Import) {
 							// just variable/value declarations
 							break;
 						}

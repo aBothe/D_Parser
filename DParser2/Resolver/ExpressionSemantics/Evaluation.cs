@@ -70,11 +70,19 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// <summary>
 		/// Uses the standard value provider for expression value evaluation
 		/// </summary>
-		public static ISymbolValue EvaluateValue(IExpression x, ResolutionContext ctxt)
+		public static ISymbolValue EvaluateValue(IExpression x, ResolutionContext ctxt, bool lazyVariableValueEvaluation = false)
 		{
 			try
 			{
-				return EvaluateValue(x, new StandardValueProvider(ctxt));
+				var vp = new StandardValueProvider(ctxt);
+				var v = EvaluateValue(x, vp);
+				
+				if(v is VariableValue && !lazyVariableValueEvaluation)
+				{
+					return EvaluateValue(v as VariableValue, vp);
+				}
+				
+				return v;
 			}
 			catch(Exception ex)
 			{
@@ -89,6 +97,32 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				vp = new StandardValueProvider(null);
 
 			return new Evaluation(vp).E(x) as ISymbolValue;
+		}
+		
+		public static ISymbolValue EvaluateValue(VariableValue v, AbstractSymbolValueProvider vp)
+		{
+			if(v.RepresentedType is TemplateParameterSymbol)
+			{
+				var tps = v.RepresentedType as TemplateParameterSymbol;
+				if(tps.ParameterValue != null)
+					return tps.ParameterValue;
+			}
+			
+			var bt = v.Member;
+
+			if(bt != null)
+			{
+				vp.ResolutionContext.CurrentContext.IntroduceTemplateParameterTypes(bt);
+			}
+			
+			var val = vp[v.Variable];
+			
+			if(bt != null)
+			{
+				vp.ResolutionContext.CurrentContext.RemoveParamTypesFromPreferredLocals(bt);
+			}
+			
+			return val;
 		}
 
 		/// <summary>
@@ -181,7 +215,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				
 			}
 			finally{
-				if(evaluationDepth != 1)
+				if(evaluationDepth > 0)
 					evaluationDepth--;
 			}
 			return ret;

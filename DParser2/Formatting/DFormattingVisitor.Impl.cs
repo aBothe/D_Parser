@@ -192,13 +192,17 @@ namespace D_Parser.Formatting
 		
 		public override void Visit(DMethod n)
 		{
+			// Format header
 			FormatAttributedNode(n);
 			
+			VisitDNode(n);
+			
+			// Stick name to type
 			if(n.Type != null)
 				ForceSpacesBeforeRemoveNewLines(n.NameLocation, true);
 			
+			// Put parenthesis '(' token directly after the name
 			var nameLength = 0;
-			
 			switch(n.SpecialType)
 			{
 				case DMethod.MethodType.Destructor:
@@ -213,7 +217,7 @@ namespace D_Parser.Formatting
 			if(nameLength > 0)
 				ForceSpacesAfterRemoveLines(new CodeLocation(n.NameLocation.Column + nameLength, n.NameLocation.Line),false);
 			
-			//MakeOnlySpacesToNextNonWs(name + nameLength - 1,0);
+			// Format parameters
 			
 			// Find in, out(...) and body tokens
 			if(!n.InToken.IsEmpty){
@@ -226,7 +230,13 @@ namespace D_Parser.Formatting
 				FixIndentationForceNewLine(n.BodyToken);
 			}
 			
-			base.Visit(n);
+			// Visit body parts
+			if (n.In != null)
+				n.In.Accept(this);
+			if (n.Body != null)
+				n.Body.Accept(this);
+			if (n.Out != null)
+				n.Out.Accept(this);
 			
 			EnsureBlankLinesAfter(n.EndLocation, policy.LinesAfterNode);
 		}

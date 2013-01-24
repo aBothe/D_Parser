@@ -126,9 +126,9 @@ namespace D_Parser.Resolver.TypeResolution
 			if(sortedAndFilteredOverloads!=null)
 			{
 				filteredOverloads.Clear();
-				foreach(var oo in sortedAndFilteredOverloads)
+				for(int i = sortedAndFilteredOverloads.Length - 1; i >= 0; i--)
 				{
-					var ds = oo as DSymbol;
+					var ds = sortedAndFilteredOverloads[i] as DSymbol;
 					if(ds != null && ds.Definition.TemplateConstraint != null)
 					{
 						ctxt.CurrentContext.IntroduceTemplateParameterTypes(ds);
@@ -142,7 +142,7 @@ namespace D_Parser.Resolver.TypeResolution
 						ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(ds);
 					}
 					else
-						filteredOverloads.Add(oo);
+						filteredOverloads.Add(sortedAndFilteredOverloads[i]);
 				}
 				if(filteredOverloads.Count == 0)
 					return null;

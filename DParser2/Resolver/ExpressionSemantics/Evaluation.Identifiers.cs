@@ -67,7 +67,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						EvalError(idOrTemplateInstance, ambigousExprMsg, overloads);
 						return null;
 					}
-					return new VariableValue((DVariable)mr.Definition, mr.Base);
+					return new VariableValue(mr);
 				}
 			}
 			else if (r is UserDefinedType)

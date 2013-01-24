@@ -8,7 +8,7 @@ using System.Collections.ObjectModel;
 
 namespace D_Parser.Resolver.Templates
 {
-	public class DeducedTypeDictionary : Dictionary<string, TemplateParameterSymbol>	{
+	public class DeducedTypeDictionary : Dictionary<string,TemplateParameterSymbol>	{
 
 		/// <summary>
 		/// Used for final template parameter symbol creation.
@@ -17,17 +17,16 @@ namespace D_Parser.Resolver.Templates
 		public DNode ParameterOwner;
 
 		public DeducedTypeDictionary() { }
-		public DeducedTypeDictionary(Dictionary<string, TemplateParameterSymbol> d) : base(d) { }
-		public DeducedTypeDictionary(IEnumerable<KeyValuePair<string, TemplateParameterSymbol>> l)
+		public DeducedTypeDictionary(IEnumerable<TemplateParameterSymbol> l)
 		{
 			if (l != null)
 				foreach (var i in l)
-					Add(i.Key, i.Value);
+					Add(i.Name, i);
 		}
 
-		public ReadOnlyCollection<KeyValuePair<string, TemplateParameterSymbol>> ToReadonly()
+		public ReadOnlyCollection<TemplateParameterSymbol> ToReadonly()
 		{
-			return new ReadOnlyCollection<KeyValuePair<string, TemplateParameterSymbol>>(this.ToList());
+			return new ReadOnlyCollection<TemplateParameterSymbol>(this.Values.ToList());
 		}
 	}
 }

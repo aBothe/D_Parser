@@ -23,11 +23,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	/// </summary>
 	public class VariableValue : LValue
 	{
+		public readonly MemberSymbol Member;
 		public readonly DVariable Variable;
 
-		public VariableValue(DVariable variable, AbstractType variableType) : base(variableType)
+		public VariableValue(MemberSymbol mr) : base(mr.Base)
 		{
-			this.Variable = variable;
+			this.Member = mr;
+			this.Variable = mr.Definition as DVariable;
 		}
 
 		public override void Set(AbstractSymbolValueProvider vp, ISymbolValue value)
@@ -41,10 +43,16 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		}
 	}
 
+	/// <summary>
+	/// Used for static properties.
+	/// </summary>
 	public class StaticVariableValue : VariableValue
 	{
+		public StaticVariableValue(MemberSymbol staticPropertyResult)
+			: base(staticPropertyResult) { }
+		
 		public StaticVariableValue(DVariable artificialVariable, AbstractType propType)
-			: base(artificialVariable, propType) { }
+			: base(new MemberSymbol(artificialVariable, propType, null)) { }
 
 		public override void Set(AbstractSymbolValueProvider vp, ISymbolValue value)
 		{
@@ -106,12 +114,18 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 		}
 
+		public ArrayPointer(MemberSymbol arrayVariable, int accessedItem)
+			: base(arrayVariable)
+		{
+			ItemNumber = accessedItem;
+		}
+		
 		/// <summary>
 		/// Array ctor.
 		/// </summary>
 		/// <param name="accessedItem">0 - the array's length-1; -1 when adding the item is wished.</param>
 		public ArrayPointer(DVariable accessedArray, ArrayType arrayType, int accessedItem)
-			: base(accessedArray, arrayType)
+			: base(new MemberSymbol(accessedArray, arrayType, null))
 		{
 			ItemNumber = accessedItem;
 		}
@@ -124,8 +138,14 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// </summary>
 		public readonly ISymbolValue Key;
 		
+		public AssocArrayPointer(MemberSymbol assocArrayVariable, ISymbolValue accessedItemKey)
+			: base(assocArrayVariable)
+		{
+			Key = accessedItemKey;
+		}
+		
 		public AssocArrayPointer(DVariable accessedArray, AssocArrayType arrayType, ISymbolValue accessedItemKey)
-			: base(accessedArray, arrayType)
+			: base(new MemberSymbol(accessedArray, arrayType,null))
 		{
 			Key = accessedItemKey;
 		}

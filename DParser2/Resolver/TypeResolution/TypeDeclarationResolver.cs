@@ -523,8 +523,8 @@ namespace D_Parser.Resolver.TypeResolution
 					{
 						bt = ExpressionSemantics.Evaluation.EvaluateType(v.Initializer, ctxt);
 						// HACK: Alter the variable's type. How could this be done more 'immutably' i.e. right at parsing(!?) time or immediately after parsing, like mixins or so?
-						if(bt != null)
-							v.Type = bt.TypeDeclarationOf;
+						/*if(bt != null)
+							v.Type = bt.TypeDeclarationOf;*/
 					}
 
 					// Check if inside an foreach statement header
@@ -549,7 +549,7 @@ namespace D_Parser.Resolver.TypeResolution
 				UserDefinedType udt = null;
 				var dc = (DClassLike)m;
 
-				var invisibleTypeParams = new Dictionary<string, TemplateParameterSymbol>();
+				var invisibleTypeParams = new List<TemplateParameterSymbol>();
 
 				/*
 				 * Add 'superior' template parameters to the current symbol because the parameters 
@@ -560,12 +560,12 @@ namespace D_Parser.Resolver.TypeResolution
 				{
 					var curCtxt = ctxt.Pop();
 					tStk.Push(curCtxt);
-					foreach (var kv in curCtxt.DeducedTemplateParameters)
-						if (!dc.ContainsTemplateParameter(kv.Key) &&
-							!invisibleTypeParams.ContainsKey(kv.Key))
+					foreach (var kv in curCtxt.DeducedTemplateParameters){
+						if (!dc.ContainsTemplateParameter(kv.Value.Parameter))
 						{
-							invisibleTypeParams.Add(kv.Key, kv.Value);
+							invisibleTypeParams.Add(kv.Value);
 						}
+					}
 				} while (ctxt.PrevContextIsInSameHierarchy);
 
 				while (tStk.Count != 0)

@@ -94,10 +94,13 @@ namespace D_Parser.Resolver
 			
 			if(sr is DModule)
 				return (DModule)sr;
-			else if(literal == null)
+			else if(literal == null){
+				ctxt.MixinCache.Cache(mx, null);
 				return null;
+			}
 			
 			var ast = (DModule)DParser.ParseString(literal, true);
+			ctxt.MixinCache.Cache(mx, ast);
 			
 			if(ast == null)
 				return null;
@@ -130,7 +133,6 @@ namespace D_Parser.Resolver
 					}
 				}
 			
-			ctxt.MixinCache.Cache(mx, ast);
 			return ast;
 		}
 	}
@@ -159,7 +161,22 @@ namespace D_Parser.Resolver
 				cache[mx] = mxList = new List<MxEntry>();
 			
 			var parms = GetParameters(mx);
-			var e = new MxEntry{ templateParams = parms.Count == 0 ? null : parms.ToArray(), mixinContent = mixedInContent };
+			var parms_array = parms.Count == 0 ? null : parms.ToArray();
+			
+			if(mixedInContent == null)
+			{
+				foreach(var e_ in mxList)
+				{
+					if(e_.mixinContent == null)
+					{
+						if(CompareParameterEquality(parms, e_.templateParams))
+							return;
+						break;
+					}
+				}
+			}
+			
+			var e = new MxEntry{ templateParams = parms_array, mixinContent = mixedInContent };
 			mxList.Add(e);
 		}
 		
@@ -175,32 +192,37 @@ namespace D_Parser.Resolver
 					return (T)e.mixinContent;
 				
 				var l = GetParameters(mx);
-				bool add = true;
-				
-				foreach(var p in e.templateParams)
-				{
-					for(int i = 0; i<l.Count; i++)
-					{
-						var ex = l[i];
-						if(p.Parameter == ex.Parameter)
-						{
-							l.Remove(ex);
-							if(!ResultComparer.IsEqual(p.Base,ex.Base)){
-								add = false;
-								goto br;
-							}
-						}
-					}
-					
-					continue;
-				br:break;
-				}
-				
-				if(add)
+				if(CompareParameterEquality(l, e.templateParams))
 					return (T)e.mixinContent;
 			}
 			
 			return default(T);
+		}
+		
+		bool CompareParameterEquality(List<TemplateParameterSymbol> l1, TemplateParameterSymbol[] l2)
+		{
+			if(l2 == null || l2.Length == 0)
+			{
+				return l1 == null || l1.Count == 0;
+			}
+			
+			foreach(var p in l2)
+			{
+				for(int i = 0; i<l1.Count; i++)
+				{
+					var ex = l1[i];
+					if(p.Parameter == ex.Parameter)
+					{
+						l1.Remove(ex);
+						if(!ResultComparer.IsEqual(p.Base,ex.Base)){
+							return false;
+						}
+						break;
+					}
+				}
+			}
+			
+			return true;
 		}
 		
 		List<TemplateParameterSymbol> GetParameters(MixinStatement mx)

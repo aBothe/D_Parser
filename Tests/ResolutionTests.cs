@@ -508,7 +508,7 @@ int delegate(int b) myDeleg;
 			var mr = r as MemberSymbol;
 			Assert.IsNotNull(mr);
 
-			var v = mr.DeducedTypes[2].Value.ParameterValue;
+			var v = mr.DeducedTypes[2].ParameterValue;
 			Assert.IsInstanceOfType(typeof(PrimitiveValue),v);
 			Assert.AreEqual(5M, ((PrimitiveValue)v).Value);
 
@@ -568,11 +568,11 @@ class Client : IClient!(Params, ConcreteRegistry){}");
 
 			Assert.AreEqual(ct.DeducedTypes.Count, 2);
 			var dedtype = ct.DeducedTypes[0];
-			Assert.AreEqual("P", dedtype.Key);
-			Assert.AreEqual(mod["Params"][0],((DSymbol)dedtype.Value.Base).Definition);
+			Assert.AreEqual("P", dedtype.Name);
+			Assert.AreEqual(mod["Params"][0],((DSymbol)dedtype.Base).Definition);
 			dedtype = ct.DeducedTypes[1];
-			Assert.AreEqual("R", dedtype.Key);
-			Assert.AreEqual(mod["ConcreteRegistry"][0], ((DSymbol)dedtype.Value.Base).Definition);
+			Assert.AreEqual("R", dedtype.Name);
+			Assert.AreEqual(mod["ConcreteRegistry"][0], ((DSymbol)dedtype.Base).Definition);
 
 
 			ctxt.CurrentContext.Set(mod);
@@ -651,6 +651,48 @@ Appender!(E[]) appender(A : E[], E)(A array = null)
 			Assert.That(t, Is.TypeOf(typeof(StructType)));
 			var ss = t as StructType;
 			Assert.That(ss.DeducedTypes.Count, Is.GreaterThan(0));
+		}
+		
+		[Test]
+		public void TestParamDeduction9()
+		{
+			var pcl = Tests.ResolutionTests.CreateCache(@"module A;
+template mxTemp(int i)
+{
+	static if(i < 0)
+		enum mxTemp = ""int"";
+	else
+		enum mxTemp = ""bool"";
+}
+
+template def(int i,string name)
+{
+	enum def = mxTemp!(-i) ~ "" ""~name~"";"";
+}
+
+mixin(def!(1,""bar""));
+");
+			var A = pcl[0]["A"];
+			var ctxt = Tests.ResolutionTests.CreateDefCtxt(pcl, A);
+			
+			var ex = DParser.ParseExpression(@"def!(2,""someVar"")");
+			var val = Evaluation.EvaluateValue(ex, ctxt);
+			Assert.That(val, Is.TypeOf(typeof(ArrayValue)));
+			Assert.That((val as ArrayValue).IsString,Is.True);
+			Assert.That((val as ArrayValue).StringValue, Is.EqualTo("int someVar;"));
+			
+			ex = DParser.ParseExpression(@"def!(-5,""foolish"")");
+			val = Evaluation.EvaluateValue(ex, ctxt);
+			Assert.That(val, Is.TypeOf(typeof(ArrayValue)));
+			Assert.That((val as ArrayValue).IsString,Is.True);
+			Assert.That((val as ArrayValue).StringValue, Is.EqualTo("bool foolish;"));
+			
+			ex=DParser.ParseExpression("bar");
+			var t = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That((t as MemberSymbol).Base,Is.TypeOf(typeof(PrimitiveType)));
+			Assert.That(((t as MemberSymbol).Base as PrimitiveType).TypeToken,Is.EqualTo(DTokens.Bool));
+			
 		}
 		
 		[Test]
@@ -1200,9 +1242,9 @@ else
 			x = TypeDeclarationResolver.ResolveIdentifier("b",ctxt,null);
 			Assert.AreEqual(0, x.Length);
 			
-			var v = Evaluation.EvaluateValue(DParser.ParseExpression("Templ!int"), ctxt);
+			var v = Evaluation.EvaluateValue(DParser.ParseExpression("Templ!int"), ctxt, true);
 			Assert.That(v, Is.InstanceOf(typeof(VariableValue)));
-			v = Evaluation.EvaluateValue(((VariableValue)v).Variable.Initializer, ctxt);
+			v = Evaluation.EvaluateValue(v as VariableValue, new StandardValueProvider(ctxt));
 			Assert.That(v, Is.InstanceOf(typeof(PrimitiveValue)));
 			var pv = (PrimitiveValue)v;
 			Assert.AreEqual(1m, pv.Value);

@@ -83,10 +83,16 @@ namespace D_Parser.Resolver.Templates
 			{
 				args = new List<ISemantic>(template.DeducedTypes.Count);
 				foreach (var kv in template.DeducedTypes)
-					args.Add((ISemantic)kv.Value.ParameterValue ?? kv.Value.Base);
+					args.Add((ISemantic)kv.ParameterValue ?? kv.Base);
 			}
 
 			matchingChild = TemplateInstanceHandler.DeduceParamsAndFilterOverloads(resolvedOverloads, args, true, ctxt);
+			
+			if(matchingChild != null)
+			{
+				foreach(DSymbol ch in matchingChild)
+					ch.DeducedTypes = template.DeducedTypes;
+			}
 
 			// Undo context-related changes
 			if (pop)

@@ -405,6 +405,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// </summary>
 		ISemantic HandleSingleMathOp(IExpression x, ISemantic l, ISemantic r, MathOp m)
 		{
+			if(l == null || r == null)
+				return null;
+			
 			var pl = l as PrimitiveValue;
 			var pr = r as PrimitiveValue;
 
@@ -424,6 +427,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		ISemantic HandleSingleMathOp(OperatorBasedExpression x, ISemantic l, ISemantic r, MathOp2 m, bool UnorderedCheck = true)
 		{
+			if(l == null || r == null)
+				return null;
+			
 			var pl = l as PrimitiveValue;
 			var pr = r as PrimitiveValue;
 
