@@ -52,8 +52,6 @@ namespace D_Parser.Resolver
 			{
 				// Evaluate the mixin expression
 				v = Evaluation.EvaluateValue(x, ctxt);
-				if(v is VariableValue)
-					v = Evaluation.EvaluateValue(x=((VariableValue)v).Variable.Initializer, ctxt);
 			}
 			catch{}
 			
@@ -69,6 +67,7 @@ namespace D_Parser.Resolver
 			if(av != null && av.IsString)
 				return av.StringValue;
 			
+			ctxt.MixinCache.Cache(mx, null);
 			return null;
 		}
 		
@@ -94,10 +93,8 @@ namespace D_Parser.Resolver
 			
 			if(sr is DModule)
 				return (DModule)sr;
-			else if(literal == null){
-				ctxt.MixinCache.Cache(mx, null);
+			else if(literal == null)
 				return null;
-			}
 			
 			var ast = (DModule)DParser.ParseString(literal, true);
 			ctxt.MixinCache.Cache(mx, ast);
