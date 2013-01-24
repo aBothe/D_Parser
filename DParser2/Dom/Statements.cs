@@ -1052,7 +1052,7 @@ namespace D_Parser.Dom.Statements
 
 		public override string ToCode()
 		{
-			return (MixinExpression==null?"":MixinExpression.ToString())+";";
+			return "mixin("+(MixinExpression==null?"":MixinExpression.ToString())+");";
 		}
 
 		public IExpression[] SubExpressions

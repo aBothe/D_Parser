@@ -13,7 +13,8 @@ namespace TestTool
 	{
 		public static void Main(string[] args)
 		{
-			
+			new Tests.ResolutionTests().TestParamDeduction9();
+			return;
 			UFCSCache.SingleThreaded = true;
 			var pc = new ParseCache();
 			pc.EnableUfcsCaching = false;
