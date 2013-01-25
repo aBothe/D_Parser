@@ -55,9 +55,10 @@ namespace D_Parser.Resolver
 			if(pop = ctxt.ScopedBlock != mx.ParentNode)
 				ctxt.PushNewScope(mx.ParentNode as IBlockNode, mx);
 			
-			cachedContent = ctxt.MixinCache.Get<ISyntaxRegion>(mx);
+			bool hadCachedItem;
+			cachedContent = ctxt.MixinCache.Get<ISyntaxRegion>(mx,out hadCachedItem);
 			
-			if(cachedContent != null)
+			if(cachedContent != null || hadCachedItem)
 			{
 				lock(stmtsBeingAnalysed)
 					stmtsBeingAnalysed.Pop();
@@ -77,7 +78,6 @@ namespace D_Parser.Resolver
 			
 			lock(stmtsBeingAnalysed)
 				stmtsBeingAnalysed.Pop();
-			
 			if(pop) 
 				ctxt.Pop();
 			
@@ -196,22 +196,25 @@ namespace D_Parser.Resolver
 			mxList.Add(e);
 		}
 		
-		public T Get<T>(MixinStatement mx) where T : ISyntaxRegion
+		public T Get<T>(MixinStatement mx, out bool foundItem) where T : ISyntaxRegion
 		{
+			foundItem = false;
 			List<MxEntry> mxList;
 			if(!cache.TryGetValue(mx,out mxList))
 				return default(T);
 			
+			foundItem = true;
+			var l = GetParameters(mx);
 			foreach(var e in mxList)
 			{
 				if(e.templateParams == null)
 					return (T)e.mixinContent;
 				
-				var l = GetParameters(mx);
 				if(CompareParameterEquality(l, e.templateParams))
 					return (T)e.mixinContent;
 			}
 			
+			foundItem = false;
 			return default(T);
 		}
 		
@@ -229,7 +232,6 @@ namespace D_Parser.Resolver
 					var ex = l1[i];
 					if(p.Parameter == ex.Parameter)
 					{
-						l1.Remove(ex);
 						if(!ResultComparer.IsEqual(p.Base,ex.Base)){
 							return false;
 						}

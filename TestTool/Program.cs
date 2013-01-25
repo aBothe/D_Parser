@@ -14,9 +14,6 @@ namespace TestTool
 	{
 		public static void Main(string[] args)
 		{
-			new ResolutionTests().Mixins5();			
-			
-			return;
 			UFCSCache.SingleThreaded = true;
 			var pc = new ParseCache();
 			pc.EnableUfcsCaching = false;
@@ -36,6 +33,9 @@ namespace TestTool
 			uc.Update(pcl, ccf, pc);
 			
 			Console.WriteLine("done.");
+			
+			var cch = ResolutionCache.paramBoundCache;
+			var cch2 = ResolutionCache.paramLessCache;
 			
 			Console.WriteLine();
 			Console.Write("Press any key to continue . . . ");

@@ -152,6 +152,7 @@
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.PrimaryExpression.cs" />
     <Compile Include="Resolver\ISemantic.cs" />
     <Compile Include="Resolver\MixinAnalysis.cs" />
+    <Compile Include="Resolver\ResolutionCache.cs" />
     <Compile Include="Resolver\ResolutionError.cs" />
     <Compile Include="Resolver\ResolutionOptions.cs" />
     <Compile Include="Resolver\ResultComparer.cs" />
@@ -172,7 +173,6 @@
     <Compile Include="Completion\ICompletionDataGenerator.cs" />
     <Compile Include="Parser\CaretContextAnalyzer.cs" />
     <Compile Include="Completion\ParameterInsightResolution.cs" />
-    <Compile Include="Resolver\ASTScanner\ResultCache.cs" />
     <Compile Include="Resolver\ResolutionContext.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.StaticProperties.cs" />
     <Compile Include="Completion\IEditorData.cs" />

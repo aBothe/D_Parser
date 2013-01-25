@@ -6,6 +6,7 @@ using D_Parser.Parser;
 using D_Parser.Resolver.TypeResolution;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Misc;
+using System.Runtime.CompilerServices;
 
 namespace D_Parser.Resolver.ASTScanner
 {
@@ -644,7 +645,6 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		/// </summary>
 		bool HandleMixin(MixinStatement mx, bool parseDeclDefs, MemberFilter vis)
 		{
-			//return false;
 			// If in a class/module block => MixinDeclaration
 			if(parseDeclDefs)
 			{
@@ -681,7 +681,6 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		// http://dlang.org/template-mixin.html#TemplateMixin
 		bool HandleUnnamedTemplateMixin(TemplateMixin tmx, bool treatAsDeclBlock, MemberFilter vis)
 		{
-			//return false;
 			lock(templateMixinsBeingAnalyzed)
 			{
 				if(templateMixinsBeingAnalyzed.Contains(tmx))
@@ -689,11 +688,25 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				templateMixinsBeingAnalyzed.Add(tmx);
 			}
 			
-			var t = TypeDeclarationResolver.ResolveSingle(tmx.Qualifier, ctxt);
+			AbstractType t;
+			if(!ResolutionCache.TryGet(ctxt, tmx, out t))
+			{
+				t = TypeDeclarationResolver.ResolveSingle(tmx.Qualifier, ctxt);
+				// Deadly important: To prevent mem leaks, all references from the result to the TemplateMixin must be erased!
+				// Elsewise there remains one reference from the dict value to the key - and won't get free'd THOUGH we can't access it anymore
+				if(t != null)
+					t.DeclarationOrExpressionBase = null;
+				ResolutionCache.Add(ctxt, tmx, t);
+			}
+			else if(t == null)
+			{
+				return false;
+			}
+			
 			var tmxTemplate = t as MixinTemplateType;
 			
 			bool res = false;
-			if(tmxTemplate== null)
+			if(tmxTemplate == null)
 				ctxt.LogError(tmx.Qualifier, "Mixin qualifier must resolve to a mixin template declaration.");
 			else
 			{
