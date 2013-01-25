@@ -6,6 +6,7 @@ using D_Parser.Misc;
 using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
+using Tests;
 
 namespace TestTool
 {
@@ -13,7 +14,8 @@ namespace TestTool
 	{
 		public static void Main(string[] args)
 		{
-			new Tests.ResolutionTests().TestParamDeduction9();
+			new ResolutionTests().Mixins5();			
+			
 			return;
 			UFCSCache.SingleThreaded = true;
 			var pc = new ParseCache();

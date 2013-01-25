@@ -670,7 +670,7 @@ template def(int i,string name)
 	enum def = mxTemp!(-i) ~ "" ""~name~"";"";
 }
 
-mixin(def!(1,""bar""));
+mixin(def!(-1,""bar""));
 ");
 			var A = pcl[0]["A"];
 			var ctxt = Tests.ResolutionTests.CreateDefCtxt(pcl, A);
@@ -692,7 +692,6 @@ mixin(def!(1,""bar""));
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That((t as MemberSymbol).Base,Is.TypeOf(typeof(PrimitiveType)));
 			Assert.That(((t as MemberSymbol).Base as PrimitiveType).TypeToken,Is.EqualTo(DTokens.Bool));
-			
 		}
 		
 		[Test]
@@ -1456,6 +1455,28 @@ class cl
 			t = TypeDeclarationResolver.ResolveSingle("CFoo", ctxt, null);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That((t as MemberSymbol).Definition, Is.TypeOf(typeof(DMethod)));
+		}
+		
+		[Test]
+		public void Mixins5()
+		{
+			var pcl = ResolutionTests.CreateCache(@"module A;
+mixin(""template mxT(string n) { enum mxT = n; }"");
+mixin(""class ""~mxT!(""myClass"")~"" {}"");
+", @"module B;
+mixin(""class ""~mxT!(""myClass"")~"" {}"");
+mixin(""template mxT(string n) { enum mxT = n; }"");
+");
+			
+			var ctxt = ResolutionTests.CreateDefCtxt(pcl, pcl[0]["A"]);
+			
+			var t = TypeDeclarationResolver.ResolveSingle("myClass", ctxt, null);
+			Assert.That(t, Is.TypeOf(typeof(ClassType)));
+			
+			ctxt.CurrentContext.Set(pcl[0]["B"]);
+			
+			t = TypeDeclarationResolver.ResolveSingle("myClass", ctxt, null);
+			Assert.That(t, Is.Null);
 		}
 		#endregion
 		

@@ -12,23 +12,44 @@ namespace D_Parser.Resolver
 	/// </summary>
 	public class MixinAnalysis
 	{
-		static List<MixinStatement> stmtsBeingAnalysed = new List<MixinStatement>();
-		[ThreadStatic]
-		static uint stk;
+		static Stack<MixinStatement> stmtsBeingAnalysed = new Stack<MixinStatement>();
+		static Stack<MixinStatement> bkpStack = new Stack<MixinStatement>();
 		
 		static string GetMixinContent(MixinStatement mx, ResolutionContext ctxt,out ISyntaxRegion cachedContent)
 		{
 			cachedContent = null;
-			if(stk > 3)
-				return null;
 			
 			lock(stmtsBeingAnalysed)
 			{
-				if(stmtsBeingAnalysed.Contains(mx))
-					return null;
-				stmtsBeingAnalysed.Add(mx);
+				if(stmtsBeingAnalysed.Count != 0)
+				{
+					/*
+					 * Only accept mixins that are located somewhere BEFORE the mixin that is the last inserted one in the stack.
+					 * Also make sure mx and the peek mixin do have the same module root!
+					 */
+					
+					do
+					{
+						var pk = stmtsBeingAnalysed.Peek();
+						if(mx.ParentNode.NodeRoot == pk.ParentNode.NodeRoot)
+						{
+							if(mx == pk || mx.Location > pk.Location)
+								return null;
+							break;
+						}
+						
+						bkpStack.Push(stmtsBeingAnalysed.Pop());
+					}while(stmtsBeingAnalysed.Count != 0);
+					
+					for(var i = bkpStack.Count; i >= 1; i--)
+						stmtsBeingAnalysed.Push(bkpStack.Pop());
+					
+					if(stmtsBeingAnalysed.Count > 5)
+						return null;
+				}
+				
+				stmtsBeingAnalysed.Push(mx);
 			}
-			stk++;
 			
 			bool pop;
 			if(pop = ctxt.ScopedBlock != mx.ParentNode)
@@ -39,10 +60,9 @@ namespace D_Parser.Resolver
 			if(cachedContent != null)
 			{
 				lock(stmtsBeingAnalysed)
-					stmtsBeingAnalysed.Remove(mx);
+					stmtsBeingAnalysed.Pop();
 				if(pop)
 					ctxt.Pop();
-				stk--;
 				return null;
 			}
 			
@@ -56,12 +76,11 @@ namespace D_Parser.Resolver
 			catch{}
 			
 			lock(stmtsBeingAnalysed)
-				stmtsBeingAnalysed.Remove(mx);
+				stmtsBeingAnalysed.Pop();
 			
 			if(pop) 
 				ctxt.Pop();
 			
-			stk--;
 			// Ensure it's a string literal
 			var av = v as ArrayValue;
 			if(av != null && av.IsString)
