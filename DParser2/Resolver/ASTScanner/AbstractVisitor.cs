@@ -638,14 +638,12 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		#endregion
 		
 		#region Mixins
-		
 		/// <summary>
 		/// Evaluates the literal given as expression and tries to parse it as a string.
 		/// Important: Assumes all its compilation conditions to be checked already!
 		/// </summary>
 		bool HandleMixin(MixinStatement mx, bool parseDeclDefs, MemberFilter vis)
 		{
-			
 			//return false;
 			// If in a class/module block => MixinDeclaration
 			if(parseDeclDefs)

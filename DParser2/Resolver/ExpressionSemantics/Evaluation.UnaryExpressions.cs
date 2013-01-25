@@ -230,7 +230,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if(eval)
 			{
 				if(v is VariableValue)
-					v = ValueProvider[((VariableValue)v).Variable];
+					v = EvaluateValue(v as VariableValue, ValueProvider);
 				var pv = v as PrimitiveValue;
 				if(pv == null){
 					EvalError(x.UnaryExpression, "Expression must be a primitive value",v);

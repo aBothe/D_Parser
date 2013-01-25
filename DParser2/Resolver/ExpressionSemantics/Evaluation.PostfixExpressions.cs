@@ -230,7 +230,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				// Then add the arguments[' member types]
 				foreach (var arg in callArguments)
 					if (arg is VariableValue)
-						tplParamDeductionArguments.Add(ValueProvider[((VariableValue)arg).Variable]);
+						tplParamDeductionArguments.Add(EvaluateValue(arg as VariableValue, ValueProvider));
 					else if(arg is AbstractType)
 						tplParamDeductionArguments.Add(DResolver.StripAliasSymbol(arg as AbstractType));
 					else

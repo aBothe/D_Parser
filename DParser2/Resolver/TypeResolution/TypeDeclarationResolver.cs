@@ -521,10 +521,7 @@ namespace D_Parser.Resolver.TypeResolution
 					// For auto variables, use the initializer to get its type
 					else if (v.Initializer != null)
 					{
-						bt = ExpressionSemantics.Evaluation.EvaluateType(v.Initializer, ctxt);
-						// HACK: Alter the variable's type. How could this be done more 'immutably' i.e. right at parsing(!?) time or immediately after parsing, like mixins or so?
-						/*if(bt != null)
-							v.Type = bt.TypeDeclarationOf;*/
+						bt = DResolver.StripMemberSymbols(ExpressionSemantics.Evaluation.EvaluateType(v.Initializer, ctxt));
 					}
 
 					// Check if inside an foreach statement header
