@@ -206,6 +206,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					return null;
 				}
 			}
+			else if (x is CatExpression)
+			{
+				return EvalConcatenation(x as CatExpression, l);
+			}
 
 			var r = TryGetValue(rValue ?? E(x.RightOperand));
 
@@ -281,68 +285,130 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					EvalError(x, "Invalid token for add/sub expression", new[]{l,r});
 					return null;
 				});
-			else if (x is CatExpression)
+			
+			throw new WrongEvaluationArgException();
+		}
+		
+		ISymbolValue EvalConcatenation(CatExpression x, ISymbolValue lValue)
+		{
+			// In the (not unusual) case that more than 2 arrays/strings shall be concat'ed - process them more efficiently
+			var catQueue = new Queue<ISymbolValue>();
+			
+			var catEx = (x as CatExpression);
+			
+			catQueue.Enqueue(lValue);
+			
+			catEx = catEx.RightOperand as CatExpression;
+			ISymbolValue r;
+			while(catEx != null)
 			{
-				// Notable: If one element is of the value type of the array, the element is added (either at the front or at the back) to the array
-
-				var av_l = l as ArrayValue;
-				var av_r = r as ArrayValue;
-
-				if (av_l!=null && av_r!=null)
+				r = TryGetValue(E(catEx.LeftOperand));
+				if(r == null)
 				{
-					// Ensure that both arrays are of the same type
-					if(!ResultComparer.IsEqual(av_l.RepresentedType, av_r.RepresentedType)){
-						EvalError(x, "Both arrays must be of same type", new[]{l,r});
+					EvalError(catEx.LeftOperand, "Couldn't be evaluated.");
+					return null;
+				}
+				catQueue.Enqueue(r);
+				if(catEx.RightOperand is CatExpression)
+					catEx = catEx.RightOperand as CatExpression;
+				else
+					break;
+			}
+			
+			r = TryGetValue(E(catEx.RightOperand));
+			if(r == null)
+			{
+				EvalError(catEx.LeftOperand, "Couldn't be evaluated.");
+				return null;
+			}
+			catQueue.Enqueue(r);
+			
+			// Notable: If one element is of the value type of the array, the element is added (either at the front or at the back) to the array
+			// myString ~ 'a' will append an 'a' to the string
+			// 'a' ~ myString inserts 'a' at index 0
+			
+			// Determine whether we have to build up a string OR a normal list of atomic elements
+			bool isString = true;
+			ArrayType lastArrayType = null;
+			
+			foreach(var e in catQueue)
+			{
+				if(e is AssociativeArrayValue)
+				{
+					EvalError(x, "Can't concatenate associative arrays", e);
+					return null;
+				}
+				else if(e is ArrayValue)
+				{
+					if(lastArrayType != null && !ResultComparer.IsEqual(lastArrayType, e.RepresentedType))
+					{
+						EvalError(x, "Both arrays must be of same type", new[]{lastArrayType, e.RepresentedType});
 						return null;
 					}
-
-					// Might be a string
-					if (av_l.IsString && av_r.IsString)
-						return new ArrayValue(av_l.RepresentedType as ArrayType, av_l.StringValue + av_r.StringValue);
-					else
-					{
-						var elements = new ISymbolValue[av_l.Elements.Length + av_r.Elements.Length];
-						Array.Copy(av_l.Elements, 0, elements, 0, av_l.Elements.Length);
-						Array.Copy(av_r.Elements, 0, elements, av_l.Elements.Length, av_r.Elements.Length);
-
-						return new ArrayValue(av_l.RepresentedType as ArrayType, elements);
-					}
+					lastArrayType = e.RepresentedType as ArrayType;
+					
+					if((e as ArrayValue).IsString)
+						continue;
 				}
-
-				ArrayType at = null;
-
-				// Append the right value to the array
-				if (av_l!=null &&  (at=av_l.RepresentedType as ArrayType) != null &&
-					ResultComparer.IsImplicitlyConvertible(r.RepresentedType, at.ValueType, ctxt))
+				else if(e is PrimitiveValue)
 				{
-					var elements = new ISymbolValue[av_l.Elements.Length + 1];
-					Array.Copy(av_l.Elements, elements, av_l.Elements.Length);
-					elements[elements.Length - 1] = r;
-
-					return new ArrayValue(at, elements);
+					var btt = (e as PrimitiveValue).BaseTypeToken;
+					if(btt == DTokens.Char || btt == DTokens.Dchar || btt == DTokens.Wchar)
+						continue;
 				}
-				// Put the left value into the first position
-				else if (av_r != null && (at = av_r.RepresentedType as ArrayType) != null &&
-					ResultComparer.IsImplicitlyConvertible(l.RepresentedType, at.ValueType, ctxt))
-				{
-					var elements = new ISymbolValue[1 + av_r.Elements.Length];
-					elements[0] = l;
-					Array.Copy(av_r.Elements,0,elements,1,av_r.Elements.Length);
-
-					return new ArrayValue(at, elements);
-				}
-
-				EvalError(x, "At least one operand must be an (non-associative) array. If so, the other operand must be of the array's element type.", new[]{l,r});
+				
+				isString = false;
+			}
+			
+			if(lastArrayType == null)
+			{
+				EvalError(x, "At least one operand must be an (non-associative) array. If so, the other operand must be of the array's element type.", catQueue.ToArray());
 				return null;
 			}
 			
-			throw new WrongEvaluationArgException();
+			if(isString)
+			{
+				var sb = new StringBuilder();
+				
+				while(catQueue.Count != 0)
+				{
+					var e = catQueue.Dequeue();
+					if(e is ArrayValue)
+						sb.Append((e as ArrayValue).StringValue);
+					else if(e is PrimitiveValue)
+						sb.Append((char)((e as PrimitiveValue).Value));
+				}
+				return new ArrayValue(GetStringType(LiteralSubformat.Utf8), sb.ToString());
+			}
+			
+			
+			var elements = new List<ISymbolValue>();
+			while(catQueue.Count != 0)
+			{
+				var e = catQueue.Dequeue();
+				
+				if(e is ArrayValue)
+				{
+					elements.AddRange((e as ArrayValue).Elements);
+					continue;
+				}
+				
+				if(!ResultComparer.IsImplicitlyConvertible(e.RepresentedType, lastArrayType.ValueType, ctxt))
+				{
+					EvalError(x, "Element with type " + e.RepresentedType.ToCode() + " doesn't fit into array with type "+lastArrayType.ToCode(), catQueue.ToArray());
+					return null;
+				}
+				
+				elements.Add(e);
+			}
+			
+			return new ArrayValue(lastArrayType, elements.ToArray());
 		}
 
 		ISymbolValue TryGetValue(ISemantic s)
 		{
 			if (s is VariableValue)
-				return ValueProvider[((VariableValue)s).Variable];
+				return EvaluateValue(s as VariableValue, ValueProvider);
 
 			return s as ISymbolValue;
 		}
