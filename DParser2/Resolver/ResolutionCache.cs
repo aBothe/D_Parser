@@ -6,22 +6,19 @@ using D_Parser.Dom;
 
 namespace D_Parser.Resolver
 {
-	public class ResolutionCache
+	public class ResolutionCache<T> where T : class
 	{
-		public static ConditionalWeakTable<ISyntaxRegion, AbstractType> paramLessCache 
-			= new ConditionalWeakTable<ISyntaxRegion, AbstractType>();
-		public static ConditionalWeakTable<ISyntaxRegion, Dictionary<TemplateParameterSymbol[], AbstractType>> paramBoundCache
-			= new ConditionalWeakTable<ISyntaxRegion, Dictionary<TemplateParameterSymbol[], AbstractType>>();
-		
-		private ResolutionCache()
-		{}
+		ConditionalWeakTable<ISyntaxRegion, T> paramLessCache 
+			= new ConditionalWeakTable<ISyntaxRegion, T>();
+		ConditionalWeakTable<ISyntaxRegion, Dictionary<TemplateParameterSymbol[], T>> paramBoundCache
+			= new ConditionalWeakTable<ISyntaxRegion, Dictionary<TemplateParameterSymbol[], T>>();
 		
 		/// <summary>
 		/// Adds a result to the cache.
 		/// Warning: Does not check for double occurences of the same set of surrounding template parameters - 
 		/// 		 so call TryGet first to ensure that the element hasn't been enlisted yet under these specific circumstances.
 		/// </summary>
-		public static void Add(ResolutionContext ctxt, ISyntaxRegion element, AbstractType resolvedElement)
+		public void Add(ResolutionContext ctxt, ISyntaxRegion element, T resolvedElement)
 		{
 			resolvedElement = null;
 			var n = GetRelatedNode(element);
@@ -31,27 +28,33 @@ namespace D_Parser.Resolver
 			
 			var parameters = GetParameters(ctxt, n);
 			
-			if(resolvedElement != null && 
-			   resolvedElement.DeclarationOrExpressionBase == element)
-				resolvedElement.DeclarationOrExpressionBase = null;
+			if(resolvedElement is AbstractType && 
+			   (resolvedElement as AbstractType).DeclarationOrExpressionBase == element)
+				(resolvedElement as AbstractType).DeclarationOrExpressionBase = null;
 			
 			if(parameters.Count == 0)
 			{
-				paramLessCache.Add(element, resolvedElement);
+				try{
+					lock(paramLessCache)
+						paramLessCache.Add(element, resolvedElement);
+				}catch(Exception x)
+				{
+					
+				}
 				return;
 			}
 			
-			Dictionary<TemplateParameterSymbol[], AbstractType> dict;
+			Dictionary<TemplateParameterSymbol[], T> dict;
 			if(!paramBoundCache.TryGetValue(element, out dict))
 			{
-				dict = new Dictionary<TemplateParameterSymbol[], AbstractType>();
+				dict = new Dictionary<TemplateParameterSymbol[], T>();
 				paramBoundCache.Add(element, dict);
 			}
 			
 			dict.Add(parameters.ToArray(), resolvedElement);
 		}
 		
-		public static bool TryGet(ResolutionContext ctxt, ISyntaxRegion element, out AbstractType resolvedElement)
+		public bool TryGet(ResolutionContext ctxt, ISyntaxRegion element, out T resolvedElement)
 		{
 			resolvedElement = null;
 			var n = GetRelatedNode(element);
@@ -63,10 +66,11 @@ namespace D_Parser.Resolver
 			
 			if(parameters.Count == 0)
 			{
-				return paramLessCache.TryGetValue(element, out resolvedElement);
+				lock(paramLessCache)
+					return paramLessCache.TryGetValue(element, out resolvedElement);
 			}
 			
-			Dictionary<TemplateParameterSymbol[], AbstractType> dict;
+			Dictionary<TemplateParameterSymbol[], T> dict;
 			if(!paramBoundCache.TryGetValue(element, out dict))
 				return false;
 			

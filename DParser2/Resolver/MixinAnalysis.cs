@@ -12,13 +12,13 @@ namespace D_Parser.Resolver
 	/// </summary>
 	public class MixinAnalysis
 	{
-		static Stack<MixinStatement> stmtsBeingAnalysed = new Stack<MixinStatement>();
-		static Stack<MixinStatement> bkpStack = new Stack<MixinStatement>();
+		static ResolutionCache<DModule> mixinDeclCache = new ResolutionCache<DModule>();
+		static ResolutionCache<BlockStatement> mixinStmtCache = new ResolutionCache<BlockStatement>();
 		
-		static string GetMixinContent(MixinStatement mx, ResolutionContext ctxt,out ISyntaxRegion cachedContent)
+		static List<MixinStatement> stmtsBeingAnalysed = new List<MixinStatement>();
+		
+		static bool CheckAndPushAnalysisStack(MixinStatement mx)
 		{
-			cachedContent = null;
-			
 			lock(stmtsBeingAnalysed)
 			{
 				if(stmtsBeingAnalysed.Count != 0)
@@ -27,41 +27,54 @@ namespace D_Parser.Resolver
 					 * Only accept mixins that are located somewhere BEFORE the mixin that is the last inserted one in the stack.
 					 * Also make sure mx and the peek mixin do have the same module root!
 					 */
-					
-					do
+					foreach(var pk in stmtsBeingAnalysed)
 					{
-						var pk = stmtsBeingAnalysed.Peek();
 						if(mx.ParentNode.NodeRoot == pk.ParentNode.NodeRoot)
 						{
 							if(mx == pk || mx.Location > pk.Location)
-								return null;
+								return false;
 							break;
 						}
-						
-						bkpStack.Push(stmtsBeingAnalysed.Pop());
-					}while(stmtsBeingAnalysed.Count != 0);
-					
-					for(var i = bkpStack.Count; i >= 1; i--)
-						stmtsBeingAnalysed.Push(bkpStack.Pop());
-					
+					}
+
 					if(stmtsBeingAnalysed.Count > 5)
-						return null;
+						return false;
 				}
 				
-				stmtsBeingAnalysed.Push(mx);
+				stmtsBeingAnalysed.Add(mx);
 			}
+			return true;
+		}
+		
+		static string GetMixinContent(MixinStatement mx, ResolutionContext ctxt, bool takeStmtCache ,out ISyntaxRegion cachedContent)
+		{
+			cachedContent = null;
+			
+			if(!CheckAndPushAnalysisStack(mx))
+				return null;
 			
 			bool pop;
 			if(pop = ctxt.ScopedBlock != mx.ParentNode)
 				ctxt.PushNewScope(mx.ParentNode as IBlockNode, mx);
 			
 			bool hadCachedItem;
-			cachedContent = ctxt.MixinCache.Get<ISyntaxRegion>(mx,out hadCachedItem);
+			if(takeStmtCache)
+			{
+				BlockStatement stmt;
+				hadCachedItem = mixinStmtCache.TryGet(ctxt, mx, out stmt);
+				cachedContent = stmt;
+			}
+			else
+			{
+				DModule mod;
+				hadCachedItem = mixinDeclCache.TryGet(ctxt, mx, out mod);
+				cachedContent = mod;
+			}
 			
-			if(cachedContent != null || hadCachedItem)
+			if(hadCachedItem)
 			{
 				lock(stmtsBeingAnalysed)
-					stmtsBeingAnalysed.Pop();
+					stmtsBeingAnalysed.Remove(mx);
 				if(pop)
 					ctxt.Pop();
 				return null;
@@ -77,7 +90,7 @@ namespace D_Parser.Resolver
 			catch{}
 			
 			lock(stmtsBeingAnalysed)
-				stmtsBeingAnalysed.Pop();
+				stmtsBeingAnalysed.Remove(mx);
 			if(pop) 
 				ctxt.Pop();
 			
@@ -86,14 +99,17 @@ namespace D_Parser.Resolver
 			if(av != null && av.IsString)
 				return av.StringValue;
 			
-			ctxt.MixinCache.Cache(mx, null);
+			if(takeStmtCache)
+				mixinStmtCache.Add(ctxt, mx, null);
+			else
+				mixinDeclCache.Add(ctxt, mx, null);
 			return null;
 		}
 		
 		public static BlockStatement ParseMixinStatement(MixinStatement mx, ResolutionContext ctxt)
 		{
 			ISyntaxRegion sr;
-			var literal = GetMixinContent(mx, ctxt, out sr);
+			var literal = GetMixinContent(mx, ctxt, true, out sr);
 			
 			if(sr is BlockStatement)
 				return (BlockStatement)sr;
@@ -101,14 +117,14 @@ namespace D_Parser.Resolver
 				return null;
 			
 			var bs = (BlockStatement)DParser.ParseBlockStatement("{"+literal+"}", mx.ParentNode);
-			ctxt.MixinCache.Cache(mx, bs);
+			mixinStmtCache.Add(ctxt, mx, bs);
 			return bs;
 		}
 		
 		public static DModule ParseMixinDeclaration(MixinStatement mx, ResolutionContext ctxt)
 		{
 			ISyntaxRegion sr;
-			var literal = GetMixinContent(mx, ctxt, out sr);
+			var literal = GetMixinContent(mx, ctxt, false, out sr);
 			
 			if(sr is DModule)
 				return (DModule)sr;
@@ -116,7 +132,7 @@ namespace D_Parser.Resolver
 				return null;
 			
 			var ast = (DModule)DParser.ParseString(literal, true);
-			ctxt.MixinCache.Cache(mx, ast);
+			mixinDeclCache.Add(ctxt, mx, ast);
 			
 			if(ast == null)
 				return null;
@@ -150,126 +166,6 @@ namespace D_Parser.Resolver
 				}
 			
 			return ast;
-		}
-	}
-	
-	public class MixinCache
-	{
-		ResolutionContext ctxt;
-		Dictionary<MixinStatement, List<MxEntry>> cache = new Dictionary<MixinStatement, List<MxEntry>>();
-		
-		public MixinCache(ResolutionContext ctxt)
-		{
-			this.ctxt = ctxt;
-		}
-		
-		class MxEntry
-		{
-			public TemplateParameterSymbol[] templateParams;
-			
-			public ISyntaxRegion mixinContent;
-		}
-		
-		public void Cache(MixinStatement mx, ISyntaxRegion mixedInContent)
-		{
-			List<MxEntry> mxList;
-			if(!cache.TryGetValue(mx,out mxList))
-				cache[mx] = mxList = new List<MxEntry>();
-			
-			var parms = GetParameters(mx);
-			var parms_array = parms.Count == 0 ? null : parms.ToArray();
-			
-			if(mixedInContent == null)
-			{
-				foreach(var e_ in mxList)
-				{
-					if(e_.mixinContent == null)
-					{
-						if(CompareParameterEquality(parms, e_.templateParams))
-							return;
-						break;
-					}
-				}
-			}
-			
-			var e = new MxEntry{ templateParams = parms_array, mixinContent = mixedInContent };
-			mxList.Add(e);
-		}
-		
-		public T Get<T>(MixinStatement mx, out bool foundItem) where T : ISyntaxRegion
-		{
-			foundItem = false;
-			List<MxEntry> mxList;
-			if(!cache.TryGetValue(mx,out mxList))
-				return default(T);
-			
-			foundItem = true;
-			var l = GetParameters(mx);
-			foreach(var e in mxList)
-			{
-				if(e.templateParams == null)
-					return (T)e.mixinContent;
-				
-				if(CompareParameterEquality(l, e.templateParams))
-					return (T)e.mixinContent;
-			}
-			
-			foundItem = false;
-			return default(T);
-		}
-		
-		bool CompareParameterEquality(List<TemplateParameterSymbol> l1, TemplateParameterSymbol[] l2)
-		{
-			if(l2 == null || l2.Length == 0)
-			{
-				return l1 == null || l1.Count == 0;
-			}
-			
-			foreach(var p in l2)
-			{
-				for(int i = 0; i<l1.Count; i++)
-				{
-					var ex = l1[i];
-					if(p.Parameter == ex.Parameter)
-					{
-						if(!ResultComparer.IsEqual(p.Base,ex.Base)){
-							return false;
-						}
-						break;
-					}
-				}
-			}
-			
-			return true;
-		}
-		
-		List<TemplateParameterSymbol> GetParameters(MixinStatement mx)
-		{
-			var l = new List<TemplateParameterSymbol>();
-			var curBn = mx.ParentNode;
-			while(curBn!= null)
-			{
-				if(ctxt.ScopedBlock == curBn)
-					break;
-				curBn = curBn.Parent;
-			}
-			
-			if(curBn == null)
-				return l;
-			
-			var stk = new Stack<ContextFrame>();
-			while(ctxt.CurrentContext != null)
-			{
-				l.AddRange(ctxt.CurrentContext.DeducedTemplateParameters.Values);
-				if(!ctxt.PrevContextIsInSameHierarchy)
-					break;
-				stk.Push(ctxt.Pop());
-			}
-			
-			while(stk.Count != 0)
-				ctxt.Push(stk.Pop());
-			
-			return l;
 		}
 	}
 }

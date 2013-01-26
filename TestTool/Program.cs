@@ -34,9 +34,6 @@ namespace TestTool
 			
 			Console.WriteLine("done.");
 			
-			var cch = ResolutionCache.paramBoundCache;
-			var cch2 = ResolutionCache.paramLessCache;
-			
 			Console.WriteLine();
 			Console.Write("Press any key to continue . . . ");
 			Console.ReadKey(true);

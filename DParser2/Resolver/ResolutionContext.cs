@@ -28,7 +28,6 @@ namespace D_Parser.Resolver
 		}
 
 		public ParseCacheList ParseCache = new ParseCacheList();
-		public readonly MixinCache MixinCache;
 
 		public IBlockNode ScopedBlock
 		{
@@ -77,7 +76,6 @@ namespace D_Parser.Resolver
 
 		protected ResolutionContext(ParseCacheList ParseCache, ConditionalCompilationFlags gFlags, IBlockNode bn, IStatement stmt=null)
 		{
-			this.MixinCache = new MixinCache(this);
 			this.CompilationEnvironment = gFlags;
 			this.ParseCache = ParseCache;
 			

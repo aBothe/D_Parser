@@ -677,6 +677,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			return false;
 		}
 		
+		static ResolutionCache<AbstractType> templateMixinCache = new ResolutionCache<AbstractType>();
 		static List<TemplateMixin> templateMixinsBeingAnalyzed = new List<TemplateMixin>();
 		// http://dlang.org/template-mixin.html#TemplateMixin
 		bool HandleUnnamedTemplateMixin(TemplateMixin tmx, bool treatAsDeclBlock, MemberFilter vis)
@@ -689,14 +690,14 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			}
 			
 			AbstractType t;
-			if(!ResolutionCache.TryGet(ctxt, tmx, out t))
+			if(!templateMixinCache.TryGet(ctxt, tmx, out t))
 			{
 				t = TypeDeclarationResolver.ResolveSingle(tmx.Qualifier, ctxt);
 				// Deadly important: To prevent mem leaks, all references from the result to the TemplateMixin must be erased!
 				// Elsewise there remains one reference from the dict value to the key - and won't get free'd THOUGH we can't access it anymore
 				if(t != null)
 					t.DeclarationOrExpressionBase = null;
-				ResolutionCache.Add(ctxt, tmx, t);
+				templateMixinCache.Add(ctxt, tmx, t);
 			}
 			else if(t == null)
 			{
