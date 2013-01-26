@@ -315,7 +315,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					break;
 			}
 			
-			r = TryGetValue(E(catEx.RightOperand));
+			r = TryGetValue(E((catEx ?? x).RightOperand));
 			if(r == null)
 			{
 				EvalError(catEx.LeftOperand, "Couldn't be evaluated.");
@@ -387,9 +387,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			{
 				var e = catQueue.Dequeue();
 				
-				if(e is ArrayValue)
+				var av = e as ArrayValue;
+				if(av != null)
 				{
-					elements.AddRange((e as ArrayValue).Elements);
+					if(av.IsString)
+						elements.Add(av);
+					else if(av.Elements != null)
+						elements.AddRange(av.Elements);
 					continue;
 				}
 				

@@ -1478,6 +1478,35 @@ mixin(""template mxT(string n) { enum mxT = n; }"");
 			t = TypeDeclarationResolver.ResolveSingle("myClass", ctxt, null);
 			Assert.That(t, Is.Null);
 		}
+		
+		[Test]
+		public void NestedMixins()
+		{
+			var pcl = CreateCache(@"module A;
+mixin(""template mxT1(string n) { enum mxT1 = n; }"");
+mixin(mxT1!(""template"")~"" mxT2(string n) { enum mxT2 = n; }"");
+mixin(""template mxT3(string n) { ""~mxT2!(""enum"")~"" mxT3 = n; }"");
+
+mixin(""template mxT4(""~mxT3!(""string"")~"" n) { enum mxT4 = n; }"");
+mixin(""class ""~mxT4!(""myClass"")~"" {}"");"");");
+			
+			var ctxt = CreateDefCtxt(pcl, pcl[0]["A"]);
+			
+			var t = TypeDeclarationResolver.ResolveSingle("mxT1",ctxt,null);
+			Assert.That(t,Is.TypeOf(typeof(TemplateType)));
+			
+			t = TypeDeclarationResolver.ResolveSingle("mxT2",ctxt,null);
+			Assert.That(t,Is.TypeOf(typeof(TemplateType)));
+			
+			t = TypeDeclarationResolver.ResolveSingle("mxT3",ctxt,null);
+			Assert.That(t,Is.TypeOf(typeof(TemplateType)));
+			
+			t = TypeDeclarationResolver.ResolveSingle("mxT4",ctxt,null);
+			Assert.That(t,Is.TypeOf(typeof(TemplateType)));
+			
+			t = TypeDeclarationResolver.ResolveSingle("myClass",ctxt,null);
+			Assert.That(t,Is.TypeOf(typeof(ClassType)));
+		}
 		#endregion
 		
 		#region Template Mixins
