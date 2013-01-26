@@ -20,7 +20,6 @@ namespace D_Parser.Resolver
 		/// </summary>
 		public void Add(ResolutionContext ctxt, ISyntaxRegion element, T resolvedElement)
 		{
-			resolvedElement = null;
 			var n = GetRelatedNode(element);
 			
 			if(n == null)
