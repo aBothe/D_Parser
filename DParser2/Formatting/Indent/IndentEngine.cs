@@ -813,11 +813,9 @@ namespace D_Parser.Formatting.Indent
 					// nothing entered on this line
 					break;
 				case ':':
-					//canBeLabel = canBeLabel && inside != Inside.FoldedStatement;
-					
-					if (keyword == DTokens.Case || keyword == DTokens.Default || !canBeLabel)
+					if (keyword == DTokens.Case || keyword == DTokens.Default || !canBeLabel || inside == Inside.Empty)
 						break;
-
+					
 					PushFoldedStatement ();
 					break;
 				case '[':
