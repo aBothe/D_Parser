@@ -118,7 +118,7 @@ namespace D_Parser.Formatting.Indent
 		}
 		
 		public bool IsInsideDocLineComment {
-			get { return stack.PeekInside (0) == Inside.DocComment; }
+			get { return stack.PeekInside(0) == Inside.DocComment; }
 		}
 		
 		public bool LineBeganInsideVerbatimString {
@@ -130,11 +130,11 @@ namespace D_Parser.Formatting.Indent
 		}
 		
 		public bool IsInsidePreprocessorDirective {
-			get { return stack.PeekInside (0) == Inside.PreProcessor; }
+			get { return stack.PeekInside (0) == Inside.PreProcessor || stack.PeekInside(0) == Inside.Shebang; }
 		}
 		
-		public bool IsInsideOrdinaryCommentOrString {
-			get { return (stack.PeekInside (0) & (Inside.LineComment | Inside.NestedComment | Inside.BlockComment | Inside.StringOrChar)) != 0; }
+		public bool IsInsideCommentOrString {
+			get { return (stack.PeekInside (0) & (Inside.Comment | Inside.StringOrChar)) != 0; }
 		}
 		
 		public bool IsInsideComment {
