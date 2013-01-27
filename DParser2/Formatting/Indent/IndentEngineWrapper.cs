@@ -44,7 +44,7 @@ namespace D_Parser.Formatting.Indent
 				eng.Push((char)c);
 			}
 			
-			return eng.NewLineIndent;
+			return eng.ThisLineIndent;
 		}
 	
 		public static void CorrectIndent(TextReader code, int startOffset, int endOffset, Action<int, int, string> documentReplace, DFormattingOptions options = null, ITextEditorOptions textStyle = null, bool formatLastLine = true)
