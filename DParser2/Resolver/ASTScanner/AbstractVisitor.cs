@@ -1,12 +1,14 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
-using D_Parser.Parser;
-using D_Parser.Resolver.TypeResolution;
-using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Misc;
-using System.Runtime.CompilerServices;
+using D_Parser.Parser;
+using D_Parser.Resolver.ExpressionSemantics;
+using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Resolver.ASTScanner
 {
@@ -678,16 +680,17 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		}
 		
 		static ResolutionCache<AbstractType> templateMixinCache = new ResolutionCache<AbstractType>();
-		static List<TemplateMixin> templateMixinsBeingAnalyzed = new List<TemplateMixin>();
+		[ThreadStatic]
+		static List<TemplateMixin> templateMixinsBeingAnalyzed;
 		// http://dlang.org/template-mixin.html#TemplateMixin
 		bool HandleUnnamedTemplateMixin(TemplateMixin tmx, bool treatAsDeclBlock, MemberFilter vis)
 		{
-			lock(templateMixinsBeingAnalyzed)
-			{
-				if(templateMixinsBeingAnalyzed.Contains(tmx))
-					return false;
-				templateMixinsBeingAnalyzed.Add(tmx);
-			}
+			if(templateMixinsBeingAnalyzed == null)
+				templateMixinsBeingAnalyzed = new List<TemplateMixin>();
+			
+			if(templateMixinsBeingAnalyzed.Contains(tmx))
+				return false;
+			templateMixinsBeingAnalyzed.Add(tmx);
 			
 			AbstractType t;
 			if(!templateMixinCache.TryGet(ctxt, tmx, out t))
@@ -701,6 +704,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			}
 			else if(t == null)
 			{
+				templateMixinsBeingAnalyzed.Remove(tmx);
 				return false;
 			}
 			

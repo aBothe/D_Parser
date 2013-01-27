@@ -43,14 +43,17 @@ namespace D_Parser.Resolver
 				return;
 			}
 			
-			Dictionary<TemplateParameterSymbol[], T> dict;
-			if(!paramBoundCache.TryGetValue(element, out dict))
+			lock(paramBoundCache)
 			{
-				dict = new Dictionary<TemplateParameterSymbol[], T>();
-				paramBoundCache.Add(element, dict);
+				Dictionary<TemplateParameterSymbol[], T> dict;
+				if(!paramBoundCache.TryGetValue(element, out dict))
+				{
+					dict = new Dictionary<TemplateParameterSymbol[], T>();
+					paramBoundCache.Add(element, dict);
+				}
+				
+				dict.Add(parameters.ToArray(), resolvedElement);
 			}
-			
-			dict.Add(parameters.ToArray(), resolvedElement);
 		}
 		
 		public bool TryGet(ResolutionContext ctxt, ISyntaxRegion element, out T resolvedElement)

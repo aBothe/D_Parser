@@ -15,34 +15,36 @@ namespace D_Parser.Resolver
 		static ResolutionCache<DModule> mixinDeclCache = new ResolutionCache<DModule>();
 		static ResolutionCache<BlockStatement> mixinStmtCache = new ResolutionCache<BlockStatement>();
 		
-		static List<MixinStatement> stmtsBeingAnalysed = new List<MixinStatement>();
+		[ThreadStatic]
+		static List<MixinStatement> stmtsBeingAnalysed;
 		
 		static bool CheckAndPushAnalysisStack(MixinStatement mx)
 		{
-			lock(stmtsBeingAnalysed)
+			if(stmtsBeingAnalysed == null)
+				stmtsBeingAnalysed = new List<MixinStatement>();
+			
+			if(stmtsBeingAnalysed.Count != 0)
 			{
-				if(stmtsBeingAnalysed.Count != 0)
+				/*
+				 * Only accept mixins that are located somewhere BEFORE the mixin that is the last inserted one in the stack.
+				 * Also make sure mx and the peek mixin do have the same module root!
+				 */
+				foreach(var pk in stmtsBeingAnalysed)
 				{
-					/*
-					 * Only accept mixins that are located somewhere BEFORE the mixin that is the last inserted one in the stack.
-					 * Also make sure mx and the peek mixin do have the same module root!
-					 */
-					foreach(var pk in stmtsBeingAnalysed)
+					if(mx.ParentNode.NodeRoot == pk.ParentNode.NodeRoot)
 					{
-						if(mx.ParentNode.NodeRoot == pk.ParentNode.NodeRoot)
-						{
-							if(mx == pk || mx.Location > pk.Location)
-								return false;
-							break;
-						}
+						if(mx == pk || mx.Location > pk.Location)
+							return false;
+						break;
 					}
-
-					if(stmtsBeingAnalysed.Count > 5)
-						return false;
 				}
-				
-				stmtsBeingAnalysed.Add(mx);
+
+				if(stmtsBeingAnalysed.Count > 5)
+					return false;
 			}
+			
+			stmtsBeingAnalysed.Add(mx);
+			
 			return true;
 		}
 		
@@ -73,8 +75,7 @@ namespace D_Parser.Resolver
 			
 			if(hadCachedItem)
 			{
-				lock(stmtsBeingAnalysed)
-					stmtsBeingAnalysed.Remove(mx);
+				stmtsBeingAnalysed.Remove(mx);
 				if(pop)
 					ctxt.Pop();
 				return null;
@@ -89,8 +90,7 @@ namespace D_Parser.Resolver
 			}
 			catch{}
 			
-			lock(stmtsBeingAnalysed)
-				stmtsBeingAnalysed.Remove(mx);
+			stmtsBeingAnalysed.Remove(mx);
 			if(pop) 
 				ctxt.Pop();
 			
