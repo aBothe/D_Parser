@@ -72,19 +72,21 @@ namespace D_Parser.Resolver
 					return paramLessCache.TryGetValue(element, out resolvedElement);
 			}
 			
-			Dictionary<TemplateParameterSymbol[], T> dict;
-			if(!paramBoundCache.TryGetValue(element, out dict))
-				return false;
-			
-			foreach(var kv in dict)
+			lock(paramBoundCache)
 			{
-				if(CompareParameterEquality(parameters, kv.Key))
+				Dictionary<TemplateParameterSymbol[], T> dict;
+				if(!paramBoundCache.TryGetValue(element, out dict))
+					return false;
+				
+				foreach(var kv in dict)
 				{
-					resolvedElement = kv.Value;
-					return true;
+					if(CompareParameterEquality(parameters, kv.Key))
+					{
+						resolvedElement = kv.Value;
+						return true;
+					}
 				}
 			}
-			
 			return false;
 		}
 		
