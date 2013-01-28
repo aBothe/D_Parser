@@ -669,7 +669,35 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			
 			return false;
 		}
-		
+
+		public static MixinTemplateType GetTemplateMixinContent (ResolutionContext ctxt, TemplateMixin tmx, bool pushOnAnalysisStack = true)
+		{
+			if (pushOnAnalysisStack) {
+				if(templateMixinsBeingAnalyzed == null)
+					templateMixinsBeingAnalyzed = new List<TemplateMixin>();
+				
+				if(templateMixinsBeingAnalyzed.Contains(tmx))
+					return null;
+				templateMixinsBeingAnalyzed.Add(tmx);
+			}
+
+			AbstractType t;
+			if(!templateMixinCache.TryGet(ctxt, tmx, out t))
+			{
+				t = TypeDeclarationResolver.ResolveSingle(tmx.Qualifier, ctxt);
+				// Deadly important: To prevent mem leaks, all references from the result to the TemplateMixin must be erased!
+				// Elsewise there remains one reference from the dict value to the key - and won't get free'd THOUGH we can't access it anymore
+				if(t != null)
+					t.DeclarationOrExpressionBase = null;
+				templateMixinCache.Add(ctxt, tmx, t);
+			}
+
+			if(pushOnAnalysisStack)
+				templateMixinsBeingAnalyzed.Remove(tmx);
+
+			return t as MixinTemplateType;
+		}
+
 		static ResolutionCache<AbstractType> templateMixinCache = new ResolutionCache<AbstractType>();
 		[ThreadStatic]
 		static List<TemplateMixin> templateMixinsBeingAnalyzed;
@@ -682,24 +710,8 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			if(templateMixinsBeingAnalyzed.Contains(tmx))
 				return false;
 			templateMixinsBeingAnalyzed.Add(tmx);
-			
-			AbstractType t;
-			if(!templateMixinCache.TryGet(ctxt, tmx, out t))
-			{
-				t = TypeDeclarationResolver.ResolveSingle(tmx.Qualifier, ctxt);
-				// Deadly important: To prevent mem leaks, all references from the result to the TemplateMixin must be erased!
-				// Elsewise there remains one reference from the dict value to the key - and won't get free'd THOUGH we can't access it anymore
-				if(t != null)
-					t.DeclarationOrExpressionBase = null;
-				templateMixinCache.Add(ctxt, tmx, t);
-			}
-			else if(t == null)
-			{
-				templateMixinsBeingAnalyzed.Remove(tmx);
-				return false;
-			}
-			
-			var tmxTemplate = t as MixinTemplateType;
+
+			var tmxTemplate = GetTemplateMixinContent(ctxt, tmx, false);
 			
 			bool res = false;
 			if(tmxTemplate == null)

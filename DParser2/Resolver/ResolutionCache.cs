@@ -20,12 +20,7 @@ namespace D_Parser.Resolver
 		/// </summary>
 		public void Add(ResolutionContext ctxt, ISyntaxRegion element, T resolvedElement)
 		{
-			var n = GetRelatedNode(element);
-			
-			if(n == null)
-				throw new ArgumentException("No associated node found for "+element.ToString());
-			
-			var parameters = GetParameters(ctxt, n);
+			var parameters = GetParameters(ctxt, GetRelatedNode(element));
 			
 			if(resolvedElement is AbstractType && 
 			   (resolvedElement as AbstractType).DeclarationOrExpressionBase == element)
@@ -59,12 +54,7 @@ namespace D_Parser.Resolver
 		public bool TryGet(ResolutionContext ctxt, ISyntaxRegion element, out T resolvedElement)
 		{
 			resolvedElement = null;
-			var n = GetRelatedNode(element);
-			
-			if(n == null)
-				return false;
-			
-			var parameters = GetParameters(ctxt, n);
+			var parameters = GetParameters(ctxt, GetRelatedNode(element));
 			
 			if(parameters.Count == 0)
 			{

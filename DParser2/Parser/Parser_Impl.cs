@@ -3921,7 +3921,7 @@ namespace D_Parser.Parser
 					if(tmx.MixinId == null)
 						return tmx;
 					else
-						return new DeclarationStatement{ Declarations=new[]{new NamedTemplateMixinNode(tmx)} };
+						return new DeclarationStatement{ Declarations=new[]{new NamedTemplateMixinNode(tmx)}, Parent = Parent };
 				}
 			}
 			#endregion
