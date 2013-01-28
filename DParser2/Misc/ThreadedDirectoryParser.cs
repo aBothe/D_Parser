@@ -169,7 +169,8 @@ namespace D_Parser.Misc
 				}
 
 				ast.FileName = file;
-				pack.Modules[ModuleNameHelper.ExtractModuleName(ast.ModuleName)] = ast;
+				lock(pack)
+					pack.AddModule(ast);
 			}
 		}
 	}

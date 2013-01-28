@@ -180,10 +180,10 @@ namespace D_Parser.Resolver.TypeResolution
 				{
 					var pack = (b as PackageSymbol).Package;
 
-					IAbstractSyntaxTree accessedModule = null;
-					if (pack.Modules.TryGetValue(nextIdentifier, out accessedModule))
+					var accessedModule = pack.GetModule(nextIdentifier);
+					if (accessedModule != null)
 						r.Add(new ModuleSymbol(accessedModule as DModule, typeIdObject as ISyntaxRegion, b as PackageSymbol));
-					else if (pack.Packages.TryGetValue(nextIdentifier, out pack))
+					else if ((pack = pack.GetPackage(nextIdentifier)) != null)
 						r.Add(new PackageSymbol(pack, typeIdObject as ISyntaxRegion));
 				}
 				else if (b is ModuleSymbol)

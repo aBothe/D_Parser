@@ -6,7 +6,7 @@ namespace D_Parser.Dom
 	{
 		ITypeDeclaration _Type;
 		string _Name="";
-		INode _Parent;
+		readonly WeakReference _Parent=new WeakReference(null);
 		string _Description="";
 		CodeLocation _StartLocation;
 		CodeLocation _EndLocation;
@@ -51,8 +51,8 @@ namespace D_Parser.Dom
 
 		public INode Parent
 		{
-			get { return _Parent; }
-			set { _Parent = value; }
+			get { return _Parent.IsAlive ? _Parent.Target as INode : null; }
+			set { _Parent.Target = value; }
 		}
 
 		public override string ToString()
@@ -114,18 +114,18 @@ namespace D_Parser.Dom
 		{
 			get
 			{
-				if (Parent == null)
+				if (!_Parent.IsAlive)
 					return this;
 
-				lock (Parent)
-					return Parent.NodeRoot;
+				lock(_Parent.Target)
+					return (_Parent.Target as INode).NodeRoot;
 			}
 			set
 			{
-				if (Parent == null)
-					Parent = value;
+				if (!_Parent.IsAlive)
+					_Parent.Target = value;
 				else 
-					Parent.NodeRoot = value;
+					(_Parent.Target as INode).NodeRoot = value;
 			}
 		}
 

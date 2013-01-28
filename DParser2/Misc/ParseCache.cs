@@ -19,10 +19,11 @@ namespace D_Parser.Misc
 		Thread parseThread;
 
 		/// <summary>
-		/// FIXME: Make a fileLookup-package constraint that enforces a module naming consistency
+		/// Lookup that is used for fast filename-AST lookup. Do NOT modify, it'll be done inside the ModulePackage instances.
 		/// </summary>
-		Dictionary<string, IAbstractSyntaxTree> fileLookup = new Dictionary<string, IAbstractSyntaxTree>();
-		public RootPackage Root = new RootPackage();
+		internal Dictionary<string, IAbstractSyntaxTree> fileLookup = new Dictionary<string, IAbstractSyntaxTree>();
+		
+		public RootPackage Root;
 
 		public bool EnableUfcsCaching = true;
 		/// <summary>
@@ -70,6 +71,11 @@ namespace D_Parser.Misc
 			private set;
 		}
 		#endregion
+		
+		public ParseCache()
+		{
+			Root = new RootPackage(this);
+		}
 
 		#region Parsing management
 		public delegate void ParseFinishedHandler(ParsePerformanceData[] PerformanceData);
@@ -91,7 +97,6 @@ namespace D_Parser.Misc
 			AbortParsing();
 
 			// Clear all kinds of caches to free memory as soon as possible!
-			UfcsCache.Clear();
 			Clear(directoriesToParse == null);
 			GC.Collect(); // Run a collection cycle to entirely free previously free'd memory
 
@@ -114,7 +119,7 @@ namespace D_Parser.Misc
 		public void WaitForParserFinish()
 		{
 			if (parseThread != null && parseThread.IsAlive)
-				parseThread.Join();
+				parseThread.Join(10000);
 		}
 
 		public void AbortParsing()
@@ -128,7 +133,7 @@ namespace D_Parser.Misc
 			var tup = (Tuple<IEnumerable<string>, List<ParsePerformanceData>>)o;
 
 			var parsedDirs = new List<string>();
-			var newRoot = new RootPackage();
+			var newRoot = new RootPackage(this);
 			foreach (var d in tup.Item1)
 			{
 				parsedDirs.Add(d);
@@ -180,20 +185,20 @@ namespace D_Parser.Misc
 					}
 
 			if (!cacheUpdateRequired && paths.Length != 0)
-				cacheUpdateRequired =
-					Root.Modules.Count == 0 &&
-					Root.Packages.Count == 0;
+				cacheUpdateRequired = Root == null || Root.IsEmpty;
 
 			return cacheUpdateRequired;
 		}
 
 		public void Clear(bool parseDirectories = false)
 		{
+			fileLookup.Clear();
+			UfcsCache.Clear();
 			Root = null;
 			if (parseDirectories)
 				ParsedDirectories = null;
 
-			Root = new RootPackage();
+			Root = new RootPackage(this);
 		}
 
 		void HandleObjectModule(IAbstractSyntaxTree objModule)
@@ -231,7 +236,8 @@ namespace D_Parser.Misc
 
 			if (string.IsNullOrEmpty(packName))
 			{
-				Root.Modules[ast.ModuleName] = ast;
+				lock(Root)
+					Root.AddModule(ast);
 
 				if (ast.ModuleName == "object")
 					HandleObjectModule(ast);
@@ -239,8 +245,8 @@ namespace D_Parser.Misc
 			}
 
 			var pack = Root.GetOrCreateSubPackage(packName, true);
-
-			pack.Modules[ModuleNameHelper.ExtractModuleName(ast.ModuleName)] = ast;
+			lock(pack)
+				pack.AddModule(ast);
 		}
 
 		/// <summary>
@@ -248,16 +254,10 @@ namespace D_Parser.Misc
 		/// </summary>
 		public IAbstractSyntaxTree GetModule(string moduleName)
 		{
-			var packName = ModuleNameHelper.ExtractPackageName(moduleName);
-
-			var pack = Root.GetOrCreateSubPackage(packName, false);
+			var pack = Root.GetOrCreateSubPackage(ModuleNameHelper.ExtractPackageName(moduleName), false);
 
 			if (pack != null)
-			{
-				IAbstractSyntaxTree ret = null;
-				if (pack.Modules.TryGetValue(ModuleNameHelper.ExtractModuleName(moduleName), out ret))
-					return ret;
-			}
+				return pack.GetModule(moduleName);
 
 			return null;
 		}
@@ -268,7 +268,7 @@ namespace D_Parser.Misc
 				return false;
 
 			if (string.IsNullOrEmpty(ast.ModuleName))
-				return Root.Modules.ContainsValue(ast) && Root.Modules.Remove("");
+				return Root.RemoveModule(string.Empty);
 
 			if(!string.IsNullOrEmpty(ast.FileName))
 				fileLookup.Remove(ast.FileName);
@@ -278,13 +278,8 @@ namespace D_Parser.Misc
 
 		bool _remFromPack(ModulePackage pack, IAbstractSyntaxTree ast)
 		{
-			if(pack.Modules.ContainsValue(ast))
-				foreach (var kv in pack.Modules)
-					if (kv.Value == ast)
-					{
-						pack.Modules.Remove(kv.Key);
-						return true;
-					}
+			if(pack.RemoveModule(ast.ModuleName))
+				return true;
 
 			foreach (var p in pack.Packages)
 				if (_remFromPack(p.Value, ast))

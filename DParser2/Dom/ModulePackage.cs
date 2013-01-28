@@ -8,19 +8,56 @@ namespace D_Parser.Dom
 {
 	public class RootPackage : ModulePackage
 	{
-		public override string ToString()
-		{
-			return "<Root>";
-		}
+		internal RootPackage(ParseCache cache) : base(cache, null, "<root>") { }
 	}
 
 	public class ModulePackage : IEnumerable<IAbstractSyntaxTree>, IEnumerable<ModulePackage>
 	{
-		public ModulePackage Parent { get; internal set; }
+		internal ModulePackage(ParseCache cache, ModulePackage parent, string name) {
+			Cache = cache;
+			this.Parent = parent;
+			this.Name = name;
+		}
+		
+		public readonly ParseCache Cache;
+		public readonly ModulePackage Parent;
 
-		public string Name = "";
-		public Dictionary<string, ModulePackage> Packages = new Dictionary<string, ModulePackage>();
-		public Dictionary<string, IAbstractSyntaxTree> Modules = new Dictionary<string, IAbstractSyntaxTree>();
+		public readonly string Name;
+		Dictionary<string, ModulePackage> packages = new Dictionary<string, ModulePackage>();
+		Dictionary<string, IAbstractSyntaxTree> modules = new Dictionary<string, IAbstractSyntaxTree>();
+		
+		public IEnumerable<KeyValuePair<string,ModulePackage>> Packages {get{return packages;}}
+		public IEnumerable<KeyValuePair<string, IAbstractSyntaxTree>> Modules {get{return modules;}}
+		
+		public bool IsEmpty {get{return packages.Count == 0 && modules.Count == 0;}}
+		
+		public ModulePackage[] GetPackages()
+		{
+			var packs = new ModulePackage[packages.Count];
+			packages.Values.CopyTo(packs,0);
+			return packs;
+		}
+		
+		public IAbstractSyntaxTree[] GetModules()
+		{
+			var mods = new IAbstractSyntaxTree[modules.Count];
+			modules.Values.CopyTo(mods,0);
+			return mods;
+		}
+		
+		public ModulePackage GetPackage(string name)
+		{
+			ModulePackage pack;
+			packages.TryGetValue(name,out pack);
+			return pack;
+		}
+		
+		public IAbstractSyntaxTree GetModule(string name)
+		{
+			IAbstractSyntaxTree ast;
+			modules.TryGetValue(name, out ast);
+			return ast;
+		}
 
 		public string Path
 		{
@@ -37,12 +74,12 @@ namespace D_Parser.Dom
 
 		public IEnumerator<IAbstractSyntaxTree> GetEnumerator()
 		{
-			lock(Modules)
-				foreach (var kv in Modules)
+			lock(modules)
+				foreach (var kv in modules)
 					yield return kv.Value;
 
-			lock(Packages)
-				foreach (var kv in Packages)
+			lock(packages)
+				foreach (var kv in packages)
 					lock(kv.Value)
 						foreach (var ast in kv.Value)
 							yield return ast;
@@ -50,8 +87,8 @@ namespace D_Parser.Dom
 
 		IEnumerator<ModulePackage> IEnumerable<ModulePackage>.GetEnumerator()
 		{
-			lock(Packages)
-				foreach (var kv in Packages)
+			lock(packages)
+				foreach (var kv in packages)
 				{
 					yield return kv.Value;
 
@@ -65,6 +102,34 @@ namespace D_Parser.Dom
 		{
 			return GetEnumerator();
 		}
+		
+		public bool AddModule(IAbstractSyntaxTree ast)
+		{
+			if(string.IsNullOrEmpty(ast.ModuleName))
+				return false;
+			
+			Cache.fileLookup[ast.FileName] = ast;
+			modules[ModuleNameHelper.ExtractModuleName(ast.ModuleName)] = ast;
+			return true;
+		}
+		
+		public bool RemovePackage(string name)
+		{
+			return packages.Remove(ModuleNameHelper.ExtractModuleName(name));
+		}
+		
+		public bool RemoveModule(string name)
+		{
+			name = ModuleNameHelper.ExtractModuleName(name);
+			IAbstractSyntaxTree ast;
+			if(modules.TryGetValue(name, out ast))
+			{
+				Cache.fileLookup.Remove(ast.FileName);
+				modules.Remove(name);
+				return true;
+			}
+			return false;
+		}
 
 		public ModulePackage GetOrCreateSubPackage(string package, bool create = false)
 		{
@@ -75,18 +140,13 @@ namespace D_Parser.Dom
 
 			foreach (var p in ModuleNameHelper.SplitModuleName(package))
 			{
-				ModulePackage returnValue = null;
+				ModulePackage returnValue;
 
-				if (!currentPackage.Packages.TryGetValue(p, out returnValue))
+				if (!currentPackage.packages.TryGetValue(p, out returnValue))
 				{
 					if (create)
-						lock(currentPackage.Packages)
-							returnValue = currentPackage.Packages[p] =
-								new ModulePackage
-								{
-									Name = p,
-									Parent = currentPackage
-								};
+						lock(currentPackage.packages)
+							returnValue = currentPackage.packages[p] = new ModulePackage(Cache, currentPackage, p);
 					else
 						return null;
 				}

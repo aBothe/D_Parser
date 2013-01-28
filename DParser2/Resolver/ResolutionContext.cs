@@ -74,7 +74,7 @@ namespace D_Parser.Resolver
 			return new ResolutionContext(pcl, globalConditions, scopedBlock, scopedStatement);
 		}
 
-		protected ResolutionContext(ParseCacheList ParseCache, ConditionalCompilationFlags gFlags, IBlockNode bn, IStatement stmt=null)
+		public ResolutionContext(ParseCacheList ParseCache, ConditionalCompilationFlags gFlags, IBlockNode bn, IStatement stmt=null)
 		{
 			this.CompilationEnvironment = gFlags;
 			this.ParseCache = ParseCache;

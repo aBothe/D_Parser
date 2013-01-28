@@ -32,22 +32,30 @@ namespace D_Parser.Dom.Statements
 	{
 		public virtual CodeLocation Location { get; set; }
 		public virtual CodeLocation EndLocation { get; set; }
-		public IStatement Parent { get; set; }
+		
+		readonly WeakReference parentStmt = new WeakReference(null);
+		readonly WeakReference parentNode = new WeakReference(null);
+		
+		public IStatement Parent { get
+			{
+				return parentStmt.IsAlive ? parentStmt.Target as IStatement : null;
+			}
+			set{
+				parentStmt.Target = value;
+			}
+		}
 
-		INode parent;
 		public INode ParentNode {
 			get
 			{
-				if(Parent!=null)
-					return Parent.ParentNode;
-				return parent;
+				return parentNode.IsAlive ? parentNode.Target as INode : null;
 			}
 			set
 			{
-				if (Parent != null)
-					Parent.ParentNode = value;
+				if (parentStmt.IsAlive)
+					(parentStmt.Target as IStatement).ParentNode = value;
 				else
-					parent = value;
+					parentNode.Target = value;
 			}
 		}
 

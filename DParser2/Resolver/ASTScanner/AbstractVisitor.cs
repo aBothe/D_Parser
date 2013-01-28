@@ -58,21 +58,12 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		
 		public virtual IEnumerable<IAbstractSyntaxTree> PrefilterSubnodes(ModulePackage pack, out ModulePackage[] subPackages)
 		{
-			if(pack.Packages.Count != 0)
-			{
-				subPackages = new ModulePackage[pack.Packages.Count];
-				pack.Packages.Values.CopyTo(subPackages, 0);
-			}
-			else
+			subPackages = pack.GetPackages();
+			if(subPackages.Length == 0)
 				subPackages = null;
 			
-			if(pack.Modules.Values.Count != 0)
-			{
-				var mods = new IAbstractSyntaxTree[pack.Modules.Values.Count];
-				pack.Modules.Values.CopyTo(mods,0);
-				return mods;
-			}
-			return null;
+			var mods = pack.GetModules();
+			return mods.Length != 0 ? mods : null;
 		}
 
 		/// <summary>

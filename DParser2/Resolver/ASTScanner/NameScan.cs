@@ -57,14 +57,14 @@ namespace D_Parser.Resolver.ASTScanner
 		
 		public override IEnumerable<IAbstractSyntaxTree> PrefilterSubnodes(ModulePackage pack, out ModulePackage[] subPackages)
 		{
-			ModulePackage subPack;
-			if(pack.Packages.TryGetValue(filterId, out subPack))
+			var subPack = pack.GetPackage(filterId);
+			if(subPack != null)
 				subPackages = new[]{ subPack };
 			else
 				subPackages = null;
 			
-			IAbstractSyntaxTree ast;
-			if(pack.Modules.TryGetValue(filterId, out ast))
+			var ast = pack.GetModule(filterId);
+			if(ast != null)
 				return new[]{ast};
 			return null;
 		}
