@@ -122,7 +122,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				vp.ResolutionContext.CurrentContext.RemoveParamTypesFromPreferredLocals(bt);
 			}
 			
-			return val;
+			return val ?? v;
 		}
 
 		/// <summary>
