@@ -95,21 +95,19 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			get
 			{
 				if (n == null){
-					if(ev!=null)ev.EvalError(null,"There must be a valid variable node given in order to retrieve its value");
-					return null;
+					return new ErrorValue(new EvaluationException("There must be a valid variable node given in order to retrieve its value"));
 				}
 
 				if (n.IsConst)
 				{
 					if(varsBeingResolved.Contains(n)){
-						if(ev!=null)ev.EvalError(n.Initializer, "Cannot reference itself");
-						return null;
+						return new ErrorValue(new EvaluationException("Cannot reference itself"));
 					}
 					varsBeingResolved.Add(n);
 					// .. resolve it's pre-compile time value and make the returned value the given argument
 					ISymbolValue val;
 					try{
-						val = Evaluation.EvaluateValue(n.Initializer, this);
+						val = Evaluation.EvaluateValue(n.Initializer,this);
 					}
 					finally{
 						varsBeingResolved.Remove(n);
@@ -121,8 +119,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						return val;
 				}
 
-				if(ev!=null)ev.EvalError(null,n+" must have a constant initializer");
-				return null;
+				return new ErrorValue(new EvaluationException(n+" must have a constant initializer"));
 			}
 			set
 			{

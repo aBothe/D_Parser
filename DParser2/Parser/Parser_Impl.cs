@@ -3422,7 +3422,7 @@ namespace D_Parser.Parser
 			}
 		}
 
-		IStatement Statement(bool BlocksAllowed = true, bool EmptyAllowed = true, IBlockNode Scope = null, IStatement Parent=null)
+		public IStatement Statement(bool BlocksAllowed = true, bool EmptyAllowed = true, IBlockNode Scope = null, IStatement Parent=null)
 		{
 			if (EmptyAllowed && laKind == Semicolon)
 			{

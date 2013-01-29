@@ -18,14 +18,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// </summary>
 		private bool eval;
 		private readonly ResolutionContext ctxt;
-		private List<EvaluationException> errors = new List<EvaluationException>();
-		
-		public EvaluationException[] Errors
-		{
-			get{
-				return errors.ToArray();
-			}
-		}
+		public List<EvaluationException> Errors = new List<EvaluationException>();
+
 		/// <summary>
 		/// Is not null if the expression value shall be evaluated.
 		/// </summary>
@@ -33,7 +27,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		bool resolveConstOnly { get { return ValueProvider == null || ValueProvider.ConstantOnly; } set { if(ValueProvider!=null) ValueProvider.ConstantOnly = value; } }
 
 		[DebuggerStepThrough]
-		private Evaluation(AbstractSymbolValueProvider vp) { 
+		Evaluation(AbstractSymbolValueProvider vp) { 
 			this.ValueProvider = vp; 
 			if(vp!=null)
 				vp.ev = this;
@@ -41,7 +35,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			this.ctxt = vp.ResolutionContext;
 		}
 		[DebuggerStepThrough]
-		private Evaluation(ResolutionContext ctxt) {
+		Evaluation(ResolutionContext ctxt) {
 			this.ctxt = ctxt;
 		}
 		#endregion
@@ -51,44 +45,42 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		internal void EvalError(EvaluationException ex)
 		{
 			if(!ignoreErrors)
-				errors.Add(ex);
+				Errors.Add(ex);
 		}
 		
 		internal void EvalError(IExpression x, string msg, ISemantic[] lastResults = null)
 		{
 			if(!ignoreErrors)
-				errors.Add(new EvaluationException(x,msg,lastResults));
+				Errors.Add(new EvaluationException(x,msg,lastResults));
 		}
 		
 		internal void EvalError(IExpression x, string msg, ISemantic lastResult)
 		{
 			if(!ignoreErrors)
-				errors.Add(new EvaluationException(x,msg,new[]{lastResult}));
+				Errors.Add(new EvaluationException(x,msg,new[]{lastResult}));
 		}
 		#endregion
 
 		/// <summary>
 		/// Uses the standard value provider for expression value evaluation
 		/// </summary>
-		public static ISymbolValue EvaluateValue(IExpression x, ResolutionContext ctxt, bool lazyVariableValueEvaluation = false)
+		public static ISymbolValue EvaluateValue (IExpression x, ResolutionContext ctxt, bool lazyVariableValueEvaluation = false)
 		{
-			try
+			try 
 			{
-				var vp = new StandardValueProvider(ctxt);
-				var v = EvaluateValue(x, vp);
+				var vp = new StandardValueProvider (ctxt);
+				var v = EvaluateValue (x, vp);
 				
-				if(v is VariableValue && !lazyVariableValueEvaluation)
-				{
-					return EvaluateValue(v as VariableValue, vp);
+				if (v is VariableValue && !lazyVariableValueEvaluation) {
+					return EvaluateValue (v as VariableValue, vp);
 				}
-				
+
 				return v;
-			}
-			catch(Exception ex)
+			} 
+			catch (Exception ex) 
 			{
-				//TODO Redirect evaluation exception to some outer logging service
+				return new ErrorValue(new EvaluationException(x, ex.Message + "\n\n" + ex.StackTrace));
 			}
-			return null;
 		}
 
 		public static ISymbolValue EvaluateValue(IExpression x, AbstractSymbolValueProvider vp)
@@ -96,7 +88,14 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (vp == null)
 				vp = new StandardValueProvider(null);
 
-			return new Evaluation(vp).E(x) as ISymbolValue;
+			var ev = new Evaluation(vp);
+
+			var v = ev.E(x) as ISymbolValue;
+
+			if(v == null && ev.Errors.Count != 0)
+				return new ErrorValue(ev.Errors.ToArray());
+
+			return v;
 		}
 		
 		public static ISymbolValue EvaluateValue(VariableValue v, AbstractSymbolValueProvider vp)

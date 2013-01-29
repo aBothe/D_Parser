@@ -14,7 +14,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		ISemantic E(PostfixExpression ex)
 		{
 			if (ex is PostfixExpression_MethodCall)
-				return E((PostfixExpression_MethodCall)ex, !ctxt.Options.HasFlag(ResolutionOptions.ReturnMethodReferencesOnly));
+				return E((PostfixExpression_MethodCall)ex, !eval || !ctxt.Options.HasFlag(ResolutionOptions.ReturnMethodReferencesOnly));
 
 			var foreExpr=E(ex.PostfixForeExpression);
 

@@ -10,9 +10,9 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 {
 	public class FunctionEvaluation
 	{
-		public static ISymbolValue Execute(DMethod method, ISymbolValue[] arguments, AbstractSymbolValueProvider vp)
+		public static ISymbolValue Execute(MemberSymbol method, ISymbolValue[] arguments, AbstractSymbolValueProvider vp)
 		{
-			throw new NotImplementedException("CTFE is not implemented yet.");
+			return new ErrorValue(new EvaluationException("CTFE is not implemented yet."));
 		}
 	}
 }

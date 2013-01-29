@@ -55,7 +55,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							EvalError(idOrTemplateInstance, ambigousExprMsg, overloads);
 							return null;
 						}
-						return FunctionEvaluation.Execute((DMethod)mr.Definition, executionArguments, ValueProvider);
+						return FunctionEvaluation.Execute(mr, executionArguments, ValueProvider);
 					}
 					
 					return new InternalOverloadValue(overloads);

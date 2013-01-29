@@ -56,7 +56,7 @@ namespace D_Parser.Resolver
 				return null;
 			
 			bool pop;
-			if(pop = ctxt.ScopedBlock != mx.ParentNode)
+			if(pop = (ctxt.ScopedBlock != mx.ParentNode && mx.ParentNode != null))
 				ctxt.PushNewScope(mx.ParentNode as IBlockNode, mx);
 			
 			bool hadCachedItem;
