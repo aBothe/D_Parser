@@ -41,9 +41,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				relatedNode = ((MemberSymbol)InitialResult).Definition;
 				InitialResult = DResolver.StripMemberSymbols((AbstractType)InitialResult);
 			}
+
+			var val = InitialResult as ISymbolValue;
 			
-			if(InitialResult is TypeValue)
-				InitialResult = (InitialResult as TypeValue).RepresentedType;
+			if(InitialResult is ISymbolValue)
+				InitialResult = (InitialResult as ISymbolValue).RepresentedType;
 
 			/*
 			 * Parameter configurations:
@@ -61,6 +63,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			 *	}
 			 */
 
+			StaticProperty prop = null;
+
 			#region AbstractTypes
 			if (InitialResult is AbstractType)
 			{
@@ -70,22 +74,24 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					switch (propertyIdentifier)
 					{
 						case "init":
-							if (!Evaluate)
-							{
-								return new StaticProperty("init",
+							prop = new StaticProperty("init",
 									at.IsStaticArray ? "Returns an array literal with each element of the literal being the .init property of the array element type." : "Returns null.",
 									at, relatedNode, idContainter);
-							}
+							//TODO
 							break;
 						case "sizeof":
-							if (!Evaluate)
-								return new StaticProperty("sizeof", 
+							prop = new StaticProperty("sizeof", 
 									"Returns the array length multiplied by the number of bytes per array element.",
 									ctxt.ParseCache.SizeT, relatedNode, idContainter);
+							
 							break;
 						case "length":
-							if (!Evaluate)
-								return new StaticProperty("length", 
+							if (Evaluate && val is ArrayValue)
+							{
+								var av = val as ArrayValue;
+								return new PrimitiveValue(DTokens.Int, av.IsString ? av.StringValue.Length : av.Elements.Length, null);
+							}
+							prop = new StaticProperty("length", 
 									"Returns the number of elements in the array. This is a fixed quantity for static arrays.",
 									ctxt.ParseCache.SizeT, relatedNode, idContainter);
 							break;
@@ -309,20 +315,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 			#endregion
 
-			#region SymbolValues
-			else if(InitialResult is ISymbolValue)
-			{
-				if(InitialResult is ArrayValue)
-				{
-					var av = (ArrayValue)InitialResult;
-					
-				}
-				else if(InitialResult is AssociativeArrayValue)
-				{
-					var aav = (AssociativeArrayValue)InitialResult;
-				}
-			}
-			#endregion
+			if (prop != null)
+				return prop;
 
 			#region init
 			if (propertyIdentifier == "init")
@@ -425,7 +419,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 			#endregion
 
-			return null;
+			return prop;
 		}
 	}
 }

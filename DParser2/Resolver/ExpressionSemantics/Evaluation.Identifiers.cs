@@ -80,6 +80,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return new TypeValue(r);
 			}
 
+			EvalError(idOrTemplateInstance, "Could neither execute nor evaluate symbol value", overloads);
 			return null;
 		}
 
@@ -110,7 +111,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				if (eval)
 				{
 					if (o == null || o.Length == 0)
+					{
+						EvalError(id, "Symbol could not be found");
 						return null;
+					}
 
 					return TryDoCTFEOrGetValueRefs(o, id, ImplicitlyExecute);
 				}
