@@ -70,7 +70,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					return new VariableValue(mr);
 				}
 			}
-			else if (r is UserDefinedType)
+			else if (r is UserDefinedType || r is PackageSymbol || r is ModuleSymbol)
 			{
 				if (overloads.Length > 1)
 				{
