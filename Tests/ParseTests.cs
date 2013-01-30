@@ -23,6 +23,16 @@ namespace Tests
 	public class ParseTests
 	{
 		[Test]
+		public void RealLiterals()
+		{
+			var e = DParser.ParseExpression("0x1.921fb54442d18469898cc51701b84p+1L");
+			
+			Assert.That(e, Is.TypeOf(typeof(IdentifierExpression)));
+			var id = e as IdentifierExpression;
+			Assert.That(Math.Abs((decimal)id.Value - (decimal)Math.PI), Is.LessThan(0.1M));
+		}
+		
+		[Test]
 		public void ParseEscapeLiterals()
 		{
 			var e = DParser.ParseExpression(@"`a`\n""lolol""");

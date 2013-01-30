@@ -597,7 +597,7 @@ namespace D_Parser.Misc.Mangling
 			{
 				r.Read();
 				var exp = Exponent();
-				n *= Math.Pow(10, exp);
+				n *= (decimal)Math.Pow(10, exp);
 			}
 			
 			return new IdentifierExpression(n, LiteralFormat.Scalar | ((Math.Truncate(n) == n) ? 0 : LiteralFormat.FloatingPoint), LiteralSubformat.Double);
@@ -626,17 +626,17 @@ namespace D_Parser.Misc.Mangling
 			}
 		}
 		
-		double Exponent()
+		int Exponent()
 		{
 			if((char)r.Peek() == 'N')
 			{
 				r.Read();
-				return -Number();
+				return -(int)Number();
 			}
-			return Number();
+			return (int)Number();
 		}
 		
-		double HexDigits(bool clearSb = true)
+		decimal HexDigits(bool clearSb = true)
 		{
 			if(clearSb)
 				sb.Clear();
@@ -646,7 +646,7 @@ namespace D_Parser.Misc.Mangling
 			return Lexer.ParseFloatValue(sb.ToString(), 16);
 		}
 		
-		double Number(bool clearSb = true)
+		decimal Number(bool clearSb = true)
 		{
 			if(clearSb)
 				sb.Clear();

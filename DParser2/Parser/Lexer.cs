@@ -833,7 +833,7 @@ namespace D_Parser.Parser
 				string prefix = null;
 				string expSuffix = "";
 				string suffix = null;
-				int exponent = 1;
+				int exponent = 0;
 
 				bool HasDot = false;
 				LiteralSubformat subFmt = 0;
@@ -941,7 +941,7 @@ namespace D_Parser.Parser
 						HasDot = true;
 						sb.Append('.');
 
-						while (IsLegalDigit(peek, NumBase))
+						do
 						{
 							if (peek == '_')
 								ReaderRead();
@@ -949,6 +949,7 @@ namespace D_Parser.Parser
 								sb.Append((char)ReaderRead());
 							peek = (char)ReaderPeek();
 						}
+						while (IsLegalDigit(peek, NumBase));
 					}
 				}
 				#endregion
@@ -1017,6 +1018,7 @@ namespace D_Parser.Parser
 					else if (peek == 'L')
 					{ // real value
 						ReaderRead();
+						isLong = true;
 						suffix += 'L';
 						subFmt |= LiteralSubformat.Real;
 						peek = (char)ReaderPeek();
@@ -1042,14 +1044,16 @@ namespace D_Parser.Parser
 
 				var num = ParseFloatValue(sb.ToString(), NumBase);
 
-				if (exponent != 1)
-					num *= Math.Pow(NumBase == 16 ? 2 : 10, exponent);
+				if (exponent != 0)
+					num *= (decimal)Math.Pow(NumBase == 16 ? 2 : 10, exponent);
 
 				object val = null;
 
 				if (HasDot)
 				{
-					if (isFloat)
+					if(isLong)
+						val = num;
+					else if (isFloat)
 						val = (float)num;
 					else
 						val = (double)num;
@@ -1904,9 +1908,9 @@ namespace D_Parser.Parser
 			return 0;
 		}
 
-		public static double ParseFloatValue(string digit, int NumBase)
+		public static decimal ParseFloatValue(string digit, int NumBase)
 		{
-			double ret = 0;
+			decimal ret = 0;
 
 			int commaPos = digit.IndexOf('.');
 			int k = digit.Length - 1;
@@ -1921,7 +1925,7 @@ namespace D_Parser.Parser
 				if (i >= digit.Length) break;
 
 				int n = GetHexNumber(digit[i]);
-				ret += n * Math.Pow(NumBase, k - i);
+				ret += (decimal)(n * Math.Pow(NumBase, k - i));
 			}
 
 			return ret;
