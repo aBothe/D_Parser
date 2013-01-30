@@ -199,7 +199,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					}
 				}
 
-				return HandleSingleMathOp(x, l, rValue ?? E(x.RightOperand), mult);
+				return HandleSingleMathOp(x, l, TryGetValue(rValue ?? E(x.RightOperand)), mult);
 				}catch(DivideByZeroException d)
 				{
 					EvalError(x, "Divide by 0");
