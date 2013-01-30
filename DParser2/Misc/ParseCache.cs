@@ -257,7 +257,7 @@ namespace D_Parser.Misc
 			var pack = Root.GetOrCreateSubPackage(ModuleNameHelper.ExtractPackageName(moduleName), false);
 
 			if (pack != null)
-				return pack.GetModule(moduleName);
+				return pack.GetModule(ModuleNameHelper.ExtractModuleName(moduleName));
 
 			return null;
 		}
