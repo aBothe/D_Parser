@@ -108,7 +108,8 @@ namespace D_Parser.Dom
 			if(string.IsNullOrEmpty(ast.ModuleName))
 				return false;
 			
-			Cache.fileLookup[ast.FileName] = ast;
+			if(!string.IsNullOrEmpty(ast.FileName))
+				Cache.fileLookup[ast.FileName] = ast;
 			modules[ModuleNameHelper.ExtractModuleName(ast.ModuleName)] = ast;
 			return true;
 		}
@@ -124,7 +125,8 @@ namespace D_Parser.Dom
 			IAbstractSyntaxTree ast;
 			if(modules.TryGetValue(name, out ast))
 			{
-				Cache.fileLookup.Remove(ast.FileName);
+				if(!string.IsNullOrEmpty(ast.FileName))
+					Cache.fileLookup.Remove(ast.FileName);
 				modules.Remove(name);
 				return true;
 			}
