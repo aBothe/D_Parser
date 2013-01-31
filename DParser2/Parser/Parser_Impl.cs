@@ -1246,15 +1246,7 @@ namespace D_Parser.Parser
 						 */
 						if (laKind != (CloseParenthesis))
 						{
-							ITemplateParameter[] _unused2 = null;
-							List<INode> _unused = null;
-							ttd = DeclaratorSuffixes(out _unused2, out _unused, ref ret.Attributes);
-
-							if (ttd != null)
-							{
-								ttd.InnerDeclaration = cd;
-								cd = ttd;
-							}
+							DeclaratorSuffixes(ret);
 						}
 					}
 				}
@@ -1290,28 +1282,18 @@ namespace D_Parser.Parser
 			if (IsDeclaratorSuffix || IsFunctionAttribute)
 			{
 				var dm = new DMethod { Parent = parent };
+				dm.Parameters = null;
 				LastParsedObject = dm;
 
-				// DeclaratorSuffixes
-				List<INode> _Parameters;
-				ttd = DeclaratorSuffixes(out ret.TemplateParameters, out _Parameters, ref ret.Attributes);
-				if (ttd != null)
-				{
-					ttd.InnerDeclaration = ret.Type;
-					ret.Type = ttd;
-				}
+				DeclaratorSuffixes(dm);
 
-				if (_Parameters == null)
-					LastParsedObject = ret;
-
-				if (_Parameters != null)
+				if (dm.Parameters != null)
 				{
 					dm.AssignFrom(ret);
-					dm.Parameters = _Parameters;
-					foreach (var pp in dm.Parameters)
-						pp.Parent = dm;
-					return dm;
+					ret = dm;
 				}
+				else
+					LastParsedObject = ret;
 			}
 
 			return ret;
@@ -1330,20 +1312,16 @@ namespace D_Parser.Parser
 		/// 
 		/// TemplateParameterList[opt] Parameters MemberFunctionAttributes[opt]
 		/// </summary>
-		ITypeDeclaration DeclaratorSuffixes(out ITemplateParameter[] TemplateParameters, out List<INode> _Parameters,ref List<DAttribute> attributes)
+		void DeclaratorSuffixes(DNode dn)
 		{
-			ITypeDeclaration td = null;
-			TemplateParameters = null;
-			_Parameters = null;
-
-			FunctionAttributes(ref attributes);
+			FunctionAttributes(ref dn.Attributes);
 
 			while (laKind == (OpenSquareBracket))
 			{
 				Step();
 				var ad = new ArrayDecl() { Location=t.Location };
 				LastParsedObject = ad;
-				ad.InnerDeclaration = td;
+				ad.InnerDeclaration = dn.Type;
 				if (laKind != (CloseSquareBracket))
 				{
 					ad.ClampsEmpty = false;
@@ -1369,28 +1347,21 @@ namespace D_Parser.Parser
 				}
 				Expect(CloseSquareBracket);
 				ad.EndLocation = t.EndLocation;
-				td = ad;
+				dn.Type = ad;
 			}
 
 			if (laKind == (OpenParenthesis))
 			{
 				if (IsTemplateParameterList())
 				{
-					TemplateParameters = TemplateParameterList();
+					TemplateParameterList(dn);
 				}
-				_Parameters = Parameters(null);
-
-				/* Is there a significant difference between storage class and memberfunctiionattribute attributes?
-				while (StorageClass[laKind])
-				{
-					attributes.Add(attr = new DAttribute(laKind, la.Value) { Location = la.Location, EndLocation = la.EndLocation });
-					LastParsedObject = attr;
-					Step();
-				}*/
+				var dm = dn as DMethod;
+				if(dm != null)
+					dm.Parameters = Parameters(dm);
 			}
 
-			FunctionAttributes(ref attributes);
-			return td;
+			FunctionAttributes(ref dn.Attributes);
 		}
 
 		public ITypeDeclaration IdentifierList()
@@ -1487,13 +1458,14 @@ namespace D_Parser.Parser
 				// DeclaratorSuffixes
 				if (laKind == (OpenSquareBracket))
 				{
-					List<INode> _unused = null;
-					ITemplateParameter[] _unused2 = null;
-					List<DAttribute> _unused3 = null;
-					DeclaratorSuffixes(out _unused2, out _unused,ref _unused3);
-					if(_unused3!=null)
-						foreach(var i in _unused3)
-							DeclarationAttributes.Push(i);
+					var dn = new DVariable();
+					dn.Type = td;
+					DeclaratorSuffixes(dn);
+					td = dn.Type;
+
+					if(dn.Attributes!= null && dn.Attributes.Count != 0)
+						foreach(var attr in dn.Attributes)
+							DeclarationAttributes.Push(attr);
 				}
 				return td;
 			}
@@ -3182,11 +3154,17 @@ namespace D_Parser.Parser
 				else
 					ce.TypeSpecialization = Type();
 
+				// TemplateParameterList
 				if (laKind == Comma)
 				{
-					Step();
-					ce.TemplateParameterList =
-						TemplateParameterList(false);
+					var ret = new List<ITemplateParameter>();
+					do
+					{
+						Step();
+						ret.Add(TemplateParameter(null));
+					}
+					while (laKind == Comma);
+					ce.TemplateParameterList = ret.ToArray();
 				}
 
 				Expect(CloseParenthesis);
@@ -4253,7 +4231,7 @@ namespace D_Parser.Parser
 			// StructTemplateDeclaration
 			if (laKind == (OpenParenthesis))
 			{
-				ret.TemplateParameters = TemplateParameterList();
+				TemplateParameterList(ret);
 
 				// Constraint[opt]
 				if (laKind == (If))
@@ -4286,7 +4264,7 @@ namespace D_Parser.Parser
 
 			if (laKind == (OpenParenthesis))
 			{
-				dc.TemplateParameters = TemplateParameterList(true);
+				TemplateParameterList(dc);
 
 				// Constraints
 				if (laKind == If)
@@ -4396,7 +4374,7 @@ namespace D_Parser.Parser
 			else
 			{
 				if (IsTemplateParameterList())
-					dm.TemplateParameters = TemplateParameterList();
+					TemplateParameterList(dm);
 
 				dm.Parameters = Parameters(dm);
 			}
@@ -4430,7 +4408,7 @@ namespace D_Parser.Parser
 			dm.Name = "~this";
 
 			if (IsTemplateParameterList())
-				dm.TemplateParameters = TemplateParameterList();
+				TemplateParameterList(dm);
 
 			dm.Parameters = Parameters(dm);
 
@@ -4461,7 +4439,7 @@ namespace D_Parser.Parser
 			dc.NameLocation = t.Location;
 
 			if (laKind == (OpenParenthesis))
-				dc.TemplateParameters = TemplateParameterList();
+				TemplateParameterList(dc);
 
 			if (laKind == (If))
 				dc.TemplateConstraint=Constraint();
@@ -4536,14 +4514,7 @@ namespace D_Parser.Parser
 
 			if (IsDeclaratorSuffix)
 			{
-				var _unused = new List<INode>();
-				var bt2=DeclaratorSuffixes(out mye.TemplateParameters, out _unused, ref mye.Attributes);
-
-				if (bt2 != null)
-				{
-					bt2.InnerDeclaration = mye.Type;
-					mye.Type = bt2;
-				}
+				DeclaratorSuffixes(mye);
 			}
 
 			// Enum inhertance type
@@ -4750,7 +4721,7 @@ namespace D_Parser.Parser
 				dc.NameLocation = t.Location;
 			}
 
-			dc.TemplateParameters = TemplateParameterList();
+			TemplateParameterList(dc);
 
 			if (laKind == (If))
 				dc.TemplateConstraint=Constraint();
@@ -4849,38 +4820,35 @@ namespace D_Parser.Parser
 			return false;
 		}
 
-		private ITemplateParameter[] TemplateParameterList()
+		void TemplateParameterList(DNode dn, bool mustHaveSurroundingBrackets = true)
 		{
-			return TemplateParameterList(true);
-		}
-
-		private ITemplateParameter[] TemplateParameterList(bool MustHaveSurroundingBrackets)
-		{
-			if (MustHaveSurroundingBrackets) Expect(OpenParenthesis);
-
-			var ret = new List<ITemplateParameter>();
+			if (mustHaveSurroundingBrackets)
+				Expect(OpenParenthesis);
 
 			if (laKind == (CloseParenthesis))
 			{
 				Step();
-				return null;
+				return;
 			}
+
+			var ret = new List<ITemplateParameter>();
 
 			bool init = true;
 			while (init || laKind == (Comma))
 			{
-				if (!init) Step();
-				init = false;
+				if (init) init = false;
+				else Step();
 
-				ret.Add(TemplateParameter());
+				ret.Add(TemplateParameter(dn));
 			}
 
-			if (MustHaveSurroundingBrackets) Expect(CloseParenthesis);
+			if (mustHaveSurroundingBrackets)
+				Expect(CloseParenthesis);
 
-			return ret.ToArray();
+			dn.TemplateParameters = ret.ToArray();
 		}
 
-		ITemplateParameter TemplateParameter()
+		ITemplateParameter TemplateParameter(DNode parent)
 		{
 			// TemplateThisParameter
 			if (laKind == (This))
@@ -4890,8 +4858,9 @@ namespace D_Parser.Parser
 				var ret= new TemplateThisParameter()
 				{
 					Location=t.Location,
-					FollowParameter=TemplateParameter(),
-					EndLocation=t.EndLocation
+					FollowParameter=TemplateParameter(parent),
+					EndLocation=t.EndLocation,
+					Parent = parent
 				};
 				LastParsedObject = ret;
 				return ret;
@@ -4905,7 +4874,12 @@ namespace D_Parser.Parser
 				var id = t.Value;
 				Step();
 
-				var ret=new TemplateTupleParameter() { Name=id, Location=startLoc, EndLocation=t.EndLocation};
+				var ret=new TemplateTupleParameter() { 
+					Name=id, 
+					Location=startLoc, 
+					EndLocation=t.EndLocation,
+					Parent = parent
+				};
 				LastParsedObject = ret;
 				return ret;
 			}
@@ -4914,7 +4888,7 @@ namespace D_Parser.Parser
 			if (laKind == (Alias))
 			{
 				Step();
-				var al = new TemplateAliasParameter() { Location=t.Location };
+				var al = new TemplateAliasParameter() { Location=t.Location, Parent = parent };
 				LastParsedObject = al;
 
 				Expect(Identifier);
@@ -4957,7 +4931,7 @@ namespace D_Parser.Parser
 			if (laKind == (Identifier) && (Lexer.CurrentPeekToken.Kind == (Colon) || Lexer.CurrentPeekToken.Kind == (Assign) || Lexer.CurrentPeekToken.Kind == (Comma) || Lexer.CurrentPeekToken.Kind == (CloseParenthesis)))
 			{
 				Expect(Identifier);
-				var tt = new TemplateTypeParameter() { Location=t.Location };
+				var tt = new TemplateTypeParameter() { Location=t.Location, Parent = parent };
 				LastParsedObject = tt;
 
 				tt.Name = t.Value;
@@ -4978,7 +4952,7 @@ namespace D_Parser.Parser
 			}
 
 			// TemplateValueParameter
-			var tv = new TemplateValueParameter() { Location=la.Location };
+			var tv = new TemplateValueParameter() { Location=la.Location, Parent = parent };
 			LastParsedObject = tv;
 				
 			var bt = BasicType();

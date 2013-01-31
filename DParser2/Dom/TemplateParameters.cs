@@ -5,6 +5,7 @@ namespace D_Parser.Dom
 	public interface ITemplateParameter : ISyntaxRegion, IVisitable<TemplateParameterVisitor>
 	{
 		string Name { get; }
+		DNode Parent {get;}
 
 		R Accept<R>(TemplateParameterVisitor<R> vis);
 	}
@@ -43,6 +44,7 @@ namespace D_Parser.Dom
 			TemplateParameter = param;
 
 			Name = param.Name;
+			Parent = param.Parent;
 
 			Location = NameLocation = param.Location;
 			EndLocation = param.EndLocation;
@@ -72,6 +74,7 @@ namespace D_Parser.Dom
 	public class TemplateTypeParameter : ITemplateParameter
 	{
 		public string Name { get; set; }
+		public DNode Parent {get; set;}
 
 		public ITypeDeclaration Specialization;
 		public ITypeDeclaration Default;
@@ -99,6 +102,7 @@ namespace D_Parser.Dom
 	public class TemplateThisParameter : ITemplateParameter
 	{
 		public string Name { get { return FollowParameter.Name; } }
+		public DNode Parent {get; set;}
 
 		public ITemplateParameter FollowParameter;
 
@@ -117,6 +121,7 @@ namespace D_Parser.Dom
 	public class TemplateValueParameter : ITemplateParameter
 	{
 		public string Name { get; set; }
+		public DNode Parent {get; set;}
 		public ITypeDeclaration Type;
 
 		public IExpression SpecializationExpression;
@@ -152,6 +157,7 @@ namespace D_Parser.Dom
 	public class TemplateTupleParameter : ITemplateParameter
 	{
 		public string Name { get; set; }
+		public DNode Parent {get; set;}
 
 		public sealed override string ToString()
 		{

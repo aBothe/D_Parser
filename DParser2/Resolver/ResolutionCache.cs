@@ -102,21 +102,22 @@ namespace D_Parser.Resolver
 		
 		static List<TemplateParameterSymbol> GetParameters(ResolutionContext ctxt,INode relatedNode)
 		{
-			var l = new List<TemplateParameterSymbol>();
-			while(relatedNode!= null)
+			var relatedNodes = new List<INode>();
+			while(relatedNode != null)
 			{
-				if(ctxt.ScopedBlock == relatedNode)
-					break;
+				relatedNodes.Add(relatedNode);
 				relatedNode = relatedNode.Parent;
 			}
 			
-			if(relatedNode == null)
-				return l;
+			var relatedTemplateParameters = new List<TemplateParameterSymbol>();
 			
 			var stk = new Stack<ContextFrame>();
 			while(ctxt.CurrentContext != null)
 			{
-				l.AddRange(ctxt.CurrentContext.DeducedTemplateParameters.Values);
+				foreach(var tparam in ctxt.CurrentContext.DeducedTemplateParameters.Values)
+					if(relatedNodes.Contains(tparam.Parameter.Parent))
+						relatedTemplateParameters.Add(tparam);
+				
 				if(!ctxt.PrevContextIsInSameHierarchy)
 					break;
 				stk.Push(ctxt.Pop());
@@ -125,7 +126,7 @@ namespace D_Parser.Resolver
 			while(stk.Count != 0)
 				ctxt.Push(stk.Pop());
 			
-			return l;
+			return relatedTemplateParameters;
 		}
 		
 		static INode GetRelatedNode(ISyntaxRegion sr)

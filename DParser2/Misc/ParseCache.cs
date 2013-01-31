@@ -229,9 +229,6 @@ namespace D_Parser.Misc
 			if (ast == null || string.IsNullOrEmpty(ast.ModuleName))
 				return;
 
-			if(!string.IsNullOrEmpty(ast.FileName))
-				fileLookup[ast.FileName] = ast;
-				
 			var packName = ModuleNameHelper.ExtractPackageName(ast.ModuleName);
 
 			if (string.IsNullOrEmpty(packName))
@@ -270,9 +267,6 @@ namespace D_Parser.Misc
 			if (string.IsNullOrEmpty(ast.ModuleName))
 				return Root.RemoveModule(string.Empty);
 
-			if(!string.IsNullOrEmpty(ast.FileName))
-				fileLookup.Remove(ast.FileName);
-			
 			return _remFromPack(Root, ast);
 		}
 
@@ -288,7 +282,7 @@ namespace D_Parser.Misc
 			return false;
 		}
 
-		public IAbstractSyntaxTree GetModuleByFileName(string file, string baseDirectory)
+		public IAbstractSyntaxTree GetModuleByFileName(string file, string baseDirectory = null)
 		{
 			IAbstractSyntaxTree ast;
 			if(fileLookup.TryGetValue(file, out ast))
