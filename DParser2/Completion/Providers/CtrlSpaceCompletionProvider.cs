@@ -170,7 +170,7 @@ namespace D_Parser.Completion
 			bool ParseDecl = false;
 
 			int blockStart = 0;
-			var blockStartLocation = CurrentScope.BlockStartLocation;
+			var blockStartLocation = CurrentScope != null ? CurrentScope.BlockStartLocation : caretLocation;
 
 			if (CurrentScope is DMethod)
 			{

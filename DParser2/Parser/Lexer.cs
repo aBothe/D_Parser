@@ -1035,50 +1035,24 @@ namespace D_Parser.Parser
 				}
 				#endregion
 
-				//string digit = sb.ToString();
-				//string stringValue = prefix + digit + expSuffix + suffix;
-
-				DToken token = null;
-
 				#region Parse the digit string
-
 				var num = ParseFloatValue(sb.ToString(), NumBase);
 
 				if (exponent != 0)
-					num *= (decimal)Math.Pow(NumBase == 16 ? 2 : 10, exponent);
-
-				object val = null;
-
-				if (HasDot)
 				{
-					if(isLong)
-						val = num;
-					else if (isFloat)
-						val = (float)num;
-					else
-						val = (double)num;
-				}
-				else
-				{
-					if (isUnsigned)
-					{
-						if (isLong)
-							val = (ulong)num;
-						else
-							val = (uint)num;
+					try{
+						num *= (decimal)Math.Pow(NumBase == 16 ? 2 : 10, exponent);
 					}
-					else
+					catch(OverflowException ox)
 					{
-						if (isLong)
-							val = (long)num;
-						else
-							val = (int)num;
+						num = decimal.MaxValue;
+						//HACK: Don't register these exceptions. The user will notice the issues at least when compiling stuff.
+						//LexerErrors.Add(new ParserError(false, "Too huge exponent", DTokens.Literal, new CodeLocation(x,y)));
 					}
 				}
-
 				#endregion
 
-				token = Token(DTokens.Literal, x, y, Col-x/*stringValue.Length*/, val,/* stringValue,*/
+				var token = Token(DTokens.Literal, x, y, Col-x/*stringValue.Length*/, num,/* stringValue,*/
 					HasDot || isFloat || isImaginary ? (LiteralFormat.FloatingPoint | LiteralFormat.Scalar) : LiteralFormat.Scalar,
 					subFmt);
 
@@ -1910,7 +1884,7 @@ namespace D_Parser.Parser
 
 		public static decimal ParseFloatValue(string digit, int NumBase)
 		{
-			decimal ret = 0;
+			decimal ret = 0M;
 
 			int commaPos = digit.IndexOf('.');
 			int k = digit.Length - 1;
@@ -1925,7 +1899,9 @@ namespace D_Parser.Parser
 				if (i >= digit.Length) break;
 
 				int n = GetHexNumber(digit[i]);
-				ret += (decimal)(n * Math.Pow(NumBase, k - i));
+				try{
+				ret += n * (decimal)Math.Pow(NumBase, k - i);
+				}catch(OverflowException ox) { return ret; }
 			}
 
 			return ret;

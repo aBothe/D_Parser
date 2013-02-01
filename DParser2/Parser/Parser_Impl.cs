@@ -1281,17 +1281,14 @@ namespace D_Parser.Parser
 
 			if (IsDeclaratorSuffix || IsFunctionAttribute)
 			{
-				var dm = new DMethod { Parent = parent };
-				dm.Parameters = null;
+				var dm = new DMethod { Parent = parent, Parameters = null };
+				dm.AssignFrom(ret);
 				LastParsedObject = dm;
 
 				DeclaratorSuffixes(dm);
 
 				if (dm.Parameters != null)
-				{
-					dm.AssignFrom(ret);
 					ret = dm;
-				}
 				else
 					LastParsedObject = ret;
 			}

@@ -328,7 +328,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							{
 								var bt=ms.Base ?? TypeDeclarationResolver.GetMethodReturnType(dm, ctxt);
 
-								if (returnBaseTypeOnly)
+								if (returnBaseTypeOnly || !eval)
 									argTypeFilteredOverloads.Add(bt);
 								else
 									argTypeFilteredOverloads.Add(ms.Base == null ? new MemberSymbol(dm, bt, ms.DeclarationOrExpressionBase, ms.DeducedTypes) : ms);
@@ -343,7 +343,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						var bt = TypeDeclarationResolver.GetMethodReturnType(dg, ctxt);
 
 						//TODO: Param-Arg check
-						if (returnBaseTypeOnly)
+						if (returnBaseTypeOnly || !eval)
 							argTypeFilteredOverloads.Add(bt);
 						else
 							argTypeFilteredOverloads.Add(new DelegateType(bt, dg.DeclarationOrExpressionBase as FunctionLiteral, dg.Parameters));

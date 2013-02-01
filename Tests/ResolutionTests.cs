@@ -531,15 +531,11 @@ int delegate(int b) myDeleg;
 
 			x=DParser.ParseExpression("myDeleg(123)");
 			r = Evaluation.EvaluateType(x, ctxt);
-			mr = r as MemberSymbol;
-			Assert.IsNotNull(mr);
-			t = mr.Base;
-			Assert.IsInstanceOfType(typeof(DelegateType),t);
+			Assert.That(r, Is.TypeOf(typeof(DelegateType)));
 
 			x = DParser.ParseExpression("foo(myDeleg(123))");
 			r = Evaluation.EvaluateType(x, ctxt);
-			Assert.IsInstanceOfType(typeof(MemberSymbol),r);
-			Assert.That((r as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.That(r, Is.TypeOf(typeof(PrimitiveType)));
 		}
 
 		[Test]
@@ -839,13 +835,13 @@ class B : A{
 			var ctxt = CreateDefCtxt(pcl, this_);
 			ctxt.ContextIndependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
 
-			var super = (this_.Body.SubStatements[0] as IExpressionContainingStatement).SubExpressions[0];
+			var super = (this_.Body.SubStatements[0] as IExpressionContainingStatement).SubExpressions[0] as PostfixExpression_MethodCall;
 
-			var sym = Evaluation.EvaluateType(super, ctxt);
-			Assert.IsInstanceOfType(typeof(MemberSymbol),sym);
-			var mr = (MemberSymbol)sym;
-			Assert.IsInstanceOfType( typeof(DMethod),mr.Definition);
-			Assert.AreEqual(DMethod.MethodType.Constructor, ((DMethod)mr.Definition).SpecialType);
+			var t = Evaluation.EvaluateType(super.PostfixForeExpression, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(ClassType)));
+			
+			t = Evaluation.EvaluateType(super, ctxt);
+			Assert.IsNull(t);
 		}
 
 		[Test]
