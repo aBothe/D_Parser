@@ -98,15 +98,23 @@ namespace D_Parser
 							return caretOffset + target.Column;
 					}
 				}
-
-				return 0;
 			}
 			else if (caret < target)
 			{
-				throw new System.Exception("Tell Alex it's not implemented yet!");
+				int len = Text.Length;
+				for (; caretOffset < len; caretOffset++)
+				{
+					if (Text[caretOffset] == '\n')
+					{
+						line++;
+						
+						if (line >= target.Line)
+							return caretOffset + target.Column;
+					}
+				}
 			}
-			else
-				return caretOffset;
+
+			return caretOffset;
 		}
 	}
 }
