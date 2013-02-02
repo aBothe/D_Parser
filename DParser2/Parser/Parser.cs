@@ -434,7 +434,7 @@ namespace D_Parser.Parser
         {
 			if (ParseErrors.Count > MaxParseErrorsBeforeFailure)
 			{
-				throw new Exception("Too many errors thrown. Quit parsing.");
+				throw new TooManyErrorsException();
 			}
 			else if (ParseErrors.Count == MaxParseErrorsBeforeFailure)
 				msg = "Too many errors - stop parsing";
@@ -455,6 +455,11 @@ namespace D_Parser.Parser
 			ParseErrors.Add(new ParserError(true, DTokens.GetTokenString(n) + " expected" + (t != null ? (", " + DTokens.GetTokenString(t.Kind) + " found") : ""), n, t == null ? la.Location : t.EndLocation));
         }*/
         #endregion
+	}
+
+	public class TooManyErrorsException : Exception
+	{
+		public TooManyErrorsException() : base("Too many errors - stop parsing") { }
 	}
 
 	public class ParserTrackerVariables
