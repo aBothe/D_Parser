@@ -4357,6 +4357,10 @@ namespace D_Parser.Parser
 			dm.Description = GetComments();
 			LastParsedObject = dm;
 
+			if (IsTemplateParameterList())
+				TemplateParameterList(dm);
+
+			// http://dlang.org/struct.html#StructPostblit
 			if (IsStruct && Lexer.CurrentPeekToken.Kind == (This) && laKind == (OpenParenthesis))
 			{
 				var dv = new DVariable();
@@ -4370,9 +4374,6 @@ namespace D_Parser.Parser
 			}
 			else
 			{
-				if (IsTemplateParameterList())
-					TemplateParameterList(dm);
-
 				dm.Parameters = Parameters(dm);
 			}
 
