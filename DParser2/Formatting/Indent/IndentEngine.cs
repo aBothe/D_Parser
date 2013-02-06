@@ -38,8 +38,8 @@ namespace D_Parser.Formatting.Indent
 		#region Properties
 		protected DFormattingOptions Policy;
 		
-		protected readonly bool tabsToSpaces;
-		protected readonly int indentWidth;
+		public readonly bool tabsToSpaces;
+		public readonly int indentWidth;
 		
 		IndentStack stack;
 		
@@ -697,9 +697,8 @@ namespace D_Parser.Formatting.Indent
 				}
 			} else {
 				stack.Push (Inside.Block, keyword, curLineNr, 0);
-// Destroys one lined expression block 'var s = "".Split (new char[] {' '});'
-//				if (inside == Inside.ParenList)
-//					TrimIndent ();
+				// Destroys one lined expression block 'var s = "".Split (new char[] {' '});'
+				//if (inside == Inside.ParenList)					TrimIndent ();
 			}
 			
 			keyword = DTokens.INVALID;
@@ -901,7 +900,6 @@ namespace D_Parser.Formatting.Indent
 		{
 			var after = stack.PeekInside (0);
 			if ((after & Inside.ParenList) == Inside.ParenList && pc == '(') {
-//				var indent = stack.PeekIndent (0);
 				var kw = stack.PeekKeyword;
 				var line = stack.PeekLineNr (0);
 				stack.Pop ();

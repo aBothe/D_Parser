@@ -54,11 +54,11 @@ namespace D_Parser.Formatting.Indent
 		
 		Node[] stack;
 		int size;
-		DFormattingOptionsFactory fact;
+		IndentEngine ie;
 		
-		public IndentStack (DFormattingOptionsFactory fact,int capacity = INITIAL_CAPACITY)
+		public IndentStack (IndentEngine ie,int capacity = INITIAL_CAPACITY)
 		{
-			this.fact = fact;
+			this.ie = ie;
 			if (capacity < INITIAL_CAPACITY)
 				capacity = INITIAL_CAPACITY;
 			
@@ -76,7 +76,7 @@ namespace D_Parser.Formatting.Indent
 		
 		public object Clone ()
 		{
-			var clone = new IndentStack (fact,stack.Length);
+			var clone = new IndentStack (ie,stack.Length);
 			
 			clone.stack = (Node[]) stack.Clone ();
 			clone.size = size;
@@ -146,13 +146,13 @@ namespace D_Parser.Formatting.Indent
 					sp--;
 				}
 				
-				if (fact.Options.IndentSwitchBody)
+				if (ie.Options.IndentSwitchBody)
 					indentBuilder.Append ('\t');
 				
 				nSpaces = 0;
 			} else if ((inside & (Inside.FoldedOrBlock)) != 0) {
 				while (sp >= 0) {
-					if ((stack[sp].inside & Inside.FoldedBlockOrCase) != 0) {
+					if ((stack[sp].inside & (Inside.FoldedBlockOrCase | Inside.ParenList)) != 0) {
 						indentBuilder.Append (stack[sp].indent);
 						break;
 					}
@@ -177,16 +177,6 @@ namespace D_Parser.Formatting.Indent
 			} else if ((inside & (Inside.Shebang | Inside.PreProcessor | Inside.StringOrChar)) != 0) {
 				// if these fold, do not indent
 				nSpaces = 0;
-				
-				//pop regions back out
-				/*if (keyword == "region" || keyword == "endregion") {
-					for (; sp >= 0; sp--) {
-						if ((stack[sp].inside & Inside.FoldedBlockOrCase) != 0) {
-							indentBuilder.Append (stack[sp].indent);
-							break;
-						}
-					}
-				}*/
 			} else if (inside == Inside.LineComment || inside == Inside.DocComment) {
 				// can't actually fold, but we still want to push it onto the stack
 				nSpaces = 0;
@@ -194,7 +184,30 @@ namespace D_Parser.Formatting.Indent
 				// not a valid argument?
 				throw new ArgumentOutOfRangeException ();
 			}
-			
+
+			// Replace additionally inserted spaces with tabs
+			if (!ie.tabsToSpaces)
+			{
+				n = 0;
+				for(int i = 0; i < indentBuilder.Length; i++)
+				{
+					if (indentBuilder[i] == ' ')
+					{
+						n++;
+						if (n >= ie.indentWidth)
+						{
+							// Decrement the space count as we're having tabs now.
+							nSpaces -= n;
+							i -= n - 1;
+							indentBuilder.Remove(i, n);
+							indentBuilder.Insert(i, '\t');
+							n = 0;
+						}
+					}
+					else
+						n = 0;
+				}
+			}
 			node.indent = indentBuilder.ToString ();
 			node.keyword = keyword;
 			node.nSpaces = nSpaces;
