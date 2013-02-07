@@ -15,10 +15,14 @@ namespace TestTool
 	{
 		public static void Main(string[] args)
 		{
+
+			return;
+
+
+
+			// Indent testing
 			var code = @"
-tastyDeleg( (uint a)
-			{
-asd";
+";
 			var line = 4;
 			var ind = D_Parser.Formatting.Indent.IndentEngineWrapper.CalculateIndent(code, line, false, 4);
 			var o = DocumentHelper.LocationToOffset(code, line,1);
@@ -32,6 +36,9 @@ asd";
 			
 			Console.ReadKey(true);
 			return;
+
+
+			// Phobos & Druntime parsing
 			//UFCSCache.SingleThreaded = true;
 			var pc = new ParseCache();
 			pc.EnableUfcsCaching = false;

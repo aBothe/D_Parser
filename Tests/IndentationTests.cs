@@ -11,6 +11,11 @@ namespace Tests
 		public void TestIndenter()
 		{
 			TestLastLine("", 0);
+			
+			TestLastLine(@"
+tastyDeleg( (uint a)
+			{
+asd",6);
 
 			TestLastLine(@"import
 std", 1);
@@ -96,7 +101,7 @@ class A
 			TestLastLine(@"foo(asdf)
 ", 1);
 			TestLastLine(@"writeln(34,
-	joLol);", 1);
+	joLol);", 2);
 			/* TODO
 			TestLastLine(@"writeln,
 	lolSecondExpression();",1);*/
