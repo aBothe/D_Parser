@@ -1597,6 +1597,8 @@ void test() {
 			var pcl = ResolutionTests.CreateCache(@"module A;
 mixin template Singleton(I) {
 	static I getInstance() {}
+	
+	void singletonBar() {}
 }
 
 mixin template Foo(T) {
@@ -1607,6 +1609,8 @@ mixin template Foo(T) {
 class clA
 {
 	mixin Singleton!clA;
+	
+	void clFoo() {}
 }
 
 void foo() {
@@ -1615,19 +1619,19 @@ void foo() {
 	localDerp;
 	arrayTest[0];
 }");
+			var A = pcl[0]["A"];
+			var foo = A["foo"][0] as DMethod;
+			var ctxt = ResolutionTests.CreateDefCtxt(pcl, foo, foo.Body);
 			
-			var A =pcl[0]["A"]["foo"][0] as DMethod;
-			var ctxt = ResolutionTests.CreateDefCtxt(pcl, A, A.Body);
-			
-			var t = Evaluation.EvaluateType((A.Body.SubStatements[0] as ExpressionStatement).Expression,ctxt);
+			var t = Evaluation.EvaluateType((foo.Body.SubStatements[0] as ExpressionStatement).Expression,ctxt);
 			Assert.That(t, Is.Null);
 			
-			t = Evaluation.EvaluateType((A.Body.SubStatements[2] as ExpressionStatement).Expression,ctxt);
+			t = Evaluation.EvaluateType((foo.Body.SubStatements[2] as ExpressionStatement).Expression,ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			var ms = t as MemberSymbol;
 			Assert.That(ms.Base, Is.TypeOf(typeof(PrimitiveType)));
 			
-			t = Evaluation.EvaluateType((A.Body.SubStatements[3] as ExpressionStatement).Expression,ctxt);
+			t = Evaluation.EvaluateType((foo.Body.SubStatements[3] as ExpressionStatement).Expression,ctxt);
 			Assert.That(t, Is.TypeOf(typeof(ArrayAccessSymbol)));
 			t = (t as ArrayAccessSymbol).Base;
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
@@ -1636,6 +1640,16 @@ void foo() {
 			var ex = DParser.ParseExpression("clA.getInstance");
 			t = Evaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			
+			foo = (A["Singleton"][0] as DClassLike)["singletonBar"][0] as DMethod;
+			ctxt.CurrentContext.Set(foo, foo.Body);
+			t = TypeDeclarationResolver.ResolveSingle("I",ctxt,null);
+			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
+			
+			foo = (A["clA"][0] as DClassLike)["clFoo"][0] as DMethod;
+			ctxt.CurrentContext.Set(foo, foo.Body);
+			t = TypeDeclarationResolver.ResolveSingle("I",ctxt,null);
+			Assert.That(t, Is.Null);
 		}
 		
 		[Test]

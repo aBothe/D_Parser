@@ -260,10 +260,24 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		                  bool isMixinAst = false,
 		                 bool takeStaticChildrenOnly = false)
 		{
-			if (curScope.TemplateParameters != null && ctxt.NodeIsInCurrentScopeHierarchy(curScope) &&
-			    (breakOnNextScope = HandleItems(curScope.TemplateParameterNodes as IEnumerable<INode>)) &&
-			    breakImmediately)
-					return true;
+			if (!dontHandleTemplateParamsInNodeScan){
+				if(curScope.TemplateParameters != null){
+					var t = ctxt.ScopedBlock;
+					while(t != null)
+					{
+						if(t == curScope)
+						{
+							if((breakOnNextScope = HandleItems(curScope.TemplateParameterNodes as IEnumerable<INode>)) &&
+				    			breakImmediately)
+								return true;
+							break;
+						}
+						t = t.Parent as IBlockNode;
+					}
+				}
+			}
+			else
+				dontHandleTemplateParamsInNodeScan = false;
 			
 			var ch = PrefilterSubnodes(curScope);
 			if (ch != null)
@@ -701,6 +715,11 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		static ResolutionCache<AbstractType> templateMixinCache = new ResolutionCache<AbstractType>();
 		[ThreadStatic]
 		static List<TemplateMixin> templateMixinsBeingAnalyzed;
+		/// <summary>
+		/// Temporary flag that is used for telling scanChildren() not to handle template parameters.
+		/// Used to prevent the insertion of a template mixin's parameter set into the completion list etc.
+		/// </summary>
+		bool dontHandleTemplateParamsInNodeScan = false;
 		// http://dlang.org/template-mixin.html#TemplateMixin
 		bool HandleUnnamedTemplateMixin(TemplateMixin tmx, bool treatAsDeclBlock, MemberFilter vis)
 		{
@@ -722,6 +741,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				if(pop)
 					ctxt.PushNewScope(tmxTemplate.Definition);
 				ctxt.CurrentContext.IntroduceTemplateParameterTypes(tmxTemplate);
+				dontHandleTemplateParamsInNodeScan = true;
 				res |= DeepScanClass(tmxTemplate, vis, ref res);
 				if(pop)
 					ctxt.Pop();
