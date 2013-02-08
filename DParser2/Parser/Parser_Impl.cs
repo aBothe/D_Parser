@@ -2574,7 +2574,8 @@ namespace D_Parser.Parser
 					Type=nt,
 					Location=startLoc
 				};
-				LastParsedObject = initExpr;
+				if(!IsEOF)
+					LastParsedObject = initExpr;
 
 				var args = new List<IExpression>();
 
@@ -5098,6 +5099,7 @@ namespace D_Parser.Parser
 				else if (IsEOF)
 				{
 					ExpectingIdentifier = false;
+					td.EndLocation = CodeLocation.Empty;
 					return td;
 				}
 

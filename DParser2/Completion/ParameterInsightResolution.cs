@@ -181,64 +181,73 @@ namespace D_Parser.Completion
 			res.MethodIdentifier = nex;
 			CalculateCurrentArgument(nex, res, Editor.CaretLocation, ctxt);
 
-			var type = TypeDeclarationResolver.ResolveSingle(nex.Type, ctxt) as TemplateIntermediateType;
-
-			//TODO: Inform the user that only classes can be instantiated
-			if (type is ClassType || type is StructType)
+			var type = TypeDeclarationResolver.Resolve(nex.Type, ctxt);
+			
+			if(type != null)
 			{
-				var constructors = new List<DMethod>();
-				bool explicitCtorFound = false;
-
-				foreach (var member in type.Definition)
-				{
-					var dm = member as DMethod;
-
-					if (dm != null && dm.SpecialType == DMethod.MethodType.Constructor)
-					{
-						explicitCtorFound = true;
-						if (!dm.IsPublic)
-						{
-							var curNode = curBlock;
-							bool pass = false;
-							do
-							{
-								if (curNode == type.Definition)
-								{
-									pass = true;
-									break;
-								}
-							}
-							while ((curNode = curNode.Parent as IBlockNode) != curNode);
-
-							if (!pass)
-								continue;
-						}
-
-						constructors.Add(dm);
-					}
-				}
-
-				if (constructors.Count == 0)
-				{
-					if (explicitCtorFound)
-					{
-						// TODO: Somehow inform the user that the current class can't be instantiated
-					}
-					else
-					{
-						// Introduce default constructor
-						constructors.Add(new DMethod(DMethod.MethodType.Constructor)
-						{
-							Description = "Default constructor for " + type.Name,
-							Parent = type.Definition
-						});
-					}
-				}
-
-				// Wrapp all ctor members in MemberSymbols
 				var _ctors = new List<AbstractType>();
-				foreach (var ctor in constructors)
-					_ctors.Add(new MemberSymbol(ctor, type, nex.Type));
+				
+				foreach(var t in type)
+				{
+					//TODO: Inform the user that only classes can be instantiated
+					if (t is ClassType || t is StructType)
+					{
+						var udt = t as TemplateIntermediateType;
+						bool explicitCtorFound = false;
+						var constructors = new List<DMethod>();
+		
+						foreach (var member in udt.Definition)
+						{
+							var dm = member as DMethod;
+		
+							if (dm != null && dm.SpecialType == DMethod.MethodType.Constructor)
+							{
+								explicitCtorFound = true;
+								if (!dm.IsPublic)
+								{
+									var curNode = curBlock;
+									bool pass = false;
+									do
+									{
+										if (curNode == udt.Definition)
+										{
+											pass = true;
+											break;
+										}
+									}
+									while ((curNode = curNode.Parent as IBlockNode) != curNode);
+		
+									if (!pass)
+										continue;
+								}
+		
+								constructors.Add(dm);
+							}
+						}
+		
+						if (constructors.Count == 0)
+						{
+							if (explicitCtorFound)
+							{
+								// TODO: Somehow inform the user that the current class can't be instantiated
+							}
+							else
+							{
+								// Introduce default constructor
+								constructors.Add(new DMethod(DMethod.MethodType.Constructor)
+								{
+									Description = "Default constructor for " + udt.Name,
+									Parent = udt.Definition
+								});
+							}
+						}
+						
+						// Wrapp all ctor members in MemberSymbols
+						foreach (var ctor in constructors)
+							_ctors.Add(new MemberSymbol(ctor, t, nex.Type));
+					}
+				}
+				
 				res.ResolvedTypesOrMethods = _ctors.ToArray();
 
 				//TODO: Probably pre-select the current ctor by handling previously typed arguments etc.

@@ -609,6 +609,10 @@ namespace D_Parser.Dom.Expressions
 		{
 			get {
 				var l = new List<IExpression>();
+				
+				// In case of a template instance
+				if(Type is IExpression)
+					l.Add(Type as IExpression);
 
 				if (NewArguments != null)
 					l.AddRange(NewArguments);

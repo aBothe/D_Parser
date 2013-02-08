@@ -252,7 +252,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			return false;
 		}
 		
-		bool scanChildren(DBlockNode curScope, 
+		protected bool scanChildren(DBlockNode curScope, 
 		                  MemberFilter VisibleMembers, 
 		                  ref bool breakOnNextScope,
 		                  bool publicImports = false,
