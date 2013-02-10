@@ -15,21 +15,22 @@ namespace D_Parser.Misc
 	public class ThreadedDirectoryParser
 	{
 		#region Properties
-		public static int numThreads = Debugger.IsAttached ? 1 : Environment.ProcessorCount;
+		public static int numThreads = /*Debugger.IsAttached ? 1 :*/ 1;
 
 		public Exception LastException;
 		string baseDirectory;
 		bool stillQueuing = false;
 		int fileCount = 0;
-		bool skipFunctionBodies = !Debugger.IsAttached;
+		long totalMSecs = 0;
+		bool skipFunctionBodies = true;//!Debugger.IsAttached;
 		Stack<Tuple<string, ModulePackage>> queue = new Stack<Tuple<string, ModulePackage>>(16);
 		#endregion
 
-		public static ParsePerformanceData Parse(string directory, RootPackage rootPackage)
+		public static ParsePerformanceData Parse (string directory, RootPackage rootPackage, bool sync = false)
 		{
 			var ppd = new ParsePerformanceData { BaseDirectory = directory };
 
-			if (!Directory.Exists(directory))
+			if (!Directory.Exists (directory))
 				return ppd;
 
 			var tpd = new ThreadedDirectoryParser
@@ -38,31 +39,40 @@ namespace D_Parser.Misc
 				stillQueuing = true
 			};
 
-			var threads = new Thread[numThreads];
-			for (int i = 0; i < numThreads; i++)
-			{
-				var th = threads[i] = new Thread(tpd.ParseThread)
+			Stopwatch sw;
+
+			if (sync) {
+				tpd.PrepareQueue (rootPackage);
+				sw = new Stopwatch ();
+				sw.Start();
+				tpd.ParseThread();
+				sw.Stop();
+			} else {
+				var threads = new Thread[numThreads];
+				for (int i = 0; i < numThreads; i++) {
+					var th = threads [i] = new Thread (tpd.ParseThread)
 				{
 					IsBackground = true,
 					Priority = ThreadPriority.Lowest,
 					Name = "Parser thread #" + i + " (" + directory + ")"
 				};
-				th.Start();
+					th.Start ();
+				}
+
+				sw = new Stopwatch ();
+				sw.Start ();
+
+				tpd.PrepareQueue (rootPackage);
+			
+				for (int i = 0; i < numThreads; i++)
+					if (threads [i].IsAlive)
+						threads [i].Join (10000);
+
+				sw.Stop ();
 			}
 
-			var sw = new Stopwatch();
-			sw.Start();
-
-			tpd.PrepareQueue(rootPackage);
-			
-			for (int i = 0; i < numThreads; i++)
-				if (threads[i].IsAlive)
-					threads[i].Join(10000);
-
-			sw.Stop();
-
 			ppd.AmountFiles = tpd.fileCount;
-			ppd.TotalDuration = sw.Elapsed.TotalSeconds;
+			ppd.TotalDuration = (double)tpd.totalMSecs/1000d;//sw.Elapsed.TotalSeconds;
 
 			return ppd;
 		}
@@ -75,6 +85,7 @@ namespace D_Parser.Misc
 				return; 
 			}
 
+			totalMSecs = 0;
 			fileCount = 0;
 			stillQueuing = true;
 
@@ -125,6 +136,7 @@ namespace D_Parser.Misc
 		{
 			var file = "";
 			ModulePackage pack = null;
+			var sw = new Stopwatch();
 
 			while (queue.Count != 0 || stillQueuing)
 			{
@@ -145,11 +157,15 @@ namespace D_Parser.Misc
 					pack = kv.Item2;
 				}
 
-				IAbstractSyntaxTree ast;
+				var code = File.ReadAllText(file);
+
+				sw.Start();
+				IAbstractSyntaxTree ast=null;
 				try
 				{
 					// If no debugger attached, save time + memory by skipping function bodies
-					ast = DParser.ParseFile(file, skipFunctionBodies);
+					ast = DParser.ParseString(code, skipFunctionBodies);
+					code = null;
 				}
 				catch (Exception ex)
 				{
@@ -159,6 +175,11 @@ namespace D_Parser.Misc
 					       }) };
 					LastException = ex;
 				}
+				finally
+				{
+					ast.FileName = file;
+				}
+				sw.Stop();
 				
 				if(!string.IsNullOrEmpty(ast.ModuleName))
 				{
@@ -172,6 +193,8 @@ namespace D_Parser.Misc
 				lock(pack)
 					pack.AddModule(ast);
 			}
+
+			totalMSecs+=sw.ElapsedMilliseconds;
 		}
 	}
 }
