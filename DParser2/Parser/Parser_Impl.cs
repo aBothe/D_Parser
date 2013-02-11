@@ -4367,12 +4367,12 @@ namespace D_Parser.Parser
 				TemplateParameterList(dm);
 
 			// http://dlang.org/struct.html#StructPostblit
-			if (IsStruct && Lexer.CurrentPeekToken.Kind == (This) && laKind == (OpenParenthesis))
+			if (IsStruct && laKind == (OpenParenthesis) && Peek(1).Kind == (This))
 			{
 				var dv = new DVariable();
 				LastParsedObject = dv;
 				dv.Parent = dm;
-				dv.Name = DMethod.ConstructorIdentifier;
+				dv.Name = "this";
 				dm.Parameters.Add(dv);
 				Step();
 				Step();
