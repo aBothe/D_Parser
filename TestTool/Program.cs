@@ -8,20 +8,23 @@ using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
 using Tests;
+using System.IO;
 
 namespace TestTool
 {
 	class Program
 	{
-		public static void Main(string[] args)
+		public static void Main (string[] args)
 		{
+			var sw2 = new Stopwatch();
+			var code = File.ReadAllText(@"D:\D\dmd2\src\phobos\std\datetime.d");
+			sw2.Start();
+			var ast = DParser.ParseString(code, true);
+			sw2.Stop();
 
 			return;
-
-
-
 			// Indent testing
-			var code = @"
+			/*var code = @"
 ";
 			var line = 4;
 			var ind = D_Parser.Formatting.Indent.IndentEngineWrapper.CalculateIndent(code, line, false, 4);
@@ -35,29 +38,30 @@ namespace TestTool
 			Console.Write(code+"|");
 			
 			Console.ReadKey(true);
-			return;
+			return;*/
 
 
 			// Phobos & Druntime parsing
-			//UFCSCache.SingleThreaded = true;
-			var pc = new ParseCache();
+			UFCSCache.SingleThreaded = true;
+			var pc = new ParseCache ();
 			pc.EnableUfcsCaching = false;
-			pc.ParsedDirectories.Add(@"D:\D\dmd2\src\phobos");
-			pc.ParsedDirectories.Add(@"D:\D\dmd2\src\druntime\import");
+			pc.ParsedDirectories.Add (@"/usr/include/dmd/phobos");
+			pc.ParsedDirectories.Add (@"/usr/include/dmd/druntime/import");
 			
-			Console.WriteLine("Begin parsing...");
-			var sw = new Stopwatch();
-			sw.Start();
-			pc.BeginParse();
-			pc.WaitForParserFinish();
-			sw.Stop();
-			Console.WriteLine("done. {0}ms needed.", sw.ElapsedMilliseconds);
+			Console.WriteLine ("Begin parsing...");
+
+			foreach (var dir in pc.ParsedDirectories) {
+				var ppd = ThreadedDirectoryParser.Parse(dir, pc.Root, false);
+				Console.WriteLine("Parsed {0} in {1}s", dir, ppd.TotalDuration);
+			}
+			Console.WriteLine("done.");
 			Console.WriteLine();
 			var uc = new UFCSCache();
 			var pcl = ParseCacheList.Create(pc);
 			var ccf = new ConditionalCompilationFlags(new[]{ "Windows", "D2" }, 1, true, null, 0);
 			
 			Console.WriteLine("Begin building ufcs cache...");
+			var sw = new Stopwatch();
 			sw.Restart();
 			uc.Update(pcl, ccf, pc);
 			sw.Stop();

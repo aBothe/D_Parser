@@ -21,7 +21,29 @@ namespace D_Parser.Misc.Mangling
 	{
 		StringReader r;
 		StringBuilder sb = new StringBuilder();
-		
+
+		public static ITypeDeclaration DemangleQualifier(string mangledString)
+		{
+			if (!mangledString.StartsWith("_D") || mangledString == "_Dmain")
+			{
+				if (mangledString.StartsWith("__D"))
+				{
+					mangledString = mangledString.Substring(1);
+				}
+				else if (mangledString.StartsWith("_"))
+				{
+					return new IdentifierDeclaration(mangledString.Substring(1));
+				}
+			}
+
+			var dmng = new Demangler(mangledString);
+
+			dmng.r.Read(); // Skip _
+			dmng.r.Read(); // SKip D
+
+			return RemoveNestedTemplateRefsFromQualifier(dmng.QualifiedName());
+		}
+
 		public static AbstractType DemangleAndResolve(string mangledString, ResolutionContext ctxt)
 		{
 			ITypeDeclaration q;
