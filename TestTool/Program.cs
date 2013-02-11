@@ -15,14 +15,14 @@ namespace TestTool
 	class Program
 	{
 		public static void Main (string[] args)
-		{
+		{/*
 			var sw2 = new Stopwatch();
 			var code = File.ReadAllText(@"D:\D\dmd2\src\phobos\std\datetime.d");
 			sw2.Start();
 			var ast = DParser.ParseString(code, true);
-			sw2.Stop();
+			sw2.Stop();*/
 
-			return;
+			//return;
 			// Indent testing
 			/*var code = @"
 ";

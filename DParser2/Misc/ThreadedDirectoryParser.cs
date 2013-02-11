@@ -5,6 +5,7 @@ using System.IO;
 using System.Threading;
 using D_Parser.Dom;
 using D_Parser.Parser;
+using System.Collections.Concurrent;
 
 namespace D_Parser.Misc
 {
@@ -15,7 +16,7 @@ namespace D_Parser.Misc
 	public class ThreadedDirectoryParser
 	{
 		#region Properties
-		public static int numThreads = Debugger.IsAttached ? 1 : Environment.ProcessorCount;
+		public static int numThreads = 4;//Debugger.IsAttached ? 1 : Environment.ProcessorCount;
 
 		public Exception LastException;
 		string baseDirectory;
@@ -23,7 +24,7 @@ namespace D_Parser.Misc
 		int fileCount = 0;
 		long totalMSecs = 0;
 		bool skipFunctionBodies = true;//!Debugger.IsAttached;
-		Stack<Tuple<string, ModulePackage>> queue = new Stack<Tuple<string, ModulePackage>>(16);
+		ConcurrentStack<Tuple<string, ModulePackage>> queue = new ConcurrentStack<Tuple<string, ModulePackage>>();
 		#endregion
 
 		public static ParsePerformanceData Parse (string directory, RootPackage rootPackage, bool sync = false)
@@ -125,8 +126,7 @@ namespace D_Parser.Misc
 					continue;
 
 				fileCount++;
-				lock(queue)
-					queue.Push(new Tuple<string, ModulePackage>(file, lastPack));
+				queue.Push(new Tuple<string, ModulePackage>(file, lastPack));
 			}
 
 			stillQueuing = false;
@@ -134,30 +134,26 @@ namespace D_Parser.Misc
 
 		void ParseThread()
 		{
-			var file = "";
-			ModulePackage pack = null;
 			var sw = new Stopwatch();
 
 			while (queue.Count != 0 || stillQueuing)
 			{
-				lock (queue)
+				Tuple<string, ModulePackage> kv;
+				if(!queue.TryPop(out kv))
 				{
-					if (queue.Count == 0)
+					if(stillQueuing)
 					{
-						if(stillQueuing)
-						{
-							Thread.Sleep(1);
-							continue;
-						}
-						return;
+						Thread.Sleep(1);
+						continue;
 					}
-
-					var kv = queue.Pop();
-					file = kv.Item1;
-					pack = kv.Item2;
+					break;
 				}
 
+				var file = kv.Item1;
+				var pack = kv.Item2;
+
 				var code = File.ReadAllText(file);
+
 
 				sw.Start();
 				IAbstractSyntaxTree ast=null;
