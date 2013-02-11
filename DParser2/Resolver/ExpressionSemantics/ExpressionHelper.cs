@@ -29,23 +29,21 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public static IExpression SearchExpressionDeeply(IExpression e, CodeLocation Where, bool WatchForParamSensitiveExpressions = false)
 		{
 			IExpression lastParamSensExpr = e;
-			
-			if(e is PostfixExpression_MethodCall)
+
+			if (e.EndLocation.Line < 0 && (e is PostfixExpression_MethodCall || e is NewExpression))
 			{
-				var mc = e as PostfixExpression_MethodCall;
+				var args = e is PostfixExpression_MethodCall ? 
+					(e as PostfixExpression_MethodCall).Arguments :
+					(e as NewExpression).Arguments;
 				
-				IExpression arg;
 				// A (-1;-1) is assumed as a safe indicator for handling the last expression in an expression chain!
-				if(mc.EndLocation.Line < 0)
-				{
-					if(mc.Arguments!=null && mc.Arguments.Length != 0){
-						arg = SearchExpressionDeeply(mc.Arguments[mc.Arguments.Length-1], Where, WatchForParamSensitiveExpressions);
+				if(args!=null && args.Length != 0){
+					var arg = SearchExpressionDeeply(args[args.Length-1], Where, WatchForParamSensitiveExpressions);
 						
-						if(!WatchForParamSensitiveExpressions || IsParamRelatedExpression(arg))
-							return arg;
-					}
-					return mc;
+					if(!WatchForParamSensitiveExpressions || IsParamRelatedExpression(arg))
+						return arg;
 				}
+				return e;
 			}
 
 			while (e is ContainerExpression)

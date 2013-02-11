@@ -2581,12 +2581,16 @@ namespace D_Parser.Parser
 
 				var ad=nt as ArrayDecl;
 
-				if((ad == null || ad.ClampsEmpty) && laKind == OpenParenthesis)
+				if ((ad == null || ad.ClampsEmpty) && laKind == OpenParenthesis)
 				{
 					Step();
 					if (laKind != CloseParenthesis)
 						args = ArgumentList(Scope);
-					Expect(CloseParenthesis);
+
+					if (Expect(CloseParenthesis))
+						initExpr.EndLocation = t.EndLocation;
+					else
+						initExpr.EndLocation = CodeLocation.Empty;
 
 					if (ad != null)
 					{
@@ -2613,6 +2617,8 @@ namespace D_Parser.Parser
 						}
 					}
 				}
+				else
+					initExpr.EndLocation = t.EndLocation;
 
 				ad = nt as ArrayDecl;
 
@@ -2624,7 +2630,6 @@ namespace D_Parser.Parser
 
 				initExpr.Arguments = args.ToArray();
 
-				initExpr.EndLocation = t.EndLocation;
 				return initExpr;
 			}
 		}
