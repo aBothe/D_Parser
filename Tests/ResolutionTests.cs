@@ -24,7 +24,7 @@ namespace Tests
 						alias immutable(char)[] string;
 						alias immutable(wchar)[] wstring;
 						alias immutable(dchar)[] dstring;
-						class Object {}");
+						class Object { string toString(); }");
 
 		public static ParseCacheList CreateCache(params string[] moduleCodes)
 		{
@@ -233,6 +233,22 @@ class Blah(T){ T b; }");
 			
 			var ex = DParser.ParseExpression("Blah!Blupp");
 			var t = Evaluation.EvaluateType(ex, ctxt);
+		}
+
+		[Test]
+		public void BasicResolution4()
+		{
+			var pcl = CreateCache(@"module modA;");
+			var ctxt = CreateDefCtxt(pcl, pcl[0]["modA"]);
+
+			var ts = TypeDeclarationResolver.Resolve(new IdentifierDeclaration("string"), ctxt);
+			Assert.That(ts, Is.Not.Null);
+			Assert.That(ts.Length, Is.EqualTo(1));
+
+			var x = DParser.ParseExpression(@"(new Object).toString()");
+			var t = Evaluation.EvaluateType(x, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(AliasedType)));
 		}
 		
 		[Test]

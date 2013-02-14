@@ -710,7 +710,8 @@ namespace D_Parser.Resolver.TypeResolution
 				if (pushMethodScope)
 					ctxt.Pop();
 
-				if (ctxt.CheckForSingleResult(returnType, method.Type))
+				ctxt.CheckForSingleResult(returnType, method.Type);
+				if(returnType != null && returnType.Length > 0)
 					return returnType[0];
 			}
 			else if (method.Body != null)
