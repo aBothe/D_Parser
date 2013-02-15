@@ -17,9 +17,10 @@ namespace D_Parser.Formatting.Indent
 		Comment            = (BlockComment | NestedComment | LineComment | DocComment),
 		
 		VerbatimString     = (1 << 6),
+		AlternateVerbatimString = 1 << 14,
 		StringLiteral      = (1 << 7),
 		CharLiteral        = (1 << 8),
-		String             = (VerbatimString | StringLiteral),
+		String             = (VerbatimString | StringLiteral | AlternateVerbatimString),
 		StringOrChar       = (String | CharLiteral),
 		
 		Attribute          = (1 << 9),

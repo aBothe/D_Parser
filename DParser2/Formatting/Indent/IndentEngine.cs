@@ -472,16 +472,36 @@ namespace D_Parser.Formatting.Indent
 			// drop the previous '/': it belongs to this comment block
 			rc = prc;
 		}
+
+		void PushAccGrave(Inside inside)
+		{
+			if ((inside & (Inside.PreProcessor | Inside.Comment | Inside.CharLiteral | Inside.StringLiteral | Inside.VerbatimString)) != 0)
+				return;
+
+			if (inside == Inside.AlternateVerbatimString)
+			{
+				if (!isEscaped)
+				{
+					keyword = stack.PeekKeyword;
+					stack.Pop();
+				}
+			}
+			else
+			{
+				stack.Push(Inside.AlternateVerbatimString, keyword, curLineNr, 0);
+			}
+		}
 		
 		void PushQuote (Inside inside)
 		{
 			Inside type;
 			
 			// ignore if in these
-			if ((inside & (Inside.PreProcessor | Inside.Comment | Inside.CharLiteral)) != 0)
+			if ((inside & (Inside.PreProcessor | Inside.Comment | Inside.CharLiteral | Inside.AlternateVerbatimString)) != 0)
 				return;
-			
-			if (inside == Inside.VerbatimString) {
+
+			if (inside == Inside.VerbatimString)
+			{
 				if (popVerbatim) {
 					// back in the verbatim-string-literal token
 					popVerbatim = false;
@@ -778,6 +798,7 @@ namespace D_Parser.Formatting.Indent
 
 				inside = stack.PeekInside (0);
 				goto top;
+			case Inside.AlternateVerbatimString:
 			case Inside.VerbatimString:
 				// nothing to do
 				break;
@@ -970,6 +991,9 @@ namespace D_Parser.Formatting.Indent
 			case '+':
 			case '*':
 				PushStar (inside,c);
+				break;
+			case '`':
+				PushAccGrave(inside);
 				break;
 			case '"':
 				PushQuote (inside);
