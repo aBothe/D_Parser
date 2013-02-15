@@ -55,12 +55,13 @@ namespace D_Parser.Resolver.TypeResolution
 							}
 							
 							var mr = TypeDeclarationResolver.HandleNodeMatch(m, ctxt, null, acc) as MemberSymbol;
-							ctxt.Pop();
 							if (mr!=null)
 							{
+								mr.DeducedTypes = ctxt.CurrentContext.DeducedTemplateParameters.ToReadonly();
 								mr.IsUFCSResult = true;
 								methodMatches.Add(mr);
 							}
+							ctxt.Pop();
 						}
 				}
 
