@@ -135,6 +135,11 @@ namespace D_Parser.Formatting.Indent
 				
 				replaceActions.Add(new DFormattingVisitor.TextReplaceAction(eng.Position - eng.LineOffset,originalIndent, eng.ThisLineIndent));
 			}
+			else if (code.Peek() == -1)
+			{
+				// Also indent the last line if we're at the EOF.
+				replaceActions.Add(new DFormattingVisitor.TextReplaceAction(eng.Position - eng.LineOffset, originalIndent, eng.ThisLineIndent));
+			}
 			
 			// Perform replacements from the back of the document to the front - to ensure offset consistency
 			for(int k = replaceActions.Count - 1; k!=0; k--)
