@@ -380,17 +380,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			baseValue = null;
 			tix = null;
 
-			// Explicitly don't resolve the methods' return types - it'll be done after filtering to e.g. resolve template types to the deduced one
-			var optBackup = ctxt.CurrentContext.ContextDependentOptions;
-			ctxt.CurrentContext.ContextDependentOptions  |= ResolutionOptions.DontResolveBaseTypes;
-
 			if (call.PostfixForeExpression is PostfixExpression_Access)
 			{
 				var pac = (PostfixExpression_Access)call.PostfixForeExpression;
 				if (pac.AccessExpression is TemplateInstanceExpression)
 					tix = (TemplateInstanceExpression)pac.AccessExpression;
 
-				var vs = E(pac, null, false);
+				var vs = E(pac, null, false, false);
 
 				if (vs != null && vs.Length != 0)
 				{
@@ -407,6 +403,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 			else
 			{
+				// Explicitly don't resolve the methods' return types - it'll be done after filtering to e.g. resolve template types to the deduced one
+				var optBackup = ctxt.CurrentContext.ContextDependentOptions;
+				ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.DontResolveBaseTypes;
+
 				if (call.PostfixForeExpression is TokenExpression)
 					baseExpression = GetResolvedConstructorOverloads((TokenExpression)call.PostfixForeExpression, ctxt);
 				else if (eval)
@@ -435,9 +435,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					else
 						baseExpression = new[] { AbstractType.Get(E(call.PostfixForeExpression)) };
 				}
-			}
 
-			ctxt.CurrentContext.ContextDependentOptions = optBackup;
+				ctxt.CurrentContext.ContextDependentOptions = optBackup;
+			}
 		}
 
 		public static AbstractType[] GetAccessedOverloads(PostfixExpression_Access acc, ResolutionContext ctxt,
@@ -454,7 +454,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// Also handles UFCS - so if filtering is wanted, the function becom
 		/// </summary>
 		ISemantic[] E(PostfixExpression_Access acc,
-			ISemantic resultBase = null, bool EvalAndFilterOverloads = true)
+			ISemantic resultBase = null, bool EvalAndFilterOverloads = true, bool ResolveImmediateBaseType = true)
 		{
 			if (acc == null)
 				return null;
@@ -472,19 +472,32 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			
 			
 			AbstractType[] overloads;
+			var optBackup = ctxt.CurrentContext.ContextDependentOptions;
 			
 			if (acc.AccessExpression is TemplateInstanceExpression)
 			{
+				if (!ResolveImmediateBaseType)
+					ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.DontResolveBaseTypes;
+
 				var tix = (TemplateInstanceExpression)acc.AccessExpression;
 				// Do not deduce and filter if superior expression is a method call since call arguments' types also count as template arguments!
 				overloads = GetOverloads(tix, new[] { AbstractType.Get(baseExpression) }, EvalAndFilterOverloads);
+
+				if (!ResolveImmediateBaseType)
+					ctxt.CurrentContext.ContextDependentOptions = optBackup;
 			}
 
 			else if (acc.AccessExpression is IdentifierExpression)
 			{
+				if (!ResolveImmediateBaseType)
+					ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.DontResolveBaseTypes;
+
 				var id = (acc.AccessExpression as IdentifierExpression).Value as string;
 
 				overloads = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(id, new[] { AbstractType.Get(baseExpression) }, ctxt, acc.AccessExpression);
+
+				if (!ResolveImmediateBaseType)
+					ctxt.CurrentContext.ContextDependentOptions = optBackup;
 
 				// Might be a static property
 				if (overloads == null)
@@ -631,6 +644,31 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				 */
 				else if (foreExpression is PointerType)
 					return new ArrayAccessSymbol(x,((PointerType)foreExpression).Base);
+
+				else if (foreExpression is TypeTuple)
+				{
+					var tt = foreExpression as TypeTuple;
+
+					if (x.Arguments != null && x.Arguments.Length != 0)
+					{
+						var idx = EvaluateValue(x.Arguments[0], ctxt) as PrimitiveValue;
+
+						if (idx == null || !DTokens.BasicTypes_Integral[idx.BaseTypeToken])
+						{
+							ctxt.LogError(x.Arguments[0], "Index expression must evaluate to integer value");
+						}
+						else if (idx.Value > (decimal)Int32.MaxValue || 
+								 (int)idx.Value > tt.Items.Length || 
+								 (int)idx.Value < 0)
+						{
+							ctxt.LogError(x.Arguments[0], "Index number must be a value between 0 and " + tt.Items.Length);
+						}
+						else
+						{
+							return tt.Items[(int)idx.Value];
+						}
+					}
+				}
 
 				ctxt.LogError(new ResolutionError(x, "Invalid base type for index expression"));
 			}
