@@ -142,10 +142,11 @@ namespace D_Parser.Formatting.Indent
 			}
 			
 			// Perform replacements from the back of the document to the front - to ensure offset consistency
-			for(int k = replaceActions.Count - 1; k!=0; k--)
+			for(int k = replaceActions.Count - 1; k>=0; k--)
 			{
 				var rep = replaceActions[k];
-				documentReplace(rep.Offset, rep.RemovalLength, rep.NewText);
+				if(rep.RemovalLength > 0 || rep.NewText.Length != 0)
+					documentReplace(rep.Offset, rep.RemovalLength, rep.NewText);
 			}
 		}
 	}
