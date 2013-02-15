@@ -233,12 +233,16 @@ class Blah(T){ T b; }");
 			
 			var ex = DParser.ParseExpression("Blah!Blupp");
 			var t = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(ClassType)));
 		}
 
 		[Test]
 		public void BasicResolution4()
 		{
-			var pcl = CreateCache(@"module modA;");
+			var pcl = CreateCache(@"module modA;
+
+
+");
 			var ctxt = CreateDefCtxt(pcl, pcl[0]["modA"]);
 
 			var ts = TypeDeclarationResolver.Resolve(new IdentifierDeclaration("string"), ctxt);
@@ -247,8 +251,9 @@ class Blah(T){ T b; }");
 
 			var x = DParser.ParseExpression(@"(new Object).toString()");
 			var t = Evaluation.EvaluateType(x, ctxt);
-
 			Assert.That(t, Is.TypeOf(typeof(AliasedType)));
+			t = DResolver.StripAliasSymbol(t);
+			Assert.That(t, Is.TypeOf(typeof(ArrayType)));
 		}
 		
 		[Test]

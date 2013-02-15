@@ -315,6 +315,11 @@ namespace D_Parser.Resolver
 		{
 			return "(alias) " + base.ToString();
 		}
+
+		public override string ToCode()
+		{
+			return Definition.ToString(false, true);
+		}
 	}
 
 	public class EnumType : UserDefinedType
