@@ -56,27 +56,24 @@ namespace D_Parser.Formatting.Indent
 			
 			int originalIndent = 0;
 			bool hadLineBreak = true;
-			int n = 0;
 			
-			var i = startOffset;
-			while(i > 0){
-				n = code.Read();
-				i--;
-				eng.Push((char)n);
-				
-				if(n == '\r')
+			int n = 0;
+			int i = 0;
+			for (; i <= endOffset && (n = code.Read()) != -1; i++)
+			{
+				if(n == '\r' || n == '\n')
 				{
-					if(code.Peek() == '\n'){
-						code.Read();
-						eng.Push('\n');
+					if (i >= startOffset)
+						replaceActions.Add(new DFormattingVisitor.TextReplaceAction(eng.Position - eng.LineOffset, originalIndent, eng.ThisLineIndent));
+					
+					hadLineBreak = true;
+					originalIndent = 0;
+
+					if (code.Peek() == '\n')
+					{
+						eng.Push((char)code.Read());
+						i++;
 					}
-					hadLineBreak = true;
-					originalIndent = 0;
-				}
-				else if(n == '\n')
-				{
-					hadLineBreak = true;
-					originalIndent = 0;
 				}
 				else if(hadLineBreak)
 				{
@@ -84,60 +81,18 @@ namespace D_Parser.Formatting.Indent
 						originalIndent++;
 					else
 						hadLineBreak = false;
-				}
-			}
-			
-			i = endOffset - startOffset;
-			while(i > 0)
-			{
-				n = code.Read();
-				i--;
 
-				if(n == '\r')
-				{
-					hadLineBreak = true;
-					replaceActions.Add(new DFormattingVisitor.TextReplaceAction(eng.Position - eng.LineOffset,originalIndent, eng.ThisLineIndent));
-					originalIndent = 0;
-					
-					eng.Push('\r');
-					if(code.Peek() == '\n'){
-						code.Read();
-						eng.Push('\n');
-					}
-					
-					continue;
+					// If there's code left, format the last line of the selection either
+					if (i == endOffset && formatLastLine)
+						endOffset++;
 				}
-				else if(n == '\n')
-				{
-					hadLineBreak = true;
-					replaceActions.Add(new DFormattingVisitor.TextReplaceAction(eng.Position - eng.LineOffset,originalIndent, eng.ThisLineIndent));
-					originalIndent = 0;
-					
-					eng.Push('\n');
-					continue;
-				}
-				else if(hadLineBreak)
-				{
-					if(n == ' ' || n == '\t')
-						originalIndent++;
-					else
-						hadLineBreak = false;
-				}
-				
+
 				eng.Push((char)n);
 			}
-			
-			// If there's code left, format the last line of the selection either
-			if(formatLastLine && code.Peek() > 0)
+
+			// Also indent the last line if we're at the EOF.
+			if (code.Peek() == -1 || (formatLastLine && n != '\r' && n != '\n'))
 			{
-				while((n=code.Read()) > 0 && n != '\r' && n != '\n')
-					eng.Push((char)n);
-				
-				replaceActions.Add(new DFormattingVisitor.TextReplaceAction(eng.Position - eng.LineOffset,originalIndent, eng.ThisLineIndent));
-			}
-			else if (code.Peek() == -1)
-			{
-				// Also indent the last line if we're at the EOF.
 				replaceActions.Add(new DFormattingVisitor.TextReplaceAction(eng.Position - eng.LineOffset, originalIndent, eng.ThisLineIndent));
 			}
 			
