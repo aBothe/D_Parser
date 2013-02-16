@@ -121,8 +121,8 @@ namespace D_Parser.Formatting.Indent
 			get { return stack.PeekInside(0) == Inside.DocComment; }
 		}
 		
-		public bool LineBeganInsideVerbatimString {
-			get { return beganInside == Inside.VerbatimString; }
+		public bool LineBeganInsideString {
+			get { return (beganInside & Inside.String) != 0; }
 		}
 		
 		public bool LineBeganInsideMultiLineComment {

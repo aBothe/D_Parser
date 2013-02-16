@@ -58,12 +58,11 @@ namespace D_Parser.Formatting.Indent
 			bool hadLineBreak = true;
 			
 			int n = 0;
-			int i = 0;
-			for (; i <= endOffset && (n = code.Read()) != -1; i++)
+			for (int i = 0; i <= endOffset && (n = code.Read()) != -1; i++)
 			{
 				if(n == '\r' || n == '\n')
 				{
-					if (i >= startOffset)
+					if (i >= startOffset && !eng.LineBeganInsideString)
 						replaceActions.Add(new DFormattingVisitor.TextReplaceAction(eng.Position - eng.LineOffset, originalIndent, eng.ThisLineIndent));
 					
 					hadLineBreak = true;
@@ -93,7 +92,8 @@ namespace D_Parser.Formatting.Indent
 			// Also indent the last line if we're at the EOF.
 			if (code.Peek() == -1 || (formatLastLine && n != '\r' && n != '\n'))
 			{
-				replaceActions.Add(new DFormattingVisitor.TextReplaceAction(eng.Position - eng.LineOffset, originalIndent, eng.ThisLineIndent));
+				if(!eng.LineBeganInsideString)
+					replaceActions.Add(new DFormattingVisitor.TextReplaceAction(eng.Position - eng.LineOffset, originalIndent, eng.ThisLineIndent));
 			}
 			
 			// Perform replacements from the back of the document to the front - to ensure offset consistency
