@@ -224,26 +224,34 @@ namespace D_Parser.Misc
 		/// Use this method to add a syntax tree to the parse cache.
 		/// Equally-named trees will be overwritten. 
 		/// </summary>
-		public void AddOrUpdate(IAbstractSyntaxTree ast)
+		public bool AddOrUpdate(IAbstractSyntaxTree ast)
 		{
 			if (ast == null || string.IsNullOrEmpty(ast.ModuleName))
-				return;
+				return false;
+
+			// Check if a module is already in the file lookup
+			IAbstractSyntaxTree oldMod;
+			if (ast.FileName != null && fileLookup.TryGetValue(ast.FileName, out oldMod))
+			{
+				Remove(oldMod);
+			}
 
 			var packName = ModuleNameHelper.ExtractPackageName(ast.ModuleName);
 
 			if (string.IsNullOrEmpty(packName))
 			{
 				lock(Root)
-					Root.AddModule(ast);
-
-				if (ast.ModuleName == "object")
-					HandleObjectModule(ast);
-				return;
+					if (Root.AddModule(ast))
+					{
+						if (ast.ModuleName == "object")
+							HandleObjectModule(ast);
+						return true;
+					}
 			}
 
 			var pack = Root.GetOrCreateSubPackage(packName, true);
 			lock(pack)
-				pack.AddModule(ast);
+				return pack.AddModule(ast);
 		}
 
 		/// <summary>
@@ -259,7 +267,13 @@ namespace D_Parser.Misc
 			return null;
 		}
 
-		public bool Remove(IAbstractSyntaxTree ast)
+		public bool Remove(string fileName)
+		{
+			var ast = GetModuleByFileName(fileName);
+			return ast == null || Remove(ast);
+		}
+
+		public bool Remove(IAbstractSyntaxTree ast, bool removeEmptyPackages = true)
 		{
 			if (ast == null)
 				return false;
@@ -267,18 +281,22 @@ namespace D_Parser.Misc
 			if (string.IsNullOrEmpty(ast.ModuleName))
 				return Root.RemoveModule(string.Empty);
 
-			return _remFromPack(Root, ast);
+			return _remFromPack(Root, ast, removeEmptyPackages);
 		}
 
-		bool _remFromPack(ModulePackage pack, IAbstractSyntaxTree ast)
+		bool _remFromPack(ModulePackage pack, IAbstractSyntaxTree ast, bool remEmptyPackages)
 		{
-			if(pack.RemoveModule(ast.ModuleName))
+			if (pack.RemoveModule(ast.ModuleName))
+			{
+				if (remEmptyPackages && pack.IsEmpty && pack.Parent != null)
+					pack.RemovePackage(pack.Name);
 				return true;
+			}
 
 			foreach (var p in pack.Packages)
-				if (_remFromPack(p.Value, ast))
+				if (_remFromPack(p.Value, ast, remEmptyPackages))
 					return true;
-
+			
 			return false;
 		}
 
