@@ -14,7 +14,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		ISemantic E(PostfixExpression ex)
 		{
 			if (ex is PostfixExpression_MethodCall)
-				return E((PostfixExpression_MethodCall)ex, !eval || !ctxt.Options.HasFlag(ResolutionOptions.ReturnMethodReferencesOnly));
+				return E((PostfixExpression_MethodCall)ex, !ctxt.Options.HasFlag(ResolutionOptions.ReturnMethodReferencesOnly));
 
 			var foreExpr=E(ex.PostfixForeExpression);
 
@@ -328,7 +328,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							{
 								var bt=ms.Base ?? TypeDeclarationResolver.GetMethodReturnType(dm, ctxt);
 
-								if (returnBaseTypeOnly || !eval)
+								if (!eval || returnBaseTypeOnly)
 									argTypeFilteredOverloads.Add(bt);
 								else
 									argTypeFilteredOverloads.Add(ms.Base == null ? new MemberSymbol(dm, bt, ms.DeclarationOrExpressionBase, ms.DeducedTypes) : ms);
@@ -343,7 +343,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						var bt = TypeDeclarationResolver.GetMethodReturnType(dg, ctxt);
 
 						//TODO: Param-Arg check
-						if (returnBaseTypeOnly || !eval)
+						if (!eval || returnBaseTypeOnly)
 							argTypeFilteredOverloads.Add(bt);
 						else
 							argTypeFilteredOverloads.Add(new DelegateType(bt, dg.DeclarationOrExpressionBase as FunctionLiteral, dg.Parameters));
