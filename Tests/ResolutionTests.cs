@@ -547,16 +547,19 @@ int delegate(int b) myDeleg;
 			r = Evaluation.EvaluateType(x, ctxt);
 			mr = r as MemberSymbol;
 			Assert.IsNotNull(mr);
-			var t = mr.Base;
-			Assert.IsInstanceOfType(typeof(DelegateType),t);
+			Assert.IsInstanceOfType(typeof(DelegateType), mr.Base);
 
 			x=DParser.ParseExpression("myDeleg(123)");
 			r = Evaluation.EvaluateType(x, ctxt);
-			Assert.That(r, Is.TypeOf(typeof(DelegateType)));
+			mr = r as MemberSymbol;
+			Assert.IsNotNull(mr);
+			Assert.That(mr.Base, Is.TypeOf(typeof(DelegateType)));
 
 			x = DParser.ParseExpression("foo(myDeleg(123))");
 			r = Evaluation.EvaluateType(x, ctxt);
-			Assert.That(r, Is.TypeOf(typeof(PrimitiveType)));
+			mr = r as MemberSymbol;
+			Assert.IsNotNull(mr);
+			Assert.That(mr.Base, Is.TypeOf(typeof(PrimitiveType)));
 		}
 
 		[Test]
@@ -854,7 +857,6 @@ class B : A{
 			var B = pcl[0]["modA"]["B"][0] as DClassLike;
 			var this_ = (DMethod)B[DMethod.ConstructorIdentifier][0];
 			var ctxt = CreateDefCtxt(pcl, this_);
-			ctxt.ContextIndependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
 
 			var super = (this_.Body.SubStatements[0] as IExpressionContainingStatement).SubExpressions[0] as PostfixExpression_MethodCall;
 

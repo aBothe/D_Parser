@@ -328,10 +328,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							{
 								var bt=ms.Base ?? TypeDeclarationResolver.GetMethodReturnType(dm, ctxt);
 
-								if (!eval || returnBaseTypeOnly)
-									argTypeFilteredOverloads.Add(bt);
-								else
+								if(eval || !returnBaseTypeOnly)
 									argTypeFilteredOverloads.Add(ms.Base == null ? new MemberSymbol(dm, bt, ms.DeclarationOrExpressionBase, ms.DeducedTypes) : ms);
+								else
+									argTypeFilteredOverloads.Add(bt);
 							}
 
 							ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(ms);
@@ -343,10 +343,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						var bt = TypeDeclarationResolver.GetMethodReturnType(dg, ctxt);
 
 						//TODO: Param-Arg check
-						if (!eval || returnBaseTypeOnly)
-							argTypeFilteredOverloads.Add(bt);
-						else
+						
+						if (eval || !returnBaseTypeOnly)
 							argTypeFilteredOverloads.Add(new DelegateType(bt, dg.DeclarationOrExpressionBase as FunctionLiteral, dg.Parameters));
+						else
+							argTypeFilteredOverloads.Add(bt);
 					}
 				}
 			#endregion
