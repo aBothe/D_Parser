@@ -109,7 +109,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				// Check if there is an opCall that has no parameters.
 				// Only if no exists, it's allowed to make a default parameter.
 				bool canMakeDefaultCtor = true;
-				foreach(var opCall in GetOpCalls(ct))
+				foreach(var opCall in GetOpCalls(ct, true))
 					if(opCall.Parameters == null || opCall.Parameters.Count == 0)
 					{
 						canMakeDefaultCtor = false;
@@ -145,14 +145,14 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 		}
 
-		public static IEnumerable<DMethod> GetOpCalls(TemplateIntermediateType t)
+		public static IEnumerable<DMethod> GetOpCalls(TemplateIntermediateType t, bool staticOnly)
 		{
 			var opCall = t.Definition["opCall"];
 			if(opCall!=null)
 				foreach(var call in opCall)
 				{
 					var dm = call as DMethod;
-					if(dm != null)
+					if(dm != null && (!staticOnly || dm.IsStatic))
 						yield return dm;
 				}
 		}

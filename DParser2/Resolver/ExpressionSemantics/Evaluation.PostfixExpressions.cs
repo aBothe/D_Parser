@@ -173,8 +173,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						if (classDef == null)
 							continue;
 
-						foreach (var i in GetOpCalls(tit))
-							if ((!requireStaticItems || (i as DNode).IsStatic))
+						foreach (var i in GetOpCalls(tit, requireStaticItems))
 								methodOverloads.Add(TypeDeclarationResolver.HandleNodeMatch(i, ctxt, b, call) as MemberSymbol);
 
 						/*

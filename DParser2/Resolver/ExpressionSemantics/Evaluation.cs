@@ -265,14 +265,23 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				overloads = new[] { Evaluation.EvaluateType(foreExpression, ctxt) };
 
 			var l = new List<AbstractType>();
+			bool staticOnly = true;
 
-			foreach (var ov in overloads)
-				if (ov is TemplateIntermediateType)
+			foreach (var ov in DResolver.StripAliasSymbols(overloads))
+			{
+				var t = ov;
+				if (ov is MemberSymbol)
 				{
-					var tit = ov as TemplateIntermediateType;
-					
+					staticOnly = false;
+					t = DResolver.StripAliasSymbol((ov as MemberSymbol).Base);
+				}
+
+				if (t is TemplateIntermediateType)
+				{
+					var tit = t as TemplateIntermediateType;
+
 					var m = TypeDeclarationResolver.HandleNodeMatches(
-						GetOpCalls(tit), ctxt,
+						GetOpCalls(tit, staticOnly), ctxt,
 						null, supExpression ?? foreExpression);
 
 					/*
@@ -292,11 +301,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						GetConstructors(tit, canCreateExplicitStructCtor), ctxt,
 						null, supExpression ?? foreExpression);
 
-					if(m!=null && m.Length != 0)
+					if (m != null && m.Length != 0)
 						l.AddRange(m);
 				}
 				else
 					l.Add(ov);
+			}
 
 			return l.ToArray();
 		}
