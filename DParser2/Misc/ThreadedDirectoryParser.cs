@@ -20,11 +20,10 @@ namespace D_Parser.Misc
 
 		public Exception LastException;
 		string baseDirectory;
-		bool stillQueuing = false;
 		int fileCount = 0;
 		long totalMSecs = 0;
 		bool skipFunctionBodies = true;//!Debugger.IsAttached;
-		ConcurrentStack<Tuple<string, ModulePackage>> queue = new ConcurrentStack<Tuple<string, ModulePackage>>();
+		ConcurrentStack<string> queue = new ConcurrentStack<string>();
 		#endregion
 
 		public static ParsePerformanceData Parse (string directory, RootPackage rootPackage, bool sync = false)
@@ -34,42 +33,30 @@ namespace D_Parser.Misc
 			if (!Directory.Exists (directory))
 				return ppd;
 
-			var tpd = new ThreadedDirectoryParser
+			var tpd = new ThreadedDirectoryParser{ baseDirectory = directory };
+
+			tpd.PrepareQueue();
+
+			if (tpd.queue.Count == 0)
+				return ppd;
+
+			if (sync)
+				tpd.ParseThread(rootPackage);
+			else 
 			{
-				baseDirectory = directory,
-				stillQueuing = true
-			};
-
-			Stopwatch sw;
-
-			if (sync) {
-				tpd.PrepareQueue (rootPackage);
-				sw = new Stopwatch ();
-				sw.Start();
-				tpd.ParseThread();
-				sw.Stop();
-			} else {
 				var threads = new Thread[numThreads];
-				for (int i = 0; i < numThreads; i++) {
-					var th = threads [i] = new Thread (tpd.ParseThread)
+				for (int i = 0; i < numThreads; i++) 
 				{
-					IsBackground = true,
-					Priority = ThreadPriority.Lowest,
-					Name = "Parser thread #" + i + " (" + directory + ")"
-				};
-					th.Start ();
+					(threads [i] = new Thread (tpd.ParseThread)	{
+						IsBackground = true,
+						Priority = ThreadPriority.BelowNormal,
+						Name = "Parser thread #" + i + " (" + directory + ")"
+					}).Start (rootPackage);
 				}
 
-				sw = new Stopwatch ();
-				sw.Start ();
-
-				tpd.PrepareQueue (rootPackage);
-			
 				for (int i = 0; i < numThreads; i++)
 					if (threads [i].IsAlive)
 						threads [i].Join (10000);
-
-				sw.Stop ();
 			}
 
 			ppd.AmountFiles = tpd.fileCount;
@@ -78,85 +65,56 @@ namespace D_Parser.Misc
 			return ppd;
 		}
 
-		void PrepareQueue(RootPackage root)
+		void PrepareQueue()
 		{
 			if (!Directory.Exists(baseDirectory))
 			{
-				stillQueuing = false;
 				return; 
 			}
 
 			totalMSecs = 0;
-			fileCount = 0;
-			stillQueuing = true;
 
 			//ISSUE: wild card character ? seems to behave differently across platforms
 			// msdn: -> Exactly zero or one character.
 			// monodocs: -> Exactly one character.
-			var dFiles = Directory.GetFiles(baseDirectory, "*.d", SearchOption.AllDirectories);
-			var diFiles = Directory.GetFiles(baseDirectory, "*.di", SearchOption.AllDirectories);
-			var files = new string[dFiles.Length + diFiles.Length];
-			if(files.Length==0)
-			{
-				stillQueuing = false;
-				return;
-			}
-			Array.Copy(dFiles, 0, files, 0, dFiles.Length);
-			Array.Copy(diFiles, 0, files, dFiles.Length, diFiles.Length);
+			var files = Directory.GetFiles(baseDirectory, "*.d", SearchOption.AllDirectories);
+			if(files.Length != 0)
+				queue.PushRange(files);
+			files = Directory.GetFiles(baseDirectory, "*.di", SearchOption.AllDirectories);
+			if (files.Length != 0)
+				queue.PushRange(files);
 
-			var lastPack = (ModulePackage)root;
-			var lastDir = baseDirectory;
-
-			bool isPhobosRoot = this.baseDirectory.EndsWith(Path.DirectorySeparatorChar + "phobos");
-
-			foreach (var file in files)
-			{
-				var modulePath = DModule.GetModuleName(baseDirectory, file);
-
-				if (lastDir != (lastDir = Path.GetDirectoryName(file)))
-				{
-					isPhobosRoot = this.baseDirectory.EndsWith(Path.DirectorySeparatorChar + "phobos");
-
-					var packName = ModuleNameHelper.ExtractPackageName(modulePath);
-					lastPack = root.GetOrCreateSubPackage(packName, true);
-				}
-
-				// Skip index.d (D2) || phobos.d (D2|D1)
-				if (isPhobosRoot && (file.EndsWith("index.d") || file.EndsWith("phobos.d")))
-					continue;
-
-				fileCount++;
-				queue.Push(new Tuple<string, ModulePackage>(file, lastPack));
-			}
-
-			stillQueuing = false;
+			fileCount = queue.Count;
 		}
 
-		void ParseThread()
-		{
-			var sw = new Stopwatch();
+		static string phobosDFile = Path.DirectorySeparatorChar + "phobos" + Path.DirectorySeparatorChar + "phobos.d";
+		static string indexDFile = Path.DirectorySeparatorChar + "phobos" + Path.DirectorySeparatorChar + "index.d";
 
-			while (queue.Count != 0 || stillQueuing)
+		void ParseThread(Object ro)
+		{
+			var root = ro as RootPackage;
+			var sw = new Stopwatch();
+			string file;
+			string code;
+			IAbstractSyntaxTree ast = null;
+			ModulePackage pack;
+
+			while (true)
 			{
-				Tuple<string, ModulePackage> kv;
-				if(!queue.TryPop(out kv))
+				if (!queue.TryPop(out file))
 				{
-					if(stillQueuing)
-					{
-						Thread.Sleep(1);
-						continue;
-					}
 					break;
 				}
 
-				var file = kv.Item1;
-				var pack = kv.Item2;
+				if (file.EndsWith(phobosDFile) || file.EndsWith(indexDFile))
+				{
+					fileCount--; // Shouldn't cause any race-conditions
+					continue;
+				}
 
-				var code = File.ReadAllText(file);
-
+				code = File.ReadAllText(file);
 
 				sw.Start();
-				IAbstractSyntaxTree ast=null;
 				try
 				{
 					// If no debugger attached, save time + memory by skipping function bodies
@@ -173,19 +131,16 @@ namespace D_Parser.Misc
 				}
 				finally
 				{
-					ast.FileName = file;
+					if(ast != null)
+						ast.FileName = file;
 				}
 				sw.Stop();
-				
-				if(string.IsNullOrEmpty(ast.ModuleName))
-				{
-					if (pack is RootPackage)
-						ast.ModuleName = Path.GetFileNameWithoutExtension(file);
-					else
-						ast.ModuleName = pack.Path + "." + Path.GetFileNameWithoutExtension(file);
-				}
 
-				ast.FileName = file;
+				if (string.IsNullOrEmpty(ast.ModuleName))
+					ast.ModuleName = DModule.GetModuleName(baseDirectory, file);
+
+				pack = root.GetOrCreateSubPackage(ModuleNameHelper.ExtractPackageName(ast.ModuleName),true);
+				
 				lock(pack)
 					pack.AddModule(ast);
 			}
