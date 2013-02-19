@@ -150,7 +150,8 @@ namespace D_Parser.Completion
 			if (mrr.Base != null)
 					BuildCompletionData(mrr.Base, 
 						currentlyScopedBlock,
-						mrr is AliasedType ? isVariableInstance : true, // True if we obviously have a variable handled here. Otherwise depends on the samely-named parameter..
+						isVariableInstance || 
+						(mrr.Definition is DVariable && !(mrr is AliasedType)), // True if we obviously have a variable handled here. Otherwise depends on the samely-named parameter..
 						mrr); 
 			else
 				StaticTypePropertyProvider.AddGenericProperties(mrr, CompletionDataGenerator, mrr.Definition, false);
