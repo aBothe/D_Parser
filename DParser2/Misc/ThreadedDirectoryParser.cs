@@ -177,7 +177,7 @@ namespace D_Parser.Misc
 				}
 				sw.Stop();
 				
-				if(!string.IsNullOrEmpty(ast.ModuleName))
+				if(string.IsNullOrEmpty(ast.ModuleName))
 				{
 					if (pack is RootPackage)
 						ast.ModuleName = Path.GetFileNameWithoutExtension(file);
