@@ -139,16 +139,17 @@ namespace D_Parser.Dom
 				return this;
 
 			var currentPackage = this;
+			var parts = ModuleNameHelper.SplitModuleName(package);
 
-			foreach (var p in ModuleNameHelper.SplitModuleName(package))
+			for(int k = 0; k < parts.Length; k++)
 			{
 				ModulePackage returnValue;
 
-				if (!currentPackage.packages.TryGetValue(p, out returnValue))
+				if (!currentPackage.packages.TryGetValue(parts[k], out returnValue))
 				{
 					if (create)
 						lock(currentPackage.packages)
-							returnValue = currentPackage.packages[p] = new ModulePackage(Cache, currentPackage, p);
+							returnValue = currentPackage.packages[parts[k]] = new ModulePackage(Cache, currentPackage, parts[k]);
 					else
 						return null;
 				}
