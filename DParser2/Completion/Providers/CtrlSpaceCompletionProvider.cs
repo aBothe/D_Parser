@@ -41,7 +41,7 @@ namespace D_Parser.Completion
 			if (trackVars == null)
 			{
 				// --> Happens if no actual declaration syntax given --> Show types/keywords anyway
-				visibleMembers = MemberFilter.Types | MemberFilter.Keywords;
+				visibleMembers = MemberFilter.Types | MemberFilter.Keywords | MemberFilter.TypeParameters;
 
 				MemberCompletionEnumeration.EnumAllAvailableMembers(
 					CompletionDataGenerator,
@@ -84,11 +84,25 @@ namespace D_Parser.Completion
 					return;
 				// In class bodies, do not show variables
 				else if (!(parsedBlock is BlockStatement || trackVars.IsParsingInitializer))
-					visibleMembers = MemberFilter.Types | MemberFilter.Keywords;
-				
+				{
+					bool showVariables = false;
+					var dbn = parsedBlock as DBlockNode;
+					if (dbn != null && dbn.StaticStatements != null && dbn.StaticStatements.Count > 0)
+					{
+						var ss = dbn.StaticStatements[dbn.StaticStatements.Count -1];
+						if (ss.Location <= Editor.CaretLocation && ss.EndLocation <= Editor.CaretLocation)
+						{
+							showVariables = true;
+						}
+					}
+
+					if(!showVariables)
+						visibleMembers = MemberFilter.Types | MemberFilter.Keywords | MemberFilter.TypeParameters;
+				}
+
 				// Hide completion if having typed a '0.' literal
-				else if(trackVars.LastParsedObject is IdentifierExpression &&
-				       (trackVars.LastParsedObject as IdentifierExpression).Format == LiteralFormat.Scalar)
+				else if (trackVars.LastParsedObject is IdentifierExpression &&
+					   (trackVars.LastParsedObject as IdentifierExpression).Format == LiteralFormat.Scalar)
 					return;
 
 				/*
@@ -98,7 +112,7 @@ namespace D_Parser.Completion
 				else if (trackVars.LastParsedObject is TokenExpression &&
 					((TokenExpression)trackVars.LastParsedObject).Token == DTokens.Dot)
 				{
-					visibleMembers = MemberFilter.Methods | MemberFilter.Types | MemberFilter.Variables;
+					visibleMembers = MemberFilter.Methods | MemberFilter.Types | MemberFilter.Variables | MemberFilter.TypeParameters;
 					curBlock = Editor.SyntaxTree;
 					curStmt = null;
 				}

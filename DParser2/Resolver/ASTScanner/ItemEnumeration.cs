@@ -19,8 +19,9 @@ namespace D_Parser.Resolver.ASTScanner
 		Methods = 4,
 		Types = 8,
 		Keywords = 16,
+		TypeParameters = 32,
 
-		All = Variables | Methods | Types | Keywords
+		All = Variables | Methods | Types | Keywords | TypeParameters
 	}
 
 	public class ItemEnumeration : AbstractVisitor

@@ -261,7 +261,8 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		                 bool takeStaticChildrenOnly = false)
 		{
 			if (!dontHandleTemplateParamsInNodeScan){
-				if(curScope.TemplateParameters != null){
+				if (curScope.TemplateParameters != null && (VisibleMembers & MemberFilter.TypeParameters) != 0)
+				{
 					var t = ctxt.ScopedBlock;
 					while(t != null)
 					{
