@@ -3421,7 +3421,7 @@ namespace D_Parser.Parser
 				Step();
 
 				var ret = new LabeledStatement() { Location = t.Location, Identifier = t.Value, Parent = Parent };
-				LastParsedObject = ret;
+				LastParsedObject = null;
 				Step();
 				ret.EndLocation = t.EndLocation;
 
@@ -3502,7 +3502,8 @@ namespace D_Parser.Parser
 				{
 					dbs.Condition = Expression(Scope);
 					Expect(CloseParenthesis);
-					Expect(Semicolon);
+					if (Expect(Semicolon))
+						LastParsedObject = null;
 	
 					dbs.EndLocation = t.EndLocation;
 				}
@@ -3553,7 +3554,8 @@ namespace D_Parser.Parser
 				LastParsedObject = dbs;
 				dbs.ArgumentList = Expression(Scope);
 
-				Expect(Colon);
+				if (Expect(Colon))
+					LastParsedObject = null;
 
 				// CaseRangeStatement
 				if (laKind == DoubleDot)
@@ -3561,7 +3563,8 @@ namespace D_Parser.Parser
 					Step();
 					Expect(Case);
 					dbs.LastExpression = AssignExpression();
-					Expect(Colon);
+					if (Expect(Colon))
+						LastParsedObject = null;
 				}
 
 				var sl = new List<IStatement>();
@@ -3629,7 +3632,8 @@ namespace D_Parser.Parser
 					Step();
 					s.Identifier = t.Value;
 				}
-				Expect(Semicolon);
+				if (Expect(Semicolon))
+					LastParsedObject = null;
 				s.EndLocation = t.EndLocation;
 
 				return s;
@@ -3645,7 +3649,8 @@ namespace D_Parser.Parser
 					Step();
 					s.Identifier = t.Value;
 				}
-				Expect(Semicolon);
+				if (Expect(Semicolon))
+					LastParsedObject = null;
 				s.EndLocation = t.EndLocation;
 
 				return s;
@@ -3661,7 +3666,8 @@ namespace D_Parser.Parser
 				if (laKind != (Semicolon))
 					s.ReturnExpression = Expression(Scope);
 
-				Expect(Semicolon);
+				if (Expect(Semicolon))
+					LastParsedObject = null;
 				s.EndLocation = t.EndLocation;
 
 				return s;
@@ -3695,7 +3701,8 @@ namespace D_Parser.Parser
 						s.CaseExpression = Expression(Scope);
 				}
 
-				Expect(Semicolon);
+				if (Expect(Semicolon))
+					LastParsedObject = null;
 				s.EndLocation = t.EndLocation;
 
 				return s;
