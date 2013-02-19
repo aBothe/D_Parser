@@ -40,12 +40,12 @@ namespace D_Parser.Misc
 			if (tpd.queue.Count == 0)
 				return ppd;
 
-			if (sync)
+			if (sync || tpd.queue.Count == 1)
 				tpd.ParseThread(rootPackage);
 			else 
 			{
-				var threads = new Thread[numThreads];
-				for (int i = 0; i < numThreads; i++) 
+				var threads = new Thread[Math.Min(tpd.queue.Count, numThreads)];
+				for (int i = 0; i < threads.Length; i++) 
 				{
 					(threads [i] = new Thread (tpd.ParseThread)	{
 						IsBackground = true,
@@ -54,7 +54,7 @@ namespace D_Parser.Misc
 					}).Start (rootPackage);
 				}
 
-				for (int i = 0; i < numThreads; i++)
+				for (int i = 0; i < threads.Length; i++)
 					if (threads [i].IsAlive)
 						threads [i].Join (10000);
 			}
@@ -65,10 +65,9 @@ namespace D_Parser.Misc
 			return ppd;
 		}
 
-		void PrepareQueue()
+		void PrepareQueue ()
 		{
-			if (!Directory.Exists(baseDirectory))
-			{
+			if (!Directory.Exists (baseDirectory)) {
 				return; 
 			}
 
@@ -77,12 +76,26 @@ namespace D_Parser.Misc
 			//ISSUE: wild card character ? seems to behave differently across platforms
 			// msdn: -> Exactly zero or one character.
 			// monodocs: -> Exactly one character.
-			var files = Directory.GetFiles(baseDirectory, "*.d", SearchOption.AllDirectories);
-			if(files.Length != 0)
-				queue.PushRange(files);
+			var files = Directory.GetFiles (baseDirectory, "*.d", SearchOption.AllDirectories);
+			if (files.Length != 0) {
+				if(Environment.OSVersion.Platform == PlatformID.Win32Windows)
+					queue.PushRange (files);
+				else
+				{
+					for(int i = 0; i < files.Length;i++)
+						queue.Push(files[i]);
+				}
+			}
 			files = Directory.GetFiles(baseDirectory, "*.di", SearchOption.AllDirectories);
-			if (files.Length != 0)
-				queue.PushRange(files);
+			if (files.Length != 0) {
+				if(Environment.OSVersion.Platform == PlatformID.Win32Windows)
+					queue.PushRange (files);
+				else
+				{
+					for(int i = 0; i < files.Length;i++)
+						queue.Push(files[i]);
+				}
+			}
 
 			fileCount = queue.Count;
 		}
