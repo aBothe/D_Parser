@@ -3434,9 +3434,7 @@ namespace D_Parser.Parser
 			{
 				Step();
 
-				var dbs = new IfStatement();
-				dbs.Location = t.Location;
-				dbs.ParentNode = Scope;
+				var dbs = new IfStatement{	Location = t.Location, Parent = Parent	};
 
 				LastParsedObject = dbs;
 				Expect(OpenParenthesis);
