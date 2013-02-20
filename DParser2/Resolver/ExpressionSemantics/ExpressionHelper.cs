@@ -30,7 +30,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			IExpression lastParamSensExpr = e;
 
-			if (e.EndLocation.Line < 0 && (e is PostfixExpression_MethodCall || e is NewExpression))
+			if (e != null && e.EndLocation.Line < 0 && (e is PostfixExpression_MethodCall || e is NewExpression))
 			{
 				var args = e is PostfixExpression_MethodCall ? 
 					(e as PostfixExpression_MethodCall).Arguments :

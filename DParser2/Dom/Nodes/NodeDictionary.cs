@@ -118,7 +118,7 @@ namespace D_Parser.Dom
 		{
 			get
 			{
-				List<INode> l = null;
+				List<INode> l;
 				if(nameDict.TryGetValue(Name ?? "", out l))
 					return new ReadOnlyCollection<INode>(l);
 				return null;

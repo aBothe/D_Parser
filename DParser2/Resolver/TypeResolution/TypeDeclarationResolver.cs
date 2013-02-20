@@ -514,8 +514,9 @@ namespace D_Parser.Resolver.TypeResolution
 				if (canResolveBase && ((ctxt.Options & ResolutionOptions.DontResolveBaseTypes) != ResolutionOptions.DontResolveBaseTypes))
 				{
 					var bts = TypeDeclarationResolver.Resolve(v.Type, ctxt);
+					ctxt.CheckForSingleResult(bts, v.Type);
 
-					if (bts != null && bts.Length != 0 && ctxt.CheckForSingleResult(bts, v.Type))
+					if (bts != null && bts.Length != 0)
 						bt = bts[0];
 
 					// For auto variables, use the initializer to get its type
