@@ -12,7 +12,7 @@ namespace D_Parser.Misc
 	/// <summary>
 	/// Stores syntax trees while regarding their package hierarchy.
 	/// </summary>
-	public class ParseCache : IEnumerable<IAbstractSyntaxTree>, IEnumerable<ModulePackage>
+	public class ParseCache : IEnumerable<DModule>, IEnumerable<ModulePackage>
 	{
 		#region Properties
 		public bool IsParsing { get { return parseThread != null && parseThread.IsAlive; } }
@@ -21,7 +21,7 @@ namespace D_Parser.Misc
 		/// <summary>
 		/// Lookup that is used for fast filename-AST lookup. Do NOT modify, it'll be done inside the ModulePackage instances.
 		/// </summary>
-		internal Dictionary<string, IAbstractSyntaxTree> fileLookup = new Dictionary<string, IAbstractSyntaxTree>();
+		internal Dictionary<string, DModule> fileLookup = new Dictionary<string, DModule>();
 		
 		public RootPackage Root;
 
@@ -201,7 +201,7 @@ namespace D_Parser.Misc
 			Root = new RootPackage(this);
 		}
 
-		void HandleObjectModule(IAbstractSyntaxTree objModule)
+		void HandleObjectModule(DModule objModule)
 		{
 			if (objModule != null)
 				foreach (var m in objModule)
@@ -224,13 +224,13 @@ namespace D_Parser.Misc
 		/// Use this method to add a syntax tree to the parse cache.
 		/// Equally-named trees will be overwritten. 
 		/// </summary>
-		public bool AddOrUpdate(IAbstractSyntaxTree ast)
+		public bool AddOrUpdate(DModule ast)
 		{
 			if (ast == null || string.IsNullOrEmpty(ast.ModuleName))
 				return false;
 
 			// Check if a module is already in the file lookup
-			IAbstractSyntaxTree oldMod;
+			DModule oldMod;
 			if (ast.FileName != null && fileLookup.TryGetValue(ast.FileName, out oldMod))
 			{
 				Remove(oldMod);
@@ -257,7 +257,7 @@ namespace D_Parser.Misc
 		/// <summary>
 		/// Returns null if no module was found.
 		/// </summary>
-		public IAbstractSyntaxTree GetModule(string moduleName)
+		public DModule GetModule(string moduleName)
 		{
 			var pack = Root.GetOrCreateSubPackage(ModuleNameHelper.ExtractPackageName(moduleName), false);
 
@@ -273,7 +273,7 @@ namespace D_Parser.Misc
 			return ast == null || Remove(ast);
 		}
 
-		public bool Remove(IAbstractSyntaxTree ast, bool removeEmptyPackages = true)
+		public bool Remove(DModule ast, bool removeEmptyPackages = true)
 		{
 			if (ast == null)
 				return false;
@@ -284,7 +284,7 @@ namespace D_Parser.Misc
 			return _remFromPack(Root, ast, removeEmptyPackages);
 		}
 
-		bool _remFromPack(ModulePackage pack, IAbstractSyntaxTree ast, bool remEmptyPackages)
+		bool _remFromPack(ModulePackage pack, DModule ast, bool remEmptyPackages)
 		{
 			if (pack.RemoveModule(ast.ModuleName))
 			{
@@ -300,15 +300,15 @@ namespace D_Parser.Misc
 			return false;
 		}
 
-		public IAbstractSyntaxTree GetModuleByFileName(string file, string baseDirectory = null)
+		public DModule GetModuleByFileName(string file, string baseDirectory = null)
 		{
-			IAbstractSyntaxTree ast;
+			DModule ast;
 			if(fileLookup.TryGetValue(file, out ast))
 				return ast;
 			return GetModule(DModule.GetModuleName(baseDirectory, file));
 		}
 
-		public IAbstractSyntaxTree this[string ModuleName]
+		public DModule this[string ModuleName]
 		{
 			get
 			{
@@ -317,7 +317,7 @@ namespace D_Parser.Misc
 		}
 		#endregion
 
-		public IEnumerator<IAbstractSyntaxTree> GetEnumerator()
+		public IEnumerator<DModule> GetEnumerator()
 		{
 			return Root.GetEnumerator();
 		}

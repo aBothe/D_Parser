@@ -105,6 +105,7 @@
     <Compile Include="Completion\Providers\UFCSCompletionProvider.cs" />
     <Compile Include="Dom\AbstractTypeDeclaration.cs" />
     <Compile Include="Dom\IDeclarationCondition.cs" />
+    <Compile Include="Dom\ParserError.cs" />
     <Compile Include="Dom\StaticStatement.cs" />
     <Compile Include="Dom\IVisitable.cs" />
     <Compile Include="Dom\Nodes\AttributeBlock.cs" />
@@ -212,11 +213,7 @@
   <ItemGroup>
     <Content Include="readme.txt" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Formatting\" />
-    <Folder Include="Misc\" />
-    <Folder Include="Resolver\ExpressionSemantics\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <None Include="license.txt" />
   </ItemGroup>

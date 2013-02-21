@@ -261,7 +261,7 @@ namespace D_Parser.Dom
 		{
 			get
 			{
-				return Parameters != null && Parameters.Count != 0 && Parent is IAbstractSyntaxTree;
+				return Parameters != null && Parameters.Count != 0 && Parent is DModule;
 			}
 		}
 

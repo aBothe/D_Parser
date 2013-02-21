@@ -109,7 +109,7 @@ namespace D_Parser.Misc
 			var sw = new Stopwatch();
 			string file;
 			string code;
-			IAbstractSyntaxTree ast = null;
+			DModule ast = null;
 			ModulePackage pack;
 
 			while (true)

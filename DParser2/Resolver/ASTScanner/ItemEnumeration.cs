@@ -102,8 +102,8 @@ namespace D_Parser.Resolver.ASTScanner
 		{
 			if(isVarInst || !(n is DMethod || n is DVariable || n is TemplateParameterNode) || (n as DNode).IsStatic)
 			{
-				if(n is IAbstractSyntaxTree)
-					gen.AddModule(n as IAbstractSyntaxTree);
+				if(n is DModule)
+					gen.AddModule(n as DModule);
 				else
 					gen.Add(n);
 			}

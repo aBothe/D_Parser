@@ -16,12 +16,12 @@ namespace D_Parser.Refactoring
 		readonly ResolutionContext ctxt;
 		readonly List<ISyntaxRegion> l = new List<ISyntaxRegion>();
 		readonly INode symbol;
-		readonly IAbstractSyntaxTree ast;
+		readonly DModule ast;
 		readonly string searchId;
 		#endregion
 
 		#region Constructor / External
-		ReferencesFinder(INode symbol, IAbstractSyntaxTree ast, ResolutionContext ctxt)
+		ReferencesFinder(INode symbol, DModule ast, ResolutionContext ctxt)
 		{
 			this.ast = ast;
 			this.symbol = symbol;
@@ -31,7 +31,7 @@ namespace D_Parser.Refactoring
 
 		public static IEnumerable<ISyntaxRegion> Scan(INode symbol, ResolutionContext ctxt)
 		{
-			return Scan(symbol.NodeRoot as IAbstractSyntaxTree, symbol, ctxt);
+			return Scan(symbol.NodeRoot as DModule, symbol, ctxt);
 		}
 
 		/// <summary>
@@ -40,7 +40,7 @@ namespace D_Parser.Refactoring
 		/// <param name="symbol">Might not be a child symbol of ast</param>
 		/// <param name="ctxt">The context required to search for symbols</param>
 		/// <returns></returns>
-		public static IEnumerable<ISyntaxRegion> Scan(IAbstractSyntaxTree ast, INode symbol, ResolutionContext ctxt)
+		public static IEnumerable<ISyntaxRegion> Scan(DModule ast, INode symbol, ResolutionContext ctxt)
 		{
 			if (ast == null || symbol == null || ctxt == null)
 				return null;

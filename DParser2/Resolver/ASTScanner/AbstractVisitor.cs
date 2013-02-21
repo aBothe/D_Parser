@@ -56,7 +56,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			return bn.Children;
 		}
 		
-		public virtual IEnumerable<IAbstractSyntaxTree> PrefilterSubnodes(ModulePackage pack, out ModulePackage[] subPackages)
+		public virtual IEnumerable<DModule> PrefilterSubnodes(ModulePackage pack, out ModulePackage[] subPackages)
 		{
 			subPackages = pack.GetPackages();
 			if(subPackages.Length == 0)
@@ -329,9 +329,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			if (dn.ContainsAttribute(DTokens.Private))
 				return dn.NodeRoot == scope.NodeRoot;
 			else if (dn.ContainsAttribute(DTokens.Package))
-				return dn.NodeRoot is IAbstractSyntaxTree &&
-					ModuleNameHelper.ExtractPackageName((dn.NodeRoot as IAbstractSyntaxTree).ModuleName) ==
-						ModuleNameHelper.ExtractPackageName((scope.NodeRoot as IAbstractSyntaxTree).ModuleName);
+				return dn.NodeRoot is DModule &&
+					ModuleNameHelper.ExtractPackageName((dn.NodeRoot as DModule).ModuleName) ==
+						ModuleNameHelper.ExtractPackageName((scope.NodeRoot as DModule).ModuleName);
 			else if(dn.ContainsAttribute(DTokens.Protected))
 			{
 				while(scope!=null)
@@ -587,7 +587,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			}
 
 			// Every module imports 'object' implicitly
-			if (dbn is IAbstractSyntaxTree && !takePublicImportsOnly)
+			if (dbn is DModule && !takePublicImportsOnly)
 				if (HandleNonAliasedImport(_objectImport, VisibleMembers))
 					return true;
 
@@ -604,7 +604,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			if (imp == null || imp.ModuleIdentifier == null)
 				return false;
 
-			var thisModuleName = (ctxt.ScopedBlock != null && ctxt.ScopedBlock.NodeRoot is IAbstractSyntaxTree) ? ((IAbstractSyntaxTree)ctxt.ScopedBlock.NodeRoot).ModuleName : string.Empty;
+			var thisModuleName = (ctxt.ScopedBlock != null && ctxt.ScopedBlock.NodeRoot is DModule) ? ((DModule)ctxt.ScopedBlock.NodeRoot).ModuleName : string.Empty;
 			
 			if(string.IsNullOrEmpty(thisModuleName))
 				return false;
@@ -619,7 +619,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				return false;
 			seenModules.Add(moduleName);
 
-			var scAst = ctxt.ScopedBlock == null ? null : ctxt.ScopedBlock.NodeRoot as IAbstractSyntaxTree;
+			var scAst = ctxt.ScopedBlock == null ? null : ctxt.ScopedBlock.NodeRoot as DModule;
 			if (ctxt.ParseCache != null)
 				foreach (var module in ctxt.ParseCache.LookupModuleName(moduleName)) //TODO: Only take the first module? Notify the user about ambigous module names?
 				{

@@ -59,7 +59,7 @@ namespace D_Parser.Resolver.TypeResolution
 			var loc = idObject is ISyntaxRegion ? ((ISyntaxRegion)idObject).Location : CodeLocation.Empty;
 
 			if (ModuleScope)
-				ctxt.PushNewScope(ctxt.ScopedBlock.NodeRoot as IAbstractSyntaxTree);
+				ctxt.PushNewScope(ctxt.ScopedBlock.NodeRoot as DModule);
 
 			// If there are symbols that must be preferred, take them instead of scanning the ast
 			else
@@ -598,9 +598,9 @@ namespace D_Parser.Resolver.TypeResolution
 					ret = canResolveBase && ((ctxt.Options & ResolutionOptions.DontResolveBaseClasses) != ResolutionOptions.DontResolveBaseClasses) ? 
 						DResolver.ResolveBaseClasses(udt, ctxt) : udt;
 			}
-			else if (m is IAbstractSyntaxTree)
+			else if (m is DModule)
 			{
-				var mod = (IAbstractSyntaxTree)m;
+				var mod = (DModule)m;
 				if (typeBase != null && typeBase.ToString() != mod.ModuleName)
 				{
 					var pack = ctxt.ParseCache.LookupPackage(typeBase.ToString()).FirstOrDefault();

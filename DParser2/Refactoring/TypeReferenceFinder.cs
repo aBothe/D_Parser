@@ -30,7 +30,7 @@ namespace D_Parser.Refactoring
 		object _lockObject = new Object();
 
 		IBlockNode curScope = null;
-		IAbstractSyntaxTree ast = null;
+		DModule ast = null;
 
 		readonly TypeReferencesResult result = new TypeReferencesResult();
 		ConditionalCompilationFlags gFlags_shared;
@@ -43,7 +43,7 @@ namespace D_Parser.Refactoring
 			sharedCtxt = ResolutionContext.Create(sharedCache, gFlags_shared = compilationEnvironment, null);
 		}
 
-		public static TypeReferencesResult Scan(IAbstractSyntaxTree ast, ParseCacheList pcl, ConditionalCompilationFlags compilationEnvironment = null)
+		public static TypeReferencesResult Scan(DModule ast, ParseCacheList pcl, ConditionalCompilationFlags compilationEnvironment = null)
 		{
 			if (ast == null)
 				return new TypeReferencesResult();

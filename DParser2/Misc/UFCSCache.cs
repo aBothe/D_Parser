@@ -95,7 +95,7 @@ namespace D_Parser.Misc
 			return true;
 		}
 
-		void PrepareQueue(IAbstractSyntaxTree module)
+		void PrepareQueue(DModule module)
 		{
 			if (module != null)
 				foreach (var n in module)
@@ -140,7 +140,7 @@ namespace D_Parser.Misc
 		/// Cleans the cache from items related to the passed syntax tree.
 		/// Used for incremental update.
 		/// </summary>
-		public void RemoveModuleItems(IAbstractSyntaxTree ast)
+		public void RemoveModuleItems(DModule ast)
 		{
 			if (IsProcessing)
 				return;
@@ -156,7 +156,7 @@ namespace D_Parser.Misc
 					CachedMethods.Remove(i);
 		}
 
-		public void CacheModuleMethods(IAbstractSyntaxTree ast, ResolutionContext ctxt)
+		public void CacheModuleMethods(DModule ast, ResolutionContext ctxt)
 		{
 			foreach (var m in ast)
 				if (m is DMethod)

@@ -22,7 +22,7 @@ namespace D_Parser.Completion
 		/// <param name="Node"></param>
 		void Add(INode Node);
 
-		void AddModule(IAbstractSyntaxTree module,string nameOverride = null);
+		void AddModule(DModule module,string nameOverride = null);
 		void AddPackage(string packageName);
 	}
 }

@@ -16,7 +16,7 @@ namespace D_Parser.Misc
 			return pcl;
 		}
 
-		public IEnumerable<IAbstractSyntaxTree> LookupModuleName(string moduleName)
+		public IEnumerable<DModule> LookupModuleName(string moduleName)
 		{
 			foreach (var pc in this)
 			{

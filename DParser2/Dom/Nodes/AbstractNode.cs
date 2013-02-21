@@ -72,8 +72,8 @@ namespace D_Parser.Dom
 			while (curParent != null)
 			{
 				// Also include module path
-				if (curParent is IAbstractSyntaxTree)
-					path = (curParent as IAbstractSyntaxTree).ModuleName + "." + path;
+				if (curParent is DModule)
+					path = (curParent as DModule).ModuleName + "." + path;
 				else
 					path = curParent.Name + "." + path;
 

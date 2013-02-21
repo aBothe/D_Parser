@@ -186,7 +186,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				case DTokens.False:
 					return new PrimitiveValue(DTokens.Bool, 0, x);
 				case DTokens.__FILE__:
-					return new ArrayValue(GetStringType(), (ctxt.ScopedBlock.NodeRoot as IAbstractSyntaxTree).FileName);
+					return new ArrayValue(GetStringType(), (ctxt.ScopedBlock.NodeRoot as DModule).FileName);
 				case DTokens.__LINE__:
 					return new PrimitiveValue(DTokens.Int, x.Location.Line, x);
 			}
@@ -277,7 +277,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				}
 
 				var fn = Path.IsPathRooted(v.StringValue) ? v.StringValue :
-							Path.Combine(Path.GetDirectoryName((ctxt.ScopedBlock.NodeRoot as IAbstractSyntaxTree).FileName),
+							Path.Combine(Path.GetDirectoryName((ctxt.ScopedBlock.NodeRoot as DModule).FileName),
 							v.StringValue);
 
 				if (!File.Exists(fn)){

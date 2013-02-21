@@ -32,7 +32,7 @@ namespace D_Parser.Refactoring
 			if (selection == null)
 				throw new Exception("Selected symbol must not be null.");
 
-			var mod = selection.NodeRoot as IAbstractSyntaxTree;
+			var mod = selection.NodeRoot as DModule;
 			if (mod == null)
 				throw new Exception("Node not assigned to a parent syntax tree. Abort operation.");
 

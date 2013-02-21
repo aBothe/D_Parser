@@ -196,7 +196,7 @@ namespace D_Parser.Parser
             return bt;
         }
 
-        public static IAbstractSyntaxTree ParseString(string ModuleCode,bool SkipFunctionBodies=false, bool KeepComments = true)
+        public static DModule ParseString(string ModuleCode,bool SkipFunctionBodies=false, bool KeepComments = true)
         {
             using(var sr = new StringReader(ModuleCode))
         	{
@@ -205,7 +205,7 @@ namespace D_Parser.Parser
         	}
         }
 
-        public static IAbstractSyntaxTree ParseFile(string File, bool SkipFunctionBodies=false, bool KeepComments = true)
+        public static DModule ParseFile(string File, bool SkipFunctionBodies=false, bool KeepComments = true)
         {
         	using(var s = new StreamReader(File)){
 	            var p=Create(s);
@@ -247,14 +247,14 @@ namespace D_Parser.Parser
         /// Parses the module again
         /// </summary>
         /// <param name="Module"></param>
-        public static void UpdateModule(IAbstractSyntaxTree Module)
+        public static void UpdateModule(DModule Module)
         {
             var m = DParser.ParseFile(Module.FileName);
 			Module.ParseErrors = m.ParseErrors;
             Module.AssignFrom(m);
         }
 
-        public static void UpdateModuleFromText(IAbstractSyntaxTree Module, string Code)
+        public static void UpdateModuleFromText(DModule Module, string Code)
         {
             var m = DParser.ParseString(Code);
 			Module.ParseErrors = m.ParseErrors;

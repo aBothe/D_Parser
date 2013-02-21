@@ -11,7 +11,7 @@ namespace D_Parser.Dom
     /// <summary>
     /// Encapsules an entire document and represents the root node
     /// </summary>
-    public class DModule : DBlockNode, IAbstractSyntaxTree
+    public class DModule : DBlockNode
     {
 		public readonly DateTime ParseTimestamp = DateTime.Now;
 
@@ -21,8 +21,8 @@ namespace D_Parser.Dom
         /// <param name="Other"></param>
         public override void AssignFrom(INode Other)
         {
-			if (Other is IAbstractSyntaxTree)
-				ParseErrors = ((IAbstractSyntaxTree)Other).ParseErrors;
+			if (Other is DModule)
+				ParseErrors = ((DModule)Other).ParseErrors;
 
 			base.AssignFrom(Other);
         }
@@ -53,7 +53,7 @@ namespace D_Parser.Dom
 		/// <summary>
 		/// Returns a package-module name-combination (like std.stdio) in dependency of its base directory (e.g. C:\dmd2\src\phobos)
 		/// </summary>
-		public static string GetModuleName(string baseDirectory, IAbstractSyntaxTree ast)
+		public static string GetModuleName(string baseDirectory, DModule ast)
 		{
 			return GetModuleName(baseDirectory, ast.FileName);
 		}

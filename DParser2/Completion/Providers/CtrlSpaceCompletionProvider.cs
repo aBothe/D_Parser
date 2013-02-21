@@ -220,7 +220,7 @@ namespace D_Parser.Completion
 
 					object ret = null;
 
-					if (CurrentScope == null || CurrentScope is IAbstractSyntaxTree)
+					if (CurrentScope == null || CurrentScope is DModule)
 						ret = psr.Parse();
 					else if (CurrentScope is DMethod)
 					{

@@ -11,7 +11,7 @@ namespace D_Parser.Dom
 		internal RootPackage(ParseCache cache) : base(cache, null, "<root>") { }
 	}
 
-	public class ModulePackage : IEnumerable<IAbstractSyntaxTree>, IEnumerable<ModulePackage>
+	public class ModulePackage : IEnumerable<DModule>, IEnumerable<ModulePackage>
 	{
 		internal ModulePackage(ParseCache cache, ModulePackage parent, string name) {
 			Cache = cache;
@@ -24,10 +24,10 @@ namespace D_Parser.Dom
 
 		public readonly string Name;
 		Dictionary<string, ModulePackage> packages = new Dictionary<string, ModulePackage>();
-		Dictionary<string, IAbstractSyntaxTree> modules = new Dictionary<string, IAbstractSyntaxTree>();
+		Dictionary<string, DModule> modules = new Dictionary<string, DModule>();
 		
 		public IEnumerable<KeyValuePair<string,ModulePackage>> Packages {get{return packages;}}
-		public IEnumerable<KeyValuePair<string, IAbstractSyntaxTree>> Modules {get{return modules;}}
+		public IEnumerable<KeyValuePair<string, DModule>> Modules {get{return modules;}}
 		
 		public bool IsEmpty {get{return packages.Count == 0 && modules.Count == 0;}}
 		
@@ -38,9 +38,9 @@ namespace D_Parser.Dom
 			return packs;
 		}
 		
-		public IAbstractSyntaxTree[] GetModules()
+		public DModule[] GetModules()
 		{
-			var mods = new IAbstractSyntaxTree[modules.Count];
+			var mods = new DModule[modules.Count];
 			modules.Values.CopyTo(mods,0);
 			return mods;
 		}
@@ -52,9 +52,9 @@ namespace D_Parser.Dom
 			return pack;
 		}
 		
-		public IAbstractSyntaxTree GetModule(string name)
+		public DModule GetModule(string name)
 		{
-			IAbstractSyntaxTree ast;
+			DModule ast;
 			modules.TryGetValue(name, out ast);
 			return ast;
 		}
@@ -72,7 +72,7 @@ namespace D_Parser.Dom
 			return Path;
 		}
 
-		public IEnumerator<IAbstractSyntaxTree> GetEnumerator()
+		public IEnumerator<DModule> GetEnumerator()
 		{
 			lock(modules)
 				foreach (var kv in modules)
@@ -103,7 +103,7 @@ namespace D_Parser.Dom
 			return GetEnumerator();
 		}
 		
-		public bool AddModule(IAbstractSyntaxTree ast)
+		public bool AddModule(DModule ast)
 		{
 			if(string.IsNullOrEmpty(ast.ModuleName))
 				return false;
@@ -122,7 +122,7 @@ namespace D_Parser.Dom
 		public bool RemoveModule(string name)
 		{
 			name = ModuleNameHelper.ExtractModuleName(name);
-			IAbstractSyntaxTree ast;
+			DModule ast;
 			if(modules.TryGetValue(name, out ast))
 			{
 				if(!string.IsNullOrEmpty(ast.FileName))
