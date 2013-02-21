@@ -2988,7 +2988,8 @@ namespace D_Parser.Parser
 					FunctionAttributes(fl.AnonymousMethod);
 				}
 				
-				FunctionBody(fl.AnonymousMethod);
+				if(!IsEOF)
+					FunctionBody(fl.AnonymousMethod);
 
 				fl.EndLocation = t.EndLocation;
 
