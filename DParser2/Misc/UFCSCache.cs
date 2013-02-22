@@ -7,6 +7,7 @@ using D_Parser.Dom;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ASTScanner;
 using D_Parser.Resolver.TypeResolution;
+using System.Runtime.CompilerServices;
 
 namespace D_Parser.Misc
 {
@@ -21,18 +22,17 @@ namespace D_Parser.Misc
 		
 		ConditionalCompilationFlags gFlags_shared;
 		Stack<DMethod> queue = new Stack<DMethod>();
-		public readonly Dictionary<DMethod, AbstractType> CachedMethods = new Dictionary<DMethod, AbstractType>();
+		public readonly ConditionalWeakTable<DMethod, AbstractType> CachedMethods = new ConditionalWeakTable<DMethod, AbstractType>();
 		/// <summary>
 		/// Returns time span needed to resolve all first parameters.
 		/// </summary>
 		public TimeSpan CachingDuration { get; private set; }
+		private int methodCount;
+		/// <summary>
+		/// 
+		/// </summary>
+		public int MethodCacheCount { get { return methodCount; } }
 		#endregion
-
-		public void Clear()
-		{
-			if (!IsProcessing)
-				CachedMethods.Clear();
-		}
 
 		/// <summary>
 		/// Returns false if cache is already updating.
@@ -47,6 +47,7 @@ namespace D_Parser.Misc
 				IsProcessing = true;
 				gFlags_shared = compilationEnvironment;
 
+				methodCount = 0;
 				queue.Clear();
 
 				// Prepare queue
@@ -131,29 +132,12 @@ namespace D_Parser.Misc
 				var firstArg_result = TypeDeclarationResolver.Resolve(dm.Parameters[0].Type, ctxt);
 
 				if (firstArg_result != null && firstArg_result.Length != 0)
-					lock (CachedMethods)
-						CachedMethods[dm] = firstArg_result[0];
+				{
+					methodCount++;
+					CachedMethods.Remove(dm);
+					CachedMethods.Add(dm, firstArg_result[0]);
+				}
 			}
-		}
-
-		/// <summary>
-		/// Cleans the cache from items related to the passed syntax tree.
-		/// Used for incremental update.
-		/// </summary>
-		public void RemoveModuleItems(DModule ast)
-		{
-			if (IsProcessing)
-				return;
-
-			var remList = new List<DMethod>();
-
-			foreach (var kv in CachedMethods)
-				if (kv.Key.NodeRoot == ast)
-					remList.Add(kv.Key);
-
-			foreach (var i in remList)
-				lock (CachedMethods)
-					CachedMethods.Remove(i);
 		}
 
 		public void CacheModuleMethods(DModule ast, ResolutionContext ctxt)
@@ -171,8 +155,10 @@ namespace D_Parser.Misc
 					ctxt.Pop();
 
 					if (firstArg_result != null && firstArg_result.Length != 0)
-						lock (CachedMethods)
-							CachedMethods[dm] = firstArg_result[0];
+					{
+						CachedMethods.Remove(dm);
+						CachedMethods.Add(dm, firstArg_result[0]);
+					}
 				}
 		}
 
@@ -181,30 +167,66 @@ namespace D_Parser.Misc
 			if (IsProcessing)
 				return null;
 
-			var preMatchList = new List<DMethod>();
-
-			bool dontUseNameFilter = nameFilter == null;
-
 			if(firstArgument is MemberSymbol)
 				firstArgument = DResolver.StripMemberSymbols(firstArgument as AbstractType);
-			
-			lock(CachedMethods)
-				foreach (var kv in CachedMethods)
-				{
-					
-					// First test if arg is matching the parameter
-					if ((dontUseNameFilter || kv.Key.Name == nameFilter) &&
-						ResultComparer.IsImplicitlyConvertible(firstArgument, kv.Value, ctxt))
-						preMatchList.Add(kv.Key);
-				}
 
 			// Then filter out methods which cannot be accessed in the current context 
 			// (like when the method is defined in a module that has not been imported)
-			var mv = new MatchFilterVisitor<DMethod>(ctxt, preMatchList);
+			var mv = new UfcsMatchScanner(ctxt, CachedMethods, firstArgument, nameFilter);
 
 			mv.IterateThroughScopeLayers(currentLocation);
 
-			return mv.filteredList;
+			return mv.filteredMethods;
+		}
+
+		class UfcsMatchScanner : AbstractVisitor
+		{
+			ConditionalWeakTable<DMethod, AbstractType> cache;
+			public List<DMethod> filteredMethods = new List<DMethod>();
+			string nameFilter;
+			ISemantic firstArgument;
+
+			public UfcsMatchScanner(ResolutionContext ctxt, 
+				ConditionalWeakTable<DMethod, AbstractType> CachedMethods, 
+				ISemantic firstArgument,
+				string nameFilter = null)
+				: base(ctxt)
+			{
+				this.firstArgument = firstArgument;
+				this.nameFilter = nameFilter;
+				this.cache = CachedMethods;
+			}
+
+			public override IEnumerable<INode> PrefilterSubnodes(IBlockNode bn)
+			{
+				if (bn is DModule)
+				{
+					foreach (var n in bn)
+					{
+						if (n is DMethod && (nameFilter == null || nameFilter == n.Name))
+							yield return n;
+					}
+				}
+
+				yield break;
+			}
+
+			protected override bool HandleItem(INode n)
+			{
+				AbstractType t;
+				if (n is DMethod && 
+					(nameFilter == null || nameFilter == n.Name) && 
+					cache.TryGetValue(n as DMethod, out t) &&
+					ResultComparer.IsImplicitlyConvertible(firstArgument, t, ctxt))
+					filteredMethods.Add(n as DMethod);
+
+				return false;
+			}
+
+			protected override bool HandleItem(PackageSymbol pack)
+			{
+				return false;
+			}
 		}
 	}
 }

@@ -148,7 +148,6 @@ namespace D_Parser.Misc
 					tup.Item2.Add(ppd);
 			}
 
-			UfcsCache.Clear();
 			ParsedDirectories = parsedDirs;
 			Root = newRoot;
 
@@ -193,7 +192,6 @@ namespace D_Parser.Misc
 		public void Clear(bool parseDirectories = false)
 		{
 			fileLookup.Clear();
-			UfcsCache.Clear();
 			Root = null;
 			if (parseDirectories)
 				ParsedDirectories = null;
@@ -269,8 +267,7 @@ namespace D_Parser.Misc
 
 		public bool Remove(string fileName)
 		{
-			var ast = GetModuleByFileName(fileName);
-			return ast == null || Remove(ast);
+			return Remove(GetModuleByFileName(fileName));
 		}
 
 		public bool Remove(DModule ast, bool removeEmptyPackages = true)

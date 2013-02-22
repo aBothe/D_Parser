@@ -11,7 +11,7 @@ namespace D_Parser.Completion.Providers
 		{
 			if(ed.ParseCache!=null)
 				foreach (var pc in ed.ParseCache)
-					if (pc != null && pc.UfcsCache != null && pc.UfcsCache.CachedMethods != null && pc.UfcsCache.CachedMethods.Count != 0)
+					if (pc != null && pc.UfcsCache != null && pc.UfcsCache.CachedMethods != null)
 					{
 						var r=pc.UfcsCache.FindFitting(ctxt, ed.CaretLocation, rr);
 						if(r!=null)
