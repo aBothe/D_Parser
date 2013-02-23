@@ -81,31 +81,31 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			return false;
 		}
 
-		bool breakImmediately { get { return ctxt.Options.HasFlag(ResolutionOptions.StopAfterFirstMatch); } }
-
 		public virtual void IterateThroughScopeLayers(CodeLocation Caret, MemberFilter VisibleMembers = MemberFilter.All)
 		{
 			if (ctxt.ScopedStatement != null &&
-				IterateThroughItemHierarchy(ctxt.ScopedStatement, Caret, VisibleMembers) &&
-					(ctxt.Options.HasFlag(ResolutionOptions.StopAfterFirstOverloads) ||
-					ctxt.Options.HasFlag(ResolutionOptions.StopAfterFirstMatch)))
+				ScanStatementHierarchy(ctxt.ScopedStatement, Caret, VisibleMembers))
+			{
+				if (ctxt.ScopedBlock is DMethod &&
+					ScanBlock(ctxt.ScopedBlock, Caret, VisibleMembers))
+				{
+					// Error: Locals are shadowing parameters!
+				}
+				
 				return;
+			}
 
 			if(ctxt.ScopedBlock != null && 
 			   ScanBlockUpward(ctxt.ScopedBlock, Caret, VisibleMembers))
 				return;
 			
-			// On the root level, add __ctfe variable
-			if (CanAddMemberOfType(VisibleMembers, __ctfe) && HandleItem(__ctfe) && breakImmediately)
-				return;
-			
-			// and all root modules/packages
+			// Handle available modules/packages
 			var nameStubs = new List<string>();
 			if(ctxt.ParseCache != null)
-				foreach(var pc in ctxt.ParseCache)
+				for(int i=0;i < ctxt.ParseCache.Count; i++)
 				{
 					ModulePackage[] packs;
-					var mods = PrefilterSubnodes(pc.Root, out packs);
+					var mods = PrefilterSubnodes(ctxt.ParseCache[i].Root, out packs);
 					
 					if(packs != null){
 						foreach(var pack in packs)
@@ -123,66 +123,62 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 						HandleItems(mods);
 					}
 				}
+
+			// On the root level, handle __ctfe variable
+			if (CanAddMemberOfType(VisibleMembers, __ctfe) &&
+				HandleItem(__ctfe))
+				return;
 		}
 		
 		bool ScanBlockUpward(IBlockNode curScope, CodeLocation Caret, MemberFilter VisibleMembers)
 		{
-			bool breakOnNextScope = false;
-
 			// 2)
 			do
 			{
-				if(ScanBlock(curScope, Caret, VisibleMembers, ref breakOnNextScope))
+				if(ScanBlock(curScope, Caret, VisibleMembers))
 					return true;
 				
 				curScope = curScope.Parent as IBlockNode;
 			}
 			while (curScope != null);
-			
-			return breakOnNextScope;
+
+			return false;
 		}
 
-		protected bool ScanBlock(IBlockNode curScope, CodeLocation Caret, MemberFilter VisibleMembers, ref bool breakOnNextScope)
+		protected bool ScanBlock(IBlockNode curScope, CodeLocation Caret, MemberFilter VisibleMembers)
 		{
 			if (curScope is DClassLike)
 			{
-				if (DeepScanClass(curScope as DClassLike, VisibleMembers, ref breakOnNextScope))
-					return true;
+				return DeepScanClass(curScope as DClassLike, VisibleMembers);
 			}
 			else if (curScope is DMethod)
 			{
+				bool breakOnNextScope = false;
 				var dm = curScope as DMethod;
 
 				// Add 'out' variable if typing in the out test block currently
-				if (dm.OutResultVariable != null && dm.Out != null && dm.GetSubBlockAt(Caret) == dm.Out &&
-					(breakOnNextScope = HandleItem(new DVariable // Create pseudo-variable
-						{
-							Name = dm.OutResultVariable.Id as string,
-							NameLocation = dm.OutResultVariable.Location,
-							Type = dm.Type, // TODO: What to do on auto functions?
-							Parent = dm,
-							Location = dm.OutResultVariable.Location,
-							EndLocation = dm.OutResultVariable.EndLocation,
-						})) &&
-						breakImmediately)
-					return true;
+				if (dm.OutResultVariable != null && dm.Out != null && dm.GetSubBlockAt(Caret) == dm.Out)
+					breakOnNextScope |= HandleItem(new DVariable
+					{ // Create pseudo variable
+						Name = dm.OutResultVariable.Id as string,
+						NameLocation = dm.OutResultVariable.Location,
+						Type = dm.Type, // TODO: What to do on auto functions?
+						Parent = dm,
+						Location = dm.OutResultVariable.Location,
+						EndLocation = dm.OutResultVariable.EndLocation
+					});
 
-				if (((VisibleMembers & MemberFilter.Variables) == MemberFilter.Variables) &&
-					(breakOnNextScope = HandleItems(dm.Parameters)) &&
-					breakImmediately)
-					return true;
+				if ((VisibleMembers & MemberFilter.Variables) == MemberFilter.Variables)
+					breakOnNextScope |= HandleItems(dm.Parameters);
 
-				if (dm.TemplateParameters != null &&
-					(breakOnNextScope = HandleItems(dm.TemplateParameterNodes as IEnumerable<INode>)) &&
-					breakImmediately)
-					return true;
+				if (dm.TemplateParameters != null)
+					breakOnNextScope |= HandleItems(dm.TemplateParameterNodes as IEnumerable<INode>);
 
 				// The method's declaration children are handled above already via BlockStatement.GetItemHierarchy().
 				// except AdditionalChildren:
 				foreach (var ch in dm.AdditionalChildren)
-					if (CanAddMemberOfType(VisibleMembers, ch) &&
-						(breakOnNextScope = HandleItem(ch) && breakImmediately))
-						return true;
+					if (CanAddMemberOfType(VisibleMembers, ch))
+						breakOnNextScope |= HandleItem(ch);
 
 				// If the method is a nested method,
 				// this method won't be 'linked' to the parent statement tree directly - 
@@ -192,25 +188,23 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					var nestedBlock = (dm.Parent as DMethod).GetSubBlockAt(Caret);
 
 					// Search for the deepest statement scope and add all declarations done in the entire hierarchy
-					if (nestedBlock != null &&
-						(breakOnNextScope = IterateThroughItemHierarchy(nestedBlock.SearchStatementDeeply(Caret), Caret, VisibleMembers)) &&
-						breakImmediately)
-						return true;
+					if (nestedBlock != null)
+						breakOnNextScope |= ScanStatementHierarchy(nestedBlock.SearchStatementDeeply(Caret), Caret, VisibleMembers);
 				}
-			}
-			else if(scanChildren(curScope as DBlockNode, VisibleMembers, ref breakOnNextScope))
-					return true;
 
-			return breakOnNextScope && ((ctxt.Options & ResolutionOptions.StopAfterFirstOverloads) == ResolutionOptions.StopAfterFirstOverloads);
+				return breakOnNextScope;
+			}
+			else
+				return scanChildren(curScope as DBlockNode, VisibleMembers);
 		}
 		
 		
-		bool DeepScanClass(DClassLike cls, MemberFilter VisibleMembers, ref bool breakOnNextScope)
+		bool DeepScanClass(DClassLike cls, MemberFilter VisibleMembers)
 		{
-			return DeepScanClass(new ClassType(cls, null, null), VisibleMembers, ref breakOnNextScope, true);
+			return DeepScanClass(new ClassType(cls, null, null), VisibleMembers, true);
 		}
 		
-		protected bool DeepScanClass(UserDefinedType udt, MemberFilter vis, ref bool breakOnNextScope, bool resolveBaseClassIfRequired = false)
+		protected bool DeepScanClass(UserDefinedType udt, MemberFilter vis, bool resolveBaseClassIfRequired = false)
 		{
 			bool isBase = false;
 			
@@ -234,7 +228,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			
 			while(udt!= null)
 			{
-				if(scanChildren(udt.Definition as DBlockNode, vis, ref breakOnNextScope, false, isBase, false, takeStaticChildrenOnly))
+				if(scanChildren(udt.Definition as DBlockNode, vis, false, isBase, false, takeStaticChildrenOnly))
 					return true;
 				
 				if(udt is TemplateIntermediateType){
@@ -253,33 +247,14 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		}
 		
 		protected bool scanChildren(DBlockNode curScope, 
-		                  MemberFilter VisibleMembers, 
-		                  ref bool breakOnNextScope,
-		                  bool publicImports = false,
-		                  bool isBaseClass = false,
-		                  bool isMixinAst = false,
-		                 bool takeStaticChildrenOnly = false)
+									MemberFilter VisibleMembers,
+									bool publicImports = false,
+									bool isBaseClass = false,
+									bool isMixinAst = false,
+									bool takeStaticChildrenOnly = false)
 		{
-			if (!dontHandleTemplateParamsInNodeScan){
-				if (curScope.TemplateParameters != null && (VisibleMembers & MemberFilter.TypeParameters) != 0)
-				{
-					var t = ctxt.ScopedBlock;
-					while(t != null)
-					{
-						if(t == curScope)
-						{
-							if((breakOnNextScope = HandleItems(curScope.TemplateParameterNodes as IEnumerable<INode>)) &&
-				    			breakImmediately)
-								return true;
-							break;
-						}
-						t = t.Parent as IBlockNode;
-					}
-				}
-			}
-			else
-				dontHandleTemplateParamsInNodeScan = false;
-			
+			bool foundItems = false;
+
 			var ch = PrefilterSubnodes(curScope);
 			if (ch != null)
 				foreach (var n in ch)
@@ -302,8 +277,8 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					if (dn is DEnum && string.IsNullOrEmpty(dn.Name) && CanAddMemberOfType(VisibleMembers, dn))
 					{
 						var ch2 = PrefilterSubnodes(dn as DEnum);
-						if (ch2 != null && (breakOnNextScope = HandleItems(ch2) && breakImmediately))
-							return true;
+						if (ch2 != null)
+							foundItems |= HandleItems(ch2);
 						continue;
 					}
 
@@ -312,11 +287,33 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 						(dm3 != null && !(dm3.SpecialType == DMethod.MethodType.Normal || dm3.SpecialType == DMethod.MethodType.Delegate || dm3.Name != null)))
 						continue;
 
-					if ((breakOnNextScope = HandleItem(n)) && breakImmediately)
-						return true;
+					foundItems |= HandleItem(n);
 				}
+
+			if (foundItems)
+				return true;
+
+			if (!dontHandleTemplateParamsInNodeScan)
+			{
+				if (curScope.TemplateParameters != null && (VisibleMembers & MemberFilter.TypeParameters) != 0)
+				{
+					var t = ctxt.ScopedBlock;
+					while (t != null)
+					{
+						if (t == curScope)
+						{
+							if (HandleItems(curScope.TemplateParameterNodes as IEnumerable<INode>))
+								return true;
+							break;
+						}
+						t = t.Parent as IBlockNode;
+					}
+				}
+			}
+			else
+				dontHandleTemplateParamsInNodeScan = false;
 			
-			return (breakOnNextScope = HandleDBlockNode(curScope, VisibleMembers, publicImports)) && breakImmediately;
+			return HandleDBlockNode(curScope, VisibleMembers, publicImports);
 		}
 		
 		static bool IsConstOrStatic(DNode dn)
@@ -400,7 +397,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		/// (If CodeLocation.Empty given, this parameter will be ignored)
 		/// </summary>
 		/// <returns>True if scan shall stop, false if not</returns>
-		bool IterateThroughItemHierarchy(IStatement Statement, CodeLocation Caret, MemberFilter VisibleMembers)
+		bool ScanStatementHierarchy(IStatement Statement, CodeLocation Caret, MemberFilter VisibleMembers)
 		{
 			// To a prevent double entry of the same declaration, skip a most scoped declaration first
 			if (Statement is DeclarationStatement)
@@ -408,7 +405,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 			while (Statement != null)
 			{
-				if (HandleSingleStatement(Statement, Caret, VisibleMembers))
+				if (ScanSingleStatement(Statement, Caret, VisibleMembers))
 					return true;
 
 				Statement = Statement.Parent;
@@ -417,7 +414,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			return false;
 		}
 
-		bool HandleSingleStatement(IStatement Statement, CodeLocation Caret, MemberFilter VisibleMembers)
+		bool ScanSingleStatement(IStatement Statement, CodeLocation Caret, MemberFilter VisibleMembers)
 		{
 			if (Statement is ImportStatement)
 			{
@@ -469,15 +466,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				ctxt.CurrentContext.Set(back);
 
 				if ((r = DResolver.StripMemberSymbols(r)) != null)
-					if (r is TemplateIntermediateType)
-					{
-						var tr = (TemplateIntermediateType)r;
-						var dc = tr.Definition as DClassLike;
-
-						bool brk = false;
-						if (DeepScanClass(dc, VisibleMembers, ref brk) || brk)
+					if (r is TemplateIntermediateType && 
+						DeepScanClass((r as TemplateIntermediateType).Definition as DClassLike, VisibleMembers))
 							return true;
-					}
 			}
 
 			if (Statement is StatementContainingStatement)
@@ -505,9 +496,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 						var sc = (StatementCondition)s;
 
 						if (ctxt.CurrentContext.MatchesDeclarationEnvironment(sc.Condition))
-							return HandleSingleStatement(sc.ScopedStatement, Caret, VisibleMembers);
+							return ScanSingleStatement(sc.ScopedStatement, Caret, VisibleMembers);
 						else if (sc.ElseStatement != null)
-							return HandleSingleStatement(sc.ElseStatement, Caret, VisibleMembers);
+							return ScanSingleStatement(sc.ElseStatement, Caret, VisibleMembers);
 					}
 					
 					var ss = s as StaticStatement;
@@ -546,6 +537,8 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		/// </summary>
 		bool HandleDBlockNode(DBlockNode dbn, MemberFilter VisibleMembers, bool takePublicImportsOnly = false)
 		{
+			bool foundItems = false;
+
 			if (dbn != null && dbn.StaticStatements != null)
 			{
 				foreach (var stmt in dbn.StaticStatements)
@@ -562,36 +555,33 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 						 */
 						if (dstmt.Declarations != null)
 							foreach (var d in dstmt.Declarations)
-								if (HandleItem(d)) //TODO: Handle visibility?
-									return true;
+								foundItems |= HandleItem(d); //TODO: Handle visibility?
 
 						if (impStmt!=null)
 						{
 							foreach (var imp in impStmt.Imports)
 								if (string.IsNullOrEmpty(imp.ModuleAlias))
-									if (HandleNonAliasedImport(imp, VisibleMembers))
-										return true;
+									foundItems |= HandleNonAliasedImport(imp, VisibleMembers);
 						}
 					}
 					else if(stmt is MixinStatement)
 					{
-						if(MatchesCompilationEnv(stmt) && HandleMixin(stmt as MixinStatement,true,VisibleMembers))
-							return true;
+						if(MatchesCompilationEnv(stmt))
+							foundItems |= HandleMixin(stmt as MixinStatement,true,VisibleMembers);
 					}
 					else if(stmt is TemplateMixin)
 					{
-						if(MatchesCompilationEnv(stmt) && HandleUnnamedTemplateMixin(stmt as TemplateMixin, true, VisibleMembers))
-							return true;
+						if (MatchesCompilationEnv(stmt))
+							foundItems |= HandleUnnamedTemplateMixin(stmt as TemplateMixin, true, VisibleMembers);
 					}
 				}
 			}
 
 			// Every module imports 'object' implicitly
 			if (dbn is DModule && !takePublicImportsOnly)
-				if (HandleNonAliasedImport(_objectImport, VisibleMembers))
-					return true;
+				foundItems |= HandleNonAliasedImport(_objectImport, VisibleMembers);
 
-			return false;
+			return foundItems;
 		}
 		
 		bool MatchesCompilationEnv(StaticStatement ss)
@@ -641,8 +631,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		
 		bool ScanImportedModule(DModule module, MemberFilter VisibleMembers)
 		{
-			bool _u = false;
-			return scanChildren(module, VisibleMembers, ref _u, true);
+			return scanChildren(module, VisibleMembers, true);
 		}
 		#endregion
 		
@@ -667,8 +656,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					return ScanBlockUpward(ast, ast.EndLocation, vis);
 				else
 				{
-					bool _u = false;
-					return scanChildren(ast, vis, ref _u, isMixinAst:true);
+					return scanChildren(ast, vis, isMixinAst:true);
 				}
 			}
 			else // => MixinStatement
@@ -678,7 +666,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				// As above, disregard the caret position because 1) caret and parsed code do not match 
 				// and 2) the caret must be located somewhere after the mixin statement's end
 				if(bs!=null){
-					return IterateThroughItemHierarchy(bs, CodeLocation.Empty, vis);
+					return ScanStatementHierarchy(bs, CodeLocation.Empty, vis);
 				}
 			}
 			
@@ -743,7 +731,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					ctxt.PushNewScope(tmxTemplate.Definition);
 				ctxt.CurrentContext.IntroduceTemplateParameterTypes(tmxTemplate);
 				dontHandleTemplateParamsInNodeScan = true;
-				res |= DeepScanClass(tmxTemplate, vis, ref res);
+				res |= DeepScanClass(tmxTemplate, vis);
 				if(pop)
 					ctxt.Pop();
 				else

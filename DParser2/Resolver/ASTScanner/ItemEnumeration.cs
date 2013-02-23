@@ -86,16 +86,14 @@ namespace D_Parser.Resolver.ASTScanner
 		{
 			var scan = new MemberCompletionEnumeration(ctxt, cdgen) { isVarInst = isVarInstance };
 
-			bool _unused=false;
-			scan.DeepScanClass(udt, MemberFilter.Methods | MemberFilter.Types | MemberFilter.Variables, ref _unused);
+			scan.DeepScanClass(udt, MemberFilter.Methods | MemberFilter.Types | MemberFilter.Variables);
 		}
 		
 		public static void EnumChildren(ICompletionDataGenerator cdgen,ResolutionContext ctxt, IBlockNode block, bool isVarInstance)
 		{
 			var scan = new MemberCompletionEnumeration(ctxt, cdgen) { isVarInst = isVarInstance };
 
-			bool _unused=false;
-			scan.ScanBlock(block, CodeLocation.Empty, MemberFilter.Methods | MemberFilter.Types | MemberFilter.Variables, ref _unused);
+			scan.ScanBlock(block, CodeLocation.Empty, MemberFilter.Methods | MemberFilter.Types | MemberFilter.Variables);
 		}
 		
 		protected override bool HandleItem(INode n)

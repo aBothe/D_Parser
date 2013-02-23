@@ -190,8 +190,8 @@ else int C;");
 			pc.FinishedParsing += new ParseCache.ParseFinishedHandler(pc_FinishedParsing);
 			pc.FinishedUfcsCaching += new Action(() =>
 			{
-				Trace.WriteLine(string.Format("Finished UFCS analysis: {0} resolutions in {1}s; ~{2}ms/resolution", pc.UfcsCache.CachedMethods.Count,
-					pc.UfcsCache.CachingDuration.TotalSeconds, Math.Round(pc.UfcsCache.CachingDuration.TotalMilliseconds/pc.UfcsCache.CachedMethods.Count,3)), "ParserTests");
+				Trace.WriteLine(string.Format("Finished UFCS analysis: {0} resolutions in {1}s; ~{2}ms/resolution", pc.UfcsCache.MethodCacheCount,
+					pc.UfcsCache.CachingDuration.TotalSeconds, Math.Round(pc.UfcsCache.CachingDuration.TotalMilliseconds/pc.UfcsCache.MethodCacheCount,3)), "ParserTests");
 				//compareUfcsResults(pc.UfcsCache);
 			});
 

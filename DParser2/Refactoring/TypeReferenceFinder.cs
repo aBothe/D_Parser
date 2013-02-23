@@ -200,8 +200,7 @@ namespace D_Parser.Refactoring
 
 			// Make it as most performing as possible by avoiding unnecessary base types. 
 			// Aliases should be analyzed deeper though.
-			ctxt.CurrentContext.ContextDependentOptions |= 
-				ResolutionOptions.StopAfterFirstOverloads | 
+			ctxt.CurrentContext.ContextDependentOptions |=
 				ResolutionOptions.DontResolveBaseTypes | //TODO: Exactly find out which option can be enabled here. Resolving variables' types is needed sometimes - but only, when highlighting a variable reference is wanted explicitly.
 				ResolutionOptions.NoTemplateParameterDeduction | 
 				ResolutionOptions.ReturnMethodReferencesOnly;

@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
-using D_Parser.Dom;
-using D_Parser.Resolver.TypeResolution;
+﻿using D_Parser.Dom;
 using D_Parser.Parser;
+using D_Parser.Resolver.TypeResolution;
+using System.Collections.Generic;
 
 namespace D_Parser.Resolver.ASTScanner
 {
@@ -82,6 +82,7 @@ namespace D_Parser.Resolver.ASTScanner
 		
 		protected override bool HandleItem(PackageSymbol pack)
 		{
+			// Packages were filtered in PrefilterSubnodes already..so just add & return
 			matches_types.Add(pack);
 			return true;
 		}
@@ -100,8 +101,7 @@ namespace D_Parser.Resolver.ASTScanner
 		{
 			var scan = new SingleNodeNameScan(ctxt, name, idObject) { resultBase = resultBase };
 
-			bool _unused=false;
-			scan.ScanBlock(block, CodeLocation.Empty, MemberFilter.All, ref _unused);
+			scan.ScanBlock(block, CodeLocation.Empty, MemberFilter.All);
 
 			return scan.matches_types;
 		}

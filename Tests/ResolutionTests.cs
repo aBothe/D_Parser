@@ -20,7 +20,7 @@ namespace Tests
 	[TestFixture]
 	public class ResolutionTests
 	{
-		public static IAbstractSyntaxTree objMod = DParser.ParseString(@"module object;
+		public static DModule objMod = DParser.ParseString(@"module object;
 						alias immutable(char)[] string;
 						alias immutable(wchar)[] wstring;
 						alias immutable(dchar)[] dstring;
@@ -47,6 +47,80 @@ namespace Tests
 		{
 			var r = ResolutionContext.Create(pcl, new ConditionalCompilationFlags(new[]{"Windows","all"},1,true,null,0), scope, stmt);
 			return r;
+		}
+
+		[Test]
+		public void BasicResolution0()
+		{
+			var pcl = CreateCache(
+@"module modA; import modC;", // Searching for 'T' will always deliver the definition from A, never from B
+@"module modB; import modC, modD;", // Searching for 'T' will result in an ambigous definition, independently of any kinds of restricting constraints!
+@"module modC; 
+public import modD; 
+/** Class 1 */ 
+class T{}",
+
+@"module modD; 
+/** Class 2 */
+class T{ int t2; }",
+
+@"module modE; 
+/** Overload 1 */ 
+class U{} 
+/** Overload 2 */ 
+class U{}
+
+class N(X){ 
+class X { int m; }
+void foo() {}
+}",
+
+@"module modF;
+
+void ni() {}
+
+void asdf(int ni=23) {
+	if(t.myMember < 50)
+	{
+		bool ni = true;
+		ni;
+	}
+}");
+
+			var ctxt = CreateDefCtxt(pcl, pcl[0]["modA"]);
+
+			var t = TypeDeclarationResolver.ResolveIdentifier("T", ctxt, null);
+			Assert.That(t.Length, Is.EqualTo(1));
+			Assert.That((t[0] as DSymbol).Definition.Parent, Is.SameAs(pcl[0]["modC"]));
+
+			ctxt.CurrentContext.Set(pcl[0]["modC"]);
+			t = TypeDeclarationResolver.ResolveIdentifier("T", ctxt, null);
+			Assert.That(t.Length, Is.EqualTo(1));
+			Assert.That((t[0] as DSymbol).Definition.Parent, Is.SameAs(pcl[0]["modC"]));
+
+			ctxt.CurrentContext.Set(pcl[0]["modB"]);
+			t = TypeDeclarationResolver.ResolveIdentifier("T", ctxt, null);
+			Assert.That(t.Length, Is.EqualTo(2));
+
+			ctxt.ResolutionErrors.Clear();
+			var mod = pcl[0]["modE"];
+			ctxt.CurrentContext.Set(mod);
+			t = TypeDeclarationResolver.ResolveIdentifier("U", ctxt, null);
+			Assert.That(t.Length, Is.EqualTo(2));
+
+			ctxt.CurrentContext.Set((mod["N"][0] as DClassLike)["foo"][0] as DMethod);
+			t = TypeDeclarationResolver.ResolveIdentifier("X",ctxt,null);
+			Assert.That(t.Length, Is.EqualTo(1));
+			Assert.That(t[0], Is.TypeOf(typeof(ClassType)));
+
+			mod = pcl[0]["modF"];
+			var f = mod["asdf"][0] as DMethod;
+			ctxt.CurrentContext.Set(f, ((f.Body.SubStatements[0] as IfStatement).ThenStatement as BlockStatement).SubStatements[1]);
+			t = TypeDeclarationResolver.ResolveIdentifier("ni", ctxt, null);
+			Assert.That(t.Length, Is.EqualTo(2));
+
+			t = DResolver.FilterOutByResultPriority(ctxt, t).ToArray();
+			Assert.That(t.Length, Is.EqualTo(1));
 		}
 
 		[Test]

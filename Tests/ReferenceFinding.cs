@@ -65,7 +65,7 @@ void main()
 }
 ");
 
-			var res = TypeReferenceFinder.Scan((IAbstractSyntaxTree)pcl[0]["modA"], pcl);
+			var res = TypeReferenceFinder.Scan(pcl[0]["modA"], pcl);
 
 			//Assert.AreEqual(6, res.TypeMatches.Count);
 			//TODO: Correct variable recognization

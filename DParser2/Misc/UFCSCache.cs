@@ -115,7 +115,6 @@ namespace D_Parser.Misc
 		{
 			DMethod dm = null;
 			var ctxt = ResolutionContext.Create((ParseCacheList)pcl_shared, gFlags_shared, null);
-			ctxt.ContextIndependentOptions |= ResolutionOptions.StopAfterFirstOverloads;
 
 			while (queue.Count != 0)
 			{
