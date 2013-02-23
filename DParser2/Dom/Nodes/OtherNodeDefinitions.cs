@@ -22,7 +22,12 @@ namespace D_Parser.Dom
 
 		public override string ToString(bool Attributes, bool IncludePath)
 		{
-			return (IsAlias ? "alias " : "") + base.ToString(Attributes, IncludePath) + (Initializer != null ? (" = " + Initializer.ToString()) : "");
+			return ToString(Attributes, IncludePath, true);
+		}
+
+		public string ToString(bool Attributes, bool IncludePath, bool initializer = true)
+		{
+			return (IsAlias ? "alias " : "") + base.ToString(Attributes, IncludePath) + (initializer && Initializer != null ? (" = " + Initializer.ToString()) : "");
 		}
 
 		public bool IsConst
