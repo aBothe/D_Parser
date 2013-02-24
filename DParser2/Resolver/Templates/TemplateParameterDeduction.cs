@@ -129,10 +129,23 @@ namespace D_Parser.Resolver.Templates
 		/// </summary>
 		bool Set(ITemplateParameter p, ISemantic r, string name=null)
 		{
-			if (string.IsNullOrEmpty(name))
+			if (p == null)
+			{
+				if(name != null && TargetDictionary.ParameterOwner != null)
+					foreach(var tpar in TargetDictionary.ParameterOwner.TemplateParameters)
+						if (tpar.Name == name)
+						{
+							p = tpar;
+							break;
+						}
+
+				if(p == null)
+					throw new System.ArgumentNullException("p");
+			}
+			else if (string.IsNullOrEmpty(name))
 				name = p.Name;
 			
-			TemplateParameterSymbol rl=null;
+			TemplateParameterSymbol rl;
 			if (!TargetDictionary.TryGetValue(name, out rl) || rl == null)
 			{
 				TargetDictionary[name] = new TemplateParameterSymbol(p, r, null, TargetDictionary.ParameterOwner);

@@ -215,140 +215,128 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				foreach (var arg in call.Arguments)
 					callArguments.Add(E(arg));
 
-			#region Deduce template parameters and filter out unmatching overloads
-			bool hasUndeterminedArgs = false;
-			AbstractType[] templateParamFilteredOverloads = null;
-			// First add optionally given template params
-			// http://dlang.org/template.html#function-templates
-			var tplParamDeductionArguments = tix == null ?
-				new List<ISemantic>() :
-				TemplateInstanceHandler.PreResolveTemplateArgs(tix, ctxt, out hasUndeterminedArgs);
-
-			if(!hasUndeterminedArgs)
+			#region If explicit template type args were given, try to associate them with each overload
+			if (tix != null)
 			{
-				// Then add the arguments[' member types]
-				foreach (var arg in callArguments)
-					if (arg is VariableValue)
-						tplParamDeductionArguments.Add(EvaluateValue(arg as VariableValue, ValueProvider));
-					else if(arg is AbstractType)
-						tplParamDeductionArguments.Add(DResolver.StripAliasSymbol(arg as AbstractType));
-					else
-						tplParamDeductionArguments.Add(arg);
-	
-				templateParamFilteredOverloads= TemplateInstanceHandler.DeduceParamsAndFilterOverloads(
-					methodOverloads,
-					tplParamDeductionArguments.Count > 0 ? tplParamDeductionArguments.ToArray() : null,
-					true, ctxt);
+				var deducedOverloads = TemplateInstanceHandler.DeduceParamsAndFilterOverloads(methodOverloads, tix, ctxt, true);
+				methodOverloads.Clear();
+				if(deducedOverloads != null)
+					methodOverloads.AddRange(deducedOverloads);
 			}
 			#endregion
 
 			#region Filter by parameter-argument comparison
-			bool hasHandledUfcsResultBefore = false;
 			var argTypeFilteredOverloads = new List<AbstractType>();
-
-			if(hasUndeterminedArgs)
-				argTypeFilteredOverloads.AddRange(methodOverloads);
-			else if (templateParamFilteredOverloads != null)
-				foreach (var ov in templateParamFilteredOverloads)
+			bool hasHandledUfcsResultBefore = false;
+			
+			foreach (var ov in methodOverloads)
+			{
+				if (ov is MemberSymbol)
 				{
-					if (ov is MemberSymbol)
+					var ms = ov as MemberSymbol;
+					var dm = ms.Definition as DMethod;
+
+					if (dm != null)
 					{
-						var ms = ov as MemberSymbol;
-						var dm = ms.Definition as DMethod;
-						bool add = false;
-
-						if (dm != null)
+						// In the case of an ufcs, insert the first argument into the CallArguments list
+						if (ms.IsUFCSResult && !hasHandledUfcsResultBefore)
 						{
-							// If it's sure that we got a ufcs call here, add the base expression's type as first argument type
-							if(ms.IsUFCSResult && !hasUndeterminedArgs){
-								callArguments.Insert(0, eval ? (ISemantic)baseValue : ((MemberSymbol)baseExpression[0]).Base);
-								hasUndeterminedArgs = true;
-							}
-							else if(!ms.IsUFCSResult && hasUndeterminedArgs) // In the rare case of having a ufcs result occuring _after_ a normal member result, remove the initial arg again
+							callArguments.Insert(0, eval ? (ISemantic)baseValue : ((MemberSymbol)baseExpression[0]).Base);
+							hasHandledUfcsResultBefore = true;
+						}
+						else if (!ms.IsUFCSResult && hasHandledUfcsResultBefore) // In the rare case of having a ufcs result occuring _after_ a normal member result, remove the initial arg again
+						{
+							callArguments.RemoveAt(0);
+							hasHandledUfcsResultBefore = false;
+						}
+						
+						//ctxt.CurrentContext.IntroduceTemplateParameterTypes(ms);
+
+						var deducedTypeDict = new DeducedTypeDictionary(ms.DeducedTypes) { ParameterOwner = ms.Definition };
+						if(dm.TemplateParameters != null)
+							foreach(var tpar in dm.TemplateParameters)
+								if(!deducedTypeDict.ContainsKey(tpar.Name))
+									deducedTypeDict[tpar.Name] = null;
+						var templateParamDeduction = new TemplateParameterDeduction(deducedTypeDict, ctxt);
+
+						bool add = false;
+						if (callArguments.Count == 0 && dm.Parameters.Count == 0)
+							add=true;
+						else
+							for (int i=0; i< dm.Parameters.Count; i++)
 							{
-								callArguments.RemoveAt(0);
-								hasUndeterminedArgs = false;
-							}
-							
-							ctxt.CurrentContext.IntroduceTemplateParameterTypes(ms);
-
-							add = false;
-
-							if (callArguments.Count == 0 && dm.Parameters.Count == 0)
-								add=true;
-							else
-								for (int i=0; i< dm.Parameters.Count; i++)
-								{
-									var paramType = DResolver.StripMemberSymbols(TypeDeclarationResolver.ResolveSingle(dm.Parameters[i].Type, ctxt));
+								/*var paramType = DResolver.StripMemberSymbols(TypeDeclarationResolver.ResolveSingle(dm.Parameters[i].Type, ctxt));
 								
-									if(paramType is TypeTuple && i == dm.Parameters.Count-1)
+								//TODO: Varargs!
+
+								if(paramType is TypeTuple && i == dm.Parameters.Count-1)
+								{
+									var tup = paramType as TypeTuple;
+									if(tup.Items == null || tup.Items.Length == 0)
 									{
-										var tup = paramType as TypeTuple;
-										if(tup.Items == null || tup.Items.Length == 0)
-										{
-											// writeln!()() -- got one type&expression tuple but no further arguments.
-											// writeln!()("herp",1234) -- arguments, but none for the type tuple => No match! 
-											if(callArguments.Count <= dm.Parameters.Count){
-												add = true;
-												break;
-											}
-										}
-										else
-										{
+										// writeln!()() -- got one type&expression tuple but no further arguments.
+										// writeln!()("herp",1234) -- arguments, but none for the type tuple => No match! 
+										if(callArguments.Count <= dm.Parameters.Count){
 											add = true;
-											for(int j = tup.Items.Length; j != 0; j--)
-											{
-												if(callArguments.Count <= i+j ||
-												  !ResultComparer.IsImplicitlyConvertible(callArguments[i+j], tup.Items[j], ctxt))
-												{
-													add = false;
-													break;
-												}
-											}
+											break;
 										}
-									}
-									
-									else if (i < callArguments.Count)
-									{
-										if(ResultComparer.IsImplicitlyConvertible(callArguments[i], paramType, ctxt))
-											add = true;
 									}
 									else
 									{
-										// If there are more parameters than arguments given, check if the param has default values
-										if(dm.Parameters[i] is DVariable && (dm.Parameters[i] as DVariable).Initializer!=null)
-											add = true;
-										// Assume that all further method parameters do have default values - and don't check further parameters
-										break;
+										add = true;
+										for(int j = tup.Items.Length; j != 0; j--)
+										{
+											if(callArguments.Count <= i+j ||
+												!ResultComparer.IsImplicitlyConvertible(callArguments[i+j], tup.Items[j], ctxt))
+											{
+												add = false;
+												break;
+											}
+										}
 									}
 								}
-
-							if (add)
-							{
-								var bt=ms.Base ?? TypeDeclarationResolver.GetMethodReturnType(dm, ctxt);
-
-								if(eval || !returnBaseTypeOnly)
-									argTypeFilteredOverloads.Add(ms.Base == null ? new MemberSymbol(dm, bt, ms.DeclarationOrExpressionBase, ms.DeducedTypes) : ms);
+									
+								else*/ if (i < callArguments.Count)
+								{
+									if (templateParamDeduction.HandleDecl(null, dm.Parameters[i].Type, callArguments[i]))
+										add = true;
+								}
 								else
-									argTypeFilteredOverloads.Add(bt);
+								{
+									// If there are more parameters than arguments given, check if the param has default values
+									if(dm.Parameters[i] is DVariable && (dm.Parameters[i] as DVariable).Initializer!=null)
+										add = true;
+									// Assume that all further method parameters do have default values - and don't check further parameters
+									break;
+								}
 							}
 
-							ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(ms);
-						}
-					}
-					else if(ov is DelegateType)
-					{
-						var dg = (DelegateType)ov;
-						var bt = TypeDeclarationResolver.GetMethodReturnType(dg, ctxt);
+						if (add && TemplateInstanceHandler.AllParamatersSatisfied(deducedTypeDict))
+						{
+							var bt=ms.Base ?? TypeDeclarationResolver.GetMethodReturnType(dm, ctxt);
 
-						//TODO: Param-Arg check
-						
-						if (eval || !returnBaseTypeOnly)
-							argTypeFilteredOverloads.Add(new DelegateType(bt, dg.DeclarationOrExpressionBase as FunctionLiteral, dg.Parameters));
-						else
-							argTypeFilteredOverloads.Add(bt);
+							if(eval || !returnBaseTypeOnly)
+								argTypeFilteredOverloads.Add(ms.Base == null ? new MemberSymbol(dm, bt, ms.DeclarationOrExpressionBase, ms.DeducedTypes) : ms);
+							else
+								argTypeFilteredOverloads.Add(bt);
+						}
+
+						//ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(ms);
 					}
 				}
+				else if(ov is DelegateType)
+				{
+					var dg = (DelegateType)ov;
+					var bt = TypeDeclarationResolver.GetMethodReturnType(dg, ctxt);
+
+					//TODO: Param-Arg check
+						
+					if (eval || !returnBaseTypeOnly)
+						argTypeFilteredOverloads.Add(new DelegateType(bt, dg.DeclarationOrExpressionBase as FunctionLiteral, dg.Parameters));
+					else
+						argTypeFilteredOverloads.Add(bt);
+				}
+			}
 			#endregion
 
 			if (eval)

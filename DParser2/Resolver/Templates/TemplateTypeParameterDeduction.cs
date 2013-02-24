@@ -48,7 +48,7 @@ namespace D_Parser.Resolver.Templates
 			return true;
 		}
 
-		bool HandleDecl(TemplateTypeParameter p ,ITypeDeclaration td, ISemantic rr)
+		public bool HandleDecl(TemplateTypeParameter p ,ITypeDeclaration td, ISemantic rr)
 		{
 			if (td is IdentifierDeclaration)
 				return HandleDecl(p,(IdentifierDeclaration)td, rr);

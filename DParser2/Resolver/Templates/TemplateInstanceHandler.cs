@@ -78,11 +78,11 @@ namespace D_Parser.Resolver.TypeResolution
 
 		public static AbstractType[] DeduceParamsAndFilterOverloads(IEnumerable<AbstractType> rawOverloadList,
 			TemplateInstanceExpression templateInstanceExpr,
-			ResolutionContext ctxt)
+			ResolutionContext ctxt, bool isMethodCall = false)
 		{
 			bool hasUndeterminedArgs;
 			var args = PreResolveTemplateArgs(templateInstanceExpr, ctxt, out hasUndeterminedArgs);
-			return hasUndeterminedArgs ? rawOverloadList.ToArray() : DeduceParamsAndFilterOverloads(rawOverloadList, args, false, ctxt);
+			return hasUndeterminedArgs ? rawOverloadList.ToArray() : DeduceParamsAndFilterOverloads(rawOverloadList, args, isMethodCall, ctxt);
 		}
 
 		/// <summary>

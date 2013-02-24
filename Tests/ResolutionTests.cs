@@ -787,6 +787,21 @@ mixin(def!(-1,""bar""));
 			Assert.That((t as MemberSymbol).Base,Is.TypeOf(typeof(PrimitiveType)));
 			Assert.That(((t as MemberSymbol).Base as PrimitiveType).TypeToken,Is.EqualTo(DTokens.Bool));
 		}
+
+		[Test]
+		public void TestParamDeduction10()
+		{
+			var pcl = CreateCache(@"module modA;
+
+void foo(T)(int a) {}");
+
+			var ctxt = CreateDefCtxt(pcl, pcl[0]["modA"]);
+			ctxt.ContextIndependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
+
+			var x = DParser.ParseExpression("foo(123)");
+			var t = Evaluation.EvaluateType(x, ctxt);
+			Assert.That(x, Is.Null);
+		}
 		
 		[Test]
 		public void IdentifierOnlyTemplateDeduction()
