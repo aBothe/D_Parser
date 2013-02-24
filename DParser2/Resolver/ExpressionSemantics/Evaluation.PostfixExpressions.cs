@@ -59,9 +59,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		ISemantic E(PostfixExpression_MethodCall call, bool returnBaseTypeOnly=true)
 		{
 			// Deduce template parameters later on
-			AbstractType[] baseExpression = null;
-			ISymbolValue baseValue = null;
-			TemplateInstanceExpression tix = null;
+			AbstractType[] baseExpression;
+			ISymbolValue baseValue;
+			TemplateInstanceExpression tix;
 			
 			GetRawCallOverloads(call, out baseExpression, out baseValue, out tix);
 
