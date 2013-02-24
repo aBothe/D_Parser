@@ -250,8 +250,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							hasHandledUfcsResultBefore = false;
 						}
 						
-						//ctxt.CurrentContext.IntroduceTemplateParameterTypes(ms);
-
 						var deducedTypeDict = new DeducedTypeDictionary(ms.DeducedTypes) { ParameterOwner = ms.Definition };
 						if(dm.TemplateParameters != null)
 							foreach(var tpar in dm.TemplateParameters)
@@ -311,17 +309,31 @@ namespace D_Parser.Resolver.ExpressionSemantics
 								}
 							}
 
-						if (add && TemplateInstanceHandler.AllParamatersSatisfied(deducedTypeDict))
+						// If type params were unassigned, try to take the defaults
+						foreach (var tpar in dm.TemplateParameters)
 						{
+							if (deducedTypeDict[tpar.Name] == null)
+							{
+								add = templateParamDeduction.Handle(tpar, null);
+								if (!add)
+									break;
+							}
+						}
+
+						if (add && deducedTypeDict.AllParamatersSatisfied)
+						{
+							ms.DeducedTypes = deducedTypeDict.ToReadonly();
+							ctxt.CurrentContext.IntroduceTemplateParameterTypes(ms);
+
 							var bt=ms.Base ?? TypeDeclarationResolver.GetMethodReturnType(dm, ctxt);
+
+							ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(ms);
 
 							if(eval || !returnBaseTypeOnly)
 								argTypeFilteredOverloads.Add(ms.Base == null ? new MemberSymbol(dm, bt, ms.DeclarationOrExpressionBase, ms.DeducedTypes) : ms);
 							else
 								argTypeFilteredOverloads.Add(bt);
 						}
-
-						//ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(ms);
 					}
 				}
 				else if(ov is DelegateType)
@@ -354,8 +366,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			{
 				// Check if one overload remains and return that one.
 				ctxt.CheckForSingleResult(argTypeFilteredOverloads.ToArray(), call);
-				return argTypeFilteredOverloads != null && argTypeFilteredOverloads.Count != 0 ? 
-					argTypeFilteredOverloads[0] : null;
+				return argTypeFilteredOverloads.Count != 0 ? argTypeFilteredOverloads[0] : null;
 			}
 		}
 

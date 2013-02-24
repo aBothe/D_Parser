@@ -28,5 +28,17 @@ namespace D_Parser.Resolver.Templates
 		{
 			return new ReadOnlyCollection<TemplateParameterSymbol>(this.Values.ToList());
 		}
+
+		public bool AllParamatersSatisfied
+		{
+			get
+			{
+				foreach (var kv in this)
+					if (kv.Value == null)
+						return false;
+
+				return true;
+			}
+		}
 	}
 }

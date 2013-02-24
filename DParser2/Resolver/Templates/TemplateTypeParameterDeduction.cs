@@ -15,22 +15,7 @@ namespace D_Parser.Resolver.Templates
 		{
 			// if no argument given, try to handle default arguments
 			if (arg == null)
-			{
-				if (p.Default == null)
-					return false;
-				else
-				{
-					IStatement stmt = null;
-					ctxt.PushNewScope(DResolver.SearchBlockAt(ctxt.ScopedBlock.NodeRoot as IBlockNode, p.Default.Location, out stmt),stmt);
-
-					var defaultTypeRes = TypeDeclarationResolver.Resolve(p.Default, ctxt);
-					bool b = false;
-					if (defaultTypeRes != null)
-						b = Set(p, defaultTypeRes.First());
-					ctxt.Pop();
-					return b;
-				}
-			}
+				return TryAssignDefaultType(p);
 
 			// If no spezialization given, assign argument immediately
 			if (p.Specialization == null)
@@ -46,6 +31,22 @@ namespace D_Parser.Resolver.Templates
 				TargetDictionary[p.Name] = new TemplateParameterSymbol(p, arg);
 
 			return true;
+		}
+
+		public bool TryAssignDefaultType(TemplateTypeParameter p)
+		{
+			if (p == null || p.Default == null)
+				return false;
+
+			IStatement stmt = null;
+			ctxt.PushNewScope(DResolver.SearchBlockAt(ctxt.ScopedBlock.NodeRoot as IBlockNode, p.Default.Location, out stmt), stmt);
+
+			var defaultTypeRes = TypeDeclarationResolver.Resolve(p.Default, ctxt);
+			var b = defaultTypeRes != null && Set(p, defaultTypeRes.First());
+
+			ctxt.Pop();
+
+			return b;
 		}
 
 		public bool HandleDecl(TemplateTypeParameter p ,ITypeDeclaration td, ISemantic rr)

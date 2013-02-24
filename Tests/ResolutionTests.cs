@@ -793,14 +793,22 @@ mixin(def!(-1,""bar""));
 		{
 			var pcl = CreateCache(@"module modA;
 
-void foo(T)(int a) {}");
+void foo(T)(int a) {}
+void foo2(T=double)(bool b) {}");
 
 			var ctxt = CreateDefCtxt(pcl, pcl[0]["modA"]);
 			ctxt.ContextIndependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
 
 			var x = DParser.ParseExpression("foo(123)");
 			var t = Evaluation.EvaluateType(x, ctxt);
-			Assert.That(x, Is.Null);
+			Assert.That(t, Is.Null);
+
+			x = DParser.ParseExpression("foo2(true)");
+			t = Evaluation.EvaluateType(x, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			var ms = t as MemberSymbol;
+			Assert.That(ms.DeducedTypes, Is.Not.Null);
+			Assert.That(ms.DeducedTypes[0].Base, Is.TypeOf(typeof(PrimitiveType)));
 		}
 		
 		[Test]

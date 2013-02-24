@@ -310,17 +310,8 @@ namespace D_Parser.Resolver.TypeResolution
 					return false;
 			}
 			// There might be too few args - but that doesn't mean that it's not correct - it's only required that all parameters got satisfied with a type
-			else if (!AllParamatersSatisfied(deducedTypes))
+			else if (!deducedTypes.AllParamatersSatisfied)
 				return false;
-
-			return true;
-		}
-
-		public static bool AllParamatersSatisfied(DeducedTypeDictionary deductions)
-		{
-			foreach (var kv in deductions)
-				if (kv.Value == null || kv.Value==null)
-					return false;
 
 			return true;
 		}
