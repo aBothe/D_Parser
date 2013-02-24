@@ -14,15 +14,53 @@ namespace D_Parser.Resolver.Templates
 		/// Used for final template parameter symbol creation.
 		/// Might be specified for better code completion because parameters can be identified with the owner node now.
 		/// </summary>
-		public DNode ParameterOwner;
+		public readonly DNode ParameterOwner;
+		public readonly ITemplateParameter[] ExpectedParameters;
 
 		public DeducedTypeDictionary() { }
-		public DeducedTypeDictionary(IEnumerable<TemplateParameterSymbol> l)
+
+		public DeducedTypeDictionary(ITemplateParameter[] parameters)
 		{
+			ExpectedParameters = parameters;
+			if (parameters != null)
+			{
+				foreach (var tpar in parameters)
+				{
+					this[tpar.Name] = null;
+				}
+			}
+		}
+
+		public DeducedTypeDictionary(DNode owner)
+		{
+			ParameterOwner = owner;
+			if (owner.TemplateParameters != null)
+			{
+				ExpectedParameters = owner.TemplateParameters;
+				foreach (var tpar in owner.TemplateParameters)
+					this[tpar.Name] = null;
+			}
+		}
+		public DeducedTypeDictionary(DSymbol ms)
+		{
+			ParameterOwner = ms.Definition;
+			ExpectedParameters = ParameterOwner.TemplateParameters;
+
+			if (ms.DeducedTypes != null)
+				foreach (var i in ms.DeducedTypes)
+					this[i.Name] = i;
+		}
+		/*
+		public DeducedTypeDictionary(IEnumerable<TemplateParameterSymbol> l, DNode parameterOwner)
+		{
+			ParameterOwner = parameterOwner;
+			if (parameterOwner != null)
+				ExpectedParameters = parameterOwner.TemplateParameters;
+
 			if (l != null)
 				foreach (var i in l)
-					Add(i.Name, i);
-		}
+					this[i.Name] = i;
+		}*/
 
 		public ReadOnlyCollection<TemplateParameterSymbol> ToReadonly()
 		{

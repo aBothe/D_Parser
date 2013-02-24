@@ -21,7 +21,7 @@ namespace TestTool
 			sw2.Start();
 			var ast = DParser.ParseString(code, true);
 			sw2.Stop();*/
-			(new ResolutionTests()).TestParamDeduction10();
+			(new EvaluationTests()).TestIsExpression();
 			return;
 			// Indent testing
 			/*var code = @"

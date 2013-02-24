@@ -210,6 +210,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			// Get all arguments' types
 			var callArguments = new List<ISemantic>();
+			bool hasNonFinalArgs = false;
 
 			if (call.Arguments != null)
 				foreach (var arg in call.Arguments)
@@ -218,7 +219,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			#region If explicit template type args were given, try to associate them with each overload
 			if (tix != null)
 			{
-				var deducedOverloads = TemplateInstanceHandler.DeduceParamsAndFilterOverloads(methodOverloads, tix, ctxt, true);
+				var args = TemplateInstanceHandler.PreResolveTemplateArgs(tix, ctxt, out hasNonFinalArgs);
+				var deducedOverloads = TemplateInstanceHandler.DeduceParamsAndFilterOverloads(methodOverloads, args, true, ctxt, hasNonFinalArgs);
 				methodOverloads.Clear();
 				if(deducedOverloads != null)
 					methodOverloads.AddRange(deducedOverloads);
@@ -250,7 +252,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							hasHandledUfcsResultBefore = false;
 						}
 						
-						var deducedTypeDict = new DeducedTypeDictionary(ms.DeducedTypes) { ParameterOwner = ms.Definition };
+						var deducedTypeDict = new DeducedTypeDictionary(ms);
 						if(dm.TemplateParameters != null)
 							foreach(var tpar in dm.TemplateParameters)
 								if(!deducedTypeDict.ContainsKey(tpar.Name))
@@ -310,17 +312,28 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							}
 
 						// If type params were unassigned, try to take the defaults
-						foreach (var tpar in dm.TemplateParameters)
+						if (dm.TemplateParameters != null)
 						{
-							if (deducedTypeDict[tpar.Name] == null)
+							foreach (var tpar in dm.TemplateParameters)
 							{
-								add = templateParamDeduction.Handle(tpar, null);
-								if (!add)
-									break;
+								if (deducedTypeDict[tpar.Name] == null)
+								{
+									add = templateParamDeduction.Handle(tpar, null);
+									if (!add)
+									{
+										if (hasNonFinalArgs)
+										{
+											deducedTypeDict[tpar.Name] = new TemplateParameterSymbol(tpar, null);
+											add = true;
+										}
+										else
+											break;
+									}
+								}
 							}
 						}
 
-						if (add && deducedTypeDict.AllParamatersSatisfied)
+						if (add && (deducedTypeDict.AllParamatersSatisfied || hasNonFinalArgs))
 						{
 							ms.DeducedTypes = deducedTypeDict.ToReadonly();
 							ctxt.CurrentContext.IntroduceTemplateParameterTypes(ms);

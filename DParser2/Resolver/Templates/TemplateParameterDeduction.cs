@@ -131,16 +131,18 @@ namespace D_Parser.Resolver.Templates
 		{
 			if (p == null)
 			{
-				if(name != null && TargetDictionary.ParameterOwner != null)
-					foreach(var tpar in TargetDictionary.ParameterOwner.TemplateParameters)
+				if (name != null  && TargetDictionary.ExpectedParameters != null)
+				{
+					foreach (var tpar in TargetDictionary.ExpectedParameters)
 						if (tpar.Name == name)
 						{
 							p = tpar;
 							break;
 						}
 
-				if(p == null)
-					throw new System.ArgumentNullException("p");
+					if (p == null)
+						throw new System.ArgumentNullException("p");
+				}
 			}
 			else if (string.IsNullOrEmpty(name))
 				name = p.Name;

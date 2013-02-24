@@ -84,7 +84,7 @@ namespace D_Parser.Resolver.Templates
 			if (id.InnerDeclaration == null && Contains(id.Id) && !id.ModuleScoped)
 			{
 				// Associate template param with r
-				return Set(p, r, id.Id);
+				return Set((p != null && id.Id == p.Name) ? p : null, r, id.Id);
 			}
 
 			/*

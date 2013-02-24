@@ -313,10 +313,7 @@ class Blah(T){ T b; }");
 		[Test]
 		public void BasicResolution4()
 		{
-			var pcl = CreateCache(@"module modA;
-
-
-");
+			var pcl = CreateCache(@"module modA;");
 			var ctxt = CreateDefCtxt(pcl, pcl[0]["modA"]);
 
 			var ts = TypeDeclarationResolver.Resolve(new IdentifierDeclaration("string"), ctxt);
@@ -794,7 +791,8 @@ mixin(def!(-1,""bar""));
 			var pcl = CreateCache(@"module modA;
 
 void foo(T)(int a) {}
-void foo2(T=double)(bool b) {}");
+void foo2(T=double)(bool b) {}
+V foo3(V)(int a,V v) {}");
 
 			var ctxt = CreateDefCtxt(pcl, pcl[0]["modA"]);
 			ctxt.ContextIndependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
@@ -809,6 +807,14 @@ void foo2(T=double)(bool b) {}");
 			var ms = t as MemberSymbol;
 			Assert.That(ms.DeducedTypes, Is.Not.Null);
 			Assert.That(ms.DeducedTypes[0].Base, Is.TypeOf(typeof(PrimitiveType)));
+
+			x = DParser.ParseExpression("foo3(123,\"asdf\")");
+			t = Evaluation.EvaluateType(x, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			ms = t as MemberSymbol;
+			var tps = ms.Base as TemplateParameterSymbol;
+			Assert.That(tps, Is.Not.Null);
+			Assert.That(tps.Base, Is.TypeOf(typeof(ArrayType)));
 		}
 		
 		[Test]
@@ -853,6 +859,7 @@ void foo(U)(U u)
 	tmplFoo!U;
 	tmplFoo2!U;
 	tmplBar!U(u);
+	tmplFoo2!(int[])(123);
 	tmplFoo2!U(123);
 }");
 			
@@ -884,14 +891,15 @@ void foo(U)(U u)
 			Assert.That(t[0], Is.TypeOf(typeof(MemberSymbol)));
 			
 			t_ = Evaluation.EvaluateType(ex, ctxt);
-			Assert.That(t_ , Is.TypeOf(typeof(MemberSymbol)));
-			Assert.That((t_ as MemberSymbol).Base, Is.TypeOf(typeof(PointerType)));
+			Assert.That(t_, Is.TypeOf(typeof(PointerType)));
 			
 			ex = (foo.Body.SubStatements[3] as ExpressionStatement).Expression;
-			
 			t_ = Evaluation.EvaluateType(ex, ctxt);
-			Assert.That(t_ , Is.TypeOf(typeof(MemberSymbol)));
-			Assert.That((t_ as MemberSymbol).Base, Is.TypeOf(typeof(ArrayType)));
+			Assert.That(t_, Is.TypeOf(typeof(ArrayType)));
+
+			ex = (foo.Body.SubStatements[4] as ExpressionStatement).Expression;
+			t_ = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(t_, Is.TypeOf(typeof(ArrayType)));
 		}
 		
 		[Test]

@@ -101,9 +101,7 @@ namespace D_Parser.Resolver
 
 					if (par != null && par.TemplateParameters != null)
 					{
-						var dedParam = new DeducedTypeDictionary { ParameterOwner=par };
-						foreach (var tp in par.TemplateParameters)
-							dedParam[tp.Name] = null;
+						var dedParam = new DeducedTypeDictionary(par);
 
 						return new TemplateParameterDeduction(dedParam, ctxt).Handle(tpn.TemplateParameter, resToCheck);
 					}

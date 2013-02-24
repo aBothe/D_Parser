@@ -303,7 +303,7 @@ A a;");
 
 			var v = Evaluation.EvaluateValue(e, vp);
 
-			Assert.IsInstanceOfType(typeof(PrimitiveValue),v);
+			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
 			var pv = (PrimitiveValue)v;
 			Assert.AreEqual(pv.BaseTypeToken, DTokens.Bool, "Type of 'is(" + IsExpressionCode + ")' result must be bool");
 			return pv.Value == 1M;
