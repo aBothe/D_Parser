@@ -657,9 +657,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				else if (foreExpression is PointerType)
 					return new ArrayAccessSymbol(x,((PointerType)foreExpression).Base);
 
-				else if (foreExpression is TypeTuple)
+				else if (foreExpression is DTuple)
 				{
-					var tt = foreExpression as TypeTuple;
+					var tt = foreExpression as DTuple;
 
 					if (x.Arguments != null && x.Arguments.Length != 0)
 					{

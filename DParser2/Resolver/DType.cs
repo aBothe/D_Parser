@@ -7,6 +7,7 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
 using D_Parser.Resolver.Templates;
 using D_Parser.Resolver.ExpressionSemantics;
+using System.Text;
 
 namespace D_Parser.Resolver
 {
@@ -528,39 +529,48 @@ namespace D_Parser.Resolver
 	#endregion
 
 	/// <summary>
-	/// Contains an array of zero or more type definitions.
-	/// Used for template parameter-argument deduction.
+	/// A Tuple is not a type, an expression, or a symbol. It is a sequence of any mix of types, expressions or symbols.
 	/// </summary>
-	public class TypeTuple : AbstractType
+	public class DTuple : AbstractType
 	{
-		public readonly AbstractType[] Items;
+		public readonly ISemantic[] Items;
 
-		public TypeTuple(ISyntaxRegion td,IEnumerable<AbstractType> items) : base(td)
+		public DTuple(ISyntaxRegion td,IEnumerable<ISemantic> items) : base(td)
 		{
-			if (items is AbstractType[])
-				Items = (AbstractType[])items;
+			if (items is ISemantic[])
+				Items = (ISemantic[])items;
 			else if (items != null)
 				Items = items.ToArray();
 		}
 
 		public override string ToCode()
 		{
-			var s = "";
+			var sb = new StringBuilder("(");
 
-			if(Items!=null)
+			if (Items != null && Items.Length != 0)
 				foreach (var i in Items)
-					s += i.ToCode() + ",";
+				{
+					sb.Append(i.ToCode()).Append(',');
+				}
+			else
+				return "()";
 
-			return s.TrimEnd(',');
+			return sb.Remove(sb.Length-1,1).Append(')').ToString();
 		}
-	}
 
-	public class ExpressionTuple : AbstractType
-	{
-
-		public override string ToCode()
+		public bool IsExpressionTuple
 		{
-			throw new NotImplementedException();
+			get {
+				return Items != null && Items.All((i) => i is ISymbolValue);
+			}
+		}
+
+		public bool IsTypeTuple
+		{
+			get
+			{
+				return Items != null && Items.All((i) => i is AbstractType);
+			}
 		}
 	}
 }

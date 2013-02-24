@@ -150,12 +150,12 @@ namespace D_Parser.Resolver
 					return IsImplicitlyConvertible(ar1.Base, ar2.Base, ctxt);
 			}
 
-			else if (resToCheck is TypeTuple && targetType is TypeTuple)
+			else if (resToCheck is DTuple && targetType is DTuple)
 			{
-				return true;
-			}
-			else if (resToCheck is ExpressionTuple && targetType is ExpressionTuple)
-			{
+				var tup1 = resToCheck as DTuple;
+				var tup2 = resToCheck as DTuple;
+
+				//TODO
 				return true;
 			}
 			/*else if (resultToCheck is ExpressionValueResult && targetType is ExpressionValue)

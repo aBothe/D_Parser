@@ -479,10 +479,10 @@ template Tmpl(){
 			x = DParser.ParseExpression("__traits(getOverloads, S, \"bar\")");
 			v = Evaluation.EvaluateValue(x, ctxt);
 			Assert.That(v, Is.TypeOf(typeof(TypeValue)));
-			Assert.That((v as TypeValue).RepresentedType, Is.TypeOf(typeof(TypeTuple)));
+			Assert.That((v as TypeValue).RepresentedType, Is.TypeOf(typeof(DTuple)));
 			
 			t = Evaluation.EvaluateType(x, ctxt);
-			Assert.That(t, Is.TypeOf(typeof(TypeTuple)));
+			Assert.That(t, Is.TypeOf(typeof(DTuple)));
 			
 			
 			x = DParser.ParseExpression("__traits(getProtection, D.privInt)");

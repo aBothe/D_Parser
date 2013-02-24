@@ -202,9 +202,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							break;
 					}
 				}
-				else if(InitialResult is TypeTuple)
+				else if(InitialResult is DTuple)
 				{
-					var tt = InitialResult as TypeTuple;
+					var tt = InitialResult as DTuple;
 					
 					if(propertyIdentifier == "length"){
 						if(Evaluate)
@@ -213,6 +213,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							"Returns number of values in the type tuple.",
 							ctxt.ParseCache.SizeT, relatedNode, idContainter);							
 					}
+
+					//TODO: Implement remaining properties
 				}
 				else if(InitialResult is DelegateType)
 				{

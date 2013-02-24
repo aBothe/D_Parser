@@ -351,16 +351,14 @@ namespace D_Parser.Misc.Mangling
 				
 				case 'B':
 					len = (int)Number();
-					var items = new List<AbstractType>();
+					var items = new AbstractType[len];
 					var c = (char)r.Read();
-					for(;len > 0; len--)
+					for (int i = 0; i < len; i++)
 					{
-						AbstractType item;
-						var unused = Argument(ref c, out item);
-						items.Add(item);
+						Argument(ref c, out items[i]);
 					}
 					
-					return new TypeTuple(null, items);
+					return new DTuple(null, items);
 			}
 			
 			return null;

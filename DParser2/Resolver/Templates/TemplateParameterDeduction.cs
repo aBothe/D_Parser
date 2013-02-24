@@ -91,25 +91,20 @@ namespace D_Parser.Resolver.Templates
 
 		public bool Handle(TemplateTupleParameter p, IEnumerable<ISemantic> arguments)
 		{
-			var l = new List<AbstractType>();
+			var l = new List<ISemantic>();
 
 			if(arguments != null)
 				foreach (var arg in arguments)
-					if(arg is TypeTuple) // If a type tuple was given already, add its items instead of the tuple itself
+					if(arg is DTuple) // If a type tuple was given already, add its items instead of the tuple itself
 					{
-						var tt = arg as TypeTuple;
+						var tt = arg as DTuple;
 						if(tt.Items != null)
 							l.AddRange(tt.Items);
 					}
-					else if (arg is AbstractType)
-						l.Add(arg as AbstractType);
 					else
-					{
-						// Error: Argument must be a type
-						break;
-					}					
+						l.Add(arg);				
 
-			return Set(p, new TypeTuple(p, l.Count == 0 ? null : l));
+			return Set(p, new DTuple(p, l.Count == 0 ? null : l));
 		}
 
 		/// <summary>

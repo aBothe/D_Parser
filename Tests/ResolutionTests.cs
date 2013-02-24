@@ -816,6 +816,41 @@ V foo3(V)(int a,V v) {}");
 			Assert.That(tps, Is.Not.Null);
 			Assert.That(tps.Base, Is.TypeOf(typeof(ArrayType)));
 		}
+
+		[Test]
+		public void TemplateTypeTuple1()
+		{
+			var pcl = CreateCache(@"module modA;
+template Print(A ...) { 
+	void print() { 
+		writefln(""args are "", A); 
+	} 
+} 
+
+template Write(A ...) {
+	void write(A a) { // A is a TypeTuple, a is an ExpressionTuple 
+		writefln(""args are "", a); 
+	} 
+} 
+
+void main() { 
+	Print!(1,'a',6.8).print(); // prints: args are 1a6.8 
+	Write!(int, char, double).write(1, 'a', 6.8); // prints: args are 1a6.8
+}");
+
+			var modA = pcl[0]["modA"];
+			var ctxt = CreateDefCtxt(pcl, modA);
+
+			var x = DParser.ParseExpression("Print!(1,'a',6.8)");
+			var t = Evaluation.EvaluateType(x,ctxt);
+			Assert.That(t, Is.TypeOf(typeof(TemplateType)));
+			var tps = (t as TemplateType).DeducedTypes[0] as TemplateParameterSymbol;
+			Assert.That(tps, Is.Not.Null);
+			Assert.That(tps.Base, Is.TypeOf(typeof(DTuple)));
+			var tt = tps.Base as DTuple;
+			Assert.That(tt.Items.Length, Is.EqualTo(3));
+			Assert.That(tt.IsExpressionTuple);
+		}
 		
 		[Test]
 		public void IdentifierOnlyTemplateDeduction()

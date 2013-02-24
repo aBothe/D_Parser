@@ -186,7 +186,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							if (udt.BaseInterfaces != null && udt.BaseInterfaces.Length != 0)
 								l.AddRange(udt.BaseInterfaces);
 
-							res = new TypeTuple(isExpression, l);
+							res = new DTuple(isExpression, l);
 						}
 					}
 					break;

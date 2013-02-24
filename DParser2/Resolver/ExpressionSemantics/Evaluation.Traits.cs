@@ -79,14 +79,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					else
 						vs = null;
 					
-					var l = new List<AbstractType>();
-					if(vs != null)
-						foreach(var sym in vs)
-							l.Add(AbstractType.Get(sym));
-					
 					ctxt.ContextIndependentOptions = optionsBackup;
 					
-					return eval ? new TypeValue(new TypeTuple(te, l)) as ISemantic : new TypeTuple(te, l);
+					return eval ? new TypeValue(new DTuple(te, vs)) as ISemantic : new DTuple(te, vs);
 					
 					
 				case "getProtection":
