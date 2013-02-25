@@ -272,6 +272,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				var t = ov;
 				if (ov is MemberSymbol)
 				{
+					var ms = ov as MemberSymbol;
+					if (ms.Definition is Dom.DMethod)
+					{
+						l.Add(ms);
+						continue;
+					}
+
 					staticOnly = false;
 					t = DResolver.StripAliasSymbol((ov as MemberSymbol).Base);
 				}
