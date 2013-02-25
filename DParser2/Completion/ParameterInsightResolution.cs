@@ -68,9 +68,8 @@ namespace D_Parser.Completion
 			IEditorData Editor,
 			ResolutionContext ctxt)
 		{
-			ParserTrackerVariables trackVars = null;
-			IStatement curStmt = null; 
-			IExpression lastParamExpression = null;
+			ParserTrackerVariables trackVars;
+			IStatement curStmt;
 
 			// Get the currently scoped block
 			var curBlock = DResolver.SearchBlockAt(Editor.SyntaxTree, Editor.CaretLocation, out curStmt);
@@ -80,15 +79,21 @@ namespace D_Parser.Completion
 
 			// Get an updated abstract view on the module's code
 			var parsedStmtBlock = CtrlSpaceCompletionProvider.FindCurrentCaretContext(
-				Editor.ModuleCode, curBlock ,Editor.CaretOffset,	Editor.CaretLocation, out trackVars) as StatementContainingStatement;
+				Editor.ModuleCode, curBlock ,Editor.CaretOffset,	Editor.CaretLocation, out trackVars) as IStatement;
 
 			if (parsedStmtBlock == null)
 				return null;
 
-			// Search the returned statement block (i.e. function body) for the current statement
-			var exStmt = BlockStatement.SearchBlockStatement(parsedStmtBlock, Editor.CaretLocation) as IExpressionContainingStatement;
+			// Search the returned statement block (i.e. function body) for the current statement;
+			while (parsedStmtBlock is StatementContainingStatement)
+			{
+				if (parsedStmtBlock is BlockStatement)
+					parsedStmtBlock = BlockStatement.SearchBlockStatement(parsedStmtBlock as BlockStatement, Editor.CaretLocation);
+				else
+					parsedStmtBlock = (parsedStmtBlock as StatementContainingStatement).ScopedStatement;
+			}
 
-			lastParamExpression = ExpressionHelper.SearchForMethodCallsOrTemplateInstances(exStmt, Editor.CaretLocation);
+			var lastParamExpression = ExpressionHelper.SearchForMethodCallsOrTemplateInstances(parsedStmtBlock as IExpressionContainingStatement, Editor.CaretLocation);
 
 			if (lastParamExpression == null)
 			{
