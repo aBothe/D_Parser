@@ -3779,7 +3779,7 @@ namespace D_Parser.Parser
 					{
 						Step();
 
-						if (laKind == CloseParenthesis)
+						if (laKind == CloseParenthesis || IsEOF)
 						{
 							SemErr(CloseParenthesis, "Catch parameter expected, not ')'");
 							Step();
@@ -3797,10 +3797,12 @@ namespace D_Parser.Parser
 							}
 							else
 								Lexer.PopLookAheadBackup();
-							
-							if(Expect(Identifier))
+
+							if (Expect(Identifier))
+							{
 								catchVar.Name = t.Value;
-							Expect(CloseParenthesis);
+								Expect(CloseParenthesis);
+							}
 
 							c.CatchParameter = catchVar;
 						}
