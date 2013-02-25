@@ -169,6 +169,10 @@ namespace D_Parser.Misc
 			if(firstArgument is MemberSymbol)
 				firstArgument = DResolver.StripMemberSymbols(firstArgument as AbstractType);
 
+			if (firstArgument is PrimitiveType && 
+				(firstArgument as PrimitiveType).TypeToken == D_Parser.Parser.DTokens.Void)
+				return null;
+
 			// Then filter out methods which cannot be accessed in the current context 
 			// (like when the method is defined in a module that has not been imported)
 			var mv = new UfcsMatchScanner(ctxt, CachedMethods, firstArgument, nameFilter);
