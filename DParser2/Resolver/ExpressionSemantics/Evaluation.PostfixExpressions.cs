@@ -259,52 +259,28 @@ namespace D_Parser.Resolver.ExpressionSemantics
 									deducedTypeDict[tpar.Name] = null;
 						var templateParamDeduction = new TemplateParameterDeduction(deducedTypeDict, ctxt);
 
+						int currentArg = 0;
 						bool add = false;
 						if (callArguments.Count == 0 && dm.Parameters.Count == 0)
 							add=true;
 						else
 							for (int i=0; i< dm.Parameters.Count; i++)
 							{
-								/*var paramType = DResolver.StripMemberSymbols(TypeDeclarationResolver.ResolveSingle(dm.Parameters[i].Type, ctxt));
-								
-								//TODO: Varargs!
+								var paramType = dm.Parameters[i].Type;
 
-								if(paramType is TypeTuple && i == dm.Parameters.Count-1)
+								// Handle the usage of tuples: Tuples may only be used as as-is, so not as an array, pointer or in a modified way..
+								if (paramType is IdentifierDeclaration &&
+									TryHandleMethodArgumentTuple(ref add, callArguments, dm, deducedTypeDict, i, ref currentArg))
+									continue;
+								else if (currentArg < callArguments.Count)
 								{
-									var tup = paramType as TypeTuple;
-									if(tup.Items == null || tup.Items.Length == 0)
-									{
-										// writeln!()() -- got one type&expression tuple but no further arguments.
-										// writeln!()("herp",1234) -- arguments, but none for the type tuple => No match! 
-										if(callArguments.Count <= dm.Parameters.Count){
-											add = true;
-											break;
-										}
-									}
-									else
-									{
-										add = true;
-										for(int j = tup.Items.Length; j != 0; j--)
-										{
-											if(callArguments.Count <= i+j ||
-												!ResultComparer.IsImplicitlyConvertible(callArguments[i+j], tup.Items[j], ctxt))
-											{
-												add = false;
-												break;
-											}
-										}
-									}
-								}
-									
-								else*/ if (i < callArguments.Count)
-								{
-									if (templateParamDeduction.HandleDecl(null, dm.Parameters[i].Type, callArguments[i]))
+									if (templateParamDeduction.HandleDecl(null, paramType, callArguments[currentArg++]))
 										add = true;
 								}
 								else
 								{
 									// If there are more parameters than arguments given, check if the param has default values
-									if(dm.Parameters[i] is DVariable && (dm.Parameters[i] as DVariable).Initializer!=null)
+									if (dm.Parameters[i] is DVariable && (dm.Parameters[i] as DVariable).Initializer != null)
 										add = true;
 									// Assume that all further method parameters do have default values - and don't check further parameters
 									break;
@@ -381,6 +357,117 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				ctxt.CheckForSingleResult(argTypeFilteredOverloads.ToArray(), call);
 				return argTypeFilteredOverloads.Count != 0 ? argTypeFilteredOverloads[0] : null;
 			}
+		}
+
+		private bool TryHandleMethodArgumentTuple(ref bool add,
+			List<ISemantic> callArguments, 
+			DMethod dm, 
+			DeducedTypeDictionary deducedTypeDict, int currentParameter,ref int currentArg)
+		{
+			// .. so only check if it's an identifer & if the id represents a tuple parameter
+			var id = dm.Parameters[currentParameter].Type as IdentifierDeclaration;
+			var curNode = dm as DNode;
+			ITemplateParameter tpar = null;
+			while (curNode != null && !curNode.TryGetTemplateParameter(id.Id, out tpar))
+				curNode = curNode.Parent as DNode;
+
+			if (tpar is TemplateTupleParameter)
+			{
+				int lastArgumentToTake = -1;
+				/*
+				 * Note: an expression tuple parameter can occur also somewhere in between the parameter list!
+				 * void write(A...)(bool b, A a, double d) {}
+				 * 
+				 * can be matched by
+				 * write(true, 1.2) as well as
+				 * write(true, "asdf", 1.2) as well as
+				 * write(true, 123, true, 'c', [3,4,5], 3.4) !
+				 */
+
+				TemplateParameterSymbol tps;
+				DTuple tuple = null;
+				if (deducedTypeDict.TryGetValue(tpar.Name, out tps) && tps != null)
+				{
+					if (tps.Parameter == tpar)
+					{
+						if (tps.Base is DTuple)
+						{
+							tuple = tps.Base as DTuple;
+							lastArgumentToTake = currentParameter + (tuple.Items == null ? 0 : (tuple.Items.Length-1));
+						}
+						else
+						{
+							// Error: Type param must be tuple!
+						}
+					}
+					else
+					{
+						// Error: Wrong parameter
+					}
+				}
+				// - Get the (amount of) arguments that shall be put into the tuple
+				else if (currentParameter == dm.Parameters.Count - 1)
+				{
+					// The usual case: A tuple of a variable length is put at the end of a parameter list..
+					// take all arguments from i until the end of the argument list..
+					lastArgumentToTake = callArguments.Count - 1;
+				}
+				else
+				{
+					// Get the type of the next expected parameter
+					var nextExpectedParameter = DResolver.StripMemberSymbols(TypeDeclarationResolver.ResolveSingle(dm.Parameters[currentParameter + 1].Type, ctxt));
+
+					// Look for the first argument whose type is equal to the next parameter's type..
+					for (int k = currentArg; k < callArguments.Count; k++)
+					{
+						if (ResultComparer.IsEqual(AbstractType.Get(callArguments[k]), nextExpectedParameter))
+						{
+							// .. and assume the tuple to go from i to the previous argument..
+							lastArgumentToTake = k - 1;
+							break;
+						}
+					}
+				}
+
+				if (lastArgumentToTake < 0)
+				{
+					// An error occurred somewhere..
+					add = false;
+					return true;
+				}
+
+				int argCountToHandle = lastArgumentToTake - currentArg;
+				if (argCountToHandle > 0)
+					argCountToHandle++;
+				
+				if (tuple != null)
+				{
+					// - If there's been set an explicit type tuple, compare all arguments' types with those in the tuple
+					for (int k = 0; k < tuple.Items.Length; k++)
+					{
+						if (!ResultComparer.IsImplicitlyConvertible(callArguments[currentArg++], AbstractType.Get(tuple.Items[k]), ctxt))
+						{
+							add = false;
+							return true;
+						}
+					}
+				}
+				else
+				{
+					// - If there was no explicit initialization, put all arguments' types into a type tuple 
+					var argsToTake = new ISemantic[argCountToHandle];
+					callArguments.CopyTo(currentArg, argsToTake, 0, argsToTake.Length);
+					currentArg += argsToTake.Length;
+					var tt = new DTuple(null, argsToTake);
+					tps = new TemplateParameterSymbol(tpar, tt);
+
+					//   and set the actual template tuple parameter deduction
+					deducedTypeDict[tpar.Name] = tps;
+				}
+				add = true;
+				return true;
+			}
+			return false;
 		}
 
 		void GetRawCallOverloads(PostfixExpression_MethodCall call, 

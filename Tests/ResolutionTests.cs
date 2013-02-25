@@ -833,6 +833,9 @@ template Write(A ...) {
 	} 
 } 
 
+void tplWrite(W...)(W a) { writefln(""args are "", a); } 
+void tplWrite2(W...)(W a,double d) { } 
+
 void main() { 
 	Print!(1,'a',6.8).print(); // prints: args are 1a6.8 
 	Write!(int, char, double).write(1, 'a', 6.8); // prints: args are 1a6.8
@@ -850,6 +853,36 @@ void main() {
 			var tt = tps.Base as DTuple;
 			Assert.That(tt.Items.Length, Is.EqualTo(3));
 			Assert.That(tt.IsExpressionTuple);
+
+			ctxt.ContextIndependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
+
+			x = DParser.ParseExpression("Write!(int, char, double).write(1, 'a', 6.8)");
+			t = Evaluation.EvaluateType(x, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+
+			x = DParser.ParseExpression("tplWrite!(int, char, double)(1, 'a', 6.8)");
+			t = Evaluation.EvaluateType(x, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+
+			x = DParser.ParseExpression("tplWrite(1, 'a', 6.8)");
+			t = Evaluation.EvaluateType(x, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			tps = (t as MemberSymbol).DeducedTypes[0] as TemplateParameterSymbol;
+			Assert.That(tps, Is.Not.Null);
+			Assert.That(tps.Base, Is.TypeOf(typeof(DTuple)));
+			tt = tps.Base as DTuple;
+			Assert.That(tt.Items.Length, Is.EqualTo(3));
+			Assert.That(tt.IsTypeTuple);
+
+			x = DParser.ParseExpression("tplWrite2(\"asdf\", 'a', 6.8)");
+			t = Evaluation.EvaluateType(x, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			tps = (t as MemberSymbol).DeducedTypes[0] as TemplateParameterSymbol;
+			Assert.That(tps, Is.Not.Null);
+			Assert.That(tps.Base, Is.TypeOf(typeof(DTuple)));
+			tt = tps.Base as DTuple;
+			Assert.That(tt.Items.Length, Is.EqualTo(2));
+			Assert.That(tt.Items[0], Is.TypeOf(typeof(ArrayType)));
 		}
 		
 		[Test]

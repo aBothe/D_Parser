@@ -123,6 +123,29 @@ namespace D_Parser.Resolver
 			}
 		}
 
+		public List<TemplateParameterSymbol> DeducedTypesInHierarchy
+		{
+			get
+			{
+				var dedTypes = new List<TemplateParameterSymbol>();
+				var stk = new Stack<ContextFrame>();
+
+				while (true)
+				{
+					dedTypes.AddRange(stack.Peek().DeducedTemplateParameters.Values);
+
+					if (!PrevContextIsInSameHierarchy)
+						break;
+
+					stk.Push(stack.Pop());
+				}
+
+				while (stk.Count != 0)
+					stack.Push(stk.Pop());
+				return dedTypes;
+			}
+		}
+
 		/// <summary>
 		/// Returns true if the currently scoped node block is located somewhere inside the hierarchy of n.
 		/// Used for prevention of unnecessary context pushing/popping.

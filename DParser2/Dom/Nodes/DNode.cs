@@ -68,13 +68,17 @@ namespace D_Parser.Dom
 			return false;
 		}
 
-		public bool ContainsTemplateParameter(string Name)
+		public bool TryGetTemplateParameter(string name, out ITemplateParameter p)
 		{
 			if (TemplateParameters != null)
-				for(int i = 0; i < TemplateParameters.Length; i++)
-					if(TemplateParameters[i].Name == Name)
+				for (int i = 0; i < TemplateParameters.Length; i++)
+					if (TemplateParameters[i].Name == name)
+					{
+						p = TemplateParameters[i];
 						return true;
+					}
 
+			p = null;
 			return false;
 		}
 		

@@ -172,6 +172,19 @@ namespace D_Parser.Resolver.TypeResolution
 
 					r.AddRange(SingleNodeNameScan.SearchChildrenAndResolve(ctxt, b, bn, nextIdentifier, typeIdObject));
 
+					List<TemplateParameterSymbol> dedTypes = null;
+					foreach (var t in r)
+					{
+						var ds = t as DSymbol;
+						if (ds != null && ds.DeducedTypes == null)
+						{
+							if (dedTypes == null)
+								dedTypes = ctxt.DeducedTypesInHierarchy;
+
+							ds.DeducedTypes = new System.Collections.ObjectModel.ReadOnlyCollection<TemplateParameterSymbol>(dedTypes);
+						}
+					}
+
 					ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(udt);
 					if(!pop)
 						ctxt.Pop();
