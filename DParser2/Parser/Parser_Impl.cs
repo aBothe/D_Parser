@@ -3790,7 +3790,7 @@ namespace D_Parser.Parser
 							LastParsedObject = catchVar;
 							Lexer.PushLookAheadBackup();
 							catchVar.Type = BasicType();
-							if (laKind != Identifier)
+							if (laKind == CloseParenthesis)
 							{
 								Lexer.RestoreLookAheadBackup();
 								catchVar.Type = new IdentifierDeclaration("Exception");
