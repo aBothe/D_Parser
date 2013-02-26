@@ -87,6 +87,9 @@ namespace D_Parser.Completion
 
 		public static AbstractCompletionProvider BuildCompletionData(ICompletionDataGenerator dataGen, IEditorData editor, string EnteredText)
 		{
+			if (!IsCompletionAllowed(editor, EnteredText))
+				return null;
+
 			var provider = Create(dataGen, editor, EnteredText);
 
 			if (provider != null)
@@ -162,15 +165,26 @@ namespace D_Parser.Completion
 
 		static bool IsCompletionAllowed(IEditorData Editor, string EnteredText)
 		{
-			// If typing a begun identifier, return immediately
-			if ((EnteredText != null && 
-				EnteredText.Length > 0 ? IsIdentifierChar(EnteredText[0]) : true) &&
-				Editor.CaretOffset > 0 &&
-				IsIdentifierChar(Editor.ModuleCode[Editor.CaretOffset - 1]))
-				return false;
+			
+			if (Editor.CaretOffset > 0)
+			{
+				var enteredChar = string.IsNullOrEmpty(EnteredText) ? '\0' : EnteredText[0];
 
-			if (CaretContextAnalyzer.IsInCommentAreaOrString(Editor.ModuleCode, Editor.CaretOffset))
-				return false;
+				if (enteredChar == '.')
+				{
+					// Don't complete on a double/multi-dot
+					if (Editor.CaretOffset > 1 && Editor.ModuleCode[Editor.CaretOffset - 2] == '.') 
+						// ISSUE: When a dot was typed, off-1 is the dot position, 
+						// if a letter was typed, off-1 is the char before the typed letter..
+						return false;
+				}
+				// If typing a begun identifier, return immediately
+				else if ((IsIdentifierChar(enteredChar) || enteredChar == '\0') &&
+					IsIdentifierChar(Editor.ModuleCode[Editor.CaretOffset - 1]))
+					return false;
+
+				return !CaretContextAnalyzer.IsInCommentAreaOrString(Editor.ModuleCode, Editor.CaretOffset);
+			}
 
 			return true;
 		}
@@ -180,9 +194,6 @@ namespace D_Parser.Completion
 		public void BuildCompletionData(IEditorData Editor,
 			string EnteredText)
 		{
-			if(!IsCompletionAllowed(Editor, EnteredText))
-				return;
-
 			BuildCompletionDataInternal(Editor, EnteredText);
 		}
 	}
