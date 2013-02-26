@@ -2,21 +2,18 @@
 
 namespace D_Parser.Misc
 {
-	public struct CompletionOptions
+	public class CompletionOptions
 	{
-		public readonly static CompletionOptions Default = new CompletionOptions
-		{
-			ShowUFCSItems = true,
-			EnableDeclarationConstraints = true
-		};
+		public static CompletionOptions Instance = new CompletionOptions();
 
-
-		public bool ShowUFCSItems;
+		public bool ShowUFCSItems = true;
 		/// <summary>
 		/// If true, type & expression resolution will happen including checking of existing declaration constraints.
 		/// It might be disabled because of huge performance tear-downs.
 		/// </summary>
-		public bool EnableDeclarationConstraints;
+		public bool EnableDeclarationConstraints = true;
+
+		public bool DisableMixinAnalysis = true;
 
 
 		public void Load(XmlReader x)
@@ -31,6 +28,9 @@ namespace D_Parser.Misc
 					case "EnableDeclarationConstraints":
 						EnableDeclarationConstraints = x.ReadString().ToLower() == "true";
 						break;
+					case "MixinAnalysis":
+						DisableMixinAnalysis = x.ReadString().ToLower() != "true";
+						break;
 				}
 			}
 		}
@@ -39,6 +39,7 @@ namespace D_Parser.Misc
 		{
 			x.WriteElementString("EnableUFCSCompletion", ShowUFCSItems.ToString());
 			x.WriteElementString("EnableDeclarationConstraints", EnableDeclarationConstraints.ToString());
+			x.WriteElementString("MixinAnalysis", (!DisableMixinAnalysis).ToString());
 		}
 	}
 }

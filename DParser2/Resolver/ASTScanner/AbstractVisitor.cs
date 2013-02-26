@@ -642,6 +642,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		/// </summary>
 		bool HandleMixin(MixinStatement mx, bool parseDeclDefs, MemberFilter vis)
 		{
+			if (CompletionOptions.Instance.DisableMixinAnalysis)
+				return false;
+
 			// If in a class/module block => MixinDeclaration
 			if(parseDeclDefs)
 			{
@@ -712,6 +715,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		// http://dlang.org/template-mixin.html#TemplateMixin
 		bool HandleUnnamedTemplateMixin(TemplateMixin tmx, bool treatAsDeclBlock, MemberFilter vis)
 		{
+			if (CompletionOptions.Instance.DisableMixinAnalysis)
+				return false;
+
 			if(templateMixinsBeingAnalyzed == null)
 				templateMixinsBeingAnalyzed = new List<TemplateMixin>();
 			

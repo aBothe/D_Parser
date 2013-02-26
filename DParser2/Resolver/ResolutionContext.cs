@@ -65,8 +65,8 @@ namespace D_Parser.Resolver
 		{
 			IStatement stmt = null;
 			return new ResolutionContext(editor.ParseCache, globalConditions ?? new ConditionalCompilationFlags(editor),
-			                             DResolver.SearchBlockAt(editor.SyntaxTree, editor.CaretLocation, out stmt) ?? editor.SyntaxTree,
-			                             stmt);
+										 DResolver.SearchBlockAt(editor.SyntaxTree, editor.CaretLocation, out stmt) ?? editor.SyntaxTree,
+										 stmt);
 		}
 
 		public static ResolutionContext Create(ParseCacheList pcl, ConditionalCompilationFlags globalConditions, IBlockNode scopedBlock, IStatement scopedStatement=null)

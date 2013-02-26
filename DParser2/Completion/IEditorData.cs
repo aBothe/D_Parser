@@ -35,12 +35,6 @@ namespace D_Parser.Completion
 			DebugLevel = data.DebugLevel;
 			GlobalDebugIds = data.GlobalDebugIds;
 		}
-
-		public CompletionOptions Options
-		{
-			get;
-			set;
-		}
 	}
 
 	public interface IEditorData
@@ -51,7 +45,6 @@ namespace D_Parser.Completion
 		DModule SyntaxTree { get; }
 
 		ParseCacheList ParseCache { get; }
-		CompletionOptions Options { get; }
 
 		int VersionNumber { get; }
 		string[] GlobalVersionIds { get; }

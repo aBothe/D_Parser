@@ -35,7 +35,7 @@ namespace D_Parser.Completion
 
 			BuildCompletionData(r, ScopedBlock);
 
-			if(Editor.Options.ShowUFCSItems && 
+			if(CompletionOptions.Instance.ShowUFCSItems && 
 				!(r is UserDefinedType || r is PrimitiveType || r is PackageSymbol || r is ModuleSymbol))
 				UFCSCompletionProvider.Generate(r, ctxt, Editor, CompletionDataGenerator);
 		}
