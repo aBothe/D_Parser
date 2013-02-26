@@ -37,11 +37,21 @@ namespace D_Parser.Completion
 
 			if (trackVars != null)
 			{
-				if (trackVars.LastParsedObject is PostfixExpression_Access)
-					return new MemberCompletionProvider(dataGen) { 
-						AccessExpression=trackVars.LastParsedObject as PostfixExpression_Access,
-						ScopedBlock = curBlock,	ScopedStatement = curStmt
-					};
+				var pfa = trackVars.LastParsedObject as PostfixExpression_Access;
+				if (pfa != null)
+				{
+					// myObj. <-- AccessExpression will be null there, 
+					// this.fileName | <-- AccessExpression will be 'fileName' - no trigger wished
+					if (pfa.AccessExpression == null)
+						return new MemberCompletionProvider(dataGen)
+						{
+							AccessExpression = trackVars.LastParsedObject as PostfixExpression_Access,
+							ScopedBlock = curBlock,
+							ScopedStatement = curStmt
+						};
+					else
+						return null;
+				}
 
 				if(trackVars.ExpectingIdentifier)
 				{
@@ -165,7 +175,6 @@ namespace D_Parser.Completion
 
 		static bool IsCompletionAllowed(IEditorData Editor, string EnteredText)
 		{
-			
 			if (Editor.CaretOffset > 0)
 			{
 				var enteredChar = string.IsNullOrEmpty(EnteredText) ? '\0' : EnteredText[0];
