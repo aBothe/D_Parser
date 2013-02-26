@@ -88,7 +88,11 @@ namespace D_Parser.Completion
 			while (parsedStmtBlock is StatementContainingStatement)
 			{
 				if (parsedStmtBlock is BlockStatement)
-					parsedStmtBlock = BlockStatement.SearchBlockStatement(parsedStmtBlock as BlockStatement, Editor.CaretLocation);
+				{
+					if(parsedStmtBlock == 
+						(parsedStmtBlock = BlockStatement.SearchBlockStatement(parsedStmtBlock as BlockStatement, Editor.CaretLocation)))
+						break;
+				}
 				else
 					parsedStmtBlock = (parsedStmtBlock as StatementContainingStatement).ScopedStatement;
 			}
