@@ -176,7 +176,7 @@ namespace D_Parser.Completion
 		}
 
 		/// <returns>Either CurrentScope, a BlockStatement object that is associated with the parent method or a complete new DModule object</returns>
-		public static object FindCurrentCaretContext(string code,
+		public static ISyntaxRegion FindCurrentCaretContext(string code,
 			IBlockNode CurrentScope,
 			int caretOffset, CodeLocation caretLocation,
 			out ParserTrackerVariables TrackerVariables)
@@ -218,7 +218,7 @@ namespace D_Parser.Completion
 					 */
 					psr.Lexer.SetInitialLocation(blockStartLocation);
 
-					object ret = null;
+					ISyntaxRegion ret = null;
 
 					if (CurrentScope == null || CurrentScope is DModule)
 						ret = psr.Parse();

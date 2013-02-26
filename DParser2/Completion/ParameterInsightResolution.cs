@@ -78,26 +78,35 @@ namespace D_Parser.Completion
 				return null;
 
 			// Get an updated abstract view on the module's code
-			var parsedStmtBlock = CtrlSpaceCompletionProvider.FindCurrentCaretContext(
-				Editor.ModuleCode, curBlock ,Editor.CaretOffset,	Editor.CaretLocation, out trackVars) as IStatement;
+			var sr = CtrlSpaceCompletionProvider.FindCurrentCaretContext(
+				Editor.ModuleCode, curBlock ,Editor.CaretOffset,	Editor.CaretLocation, out trackVars);
 
-			if (parsedStmtBlock == null)
-				return null;
+			IExpression lastParamExpression = null;
 
-			// Search the returned statement block (i.e. function body) for the current statement;
-			while (parsedStmtBlock is StatementContainingStatement)
+			var parsedStmtBlock = sr as IStatement;
+			if (parsedStmtBlock != null)
 			{
-				if (parsedStmtBlock is BlockStatement)
+				// Search the returned statement block (i.e. function body) for the current statement;
+				while (parsedStmtBlock is StatementContainingStatement)
 				{
-					if(parsedStmtBlock == 
-						(parsedStmtBlock = BlockStatement.SearchBlockStatement(parsedStmtBlock as BlockStatement, Editor.CaretLocation)))
-						break;
+					if (parsedStmtBlock is BlockStatement)
+					{
+						if (parsedStmtBlock ==
+							(parsedStmtBlock = BlockStatement.SearchBlockStatement(parsedStmtBlock as BlockStatement, Editor.CaretLocation)))
+							break;
+					}
+					else
+						parsedStmtBlock = (parsedStmtBlock as StatementContainingStatement).ScopedStatement;
 				}
-				else
-					parsedStmtBlock = (parsedStmtBlock as StatementContainingStatement).ScopedStatement;
-			}
 
-			var lastParamExpression = ExpressionHelper.SearchForMethodCallsOrTemplateInstances(parsedStmtBlock as IExpressionContainingStatement, Editor.CaretLocation);
+				lastParamExpression = ExpressionHelper.SearchForMethodCallsOrTemplateInstances(parsedStmtBlock as IExpressionContainingStatement, Editor.CaretLocation);
+			}
+			else if (trackVars != null && trackVars.IsParsingInitializer)
+			{
+				if (trackVars.InitializedNode is DVariable)
+					lastParamExpression = 
+						ExpressionHelper.SearchExpressionDeeply((trackVars.InitializedNode as DVariable).Initializer, Editor.CaretLocation, true);
+			}
 
 			if (lastParamExpression == null)
 			{
