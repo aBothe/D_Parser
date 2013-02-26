@@ -82,7 +82,7 @@ namespace D_Parser.Misc
 		
 						for (int i = 0; i < ThreadedDirectoryParser.numThreads; i++)
 							if (threads[i].IsAlive)
-								threads[i].Join(10000);
+								threads[i].Join(2000);
 					}
 	
 					sw.Stop();
