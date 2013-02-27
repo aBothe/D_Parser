@@ -30,7 +30,7 @@ namespace D_Parser.Misc
 		{
 			var ppd = new ParsePerformanceData { BaseDirectory = directory };
 
-			if (!Directory.Exists (directory))
+			if (!Directory.Exists (directory) || rootPackage == null)
 				return ppd;
 
 			var tpd = new ThreadedDirectoryParser{ baseDirectory = directory };

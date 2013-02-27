@@ -257,6 +257,9 @@ namespace D_Parser.Misc
 		/// </summary>
 		public DModule GetModule(string moduleName)
 		{
+			if (Root == null)
+				return null;
+
 			var pack = Root.GetOrCreateSubPackage(ModuleNameHelper.ExtractPackageName(moduleName), false);
 
 			if (pack != null)
@@ -272,7 +275,7 @@ namespace D_Parser.Misc
 
 		public bool Remove(DModule ast, bool removeEmptyPackages = true)
 		{
-			if (ast == null)
+			if (ast == null || Root == null)
 				return false;
 
 			if (string.IsNullOrEmpty(ast.ModuleName))
