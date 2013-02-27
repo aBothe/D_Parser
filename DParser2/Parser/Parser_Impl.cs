@@ -3323,47 +3323,39 @@ namespace D_Parser.Parser
 			
 			Lexer.PushLookAheadBackup();
 
-			ITypeDeclaration tp = null;
+			ITypeDeclaration tp;
 			if (laKind == Auto)
 			{
 				Step();
-				tp = new DTokenDeclaration(t.Kind) { Location=t.Location, EndLocation=t.EndLocation };
+				tp = new DTokenDeclaration(Auto) { Location=t.Location, EndLocation=t.EndLocation };
 			}
 			else
 				tp = Type();
 
 			AllowWeakTypeParsing = wkType;
 
-			if (tp != null &&
-				laKind == Identifier && (
-				Lexer.CurrentPeekToken.Kind == Assign ||
-				Lexer.CurrentPeekToken.Kind == Comma ||
-				Lexer.CurrentPeekToken.Kind == CloseParenthesis))
+			if (tp != null && laKind == Identifier)
 			{
-				Lexer.PopLookAheadBackup();
-				var ifVars = new List<DVariable>();
-				do
+				var dv = Declarator(tp, false, par.ParentNode) as DVariable;
+				if (dv == null)
 				{
-					if (laKind == Comma)
-						Step();
-
-					var n = Declarator(tp, false, par.ParentNode);
-
-					n.Location = tp.Location;
-
-					// Initializer is optional
-					if (laKind == Assign)
-					{
-						Step();
-
-						if (n is DVariable)
-							((DVariable)n).Initializer = Expression(par.ParentNode as IBlockNode);
-					}
-					n.EndLocation = t.EndLocation;
+					SynErr(t.Kind, "Invalid node type! - Variable expected!");
+					return;
 				}
-				while (laKind == Comma);
 
-				par.IfVariable = ifVars.ToArray();
+				dv.Location = tp.Location;
+
+				if (Expect(Assign))
+					dv.Initializer = Expression();
+
+				dv.EndLocation = t.EndLocation;
+
+				par.IfVariable = dv;
+			}
+			else if (IsEOF)
+			{
+				if (tp != null)
+					TrackerVariables.ExpectingIdentifier = true;
 			}
 			else
 			{

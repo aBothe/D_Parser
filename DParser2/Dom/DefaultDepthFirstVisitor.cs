@@ -210,8 +210,7 @@ namespace D_Parser.Dom
 
 			//TODO: Are the declarations also in the statements?
 			if (s.IfVariable != null)
-				foreach (var d in s.IfVariable)
-					d.Accept(this);
+				s.IfVariable.Accept(this);
 		}
 
 		public virtual void Visit(WhileStatement s)

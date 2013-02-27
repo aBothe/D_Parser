@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
+using System.Text;
 
 namespace D_Parser.Dom.Statements
 {
@@ -48,7 +49,8 @@ namespace D_Parser.Dom.Statements
 		public INode ParentNode {
 			get
 			{
-				return parentNode.IsAlive ? parentNode.Target as INode : null;
+				return parentNode.IsAlive ? parentNode.Target as INode : 
+					(parentStmt.IsAlive ? (parentStmt.Target as IStatement).ParentNode : null);
 			}
 			set
 			{
@@ -260,7 +262,7 @@ namespace D_Parser.Dom.Statements
 	public class IfStatement : StatementContainingStatement,IDeclarationContainingStatement,IExpressionContainingStatement
 	{
 		public IExpression IfCondition;
-		public DVariable[] IfVariable;
+		public DVariable IfVariable;
 
 		public IStatement ThenStatement
 		{
@@ -296,20 +298,22 @@ namespace D_Parser.Dom.Statements
 
 		public override string ToCode()
 		{
-			var ret = "if(";
+			var sb = new StringBuilder("if(");
 
 			if (IfCondition != null)
-				ret += IfCondition.ToString();
+				sb.Append(IfCondition.ToString());
+			else if (IfVariable != null)
+				sb.Append(IfVariable.ToString(true, false, true));
 
-			ret += ")"+Environment.NewLine;
+			sb.AppendLine(")");
 
 			if (ScopedStatement != null)
-				ret += ScopedStatement. ToCode();
+				sb.Append(ScopedStatement.ToCode());
 
 			if (ElseStatement != null)
-				ret += Environment.NewLine + "else " + ElseStatement.ToCode();
+				sb.AppendLine().Append("else ").Append(ElseStatement.ToCode());
 
-			return ret;
+			return sb.ToString();
 		}
 
 		public IExpression[] SubExpressions
@@ -322,7 +326,7 @@ namespace D_Parser.Dom.Statements
 		public INode[] Declarations
 		{
 			get { 
-				return IfVariable;
+				return IfVariable == null ? null : new[]{IfVariable};
 			}
 		}
 
