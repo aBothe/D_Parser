@@ -4059,6 +4059,7 @@ namespace D_Parser.Parser
 				if (laKind == (Identifier) && (Lexer.CurrentPeekToken.Kind == (Semicolon) || Lexer.CurrentPeekToken.Kind == Comma))
 				{
 					Step();
+					forEachVar.NameLocation = t.Location;
 					forEachVar.Name = t.Value;
 				}
 				else
