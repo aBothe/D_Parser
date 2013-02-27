@@ -37,7 +37,12 @@ namespace D_Parser.Formatting.Indent
 	{
 		#region Properties
 		protected DFormattingOptions Policy;
-		
+
+		/// <summary>
+		/// True if spaces shall be kept for aligning code.
+		/// False if spaces shall be replaced by tabs and only the few remaining spaces are used for aligning.
+		/// </summary>
+		public readonly bool keepAlignmentSpaces;
 		public readonly bool tabsToSpaces;
 		public readonly int indentWidth;
 		
@@ -191,7 +196,7 @@ namespace D_Parser.Formatting.Indent
 		#region Constructor/Init
 		protected IndentEngine() {}
 		
-		public IndentEngine(DFormattingOptions policy, bool tabsToSpaces = false, int indentWidth = 4)
+		public IndentEngine(DFormattingOptions policy, bool tabsToSpaces = false, int indentWidth = 4, bool keepAlignmentSpaces = true)
 		{
 			if (policy == null)
 				throw new ArgumentNullException ("policy");
@@ -199,6 +204,7 @@ namespace D_Parser.Formatting.Indent
 			this.Policy = policy;
 			this.tabsToSpaces = tabsToSpaces;
 			this.indentWidth = indentWidth;
+			this.keepAlignmentSpaces = keepAlignmentSpaces;
 			stack = new IndentStack (this);
 			linebuf = new StringBuilder ();
 			Reset ();
@@ -209,7 +215,7 @@ namespace D_Parser.Formatting.Indent
 		/// </summary>
 		protected virtual IndentEngine Construct()
 		{
-			return new IndentEngine(Policy, tabsToSpaces, indentWidth);
+			return new IndentEngine(Policy, tabsToSpaces, indentWidth, keepAlignmentSpaces);
 		}
 		#endregion
 		

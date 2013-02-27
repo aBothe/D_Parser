@@ -62,7 +62,7 @@ namespace D_Parser.Formatting
 		DFormattingOptions Options{get;}
 	}
 	
-	public class DFormattingOptions
+	public class DFormattingOptions : ICloneable
 	{
 		#region Nodes
 		/// <summary>
@@ -93,6 +93,20 @@ namespace D_Parser.Formatting
 		public static DFormattingOptions CreateDStandard()
 		{
 			return new DFormattingOptions();
+		}
+
+		public object Clone()
+		{
+			return new DFormattingOptions { 
+				TypeBlockBraces = TypeBlockBraces,
+				LinesBeforeNode = LinesBeforeNode,
+				LinesAfterNode = LinesAfterNode,
+				ForceVarInitializerOnSameLine = ForceVarInitializerOnSameLine,
+				ForceNodeNameOnSameLine = ForceNodeNameOnSameLine,
+				MultiVariableDeclPlacement = MultiVariableDeclPlacement,
+				IndentSwitchBody = IndentSwitchBody,
+				LabelIndentStyle = LabelIndentStyle,
+			};
 		}
 	}
 }

@@ -51,7 +51,7 @@ namespace D_Parser.Formatting.Indent
 		{
 			textStyle = textStyle ?? TextEditorOptions.Default;
 			
-			var eng = new IndentEngine(options ?? DFormattingOptions.CreateDStandard(), textStyle.TabsToSpaces, textStyle.IndentSize);
+			var eng = new IndentEngine(options ?? DFormattingOptions.CreateDStandard(), textStyle.TabsToSpaces, textStyle.IndentSize, textStyle.KeepAlignmentSpaces);
 			var replaceActions = new List<DFormattingVisitor.TextReplaceAction>();
 			
 			int originalIndent = 0;

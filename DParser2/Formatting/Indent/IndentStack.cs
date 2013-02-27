@@ -187,7 +187,7 @@ namespace D_Parser.Formatting.Indent
 			}
 
 			// Replace additionally inserted spaces with tabs
-			if (!ie.tabsToSpaces)
+			if (!ie.tabsToSpaces && !ie.keepAlignmentSpaces)
 			{
 				n = 0;
 				for(int i = 0; i < indentBuilder.Length; i++)
