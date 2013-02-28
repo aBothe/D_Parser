@@ -6,6 +6,8 @@ namespace D_Parser.Misc
 	{
 		public static CompletionOptions Instance = new CompletionOptions();
 
+		public bool EnableSuggestionMode = false;
+
 		public bool ShowUFCSItems = true;
 		/// <summary>
 		/// If true, type & expression resolution will happen including checking of existing declaration constraints.
@@ -31,6 +33,9 @@ namespace D_Parser.Misc
 					case "MixinAnalysis":
 						DisableMixinAnalysis = x.ReadString().ToLower() != "true";
 						break;
+					case "CompletionSuggestionMode":
+						EnableSuggestionMode = x.ReadString().ToLower() == "true";
+						break;
 				}
 			}
 		}
@@ -40,6 +45,7 @@ namespace D_Parser.Misc
 			x.WriteElementString("EnableUFCSCompletion", ShowUFCSItems.ToString());
 			x.WriteElementString("EnableDeclarationConstraints", EnableDeclarationConstraints.ToString());
 			x.WriteElementString("MixinAnalysis", (!DisableMixinAnalysis).ToString());
+			x.WriteElementString("CompletionSuggestionMode", EnableSuggestionMode.ToString());
 		}
 	}
 }
