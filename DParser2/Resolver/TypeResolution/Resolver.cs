@@ -9,6 +9,7 @@ using D_Parser.Dom.Statements;
 using D_Parser.Parser;
 using System.Linq;
 using D_Parser.Resolver.ExpressionSemantics;
+using D_Parser.Misc;
 
 namespace D_Parser.Resolver.TypeResolution
 {
@@ -31,6 +32,8 @@ namespace D_Parser.Resolver.TypeResolution
 			/// If passed, the last call, template instance or new() expression will be returned
 			/// </summary>
 			WatchForParamExpressions=8,
+
+			DontCheckForCommentsOrStringSurrounding = 16,
 		}
 
 		/// <summary>
@@ -76,31 +79,45 @@ namespace D_Parser.Resolver.TypeResolution
 			if (!IsExpression)
 			{
 				// First check if caret is inside a comment/string etc.
-				int lastStart = -1;
-				int lastEnd = -1;
-				var caretContext = CaretContextAnalyzer.GetTokenContext(code, editor.CaretOffset, out lastStart, out lastEnd);
+				int lastStart = 0;
+				int lastEnd = 0;
+				if ((Options & AstReparseOptions.DontCheckForCommentsOrStringSurrounding) == 0)
+				{
+					var caretContext = CaretContextAnalyzer.GetTokenContext(code, editor.CaretOffset, out lastStart, out lastEnd);
 
-				// Return if comment etc. found
-				if (caretContext != TokenContext.None)
+					// Return if comment etc. found
+					if (caretContext != TokenContext.None)
+						return null;
+				}
+
+				// Could be somewhere in an ITypeDeclaration..
+
+				if (Lexer.IsIdentifierPart(code[editor.CaretOffset]))
+					start = editor.CaretOffset;
+				else if (editor.CaretOffset > 0 && Lexer.IsIdentifierPart(code[editor.CaretOffset - 1]))
+					start = editor.CaretOffset - 1;
+				else
 					return null;
 
-				start = CaretContextAnalyzer.SearchExpressionStart(code, editor.CaretOffset - 1,
+				
+				start = CaretContextAnalyzer.SearchExpressionStart(code, start,
 					(lastEnd > 0 && lastEnd < editor.CaretOffset) ? lastEnd : 0);
 				startLocation = DocumentHelper.OffsetToLocation(editor.ModuleCode, start);
 			}
 
-			if (start < 0 || editor.CaretOffset <= start)
+			if (start < 0 || editor.CaretOffset < start)
 				return null;
 
-			var expressionCode = code.Substring(start, Options.HasFlag(AstReparseOptions.AlsoParseBeyondCaret) ? code.Length - start : editor.CaretOffset - start);
-
-			var parser = DParser.Create(new StringReader(expressionCode));
+			var sv = new StringView(code, start, Options.HasFlag(AstReparseOptions.AlsoParseBeyondCaret) ? code.Length - start : editor.CaretOffset - start);
+			var parser = DParser.Create(sv);
 			parser.Lexer.SetInitialLocation(startLocation);
 			parser.Step();
 
+			ITypeDeclaration td;
+
 			if (!IsExpression && Options.HasFlag(AstReparseOptions.OnlyAssumeIdentifierList) && parser.Lexer.LookAhead.Kind == DTokens.Identifier)
 			{
-				return parser.IdentifierList();
+				td = parser.IdentifierList();
 			}
 			else if (IsExpression || parser.IsAssignExpression())
 			{
@@ -110,7 +127,15 @@ namespace D_Parser.Resolver.TypeResolution
 					return ExpressionHelper.SearchExpressionDeeply(parser.AssignExpression(), editor.CaretLocation, Options.HasFlag(AstReparseOptions.WatchForParamExpressions));
 			}
 			else
-				return parser.Type();
+				td = parser.Type();
+
+			if (Options.HasFlag(AstReparseOptions.ReturnRawParsedExpression))
+				return td;
+
+			while (td != null && td.InnerDeclaration != null && editor.CaretLocation <= td.InnerDeclaration.EndLocation)
+				td = td.InnerDeclaration;
+
+			return td;
 		}
 
 		public static AbstractType[] ResolveType(IEditorData editor,AstReparseOptions Options=0)
