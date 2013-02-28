@@ -179,10 +179,10 @@ namespace D_Parser.Completion
 			{
 				var enteredChar = string.IsNullOrEmpty(EnteredText) ? '\0' : EnteredText[0];
 
-				if (enteredChar == '.')
+				if (enteredChar == '.' || enteredChar == '_')
 				{
 					// Don't complete on a double/multi-dot
-					if (Editor.CaretOffset > 1 && Editor.ModuleCode[Editor.CaretOffset - 2] == '.') 
+					if (Editor.CaretOffset > 1 && Editor.ModuleCode[Editor.CaretOffset - 2] == enteredChar) 
 						// ISSUE: When a dot was typed, off-1 is the dot position, 
 						// if a letter was typed, off-1 is the char before the typed letter..
 						return false;
