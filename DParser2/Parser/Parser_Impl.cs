@@ -3793,6 +3793,7 @@ namespace D_Parser.Parser
 							if (Expect(Identifier))
 							{
 								catchVar.Name = t.Value;
+								catchVar.NameLocation = t.Location;
 								Expect(CloseParenthesis);
 							}
 
