@@ -1362,16 +1362,18 @@ namespace D_Parser.Dom.Expressions
 		public override string ToString()
 		{
 			var s = "[";
+			
 			//HACK: To prevent exessive string building flood, limit element count to 100
-			for (int i = 0; i < Elements.Count; i++)
-			{
-				s += Elements[i].ToString() + ", ";
-				if (i == 100)
+			if(Elements != null)
+				for (int i = 0; i < Elements.Count; i++)
 				{
-					s += "...";
-					break;
+					s += Elements[i].ToString() + ", ";
+					if (i == 100)
+					{
+						s += "...";
+						break;
+					}
 				}
-			}
 			s = s.TrimEnd(' ', ',') + "]";
 			return s;
 		}
