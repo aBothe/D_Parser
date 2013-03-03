@@ -302,6 +302,8 @@ namespace D_Parser.Misc
 
 		public DModule GetModuleByFileName(string file, string baseDirectory = null)
 		{
+			if (string.IsNullOrEmpty(file))
+				return null;
 			DModule ast;
 			if(fileLookup.TryGetValue(file, out ast))
 				return ast;
