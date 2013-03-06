@@ -105,7 +105,7 @@ namespace D_Parser.Dom
 		
 		public bool AddModule(DModule ast)
 		{
-			if(string.IsNullOrEmpty(ast.ModuleName))
+			if(ast == null || string.IsNullOrEmpty(ast.ModuleName))
 				return false;
 			
 			if(!string.IsNullOrEmpty(ast.FileName))
