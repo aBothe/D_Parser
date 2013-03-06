@@ -4566,23 +4566,19 @@ namespace D_Parser.Parser
 
 				Expect(Semicolon);
 			}
-			else
+			else if (laKind == OpenCurlyBrace) // Normal enum block
 			{
-				// Normal enum block
-				Expect(OpenCurlyBrace);
-
 				var OldPreviousComment = PreviousComment;
 				PreviousComment = "";
-				mye.BlockStartLocation = t.Location;
+				mye.BlockStartLocation = la.Location;
 
-				bool init = true;
 				// While there are commas, loop through
-				while ((init && laKind != (Comma)) || laKind == (Comma))
+				do
 				{
-					if (!init) Step();
-					init = false;
+					if (laKind == CloseCurlyBrace)
+						break;
 
-					if (laKind == CloseCurlyBrace) break;
+					Step();
 
 					var ev = new DEnumValue() { Location = la.Location, Description = GetComments(), Parent = mye };
 					LastParsedObject = ev;
@@ -4615,6 +4611,7 @@ namespace D_Parser.Parser
 
 					mye.Add(ev);
 				}
+				while(laKind == Comma);
 				Expect(CloseCurlyBrace);
 				PreviousComment = OldPreviousComment;
 
