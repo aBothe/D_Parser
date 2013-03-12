@@ -438,6 +438,8 @@ namespace D_Parser.Parser
 					}
 					else if (Expect(Identifier))
 						c = new DebugCondition((string)t.LiteralValue) { IdLocation = t.Location };
+					else
+						c = new DebugCondition();
 
 					if (Expect(CloseParenthesis))
 						TrackerVariables.ExpectingIdentifier = false;
