@@ -4218,8 +4218,13 @@ namespace D_Parser.Parser
 				Parent=Parent
 			};
 			LastParsedObject = ret;
-
 			ApplyAttributes(ret);
+
+			if (IsEOF)
+			{
+				Expect(Identifier);
+				return ret;
+			}
 
 			// Allow anonymous structs&unions
 			if (laKind == Identifier)
@@ -4442,7 +4447,8 @@ namespace D_Parser.Parser
 
 			ApplyAttributes(dc);
 
-			Expect(Identifier);
+			if (!Expect(Identifier))
+				return dc;
 			dc.Name = t.Value;
 			dc.NameLocation = t.Location;
 
@@ -4519,6 +4525,8 @@ namespace D_Parser.Parser
 					}
 				}
 			}
+			else if (IsEOF)
+				Expect(Identifier);
 
 			if (IsDeclaratorSuffix)
 			{
