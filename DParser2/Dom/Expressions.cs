@@ -1238,7 +1238,8 @@ namespace D_Parser.Dom.Expressions
 				}
 			else if (IsIdentifier && ModuleScoped)
 				return "." + Value;
-			else if (Value is decimal)
+			
+			if (Value is decimal)
 				return ((decimal)Value).ToString(System.Globalization.CultureInfo.InvariantCulture);
 			
 			return Value==null?null: Value.ToString();
