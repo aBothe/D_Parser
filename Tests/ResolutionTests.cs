@@ -46,6 +46,7 @@ namespace Tests
 		public static ResolutionContext CreateDefCtxt(ParseCacheList pcl, IBlockNode scope, IStatement stmt=null)
 		{
 			var r = ResolutionContext.Create(pcl, new ConditionalCompilationFlags(new[]{"Windows","all"},1,true,null,0), scope, stmt);
+			CompletionOptions.Instance.DisableMixinAnalysis = false;
 			return r;
 		}
 
@@ -815,6 +816,26 @@ V foo3(V)(int a,V v) {}");
 			var tps = ms.Base as TemplateParameterSymbol;
 			Assert.That(tps, Is.Not.Null);
 			Assert.That(tps.Base, Is.TypeOf(typeof(ArrayType)));
+		}
+
+		[Test]
+		public void TemplateParamDeduction11()
+		{
+			var pcl = CreateCache(@"module modA;
+Appender!(E[]) appender(A : E[], E)(A array = null) { return Appender!(E[])(array); }
+struct Appender(A : T[], T) {
+	this(T[] arr){}
+}
+");
+			var ctxt = CreateDefCtxt(pcl, pcl[0]["modA"]);
+
+			var ex = DParser.ParseExpression("appender!(int[])()");
+			var t = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(t, Is.InstanceOfType(typeof(StructType)));
+
+			ex = DParser.ParseExpression("appender!string()");
+			t = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(t, Is.InstanceOfType(typeof(StructType)));
 		}
 
 		[Test]

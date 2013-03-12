@@ -42,6 +42,15 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					return new TypeValue(r);
 				//TODO: Are there other evaluable template parameters?
 			}
+			else if (r is UserDefinedType || r is PackageSymbol || r is ModuleSymbol || r is AliasedType)
+			{
+				if (overloads.Length > 1)
+				{
+					EvalError(idOrTemplateInstance, ambigousExprMsg, overloads);
+					return null;
+				}
+				return new TypeValue(r);
+			}
 			else if (r is MemberSymbol)
 			{
 				var mr = (MemberSymbol)r;
@@ -69,15 +78,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					}
 					return new VariableValue(mr);
 				}
-			}
-			else if (r is UserDefinedType || r is PackageSymbol || r is ModuleSymbol)
-			{
-				if (overloads.Length > 1)
-				{
-					EvalError(idOrTemplateInstance, ambigousExprMsg, overloads);
-					return null;
-				}
-				return new TypeValue(r);
 			}
 
 			EvalError(idOrTemplateInstance, "Could neither execute nor evaluate symbol value", overloads);

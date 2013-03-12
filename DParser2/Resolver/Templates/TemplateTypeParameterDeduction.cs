@@ -56,7 +56,7 @@ namespace D_Parser.Resolver.Templates
 
 			//HACK Ensure that no information gets lost by using this function 
 			// -- getting a value but requiring an abstract type and just extract it from the value - is this correct behaviour?
-			var at = AbstractType.Get(rr);
+			var at = DResolver.StripAliasSymbol(AbstractType.Get(rr));
 
 			if (td is ArrayDecl)
 				return HandleDecl(p,(ArrayDecl)td, at as AssocArrayType);
