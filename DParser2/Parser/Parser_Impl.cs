@@ -4585,17 +4585,17 @@ namespace D_Parser.Parser
 				// While there are commas, loop through
 				do
 				{
+					Step();
+
 					if (laKind == CloseCurlyBrace)
 						break;
-
-					Step();
 
 					var ev = new DEnumValue() { Location = la.Location, Description = GetComments(), Parent = mye };
 					LastParsedObject = ev;
 
 					if (laKind == Identifier && (
 						Lexer.CurrentPeekToken.Kind == Assign ||
-						Lexer.CurrentPeekToken.Kind == Comma || 
+						Lexer.CurrentPeekToken.Kind == Comma ||
 						Lexer.CurrentPeekToken.Kind == CloseCurlyBrace))
 					{
 						Step();
@@ -4621,7 +4621,8 @@ namespace D_Parser.Parser
 
 					mye.Add(ev);
 				}
-				while(laKind == Comma);
+				while (laKind == Comma);
+
 				Expect(CloseCurlyBrace);
 				PreviousComment = OldPreviousComment;
 
