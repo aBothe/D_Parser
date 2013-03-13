@@ -4905,9 +4905,8 @@ namespace D_Parser.Parser
 				var al = new TemplateAliasParameter() { Location=t.Location, Parent = parent };
 				LastParsedObject = al;
 
-				Expect(Identifier);
-
-				al.Name = t.Value;
+				if(Expect(Identifier))
+					al.Name = t.Value;
 
 				// TODO?:
 				// alias BasicType Declarator TemplateAliasParameterSpecialization_opt TemplateAliasParameterDefault_opt
