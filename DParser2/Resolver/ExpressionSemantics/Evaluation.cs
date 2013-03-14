@@ -280,7 +280,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					}
 
 					staticOnly = false;
-					t = DResolver.StripAliasSymbol((ov as MemberSymbol).Base);
+					t = DResolver.StripAliasSymbol(ms.Base);
 				}
 
 				if (t is TemplateIntermediateType)
