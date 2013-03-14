@@ -29,9 +29,9 @@ namespace D_Parser.Refactoring
 			this.ctxt = ctxt;
 		}
 
-		public static IEnumerable<ISyntaxRegion> Scan(INode symbol, ResolutionContext ctxt)
+		public static IEnumerable<ISyntaxRegion> Scan(INode symbol, ResolutionContext ctxt, bool includeDefinition = true)
 		{
-			return Scan(symbol.NodeRoot as DModule, symbol, ctxt);
+			return Scan(symbol.NodeRoot as DModule, symbol, ctxt, includeDefinition);
 		}
 
 		/// <summary>
@@ -40,7 +40,7 @@ namespace D_Parser.Refactoring
 		/// <param name="symbol">Might not be a child symbol of ast</param>
 		/// <param name="ctxt">The context required to search for symbols</param>
 		/// <returns></returns>
-		public static IEnumerable<ISyntaxRegion> Scan(DModule ast, INode symbol, ResolutionContext ctxt)
+		public static IEnumerable<ISyntaxRegion> Scan(DModule ast, INode symbol, ResolutionContext ctxt, bool includeDefinition = true)
 		{
 			if (ast == null || symbol == null || ctxt == null)
 				return null;
@@ -52,6 +52,27 @@ namespace D_Parser.Refactoring
 			f.S(ast);
 
 			ctxt.Pop();
+
+			var nodeRoot = symbol.NodeRoot as DModule;
+			if (includeDefinition && nodeRoot != null && nodeRoot.FileName == ast.FileName)
+			{
+				var dc = symbol.Parent as DClassLike;
+				if (dc != null && dc.ClassType == D_Parser.Parser.DTokens.Template &&
+					dc.Name == symbol.Name)
+				{
+					f.l.Insert(0, new IdentifierDeclaration(dc.Name)
+					{
+						Location = dc.NameLocation,
+						EndLocation = new CodeLocation(dc.NameLocation.Column + dc.Name.Length, dc.NameLocation.Line)
+					});
+				}
+
+				f.l.Insert(0, new IdentifierDeclaration(symbol.Name)
+				{
+					Location = symbol.NameLocation,
+					EndLocation = new CodeLocation(symbol.NameLocation.Column + symbol.Name.Length,	symbol.NameLocation.Line)
+				});
+			}
 
 			return f.l;
 		}
