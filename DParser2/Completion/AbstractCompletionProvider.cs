@@ -4,6 +4,7 @@ using D_Parser.Dom.Statements;
 using D_Parser.Parser;
 using D_Parser.Resolver.TypeResolution;
 using D_Parser.Completion.Providers;
+using D_Parser.Resolver.ASTScanner;
 
 namespace D_Parser.Completion
 {
@@ -37,18 +38,29 @@ namespace D_Parser.Completion
 
 			if (trackVars != null)
 			{
-				var pfa = trackVars.LastParsedObject as PostfixExpression_Access;
+				PostfixExpression_Access pfa;
+				if (trackVars.LastParsedObject is PostfixExpression_Access)
+					pfa = trackVars.LastParsedObject as PostfixExpression_Access;
+				else if (trackVars.LastParsedObject is ITypeDeclaration)
+					pfa = TryConvertTypeDeclaration(trackVars.LastParsedObject as ITypeDeclaration) as PostfixExpression_Access;
+				else
+					pfa = null;
+
 				if (pfa != null)
 				{
 					// myObj. <-- AccessExpression will be null there, 
 					// this.fileName | <-- AccessExpression will be 'fileName' - no trigger wished
 					if (pfa.AccessExpression == null)
-						return new MemberCompletionProvider(dataGen)
-						{
-							AccessExpression = trackVars.LastParsedObject as PostfixExpression_Access,
+					{
+						var mcp = new MemberCompletionProvider(dataGen) {
+							AccessExpression = pfa,
 							ScopedBlock = curBlock,
-							ScopedStatement = curStmt
+							ScopedStatement = curStmt,
 						};
+						if (trackVars.IsParsingBaseClassList)
+							mcp.MemberFilter = MemberFilter.Classes | MemberFilter.Interfaces | MemberFilter.Templates;
+						return mcp;
+					}
 					else
 						return null;
 				}
@@ -111,6 +123,32 @@ namespace D_Parser.Completion
 		}
 
 		#region Helper Methods
+		public static IExpression TryConvertTypeDeclaration(ITypeDeclaration td, bool ignoreInnerDeclaration = false)
+		{
+			if (td.InnerDeclaration == null || ignoreInnerDeclaration)
+			{
+				if (td is IdentifierDeclaration)
+				{
+					var id = td as IdentifierDeclaration;
+					if (id.Id == null)
+						return null;
+					return new IdentifierExpression(id.Id) { Location = id.Location, EndLocation = id.EndLocation };
+				}
+				if (td is TemplateInstanceExpression)
+					return td as IExpression;
+				
+				return null;
+			}
+
+			var pfa = new PostfixExpression_Access{
+				PostfixForeExpression = TryConvertTypeDeclaration(td.InnerDeclaration),
+				AccessExpression  = TryConvertTypeDeclaration(td, true)
+			};
+			if (pfa.PostfixForeExpression == null)
+				return null;
+			return pfa;
+		}
+
 		public static bool IsIdentifierChar(char key)
 		{
 			return char.IsLetterOrDigit(key) || key == '_';

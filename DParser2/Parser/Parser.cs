@@ -482,5 +482,7 @@ namespace D_Parser.Parser
 
 		public INode InitializedNode=null;
 		public bool IsParsingInitializer=false;
+
+		public bool IsParsingBaseClassList = false;
 	}
 }

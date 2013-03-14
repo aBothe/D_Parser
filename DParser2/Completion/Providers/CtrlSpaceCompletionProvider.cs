@@ -28,7 +28,6 @@ namespace D_Parser.Completion
 			if (curBlock == null)
 				return;
 
-			// 1) Get current context the caret is at
 			if (parsedBlock == null)
 				parsedBlock = FindCurrentCaretContext(
 					Editor.ModuleCode,
@@ -37,20 +36,35 @@ namespace D_Parser.Completion
 					Editor.CaretLocation,
 					out trackVars);
 
-			// 2) If in declaration and if node identifier is expected, do not show any data
+			if(!GetVisibleMemberFilter(Editor, EnteredText, ref visibleMembers, ref curStmt))
+				return;
+
+			MemberCompletionEnumeration.EnumAllAvailableMembers(
+					CompletionDataGenerator,
+					curBlock,
+					curStmt,
+					Editor.CaretLocation,
+					Editor.ParseCache,
+					visibleMembers,
+					new ConditionalCompilationFlags(Editor));
+
+			//TODO: Split the keywords into such that are allowed within block statements and non-block statements
+			// Insert typable keywords
+			if (visibleMembers.HasFlag(MemberFilter.Keywords))
+				foreach (var kv in DTokens.Keywords)
+					CompletionDataGenerator.Add(kv.Key);
+
+			else if (visibleMembers.HasFlag(MemberFilter.Types))
+				foreach (var kv in DTokens.BasicTypes_Array)
+					CompletionDataGenerator.Add(kv);
+		}
+
+		private bool GetVisibleMemberFilter(IEditorData Editor, string EnteredText, ref MemberFilter visibleMembers, ref IStatement curStmt)
+		{
 			if (trackVars == null)
 			{
 				// --> Happens if no actual declaration syntax given --> Show types/keywords anyway
 				visibleMembers = MemberFilter.Types | MemberFilter.Keywords | MemberFilter.TypeParameters;
-
-				MemberCompletionEnumeration.EnumAllAvailableMembers(
-					CompletionDataGenerator,
-					curBlock, 
-					null, 
-					Editor.CaretLocation, 
-					Editor.ParseCache, 
-					visibleMembers, 
-					new ConditionalCompilationFlags(Editor));
 			}
 			else
 			{
@@ -61,27 +75,33 @@ namespace D_Parser.Completion
 					// Show completion because no aliased type has been entered yet
 				}
 				else if (n != null && string.IsNullOrEmpty(n.Name) && trackVars.ExpectingIdentifier)
-					return;
+					return false;
 
 				else if (trackVars.LastParsedObject is TokenExpression &&
 					DTokens.BasicTypes[(trackVars.LastParsedObject as TokenExpression).Token] &&
 					!string.IsNullOrEmpty(EnteredText) &&
 					IsIdentifierChar(EnteredText[0]))
-					return;
+					return false;
 
 				if (trackVars.LastParsedObject is Modifier)
 				{
 					var attr = trackVars.LastParsedObject as Modifier;
 
 					if (attr.IsStorageClass && attr.Token != DTokens.Abstract)
-						return;
+						return false;
+				}
+
+				else if (trackVars.IsParsingBaseClassList)
+				{
+					visibleMembers = MemberFilter.Classes | MemberFilter.Interfaces | MemberFilter.Templates;
+					return true;
 				}
 
 				if ((trackVars.LastParsedObject is NewExpression && trackVars.IsParsingInitializer) ||
 					trackVars.LastParsedObject is TemplateInstanceExpression && ((TemplateInstanceExpression)trackVars.LastParsedObject).Arguments == null)
 					visibleMembers = MemberFilter.Types;
 				else if (EnteredText == " ")
-					return;
+					return false;
 				// In class bodies, do not show variables
 				else if (!(parsedBlock is BlockStatement || trackVars.IsParsingInitializer))
 				{
@@ -89,21 +109,21 @@ namespace D_Parser.Completion
 					var dbn = parsedBlock as DBlockNode;
 					if (dbn != null && dbn.StaticStatements != null && dbn.StaticStatements.Count > 0)
 					{
-						var ss = dbn.StaticStatements[dbn.StaticStatements.Count -1];
+						var ss = dbn.StaticStatements[dbn.StaticStatements.Count - 1];
 						if (ss.Location <= Editor.CaretLocation && ss.EndLocation <= Editor.CaretLocation)
 						{
 							showVariables = true;
 						}
 					}
 
-					if(!showVariables)
+					if (!showVariables)
 						visibleMembers = MemberFilter.Types | MemberFilter.Keywords | MemberFilter.TypeParameters;
 				}
 
 				// Hide completion if having typed a '0.' literal
 				else if (trackVars.LastParsedObject is IdentifierExpression &&
 					   (trackVars.LastParsedObject as IdentifierExpression).Format == LiteralFormat.Scalar)
-					return;
+					return false;
 
 				/*
 				 * Handle module-scoped things:
@@ -143,9 +163,9 @@ namespace D_Parser.Completion
 							 *  |	 -- Okay, there's no } at the block end
 							 */
 							if (Editor.ModuleCode[DocumentHelper.GetOffsetByRelativeLocation(
-								Editor.ModuleCode, Editor.CaretLocation, 
+								Editor.ModuleCode, Editor.CaretLocation,
 								Editor.CaretOffset, bs.EndLocation) - 1] == '}')
-									curStmt = curStmt.Parent.Parent;
+								curStmt = curStmt.Parent.Parent;
 						}
 						else // For non-block statements: Switch only one level up - there's no extra level for e.g. 'for', 'if' or 'foreach'
 							curStmt = curStmt.Parent;
@@ -153,26 +173,8 @@ namespace D_Parser.Completion
 				}
 				else
 					curStmt = null;
-
-				MemberCompletionEnumeration.EnumAllAvailableMembers(
-					CompletionDataGenerator,
-				    curBlock, 
-				    curStmt, 
-				    Editor.CaretLocation, 
-				    Editor.ParseCache, 
-				    visibleMembers, 
-				    new ConditionalCompilationFlags(Editor));
 			}
-
-			//TODO: Split the keywords into such that are allowed within block statements and non-block statements
-			// Insert typable keywords
-			if (visibleMembers.HasFlag(MemberFilter.Keywords))
-				foreach (var kv in DTokens.Keywords)
-					CompletionDataGenerator.Add(kv.Key);
-
-			else if (visibleMembers.HasFlag(MemberFilter.Types))
-				foreach (var kv in DTokens.BasicTypes_Array)
-					CompletionDataGenerator.Add(kv);
+			return true;
 		}
 
 		/// <returns>Either CurrentScope, a BlockStatement object that is associated with the parent method or a complete new DModule object</returns>

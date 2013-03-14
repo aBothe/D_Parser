@@ -1382,7 +1382,7 @@ namespace D_Parser.Parser
 				else if (Expect(Identifier))
 					ttd = new IdentifierDeclaration(t.Value) { Location = t.Location, EndLocation = t.EndLocation };
 				else if (IsEOF)
-					return td;
+					return new IdentifierDeclaration() { InnerDeclaration = td, Location = t.Location, EndLocation = t.EndLocation };
 
 				if (ttd != null)
 					ttd.InnerDeclaration = td;
@@ -4316,7 +4316,17 @@ namespace D_Parser.Parser
 				var ids=IdentifierList();
 				if (ids != null)
 					ret.Add(ids);
+				else
+					ret.Add(new DTokenDeclaration(DTokens.INVALID));
 			}
+
+			if (IsEOF)
+			{
+				if (ret.Count != 0)
+					LastParsedObject = ret[ret.Count - 1];
+				TrackerVariables.IsParsingBaseClassList = true;
+			}
+
 			return ret;
 		}
 

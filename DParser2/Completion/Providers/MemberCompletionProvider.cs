@@ -18,6 +18,7 @@ namespace D_Parser.Completion
 		public PostfixExpression_Access AccessExpression;
 		public IStatement ScopedStatement;
 		public IBlockNode ScopedBlock;
+		public MemberFilter MemberFilter = MemberFilter.Methods | MemberFilter.Types | MemberFilter.Variables;
 
 		public MemberCompletionProvider(ICompletionDataGenerator cdg) : base(cdg) { }
 
@@ -35,7 +36,7 @@ namespace D_Parser.Completion
 
 			BuildCompletionData(r, ScopedBlock);
 
-			if(CompletionOptions.Instance.ShowUFCSItems && 
+			if(CompletionOptions.Instance.ShowUFCSItems && (MemberFilter & MemberFilter.Methods) != 0 &&
 				!(r is UserDefinedType || r is PrimitiveType || r is PackageSymbol || r is ModuleSymbol))
 				UFCSCompletionProvider.Generate(r, ctxt, Editor, CompletionDataGenerator);
 		}
@@ -93,10 +94,13 @@ namespace D_Parser.Completion
 
 				BuildCompletionData(tr, isVariableInstance);
 
-				if (resultParent == null)
-					StaticTypePropertyProvider.AddGenericProperties(rr, CompletionDataGenerator, tr.Definition);
+				if ((MemberFilter & MemberFilter.Variables) != 0)
+				{
+					if (resultParent == null)
+						StaticTypePropertyProvider.AddGenericProperties(rr, CompletionDataGenerator, tr.Definition);
 
-				StaticTypePropertyProvider.AddClassTypeProperties(CompletionDataGenerator, tr.Definition);
+					StaticTypePropertyProvider.AddClassTypeProperties(CompletionDataGenerator, tr.Definition);
+				}
 			}
 			#endregion
 
@@ -179,14 +183,14 @@ namespace D_Parser.Completion
 					continue;
 				}
 
-				if (di.IsPublic && CanItemBeShownGenerally(i))
+				if (di.IsPublic && CanItemBeShownGenerally(i) && AbstractVisitor.CanAddMemberOfType(MemberFilter, i))
 					CompletionDataGenerator.Add(i);
 			}
 		}
 
 		void BuildCompletionData(UserDefinedType tr, bool showInstanceItems)
 		{
-			MemberCompletionEnumeration.EnumChildren(CompletionDataGenerator, ctxt, tr, showInstanceItems);
+			MemberCompletionEnumeration.EnumChildren(CompletionDataGenerator, ctxt, tr, showInstanceItems, MemberFilter);
 		}
 	}
 }

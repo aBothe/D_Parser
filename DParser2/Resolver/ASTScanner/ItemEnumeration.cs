@@ -13,15 +13,22 @@ namespace D_Parser.Resolver.ASTScanner
 	/// <summary>
 	/// A whitelisting filter for members to show in completion menus.
 	/// </summary>
+	[Flags]
 	public enum MemberFilter
 	{
-		Variables = 2,
-		Methods = 4,
-		Types = 8,
-		Keywords = 16,
-		TypeParameters = 32,
+		None=0,
+		Variables=1,
+		Methods=1<<2,
+		Classes=1<<3,
+		Interfaces=1<<4,
+		Templates=1<<5,
+		StructsAndUnions=1<<6,
+		Enums=1<<7,
+		Keywords=1<<8,
+		TypeParameters=1<<9,
 
-		All = Variables | Methods | Types | Keywords | TypeParameters
+		Types = Classes | Interfaces | Templates | StructsAndUnions,
+		All = Variables | Methods | Types | Enums | Keywords | TypeParameters
 	}
 
 	public class ItemEnumeration : AbstractVisitor
@@ -82,18 +89,20 @@ namespace D_Parser.Resolver.ASTScanner
 			en.IterateThroughScopeLayers(Caret, VisibleMembers);
 		}
 		
-		public static void EnumChildren(ICompletionDataGenerator cdgen,ResolutionContext ctxt, UserDefinedType udt, bool isVarInstance)
+		public static void EnumChildren(ICompletionDataGenerator cdgen,ResolutionContext ctxt, UserDefinedType udt, bool isVarInstance, 
+			MemberFilter vis = MemberFilter.Methods | MemberFilter.Types | MemberFilter.Variables)
 		{
 			var scan = new MemberCompletionEnumeration(ctxt, cdgen) { isVarInst = isVarInstance };
 
-			scan.DeepScanClass(udt, MemberFilter.Methods | MemberFilter.Types | MemberFilter.Variables);
+			scan.DeepScanClass(udt, vis);
 		}
 		
-		public static void EnumChildren(ICompletionDataGenerator cdgen,ResolutionContext ctxt, IBlockNode block, bool isVarInstance)
+		public static void EnumChildren(ICompletionDataGenerator cdgen,ResolutionContext ctxt, IBlockNode block, bool isVarInstance,
+			MemberFilter vis = MemberFilter.Methods | MemberFilter.Types | MemberFilter.Variables)
 		{
 			var scan = new MemberCompletionEnumeration(ctxt, cdgen) { isVarInst = isVarInstance };
 
-			scan.ScanBlock(block, CodeLocation.Empty, MemberFilter.Methods | MemberFilter.Types | MemberFilter.Variables);
+			scan.ScanBlock(block, CodeLocation.Empty, vis);
 		}
 		
 		protected override bool HandleItem(INode n)

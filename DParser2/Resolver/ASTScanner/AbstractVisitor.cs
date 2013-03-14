@@ -356,7 +356,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			return false;
 		}
 
-		static bool CanAddMemberOfType(MemberFilter vis, INode n)
+		public static bool CanAddMemberOfType(MemberFilter vis, INode n)
 		{
 			if (n is DMethod)
 				return !string.IsNullOrEmpty(n.Name) && ((vis & MemberFilter.Methods) == MemberFilter.Methods);
@@ -376,17 +376,32 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			}
 
 			else if (n is DClassLike)
-				return (vis & MemberFilter.Types) == MemberFilter.Types;
+			{
+				var dc = n as DClassLike;
+				switch (dc.ClassType)
+				{
+					case DTokens.Class:
+						return (vis & MemberFilter.Classes) != 0;
+					case DTokens.Interface:
+						return (vis & MemberFilter.Interfaces) != 0;
+					case DTokens.Template:
+						return (vis & MemberFilter.Templates) != 0;
+					case DTokens.Struct:
+					case DTokens.Union:
+						return (vis & MemberFilter.StructsAndUnions) != 0;
+				}
+			}
 
 			else if (n is DEnum)
 			{
 				var d = n as DEnum;
 
-				// Only show enums if a) they're named and types are allowed or b) variables are allowed
-				return (d.IsAnonymous ? false : vis.HasFlag(MemberFilter.Types)) ||
-					vis.HasFlag(MemberFilter.Variables);
+				// Only show enums if a) they're named and enums are allowed or b) variables are allowed
+				return d.IsAnonymous ? 
+					(vis & MemberFilter.Variables) != 0 :
+					(vis & MemberFilter.Enums) != 0;
 			}
-			else if(n is NamedTemplateMixinNode)
+			else if (n is NamedTemplateMixinNode)
 				return (vis & (MemberFilter.Variables | MemberFilter.Types)) == (MemberFilter.Variables | MemberFilter.Types);
 			
 			return false;
