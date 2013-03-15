@@ -93,7 +93,11 @@ namespace D_Parser.Completion
 
 				else if (trackVars.IsParsingBaseClassList)
 				{
-					visibleMembers = MemberFilter.Classes | MemberFilter.Interfaces | MemberFilter.Templates;
+					var dc = parsedBlock as DClassLike;
+					if (dc != null && dc.ClassType == DTokens.Interface)
+						visibleMembers = MemberFilter.Interfaces | MemberFilter.Templates;
+					else
+						visibleMembers = MemberFilter.Classes | MemberFilter.Interfaces | MemberFilter.Templates;
 					return true;
 				}
 
@@ -199,7 +203,7 @@ namespace D_Parser.Completion
 			}
 			else if (CurrentScope != null)
 			{
-				if (CurrentScope.BlockStartLocation.IsEmpty || caretLocation < CurrentScope.BlockStartLocation && caretLocation > CurrentScope.Location)
+				if (CurrentScope.BlockStartLocation.IsEmpty || (caretLocation < CurrentScope.BlockStartLocation && caretLocation > CurrentScope.Location))
 				{
 					ParseDecl = true;
 					blockStart = DocumentHelper.GetOffsetByRelativeLocation(code, caretLocation, caretOffset, blockStartLocation = CurrentScope.Location);

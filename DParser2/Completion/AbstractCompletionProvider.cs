@@ -41,7 +41,7 @@ namespace D_Parser.Completion
 				PostfixExpression_Access pfa;
 				if (trackVars.LastParsedObject is PostfixExpression_Access)
 					pfa = trackVars.LastParsedObject as PostfixExpression_Access;
-				else if (trackVars.LastParsedObject is ITypeDeclaration)
+				else if (trackVars.LastParsedObject is ITypeDeclaration && !(trackVars.LastParsedObject is TemplateInstanceExpression))
 					pfa = TryConvertTypeDeclaration(trackVars.LastParsedObject as ITypeDeclaration) as PostfixExpression_Access;
 				else
 					pfa = null;
@@ -52,13 +52,20 @@ namespace D_Parser.Completion
 					// this.fileName | <-- AccessExpression will be 'fileName' - no trigger wished
 					if (pfa.AccessExpression == null)
 					{
-						var mcp = new MemberCompletionProvider(dataGen) {
+						var mcp = new MemberCompletionProvider(dataGen)
+						{
 							AccessExpression = pfa,
 							ScopedBlock = curBlock,
 							ScopedStatement = curStmt,
 						};
 						if (trackVars.IsParsingBaseClassList)
-							mcp.MemberFilter = MemberFilter.Classes | MemberFilter.Interfaces | MemberFilter.Templates;
+						{
+							if (trackVars.InitializedNode is DClassLike && 
+								(trackVars.InitializedNode as DClassLike).ClassType == DTokens.Interface)
+								mcp.MemberFilter = MemberFilter.Interfaces | MemberFilter.Templates;
+							else
+								mcp.MemberFilter = MemberFilter.Classes | MemberFilter.Interfaces | MemberFilter.Templates;
+						}
 						return mcp;
 					}
 					else

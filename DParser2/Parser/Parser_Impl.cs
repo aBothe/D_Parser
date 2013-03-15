@@ -1382,7 +1382,7 @@ namespace D_Parser.Parser
 				else if (Expect(Identifier))
 					ttd = new IdentifierDeclaration(t.Value) { Location = t.Location, EndLocation = t.EndLocation };
 				else if (IsEOF)
-					return new IdentifierDeclaration() { InnerDeclaration = td, Location = t.Location, EndLocation = t.EndLocation };
+					return new DTokenDeclaration(DTokens.INVALID, td);
 
 				if (ttd != null)
 					ttd.InnerDeclaration = td;
@@ -2538,11 +2538,13 @@ namespace D_Parser.Parser
 
 				// BaseClasslist_opt
 				if (laKind == (Colon))
+				{
 					//TODO : Add base classes to expression
-					anclass.BaseClasses = BaseClassList();
+					BaseClassList(anclass);
+				}
 				// SuperClass_opt InterfaceClasses_opt
 				else if (laKind != OpenCurlyBrace)
-					anclass.BaseClasses = BaseClassList(false);
+					BaseClassList(anclass,false);
 
 				ClassBody(anclass);
 
@@ -4291,7 +4293,7 @@ namespace D_Parser.Parser
 			}
 
 			if (laKind == (Colon))
-				dc.BaseClasses = BaseClassList();
+				BaseClassList(dc);
 
 			ClassBody(dc);
 
@@ -4299,11 +4301,12 @@ namespace D_Parser.Parser
 			return dc;
 		}
 
-		private List<ITypeDeclaration> BaseClassList(bool ExpectColon=true)
+		private void BaseClassList(DClassLike dc,bool ExpectColon=true)
 		{
 			if (ExpectColon) Expect(Colon);
 
 			var ret = new List<ITypeDeclaration>();
+			dc.BaseClasses = ret;
 
 			bool init = true;
 			while (init || laKind == (Comma))
@@ -4316,8 +4319,6 @@ namespace D_Parser.Parser
 				var ids=IdentifierList();
 				if (ids != null)
 					ret.Add(ids);
-				else
-					ret.Add(new DTokenDeclaration(DTokens.INVALID));
 			}
 
 			if (IsEOF)
@@ -4325,9 +4326,8 @@ namespace D_Parser.Parser
 				if (ret.Count != 0)
 					LastParsedObject = ret[ret.Count - 1];
 				TrackerVariables.IsParsingBaseClassList = true;
+				TrackerVariables.InitializedNode = dc;
 			}
-
-			return ret;
 		}
 
 		public void ClassBody(DBlockNode ret,bool KeepBlockAttributes=false,bool UpdateBoundaries=true)
@@ -4469,7 +4469,7 @@ namespace D_Parser.Parser
 				dc.TemplateConstraint=Constraint();
 
 			if (laKind == (Colon))
-				dc.BaseClasses = BaseClassList();
+				BaseClassList(dc);
 
 			// Empty interfaces are allowed
 			if (laKind == Semicolon)
