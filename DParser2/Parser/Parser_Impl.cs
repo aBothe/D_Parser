@@ -2647,6 +2647,8 @@ namespace D_Parser.Parser
 			while (laKind == (Comma))
 			{
 				Step();
+				if (laKind == CloseParenthesis)
+					break;
 				ret.Add(AssignExpression(Scope));
 			}
 
