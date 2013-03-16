@@ -885,9 +885,9 @@ namespace D_Parser.Parser
 			 * T!(int) -- now every argument is complete
 			 */
 			var tix=ttd as TemplateInstanceExpression;
-			if (IsEOF && tix!=null && (tix.Arguments == null ||
-				tix.Arguments[tix.Arguments.Length-1] is TokenExpression &&
-				((TokenExpression)tix.Arguments[tix.Arguments.Length-1]).Token == DTokens.INVALID))
+			if (IsEOF && tix!=null && (tix.Arguments == null || tix.Arguments.Length == 0 ||
+				(tix.Arguments[tix.Arguments.Length-1] is TokenExpression &&
+				((TokenExpression)tix.Arguments[tix.Arguments.Length-1]).Token == DTokens.INVALID)))
 			{
 				LastParsedObject = ttd;
 				return null;
