@@ -155,6 +155,8 @@ namespace D_Parser.Completion
 
 				if (templ.Arguments != null)
 					res.CurrentlyTypedArgumentIndex = templ.Arguments.Length;
+				else
+					res.CurrentlyTypedArgumentIndex = 0;
 			}
 			else if (lastParamExpression is PostfixExpression_Access)
 			{
