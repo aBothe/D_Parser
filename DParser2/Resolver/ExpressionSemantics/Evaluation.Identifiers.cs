@@ -204,7 +204,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			else
 				res = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(tix.TemplateIdentifier.Id, resultBases, ctxt, tix);
 
-			return !ctxt.Options.HasFlag(ResolutionOptions.NoTemplateParameterDeduction) && deduceParameters ?
+			return (ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) == 0 && deduceParameters ?
 				TemplateInstanceHandler.DeduceParamsAndFilterOverloads(res, tix, ctxt) : res;
 		}
 

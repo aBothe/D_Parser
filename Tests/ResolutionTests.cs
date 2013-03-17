@@ -839,6 +839,35 @@ struct Appender(A : T[], T) {
 		}
 
 		[Test]
+		public void TemplateParamDeduction12()
+		{
+			var pcl = CreateCache(@"module modA;
+template Tmpl(T)
+{
+	enum Tmpl = false;
+}
+
+template Tmpl(alias T)
+{
+	enum Tmpl = true;
+}
+
+int sym;
+");
+			var ctxt = CreateDefCtxt(pcl, pcl[0]["modA"]);
+
+			var ex = DParser.ParseExpression("Tmpl!sym");
+			var t = Evaluation.EvaluateValue(ex, ctxt);
+			Assert.That(t, Is.InstanceOfType(typeof(PrimitiveValue)));
+			Assert.That((t as PrimitiveValue).Value == 1m);
+
+			ex = ex = DParser.ParseExpression("Tmpl!int");
+			t = Evaluation.EvaluateValue(ex, ctxt);
+			Assert.That(t, Is.InstanceOfType(typeof(PrimitiveValue)));
+			Assert.That((t as PrimitiveValue).Value == 0m);
+		}
+
+		[Test]
 		public void TemplateTypeTuple1()
 		{
 			var pcl = CreateCache(@"module modA;

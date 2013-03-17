@@ -60,7 +60,13 @@ namespace D_Parser.Resolver.TypeResolution
 					}
 					else
 					{
-						var v = Evaluation.EvaluateValue(arg, ctxt);
+						var v = Evaluation.EvaluateValue(arg, ctxt, true);
+						if (v is VariableValue)
+						{
+							var vv = v as VariableValue;
+							if (vv.Variable.IsConst && vv.Variable.Initializer != null)
+								v = Evaluation.EvaluateValue(vv, new StandardValueProvider(ctxt));
+						}
 						if(!hasNonFinalArgument)
 							hasNonFinalArgument = IsNonFinalArgument(v);
 						templateArguments.Add(v);

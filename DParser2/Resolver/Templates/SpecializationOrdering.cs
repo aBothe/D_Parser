@@ -114,6 +114,8 @@ namespace D_Parser.Resolver.Templates
 			else if (t1 is TemplateThisParameter && t2 is TemplateThisParameter && !
 				IsMoreSpecialized(((TemplateThisParameter)t1).FollowParameter, ((TemplateThisParameter)t2).FollowParameter, t1_dummyParameterList))
 				return false;
+			else if (t1 is TemplateAliasParameter && t2 is TemplateTypeParameter)
+				return true;
 
 			return false;
 		}
