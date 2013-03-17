@@ -6,6 +6,7 @@ using D_Parser.Resolver.ASTScanner;
 using System.Threading;
 using D_Parser.Resolver;
 using D_Parser.Resolver.TypeResolution;
+using System.Collections.Concurrent;
 
 namespace D_Parser.Misc
 {
@@ -21,7 +22,7 @@ namespace D_Parser.Misc
 		/// <summary>
 		/// Lookup that is used for fast filename-AST lookup. Do NOT modify, it'll be done inside the ModulePackage instances.
 		/// </summary>
-		internal Dictionary<string, DModule> fileLookup = new Dictionary<string, DModule>();
+		internal ConcurrentDictionary<string, DModule> fileLookup = new ConcurrentDictionary<string, DModule>();
 		
 		public RootPackage Root;
 

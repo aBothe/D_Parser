@@ -126,7 +126,7 @@ namespace D_Parser.Dom
 			if(modules.TryGetValue(name, out ast))
 			{
 				if(!string.IsNullOrEmpty(ast.FileName))
-					Cache.fileLookup.Remove(ast.FileName);
+					Cache.fileLookup.TryRemove(ast.FileName, out ast);
 				modules.Remove(name);
 				return true;
 			}
