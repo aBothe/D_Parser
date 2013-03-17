@@ -88,7 +88,7 @@ namespace D_Parser.Resolver.TypeResolution
 		{
 			bool hasUndeterminedArgs;
 			var args = PreResolveTemplateArgs(templateInstanceExpr, ctxt, out hasUndeterminedArgs);
-			return hasUndeterminedArgs ? rawOverloadList.ToArray() : DeduceParamsAndFilterOverloads(rawOverloadList, args, isMethodCall, ctxt);
+			return DeduceParamsAndFilterOverloads(rawOverloadList, args, isMethodCall, ctxt, hasUndeterminedArgs);
 		}
 
 		/// <summary>
@@ -114,12 +114,10 @@ namespace D_Parser.Resolver.TypeResolution
 			if (rawOverloadList == null)
 				return null;
 			
-			if(hasUndeterminedArguments)
-				return rawOverloadList.ToArray();
+			var filteredOverloads = hasUndeterminedArguments ? new List<AbstractType>(rawOverloadList) : 
+				DeduceOverloads(rawOverloadList, givenTemplateArguments, isMethodCall, ctxt);
 
-			var filteredOverloads = DeduceOverloads(rawOverloadList, givenTemplateArguments, isMethodCall, ctxt);
-
-			AbstractType[] sortedAndFilteredOverloads = null;
+			AbstractType[] sortedAndFilteredOverloads;
 
 			// If there are >1 overloads, filter from most to least specialized template param
 			if (filteredOverloads.Count > 1)
@@ -129,7 +127,7 @@ namespace D_Parser.Resolver.TypeResolution
 			else
 				return null;
 			
-			if(sortedAndFilteredOverloads!=null)
+			if(sortedAndFilteredOverloads!=null && !hasUndeterminedArguments)
 			{
 				filteredOverloads.Clear();
 				for(int i = sortedAndFilteredOverloads.Length - 1; i >= 0; i--)

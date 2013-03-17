@@ -129,7 +129,7 @@ namespace D_Parser.Resolver.TypeResolution
 				res = ResolveFurtherTypeIdentifier(id.Id, rbases, ctxt, id);
 			}
 
-			if (filterForTemplateArgs && !ctxt.Options.HasFlag(ResolutionOptions.NoTemplateParameterDeduction))
+			if (filterForTemplateArgs && (ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) == 0)
 			{
 				var l_ = new List<AbstractType>();
 
@@ -702,7 +702,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 		public static AbstractType GetMethodReturnType(DMethod method, ResolutionContext ctxt)
 		{
-			if (ctxt != null && ctxt.Options.HasFlag(ResolutionOptions.DontResolveBaseTypes))
+			if (ctxt != null && (ctxt.Options & ResolutionOptions.DontResolveBaseTypes) != 0)
 				return null;
 
 			/*

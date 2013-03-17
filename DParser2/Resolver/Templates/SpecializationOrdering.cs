@@ -11,7 +11,7 @@ namespace D_Parser.Resolver.Templates
 		ResolutionContext ctxt;
 
 		public static AbstractType[] FilterFromMostToLeastSpecialized(
-			List<AbstractType> templateOverloads,
+			IEnumerable<AbstractType> templateOverloads,
 			ResolutionContext ctxt)
 		{
 			if (templateOverloads == null)
@@ -28,15 +28,18 @@ namespace D_Parser.Resolver.Templates
 			 * two overloads would be illegal.
 			 */
 			var lastEquallySpecializedOverloads = new List<AbstractType>();
-			var currentlyMostSpecialized = templateOverloads[0];
+			var en = templateOverloads.GetEnumerator();
+			if (!en.MoveNext())
+				return null;
+			var currentlyMostSpecialized = en.Current;
 			lastEquallySpecializedOverloads.Add(currentlyMostSpecialized);
 
-			for (int i = 1; i < templateOverloads.Count; i++)
+			while(en.MoveNext())
 			{
-				var evenMoreSpecialized = so.GetTheMoreSpecialized(currentlyMostSpecialized, templateOverloads[i]);
+				var evenMoreSpecialized = so.GetTheMoreSpecialized(currentlyMostSpecialized, en.Current);
 
 				if (evenMoreSpecialized == null)
-					lastEquallySpecializedOverloads.Add(templateOverloads[i]);
+					lastEquallySpecializedOverloads.Add(en.Current);
 				else
 				{
 					currentlyMostSpecialized = evenMoreSpecialized;

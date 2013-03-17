@@ -41,10 +41,10 @@ namespace D_Parser.Resolver.Templates
 			var rawOverloads = template.Definition[template.Name];
 
 			// Pre-check version/debug conditions
-			var overloads = new List<INode>();
+			var overloads = new List<DNode>();
 			if(rawOverloads!=null)
-				foreach(var oo in rawOverloads) //TODO: Private/Package check
-					if(oo is DNode && ctxt.CurrentContext.MatchesDeclarationEnvironment((DNode)oo))
+				foreach(DNode oo in rawOverloads) //TODO: Private/Package check
+					if(ctxt.CurrentContext.MatchesDeclarationEnvironment(oo))
 					   overloads.Add(oo);
 			
 			if(template.Definition.StaticStatements != null &&
@@ -61,8 +61,8 @@ namespace D_Parser.Resolver.Templates
 						
 						rawOverloads = ast[template.Name];
 						if(rawOverloads != null)
-							foreach(var oo in rawOverloads) //TODO: Private/Package check
-								if(oo is DNode && ctxt.CurrentContext.MatchesDeclarationEnvironment((DNode)oo))
+							foreach(DNode oo in rawOverloads) //TODO: Private/Package check
+								if(ctxt.CurrentContext.MatchesDeclarationEnvironment(oo))
 								   overloads.Add(oo);
 					}
 				}

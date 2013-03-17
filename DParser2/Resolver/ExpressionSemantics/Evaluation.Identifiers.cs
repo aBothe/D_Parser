@@ -33,13 +33,14 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if(r is TemplateParameterSymbol)
 			{
 				var tps = (TemplateParameterSymbol)r;
-				
+
+				if((tps.Parameter is TemplateTypeParameter ||
+					tps.Parameter is TemplateAliasParameter))
+					return new TypeValue(tps.Base ?? tps);
 				if(tps.Parameter is TemplateValueParameter)
 					return tps.ParameterValue;
-				else if(tps.Parameter is TemplateTupleParameter)
+				if(tps.Parameter is TemplateTupleParameter)
 					return new TypeValue(tps.Base);
-				else if(tps.Parameter is TemplateTypeParameter && tps.Base == null)
-					return new TypeValue(r);
 				//TODO: Are there other evaluable template parameters?
 			}
 			else if (r is UserDefinedType || r is PackageSymbol || r is ModuleSymbol || r is AliasedType)
@@ -220,8 +221,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			
 			if(f==null)
 				return null;
-			
-			return !ctxt.Options.HasFlag(ResolutionOptions.NoTemplateParameterDeduction) && deduceParameters ?
+
+			return (ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) == 0 && deduceParameters ?
 				TemplateInstanceHandler.DeduceParamsAndFilterOverloads(f, null, false, ctxt) : 
 				f.ToArray();
 		}

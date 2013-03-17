@@ -852,9 +852,14 @@ template Tmpl(alias T)
 	enum Tmpl = true;
 }
 
+template tt(alias U)
+{
+}
+
 int sym;
 ");
-			var ctxt = CreateDefCtxt(pcl, pcl[0]["modA"]);
+			var modA = pcl[0]["modA"];
+			var ctxt = CreateDefCtxt(pcl, modA);
 
 			var ex = DParser.ParseExpression("Tmpl!sym");
 			var t = Evaluation.EvaluateValue(ex, ctxt);
@@ -865,6 +870,12 @@ int sym;
 			t = Evaluation.EvaluateValue(ex, ctxt);
 			Assert.That(t, Is.InstanceOfType(typeof(PrimitiveValue)));
 			Assert.That((t as PrimitiveValue).Value == 0m);
+
+			ctxt.CurrentContext.Set(modA["tt"][0] as IBlockNode);
+			ex = DParser.ParseExpression("Tmpl!U");
+			t = Evaluation.EvaluateValue(ex, ctxt);
+			Assert.That(t, Is.InstanceOfType(typeof(PrimitiveValue)));
+			Assert.That((t as PrimitiveValue).Value == 1m);
 		}
 
 		[Test]
