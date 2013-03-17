@@ -70,11 +70,11 @@ namespace D_Parser.Completion
 			{
 				var n = trackVars.LastParsedObject as INode;
 				var dv = n as DVariable;
-				if (dv != null && dv.IsAlias && dv.Type == null && trackVars.ExpectingIdentifier)
+				if (dv != null && dv.IsAlias && dv.Type == null && trackVars.ExpectingNodeName)
 				{
 					// Show completion because no aliased type has been entered yet
 				}
-				else if (n != null && string.IsNullOrEmpty(n.Name) && trackVars.ExpectingIdentifier)
+				else if (n != null && string.IsNullOrEmpty(n.Name) && trackVars.ExpectingNodeName)
 					return false;
 
 				else if (trackVars.LastParsedObject is TokenExpression &&

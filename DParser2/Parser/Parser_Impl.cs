@@ -534,7 +534,8 @@ namespace D_Parser.Parser
 
 		ITypeDeclaration ModuleFullyQualifiedName()
 		{
-			Expect(Identifier);
+			if (!Expect(Identifier))
+				return null;
 
 			var td = new IdentifierDeclaration(t.Value) { Location=t.Location,EndLocation=t.EndLocation };
 
@@ -542,11 +543,7 @@ namespace D_Parser.Parser
 			{
 				Step();
 				Expect(Identifier);
-
-				var td2 = new IdentifierDeclaration(t.Value) { Location=t.Location, EndLocation=t.EndLocation };
-
-				td2.InnerDeclaration = td;
-				td = td2;
+				td = new IdentifierDeclaration(t.Value) { Location=t.Location, EndLocation=t.EndLocation, InnerDeclaration = td };
 			}
 
 			return td;
@@ -1054,7 +1051,7 @@ namespace D_Parser.Parser
 				td.InnerMost = IdentifierList();
 
 			if (td == null)
-				ExpectingIdentifier = false;
+				TrackerVariables.ExpectingIdentifier = false;
 
 			if(isModuleScoped)
 			{
@@ -1263,7 +1260,7 @@ namespace D_Parser.Parser
 				if (IsParam && laKind != (Identifier))
 				{
 					if(ret.Type!=null && IsEOF)
-						ExpectingIdentifier = true;
+						ExpectingNodeName = true;
 					return ret;
 				}
 
@@ -1275,7 +1272,7 @@ namespace D_Parser.Parser
 				else
 				{
 					if(IsEOF)
-						ExpectingIdentifier = true;
+						ExpectingNodeName = true;
 					// Code error! - to prevent infinite declaration loops, step one token forward anyway!
 					if(laKind != CloseCurlyBrace)
 						Step();
@@ -1385,7 +1382,7 @@ namespace D_Parser.Parser
 					ttd = new IdentifierDeclaration(t.Value) { Location = t.Location, EndLocation = t.EndLocation };
 				else if (IsEOF)
 				{
-					ExpectingIdentifier = true;
+					TrackerVariables.ExpectingIdentifier = true;
 					return td == null ? null : new DTokenDeclaration(DTokens.INVALID, td);
 				}
 				else 
@@ -1395,8 +1392,6 @@ namespace D_Parser.Parser
 				td = ttd;
 			}
 			while (laKind == Dot);
-
-			ExpectingIdentifier = false;
 
 			return td;
 		}
@@ -1873,7 +1868,7 @@ namespace D_Parser.Parser
 					{
 						Step();
 						n += t.ToString();
-	
+
 						TrackerVariables.ExpectingIdentifier = false;
 	
 						if (t.Kind == Identifier && laKind == Identifier)
@@ -2801,7 +2796,7 @@ namespace D_Parser.Parser
 				if (IsEOF)
 				{
 					LastParsedObject = new TokenExpression(Dot) { Location = t.Location, EndLocation = t.EndLocation };
-					ExpectingIdentifier = true;
+					TrackerVariables.ExpectingIdentifier = true;
 				}
 			}
 
@@ -3374,7 +3369,7 @@ namespace D_Parser.Parser
 			else if (IsEOF)
 			{
 				if (tp != null)
-					TrackerVariables.ExpectingIdentifier = true;
+					TrackerVariables.ExpectingNodeName = true;
 			}
 			else
 			{
@@ -4245,7 +4240,7 @@ namespace D_Parser.Parser
 				ret.NameLocation = t.Location;
 			}
 			else if (IsEOF)
-				ExpectingIdentifier = true;
+				ExpectingNodeName = true;
 
 			if (laKind == (Semicolon))
 			{
@@ -4289,7 +4284,7 @@ namespace D_Parser.Parser
 				dc.NameLocation = t.Location;
 			}
 			else if (IsEOF)
-				ExpectingIdentifier = true;
+				ExpectingNodeName = true;
 
 			if (laKind == (OpenParenthesis))
 			{
@@ -4475,7 +4470,7 @@ namespace D_Parser.Parser
 			if (!Expect(Identifier))
 			{
 				if (IsEOF)
-					ExpectingIdentifier = true;
+					ExpectingNodeName = true;
 				return dc;
 			}
 			dc.Name = t.Value;
@@ -4544,7 +4539,7 @@ namespace D_Parser.Parser
 				}
 				else
 				{
-					if(mye.Type == null)
+					if (mye.Type == null)
 						mye.Type = Type();
 
 					if (Expect(Identifier))
@@ -4555,7 +4550,7 @@ namespace D_Parser.Parser
 				}
 			}
 			else if (IsEOF)
-				Expect(Identifier);
+				ExpectingNodeName = true;
 
 			if (IsDeclaratorSuffix)
 			{
@@ -4645,9 +4640,13 @@ namespace D_Parser.Parser
 				else
 				{
 					ev.Type = Type();
-					Expect(Identifier);
-					ev.Name = t.Value;
-					ev.NameLocation = t.Location;
+					if (Expect(Identifier))
+					{
+						ev.Name = t.Value;
+						ev.NameLocation = t.Location;
+					}
+					else if (IsEOF)
+						ExpectingNodeName = true;
 				}
 
 				if (laKind == (Assign))
@@ -4767,7 +4766,7 @@ namespace D_Parser.Parser
 				dc.NameLocation = t.Location;
 			}
 			else if (IsEOF)
-				ExpectingIdentifier = true;
+				ExpectingNodeName = true;
 
 			TemplateParameterList(dc);
 
@@ -5146,7 +5145,7 @@ namespace D_Parser.Parser
 					};
 				else if (IsEOF)
 				{
-					ExpectingIdentifier = false;
+					TrackerVariables.ExpectingIdentifier = false;
 					td.EndLocation = CodeLocation.Empty;
 					return td;
 				}
