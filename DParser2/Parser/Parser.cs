@@ -279,8 +279,6 @@ namespace D_Parser.Parser
 			else
 				Modifier.RemoveFromStack(stk, m.Token);
 
-			LastParsedObject = attr;
-
 			stk.Push(attr);
 		}
 
@@ -352,17 +350,15 @@ namespace D_Parser.Parser
 
         private bool Expect(byte n)
         {
-			if(n == Identifier)
-				ExpectingIdentifier = true;
 			if (laKind == n)
 			{
 				Step();
-				if (n == Identifier)
-					ExpectingIdentifier = false;
 				return true; 
 			}
 			else
 			{
+				if (n == Identifier)
+					ExpectingIdentifier = true;
 				SynErr(n, DTokens.GetTokenString(n) + " expected, "+DTokens.GetTokenString(laKind)+" found!");
 			}
             return false;
@@ -470,7 +466,7 @@ namespace D_Parser.Parser
 		/// Required for code completion.
 		/// </summary>
 		public object LastParsedObject { get { return lastParsedObj; } set { PreviousParsedObject = lastParsedObj; lastParsedObj = value; } }
-		object lastParsedObj = null;
+		object lastParsedObj;
 
 		public readonly List<Comment> Comments = new List<Comment>();
 
@@ -478,11 +474,12 @@ namespace D_Parser.Parser
 		/// Required for code completion.
 		/// True if a type/variable/method/etc. identifier is expected.
 		/// </summary>
-		public bool ExpectingIdentifier = false;
+		public bool ExpectingIdentifier;
+		public bool IsParsingAssignExpression;
 
-		public INode InitializedNode=null;
-		public bool IsParsingInitializer=false;
+		public INode InitializedNode;
+		public bool IsParsingInitializer;
 
-		public bool IsParsingBaseClassList = false;
+		public bool IsParsingBaseClassList;
 	}
 }

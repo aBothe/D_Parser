@@ -100,6 +100,12 @@ namespace D_Parser.Completion
 						visibleMembers = MemberFilter.Classes | MemberFilter.Interfaces | MemberFilter.Templates;
 					return true;
 				}
+				
+				if (trackVars.IsParsingAssignExpression)
+				{
+					visibleMembers = MemberFilter.All;
+					return true;
+				}
 
 				if ((trackVars.LastParsedObject is NewExpression && trackVars.IsParsingInitializer) ||
 					trackVars.LastParsedObject is TemplateInstanceExpression && ((TemplateInstanceExpression)trackVars.LastParsedObject).Arguments == null)
@@ -114,14 +120,14 @@ namespace D_Parser.Completion
 					if (dbn != null && dbn.StaticStatements != null && dbn.StaticStatements.Count > 0)
 					{
 						var ss = dbn.StaticStatements[dbn.StaticStatements.Count - 1];
-						if (ss.Location <= Editor.CaretLocation && ss.EndLocation <= Editor.CaretLocation)
+						if (Editor.CaretLocation > ss.Location && Editor.CaretLocation <= ss.EndLocation)
 						{
 							showVariables = true;
 						}
 					}
 
 					if (!showVariables)
-						visibleMembers = MemberFilter.Types | MemberFilter.Keywords | MemberFilter.TypeParameters;
+						visibleMembers = MemberFilter.All ^ MemberFilter.Variables;
 				}
 
 				// Hide completion if having typed a '0.' literal

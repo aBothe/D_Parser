@@ -2171,6 +2171,12 @@ namespace D_Parser.Parser
 		public IExpression AssignExpression(IBlockNode Scope = null)
 		{
 			var left = ConditionalExpression(Scope);
+			if (Lexer.IsEOF)
+			{
+				TrackerVariables.IsParsingAssignExpression = true;
+				LastParsedObject = left;
+				return left;
+			}
 			if (!AssignOps[laKind])
 				return left;
 
