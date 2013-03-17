@@ -4590,63 +4590,66 @@ namespace D_Parser.Parser
 			}
 			else if (laKind == OpenCurlyBrace) // Normal enum block
 			{
-				var OldPreviousComment = PreviousComment;
-				PreviousComment = "";
-				mye.BlockStartLocation = la.Location;
-
-				// While there are commas, loop through
-				do
-				{
-					Step();
-
-					if (laKind == CloseCurlyBrace)
-						break;
-
-					var ev = new DEnumValue() { Location = la.Location, Description = GetComments(), Parent = mye };
-					LastParsedObject = ev;
-
-					if (laKind == Identifier && (
-						Lexer.CurrentPeekToken.Kind == Assign ||
-						Lexer.CurrentPeekToken.Kind == Comma ||
-						Lexer.CurrentPeekToken.Kind == CloseCurlyBrace))
-					{
-						Step();
-						ev.Name = t.Value;
-						ev.NameLocation = t.Location;
-					}
-					else
-					{
-						ev.Type = Type();
-						Expect(Identifier);
-						ev.Name = t.Value;
-						ev.NameLocation = t.Location;
-					}
-
-					if (laKind == (Assign))
-					{
-						Step();
-						ev.Initializer = AssignExpression();
-					}
-
-					ev.EndLocation = t.EndLocation;
-					ev.Description += CheckForPostSemicolonComment();
-
-					mye.Add(ev);
-				}
-				while (laKind == Comma);
-
-				Expect(CloseCurlyBrace);
-				PreviousComment = OldPreviousComment;
-
-				mye.EndLocation = t.EndLocation;
-				
-				// Important: Add the enum block, whereas it CAN be unnamed, to the return array
+				EnumBody(mye);
 				ret.Add(mye);
 			}
 
 			mye.Description += CheckForPostSemicolonComment();
 
 			return ret.ToArray();
+		}
+
+		public void EnumBody(DEnum mye)
+		{
+			var OldPreviousComment = PreviousComment;
+			PreviousComment = "";
+			mye.BlockStartLocation = la.Location;
+
+			// While there are commas, loop through
+			do
+			{
+				Step();
+
+				if (laKind == CloseCurlyBrace)
+					break;
+
+				var ev = new DEnumValue() { Location = la.Location, Description = GetComments(), Parent = mye };
+				LastParsedObject = ev;
+
+				if (laKind == Identifier && (
+					Lexer.CurrentPeekToken.Kind == Assign ||
+					Lexer.CurrentPeekToken.Kind == Comma ||
+					Lexer.CurrentPeekToken.Kind == CloseCurlyBrace))
+				{
+					Step();
+					ev.Name = t.Value;
+					ev.NameLocation = t.Location;
+				}
+				else
+				{
+					ev.Type = Type();
+					Expect(Identifier);
+					ev.Name = t.Value;
+					ev.NameLocation = t.Location;
+				}
+
+				if (laKind == (Assign))
+				{
+					Step();
+					ev.Initializer = AssignExpression();
+				}
+
+				ev.EndLocation = t.EndLocation;
+				ev.Description += CheckForPostSemicolonComment();
+
+				mye.Add(ev);
+			}
+			while (laKind == Comma);
+
+			Expect(CloseCurlyBrace);
+			PreviousComment = OldPreviousComment;
+
+			mye.EndLocation = t.EndLocation;
 		}
 		#endregion
 

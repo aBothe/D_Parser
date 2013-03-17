@@ -226,7 +226,7 @@ namespace D_Parser.Completion
 
 					ISyntaxRegion ret = null;
 
-					if (CurrentScope == null || CurrentScope is DModule)
+					if (CurrentScope == null)
 						ret = psr.Parse();
 					else if (CurrentScope is DMethod)
 					{
@@ -245,26 +245,21 @@ namespace D_Parser.Completion
 							if (ret2 != null && ret2.Length > 0)
 								ret = ret2[0];
 						}
-						else
+						else if (CurrentScope is DClassLike)
 						{
-							DBlockNode bn = null;
-							if (CurrentScope is DClassLike)
-							{
-								var t = new DClassLike((CurrentScope as DClassLike).ClassType);
-								t.AssignFrom(CurrentScope);
-								bn = t;
-							}
-							else if (CurrentScope is DEnum)
-							{
-								var t = new DEnum();
-								t.AssignFrom(CurrentScope);
-								bn = t;
-							}
-
-							bn.Clear();
-
-							psr.ClassBody(bn);
-							ret = bn;
+							var t = new DClassLike((CurrentScope as DClassLike).ClassType);
+							t.AssignFrom(CurrentScope);
+							t.Clear();
+							psr.ClassBody(t);
+							ret = t;
+						}
+						else if (CurrentScope is DEnum)
+						{
+							var t = new DEnum();
+							t.AssignFrom(CurrentScope);
+							t.Clear();
+							psr.EnumBody(t);
+							ret = t;
 						}
 					}
 
