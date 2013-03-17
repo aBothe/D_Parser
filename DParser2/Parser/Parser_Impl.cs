@@ -2177,8 +2177,11 @@ namespace D_Parser.Parser
 			var left = ConditionalExpression(Scope);
 			if (Lexer.IsEOF)
 			{
-				TrackerVariables.IsParsingAssignExpression = true;
-				LastParsedObject = left;
+				if (!TrackerVariables.IsParsingAssignExpression)
+				{
+					LastParsedObject = left;
+					TrackerVariables.IsParsingAssignExpression = true;
+				}
 				return left;
 			}
 			if (!AssignOps[laKind])
