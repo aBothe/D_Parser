@@ -51,7 +51,7 @@ namespace D_Parser.Parser
 		/// Required for code completion.
 		/// True if a type/variable/method/etc. identifier is expected.
 		/// </summary>
-		public bool ExpectingIdentifier { set { TrackerVariables.ExpectingIdentifier = value; } }
+		public bool ExpectingIdentifier { set { TrackerVariables.ExpectingIdentifier = value; } get { return TrackerVariables.ExpectingIdentifier; } }
 
 		public ParserTrackerVariables TrackerVariables = new ParserTrackerVariables();
 
@@ -357,8 +357,6 @@ namespace D_Parser.Parser
 			}
 			else
 			{
-				if (n == Identifier)
-					ExpectingIdentifier = true;
 				SynErr(n, DTokens.GetTokenString(n) + " expected, "+DTokens.GetTokenString(laKind)+" found!");
 			}
             return false;

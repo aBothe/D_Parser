@@ -1053,10 +1053,10 @@ namespace D_Parser.Parser
 			else
 				td.InnerMost = IdentifierList();
 
-			// A type is never a declaration identifier
 			if (td == null)
 				ExpectingIdentifier = false;
-			else if(isModuleScoped)
+
+			if(isModuleScoped)
 			{
 				var innerMost = td.InnerMost;
 				if (innerMost is IdentifierDeclaration)
@@ -1262,7 +1262,7 @@ namespace D_Parser.Parser
 				// extern void Cfoo(HANDLE,char**);
 				if (IsParam && laKind != (Identifier))
 				{
-					if(ret.Type!=null)
+					if(ret.Type!=null && IsEOF)
 						ExpectingIdentifier = true;
 					return ret;
 				}
@@ -1274,6 +1274,8 @@ namespace D_Parser.Parser
 				}
 				else
 				{
+					if(IsEOF)
+						ExpectingIdentifier = true;
 					// Code error! - to prevent infinite declaration loops, step one token forward anyway!
 					if(laKind != CloseCurlyBrace)
 						Step();
@@ -1375,15 +1377,19 @@ namespace D_Parser.Parser
 				else
 					notInit = true;
 
-				ITypeDeclaration ttd = null;
+				ITypeDeclaration ttd;
 
 				if (IsTemplateInstance)
 					ttd = TemplateInstance();
 				else if (Expect(Identifier))
 					ttd = new IdentifierDeclaration(t.Value) { Location = t.Location, EndLocation = t.EndLocation };
 				else if (IsEOF)
-					return new DTokenDeclaration(DTokens.INVALID, td);
-
+				{
+					ExpectingIdentifier = true;
+					return td == null ? null : new DTokenDeclaration(DTokens.INVALID, td);
+				}
+				else 
+					ttd = null;
 				if (ttd != null)
 					ttd.InnerDeclaration = td;
 				td = ttd;
@@ -1498,7 +1504,7 @@ namespace D_Parser.Parser
 				return ret;
 			}
 
-			INode p=null;
+			DNode p;
 
 			if (laKind != TripleDot)
 			{
@@ -1546,12 +1552,10 @@ namespace D_Parser.Parser
 			return ret;
 		}
 
-		private INode Parameter(IBlockNode Scope = null)
+		private DNode Parameter(IBlockNode Scope = null)
 		{
 			var attr = new List<DAttribute>();
 			var startLocation = la.Location;
-
-			ITypeDeclaration td = null;
 
 			while ((ParamModifiers[laKind] && laKind != InOut) || (MemberFunctionAttribute[laKind] && Lexer.CurrentPeekToken.Kind != OpenParenthesis))
 			{
@@ -1567,7 +1571,7 @@ namespace D_Parser.Parser
 				attr.Add(new Modifier(Ref));
 			}
 
-			td = BasicType();
+			var td = BasicType();
 
 			var ret = Declarator(td,true, Scope);
 			ret.Location = startLocation;
@@ -4230,12 +4234,6 @@ namespace D_Parser.Parser
 			LastParsedObject = ret;
 			ApplyAttributes(ret);
 
-			if (IsEOF)
-			{
-				Expect(Identifier);
-				return ret;
-			}
-
 			// Allow anonymous structs&unions
 			if (laKind == Identifier)
 			{
@@ -4243,6 +4241,8 @@ namespace D_Parser.Parser
 				ret.Name = t.Value;
 				ret.NameLocation = t.Location;
 			}
+			else if (IsEOF)
+				ExpectingIdentifier = true;
 
 			if (laKind == (Semicolon))
 			{
@@ -4280,9 +4280,13 @@ namespace D_Parser.Parser
 
 			ApplyAttributes(dc);
 
-			Expect(Identifier);
-			dc.Name = t.Value;
-			dc.NameLocation = t.Location;
+			if (Expect(Identifier))
+			{
+				dc.Name = t.Value;
+				dc.NameLocation = t.Location;
+			}
+			else if (IsEOF)
+				ExpectingIdentifier = true;
 
 			if (laKind == (OpenParenthesis))
 			{
@@ -4466,7 +4470,11 @@ namespace D_Parser.Parser
 			ApplyAttributes(dc);
 
 			if (!Expect(Identifier))
+			{
+				if (IsEOF)
+					ExpectingIdentifier = true;
 				return dc;
+			}
 			dc.Name = t.Value;
 			dc.NameLocation = t.Location;
 
@@ -4755,6 +4763,8 @@ namespace D_Parser.Parser
 				dc.Name = t.Value;
 				dc.NameLocation = t.Location;
 			}
+			else if (IsEOF)
+				ExpectingIdentifier = true;
 
 			TemplateParameterList(dc);
 
