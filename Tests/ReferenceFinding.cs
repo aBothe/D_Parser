@@ -40,7 +40,7 @@ void main()
 			var refs = ReferencesFinder.Scan(pcl[0]["modA"]["A"][0],ctxt) as List<ISyntaxRegion>;
 
 			Assert.IsNotNull(refs);
-			Assert.AreEqual(7, refs.Count);
+			Assert.AreEqual(8, refs.Count);
 		}
 
 		[Test]
