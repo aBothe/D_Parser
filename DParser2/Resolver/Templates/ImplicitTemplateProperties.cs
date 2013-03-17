@@ -76,12 +76,9 @@ namespace D_Parser.Resolver.Templates
 
 			// Furthermore, pass all the arguments that have been passed to the super template, to the child,
 			// so these arguments may be used again for some inner parameters.
-			List<ISemantic> args;
-			if(template.DeducedTypes==null)
-				args = new List<ISemantic>();
-			else
+			var args = new List<ISemantic>();
+			if(template.DeducedTypes!=null)
 			{
-				args = new List<ISemantic>(template.DeducedTypes.Count);
 				foreach (var kv in template.DeducedTypes)
 					args.Add((ISemantic)kv.ParameterValue ?? kv.Base);
 			}
