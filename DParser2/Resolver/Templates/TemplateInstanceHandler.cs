@@ -126,8 +126,11 @@ namespace D_Parser.Resolver.TypeResolution
 				sortedAndFilteredOverloads = new[] { filteredOverloads[0] };
 			else
 				return null;
+
+			if (hasUndeterminedArguments)
+				return sortedAndFilteredOverloads;
 			
-			if(sortedAndFilteredOverloads!=null && !hasUndeterminedArguments)
+			if(sortedAndFilteredOverloads!=null)
 			{
 				filteredOverloads.Clear();
 				for(int i = sortedAndFilteredOverloads.Length - 1; i >= 0; i--)
