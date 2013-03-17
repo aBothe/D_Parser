@@ -13,6 +13,7 @@ namespace D_Parser.Completion
 	{
 		public object parsedBlock;
 		public IBlockNode curBlock;
+		public IStatement curStmt;
 		public ParserTrackerVariables trackVars;
 
 		public CtrlSpaceCompletionProvider(ICompletionDataGenerator cdg) : base(cdg) { }
@@ -21,7 +22,6 @@ namespace D_Parser.Completion
 		{
 			var visibleMembers = MemberFilter.All;
 
-			IStatement curStmt = null;
 			if (curBlock == null)
 				curBlock = D_Parser.Resolver.TypeResolution.DResolver.SearchBlockAt(Editor.SyntaxTree, Editor.CaretLocation, out curStmt);
 
@@ -54,7 +54,7 @@ namespace D_Parser.Completion
 				foreach (var kv in DTokens.Keywords)
 					CompletionDataGenerator.Add(kv.Key);
 
-			else if (visibleMembers.HasFlag(MemberFilter.Types))
+			else if (visibleMembers.HasFlag(MemberFilter.StructsAndUnions))
 				foreach (var kv in DTokens.BasicTypes_Array)
 					CompletionDataGenerator.Add(kv);
 		}

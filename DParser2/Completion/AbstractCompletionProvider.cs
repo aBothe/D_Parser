@@ -112,6 +112,7 @@ namespace D_Parser.Completion
 			return new CtrlSpaceCompletionProvider(dataGen) { 
 				trackVars=trackVars,
 				curBlock=curBlock,
+				curStmt = curStmt,
 				parsedBlock=parsedBlock
 			};
 		}
