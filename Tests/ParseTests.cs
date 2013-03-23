@@ -137,6 +137,18 @@ else int C;");
 			Assert.That(e1, Is.TypeOf(typeof(PostfixExpression_Access)));
 			Assert.That(e2, Is.TypeOf(typeof(PostfixExpression_Access)));
 		}
+
+		[Test]
+		public void Expr1()
+		{
+			var m = DParser.ParseString(@"module A;
+void main() {
+	if(*p == 0)
+	{}
+}");
+
+			Assert.That(m.ParseErrors.Count, Is.EqualTo(0));
+		}
 		
 		[Test]
 		public void LexingPerformance()
@@ -182,10 +194,10 @@ else int C;");
 
 		public static ParseCache ParsePhobos(bool ufcs=true)
 		{
-			var dmdBase = @"A:\D\dmd2\src";
+			var dmdBase = @"D:\D\dmd2\src";
 
 			var pc = new ParseCache();
-			UFCSCache.SingleThreaded = true;
+			//UFCSCache.SingleThreaded = true;
 			pc.EnableUfcsCaching = ufcs;
 			pc.FinishedParsing += new ParseCache.ParseFinishedHandler(pc_FinishedParsing);
 			pc.FinishedUfcsCaching += new Action(() =>
@@ -196,9 +208,9 @@ else int C;");
 			});
 
 			pc.BeginParse(new[] { 
-			    @"D:\Projects\tutorial.lib\gfm-master",
-				//dmdBase+@"\druntime\import",
-				//dmdBase+@"\phobos",
+			   // @"D:\Projects\tutorial.lib\gfm-master",
+				dmdBase+@"\druntime\import",
+				dmdBase+@"\phobos",
 				//@"A:\Projects\fxLib\src"
 				//@"A:\D\tango-d2\tngo"
 			},dmdBase+@"\phobos");
