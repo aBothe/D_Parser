@@ -1419,7 +1419,7 @@ namespace D_Parser.Parser
 		{
 			var td = BasicType();
 
-			if (IsDeclarator2())
+			if (td != null && IsDeclarator2())
 			{
 				var ttd = Declarator2();
 				if (ttd != null)
@@ -2374,7 +2374,7 @@ namespace D_Parser.Parser
 			{
 				Step();
 
-				SimpleUnaryExpression ae = null;
+				SimpleUnaryExpression ae;
 
 				switch (t.Kind)
 				{
