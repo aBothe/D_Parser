@@ -161,6 +161,7 @@ class baseFoo
 			var pcl = CreateCache(@"module A;
 
 int globalVar;
+enum enumSym = null;
 
 class otherClass {}
 
@@ -259,6 +260,10 @@ void foo()
 			Assert.That(t, Is.InstanceOf(typeof(ClassType)));
 			
 			ex = DParser.ParseExpression("globalVar");
+			t = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
+
+			ex = DParser.ParseExpression("enumSym");
 			t = Evaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
 		}
