@@ -383,6 +383,7 @@ namespace D_Parser.Parser
 			 *		version ( IntegerLiteral ) 
 			 *		version ( Identifier ) 
 			 *		version ( unittest )
+			 *		version ( assert )
 			 */
 			if (laKind == Version)
 			{
@@ -394,6 +395,11 @@ namespace D_Parser.Parser
 					{
 						Step();
 						c = new VersionCondition("unittest") { IdLocation = t.Location };
+					}
+					else if (laKind == Assert)
+					{
+						Step();
+						c = new VersionCondition("assert") { IdLocation = t.Location };
 					}
 					else if (laKind == Literal)
 					{
