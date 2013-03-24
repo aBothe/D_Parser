@@ -1058,8 +1058,7 @@ namespace D_Parser.Parser
 
 			if (td == null)
 				TrackerVariables.ExpectingIdentifier = false;
-
-			if(isModuleScoped)
+			else if(isModuleScoped)
 			{
 				var innerMost = td.InnerMost;
 				if (innerMost is IdentifierDeclaration)
