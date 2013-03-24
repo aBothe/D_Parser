@@ -1713,7 +1713,10 @@ namespace D_Parser.Parser
 					break;
 				case '/':
 					if (ReaderPeek() == '/')// DDoc
+					{
+						ReaderRead();
 						ReadSingleLineComment(Comment.Type.Documentation | Comment.Type.SingleLine);
+					}
 					else
 						ReadSingleLineComment(Comment.Type.SingleLine);
 					break;
@@ -1725,12 +1728,13 @@ namespace D_Parser.Parser
 
 		void ReadSingleLineComment(Comment.Type commentType)
 		{
-			var st = new CodeLocation(Col - ((commentType & Comment.Type.Documentation) != 0 ? 3 : 2), Line);
-			string comm = ReadToEndOfLine().TrimStart('/');
-			var end = new CodeLocation(Col, Line);
+			int tagLen = ((commentType & Comment.Type.Documentation) != 0 ? 3 : 2);
+			var st = new CodeLocation(Col - tagLen, Line);
+			string comm = ReadToEndOfLine();
+			var end = new CodeLocation(st.Column + tagLen + comm.Length, Line);
 
-			if (commentType.HasFlag(Comment.Type.Documentation) || !OnlyEnlistDDocComments)
-				Comments.Add(new Comment(commentType, comm.Trim(), st.Column < 2, st, end));
+			if ((commentType &Comment.Type.Documentation) != 0 || !OnlyEnlistDDocComments)
+				Comments.Add(new Comment(commentType, comm.TrimStart('/',' ','\t'), st.Column < 2, st, end));
 		}
 
 		void ReadMultiLineComment(Comment.Type commentType, bool isNestingComment)
