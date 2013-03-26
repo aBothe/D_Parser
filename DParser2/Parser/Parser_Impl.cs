@@ -3915,14 +3915,19 @@ namespace D_Parser.Parser
 			else if (laKind == (Mixin))
 			{
 				if (Peek(1).Kind == OpenParenthesis)
-					return MixinDeclaration(Scope,Parent);
+				{
+					OverPeekBrackets(OpenParenthesis);
+					if (Lexer.CurrentPeekToken.Kind != Semicolon)
+						return ExpressionStatement(Scope, Parent);
+					return MixinDeclaration(Scope, Parent);
+				}
 				else
 				{
-					var tmx = TemplateMixin(Scope,Parent);
-					if(tmx.MixinId == null)
+					var tmx = TemplateMixin(Scope, Parent);
+					if (tmx.MixinId == null)
 						return tmx;
 					else
-						return new DeclarationStatement{ Declarations=new[]{new NamedTemplateMixinNode(tmx)}, Parent = Parent };
+						return new DeclarationStatement { Declarations = new[] { new NamedTemplateMixinNode(tmx) }, Parent = Parent };
 				}
 			}
 			#endregion
@@ -3978,20 +3983,7 @@ namespace D_Parser.Parser
 			}
 
 			else if (!(ClassLike[laKind] || BasicTypes[laKind] || laKind == Enum || Modifiers[laKind] || IsAtAttribute || laKind == Alias || laKind == Typedef) && IsAssignExpression())
-			{
-				var s = new ExpressionStatement() { Location = la.Location, Parent = Parent, ParentNode = Scope };
-
-				if (!IsEOF)
-					LastParsedObject = s;
-				// a==b, a=9; is possible -> Expressions can be there, not only single AssignExpressions!
-				s.Expression = Expression(Scope);
-
-				if (Expect(Semicolon))
-					LastParsedObject = null;
-
-				s.EndLocation = t.EndLocation;
-				return s;
-			}
+				return ExpressionStatement(Scope, Parent);
 
 			var ds = new DeclarationStatement() { Location = la.Location, Parent = Parent, ParentNode = Scope };
 			LastParsedObject = ds;
@@ -3999,6 +3991,22 @@ namespace D_Parser.Parser
 
 			ds.EndLocation = t.EndLocation;
 			return ds;
+		}
+
+		private IStatement ExpressionStatement(IBlockNode Scope, IStatement Parent)
+		{
+			var s = new ExpressionStatement() { Location = la.Location, Parent = Parent, ParentNode = Scope };
+
+			if (!IsEOF)
+				LastParsedObject = s;
+			// a==b, a=9; is possible -> Expressions can be there, not only single AssignExpressions!
+			s.Expression = Expression(Scope);
+
+			if (Expect(Semicolon))
+				LastParsedObject = null;
+
+			s.EndLocation = t.EndLocation;
+			return s;
 		}
 		
 		ForStatement ForStatement(IBlockNode Scope, IStatement Parent)
