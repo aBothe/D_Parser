@@ -16,6 +16,7 @@ namespace D_Parser.Misc
 		public bool EnableDeclarationConstraints = true;
 
 		public bool DisableMixinAnalysis = true;
+		public bool HideDeprecatedNodes = true;
 
 
 		public void Load(XmlReader x)
@@ -36,6 +37,9 @@ namespace D_Parser.Misc
 					case "CompletionSuggestionMode":
 						EnableSuggestionMode = x.ReadString().ToLower() == "true";
 						break;
+					case "HideDeprecatedNodes":
+						HideDeprecatedNodes = x.ReadString().ToLower() == "true";
+						break;
 				}
 			}
 		}
@@ -46,6 +50,7 @@ namespace D_Parser.Misc
 			x.WriteElementString("EnableDeclarationConstraints", EnableDeclarationConstraints.ToString());
 			x.WriteElementString("MixinAnalysis", (!DisableMixinAnalysis).ToString());
 			x.WriteElementString("CompletionSuggestionMode", EnableSuggestionMode.ToString());
+			x.WriteElementString("HideDeprecatedNodes", HideDeprecatedNodes.ToString());
 		}
 	}
 }

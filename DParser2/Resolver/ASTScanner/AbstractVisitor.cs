@@ -323,6 +323,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 		static bool CanShowMember(DNode dn, IBlockNode scope)
 		{
+			if (dn.ContainsAttribute(DTokens.Deprecated) && CompletionOptions.Instance.HideDeprecatedNodes)
+				return false;
+
 			if (dn.ContainsAttribute(DTokens.Private))
 				return dn.NodeRoot == scope.NodeRoot;
 			else if (dn.ContainsAttribute(DTokens.Package))
