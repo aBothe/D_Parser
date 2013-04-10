@@ -92,12 +92,13 @@ namespace D_Parser.Resolver.TypeResolution
 
 				// Could be somewhere in an ITypeDeclaration..
 
-				if (Lexer.IsIdentifierPart(code[editor.CaretOffset]))
+				if (editor.CaretOffset < 0 || editor.CaretOffset >= code.Length)
+					return null;
+				
+				if(Lexer.IsIdentifierPart(code[editor.CaretOffset]))
 					start = editor.CaretOffset;
 				else if (editor.CaretOffset > 0 && Lexer.IsIdentifierPart(code[editor.CaretOffset - 1]))
 					start = editor.CaretOffset - 1;
-				else
-					return null;
 
 				
 				start = CaretContextAnalyzer.SearchExpressionStart(code, start,
