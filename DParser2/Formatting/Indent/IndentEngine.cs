@@ -944,8 +944,15 @@ namespace D_Parser.Formatting.Indent
 			inside = stack.PeekInside (0);
 			
 			// Skip the first optional shebang line
-			if(inside == Inside.Shebang && c != '\n' && c != '\r')
+			if (inside == Inside.Shebang && c != '\n' && c != '\r')
+			{
+				pc = c;
+				prc = rc;
+				linebuf.Append(c);
+				cursor++;
+				lastChar = c;
 				return;
+			}
 			
 			// pop the verbatim-string-literal
 			if (inside == Inside.VerbatimString && popVerbatim && c != '"') {
@@ -1065,7 +1072,7 @@ namespace D_Parser.Formatting.Indent
 				}
 			}
 			
-			if ((after & (Inside.PreProcessor | Inside.StringOrChar | Inside.Comment)) == 0) {
+			if ((after & (Inside.PreProcessor | Inside.StringOrChar | Inside.Comment | Inside.Shebang)) == 0) {
 				if (!Char.IsWhiteSpace (c)) {
 					if (firstNonLwsp == -1)
 						firstNonLwsp = linebuf.Length;
