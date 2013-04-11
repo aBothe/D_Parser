@@ -225,6 +225,9 @@ namespace D_Parser.Completion
 		{
 			if (Editor.CaretOffset > 0)
 			{
+				if (Editor.CaretLocation.Line == 1 && Editor.ModuleCode.Length > 0 && Editor.ModuleCode[0] == '#')
+					return false;
+
 				var enteredChar = string.IsNullOrEmpty(EnteredText) ? '\0' : EnteredText[0];
 
 				if (enteredChar == '.' || enteredChar == '_')
