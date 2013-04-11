@@ -116,7 +116,7 @@ namespace D_Parser.Parser
         public const byte Is = 101;
         public const byte Lazy = 102;
         public const byte Long = 103;
-        public const byte empty1 = 104;
+        public const byte Macro = 104;
         public const byte Mixin = 105;
         public const byte Module = 106;
         public const byte New = 107;
@@ -309,7 +309,7 @@ namespace D_Parser.Parser
 	"is"},{Lazy,
 
 	"lazy"},{Long,
-	"long"},{empty1,
+	"long"},{Macro,
 
 	"macro"},{Mixin,
 	"mixin"},{Module,
