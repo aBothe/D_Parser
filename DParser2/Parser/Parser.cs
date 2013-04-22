@@ -430,6 +430,7 @@ namespace D_Parser.Parser
         {
 			if (ParseErrors.Count > MaxParseErrorsBeforeFailure)
 			{
+				return;
 				throw new TooManyErrorsException();
 			}
 			else if (ParseErrors.Count == MaxParseErrorsBeforeFailure)
