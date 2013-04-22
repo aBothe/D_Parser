@@ -3797,7 +3797,7 @@ namespace D_Parser.Parser
 						}
 						else
 						{
-							var catchVar = new DVariable { Parent = Scope };
+							var catchVar = new DVariable { Parent = Scope, Location = t.Location };
 							LastParsedObject = catchVar;
 							Lexer.PushLookAheadBackup();
 							catchVar.Type = BasicType();
@@ -3815,7 +3815,7 @@ namespace D_Parser.Parser
 								catchVar.NameLocation = t.Location;
 								Expect(CloseParenthesis);
 							}
-
+							catchVar.EndLocation = t.EndLocation;
 							c.CatchParameter = catchVar;
 						}
 					}
