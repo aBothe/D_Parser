@@ -898,6 +898,8 @@ namespace D_Parser.Parser
 
 			// Declarators
 			var firstNode = Declarator(ttd,false, Scope);
+			if (firstNode == null)
+				return null;
 			firstNode.Description = initialComment;
 			firstNode.Location = startLocation;
 
@@ -1276,12 +1278,17 @@ namespace D_Parser.Parser
 				}
 				else
 				{
-					if(IsEOF)
+					if (IsEOF || IsParam)
+					{
 						ExpectingNodeName = true;
+						return ret;
+					}
+
+					return null;
 					// Code error! - to prevent infinite declaration loops, step one token forward anyway!
-					if(laKind != CloseCurlyBrace)
+					if(laKind != CloseCurlyBrace && laKind != CloseParenthesis)
 						Step();
-					return ret;
+					return null;
 				}
 			}
 
