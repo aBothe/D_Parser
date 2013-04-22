@@ -609,7 +609,7 @@ namespace D_Parser.Parser
 			if (Lexer.CurrentPeekToken.Kind == Assign)
 			{
 				if(Expect(Identifier))
-					import.ModuleAlias = t.Value;
+					import.ModuleAlias = new IdentifierDeclaration(t.Value) { Location = t.Location, EndLocation = t.EndLocation };
 				Step();
 			}
 
@@ -636,15 +636,18 @@ namespace D_Parser.Parser
 
 				if (Expect(Identifier))
 				{
+					var symbolAlias = new IdentifierDeclaration(t.Value){ Location = t.Location, EndLocation = t.EndLocation };
+						
 					if (laKind == Assign)
 					{
-						var symbolAlias = t.Value;
 						Step();
 						if (Expect(Identifier))
-							importBindings.SelectedSymbols.Add(new KeyValuePair<string, string>(symbolAlias, t.Value));
+							importBindings.SelectedSymbols.Add(new KeyValuePair<IdentifierDeclaration, IdentifierDeclaration>(
+								symbolAlias, 
+								new IdentifierDeclaration(t.Value) { Location = t.Location, EndLocation = t.EndLocation }));
 					}
 					else
-						importBindings.SelectedSymbols.Add(new KeyValuePair<string, string>(t.Value, null));
+						importBindings.SelectedSymbols.Add(new KeyValuePair<IdentifierDeclaration, IdentifierDeclaration>(symbolAlias, null));
 				}
 			}
 

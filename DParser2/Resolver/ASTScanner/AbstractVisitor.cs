@@ -578,7 +578,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 						if (impStmt!=null)
 						{
 							foreach (var imp in impStmt.Imports)
-								if (string.IsNullOrEmpty(imp.ModuleAlias))
+								if (imp.ModuleAlias != null)
 									foundItems |= HandleNonAliasedImport(imp, VisibleMembers);
 						}
 					}

@@ -39,12 +39,12 @@ namespace D_Parser.Dom
 			/// <summary>
 			/// import io=std.stdio;
 			/// </summary>
-			public string ModuleAlias;
+			public IdentifierDeclaration ModuleAlias;
 			public ITypeDeclaration ModuleIdentifier;
 
 			public override string ToString()
 			{
-				var r= string.IsNullOrEmpty(ModuleAlias) ? "":(ModuleAlias+" = ");
+				var r= string.IsNullOrEmpty(ModuleAlias) ? "":(ModuleAlias.Id+" = ");
 
 				if (ModuleIdentifier != null)
 					r += ModuleIdentifier.ToString();
@@ -63,7 +63,8 @@ namespace D_Parser.Dom
 			/// 
 			/// If value empty: Key is imported symbol
 			/// </summary>
-			public List<KeyValuePair<string, string>> SelectedSymbols = new List<KeyValuePair<string, string>>();
+			public List<KeyValuePair<IdentifierDeclaration, IdentifierDeclaration>> SelectedSymbols
+				= new List<KeyValuePair<IdentifierDeclaration, IdentifierDeclaration>>();
 
 			public override string ToString()
 			{
@@ -127,7 +128,7 @@ namespace D_Parser.Dom
 			PseudoAliases.Clear();
 
 			foreach (var imp in Imports)
-				if (!string.IsNullOrEmpty(imp.ModuleAlias))
+				if (imp.ModuleAlias!=null)
 					PseudoAliases.Add(new ImportSymbolAlias(this, imp, Parent));
 
 			if (ImportBinding != null)
@@ -138,21 +139,28 @@ namespace D_Parser.Dom
 				 * cv can be still used as an alias for std.conv,
 				 * whereas Convert is a direct alias for std.conv.to
 				 */
-				if(!string.IsNullOrEmpty(ImportBinding.Module.ModuleAlias))
+				if(ImportBinding.Module.ModuleAlias!=null)
 					PseudoAliases.Add(new ImportSymbolAlias(this, ImportBinding.Module, Parent));
 
 				foreach (var bind in ImportBinding.SelectedSymbols)
+				{
+					var impType = bind.Value ?? bind.Key;
 					PseudoAliases.Add(new ImportSymbolAlias(Parent)
 					{
-						IsAlias=true,
+						IsAlias = true,
 						IsModuleAlias = false,
 						OriginalImportStatement = this,
-						Name = bind.Key,
-						Type = new IdentifierDeclaration(string.IsNullOrEmpty(bind.Value) ? bind.Key : bind.Value)
+						Name = bind.Key.Id,
+						Location = bind.Key.Location,
+						NameLocation = bind.Key.Location,
+						Type = new IdentifierDeclaration(impType.Id)
 						{
+							Location = impType.Location,
+							EndLocation = impType.EndLocation,
 							InnerDeclaration = ImportBinding.Module.ModuleIdentifier
 						}
 					});
+				}
 			}
 		}
 
