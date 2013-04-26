@@ -530,7 +530,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 						var impStmt = (ImportStatement)s;
 
 						foreach (var imp in impStmt.Imports)
-							if (string.IsNullOrEmpty(imp.ModuleAlias))
+							if (imp.ModuleAlias == null)
 								if (HandleNonAliasedImport(imp, VisibleMembers))
 									return true;
 					}
@@ -578,7 +578,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 						if (impStmt!=null)
 						{
 							foreach (var imp in impStmt.Imports)
-								if (imp.ModuleAlias != null)
+								if (imp.ModuleAlias == null)
 									foundItems |= HandleNonAliasedImport(imp, VisibleMembers);
 						}
 					}

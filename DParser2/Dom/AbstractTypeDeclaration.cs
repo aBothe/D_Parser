@@ -61,7 +61,7 @@ namespace D_Parser.Dom
 	
 		public static implicit operator String(AbstractTypeDeclaration d)
 		{
-			return d.ToString(false);
+			return d == null? null : d.ToString(false);
 		}
 	
 		CodeLocation _loc=CodeLocation.Empty;

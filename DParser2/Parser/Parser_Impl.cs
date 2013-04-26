@@ -4105,6 +4105,8 @@ namespace D_Parser.Parser
 					var type = BasicType();
 					
 					var tnode = Declarator(type, false, Scope);
+					if (tnode == null)
+						break;
 					if(forEachVar.Attributes != null)
 						if(tnode.Attributes == null)
 							tnode.Attributes = new List<DAttribute>(forEachVar.Attributes);

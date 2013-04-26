@@ -44,7 +44,7 @@ namespace D_Parser.Dom
 
 			public override string ToString()
 			{
-				var r= string.IsNullOrEmpty(ModuleAlias) ? "":(ModuleAlias.Id+" = ");
+				var r= ModuleAlias == null ? "":(ModuleAlias.Id+" = ");
 
 				if (ModuleIdentifier != null)
 					r += ModuleIdentifier.ToString();
