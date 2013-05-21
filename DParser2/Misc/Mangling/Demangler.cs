@@ -24,16 +24,15 @@ namespace D_Parser.Misc.Mangling
 
 		public static ITypeDeclaration DemangleQualifier(string mangledString)
 		{
-			if (!mangledString.StartsWith("_D") || mangledString == "_Dmain")
+			if (mangledString == "_Dmain")
+				return new IdentifierDeclaration ("main");
+			else if (!mangledString.StartsWith("_D"))
 			{
 				if (mangledString.StartsWith("__D"))
-				{
 					mangledString = mangledString.Substring(1);
-				}
+				// C Functions
 				else if (mangledString.StartsWith("_"))
-				{
 					return new IdentifierDeclaration(mangledString.Substring(1));
-				}
 			}
 
 			var dmng = new Demangler(mangledString);
@@ -86,20 +85,19 @@ namespace D_Parser.Misc.Mangling
 			if(string.IsNullOrEmpty(mangledString))
 				throw new ArgumentException("input string must not be null or empty!");
 			
-			if(!mangledString.StartsWith("_D") || mangledString == "_Dmain")
+			if (!mangledString.StartsWith("_D"))
 			{
-				if(mangledString.StartsWith("__D"))
-				{
-					mangledString = mangledString.Substring(1);
-					isCFunction = true;
-				}
-				else if(mangledString.StartsWith("_"))
-				{
-					qualifier = new IdentifierDeclaration(mangledString.Substring(1));
-					isCFunction = true;
+				isCFunction = true;
+
+				if (mangledString.StartsWith ("__D"))
+					mangledString = mangledString.Substring (1);
+				// C Functions
+				else if (mangledString.StartsWith ("_")) {
+					qualifier = new IdentifierDeclaration (mangledString.Substring (1));
 					return null;
 				}
 			}
+
 			//TODO: What about C functions that start with 'D'?
 			isCFunction = false;
 			
