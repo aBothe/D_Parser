@@ -5029,6 +5029,11 @@ namespace D_Parser.Parser
 			var bt = BasicType();
 			var dv = Declarator(bt,false, null);
 
+			if (dv == null) {
+				SynErr (t.Kind, "Declarator expected for parsing template value parameter");
+				return null;
+			}
+
 			tv.Type = dv.Type;
 			tv.Name = dv.Name;
 

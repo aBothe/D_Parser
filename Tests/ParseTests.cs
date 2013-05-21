@@ -67,6 +67,15 @@ void bar();");
 		}
 
 		[Test]
+		public void TestSyntaxError2()
+		{
+			var s = "class Foo( if(is(T==float) {} class someThingElse {}";
+			var mod = DParser.ParseString (s);
+
+			Assert.GreaterOrEqual(1, mod.ParseErrors.Count);
+		}
+
+		[Test]
 		public void Attributes1()
 		{
 			var n = DParser.ParseString("align(2) align int a;");
