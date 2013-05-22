@@ -3372,16 +3372,18 @@ namespace D_Parser.Parser
 					return;
 				}
 
-				dv.Location = tp.Location;
-
-				if (Expect(Assign))
+				if (laKind == Assign)
+				{
+					dv.Location = tp.Location;
 					dv.Initializer = Expression();
+					dv.EndLocation = t.EndLocation;
 
-				dv.EndLocation = t.EndLocation;
-
-				par.IfVariable = dv;
+					par.IfVariable = dv;
+					return;
+				}
 			}
-			else if (IsEOF)
+
+			if (IsEOF)
 			{
 				if (tp != null)
 					TrackerVariables.ExpectingNodeName = true;
