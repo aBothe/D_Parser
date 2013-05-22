@@ -585,7 +585,8 @@ namespace D_Parser.Formatting.Indent
 					TrimIndent ();
 				}
 				
-				stack.Push (Inside.Case, DTokens.Switch, curLineNr, 0);
+				if(Policy.IndentCases)
+					stack.Push (Inside.Case, DTokens.Switch, curLineNr, 0);
 			} else if (canBeLabel) {
 				var style = Policy.LabelIndentStyle;
 				// indent goto labels as specified

@@ -167,16 +167,20 @@ namespace D_Parser.Dom
 		#endregion
 
 		#region Statements
+		public virtual void VisitSubStatements(StatementContainingStatement stmtContainer)
+		{
+			var ss = stmtContainer.SubStatements;
+			if (ss != null)
+				for (int i = 0; i < ss.Length; i++)
+					ss[i].Accept(this);
+		}
+
 		/// <summary>
 		/// Visit abstract stmt
 		/// </summary>
 		public virtual void VisitChildren(StatementContainingStatement stmtContainer)
 		{
-			var ss = stmtContainer.SubStatements;
-			if (ss != null)
-				for(int i=0 ; i < ss.Length; i++)
-					ss[i].Accept(this);
-
+			VisitSubStatements(stmtContainer);
 			VisitAbstractStmt(stmtContainer);
 		}
 

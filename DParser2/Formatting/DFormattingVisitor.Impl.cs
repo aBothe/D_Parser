@@ -355,9 +355,14 @@ namespace D_Parser.Formatting
 		#endregion
 		
 		#region Statements
+		void EnforceBraceStyle(BlockStatement s)
+		{
+			EnforceBraceStyle(policy.TypeBlockBraces, s.Location, s.EndLocation.Line, s.EndLocation.Column - 1);
+		}
+
 		public override void Visit(BlockStatement s)
 		{
-			EnforceBraceStyle(policy.TypeBlockBraces, s.Location, s.EndLocation.Line, s.EndLocation.Column-1);
+			EnforceBraceStyle(s);
 			
 			curIndent.Push(IndentType.Block);
 			base.Visit(s);
@@ -378,6 +383,74 @@ namespace D_Parser.Formatting
 			FixStatementIndentation(s.Location);
 			FixSemicolon(s.EndLocation);
 			
+			base.Visit(s);
+		}
+
+		public override void Visit(SwitchStatement s)
+		{
+			FixStatementIndentation(s.Location);
+			var bs = s.ScopedStatement as BlockStatement;
+			if (bs == null)
+				return;
+
+			EnforceBraceStyle(bs);
+
+			if (policy.IndentSwitchBody)
+				curIndent.Push(IndentType.Block);
+
+			foreach (var ss in bs.SubStatements)
+			{
+				ss.Accept(this);
+			}
+
+			if (policy.IndentSwitchBody)
+				curIndent.Pop();
+		}
+
+		public override void Visit(SwitchStatement.CaseStatement s)
+		{
+			FixIndentation(s.Location);
+			
+			if (s.ArgumentList != null)
+				s.ArgumentList.Accept(this);
+			if (s.LastExpression != null)
+				s.LastExpression.Accept(this);
+			
+			if (policy.IndentCases)
+				curIndent.Push(IndentType.Block);
+
+			VisitSubStatements(s);
+
+			if (policy.IndentCases)
+				curIndent.Pop();
+		}
+
+		public override void Visit(SwitchStatement.DefaultStatement s)
+		{
+			FixIndentation(s.Location);
+
+			if (policy.IndentCases)
+				curIndent.Push(IndentType.Block);
+
+			VisitSubStatements(s);
+
+			if (policy.IndentCases)
+				curIndent.Pop();
+		}
+
+		public override void Visit(BreakStatement s)
+		{
+			FixStatementIndentation(s.Location);
+			FixSemicolon(s.EndLocation);
+
+			base.Visit(s);
+		}
+
+		public override void Visit(ContinueStatement s)
+		{
+			FixStatementIndentation(s.Location);
+			FixSemicolon(s.EndLocation);
+
 			base.Visit(s);
 		}
 		#endregion

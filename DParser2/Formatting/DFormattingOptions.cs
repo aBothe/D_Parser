@@ -88,6 +88,7 @@ namespace D_Parser.Formatting
 		#endregion
 		
 		public bool IndentSwitchBody = true;
+		public bool IndentCases = true;
 		public GotoLabelIndentStyle LabelIndentStyle = GotoLabelIndentStyle.OneLess;
 		
 		public static DFormattingOptions CreateDStandard()
@@ -106,6 +107,7 @@ namespace D_Parser.Formatting
 				MultiVariableDeclPlacement = MultiVariableDeclPlacement,
 				IndentSwitchBody = IndentSwitchBody,
 				LabelIndentStyle = LabelIndentStyle,
+				IndentCases = IndentCases,
 			};
 		}
 	}
