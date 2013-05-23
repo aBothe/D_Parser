@@ -488,10 +488,12 @@ namespace D_Parser.Dom.Statements
 		{
 			var ret=(IsReverse?"foreach_reverse":"foreach")+'(';
 
-			foreach (var v in ForeachTypeList)
-				ret += v.ToString() + ',';
+			if(ForeachTypeList != null){
+				foreach (var v in ForeachTypeList)
+					ret += v.ToString() + ',';
 
-			ret=ret.TrimEnd(',')+';';
+				ret=ret.TrimEnd(',')+';';
+			}
 
 			if (Aggregate != null)
 				ret += Aggregate.ToString();
