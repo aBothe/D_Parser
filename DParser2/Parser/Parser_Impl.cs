@@ -4090,6 +4090,7 @@ namespace D_Parser.Parser
 				}
 				
 				if(IsEOF){
+					TrackerVariables.ExpectingIdentifier = true;
 					SynErr(t.Kind,"Basic type or iteration variable identifier expected.");
 					return dbs;
 				}
