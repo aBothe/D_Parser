@@ -74,7 +74,7 @@ namespace D_Parser.Completion
 				{
 					// Show completion because no aliased type has been entered yet
 				}
-				else if (n != null && string.IsNullOrEmpty(n.Name) && trackVars.ExpectingNodeName)
+				else if (n != null && string.IsNullOrEmpty(n.Name) && trackVars.ExpectingNodeName && EnteredText != null)
 					return false;
 
 				else if (trackVars.LastParsedObject is TokenExpression &&
