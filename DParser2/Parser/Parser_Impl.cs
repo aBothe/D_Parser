@@ -3374,6 +3374,7 @@ namespace D_Parser.Parser
 
 				if (laKind == Assign)
 				{
+					Step ();
 					dv.Location = tp.Location;
 					dv.Initializer = Expression();
 					dv.EndLocation = t.EndLocation;
