@@ -141,7 +141,7 @@ namespace D_Parser.Dom
 			var currentPackage = this;
 			var parts = ModuleNameHelper.SplitModuleName(package);
 
-			for(int k = 0; k < parts.Length; k++)
+			for(int k = 0; k < parts.Length && currentPackage != null; k++)
 			{
 				ModulePackage returnValue;
 
