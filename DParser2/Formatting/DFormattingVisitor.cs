@@ -96,14 +96,16 @@ namespace D_Parser.Formatting
 						continue;
 					}
 					if (change.Offset < previousChange.Offset + previousChange.RemovalLength) {
+						var sb = new StringBuilder();
 						#if DEBUG
-						Console.WriteLine ("change 1:" + change + " at " + document.ToLocation (change.Offset));
-						Console.WriteLine (change.StackTrace);
+						sb.AppendLine ("change 1:" + change + " at " + document.ToLocation (change.Offset));
+						sb.AppendLine (change.StackTrace);
 
-						Console.WriteLine ("change 2:" + previousChange + " at " + document.ToLocation (previousChange.Offset));
-						Console.WriteLine (previousChange.StackTrace);
+						sb.AppendLine ("change 2:" + previousChange + " at " + document.ToLocation (previousChange.Offset));
+						sb.AppendLine (previousChange.StackTrace);
 						#endif
-						throw new InvalidOperationException ("Detected overlapping changes " + change + "/" + previousChange);
+						sb.AppendLine("Detected overlapping changes " + change + "/" + previousChange);
+						throw new InvalidOperationException (sb.ToString());
 					}
 				}
 				previousChange = change;
