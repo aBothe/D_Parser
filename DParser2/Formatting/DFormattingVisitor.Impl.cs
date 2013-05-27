@@ -248,7 +248,7 @@ namespace D_Parser.Formatting
 		
 		public override void Visit(DVariable n)
 		{
-			FormatAttributedNode(n);
+			FormatAttributedNode(n, n.NameLocation != n.Location);
 			
 			if(n.Type != null)
 				n.Type.Accept(this);
@@ -329,6 +329,7 @@ namespace D_Parser.Formatting
 		/// </summary>
 		void FormatAttributedNode(DNode n, bool fmtStartLocation = true)
 		{
+			bool firstAttr = true;
 			if(n.Attributes != null)
 			foreach(var a in n.Attributes)
 			{
@@ -336,8 +337,10 @@ namespace D_Parser.Formatting
 					continue;
 				AlreadyHandledAttributes.Add(a);
 				
-				if(a is AtAttribute)
+				if(a is AtAttribute || firstAttr){
 					FixIndentationForceNewLine(a.Location);
+					firstAttr = false;
+				}
 			}
 			
 			if(fmtStartLocation)
