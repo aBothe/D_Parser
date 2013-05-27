@@ -153,7 +153,7 @@ namespace D_Parser.Formatting.Indent
 				nSpaces = 0;
 			} else if ((inside & (Inside.FoldedOrBlock)) != 0) {
 				while (sp >= 0) {
-					if ((stack[sp].inside & (Inside.FoldedBlockOrCase | Inside.ParenList)) != 0) {
+					if ((stack[sp].inside & Inside.FoldedBlockOrCase) != 0) { // Optional: Check for Inside.ParenList to align the following lines like the previous line
 						indentBuilder.Append (stack[sp].indent);
 						break;
 					}
@@ -166,7 +166,7 @@ namespace D_Parser.Formatting.Indent
 				// This is a workaround to make anonymous methods indent nicely
 				if (parent == Inside.ParenList)
 					stack[size - 1].indent = indentBuilder.ToString ();
-				
+
 				if (inside == Inside.FoldedStatement) {
 					indentBuilder.Append ('\t');
 				} else if (inside == Inside.Block) {
