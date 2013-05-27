@@ -194,7 +194,7 @@ namespace D_Parser.Formatting
 		public override void Visit(DMethod n)
 		{
 			// Format header
-			FormatAttributedNode(n);
+			FormatAttributedNode(n, !n.IsAnonymous && n.Type != null);
 			
 			VisitDNode(n);
 			
@@ -233,13 +233,14 @@ namespace D_Parser.Formatting
 			
 			// Visit body parts
 			if (n.In != null)
-				n.In.Accept(this);
+				n.In.Accept (this);
 			if (n.Body != null)
-				n.Body.Accept(this);
+				n.Body.Accept (this);
 			if (n.Out != null)
-				n.Out.Accept(this);
-			
-			EnsureBlankLinesAfter(n.EndLocation, policy.LinesAfterNode);
+				n.Out.Accept (this);
+
+			if (!n.IsAnonymous)
+				EnsureBlankLinesAfter (n.EndLocation, policy.LinesAfterNode);
 		}
 		
 		public override void Visit(DClassLike n)
@@ -330,7 +331,7 @@ namespace D_Parser.Formatting
 		/// </summary>
 		void FormatAttributedNode(DNode n, bool fmtStartLocation = true)
 		{
-			bool firstAttr = true;
+			bool firstAttr = fmtStartLocation;
 			if(n.Attributes != null)
 			foreach(var a in n.Attributes)
 			{
@@ -457,13 +458,23 @@ namespace D_Parser.Formatting
 
 			base.Visit(s);
 		}
+
+		public override void Visit (ReturnStatement s)
+		{
+			base.Visit (s);
+		}
 		#endregion
 
 		#region Expressions
 		public override void Visit (FunctionLiteral x)
 		{
-			FixIndentation (x.Location);
+			var pop = curIndent.Peek == IndentType.Block && curIndent.ExtraSpaces > 0;
+			if (pop)
+				curIndent.Push (IndentType.Negative);
+			//FixIndentation (x.Location);
 			base.Visit (x);
+			if (pop)
+				curIndent.Pop ();
 		}
 		#endregion
 	}

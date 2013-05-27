@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 
 using D_Parser.Dom.Statements;
 using D_Parser.Parser;
+using System.Text;
 
 namespace D_Parser.Dom.Expressions
 {
@@ -1492,29 +1493,37 @@ namespace D_Parser.Dom.Expressions
 		{
 			if (IsLambda)
 			{
-				var s = "";
+				var sb = new StringBuilder();
 
 				if (AnonymousMethod.Parameters.Count == 1 && AnonymousMethod.Parameters[0].Type == null)
-					s += AnonymousMethod.Parameters[0].Name;
+					sb.Append(AnonymousMethod.Parameters[0].Name);
 				else
 				{
-					s += '(';
-					foreach (var par in AnonymousMethod.Parameters)
+					sb.Append('(');
+					for(int i = 0; i < AnonymousMethod.Parameters.Count; i++)
 					{
-						s += par.ToString()+',';
+						sb.Append(AnonymousMethod.Parameters[i].ToString()).Append(',');
 					}
 
-					s = s.TrimEnd(',')+')';
+					if(AnonymousMethod.Parameters.Count > 0)
+						sb.Remove(sb.Length -1,1);
+					sb.Append(')');
 				}
 
-				s += " => ";
+				sb.Append(" => ");
 
 				IStatement[] stmts=null;
-				if (AnonymousMethod.Body != null && (stmts = AnonymousMethod.Body.SubStatements).Length > 0 &&
-					stmts[0] is ReturnStatement)
-					s += (stmts[0] as ReturnStatement).ReturnExpression.ToString();
+				if(AnonymousMethod.Body != null)
+				{
+					if ((stmts = AnonymousMethod.Body.SubStatements).Length > 0 && stmts[0] is ReturnStatement)
+						sb.Append((stmts[0] as ReturnStatement).ReturnExpression.ToString());
+					else
+						sb.Append(AnonymousMethod.Body.ToCode());
+				}
+				else 
+					sb.Append("{}");
 
-				return s;
+				return sb.ToString();
 			}
 
 			return DTokens.GetTokenString(LiteralToken) + (string.IsNullOrEmpty (AnonymousMethod.Name)?"": " ") + AnonymousMethod.ToString();

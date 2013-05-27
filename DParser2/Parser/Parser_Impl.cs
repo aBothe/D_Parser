@@ -3321,18 +3321,25 @@ namespace D_Parser.Parser
 
 			if (Expect(GoesTo))
 			{
-				fl.AnonymousMethod.Body = new BlockStatement { Location= la.Location };
-
-				var ae = AssignExpression(fl.AnonymousMethod);
-
-				fl.AnonymousMethod.Body.Add(new ReturnStatement
+				if(laKind == OpenCurlyBrace)
 				{
-					Location = ae.Location,
-					EndLocation = ae.EndLocation,
-					ReturnExpression=ae
-				});
+					fl.AnonymousMethod.Body = BlockStatement(fl.AnonymousMethod);
+				}
+				else
+				{
+					fl.AnonymousMethod.Body = new BlockStatement { Location= la.Location, ParentNode = fl.AnonymousMethod };
 
-				fl.AnonymousMethod.Body.EndLocation = t.EndLocation;
+					var ae = AssignExpression(fl.AnonymousMethod);
+
+					fl.AnonymousMethod.Body.Add(new ReturnStatement
+					{
+						Location = ae.Location,
+						EndLocation = ae.EndLocation,
+						ReturnExpression=ae
+					});
+
+					fl.AnonymousMethod.Body.EndLocation = t.EndLocation;
+				}
 			}
 
 			fl.EndLocation = fl.AnonymousMethod.EndLocation = t.EndLocation;
