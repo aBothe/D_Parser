@@ -4,6 +4,7 @@ using System.Text;
 
 using D_Parser.Dom;
 using D_Parser.Dom.Statements;
+using D_Parser.Dom.Expressions;
 
 namespace D_Parser.Formatting
 {
@@ -455,6 +456,14 @@ namespace D_Parser.Formatting
 			FixSemicolon(s.EndLocation);
 
 			base.Visit(s);
+		}
+		#endregion
+
+		#region Expressions
+		public override void Visit (FunctionLiteral x)
+		{
+			FixIndentation (x.Location);
+			base.Visit (x);
 		}
 		#endregion
 	}
