@@ -4903,10 +4903,14 @@ namespace D_Parser.Parser
 			return false;
 		}
 
-		void TemplateParameterList(DNode dn, bool mustHaveSurroundingBrackets = true)
+		void TemplateParameterList(DNode dn)
 		{
-			if (mustHaveSurroundingBrackets)
-				Expect(OpenParenthesis);
+			if (!Expect(OpenParenthesis))
+			{
+				SynErr(OpenParenthesis, "Template parameter list expected");
+				dn.TemplateParameters = new ITemplateParameter[0];
+				return;
+			}
 
 			if (laKind == (CloseParenthesis))
 			{
@@ -4925,8 +4929,7 @@ namespace D_Parser.Parser
 				ret.Add(TemplateParameter(dn));
 			}
 
-			if (mustHaveSurroundingBrackets)
-				Expect(CloseParenthesis);
+			Expect(CloseParenthesis);
 
 			dn.TemplateParameters = ret.ToArray();
 		}
