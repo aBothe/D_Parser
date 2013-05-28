@@ -623,22 +623,52 @@ namespace D_Parser.Formatting.Indent
 		
 		void PushOpenSq (Inside inside)
 		{
-			int n = 1;
-			
 			if ((inside & (Inside.PreProcessor | Inside.StringOrChar | Inside.Comment)) != 0)
 				return;
 			
-			// push a new attribute onto the stack
-			if (firstNonLwsp != -1)
-				n += linebuf.Length - firstNonLwsp;
-			
-			stack.Push (Inside.Attribute, keyword, curLineNr, n);
+			if (inside == Inside.FoldedStatement) {
+				byte pKeyword;
+
+				if (firstNonLwsp == -1) {
+					pKeyword = stack.PeekKeyword;
+					stack.Pop ();
+				} else {
+					pKeyword = keyword;
+				}
+
+				while (true) {
+					if (stack.PeekInside (0) != Inside.FoldedStatement)
+						break;
+					var kw = stack.PeekKeyword;
+					stack.Pop ();
+					TrimIndent ();
+					if (kw != DTokens.INVALID) {
+						pKeyword = kw;
+						break;
+					}
+				}
+
+				if (firstNonLwsp == -1)
+					curIndent = stack.PeekIndent (0);
+
+				stack.Push (Inside.Attribute, pKeyword, curLineNr, 0);
+			}
+			else
+				stack.Push (Inside.Attribute, keyword, curLineNr, 0);
+
+			keyword = DTokens.INVALID;
+			if (firstNonLwsp == -1)
+				needsReindent = true;
 		}
 		
 		void PushCloseSq (Inside inside)
 		{
 			if ((inside & (Inside.PreProcessor | Inside.StringOrChar | Inside.Comment)) != 0)
 				return;
+
+			while (stack.PeekInside (0) == Inside.FoldedStatement) {
+				stack.Pop ();
+			}
 			
 			if (inside != Inside.Attribute) {
 				//Console.WriteLine ("can't pop a '[' if we ain't got one?");
@@ -648,6 +678,15 @@ namespace D_Parser.Formatting.Indent
 			// pop this attribute off the stack
 			keyword = stack.PeekKeyword;
 			stack.Pop ();
+
+			while (stack.PeekInside (0) == Inside.FoldedStatement) {
+				stack.Pop ();
+			}
+
+			if (firstNonLwsp == -1) {
+				needsReindent = true;
+				TrimIndent ();
+			}
 		}
 		
 		void PushOpenParen (Inside inside)
