@@ -152,69 +152,71 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		
 		ISemantic E(IExpression x)
 		{
-			if(evaluationDepth > 6){
-				evaluationDepth = 0;
+			if (evaluationDepth > 10)
 				return null;
-			}
 			evaluationDepth++;
-			
+
 			ISemantic ret = null;
-			try{
-			if (x is Expression) // a,b,c;
-			{
-				var ex = (Expression)x;
-				/*
-				 * The left operand of the ',' is evaluated, then the right operand is evaluated. 
-				 * The type of the expression is the type of the right operand, 
-				 * and the result is the result of the right operand.
-				 */
 
-				if (eval)
+			try
+			{
+				if (x is Expression) // a,b,c;
 				{
-					for (int i = 0; i < ex.Expressions.Count; i++)
+					var ex = (Expression)x;
+					/*
+					 * The left operand of the ',' is evaluated, then the right operand is evaluated. 
+					 * The type of the expression is the type of the right operand, 
+					 * and the result is the result of the right operand.
+					 */
+
+					if (eval)
 					{
-						var v = E(ex.Expressions[i]);
-
-						if (i == ex.Expressions.Count - 1)
+						for (int i = 0; i < ex.Expressions.Count; i++)
 						{
-							ret = v;
-							break;
+							var v = E(ex.Expressions[i]);
+
+							if (i == ex.Expressions.Count - 1)
+							{
+								ret = v;
+								break;
+							}
 						}
-					}
 
-					if(ret == null){
-						EvalError(x, "There must be at least one expression in the expression chain");
-						return null;
+						if (ret == null)
+							EvalError(x, "There must be at least one expression in the expression chain");
 					}
+					else
+						ret = ex.Expressions.Count == 0 ? null : E(ex.Expressions[ex.Expressions.Count - 1]);
 				}
-				else
-					ret = ex.Expressions.Count == 0 ? null : E(ex.Expressions[ex.Expressions.Count - 1]);
+
+				else if (x is SurroundingParenthesesExpression)
+					ret = E((x as SurroundingParenthesesExpression).Expression);
+
+				else if (x is ConditionalExpression) // a ? b : c
+					ret = E((ConditionalExpression)x);
+
+				else if (x is OperatorBasedExpression)
+					ret = E(x as OperatorBasedExpression);
+
+				else if (x is UnaryExpression)
+					ret = E(x as UnaryExpression);
+
+				else if (x is PostfixExpression)
+					ret = E(x as PostfixExpression);
+
+				else if (x is PrimaryExpression)
+					ret = E(x as PrimaryExpression);
 			}
-
-			else if (x is SurroundingParenthesesExpression)
-				ret= E((x as SurroundingParenthesesExpression).Expression);
-
-			else if (x is ConditionalExpression) // a ? b : c
-				ret= E((ConditionalExpression)x);
-
-			else if (x is OperatorBasedExpression)
-				ret= E(x as OperatorBasedExpression);
-
-			else if (x is UnaryExpression)
-				ret= E(x as UnaryExpression);
-
-			else if (x is PostfixExpression)
-				ret= E(x as PostfixExpression);
-
-			else if (x is PrimaryExpression)
-				ret= E(x as PrimaryExpression);
-			}
-			catch(Exception ex)
+			catch (Exception ex)
 			{
-				
+#if DEBUG
+				Console.Error.WriteLine("Exception while evaluating " + x.ToString() + ": " + ex.Message);
+				Console.Error.WriteLine(ex.StackTrace);
+#endif
 			}
-			finally{
-				if(evaluationDepth > 0)
+			finally
+			{
+				if(evaluationDepth>0)
 					evaluationDepth--;
 			}
 			return ret;

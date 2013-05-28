@@ -243,7 +243,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						// In the case of an ufcs, insert the first argument into the CallArguments list
 						if (ms.IsUFCSResult && !hasHandledUfcsResultBefore)
 						{
-							callArguments.Insert(0, eval ? (ISemantic)baseValue : ((MemberSymbol)baseExpression[0]).Base);
+							callArguments.Insert(0, eval ? baseValue as ISemantic : ((MemberSymbol)baseExpression[0]).Base);
 							hasHandledUfcsResultBefore = true;
 						}
 						else if (!ms.IsUFCSResult && hasHandledUfcsResultBefore) // In the rare case of having a ufcs result occuring _after_ a normal member result, remove the initial arg again
@@ -260,10 +260,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						var templateParamDeduction = new TemplateParameterDeduction(deducedTypeDict, ctxt);
 
 						int currentArg = 0;
-						bool add = false;
-						if (callArguments.Count == 0 && dm.Parameters.Count == 0)
-							add=true;
-						else
+						bool add = true;
+						if (callArguments.Count > 0 || dm.Parameters.Count > 0)
 							for (int i=0; i< dm.Parameters.Count; i++)
 							{
 								var paramType = dm.Parameters[i].Type;
@@ -274,21 +272,27 @@ namespace D_Parser.Resolver.ExpressionSemantics
 									continue;
 								else if (currentArg < callArguments.Count)
 								{
-									if (templateParamDeduction.HandleDecl(null, paramType, callArguments[currentArg++]))
-										add = true;
+									if (!templateParamDeduction.HandleDecl(null, paramType, callArguments[currentArg++]))
+									{
+										add = false;
+										break;
+									}
 								}
 								else
 								{
 									// If there are more parameters than arguments given, check if the param has default values
-									if (dm.Parameters[i] is DVariable && (dm.Parameters[i] as DVariable).Initializer != null)
-										add = true;
+									if (!(dm.Parameters[i] is DVariable) || (dm.Parameters[i] as DVariable).Initializer == null)
+									{
+										add = false;
+										break;
+									}
 									// Assume that all further method parameters do have default values - and don't check further parameters
 									break;
 								}
 							}
 
 						// If type params were unassigned, try to take the defaults
-						if (dm.TemplateParameters != null)
+						if (add && dm.TemplateParameters != null)
 						{
 							foreach (var tpar in dm.TemplateParameters)
 							{
@@ -522,8 +526,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 					if (baseValue is InternalOverloadValue)
 						baseExpression = ((InternalOverloadValue)baseValue).Overloads;
-					else
+					else if (baseValue != null)
 						baseExpression = new[] { baseValue.RepresentedType };
+					else baseExpression = null;
 				}
 				else
 				{
@@ -757,7 +762,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							ctxt.LogError(x.Arguments[0], "Index expression must evaluate to integer value");
 						}
 						else if (idx.Value > (decimal)Int32.MaxValue || 
-								 (int)idx.Value > tt.Items.Length || 
+								 (int)idx.Value >= tt.Items.Length || 
 								 (int)idx.Value < 0)
 						{
 							ctxt.LogError(x.Arguments[0], "Index number must be a value between 0 and " + tt.Items.Length);

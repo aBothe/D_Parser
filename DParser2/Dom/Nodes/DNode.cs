@@ -17,7 +17,10 @@ namespace D_Parser.Dom
 			{
 				if (TemplateParameters != null)
 					foreach (var p in TemplateParameters)
-						yield return new TemplateParameterNode(p) { Parent = this };
+						if (p == null)
+							yield return null;
+						else
+							yield return new TemplateParameterNode(p) { Parent = this };
 			}
 		}
 
