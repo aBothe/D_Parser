@@ -208,6 +208,7 @@
     <Compile Include="Resolver\TypeResolution\UFCSResolver.cs" />
     <Compile Include="Resolver\ConditionalCompilationFlags.cs" />
     <Compile Include="Misc\VersionIdEvaluation.cs" />
+    <Compile Include="Misc\GlobalParseCache.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="readme.txt" />

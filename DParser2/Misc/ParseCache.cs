@@ -104,10 +104,10 @@ namespace D_Parser.Misc
 
 			FallbackPath = fallbackAbsolutePath;
 
-			if (directoriesToParse == null)
+			if (directoriesToParse == null || !directoriesToParse.GetEnumerator().MoveNext())
 			{
 				if (FinishedParsing != null)
-					FinishedParsing(null);
+					FinishedParsing(new ParsePerformanceData[0]);
 				return;
 			}
 
