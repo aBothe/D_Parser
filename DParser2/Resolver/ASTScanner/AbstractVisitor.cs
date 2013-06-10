@@ -207,7 +207,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		protected bool DeepScanClass(UserDefinedType udt, MemberFilter vis, bool resolveBaseClassIfRequired = false)
 		{
 			bool isBase = false;
-			
+			bool scopeIsInInheritanceHierarchy = udt != null && ctxt.NodeIsInCurrentScopeHierarchy(udt.Definition);
 			bool takeStaticChildrenOnly = ctxt.ScopedBlock is DMethod && (ctxt.ScopedBlock as DMethod).IsStatic;
 			
 			// Check if the scoped node's parent is the current class
@@ -225,10 +225,10 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					sc = sc.Parent as IBlockNode;
 				}
 			}
-			
+
 			while(udt!= null)
 			{
-				if(scanChildren(udt.Definition as DBlockNode, vis, false, isBase, false, takeStaticChildrenOnly))
+				if(scanChildren(udt.Definition as DBlockNode, vis, false, isBase, false, takeStaticChildrenOnly, scopeIsInInheritanceHierarchy))
 					return true;
 				
 				if(udt is TemplateIntermediateType){
@@ -251,7 +251,8 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 									bool publicImports = false,
 									bool isBaseClass = false,
 									bool isMixinAst = false,
-									bool takeStaticChildrenOnly = false)
+									bool takeStaticChildrenOnly = false,
+		                            bool scopeIsInInheritanceHierarchy =false)
 		{
 			bool foundItems = false;
 
@@ -266,7 +267,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					if((ctxt.Options & ResolutionOptions.IgnoreAllProtectionAttributes) != ResolutionOptions.IgnoreAllProtectionAttributes){
 						if((CanShowMember(dn, ctxt.ScopedBlock) || isBaseClass && !isMixinAst) && ((!takeStaticChildrenOnly && (!publicImports || !isBaseClass)) || IsConstOrStatic(dn)))
 						{
-							if(!CheckForProtectedAttribute(dn,ctxt.ScopedBlock))
+							if (!(CheckForProtectedAttribute (dn, ctxt.ScopedBlock) || scopeIsInInheritanceHierarchy))
 								continue;
 						}
 						else
@@ -326,28 +327,20 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			if (dn.ContainsAttribute(DTokens.Deprecated) && CompletionOptions.Instance.HideDeprecatedNodes)
 				return false;
 
+			// http://dlang.org/attribute.html#ProtectionAttribute
 			if (dn.ContainsAttribute(DTokens.Private))
 				return dn.NodeRoot == scope.NodeRoot;
 			else if (dn.ContainsAttribute(DTokens.Package))
 				return dn.NodeRoot is DModule &&
 					ModuleNameHelper.ExtractPackageName((dn.NodeRoot as DModule).ModuleName) ==
 						ModuleNameHelper.ExtractPackageName((scope.NodeRoot as DModule).ModuleName);
-			else if(dn.ContainsAttribute(DTokens.Protected))
-			{
-				while(scope!=null)
-				{
-					if(dn == scope || dn.Parent == scope)
-						return true;
-					scope = scope.Parent as IBlockNode;
-				}
-				return false;
-			}
-			return true;
+
+			return CheckForProtectedAttribute(dn, scope);
 		}
 		
 		static bool CheckForProtectedAttribute(DNode dn, IBlockNode scope)
 		{
-			if(!dn.ContainsAttribute(DTokens.Protected))
+			if(!dn.ContainsAttribute(DTokens.Protected) || dn.NodeRoot == scope.NodeRoot)
 				return true;
 			
 			while(scope!=null)
