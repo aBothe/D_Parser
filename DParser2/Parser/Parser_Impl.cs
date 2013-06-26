@@ -862,7 +862,7 @@ namespace D_Parser.Parser
 			// Autodeclaration
 			var StorageClass = DTokens.ContainsStorageClass(DeclarationAttributes.ToArray());
 
-			if (laKind == Enum && StorageClass == Modifier.Empty)
+			if (laKind == Enum)
 			{
 				Step();
 				PushAttribute(StorageClass = new Modifier(Enum) { Location = t.Location, EndLocation = t.EndLocation },false);
