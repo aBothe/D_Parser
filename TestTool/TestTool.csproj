@@ -38,11 +38,18 @@
         <Variable name="PATH" value="/home/lx/Dokumente/Projects/NUnit-2.6.2/bin:$PATH" />
       </EnvironmentVariables>
     </EnvironmentVariables>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <WarningLevel>4</WarningLevel>
     <DebugSymbols>True</DebugSymbols>
     <DebugType>full</DebugType>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug-Linux|AnyCPU' ">
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug-Linux</OutputPath>
+    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />

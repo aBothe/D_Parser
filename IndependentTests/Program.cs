@@ -24,6 +24,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
+using D_Parser.Parser;
+using D_Parser.Dom;
 
 namespace IndependentTests
 {
@@ -31,7 +33,11 @@ namespace IndependentTests
 	{
 		public static void Main (string[] args)
 		{
-			Console.WriteLine ("Hello World!");
+			var code = @"static enum sendParserIntoInfiniteLoop() {}";
+
+			var mod = DParser.ParseString (code);
+
+			Console.WriteLine (mod.ToString());
 		}
 	}
 }
