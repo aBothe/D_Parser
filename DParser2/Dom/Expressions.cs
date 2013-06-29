@@ -83,8 +83,9 @@ namespace D_Parser.Dom.Expressions
 		public override string ToString()
 		{
 			var s = "";
-			foreach (var ex in Expressions)
-				s += ex.ToString() + ",";
+			if(Expressions!=null)
+				foreach (var ex in Expressions)
+					s += (ex == null ? string.Empty : ex.ToString()) + ",";
 			return s.TrimEnd(',');
 		}
 
