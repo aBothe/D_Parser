@@ -38,6 +38,9 @@ namespace D_Parser.Completion
 
 			if (trackVars != null)
 			{
+				if(trackVars.ExpectingNodeName)
+					return null;
+
 				PostfixExpression_Access pfa;
 
 				// if( asdf == E.| )
