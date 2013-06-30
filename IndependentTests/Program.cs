@@ -33,9 +33,11 @@ namespace IndependentTests
 	{
 		public static void Main (string[] args)
 		{
-			var code = @"static enum sendParserIntoInfiniteLoop() {}";
+			var code = @"
+{
+if(e";
 
-			var mod = DParser.ParseString (code);
+			var mod = DParser.ParseBlockStatement (code);
 
 			Console.WriteLine (mod.ToString());
 		}

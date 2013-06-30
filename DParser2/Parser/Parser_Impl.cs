@@ -3391,10 +3391,13 @@ namespace D_Parser.Parser
 				}
 			}
 
-			if (IsEOF)
+			if (IsEOF && tp != null && !(tp is IdentifierDeclaration || 
+			                             tp is DTokenDeclaration && (tp as DTokenDeclaration).Token == DTokens.INVALID))
 			{
-				if (tp != null)
-					TrackerVariables.ExpectingNodeName = true;
+				/*
+				 * Ambigious situation: if(e| -- is this an inline declaration or the start of a postfix_access expression á la 'e.'? 
+				 */
+				TrackerVariables.ExpectingNodeName = true;
 			}
 			else
 			{
