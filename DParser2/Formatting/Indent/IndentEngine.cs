@@ -632,6 +632,7 @@ namespace D_Parser.Formatting.Indent
 				if (firstNonLwsp == -1) {
 					pKeyword = stack.PeekKeyword;
 					stack.Pop ();
+					TrimIndent ();
 				} else {
 					pKeyword = keyword;
 				}
@@ -641,7 +642,6 @@ namespace D_Parser.Formatting.Indent
 						break;
 					var kw = stack.PeekKeyword;
 					stack.Pop ();
-					TrimIndent ();
 					if (kw != DTokens.INVALID) {
 						pKeyword = kw;
 						break;
@@ -651,10 +651,10 @@ namespace D_Parser.Formatting.Indent
 				if (firstNonLwsp == -1)
 					curIndent = stack.PeekIndent (0);
 
-				stack.Push (Inside.Attribute, pKeyword, curLineNr, 0);
+				stack.Push (Inside.SquareBracketList, pKeyword, curLineNr, 0);
 			}
 			else
-				stack.Push (Inside.Attribute, keyword, curLineNr, 0);
+				stack.Push (Inside.SquareBracketList, keyword, curLineNr, 0);
 
 			keyword = DTokens.INVALID;
 			if (firstNonLwsp == -1)
@@ -670,7 +670,7 @@ namespace D_Parser.Formatting.Indent
 				stack.Pop ();
 			}
 			
-			if (inside != Inside.Attribute) {
+			if (inside != Inside.SquareBracketList) {
 				//Console.WriteLine ("can't pop a '[' if we ain't got one?");
 				return;
 			}

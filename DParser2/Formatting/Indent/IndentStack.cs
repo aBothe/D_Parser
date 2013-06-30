@@ -25,13 +25,14 @@ namespace D_Parser.Formatting.Indent
 		
 		Attribute          = (1 << 9),
 		ParenList          = (1 << 10),
+		SquareBracketList = (1<<15),
 		
 		FoldedStatement    = (1 << 11),
 		Block              = (1 << 12),
 		Case               = (1 << 13),
 		
-		FoldedOrBlock      = (FoldedStatement | Block),
-		FoldedBlockOrCase  = (FoldedStatement | Block | Case)
+		FoldedOrBlock      = (FoldedStatement | Block | SquareBracketList),
+		FoldedBlockOrCase  = (FoldedStatement | Block | SquareBracketList | Case)
 	}
 	
 	/// <summary>
@@ -167,7 +168,7 @@ namespace D_Parser.Formatting.Indent
 				if (parent == Inside.ParenList)
 					stack[size - 1].indent = indentBuilder.ToString ();
 
-				if (inside == Inside.FoldedStatement) {
+				if (inside == Inside.FoldedStatement || inside == Inside.SquareBracketList) {
 					indentBuilder.Append ('\t');
 				} else if (inside == Inside.Block) {
 					if (parent != Inside.Case || nSpaces != -1)
