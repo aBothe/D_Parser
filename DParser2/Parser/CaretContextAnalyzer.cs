@@ -292,14 +292,23 @@ namespace D_Parser.Parser
 							off += 2;
 							continue;
 						}
-						else if (IsAlternateVerbatimString && cur == '`')
+						else if(!IsAlternateVerbatimString)
+						{
+							// Normal string escape \"
+							if(cur == '\\' && peekChar == '\"')
+							{
+								off += 2;
+								continue;
+							}
+							else if (cur == '\"') // Normal string end
+							{
+								IsInString = IsVerbatimString = false;
+								lastEndOffset = off;
+							}
+						}
+						else if (cur == '`') // AlternativeVerbatim string end
 						{
 							IsInString = IsAlternateVerbatimString = false;
-							lastEndOffset = off;
-						}
-						else if (!IsAlternateVerbatimString && cur == '\"')
-						{
-							IsInString = IsVerbatimString = false;
 							lastEndOffset = off;
 						}
 					}
