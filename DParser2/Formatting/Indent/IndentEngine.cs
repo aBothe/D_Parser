@@ -923,10 +923,14 @@ namespace D_Parser.Formatting.Indent
 					
 					if (inside == Inside.Block) {
 						var peekKw = stack.PeekKeyword;
-						if (peekKw == DTokens.Struct || 
-						    peekKw == DTokens.Enum || 
-						    peekKw == DTokens.Assign || 
-						    peekKw == DTokens.Import) {
+						if (//peekKw == DTokens.Struct || 
+						    peekKw == DTokens.Enum
+						    //peekKw == DTokens.Assign ||
+						    //peekKw == DTokens.Import
+								    ) {
+							/* When breaking on DTokens.Assign here,
+							 * stuff like myDeleg = (){...}; will cause issues inside the anonymous method body!
+							 */
 							// just variable/value declarations
 							break;
 						}
