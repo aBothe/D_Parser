@@ -145,11 +145,11 @@ namespace D_Parser.Dom
 			{
 				ModulePackage returnValue;
 
+				lock(currentPackage.packages)
 				if (!currentPackage.packages.TryGetValue(parts[k], out returnValue))
 				{
 					if (create)
-						lock(currentPackage.packages)
-							returnValue = currentPackage.packages[parts[k]] = new ModulePackage(Cache, currentPackage, parts[k]);
+						returnValue = currentPackage.packages[parts[k]] = new ModulePackage(Cache, currentPackage, parts[k]);
 					else
 						return null;
 				}
