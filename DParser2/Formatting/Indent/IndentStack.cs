@@ -168,9 +168,9 @@ namespace D_Parser.Formatting.Indent
 				if (parent == Inside.ParenList)
 					stack[size - 1].indent = indentBuilder.ToString ();
 
-				if (inside == Inside.FoldedStatement || inside == Inside.SquareBracketList) {
+				if (inside == Inside.FoldedStatement) {
 					indentBuilder.Append ('\t');
-				} else if (inside == Inside.Block) {
+				} else if (inside == Inside.Block || inside == Inside.SquareBracketList) {
 					if (parent != Inside.Case || nSpaces != -1)
 						indentBuilder.Append ('\t');
 				}
