@@ -2,6 +2,7 @@
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
 using D_Parser.Parser;
+using System.Text;
 
 namespace D_Parser.Dom
 {
@@ -296,27 +297,35 @@ namespace D_Parser.Dom
 
 		public override string ToString(bool Attributes, bool IncludePath)
 		{
-			var ret = (Attributes ? (AttributeString + " ") : "") + DTokens.GetTokenString(ClassType) + " ";
+			var sb = new StringBuilder();
+			if (Attributes)
+				sb.Append(AttributeString).Append(' ');
+			sb.Append(DTokens.GetTokenString(ClassType)).Append(' ');
 
-			if (IncludePath)
-				ret += GetNodePath(this, true);
-			else
-				ret += Name;
+			sb.Append(IncludePath ? GetNodePath(this, true) : Name);
 
 			if (TemplateParameters != null && TemplateParameters.Length > 0)
 			{
-				ret += "(";
+				sb.Append('(');
 				foreach (var tp in TemplateParameters)
-					ret += tp.ToString() + ",";
-				ret = ret.TrimEnd(',') + ")";
+				{
+					if (tp != null)
+						sb.Append(tp.ToString());
+					sb.Append(',');
+				}
+				if (TemplateParameters.Length > 0)
+					sb.Remove(sb.Length - 1, 1);
+				sb.Append(')');
 			}
 
 			if (BaseClasses.Count > 0)
-				ret += ":";
-			foreach (var c in BaseClasses)
-				ret += c.ToString() + ", ";
-
-			return ret.Trim().TrimEnd(',');
+			{
+				sb.Append(':');
+				foreach (var c in BaseClasses)
+					sb.Append(c.ToString()).Append(", ");
+				sb.Remove(sb.Length - 2, 2);
+			}
+			return sb.ToString();
 		}
 
 		public override void Accept(NodeVisitor vis)
