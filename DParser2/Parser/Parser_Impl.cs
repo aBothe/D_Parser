@@ -788,6 +788,8 @@ namespace D_Parser.Parser
 						};
 						if(Expect(Assign))
 							dv.Type = Type();
+						else
+							break;
 						decls.Add(dv);
 					}
 					while(laKind == Comma);
