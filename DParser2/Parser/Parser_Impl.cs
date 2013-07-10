@@ -776,7 +776,10 @@ namespace D_Parser.Parser
 				{
 					var decls = new List<INode>();
 					do{
-						Expect(Identifier);
+						if(laKind == Comma)
+							Step();
+						if(!Expect(Identifier))
+							break;
 						var dv = new DVariable{
 							IsAlias = true,
 							Attributes = _t.Attributes,
@@ -787,9 +790,17 @@ namespace D_Parser.Parser
 							Parent = Scope
 						};
 						if(Expect(Assign))
+						{
+							Lexer.PushLookAheadBackup();
 							dv.Type = Type();
-						else
-							break;
+							if(!(laKind == Comma || laKind == Semicolon))
+							{
+								Lexer.RestoreLookAheadBackup();
+								dv.Initializer = AssignExpression(Scope);
+							}
+							else
+								Lexer.PopLookAheadBackup();
+						}
 						decls.Add(dv);
 					}
 					while(laKind == Comma);
