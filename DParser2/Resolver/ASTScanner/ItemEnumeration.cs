@@ -90,7 +90,7 @@ namespace D_Parser.Resolver.ASTScanner
 		}
 		
 		public static void EnumChildren(ICompletionDataGenerator cdgen,ResolutionContext ctxt, UserDefinedType udt, bool isVarInstance, 
-			MemberFilter vis = MemberFilter.Methods | MemberFilter.Types | MemberFilter.Variables)
+			MemberFilter vis = MemberFilter.Methods | MemberFilter.Types | MemberFilter.Variables | MemberFilter.Enums)
 		{
 			var scan = new MemberCompletionEnumeration(ctxt, cdgen) { isVarInst = isVarInstance };
 
@@ -98,7 +98,7 @@ namespace D_Parser.Resolver.ASTScanner
 		}
 		
 		public static void EnumChildren(ICompletionDataGenerator cdgen,ResolutionContext ctxt, IBlockNode block, bool isVarInstance,
-			MemberFilter vis = MemberFilter.Methods | MemberFilter.Types | MemberFilter.Variables)
+			MemberFilter vis = MemberFilter.Methods | MemberFilter.Types | MemberFilter.Variables | MemberFilter.Enums)
 		{
 			var scan = new MemberCompletionEnumeration(ctxt, cdgen) { isVarInst = isVarInstance };
 
@@ -107,7 +107,10 @@ namespace D_Parser.Resolver.ASTScanner
 		
 		protected override bool HandleItem(INode n)
 		{
-			if(isVarInst || !(n is DMethod || n is DVariable || n is TemplateParameterNode) || (n as DNode).IsStatic)
+			var dv = n as DVariable;
+			if(isVarInst || !(n is DMethod || dv != null || n is TemplateParameterNode) || 
+			   (n as DNode).IsStatic ||
+			   (dv != null && dv.IsConst))
 			{
 				if(n is DModule)
 					gen.AddModule(n as DModule);

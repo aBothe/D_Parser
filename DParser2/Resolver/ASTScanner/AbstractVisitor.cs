@@ -172,7 +172,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					breakOnNextScope |= HandleItems(dm.Parameters);
 
 				if (dm.TemplateParameters != null)
-					breakOnNextScope |= HandleItems(dm.TemplateParameterNodes as IEnumerable<INode>);
+					breakOnNextScope |= HandleItems(dm.TemplateParameterNodes as IEnumerable<DNode>);
 
 				// The method's declaration children are handled above already via BlockStatement.GetItemHierarchy().
 				// except AdditionalChildren:

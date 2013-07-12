@@ -18,7 +18,7 @@ namespace D_Parser.Completion
 		public PostfixExpression_Access AccessExpression;
 		public IStatement ScopedStatement;
 		public IBlockNode ScopedBlock;
-		public MemberFilter MemberFilter = MemberFilter.Methods | MemberFilter.Types | MemberFilter.Variables;
+		public MemberFilter MemberFilter = MemberFilter.All;
 
 		public MemberCompletionProvider(ICompletionDataGenerator cdg) : base(cdg) { }
 
