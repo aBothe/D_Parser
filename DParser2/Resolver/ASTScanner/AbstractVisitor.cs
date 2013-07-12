@@ -558,7 +558,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					if (dstmt != null)
 					{
 						var impStmt = dstmt as ImportStatement;
-						if ((takePublicImportsOnly && impStmt!=null && !impStmt.IsPublic) || !MatchesCompilationEnv(stmt))
+						if ((takePublicImportsOnly && impStmt!=null && !impStmt.IsPublic) || 
+						    !MatchesCompilationEnv(stmt) ||
+						    impStmt.IsStatic)
 							continue;
 
 						/*
