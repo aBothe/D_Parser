@@ -96,7 +96,7 @@ namespace D_Parser.Refactoring
 				if (td is IdentifierDeclaration)
 					id = ((IdentifierDeclaration)td).Id;
 				else if (td is TemplateInstanceExpression)
-					id = ((TemplateInstanceExpression)td).TemplateIdentifier.Id;
+					id = ((TemplateInstanceExpression)td).TemplateId;
 			}
 			else if (o is IExpression)
 			{
@@ -108,7 +108,7 @@ namespace D_Parser.Refactoring
 				if (x is IdentifierExpression && ((IdentifierExpression)x).IsIdentifier)
 					id = (string)((IdentifierExpression)x).Value;
 				else if (x is TemplateInstanceExpression)
-					id = ((TemplateInstanceExpression)x).TemplateIdentifier.Id;
+					id = ((TemplateInstanceExpression)x).TemplateId;
 				else if (x is NewExpression)
 				{
 					o = ((NewExpression)x).Type;

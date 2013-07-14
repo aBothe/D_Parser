@@ -109,7 +109,7 @@ namespace D_Parser.Refactoring
 			{
 				var tix = (TemplateInstanceExpression)o;
 
-				if (tix.TemplateIdentifier.Id != searchId)
+				if (tix.TemplateId != searchId)
 					return;
 
 				if (resolvedSymbol == null)
@@ -132,7 +132,7 @@ namespace D_Parser.Refactoring
 				if ((acc.AccessExpression is IdentifierExpression &&
 				(string)((IdentifierExpression)acc.AccessExpression).Value != searchId) ||
 				(acc.AccessExpression is TemplateInstanceExpression &&
-				(string)((TemplateInstanceExpression)acc.AccessExpression).TemplateIdentifier.Id != searchId))
+				(string)((TemplateInstanceExpression)acc.AccessExpression).TemplateId != searchId))
 				{
 					Handle(acc.PostfixForeExpression, null);
 					return;
@@ -144,7 +144,7 @@ namespace D_Parser.Refactoring
 					if ((nex.Type is IdentifierDeclaration &&
 						((IdentifierDeclaration)nex.Type).Id != searchId) ||
 						(nex.Type is TemplateInstanceExpression &&
-						(string)((TemplateInstanceExpression)acc.AccessExpression).TemplateIdentifier.Id != searchId))
+						(string)((TemplateInstanceExpression)acc.AccessExpression).TemplateId != searchId))
 					{
 						Handle(acc.PostfixForeExpression, null);
 						return;

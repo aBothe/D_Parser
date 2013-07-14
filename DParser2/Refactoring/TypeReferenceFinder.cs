@@ -159,7 +159,7 @@ namespace D_Parser.Refactoring
 			else if (o is PostfixExpression_Access)
 				return ExtractId(((PostfixExpression_Access)o).AccessExpression);
 			else if (o is TemplateInstanceExpression)
-				return ((TemplateInstanceExpression)o).TemplateIdentifier.Id;
+				return ((TemplateInstanceExpression)o).TemplateId;
 			else if (o is NewExpression)
 				return ExtractId(((NewExpression)o).Type);
 			return null;

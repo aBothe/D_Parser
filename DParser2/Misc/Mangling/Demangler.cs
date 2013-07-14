@@ -135,7 +135,7 @@ namespace D_Parser.Misc.Mangling
 					if(td is IdentifierDeclaration)
 						ds.Definition.Name = (td as IdentifierDeclaration).Id;
 					else if(td is TemplateInstanceExpression)
-						ds.Definition.Name = (td as TemplateInstanceExpression).TemplateIdentifier.Id;
+						ds.Definition.Name = (td as TemplateInstanceExpression).TemplateId;
 					
 					if(isStatic && ds.Definition is DMethod)
 						(ds.Definition as DMethod).Attributes.Add(new Modifier(DTokens.Static));
@@ -167,9 +167,8 @@ namespace D_Parser.Misc.Mangling
 							r.Read();
 							// We've got to handle a Template instance:
 							// Number __T LName TemplateArgs Z
-							var tpi = new TemplateInstanceExpression();
-							tpi.TemplateIdentifier = new IdentifierDeclaration(LName());
-							
+							var tpi = new TemplateInstanceExpression(new IdentifierDeclaration(LName()));
+
 							tpi.InnerDeclaration = td;
 							td = tpi;
 							
@@ -214,7 +213,7 @@ namespace D_Parser.Misc.Mangling
 			else if(td is TemplateInstanceExpression)
 			{
 				var tix = td as TemplateInstanceExpression;
-				id = tix.TemplateIdentifier.Id;
+				id = tix.TemplateId;
 				
 				if(tix.Arguments!=null && tix.Arguments.Length != 0)
 					foreach(var arg in tix.Arguments)
@@ -230,7 +229,7 @@ namespace D_Parser.Misc.Mangling
 			   (td.InnerDeclaration as IdentifierDeclaration).Id == id)
 				return td.InnerDeclaration;
 			if(td.InnerDeclaration is TemplateInstanceExpression &&
-			   (td.InnerDeclaration as TemplateInstanceExpression).TemplateIdentifier.Id == id)
+			   (td.InnerDeclaration as TemplateInstanceExpression).TemplateId == id)
 				return td.InnerDeclaration;
 			
 			return td;

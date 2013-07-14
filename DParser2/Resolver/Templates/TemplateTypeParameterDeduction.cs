@@ -192,7 +192,7 @@ namespace D_Parser.Resolver.Templates
 			var optBackup = ctxt.CurrentContext.ContextDependentOptions;
 			ctxt.CurrentContext.ContextDependentOptions = ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.DontResolveBaseTypes;
 
-			var initialResults = TypeDeclarationResolver.ResolveIdentifier(tix.TemplateIdentifier.Id, ctxt, tix);
+			var initialResults = TypeDeclarationResolver.ResolveIdentifier(tix.TemplateId, ctxt, tix);
 			var l = _handleResStep(initialResults);
 
 			ctxt.CurrentContext.ContextDependentOptions = optBackup;

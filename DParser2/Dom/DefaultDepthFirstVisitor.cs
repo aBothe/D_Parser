@@ -661,8 +661,8 @@ namespace D_Parser.Dom
 
 		public virtual void Visit(TemplateInstanceExpression x)
 		{
-			if (x.TemplateIdentifier != null)
-				x.TemplateIdentifier.Accept(this);
+			if (x.Identifier != null)
+				x.Identifier.Accept(this);
 
 			if (x.Arguments != null)
 				foreach (var arg in x.Arguments)

@@ -239,8 +239,8 @@ namespace D_Parser.Refactoring
 			else if (sr is TemplateInstanceExpression)
 			{
 				var tix = (TemplateInstanceExpression)sr;
-				idLength = tix.TemplateIdentifier.Id.Length;
-				return tix.TemplateIdentifier.Location;
+				idLength = tix.TemplateId.Length;
+				return tix.Identifier.Location;
 			}
 			else if (sr is PostfixExpression_Access)
 				return ExtractIdLocation(((PostfixExpression_Access)sr).AccessExpression, out idLength);

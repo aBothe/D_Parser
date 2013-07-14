@@ -26,7 +26,7 @@ namespace D_Parser.Resolver.TypeResolution
 			if (acc.AccessExpression is IdentifierExpression)
 				name = ((IdentifierExpression)acc.AccessExpression).Value as string;
 			else if (acc.AccessExpression is TemplateInstanceExpression)
-				name = ((TemplateInstanceExpression)acc.AccessExpression).TemplateIdentifier.Id;
+				name = ((TemplateInstanceExpression)acc.AccessExpression).TemplateId;
 			else
 				return null;
 

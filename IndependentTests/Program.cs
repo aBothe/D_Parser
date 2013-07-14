@@ -33,11 +33,9 @@ namespace IndependentTests
 	{
 		public static void Main (string[] args)
 		{
-			var code = @"
-{
-if(e";
+			var code = @"const A!string()";
 
-			var mod = DParser.ParseBlockStatement (code);
+			var mod = DParser.ParseExpression (code);
 
 			Console.WriteLine (mod.ToString());
 		}

@@ -72,7 +72,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							var tix = pfa.AccessExpression as TemplateInstanceExpression;
 							if(tix != null)
 							{
-								if(Where >= tix.TemplateIdentifier.Location && Where <= tix.TemplateIdentifier.EndLocation)
+								if(Where >= tix.Identifier.Location && Where <= tix.Identifier.EndLocation)
 									continue;
 							}
 							continue;

@@ -1040,7 +1040,7 @@ namespace D_Parser.Parser
 
 				// e.g. cast(const)
 				if (laKind != CloseParenthesis)
-					md.InnerType = Type();
+					md.InnerType = p ? Type() : BasicType();
 
 				if (p)
 					Expect(CloseParenthesis);
@@ -1082,7 +1082,7 @@ namespace D_Parser.Parser
 				if (innerMost is IdentifierDeclaration)
 					((IdentifierDeclaration)innerMost).ModuleScoped = true;
 				else if (innerMost is TemplateInstanceExpression)
-					((TemplateInstanceExpression)innerMost).TemplateIdentifier.ModuleScoped = true;
+					((TemplateInstanceExpression)innerMost).ModuleScopedIdentifier = true;
 			}
 
 			return td;
@@ -2861,8 +2861,8 @@ namespace D_Parser.Parser
 			if (IsTemplateInstance)
 			{
 				var tix = TemplateInstance();
-				if (tix != null && tix.TemplateIdentifier!=null)
-					tix.TemplateIdentifier.ModuleScoped = isModuleScoped;
+				if (tix != null)
+					tix.ModuleScopedIdentifier = isModuleScoped;
 				return tix;
 			}
 
@@ -4879,7 +4879,7 @@ namespace D_Parser.Parser
 				if(innerMost is IdentifierExpression)	
 					(innerMost as IdentifierExpression).ModuleScoped = true;
 				else if(innerMost is TemplateInstanceExpression)
-					(innerMost as TemplateInstanceExpression).TemplateIdentifier.ModuleScoped = true;
+					(innerMost as TemplateInstanceExpression).ModuleScopedIdentifier = true;
 			}
 
 			// MixinIdentifier
@@ -5085,29 +5085,44 @@ namespace D_Parser.Parser
 		bool IsTemplateInstance
 		{
 			get {
-				return laKind == Identifier && Peek(1).Kind == Not && !(Peek(2).Kind == Is || Lexer.CurrentPeekToken.Kind == In);
+				Lexer.StartPeek ();
+				if (laKind != Identifier && (!DTokens.StorageClass [laKind] || Peek ().Kind != Identifier))
+					return false;
+				
+				var r = Peek ().Kind == Not && !(Peek().Kind == Is || Lexer.CurrentPeekToken.Kind == In);
+				Peek (1);
+				return r;
 			}
 		}
 
 		public TemplateInstanceExpression TemplateInstance()
 		{
-			if (!Expect(Identifier))
+			var loc = la.Location;
+
+			var mod = INVALID;
+
+			if (DTokens.StorageClass [laKind]) {
+				mod = laKind;
+				Step ();
+			}
+
+			if (!Expect (Identifier))
 				return null;
 
-			var td = new TemplateInstanceExpression() { 
-				TemplateIdentifier = new IdentifierDeclaration(t.Value) 
-				{ 
-					Location=t.Location,
-					EndLocation=t.EndLocation 
-				}, 
-				Location = t.Location 
+			ITypeDeclaration td = new IdentifierDeclaration (t.Value) { 
+				Location = t.Location, 
+				EndLocation = t.EndLocation
+			};
+
+			td = new TemplateInstanceExpression(mod != DTokens.INVALID ? new MemberFunctionAttributeDecl(mod) { InnerType = td } : td) {
+				Location = loc
 			};
 			LastParsedObject = td;
 
 			var args = new List<IExpression>();
 
 			if (!Expect(Not))
-				return td;
+				return td as TemplateInstanceExpression;
 
 			if (laKind == (OpenParenthesis))
 			{
@@ -5207,14 +5222,14 @@ namespace D_Parser.Parser
 				{
 					TrackerVariables.ExpectingIdentifier = false;
 					td.EndLocation = CodeLocation.Empty;
-					return td;
+					return td as TemplateInstanceExpression;
 				}
 
 				args.Add(arg);
 			}
-			td.Arguments = args.ToArray();
+			(td as TemplateInstanceExpression).Arguments = args.ToArray();
 			td.EndLocation = t.EndLocation;
-			return td;
+			return td as TemplateInstanceExpression;
 		}
 		#endregion
 

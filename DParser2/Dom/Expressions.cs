@@ -1157,15 +1157,34 @@ namespace D_Parser.Dom.Expressions
 
 	public class TemplateInstanceExpression : AbstractTypeDeclaration,PrimaryExpression,ContainerExpression
 	{
-		public IdentifierDeclaration TemplateIdentifier;
+		public readonly string TemplateId;
+		public bool ModuleScopedIdentifier;
+		public readonly ITypeDeclaration Identifier;
 		public IExpression[] Arguments;
+
+		public TemplateInstanceExpression(ITypeDeclaration id)
+		{
+			this.Identifier = id;
+
+			var curtd = id;
+			while (curtd!=null) {
+				if (curtd is IdentifierDeclaration)
+				{
+					var i = curtd as IdentifierDeclaration;
+					TemplateId = i.Id;
+					ModuleScopedIdentifier = i.ModuleScoped;
+					break;
+				}
+				curtd = curtd.InnerDeclaration;
+			}
+		}
 
 		public override string ToString(bool IncludesBase)
 		{
 			var ret = IncludesBase && InnerDeclaration != null ? (InnerDeclaration.ToString() + ".") : "";
 			
-			if(TemplateIdentifier!=null)
-				ret+=TemplateIdentifier.ToString();
+			if(Identifier!=null)
+				ret+=Identifier.ToString();
 
 			ret += "!";
 
@@ -1199,8 +1218,8 @@ namespace D_Parser.Dom.Expressions
 		{
 			ulong hashCode = 0uL;
 			unchecked {
-				if (TemplateIdentifier != null)
-					hashCode += 1000000007 * TemplateIdentifier.GetHash();
+				if (Identifier != null)
+					hashCode += 1000000007 * Identifier.GetHash();
 				if (Arguments != null)
 					for(ulong i = (ulong)Arguments.Length; i!=0;)
 						hashCode += 1000000009 * i * Arguments[(int)--i].GetHash();
