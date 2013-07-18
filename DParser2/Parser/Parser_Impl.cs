@@ -2828,29 +2828,11 @@ namespace D_Parser.Parser
 				}
 			}
 
-			if (laKind == __FILE__ || laKind == __LINE__)
-			{
-				Step();
-
-				object id = null;
-
-				if (t.Kind == __FILE__ && doc != null)
-					id = doc.FileName;
-				else if(t.Kind==__LINE__)
-					id = t.Line;
-
-				return new IdentifierExpression(id)
-				{
-					Location=t.Location,
-					EndLocation=t.EndLocation
-				};
-			}
-
 			// Dollar (== Array length expression)
-			if (laKind == Dollar)
+			if (laKind == Dollar || DTokens.MetaIdentifiers[laKind])
 			{
 				Step();
-				return new TokenExpression(laKind)
+				return new TokenExpression(t.Kind)
 				{
 					Location = t.Location,
 					EndLocation = t.EndLocation

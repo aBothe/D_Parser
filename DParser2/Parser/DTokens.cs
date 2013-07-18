@@ -220,7 +220,11 @@ namespace D_Parser.Parser
 		public const byte __TIMESTAMP__ = 178;
 		public const byte __VENDOR__ = 179;
 
-        public const byte MaxToken = 180;
+		public const byte __MODULE__ = 180;
+		public const byte __FUNCTION__ = 181;
+		public const byte __PRETTY_FUNCTION__ = 182;
+
+        public const byte MaxToken = 183;
         public static BitArray NewSet(params byte[] values)
         {
             BitArray bitArray = new BitArray(MaxToken);
@@ -241,6 +245,10 @@ namespace D_Parser.Parser
             {__LINE__,"__LINE__"},
             {__FILE__,"__FILE__"},
             {__EOF__,"__EOF__"},
+
+			{__MODULE__,"__MODULE__"},
+			{__FUNCTION__,"__FUNCTION__"},
+			{__PRETTY_FUNCTION__, "__PRETTY_FUNCTION__"},
 
 			{__VERSION__,"__VERSION__"},
 			{__DATE__,"__DATE__"},
@@ -465,6 +473,8 @@ namespace D_Parser.Parser
             ,Synchronized
 			,__gshared
             );
+
+		public static BitArray MetaIdentifiers = NewSet(__DATE__,__FILE__,__FUNCTION__,__LINE__,__MODULE__,__PRETTY_FUNCTION__,__TIMESTAMP__,__TIME__,__VENDOR__,__VERSION__);
 
         /// <summary>
         /// Checks if modifier array contains member attributes. If so, it returns the last found attribute. Otherwise 0.

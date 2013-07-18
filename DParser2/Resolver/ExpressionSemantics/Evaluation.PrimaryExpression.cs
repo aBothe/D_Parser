@@ -172,6 +172,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					return null;
 
 				case DTokens.Dollar:
+					if (!eval)
+						return new PrimitiveType (DTokens.Int);
 					// It's only allowed if the evaluation stack contains an array value
 					if (ValueProvider.CurrentArrayLength != -1)
 						return new PrimitiveValue(DTokens.Int, ValueProvider.CurrentArrayLength, x);
@@ -182,13 +184,32 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					}
 
 				case DTokens.True:
+					if (!eval)
+						return new PrimitiveType (DTokens.Bool);
 					return new PrimitiveValue(DTokens.Bool, 1, x);
 				case DTokens.False:
+					if (!eval)
+						return new PrimitiveType (DTokens.Bool);
 					return new PrimitiveValue(DTokens.Bool, 0, x);
 				case DTokens.__FILE__:
+					if (!eval)
+						return GetStringType();
 					return new ArrayValue(GetStringType(), (ctxt.ScopedBlock.NodeRoot as DModule).FileName);
 				case DTokens.__LINE__:
+					if (!eval)
+						return new PrimitiveType (DTokens.Int);
 					return new PrimitiveValue(DTokens.Int, x.Location.Line, x);
+				case DTokens.__MODULE__:
+					if (!eval)
+						return GetStringType();
+					return new ArrayValue(GetStringType(), (ctxt.ScopedBlock.NodeRoot as DModule).ModuleName);
+				case DTokens.__FUNCTION__:
+					//TODO
+				case DTokens.__PRETTY_FUNCTION__:
+					if (!eval)
+						return GetStringType();
+					var dm = ctxt.ScopedStatement.ParentNode as DMethod;
+					return new ArrayValue(GetStringType(), dm == null ? "<not inside function>" : dm.ToString(false,true));
 			}
 
 
