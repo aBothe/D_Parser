@@ -2,6 +2,9 @@
 using D_Parser.Dom.Statements;
 using D_Parser.Resolver;
 using D_Parser.Resolver.TypeResolution;
+using D_Parser.Dom.Expressions;
+using D_Parser.Resolver.ExpressionSemantics;
+using D_Parser.Dom;
 
 namespace D_Parser.Completion
 {
@@ -22,17 +25,29 @@ namespace D_Parser.Completion
 		{
 			try
 			{
+				var l = new List<AbstractTooltipContent>();
+
 				var ctxt=ResolutionContext.Create(Editor);
-				var rr = DResolver.ResolveType(Editor, ctxt, DResolver.AstReparseOptions.AlsoParseBeyondCaret);
+				var o = DResolver.GetScopedCodeObject(Editor, ctxt, DResolver.AstReparseOptions.AlsoParseBeyondCaret);
 
-				if (rr.Length < 1)
-					return null;
+				var x = o as IExpression;
+				AbstractType[] rr = null;
+				if (x != null)
+				{
+					var v = Evaluation.EvaluateValue(x, ctxt);
+					if(v!=null && !(v is ErrorValue))
+						l.Add(BuildTooltipContent(v));
+					else
+					  rr = Evaluation.EvaluateTypes((IExpression)o, ctxt);
+				}
+				else if(o is ITypeDeclaration)
+					rr = TypeDeclarationResolver.Resolve((ITypeDeclaration)o, ctxt);
 
-				var l = new List<AbstractTooltipContent>(rr.Length);
-				foreach (var res in rr)
-					l.Add(BuildTooltipContent(res));
+				if (rr != null)
+					foreach (var res in rr)
+						l.Add(BuildTooltipContent(res));
 
-				return l.ToArray();
+				return l.Count == 0 ? null : l.ToArray();
 			}
 			catch { }
 			return null;
@@ -40,6 +55,15 @@ namespace D_Parser.Completion
 
 		static AbstractTooltipContent BuildTooltipContent(ISemantic res)
 		{
+			if (res is ISymbolValue) {
+				var sv = res as ISymbolValue;
+
+				return new AbstractTooltipContent { 
+					ResolveResult = res,
+					Title = "(" + sv.RepresentedType + ") "+sv.ToCode()
+				};
+			}
+
 			// Only show one description for items sharing descriptions
 			string description = res is DSymbol ? ((DSymbol)res).Definition.Description : "";
 
