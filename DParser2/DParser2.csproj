@@ -100,6 +100,12 @@
     <PlatformTarget>anycpu</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug-Linux|x86' ">
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug-Linux</OutputPath>
+    <WarningLevel>4</WarningLevel>
+    <AssemblyName>DParser2</AssemblyName>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Xml" />
@@ -220,6 +226,7 @@
     <Compile Include="Resolver\ConditionalCompilationFlags.cs" />
     <Compile Include="Misc\VersionIdEvaluation.cs" />
     <Compile Include="Misc\GlobalParseCache.cs" />
+    <Compile Include="Misc\Mangling\Mangler.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="readme.txt" />
