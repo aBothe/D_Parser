@@ -436,7 +436,7 @@ namespace D_Parser.Parser
 			else if (ParseErrors.Count == MaxParseErrorsBeforeFailure)
 				msg = "Too many errors - stop parsing";
 
-			ParseErrors.Add(new ParserError(false,msg,n,t==null?la.Location:t.EndLocation));
+			ParseErrors.Add(new ParserError(false,msg,n,la.Location));
         }
         void SynErr(byte n)
 		{
@@ -445,7 +445,7 @@ namespace D_Parser.Parser
 
         void SemErr(byte n, string msg)
         {
-			ParseErrors.Add(new ParserError(true, msg, n, t == null ? la.Location : t.EndLocation));
+			ParseErrors.Add(new ParserError(true, msg, n, la.Location));
         }
         /*void SemErr(int n)
         {
