@@ -58,6 +58,9 @@ namespace D_Parser.Completion
 			if (res is ISymbolValue) {
 				var sv = res as ISymbolValue;
 
+				if (sv is TypeValue)
+					return new AbstractTooltipContent { ResolveResult = res, Title = sv.RepresentedType.ToString() };
+
 				return new AbstractTooltipContent { 
 					ResolveResult = res,
 					Title = "(" + sv.RepresentedType + ") "+sv.ToCode()
