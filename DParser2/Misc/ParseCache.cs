@@ -282,23 +282,17 @@ namespace D_Parser.Misc
 			if (string.IsNullOrEmpty(ast.ModuleName))
 				return Root.RemoveModule(string.Empty);
 
-			return _remFromPack(Root, ast, removeEmptyPackages);
-		}
+			var packName = ModuleNameHelper.ExtractPackageName (ast.ModuleName);
+			var pack = this.Root.GetOrCreateSubPackage (packName);
 
-		bool _remFromPack(ModulePackage pack, DModule ast, bool remEmptyPackages)
-		{
-			if (pack.RemoveModule(ast.ModuleName))
-			{
-				if (remEmptyPackages && pack.IsEmpty && pack.Parent != null)
-					pack.RemovePackage(pack.Name);
-				return true;
-			}
+			if (!pack.RemoveModule (ast.ModuleName))
+				return false;
 
-			foreach (var p in pack.Packages)
-				if (_remFromPack(p.Value, ast, remEmptyPackages))
-					return true;
-			
-			return false;
+			ModulePackage parPack;
+			if (removeEmptyPackages && pack.IsEmpty && (parPack = pack.Parent) != null)
+				parPack.RemovePackage (pack.Name);
+
+			return true;
 		}
 
 		public DModule GetModuleByFileName(string file, string baseDirectory = null)
