@@ -259,7 +259,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 				bcStack++;
 
-				var res=TypeDeclarationResolver.Resolve(type, ctxt);
+				var res= DResolver.StripAliasSymbols(TypeDeclarationResolver.Resolve(type, ctxt));
 
 				ctxt.CheckForSingleResult(res, type);
 
