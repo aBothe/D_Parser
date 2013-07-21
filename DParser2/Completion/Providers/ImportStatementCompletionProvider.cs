@@ -4,13 +4,15 @@ using System.Linq;
 using System.Text;
 using D_Parser.Dom;
 using D_Parser.Misc;
+using D_Parser.Resolver;
+using D_Parser.Resolver.ASTScanner;
 
 namespace D_Parser.Completion.Providers
 {
 	public class ImportStatementCompletionProvider : AbstractCompletionProvider
 	{
-		ImportStatement.Import imp;
-		ImportStatement.ImportBindings impBind;
+		readonly ImportStatement.Import imp;
+		readonly ImportStatement.ImportBindings impBind;
 
 		public ImportStatementCompletionProvider(
 			ICompletionDataGenerator gen, 
@@ -26,6 +28,7 @@ namespace D_Parser.Completion.Providers
 			: base(gen)
 		{
 			this.impBind = imbBind;
+			imp = impBind.Module;
 		}
 
 		protected override void BuildCompletionDataInternal(IEditorData Editor, string EnteredText)
@@ -33,35 +36,50 @@ namespace D_Parser.Completion.Providers
 			if(Editor.ParseCache == null)
 				return;
 
-			if (imp != null)
+			if (impBind != null)
 			{
-				string pack = null;
+				DModule mod = null;
 
-				if (imp.ModuleIdentifier != null && imp.ModuleIdentifier.InnerDeclaration != null)
-				{
-					pack = imp.ModuleIdentifier.InnerDeclaration.ToString();
+				var modName = imp.ModuleIdentifier.ToString (true);
+				foreach (var pc in Editor.ParseCache)
+					if ((mod = pc.GetModule (modName)) != null)
+						break;
 
-					// Will occur after an initial dot  
-					if (string.IsNullOrEmpty(pack))
-						return;
-				}
+				if (mod == null)
+					return;
 
-				foreach (var p in Editor.ParseCache.LookupPackage(pack))
-				{
-					foreach (var kv_pack in p.Packages)
-						CompletionDataGenerator.AddPackage(kv_pack.Key);
+				var ctxt = ResolutionContext.Create (Editor);
 
-					foreach (var kv_mod in p.Modules)
-						CompletionDataGenerator.AddModule(kv_mod.Value, kv_mod.Key);
-				}
-			}
-			else if (impBind != null)
-			{
 				/*
-				 * Show all members of the imported modules
+				 * Show all members of the imported module
 				 * + public imports 
 				 * + items of anonymous enums
 				 */
+
+				MemberCompletionEnumeration.EnumChildren(CompletionDataGenerator, ctxt, mod, false, MemberFilter.All);
+
+				return;
+			}
+
+
+			string pack = null;
+
+			if (imp.ModuleIdentifier != null && imp.ModuleIdentifier.InnerDeclaration != null)
+			{
+				pack = imp.ModuleIdentifier.InnerDeclaration.ToString();
+
+				// Will occur after an initial dot  
+				if (string.IsNullOrEmpty(pack))
+					return;
+			}
+
+			foreach (var p in Editor.ParseCache.LookupPackage(pack))
+			{
+				foreach (var kv_pack in p.Packages)
+					CompletionDataGenerator.AddPackage(kv_pack.Key);
+
+				foreach (var kv_mod in p.Modules)
+					CompletionDataGenerator.AddModule(kv_mod.Value, kv_mod.Key);
 			}
 		}
 	}

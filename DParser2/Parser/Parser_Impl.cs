@@ -646,8 +646,6 @@ namespace D_Parser.Parser
 								Location = t.Location,
 								EndLocation = t.EndLocation
 							}, symbolAlias));
-						else if(IsEOF)
-							LastParsedObject = new Tuple<ImportStatement.ImportBindings, ImportStatement.ImportBinding>(importBindings,new ImportStatement.ImportBinding (null, symbolAlias));
 					}
 					else
 						importBindings.SelectedSymbols.Add(new ImportStatement.ImportBinding(symbolAlias));

@@ -112,10 +112,6 @@ namespace D_Parser.Completion
 						return new ImportStatementCompletionProvider (dataGen, (ImportStatement.Import)trackVars.LastParsedObject);
 					else if (trackVars.LastParsedObject is ImportStatement.ImportBindings)
 						return new ImportStatementCompletionProvider (dataGen, (ImportStatement.ImportBindings)trackVars.LastParsedObject);
-					else if (trackVars.LastParsedObject is Tuple<ImportStatement.ImportBindings, ImportStatement.ImportBinding>) {
-						var tup = trackVars.LastParsedObject as Tuple<ImportStatement.ImportBindings, ImportStatement.ImportBinding>;
-
-					}
 					else if (trackVars.LastParsedObject is ModuleStatement)
 						return new ModuleStatementCompletionProvider(dataGen);
 					else if ((trackVars.LastParsedObject is ITemplateParameter || 
