@@ -29,7 +29,7 @@ namespace D_Parser.Completion
 
 			var ex = AccessExpression.AccessExpression == null ? AccessExpression.PostfixForeExpression : AccessExpression;
 
-			var r = Evaluation.EvaluateType(ex, ctxt);
+			var r = DResolver.StripAliasSymbol(Evaluation.EvaluateType(ex, ctxt));
 
 			if (r == null) //TODO: Add after-space list creation when an unbound . (Dot) was entered which means to access the global scope
 				return;
