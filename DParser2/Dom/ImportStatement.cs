@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using D_Parser.Dom.Statements;
+using System.Text;
+using System;
 
 namespace D_Parser.Dom
 {
@@ -53,6 +55,28 @@ namespace D_Parser.Dom
 			}
 		}
 
+		public class ImportBinding
+		{
+			public IdentifierDeclaration Symbol;
+			public IdentifierDeclaration Alias;
+
+			public ImportBinding(IdentifierDeclaration symbol, IdentifierDeclaration alias = null)
+			{
+				Symbol = symbol;
+				Alias = alias;
+			}
+
+			public override string ToString ()
+			{
+				if(Symbol == null)
+					return "<empty import binding>";
+
+				if (Alias == null)
+					return Symbol.ToString();
+				return Alias + " = " + Symbol;
+			}
+		}
+
 		public class ImportBindings
 		{
 			public Import Module;
@@ -63,48 +87,49 @@ namespace D_Parser.Dom
 			/// 
 			/// If value empty: Key is imported symbol
 			/// </summary>
-			public List<KeyValuePair<IdentifierDeclaration, IdentifierDeclaration>> SelectedSymbols
-				= new List<KeyValuePair<IdentifierDeclaration, IdentifierDeclaration>>();
+			public List<ImportBinding> SelectedSymbols = new List<ImportBinding>();
 
 			public override string ToString()
 			{
-				var r = Module==null?"":Module.ToString();
+				var sb = new StringBuilder ();
+				if (Module != null)
+					sb.Append (Module);
 
-				r += " : ";
+				sb.Append(" : ");
 
-				if(SelectedSymbols!=null)
-					foreach (var kv in SelectedSymbols)
-					{
-						r += kv.Key;
-
-						if (!string.IsNullOrEmpty(kv.Value))
-							r += "="+kv.Value;
-
-						r += ",";
+				if (SelectedSymbols != null) {
+					foreach (var kv in SelectedSymbols) {
+						sb.Append (kv.ToString ()).Append (',');
 					}
+					sb.Remove (sb.Length - 1, 1);
+				}
 
-				return r.TrimEnd(',');
+				return sb.ToString();
 			}
 		}
 
 		public List<Import> Imports = new List<Import>();
-		public ImportBindings ImportBinding;
+		public ImportBindings ImportBindList;
 
 		public override string ToCode()
 		{
-			var ret = (IsPublic?"public ":"")+ (IsStatic?"static ":"") + "import ";
+			var sb = new StringBuilder ();
+
+			if (IsPublic)
+				sb.Append ("public ");
+			if (IsStatic)
+				sb.Append ("static ");
+			sb.Append ("import ");
 
 			foreach (var imp in Imports)
-			{
-				ret += imp.ToString()+",";
-			}
+				sb.Append(imp.ToString()).Append(',');
 
-			if (ImportBinding == null)
-				ret = ret.TrimEnd(',');
+			if (ImportBindList == null)
+				sb.Remove (sb.Length - 1, 1);
 			else
-				ret += ImportBinding.ToString();
+				sb.Append(ImportBindList.ToString());
 
-			return ret;
+			return sb.ToString();
 		}
 
 		public override void Accept(StatementVisitor vis)
@@ -129,9 +154,9 @@ namespace D_Parser.Dom
 
 			foreach (var imp in Imports)
 				if (imp.ModuleAlias!=null)
-					PseudoAliases.Add(new ImportSymbolAlias(this, imp, Parent));
+					PseudoAliases.Add(new ModuleAliasNode(this, imp, Parent));
 
-			if (ImportBinding != null)
+			if (ImportBindList != null)
 			{
 				/*
 				 * import cv=std.conv : Convert = to;
@@ -139,28 +164,11 @@ namespace D_Parser.Dom
 				 * cv can be still used as an alias for std.conv,
 				 * whereas Convert is a direct alias for std.conv.to
 				 */
-				if(ImportBinding.Module.ModuleAlias!=null)
-					PseudoAliases.Add(new ImportSymbolAlias(this, ImportBinding.Module, Parent));
+				if(ImportBindList.Module.ModuleAlias!=null)
+					PseudoAliases.Add(new ModuleAliasNode(this, ImportBindList.Module, Parent));
 
-				foreach (var bind in ImportBinding.SelectedSymbols)
-				{
-					var impType = bind.Value ?? bind.Key;
-					PseudoAliases.Add(new ImportSymbolAlias(Parent)
-					{
-						IsAlias = true,
-						IsModuleAlias = false,
-						OriginalImportStatement = this,
-						Name = bind.Key.Id,
-						Location = bind.Key.Location,
-						NameLocation = bind.Key.Location,
-						Type = new IdentifierDeclaration(impType.Id)
-						{
-							Location = impType.Location,
-							EndLocation = impType.EndLocation,
-							InnerDeclaration = ImportBinding.Module.ModuleIdentifier
-						}
-					});
-				}
+				foreach (var bind in ImportBindList.SelectedSymbols)
+					PseudoAliases.Add(new ImportSymbolAlias(this, bind, Parent));
 			}
 		}
 
@@ -174,34 +182,65 @@ namespace D_Parser.Dom
 		#endregion
 	}
 
+	public abstract class ImportSymbolNode : DVariable
+	{
+		public readonly ImportStatement ImportStatement;
+
+		public ImportSymbolNode(ImportStatement impStmt,IBlockNode parentNode)
+		{
+			IsAlias = true;
+			this.ImportStatement = impStmt;
+			Parent = parentNode;
+		}
+	}
+
 	/// <summary>
 	/// import io = std.stdio;
 	/// </summary>
-	public class ImportSymbolAlias : DVariable
+	public class ModuleAliasNode : ImportSymbolNode
 	{
-		public bool IsModuleAlias;
-		public ImportStatement OriginalImportStatement;
+		public readonly ImportStatement.Import Import;
 
-		public ImportSymbolAlias(IBlockNode parentNode)
+		public ModuleAliasNode(ImportStatement impStmt,ImportStatement.Import imp, IBlockNode parentNode)
+			: base(impStmt, parentNode)
 		{
-			Parent = parentNode;
-		}
+			this.Import = imp;
 
-		public ImportSymbolAlias(ImportStatement impStmt,ImportStatement.Import imp, IBlockNode parentNode) : this(parentNode)
-		{
-			OriginalImportStatement = impStmt;
+			Name = imp.ModuleAlias.Id;
+			Location = NameLocation = imp.ModuleIdentifier.Location;
 
-			IsModuleAlias = true;
-			Name = imp.ModuleAlias;
 			Type = imp.ModuleIdentifier;
-			IsAlias = true;
+		}
+	}
+
+	/// <summary>
+	/// import std.stdio : writeln;
+	/// import std.stdio : wr = writeln;
+	/// </summary>
+	public class ImportSymbolAlias : ImportSymbolNode
+	{
+		public readonly ImportStatement.ImportBinding ImportBinding;
+
+		public ImportSymbolAlias(ImportStatement impStmt,ImportStatement.ImportBinding imp, IBlockNode parentNode)
+			: base(impStmt, parentNode)
+		{
+			ImportBinding = imp;
+			var sym = imp.Symbol;
+
+			Name = (imp.Alias ?? sym).Id;
+			NameLocation = (imp.Alias ?? sym).Location;
+			Location = imp.Symbol.Location;
+
+			Type = new IdentifierDeclaration (sym.Id) {
+				Location = sym.Location,
+				EndLocation = sym.EndLocation,
+				InnerDeclaration = impStmt.ImportBindList.Module.ModuleIdentifier
+			};
 		}
 
-		public ImportSymbolAlias()	{}
-
-		public override string ToString()
+		public override string ToString ()
 		{
-			return OriginalImportStatement.ToString();
+			return string.Format ("[ImportSymbolAlias] {0}", ImportBinding.ToString());
 		}
 	}
 }

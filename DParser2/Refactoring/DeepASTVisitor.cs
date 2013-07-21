@@ -130,8 +130,8 @@ namespace D_Parser.Refactoring
 				foreach (var imp in impStmt.Imports)
 					S(imp.ModuleIdentifier);
 
-				if (impStmt.ImportBinding != null)
-					S(impStmt.ImportBinding.Module.ModuleIdentifier);
+				if (impStmt.ImportBindList != null)
+					S(impStmt.ImportBindList.Module.ModuleIdentifier);
 			}
 
 			if (s is IDeclarationContainingStatement && !(s is BlockStatement))

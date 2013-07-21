@@ -5,6 +5,7 @@ using D_Parser.Parser;
 using D_Parser.Resolver.TypeResolution;
 using D_Parser.Completion.Providers;
 using D_Parser.Resolver.ASTScanner;
+using System;
 
 namespace D_Parser.Completion
 {
@@ -92,29 +93,29 @@ namespace D_Parser.Completion
 				if(trackVars.ExpectingIdentifier)
 				{
 					if (trackVars.LastParsedObject is DAttribute)
-						return new AttributeCompletionProvider(dataGen)
-						{
+						return new AttributeCompletionProvider (dataGen) {
 							Attribute = trackVars.LastParsedObject as DAttribute
 						};
 					else if (trackVars.LastParsedObject is ScopeGuardStatement)
-						return new ScopeAttributeCompletionProvider(dataGen)
-						{
+						return new ScopeAttributeCompletionProvider (dataGen) {
 							//ScopeStmt = trackVars.LastParsedObject as ScopeGuardStatement
 						};
 					else if (trackVars.LastParsedObject is PragmaStatement)
-						return new AttributeCompletionProvider(dataGen)
-						{
+						return new AttributeCompletionProvider (dataGen) {
 							Attribute = (trackVars.LastParsedObject as PragmaStatement).Pragma
 						};
 					else if (trackVars.LastParsedObject is TraitsExpression)
-						return new TraitsExpressionCompletionProvider(dataGen)
-						{
+						return new TraitsExpressionCompletionProvider (dataGen) {
 							//TraitsExpr=trackVars.LastParsedObject as TraitsExpression 
 						};
 					else if (trackVars.LastParsedObject is ImportStatement.Import)
-						return new ImportStatementCompletionProvider(dataGen, (ImportStatement.Import)trackVars.LastParsedObject);
+						return new ImportStatementCompletionProvider (dataGen, (ImportStatement.Import)trackVars.LastParsedObject);
 					else if (trackVars.LastParsedObject is ImportStatement.ImportBindings)
-						return new ImportStatementCompletionProvider(dataGen, (ImportStatement.ImportBindings)trackVars.LastParsedObject);
+						return new ImportStatementCompletionProvider (dataGen, (ImportStatement.ImportBindings)trackVars.LastParsedObject);
+					else if (trackVars.LastParsedObject is Tuple<ImportStatement.ImportBindings, ImportStatement.ImportBinding>) {
+						var tup = trackVars.LastParsedObject as Tuple<ImportStatement.ImportBindings, ImportStatement.ImportBinding>;
+
+					}
 					else if (trackVars.LastParsedObject is ModuleStatement)
 						return new ModuleStatementCompletionProvider(dataGen);
 					else if ((trackVars.LastParsedObject is ITemplateParameter || 

@@ -478,14 +478,15 @@ namespace D_Parser.Resolver.TypeResolution
 				ctxt.CurrentContext.IntroduceTemplateParameterTypes((DSymbol)resultBase);
 
 			// Only import symbol aliases are allowed to search in the parse cache
-			if (m is ImportSymbolAlias)
+			if (m is ImportSymbolNode)
 			{
-				var isa = (ImportSymbolAlias)m;
+				var isa = (ImportSymbolNode)m;
+				var modAlias = isa is ModuleAliasNode;
 
-				if (isa.IsModuleAlias ? isa.Type != null : isa.Type.InnerDeclaration != null)
+				if (modAlias ? isa.Type != null : isa.Type.InnerDeclaration != null)
 				{
 					var mods = new List<DModule>();
-					var td = isa.IsModuleAlias ? isa.Type : isa.Type.InnerDeclaration;
+					var td = modAlias ? isa.Type : isa.Type.InnerDeclaration;
 					foreach (var mod in ctxt.ParseCache.LookupModuleName(td.ToString()))
 						mods.Add(mod as DModule);
 
@@ -504,7 +505,7 @@ namespace D_Parser.Resolver.TypeResolution
 					var bt = mods.Count != 0 ? (AbstractType)new ModuleSymbol(mods[0], td) : null;
 
 					//TODO: Is this correct behaviour?
-					if (!isa.IsModuleAlias)
+					if (!modAlias)
 					{
 						var furtherId = ResolveFurtherTypeIdentifier(isa.Type.ToString(false), new[] { bt }, ctxt, isa.Type);
 

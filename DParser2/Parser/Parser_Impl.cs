@@ -582,7 +582,7 @@ namespace D_Parser.Parser
 			if (laKind == Colon)
 			{
 				Step();
-				importStatement.ImportBinding = ImportBindings(imp);
+				importStatement.ImportBindList = ImportBindings(imp);
 			}
 			else
 				importStatement.Imports.Add(imp); // Don't forget to add the last import
@@ -641,13 +641,16 @@ namespace D_Parser.Parser
 					if (laKind == Assign)
 					{
 						Step();
-						if (Expect(Identifier))
-							importBindings.SelectedSymbols.Add(new KeyValuePair<IdentifierDeclaration, IdentifierDeclaration>(
-								symbolAlias, 
-								new IdentifierDeclaration(t.Value) { Location = t.Location, EndLocation = t.EndLocation }));
+						if (Expect (Identifier))
+							importBindings.SelectedSymbols.Add (new ImportStatement.ImportBinding (new IdentifierDeclaration (t.Value) {
+								Location = t.Location,
+								EndLocation = t.EndLocation
+							}, symbolAlias));
+						else if(IsEOF)
+							LastParsedObject = new Tuple<ImportStatement.ImportBindings, ImportStatement.ImportBinding>(importBindings,new ImportStatement.ImportBinding (null, symbolAlias));
 					}
 					else
-						importBindings.SelectedSymbols.Add(new KeyValuePair<IdentifierDeclaration, IdentifierDeclaration>(symbolAlias, null));
+						importBindings.SelectedSymbols.Add(new ImportStatement.ImportBinding(symbolAlias));
 				}
 			}
 
