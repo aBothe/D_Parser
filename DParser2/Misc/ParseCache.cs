@@ -75,7 +75,7 @@ namespace D_Parser.Misc
 		
 		public ParseCache()
 		{
-			Root = new RootPackage(this);
+			Root = new RootPackage();
 		}
 
 		#region Parsing management
@@ -134,7 +134,7 @@ namespace D_Parser.Misc
 			var tup = (Tuple<IEnumerable<string>, List<ParsePerformanceData>>)o;
 
 			var parsedDirs = new List<string>();
-			var newRoot = new RootPackage(this);
+			var newRoot = new RootPackage();
 			foreach (var d in tup.Item1)
 			{
 				parsedDirs.Add(d);
@@ -197,7 +197,7 @@ namespace D_Parser.Misc
 			if (parseDirectories)
 				ParsedDirectories = null;
 
-			Root = new RootPackage(this);
+			Root = new RootPackage();
 		}
 
 		void HandleObjectModule(DModule objModule)

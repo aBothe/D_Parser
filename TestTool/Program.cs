@@ -22,7 +22,7 @@ namespace TestTool
 			var ast = DParser.ParseString(code, true);
 			sw2.Stop();*/
 			(new ParseTests()).TestSyntaxError2();
-			return;
+			//return;
 			// Indent testing
 			/*var code = @"
 ";
@@ -40,13 +40,30 @@ namespace TestTool
 			Console.ReadKey(true);
 			return;*/
 
+			var dirsToParse = new[] { @"/usr/include/d" };
 
+			GlobalParseCache.WaitForFinish ();
+ 
+			GlobalParseCache.ParseTaskFinished += (ParsingFinishedEventArgs ea) => {
+				Console.WriteLine("Parsed {0} in {1}ms", ea.Directory, ea.Duration);
+				Console.WriteLine("\t({0} files, ~{1}ms each)", ea.FileAmount, ea.FileDuration);
+			};
+
+			GlobalParseCache.BeginAddOrUpdatePaths (dirsToParse, true);
+
+
+			GlobalParseCache.WaitForFinish ();
+
+			var stats = GlobalParseCache.ParseStatistics [dirsToParse [0]];
+			var root = GlobalParseCache.GetRootPackage(dirsToParse[0]);
+
+			/*
 			// Phobos & Druntime parsing
 			UFCSCache.SingleThreaded = true;
 			var pc = new ParseCache ();
 			pc.EnableUfcsCaching = false;
-			pc.ParsedDirectories.Add (@"/usr/include/dmd/phobos");
-			pc.ParsedDirectories.Add (@"/usr/include/dmd/druntime/import");
+			pc.ParsedDirectories.Add ();
+			//pc.ParsedDirectories.Add (@"/usr/include/dmd/druntime/import");
 			
 			Console.WriteLine ("Begin parsing...");
 
@@ -66,7 +83,7 @@ namespace TestTool
 			uc.Update(pcl, ccf, pc);
 			sw.Stop();
 			Console.WriteLine("done. {0}ms needed.", sw.ElapsedMilliseconds);
-			
+			*/
 			Console.WriteLine();
 			Console.Write("Press any key to continue . . . ");
 			Console.ReadKey(true);

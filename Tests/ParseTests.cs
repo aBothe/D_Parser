@@ -72,7 +72,7 @@ void bar();");
 			var s = "class Foo( if(is(T==float) {} class someThingElse {}";
 			var mod = DParser.ParseString (s);
 
-			Assert.GreaterOrEqual(1, mod.ParseErrors.Count);
+			Assert.GreaterOrEqual(mod.ParseErrors.Count,1);
 		}
 
 		[Test]

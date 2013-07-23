@@ -8,23 +8,21 @@ namespace D_Parser.Dom
 {
 	public class RootPackage : ModulePackage
 	{
-		internal RootPackage(ParseCache cache) : base(cache, null, "<root>") { }
+		internal RootPackage() : base(null, "<root>") { }
 	}
 
 	public class ModulePackage : IEnumerable<DModule>, IEnumerable<ModulePackage>
 	{
-		internal ModulePackage(ParseCache cache, ModulePackage parent, string name) {
-			Cache = cache;
+		internal ModulePackage(ModulePackage parent, string name) {
 			this.Parent = parent;
 			this.Name = name;
 		}
-		
-		public readonly ParseCache Cache;
+
 		public readonly ModulePackage Parent;
 
 		public readonly string Name;
-		Dictionary<string, ModulePackage> packages = new Dictionary<string, ModulePackage>();
-		Dictionary<string, DModule> modules = new Dictionary<string, DModule>();
+		internal Dictionary<string, ModulePackage> packages = new Dictionary<string, ModulePackage>();
+		internal Dictionary<string, DModule> modules = new Dictionary<string, DModule>();
 		
 		public IEnumerable<KeyValuePair<string,ModulePackage>> Packages {get{return packages;}}
 		public IEnumerable<KeyValuePair<string, DModule>> Modules {get{return modules;}}
@@ -103,37 +101,39 @@ namespace D_Parser.Dom
 			return GetEnumerator();
 		}
 		
-		public bool AddModule(DModule ast)
+		internal bool AddModule(DModule ast)
 		{
 			if(ast == null || string.IsNullOrEmpty(ast.ModuleName))
 				return false;
-			
-			if(!string.IsNullOrEmpty(ast.FileName))
-				Cache.fileLookup[ast.FileName] = ast;
-			modules[ModuleNameHelper.ExtractModuleName(ast.ModuleName)] = ast;
+
+			lock(modules)
+				modules[ModuleNameHelper.ExtractModuleName(ast.ModuleName)] = ast;
 			return true;
 		}
 		
-		public bool RemovePackage(string name)
+		internal bool RemovePackage(string name)
 		{
 			return packages.Remove(ModuleNameHelper.ExtractModuleName(name));
 		}
 		
-		public bool RemoveModule(string name)
+		internal bool RemoveModule(string name)
 		{
 			name = ModuleNameHelper.ExtractModuleName(name);
 			DModule ast;
 			if(modules.TryGetValue(name, out ast))
 			{
-				if(!string.IsNullOrEmpty(ast.FileName))
-					Cache.fileLookup.TryRemove(ast.FileName, out ast);
 				modules.Remove(name);
 				return true;
 			}
 			return false;
 		}
 
-		public ModulePackage GetOrCreateSubPackage(string package, bool create = false)
+		public ModulePackage GetSubPackage(string package)
+		{
+			return GetOrCreateSubPackage (package, false);
+		}
+
+		internal ModulePackage GetOrCreateSubPackage(string package, bool create = false)
 		{
 			if (string.IsNullOrEmpty(package))
 				return this;
@@ -146,13 +146,13 @@ namespace D_Parser.Dom
 				ModulePackage returnValue;
 
 				lock(currentPackage.packages)
-				if (!currentPackage.packages.TryGetValue(parts[k], out returnValue))
-				{
-					if (create)
-						returnValue = currentPackage.packages[parts[k]] = new ModulePackage(Cache, currentPackage, parts[k]);
-					else
-						return null;
-				}
+					if (!currentPackage.packages.TryGetValue(parts[k], out returnValue))
+					{
+						if (create)
+							returnValue = currentPackage.packages[parts[k]] = new ModulePackage(currentPackage, parts[k]);
+						else
+							return null;
+					}
 
 				currentPackage = returnValue;
 			}
@@ -160,7 +160,7 @@ namespace D_Parser.Dom
 			return currentPackage;
 		}
 
-		public static ModulePackage GetOrCreatePackage(ModulePackage root, string package, bool create = false)
+		internal static ModulePackage GetOrCreatePackage(ModulePackage root, string package, bool create = false)
 		{
 			return root.GetOrCreateSubPackage(package, create);
 		}
