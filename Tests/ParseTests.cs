@@ -198,7 +198,7 @@ void main() {
 						hadErrors = true;
 					}
 			}
-			
+			Console.WriteLine (sb.ToString ());
 			Assert.That(sb.ToString(), Is.Empty);
 		}
 

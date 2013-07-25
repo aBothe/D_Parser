@@ -52,7 +52,7 @@ namespace D_Parser.Misc
 
 		public ParseCacheView(IEnumerable<RootPackage> roots)
 		{
-			if (basePaths == null)
+			if (roots == null)
 				throw new ArgumentNullException ("roots");
 			this.packs = new List<RootPackage> (roots);
 		}
