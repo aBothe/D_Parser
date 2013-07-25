@@ -144,8 +144,11 @@ namespace D_Parser.Dom
 		
 		public DModule GetModule(string name)
 		{
+			var pack = GetSubPackage (ModuleNameHelper.ExtractPackageName (name));
 			DModule ast;
-			modules.TryGetValue(name, out ast);
+			if (pack == null)
+				return null;
+			pack.modules.TryGetValue(name, out ast);
 			return ast;
 		}
 
