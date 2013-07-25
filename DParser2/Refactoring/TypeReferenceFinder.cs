@@ -34,16 +34,16 @@ namespace D_Parser.Refactoring
 
 		readonly TypeReferencesResult result = new TypeReferencesResult();
 		ConditionalCompilationFlags gFlags_shared;
-		readonly ParseCacheList sharedParseCache;
+		readonly ParseCacheView sharedParseCache;
 		ResolutionContext sharedCtxt;
 
-		private TypeReferenceFinder(ParseCacheList sharedCache, ConditionalCompilationFlags compilationEnvironment = null)
+		private TypeReferenceFinder(ParseCacheView sharedCache, ConditionalCompilationFlags compilationEnvironment = null)
 		{
 			this.sharedParseCache = sharedCache;
 			sharedCtxt = ResolutionContext.Create(sharedCache, gFlags_shared = compilationEnvironment, null);
 		}
 
-		public static TypeReferencesResult Scan(DModule ast, ParseCacheList pcl, ConditionalCompilationFlags compilationEnvironment = null)
+		public static TypeReferencesResult Scan(DModule ast, ParseCacheView pcl, ConditionalCompilationFlags compilationEnvironment = null)
 		{
 			if (ast == null)
 				return new TypeReferencesResult();
@@ -177,8 +177,8 @@ namespace D_Parser.Refactoring
 				return;
 			}
 
-			var threads = new Thread[ThreadedDirectoryParser.numThreads];
-			for (int i = 0; i < ThreadedDirectoryParser.numThreads; i++)
+			var threads = new Thread[GlobalParseCache.NumThreads];
+			for (int i = 0; i < GlobalParseCache.NumThreads; i++)
 			{
 				var th = threads[i] = new Thread(_th)
 				{
@@ -189,14 +189,14 @@ namespace D_Parser.Refactoring
 				th.Start(sharedParseCache);
 			}
 
-			for (int i = 0; i < ThreadedDirectoryParser.numThreads; i++)
+			for (int i = 0; i < GlobalParseCache.NumThreads; i++)
 				if (threads[i].IsAlive)
 					threads[i].Join(10000);
 		}
 
 		void _th(object pcl_shared)
 		{
-			var ctxt = ResolutionContext.Create((ParseCacheList)pcl_shared, gFlags_shared, ast);
+			var ctxt = ResolutionContext.Create((ParseCacheView)pcl_shared, gFlags_shared, ast);
 
 			// Make it as most performing as possible by avoiding unnecessary base types. 
 			// Aliases should be analyzed deeper though.

@@ -27,7 +27,7 @@ namespace D_Parser.Resolver
 			get { return ContextIndependentOptions | CurrentContext.ContextDependentOptions; }
 		}
 
-		public ParseCacheList ParseCache = new ParseCacheList();
+		public ParseCacheView ParseCache;
 
 		public IBlockNode ScopedBlock
 		{
@@ -69,12 +69,12 @@ namespace D_Parser.Resolver
 										 stmt);
 		}
 
-		public static ResolutionContext Create(ParseCacheList pcl, ConditionalCompilationFlags globalConditions, IBlockNode scopedBlock, IStatement scopedStatement=null)
+		public static ResolutionContext Create(ParseCacheView pcl, ConditionalCompilationFlags globalConditions, IBlockNode scopedBlock, IStatement scopedStatement=null)
 		{
 			return new ResolutionContext(pcl, globalConditions, scopedBlock, scopedStatement);
 		}
 
-		public ResolutionContext(ParseCacheList ParseCache, ConditionalCompilationFlags gFlags, IBlockNode bn, IStatement stmt=null)
+		public ResolutionContext(ParseCacheView ParseCache, ConditionalCompilationFlags gFlags, IBlockNode bn, IStatement stmt=null)
 		{
 			this.CompilationEnvironment = gFlags;
 			this.ParseCache = ParseCache;

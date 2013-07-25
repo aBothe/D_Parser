@@ -168,10 +168,6 @@
     <Compile Include="Resolver\ExpressionSemantics\SymbolValueComparer.cs" />
     <Compile Include="Misc\CompletionOptions.cs" />
     <Compile Include="Misc\ModuleNameHelper.cs" />
-    <Compile Include="Misc\ParseCache.cs" />
-    <Compile Include="Misc\ParseCacheList.cs" />
-    <Compile Include="Misc\ParseLog.cs" />
-    <Compile Include="Misc\ThreadedDirectoryParser.cs" />
     <Compile Include="Resolver\ASTScanner\ItemEnumeration.cs" />
     <Compile Include="Resolver\ASTScanner\NameScan.cs" />
     <Compile Include="Misc\UFCSCache.cs" />
@@ -227,6 +223,7 @@
     <Compile Include="Misc\VersionIdEvaluation.cs" />
     <Compile Include="Misc\GlobalParseCache.cs" />
     <Compile Include="Misc\Mangling\Mangler.cs" />
+    <Compile Include="Misc\ParseCacheView.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="readme.txt" />
@@ -234,6 +231,7 @@
   <ItemGroup />
   <ItemGroup>
     <None Include="license.txt" />
+    <None Include="Misc\ParseLog.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.

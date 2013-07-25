@@ -13,7 +13,7 @@ namespace D_Parser.Completion
 		public virtual int CaretOffset { get; set; }
 		public virtual DModule SyntaxTree { get; set; }
 
-		public virtual ParseCacheList ParseCache { get; set; }
+		public virtual ParseCacheView ParseCache { get; set; }
 		
 		public int VersionNumber { get; set; }
 		public string[] GlobalVersionIds { get; set; }
@@ -44,7 +44,7 @@ namespace D_Parser.Completion
 		int CaretOffset { get; }
 		DModule SyntaxTree { get; }
 
-		ParseCacheList ParseCache { get; }
+		ParseCacheView ParseCache { get; }
 
 		int VersionNumber { get; }
 		string[] GlobalVersionIds { get; }

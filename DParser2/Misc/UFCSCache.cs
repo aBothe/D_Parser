@@ -8,36 +8,47 @@ using D_Parser.Resolver;
 using D_Parser.Resolver.ASTScanner;
 using D_Parser.Resolver.TypeResolution;
 using System.Runtime.CompilerServices;
+using System.Collections.Concurrent;
 
 namespace D_Parser.Misc
-{
+{	
+	public delegate void UfcsAnalysisFinishedHandler(RootPackage ea);
+
+
 	/// <summary>
 	/// Contains resolution results of methods.
 	/// </summary>
 	public class UFCSCache
 	{
 		#region Properties
+		int parsingThreads;
+		public readonly RootPackage Root;
 		public bool IsProcessing { get; private set; }
 		public static bool SingleThreaded = false;
+		ManualResetEvent completedEvent = new ManualResetEvent (true);
+		public event UfcsAnalysisFinishedHandler AnalysisFinished;
+		public static event UfcsAnalysisFinishedHandler AnyAnalysisFinished;
 		
 		ConditionalCompilationFlags gFlags_shared;
-		Stack<DMethod> queue = new Stack<DMethod>();
-		public readonly ConditionalWeakTable<DMethod, AbstractType> CachedMethods = new ConditionalWeakTable<DMethod, AbstractType>();
-		/// <summary>
-		/// Returns time span needed to resolve all first parameters.
-		/// </summary>
-		public TimeSpan CachingDuration { get; private set; }
+		Stopwatch sw = new Stopwatch();
+		ConcurrentStack<DMethod> queue = new ConcurrentStack<DMethod>();
+
+		public TimeSpan CachingDuration { get { return sw.Elapsed; } }
 		private int methodCount;
-		/// <summary>
-		/// 
-		/// </summary>
 		public int MethodCacheCount { get { return methodCount; } }
+
+		public readonly ConditionalWeakTable<DMethod, AbstractType> CachedMethods = new ConditionalWeakTable<DMethod, AbstractType>();
 		#endregion
+
+		public UFCSCache(RootPackage root)
+		{
+			this.Root = root;
+		}
 
 		/// <summary>
 		/// Returns false if cache is already updating.
 		/// </summary>
-		public bool Update(ParseCacheList pcList, ConditionalCompilationFlags compilationEnvironment = null, ParseCache subCacheToUpdate = null)
+		public bool BeginUpdate(ParseCacheView pcList, ConditionalCompilationFlags compilationEnvironment = null)
 		{
 			if (IsProcessing)
 				return false;
@@ -51,42 +62,32 @@ namespace D_Parser.Misc
 				queue.Clear();
 
 				// Prepare queue
-				if (subCacheToUpdate != null)
-					foreach (var module in subCacheToUpdate)
-						PrepareQueue(module);
-				else
-					foreach (var pc in pcList)
-						foreach (var module in pc)
-							PrepareQueue(module);
+				foreach (var module in Root)
+					PrepareQueue(module);
 
 				if(queue.Count != 0)
 				{
-					var sw = new Stopwatch();
-					sw.Start();
+					completedEvent.Reset();
+					sw.Restart();
 	
 					if(SingleThreaded)
 						parseThread(pcList);
 					else
 					{
-						var threads = new Thread[ThreadedDirectoryParser.numThreads];
-						for (int i = 0; i < ThreadedDirectoryParser.numThreads; i++)
+						var threads = new Thread[GlobalParseCache.NumThreads];
+						for (int i = 0; i < GlobalParseCache.NumThreads; i++)
 						{
 							var th = threads[i] = new Thread(parseThread)
 							{
 								IsBackground = true,
-								Priority = ThreadPriority.Lowest,
+								Priority = ThreadPriority.BelowNormal,
 								Name = "UFCS Analysis thread #" + i
 							};
 							th.Start(pcList);
 						}
-		
-						for (int i = 0; i < ThreadedDirectoryParser.numThreads; i++)
-							if (threads[i].IsAlive)
-								threads[i].Join(2000);
 					}
 	
 					sw.Stop();
-					CachingDuration = sw.Elapsed;
 				}
 			}
 			finally
@@ -113,30 +114,39 @@ namespace D_Parser.Misc
 
 		void parseThread(object pcl_shared)
 		{
-			DMethod dm = null;
-			var ctxt = ResolutionContext.Create((ParseCacheList)pcl_shared, gFlags_shared, null);
-
-			while (queue.Count != 0)
+			Interlocked.Increment (ref parsingThreads);
+			DMethod dm;
+			var ctxt = ResolutionContext.Create((ParseCacheView)pcl_shared, gFlags_shared, null);
+			int count=0;
+			while (queue.TryPop(out dm))
 			{
-				lock (queue)
-				{
-					if (queue.Count == 0)
-						return;
-
-					dm = queue.Pop();
-				}
-
 				ctxt.CurrentContext.Set(dm);
 
 				var firstArg_result = TypeDeclarationResolver.Resolve(dm.Parameters[0].Type, ctxt);
 
 				if (firstArg_result != null && firstArg_result.Length != 0)
 				{
-					methodCount++;
-					CachedMethods.Remove(dm);
+					count++;
+					CachedMethods.Remove (dm);
 					CachedMethods.Add(dm, firstArg_result[0]);
 				}
 			}
+
+			Interlocked.Add (ref methodCount, count);
+			if (Interlocked.Decrement (ref parsingThreads) < 1) {
+				completedEvent.Set ();
+				if (AnalysisFinished != null)
+					AnalysisFinished (Root);
+				if (AnyAnalysisFinished != null)
+					AnyAnalysisFinished (Root);
+			}
+		}
+
+		public bool WaitForFinish(int millisecondsToWait = -1)
+		{
+			if(millisecondsToWait < 0)
+				return completedEvent.WaitOne();
+			return completedEvent.WaitOne(millisecondsToWait);
 		}
 
 		public void CacheModuleMethods(DModule ast, ResolutionContext ctxt)
@@ -155,7 +165,7 @@ namespace D_Parser.Misc
 
 					if (firstArg_result != null && firstArg_result.Length != 0)
 					{
-						CachedMethods.Remove(dm);
+						CachedMethods.Remove (dm);
 						CachedMethods.Add(dm, firstArg_result[0]);
 					}
 				}

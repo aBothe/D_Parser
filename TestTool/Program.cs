@@ -42,19 +42,37 @@ namespace TestTool
 
 			var dirsToParse = new[] { @"/usr/include/d" };
 
-			GlobalParseCache.WaitForFinish ();
- 
+			var pc = new ParseCache ();
+			pc.FinishedParsing += (pdd) => {
+				foreach(var pd in pdd)
+				{
+					Console.WriteLine("Parsed {0} in {1}ms", pd.BaseDirectory, pd.TotalDuration);
+					Console.WriteLine("\t({0} files, ~{1}ms each)", pd.AmountFiles, pd.FileDuration);
+				}
+			}; 
+			pc.EnableUfcsCaching = false;
+			var sw = new Stopwatch ();
+			sw.Restart ();
+			pc.BeginParse (dirsToParse, null);
+			pc.WaitForParserFinish ();
+			sw.Stop ();
+
+			Console.WriteLine ("it took {0}ms",sw.ElapsedMilliseconds);
+
+
 			GlobalParseCache.ParseTaskFinished += (ParsingFinishedEventArgs ea) => {
 				Console.WriteLine("Parsed {0} in {1}ms", ea.Directory, ea.Duration);
 				Console.WriteLine("\t({0} files, ~{1}ms each)", ea.FileAmount, ea.FileDuration);
 			};
 
+			sw.Restart ();
 			GlobalParseCache.BeginAddOrUpdatePaths (dirsToParse, true);
-
-
 			GlobalParseCache.WaitForFinish ();
+			sw.Stop ();
 
-			var stats = GlobalParseCache.ParseStatistics [dirsToParse [0]];
+			Console.WriteLine ("it took {0}ms",sw.ElapsedMilliseconds);
+
+			var stats = GlobalParseCache.GetParseStatistics(dirsToParse [0]);
 			var root = GlobalParseCache.GetRootPackage(dirsToParse[0]);
 
 			/*

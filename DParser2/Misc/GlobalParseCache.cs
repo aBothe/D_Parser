@@ -24,14 +24,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
-using System.Threading;
-using D_Parser.Dom;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.Remoting.Messaging;
+using System.Threading;
+using D_Parser.Dom;
 using D_Parser.Parser;
+using System.Linq;
 
 namespace D_Parser.Misc
 {
@@ -65,34 +66,8 @@ namespace D_Parser.Misc
 			FileAmount = fileCount;
 		}
 	}
-
-	public class UfcsAnalysisFinishedEventArgs
-	{
-		public readonly RootPackage Package;
-		public readonly TimeSpan Duration;
-		public readonly int MethodCount;
-
-		public double MethodDuration
-		{
-			get
-			{
-				if (MethodCount < 1)
-					return 0;
-
-				return Duration.TotalMilliseconds / MethodCount;
-			}
-		}
-
-		public UfcsAnalysisFinishedEventArgs(RootPackage pack, TimeSpan duration, int methodCount)
-		{
-			Package = pack;
-			Duration = duration;
-			MethodCount = methodCount;
-		}
-	}
-
+	
 	public delegate void ParseFinishedHandler(ParsingFinishedEventArgs ea);
-	public delegate void UfcsAnalysisFinishedHandler(UfcsAnalysisFinishedEventArgs ea);
 	#endregion
 
 	/// <summary>
@@ -123,7 +98,7 @@ namespace D_Parser.Misc
 		/// </summary>
 		static readonly ConcurrentDictionary<string, RootPackage> ParsedDirectories
 			= new ConcurrentDictionary<string, RootPackage>();
-		public static readonly Dictionary<string, StatIntermediate> ParseStatistics
+		static readonly Dictionary<string, StatIntermediate> ParseStatistics
 			= new Dictionary<string, StatIntermediate>();
 
 		/// <summary>
@@ -132,13 +107,11 @@ namespace D_Parser.Misc
 		internal readonly static ConcurrentDictionary<string, DModule> fileLookup = new ConcurrentDictionary<string, DModule>();
 
 		public static ParseFinishedHandler ParseTaskFinished;
-		public static UfcsAnalysisFinishedHandler UfcsAnalysisFinished;
 
 		private GlobalParseCache (){}
 		#endregion
 
 		#region Init/Ctor
-
 		static GlobalParseCache()
 		{
 			preparationThread = new Thread(preparationTh);
@@ -171,6 +144,7 @@ namespace D_Parser.Misc
 			/// </summary>
 			public long totalMilliseconds;
 
+			internal ManualResetEvent completed = new ManualResetEvent(false);
 			internal System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
 			/// <summary>
 			/// The time one had to wait until the parse task finished. Milliseconds.
@@ -204,8 +178,11 @@ namespace D_Parser.Misc
 			if (basePaths == null)
 				throw new ArgumentNullException ("basePaths");
 
+			GC.Collect();
+
 			parseCompletedEvent.Reset();
 			stopParsing = false;
+
 			foreach (var path in basePaths) {
 				Interlocked.Increment(ref parsingThreads);
 				basePathQueue.Push (new Tuple<string, bool> (path, skipFunctionBodies));
@@ -231,7 +208,10 @@ namespace D_Parser.Misc
 						continue;
 
 					var newRoot = new RootPackage();
-					var statIm = new StatIntermediate{ skipFunctionBodies =  tup.Item2, basePath = path };
+					var statIm = new StatIntermediate{ 
+						skipFunctionBodies =  tup.Item2, 
+						basePath = path
+					};
 					statIm.sw.Restart();
 
 					lock (ParseStatistics)
@@ -309,6 +289,8 @@ namespace D_Parser.Misc
 
 					sw.Stop ();
 
+					Interlocked.Add(ref im.totalMilliseconds, sw.ElapsedMilliseconds);
+
 					code = null;
 
 					if (ast != null)
@@ -322,17 +304,19 @@ namespace D_Parser.Misc
 					p.root.GetOrCreateSubPackage (ModuleNameHelper.ExtractPackageName (ast.ModuleName), true)
 						.AddModule (ast);
 
-					Interlocked.Add(ref im.totalMilliseconds, sw.ElapsedMilliseconds);
 					if (Interlocked.Decrement(ref im.remainingFiles) <= 0)
 						noticeFinish (p);
 				}
+
 			}
 		}
 
 		static void noticeFinish(ParseIntermediate p)
 		{
 			p.im.sw.Stop ();
+			p.im.completed.Set ();
 			ParsedDirectories [p.im.basePath] = p.root;
+			p.root.TryPreResolveCommonTypes();
 
 			if(ParseTaskFinished!=null)
 				ParseTaskFinished(new ParsingFinishedEventArgs(p.im.basePath, p.root, p.im.actualTimeNeeded, p.im.totalFiles));
@@ -348,6 +332,17 @@ namespace D_Parser.Misc
 			return parseCompletedEvent.WaitOne(millisecondsToWait);
 		}
 
+		public static bool WaitForFinish(string basePath,int millisecondsToWait = -1)
+		{
+			StatIntermediate im;
+			if (!ParseStatistics.TryGetValue (basePath, out im))
+				return false;
+
+			if(millisecondsToWait < 0)
+				return im.completed.WaitOne();
+			return im.completed.WaitOne(millisecondsToWait);
+		}
+
 		/// <summary>
 		/// Stops the scanning. If discardProgress is true, caches will be cleared.
 		/// </summary>
@@ -361,13 +356,20 @@ namespace D_Parser.Misc
 		/// <summary>
 		/// Returns the parse progress factor (from 0.0 to 1.0); NaN if there's no such directory being scanned.
 		/// </summary>
-		public static double GetParseProgress(string basePath,out string currentlyParsedFile)
+		public static double GetParseProgress(string basePath)
 		{
-			currentlyParsedFile = null;
+			StatIntermediate im;
+			if (!ParseStatistics.TryGetValue (basePath, out im))
+				return double.NaN;
 
-			// threads will see that there's a progress request for a specific basePath
+			return 1.0 - (im.totalFiles < 1 ? 0.0 : (im.remainingFiles / im.totalFiles));
+		}
 
-			return double.NaN;
+		public static StatIntermediate GetParseStatistics(string basePath)
+		{
+			StatIntermediate im;
+			ParseStatistics.TryGetValue (basePath, out im);
+			return im;
 		}
 
 		public static bool UpdateRequired(string basePath)

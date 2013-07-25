@@ -78,7 +78,7 @@ namespace D_Parser.Resolver.ASTScanner
 		public static void EnumAllAvailableMembers(ICompletionDataGenerator cdgen, IBlockNode ScopedBlock
 			, IStatement ScopedStatement,
 			CodeLocation Caret,
-			ParseCacheList CodeCache,
+		    ParseCacheView CodeCache,
 			MemberFilter VisibleMembers,
 			ConditionalCompilationFlags compilationEnvironment = null)
 		{

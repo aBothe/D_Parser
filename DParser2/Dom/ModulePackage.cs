@@ -3,12 +3,104 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using D_Parser.Misc;
+using D_Parser.Resolver;
+using D_Parser.Resolver.TypeResolution;
+using D_Parser.Parser;
 
 namespace D_Parser.Dom
 {
+	public class MutableRootPackage : RootPackage
+	{
+		public MutableRootPackage() {}
+		public MutableRootPackage(params DModule[] modules)
+		{
+			foreach(var m in modules)
+				base.AddModule(m);
+		}
+
+		public new bool AddModule(DModule ast)
+		{
+			return base.AddModule (ast);
+		}
+
+		public new ModulePackage GetOrCreateSubPackage(string package, bool create = false)
+		{
+			return base.GetOrCreateSubPackage (package, create);
+		}
+
+		public new bool RemovePackage(string name)
+		{
+			return base.RemovePackage(name);
+		}
+
+		public new bool RemoveModule(string name)
+		{
+			return base.RemoveModule (name);
+		}
+	}
+
 	public class RootPackage : ModulePackage
 	{
-		internal RootPackage() : base(null, "<root>") { }
+		#region Ufcs caching
+		public readonly UFCSCache UfcsCache;
+		#endregion
+
+		public RootPackage() : base(null, "<root>") {
+			UfcsCache = new UFCSCache (this);
+		}
+
+		#region Common type bypasses
+		public bool IsObjectClassDefined
+		{
+			get { return ObjectClass != null; }
+		}
+
+		/// <summary>
+		/// To improve resolution performance, the object class that can be defined only once will be stored over here.
+		/// </summary>
+		public DClassLike ObjectClass
+		{
+			get;
+			private set;
+		}
+
+		public AbstractType SizeT
+		{
+			get;
+			private set;
+		}
+
+		/// <summary>
+		/// See <see cref="ObjectClass"/>
+		/// </summary>
+		public ClassType ObjectClassResult
+		{
+			get;
+			private set;
+		}
+
+		public void TryPreResolveCommonTypes()
+		{
+			var obj = GetModule ("object");
+			if (obj == null)
+				return;
+
+			ParseCacheView cache = null;
+
+			foreach (var m in obj) {
+				if (m.Name == "Object" && m is DClassLike) {
+					ObjectClassResult = new ClassType (ObjectClass = (DClassLike)m, new IdentifierDeclaration ("Object"), null);
+					break;
+				} else if (m.Name == "size_t") {
+					if (cache == null)
+						cache = new ParseCacheView (new[]{this});
+					//TODO: Do a version check, so that only on x64 dmd installations, size_t equals ulong.
+					SizeT = TypeDeclarationResolver.HandleNodeMatch (m, 
+					                                                 ResolutionContext.Create (cache, null, obj));
+				}
+			}
+		}
+		#endregion
 	}
 
 	public class ModulePackage : IEnumerable<DModule>, IEnumerable<ModulePackage>
@@ -131,6 +223,19 @@ namespace D_Parser.Dom
 		public ModulePackage GetSubPackage(string package)
 		{
 			return GetOrCreateSubPackage (package, false);
+		}
+
+		public DModule GetSubModule(string moduleName)
+		{
+			if (string.IsNullOrEmpty (moduleName))
+				return null;
+
+			var pack = GetOrCreateSubPackage (ModuleNameHelper.ExtractPackageName (moduleName));
+
+			if (pack == null)
+				return null;
+
+			return pack.GetModule (ModuleNameHelper.ExtractModuleName(moduleName));
 		}
 
 		internal ModulePackage GetOrCreateSubPackage(string package, bool create = false)

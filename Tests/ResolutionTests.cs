@@ -26,24 +26,22 @@ namespace Tests
 						alias immutable(dchar)[] dstring;
 						class Object { string toString(); }");
 
-		public static ParseCacheList CreateCache(params string[] moduleCodes)
+		public static ParseCacheView CreateCache(params string[] moduleCodes)
 		{
-			var pcl = new ParseCacheList();
-			var pc = new ParseCache();
-			pcl.Add(pc);
-
-			pc.AddOrUpdate(objMod);
+			var r = new MutableRootPackage (objMod);
 
 			foreach (var code in moduleCodes)
-				pc.AddOrUpdate(DParser.ParseString(code));
+				r.AddModule(DParser.ParseString(code));
 
 			UFCSCache.SingleThreaded = true;
-			pc.UfcsCache.Update(pcl, null, pc);
+			var pcl = new ParseCacheView (new [] { r });
+			r.UfcsCache.BeginUpdate (pcl);
+			r.UfcsCache.WaitForFinish ();
 
 			return pcl;
 		}
 
-		public static ResolutionContext CreateDefCtxt(ParseCacheList pcl, IBlockNode scope, IStatement stmt=null)
+		public static ResolutionContext CreateDefCtxt(ParseCacheView pcl, IBlockNode scope, IStatement stmt=null)
 		{
 			var r = ResolutionContext.Create(pcl, new ConditionalCompilationFlags(new[]{"Windows","all"},1,true,null,0), scope, stmt);
 			CompletionOptions.Instance.DisableMixinAnalysis = false;

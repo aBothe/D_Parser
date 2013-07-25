@@ -102,10 +102,10 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			// Handle available modules/packages
 			var nameStubs = new List<string>();
 			if(ctxt.ParseCache != null)
-				for(int i=0;i < ctxt.ParseCache.Count; i++)
+				foreach(var root in ctxt.ParseCache)
 				{
 					ModulePackage[] packs;
-					var mods = PrefilterSubnodes(ctxt.ParseCache[i].Root, out packs);
+					var mods = PrefilterSubnodes(root, out packs);
 					
 					if(packs != null){
 						foreach(var pack in packs)

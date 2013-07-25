@@ -185,54 +185,48 @@ void main() {
 			var pc = ParsePhobos();
 			bool hadErrors = false;
 			var sb = new StringBuilder();
-			foreach (var mod in pc)
+			foreach (var root in pc)
 			{
-				if (mod.ParseErrors.Count != 0)
-				{
-					sb.AppendLine(mod.FileName);
+				foreach(var mod in root)
+					if (mod.ParseErrors.Count != 0)
+					{
+						sb.AppendLine(mod.FileName);
 
-					foreach (var err in mod.ParseErrors)
-						sb.AppendLine("\t"+err.Location.ToString() + "\t" + err.Message);
+						foreach (var err in mod.ParseErrors)
+							sb.AppendLine("\t"+err.Location.ToString() + "\t" + err.Message);
 
-					hadErrors = true;
-				}
+						hadErrors = true;
+					}
 			}
 			
 			Assert.That(sb.ToString(), Is.Empty);
 		}
 
-		public static ParseCache ParsePhobos(bool ufcs=true)
+		public static ParseCacheView ParsePhobos(bool ufcs=true)
 		{
-			var dmdBase = @"D:\D\dmd2\src";
+			var dir = "/usr/include/d";
 
-			var pc = new ParseCache();
-			//UFCSCache.SingleThreaded = true;
-			pc.EnableUfcsCaching = ufcs;
-			pc.FinishedParsing += new ParseCache.ParseFinishedHandler(pc_FinishedParsing);
-			pc.FinishedUfcsCaching += new Action(() =>
-			{
-				Trace.WriteLine(string.Format("Finished UFCS analysis: {0} resolutions in {1}s; ~{2}ms/resolution", pc.UfcsCache.MethodCacheCount,
-					pc.UfcsCache.CachingDuration.TotalSeconds, Math.Round(pc.UfcsCache.CachingDuration.TotalMilliseconds/pc.UfcsCache.MethodCacheCount,3)), "ParserTests");
-				//compareUfcsResults(pc.UfcsCache);
-			});
+			GlobalParseCache.ParseTaskFinished += pc_FinishedParsing;
+			UFCSCache.SingleThreaded = true;
+			UFCSCache.AnyAnalysisFinished+=(ea) => 
+				Trace.WriteLine(string.Format("Finished UFCS analysis: {0} resolutions in {1}s; ~{2}ms/resolution", ea.UfcsCache.MethodCacheCount,
+				                              ea.UfcsCache.CachingDuration.TotalSeconds, Math.Round(ea.UfcsCache.CachingDuration.TotalMilliseconds/ea.UfcsCache.MethodCacheCount,3)), "ParserTests");
 
-			pc.BeginParse(new[] { 
-			   // @"D:\Projects\tutorial.lib\gfm-master",
-				dmdBase+@"\druntime\import",
-				dmdBase+@"\phobos",
-				//@"A:\Projects\fxLib\src"
-				//@"A:\D\tango-d2\tngo"
-			},dmdBase+@"\phobos");
+			GlobalParseCache.BeginAddOrUpdatePaths (new[] { dir }, false);
 
-			pc.WaitForParserFinish();
-			
+			GlobalParseCache.WaitForFinish();
+
+			var pc = new ParseCacheView(new[]{dir});
+
+			foreach (var root in pc)
+				root.UfcsCache.BeginUpdate (pc);
+
 			return pc;
 		}
 
-		static void pc_FinishedParsing(ParsePerformanceData[] PerformanceData)
+		static void pc_FinishedParsing(ParsingFinishedEventArgs ppd)
 		{
-			foreach (var ppd in PerformanceData)
-				Trace.WriteLine(string.Format("Parsed {0} files in {1}; {2}ms/file", ppd.AmountFiles, ppd.BaseDirectory, ppd.FileDuration), "ParserTests");
+			Trace.WriteLine(string.Format("Parsed {0} files in {1}; {2}ms/file", ppd.FileAmount, ppd.Directory, ppd.FileDuration), "ParserTests");
 		}
 
 		[Test]
