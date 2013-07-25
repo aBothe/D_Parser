@@ -269,5 +269,10 @@ namespace D_Parser.Dom
 		{
 			return root.GetOrCreateSubPackage(package, create);
 		}
+
+		public DModule this[string modName]
+		{
+			get{return GetModule (modName);}
+		}
 	}
 }

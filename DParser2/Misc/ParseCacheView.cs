@@ -99,17 +99,36 @@ namespace D_Parser.Misc
 			}
 		}
 
-		public IEnumerator<RootPackage> GetEnumerator ()
+		void InitPacks()
 		{
-			if (packs == null) {
-				if (basePaths == null)
-					return new RootPackage[0].GetEnumerator() as IEnumerator<RootPackage>;
+			if (basePaths != null) {
 				packs = new List<RootPackage> ();
 				foreach (var p in basePaths)
 					packs.Add (GlobalParseCache.GetRootPackage (p));
 			}
+		}
 
-			return packs.GetEnumerator();
+		public RootPackage this[int i]
+		{
+			get{
+				if (packs == null)
+					InitPacks ();
+
+				if (packs != null)
+					return packs[i];
+				return null;
+			}
+		}
+
+		public IEnumerator<RootPackage> GetEnumerator ()
+		{
+			if (packs == null)
+				InitPacks ();
+
+			if (packs != null)
+				return packs.GetEnumerator ();
+			else
+				return new RootPackage[0].GetEnumerator () as IEnumerator<RootPackage>;
 		}
 
 		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator ()

@@ -9,6 +9,8 @@ using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
 using NUnit.Framework;
+using D_Parser.Dom;
+using D_Parser.Misc;
 
 namespace Tests
 {
@@ -207,7 +209,8 @@ namespace Tests
 			Assert.AreEqual(aa.Elements.Count, 3);
 
 			ex = DParser.ParseExpression("(a,b) => a+b");
-			v = Evaluation.EvaluateValue(ex, ResolutionContext.Create(new D_Parser.Misc.ParseCacheList(), null, null));
+			var pcl = new ParseCacheView (new[]{new MutableRootPackage()});
+			v = Evaluation.EvaluateValue(ex, ResolutionContext.Create(pcl, null, null));
 			Assert.IsInstanceOfType(typeof(DelegateValue),v);
 		}
 
