@@ -101,6 +101,13 @@ namespace D_Parser.Dom
 			}
 		}
 		#endregion
+
+		public override RootPackage Root
+		{
+			get{
+				return this;
+			}
+		}
 	}
 
 	public class ModulePackage : IEnumerable<DModule>, IEnumerable<ModulePackage>
@@ -111,6 +118,13 @@ namespace D_Parser.Dom
 		}
 
 		public readonly ModulePackage Parent;
+
+		public virtual RootPackage Root
+		{
+			get{
+				return Parent != null ? Parent.Root : null;
+			}
+		}
 
 		public readonly string Name;
 		internal Dictionary<string, ModulePackage> packages = new Dictionary<string, ModulePackage>();
@@ -201,8 +215,10 @@ namespace D_Parser.Dom
 			if(ast == null || string.IsNullOrEmpty(ast.ModuleName))
 				return false;
 
-			lock(modules)
-				modules[ModuleNameHelper.ExtractModuleName(ast.ModuleName)] = ast;
+			var pack = Root.GetOrCreateSubPackage (ModuleNameHelper.ExtractPackageName (ast.ModuleName), true);
+
+			lock(pack.modules)
+				pack.modules[ModuleNameHelper.ExtractModuleName(ast.ModuleName)] = ast;
 			return true;
 		}
 		
@@ -218,6 +234,11 @@ namespace D_Parser.Dom
 			if(modules.TryGetValue(name, out ast))
 			{
 				modules.Remove(name);
+
+				var root = Root;
+				if (root != null)
+					root.UfcsCache.RemoveModuleMethods (ast);
+
 				return true;
 			}
 			return false;

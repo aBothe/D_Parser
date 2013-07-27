@@ -5,13 +5,14 @@ using D_Parser.Parser;
 using System;
 using System.IO;
 using System.Collections.ObjectModel;
+using D_Parser.Misc;
 
 namespace D_Parser.Dom
 {
     /// <summary>
     /// Encapsules an entire document and represents the root node
     /// </summary>
-    public class DModule : DBlockNode
+    public class DModule : DBlockNode, IDisposable
     {
 		public readonly DateTime ParseTimestamp = DateTime.Now;
 
@@ -76,6 +77,18 @@ namespace D_Parser.Dom
 		{
 			get;
 			set;
+		}
+
+		~DModule()
+		{
+			Dispose ();
+		}
+
+		public virtual void Dispose()
+		{
+			var root = GlobalParseCache.GetRootPackage (FileName);
+			if (root != null)
+				root.UfcsCache.RemoveModuleMethods (this);
 		}
 		
 		public Comment[] Comments;

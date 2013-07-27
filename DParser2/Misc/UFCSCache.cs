@@ -37,7 +37,7 @@ namespace D_Parser.Misc
 		private int methodCount;
 		public int MethodCacheCount { get { return methodCount; } }
 
-		public readonly ConditionalWeakTable<DMethod, AbstractType> CachedMethods = new ConditionalWeakTable<DMethod, AbstractType>();
+		public readonly ConcurrentDictionary<DMethod, AbstractType> CachedMethods = new ConcurrentDictionary<DMethod, AbstractType>();
 		#endregion
 
 		public UFCSCache(RootPackage root)
@@ -127,8 +127,7 @@ namespace D_Parser.Misc
 				if (firstArg_result != null && firstArg_result.Length != 0)
 				{
 					count++;
-					CachedMethods.Remove (dm);
-					CachedMethods.Add(dm, firstArg_result[0]);
+					CachedMethods[dm]= firstArg_result[0];
 				}
 			}
 
@@ -164,11 +163,18 @@ namespace D_Parser.Misc
 					ctxt.Pop();
 
 					if (firstArg_result != null && firstArg_result.Length != 0)
-					{
-						CachedMethods.Remove (dm);
-						CachedMethods.Add(dm, firstArg_result[0]);
-					}
+						CachedMethods[dm] = firstArg_result[0];
 				}
+		}
+
+		public void RemoveModuleMethods(DModule ast)
+		{
+			AbstractType t;
+			if (ast != null)
+				foreach (var m in ast)
+					if (m is DMethod)
+						CachedMethods.TryRemove (m as DMethod, out t);
+			t = null;
 		}
 
 		public IEnumerable<DMethod> FindFitting(ResolutionContext ctxt, CodeLocation currentLocation, ISemantic firstArgument, string nameFilter = null)
@@ -194,13 +200,13 @@ namespace D_Parser.Misc
 
 		class UfcsMatchScanner : AbstractVisitor
 		{
-			ConditionalWeakTable<DMethod, AbstractType> cache;
+			ConcurrentDictionary<DMethod, AbstractType> cache;
 			public List<DMethod> filteredMethods = new List<DMethod>();
 			string nameFilter;
 			ISemantic firstArgument;
 
 			public UfcsMatchScanner(ResolutionContext ctxt, 
-				ConditionalWeakTable<DMethod, AbstractType> CachedMethods, 
+			    ConcurrentDictionary<DMethod, AbstractType> CachedMethods, 
 				ISemantic firstArgument,
 				string nameFilter = null)
 				: base(ctxt)

@@ -34,7 +34,8 @@ namespace D_Parser.Misc
 	public class ParseCacheView : IEnumerable<RootPackage>
 	{
 		protected IEnumerable<string> basePaths;
-		protected List<RootPackage> packs;
+		protected List<RootPackage> packs = new List<RootPackage> ();
+		bool initedPacks = false;
 
 		static protected readonly AbstractType defaultSizeT = new AliasedType(
 			new DVariable{ Name = "size_t", Type = new DTokenDeclaration(DTokens.Uint)}, new PrimitiveType(DTokens.Uint), null);
@@ -55,6 +56,17 @@ namespace D_Parser.Misc
 			if (roots == null)
 				throw new ArgumentNullException ("roots");
 			this.packs = new List<RootPackage> (roots);
+		}
+
+		public void Add(RootPackage pack)
+		{
+			packs.Add (pack);
+		}
+
+		public void Add(IEnumerable<string> roots)
+		{
+			foreach (var r in roots)
+				packs.Add (GlobalParseCache.GetRootPackage (r));
 		}
 
 		public virtual DClassLike ObjectClass {
@@ -101,18 +113,17 @@ namespace D_Parser.Misc
 
 		void InitPacks()
 		{
-			if (basePaths != null) {
-				packs = new List<RootPackage> ();
+			if (!initedPacks && basePaths != null) {
 				foreach (var p in basePaths)
 					packs.Add (GlobalParseCache.GetRootPackage (p));
+				initedPacks = true;
 			}
 		}
 
 		public RootPackage this[int i]
 		{
 			get{
-				if (packs == null)
-					InitPacks ();
+				InitPacks ();
 
 				if (packs != null)
 					return packs[i];
