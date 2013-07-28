@@ -261,7 +261,19 @@ namespace D_Parser.Resolver
 
 	public abstract class DSymbol : DerivedDataType
 	{
-		public DNode Definition { get; private set; }
+		protected WeakReference definition;
+		public DNode Definition { get {
+				return definition != null ? definition.Target as DNode : null;
+			}
+			private set {
+				if (value == null)
+					definition = null;
+				else if (definition == null)
+					definition = new WeakReference (value);
+				else
+					definition.Target = value;
+			}
+		}
 
 		/// <summary>
 		/// Key: Type name
