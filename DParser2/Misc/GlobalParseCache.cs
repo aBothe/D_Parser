@@ -47,10 +47,8 @@ namespace D_Parser.Misc
 		public readonly long Duration;
 		public readonly int FileAmount;
 
-		public double FileDuration
-		{
-			get
-			{
+		public double FileDuration {
+			get {
 				if (FileAmount < 1)
 					return 0;
 
@@ -58,7 +56,7 @@ namespace D_Parser.Misc
 			}
 		}
 
-		public ParsingFinishedEventArgs(string dir, RootPackage pack, long duration, int fileCount)
+		public ParsingFinishedEventArgs (string dir, RootPackage pack, long duration, int fileCount)
 		{
 			Directory = dir;
 			Package = pack;
@@ -66,22 +64,23 @@ namespace D_Parser.Misc
 			FileAmount = fileCount;
 		}
 	}
-	
-	public delegate void ParseFinishedHandler(ParsingFinishedEventArgs ea);
+	public delegate void ParseFinishedHandler (ParsingFinishedEventArgs ea);
 	#endregion
-
 	/// <summary>
 	/// Threadsafe global parse cache.
 	/// Central storage of scanned directories.
 	/// </summary>
 	public sealed class GlobalParseCache
 	{
+
 		#region Properties
+
 		public static int NumThreads = Environment.ProcessorCount;
 		static Thread preparationThread;
-		static AutoResetEvent preparationThreadStartEvent = new AutoResetEvent(false);
-		static ManualResetEvent parseThreadStartEvent = new ManualResetEvent(false);
+		static AutoResetEvent preparationThreadStartEvent = new AutoResetEvent (false);
+		static ManualResetEvent parseThreadStartEvent = new ManualResetEvent (false);
 		static Thread[] threads;
+
 		class PathQueueArgs
 		{
 			public string basePath;
@@ -89,7 +88,7 @@ namespace D_Parser.Misc
 			public ParseFinishedHandler finished;
 			public IntContainer finished_untilCount;
 
-			public PathQueueArgs(string p, bool s, ParseFinishedHandler h, IntContainer hc)
+			public PathQueueArgs (string p, bool s, ParseFinishedHandler h, IntContainer hc)
 			{
 				basePath = p;
 				skipFunctionBodies = s;
@@ -97,14 +96,14 @@ namespace D_Parser.Misc
 				finished_untilCount = hc;
 			}
 		}
-		static ConcurrentStack<PathQueueArgs> basePathQueue = new ConcurrentStack<PathQueueArgs>();
-		static ConcurrentStack<ParseIntermediate> queue = new ConcurrentStack<ParseIntermediate>();
+
+		static ConcurrentStack<PathQueueArgs> basePathQueue = new ConcurrentStack<PathQueueArgs> ();
+		static ConcurrentStack<ParseIntermediate> queue = new ConcurrentStack<ParseIntermediate> ();
 		static int parsingThreads = 0;
-		static ManualResetEvent parseCompletedEvent = new ManualResetEvent(true);
+		static ManualResetEvent parseCompletedEvent = new ManualResetEvent (true);
 		static bool stopParsing;
 
-		public static bool IsParsing
-		{
+		public static bool IsParsing {
 			get{ return parsingThreads > 0; }
 		}
 
@@ -112,44 +111,46 @@ namespace D_Parser.Misc
 		/// Contains phys path -> RootPackage relationships.
 		/// </summary>
 		static readonly ConcurrentDictionary<string, RootPackage> ParsedDirectories
-			= new ConcurrentDictionary<string, RootPackage>();
+			= new ConcurrentDictionary<string, RootPackage> ();
 		static readonly Dictionary<string, StatIntermediate> ParseStatistics
-			= new Dictionary<string, StatIntermediate>();
-
+			= new Dictionary<string, StatIntermediate> ();
 		/// <summary>
 		/// Lookup that is used for fast filename-AST lookup. Do NOT modify, it'll be done inside the ModulePackage instances.
 		/// </summary>
-		internal readonly static ConditionalWeakTable<string, DModule> fileLookup = new ConditionalWeakTable<string, DModule>();
-
+		internal readonly static ConditionalWeakTable<string, DModule> fileLookup = new ConditionalWeakTable<string, DModule> ();
 		public static ParseFinishedHandler ParseTaskFinished;
 
-		private GlobalParseCache (){}
+		private GlobalParseCache ()
+		{
+		}
+
 		#endregion
 
 		#region Init/Ctor
-		static GlobalParseCache()
+
+		static GlobalParseCache ()
 		{
-			preparationThread = new Thread(preparationTh);
+			preparationThread = new Thread (preparationTh);
 			preparationThread.IsBackground = true;
 			preparationThread.Name = "Preparation thread";
 			preparationThread.Start ();
 
-			threads  = new Thread[NumThreads];
-			for(int i=0; i< NumThreads;i++)
-			{
-				var th = threads[i] = new Thread(parseTh);
+			threads = new Thread[NumThreads];
+			for (int i=0; i< NumThreads; i++) {
+				var th = threads [i] = new Thread (parseTh);
 				th.IsBackground = true;
-				th.Name = "Parse thread #"+i.ToString();
-				th.Start(i);
+				th.Name = "Parse thread #" + i.ToString ();
+				th.Start (i);
 			}
 		}
 
 		#endregion
 
 		#region Parsing
+
 		internal class IntContainer
 		{
-			public IntContainer(int i)
+			public IntContainer (int i)
 			{
 				this.i = i;
 			}
@@ -161,25 +162,24 @@ namespace D_Parser.Misc
 		{
 			public bool skipFunctionBodies;
 			public string basePath;
-
 			public int totalFiles;
 			public int remainingFiles;
 			/// <summary>
 			/// Theroetical time needed for parsing all files in one sequence.
 			/// </summary>
 			public long totalMilliseconds;
-
 			/// <summary>
 			/// Stores an integer!
 			/// </summary>
 			internal IntContainer parseSubTasksUntilFinished;
 			internal ParseFinishedHandler finishedHandler;
-			internal ManualResetEvent completed = new ManualResetEvent(false);
-			internal System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+			internal ManualResetEvent completed = new ManualResetEvent (false);
+			internal System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch ();
+
 			/// <summary>
 			/// The time one had to wait until the parse task finished. Milliseconds.
 			/// </summary>
-			public long actualTimeNeeded{
+			public long actualTimeNeeded {
 				get{ return sw.ElapsedMilliseconds; }
 			}
 		}
@@ -190,7 +190,7 @@ namespace D_Parser.Misc
 			public readonly RootPackage root;
 			public readonly string file;
 
-			public ParseIntermediate(StatIntermediate im,RootPackage r, string f)
+			public ParseIntermediate (StatIntermediate im, RootPackage r, string f)
 			{
 				this.im = im;
 				root = r;
@@ -198,42 +198,40 @@ namespace D_Parser.Misc
 			}
 		}
 
-		public static void BeginAddOrUpdatePaths(params string[] basePaths)
+		public static void BeginAddOrUpdatePaths (params string[] basePaths)
 		{
-			BeginAddOrUpdatePaths((IEnumerable<string>)basePaths);
+			BeginAddOrUpdatePaths ((IEnumerable<string>)basePaths);
 		}
 
-		public static void BeginAddOrUpdatePaths(IEnumerable<string> basePaths, bool skipFunctionBodies = false, ParseFinishedHandler finishedHandler = null)
+		public static void BeginAddOrUpdatePaths (IEnumerable<string> basePaths, bool skipFunctionBodies = false, ParseFinishedHandler finishedHandler = null)
 		{
 			if (basePaths == null)
 				throw new ArgumentNullException ("basePaths");
 
-			GC.Collect();
+			GC.Collect ();
 
-			parseCompletedEvent.Reset();
+			parseCompletedEvent.Reset ();
 			stopParsing = false;
 
 			var c = basePaths.Count ();
 
-			var countObj = c > 1 ? new IntContainer(c) : null;
+			var countObj = c > 1 ? new IntContainer (c) : null;
 
 			foreach (var path in basePaths) {
-				Interlocked.Increment(ref parsingThreads);
+				Interlocked.Increment (ref parsingThreads);
 				basePathQueue.Push (new PathQueueArgs (path, skipFunctionBodies, finishedHandler, countObj));
 			}
 			preparationThreadStartEvent.Set ();
 		}
 
-		static void preparationTh()
+		static void preparationTh ()
 		{
-			while(true)
-			{
-				if(basePathQueue.IsEmpty)
-					preparationThreadStartEvent.WaitOne();
+			while (true) {
+				if (basePathQueue.IsEmpty)
+					preparationThreadStartEvent.WaitOne ();
 
 				PathQueueArgs tup;
-				while(basePathQueue.TryPop(out tup)) {
-
+				while (basePathQueue.TryPop(out tup)) {
 					if (stopParsing)
 						break;
 
@@ -263,7 +261,7 @@ namespace D_Parser.Misc
 					// msdn: -> Exactly zero or one character.
 					// monodocs: -> Exactly one character.
 					var files = Directory.GetFiles (path, "*.d", SearchOption.AllDirectories);
-					var ifiles= Directory.GetFiles (path, "*.di", SearchOption.AllDirectories);
+					var ifiles = Directory.GetFiles (path, "*.di", SearchOption.AllDirectories);
 
 					statIm.totalFiles = statIm.remainingFiles = files.Length + ifiles.Length;
 				
@@ -271,26 +269,22 @@ namespace D_Parser.Misc
 						LastParseTime = Directory.GetLastWriteTimeUtc(path)
 					};
 				
-					
 					if (statIm.totalFiles == 0) {
-						noticeFinish(new ParseIntermediate(statIm, newRoot, string.Empty));
+						noticeFinish (new ParseIntermediate (statIm, newRoot, string.Empty));
 						continue;
 					}
-					
-					parseThreadStartEvent.Set();
+				
+					parseThreadStartEvent.Set ();
 
 					if (files.Length != 0)
-						for(int i = 0; i < files.Length;i++)
-							queue.Push(new ParseIntermediate(statIm,newRoot,files[i]));
+						for (int i = 0; i < files.Length; i++)
+							queue.Push (new ParseIntermediate (statIm, newRoot, files [i]));
 
 					if (ifiles.Length != 0)
-						for(int i = 0; i < ifiles.Length;i++)
-							queue.Push(new ParseIntermediate(statIm,newRoot,ifiles[i]));
-					}catch(Exception ex) {
-						Console.WriteLine (ex.Message);
-					}
+						for (int i = 0; i < ifiles.Length; i++)
+							queue.Push (new ParseIntermediate (statIm, newRoot, ifiles [i]));
 
-					parseThreadStartEvent.Reset();
+					parseThreadStartEvent.Reset ();
 				}
 			}
 		}
@@ -298,7 +292,7 @@ namespace D_Parser.Misc
 		static readonly string phobosDFile = Path.DirectorySeparatorChar + "phobos.d";
 		static readonly string indexDFile = Path.DirectorySeparatorChar + "index.d";
 
-		static void parseTh(object s)
+		static void parseTh (object s)
 		{
 			int i = (int)s;
 			while (true) {
@@ -311,15 +305,14 @@ namespace D_Parser.Misc
 				//if(!queue.IsEmpty)	Console.WriteLine("queue not empty..working (Thread #"+i+")");
 
 				ParseIntermediate p;
-				while(queue.TryPop(out p))
-				{
+				while (queue.TryPop(out p)) {
 					if (stopParsing)
 						break;
 
 					var im = p.im;
 
 					if (p.file.EndsWith (phobosDFile) || p.file.EndsWith (indexDFile)) {
-						if (Interlocked.Decrement(ref im.remainingFiles) <= 0)
+						if (Interlocked.Decrement (ref im.remainingFiles) <= 0)
 							noticeFinish (p);
 						continue;
 					}
@@ -335,7 +328,7 @@ namespace D_Parser.Misc
 
 					sw.Stop ();
 
-					Interlocked.Add(ref im.totalMilliseconds, sw.ElapsedMilliseconds);
+					Interlocked.Add (ref im.totalMilliseconds, sw.ElapsedMilliseconds);
 
 					code = null;
 
@@ -346,72 +339,72 @@ namespace D_Parser.Misc
 						ast.ModuleName = DModule.GetModuleName (im.basePath, p.file);
 
 					fileLookup.Remove (p.file);
-					fileLookup.Add(p.file,ast);
+					fileLookup.Add (p.file, ast);
 
 					p.root.GetOrCreateSubPackage (ModuleNameHelper.ExtractPackageName (ast.ModuleName), true)
 						.AddModule (ast);
 
-					if (Interlocked.Decrement(ref im.remainingFiles) <= 0)
+					if (Interlocked.Decrement (ref im.remainingFiles) <= 0)
 						noticeFinish (p);
 				}
 
 			}
 		}
 
-		static void noticeFinish(ParseIntermediate p)
+		static void noticeFinish (ParseIntermediate p)
 		{
 			p.im.sw.Stop ();
 			p.im.completed.Set ();
 			ParsedDirectories [p.im.basePath] = p.root;
-			p.root.TryPreResolveCommonTypes();
+			p.root.TryPreResolveCommonTypes ();
 
 			var pf = new ParsingFinishedEventArgs (p.im.basePath, p.root, p.im.actualTimeNeeded, p.im.totalFiles);
 
-			if(ParseTaskFinished!=null)
-				ParseTaskFinished(pf);
+			if (ParseTaskFinished != null)
+				ParseTaskFinished (pf);
 
 			if (p.im.finishedHandler != null) {
 				var o = p.im.parseSubTasksUntilFinished;
-				if(o == null || Interlocked.Decrement(ref o.i) < 1)
+				if (o == null || Interlocked.Decrement (ref o.i) < 1)
 					p.im.finishedHandler (pf);
 			}
 
-			if(Interlocked.Decrement(ref parsingThreads) <= 0)
-				parseCompletedEvent.Set();
+			if (Interlocked.Decrement (ref parsingThreads) <= 0)
+				parseCompletedEvent.Set ();
 		}
 
-		public static bool WaitForFinish(int millisecondsToWait = -1)
+		public static bool WaitForFinish (int millisecondsToWait = -1)
 		{
-			if(millisecondsToWait < 0)
-				return parseCompletedEvent.WaitOne();
-			return parseCompletedEvent.WaitOne(millisecondsToWait);
+			if (millisecondsToWait < 0)
+				return parseCompletedEvent.WaitOne ();
+			return parseCompletedEvent.WaitOne (millisecondsToWait);
 		}
 
-		public static bool WaitForFinish(string basePath,int millisecondsToWait = -1)
+		public static bool WaitForFinish (string basePath, int millisecondsToWait = -1)
 		{
 			StatIntermediate im;
 			if (!ParseStatistics.TryGetValue (basePath, out im))
 				return false;
 
-			if(millisecondsToWait < 0)
-				return im.completed.WaitOne();
-			return im.completed.WaitOne(millisecondsToWait);
+			if (millisecondsToWait < 0)
+				return im.completed.WaitOne ();
+			return im.completed.WaitOne (millisecondsToWait);
 		}
 
 		/// <summary>
 		/// Stops the scanning. If discardProgress is true, caches will be cleared.
 		/// </summary>
-		public static void StopScanning(bool discardProgress = false)
+		public static void StopScanning (bool discardProgress = false)
 		{
 			stopParsing = true;
-			basePathQueue.Clear();
+			basePathQueue.Clear ();
 			queue.Clear ();
 		}
 
 		/// <summary>
 		/// Returns the parse progress factor (from 0.0 to 1.0); NaN if there's no such directory being scanned.
 		/// </summary>
-		public static double GetParseProgress(string basePath)
+		public static double GetParseProgress (string basePath)
 		{
 			StatIntermediate im;
 			if (!ParseStatistics.TryGetValue (basePath, out im))
@@ -420,25 +413,26 @@ namespace D_Parser.Misc
 			return 1.0 - (im.totalFiles < 1 ? 0.0 : (im.remainingFiles / im.totalFiles));
 		}
 
-		public static StatIntermediate GetParseStatistics(string basePath)
+		public static StatIntermediate GetParseStatistics (string basePath)
 		{
 			StatIntermediate im;
 			ParseStatistics.TryGetValue (basePath, out im);
 			return im;
 		}
 
-
-		public static bool RemoveRoot(string basePath)
+		public static bool RemoveRoot (string basePath)
 		{
 			RootPackage r;
 			ParseStatistics.Remove (basePath);
 			return ParsedDirectories.TryRemove (basePath, out r);
 		}
+
 		#endregion
 
 		#region Lookup
+
 		/// <param name="path">Path which may contains a part of some root package's path</param>
-		public static RootPackage GetRootPackage(string path)
+		public static RootPackage GetRootPackage (string path)
 		{
 			foreach (var kv in ParsedDirectories)
 				if (path.StartsWith (kv.Key))
@@ -447,7 +441,7 @@ namespace D_Parser.Misc
 			return null;
 		}
 
-		public static ModulePackage GetPackage(string physicalRootPath, string subPackageName=null)
+		public static ModulePackage GetPackage (string physicalRootPath, string subPackageName=null)
 		{
 			if (string.IsNullOrEmpty (physicalRootPath))
 				throw new ArgumentNullException ("physicalRootPath");
@@ -460,7 +454,7 @@ namespace D_Parser.Misc
 			return pack;
 		}
 
-		public static ModulePackage GetOrCreatePackageByDirectory(string physicalPackagePath, bool create = false)
+		public static ModulePackage GetOrCreatePackageByDirectory (string physicalPackagePath, bool create = false)
 		{
 			RootPackage root = null;
 			foreach (var kv in ParsedDirectories) {
@@ -468,22 +462,22 @@ namespace D_Parser.Misc
 					continue;
 
 				root = kv.Value;
-				physicalPackagePath = physicalPackagePath.Substring(kv.Key.Length);
+				physicalPackagePath = physicalPackagePath.Substring (kv.Key.Length);
 				break;
 			}
 
 			if (root == null)
 				return null;
 			
-			physicalPackagePath = physicalPackagePath.Trim(Path.DirectorySeparatorChar);
+			physicalPackagePath = physicalPackagePath.Trim (Path.DirectorySeparatorChar);
 
 			if (physicalPackagePath == string.Empty)
 				return root;
 
-			return root.GetOrCreateSubPackage(physicalPackagePath.Replace(Path.DirectorySeparatorChar,'.'), create);
+			return root.GetOrCreateSubPackage (physicalPackagePath.Replace (Path.DirectorySeparatorChar, '.'), create);
 		}
 
-		public static ModulePackage GetPackage(DModule module, bool create = false)
+		public static ModulePackage GetPackage (DModule module, bool create = false)
 		{
 			if (module == null)
 				return null;
@@ -493,30 +487,30 @@ namespace D_Parser.Misc
 			if (root == null)
 				return null;
 
-			return root.GetOrCreateSubPackage(ModuleNameHelper.ExtractPackageName(module.ModuleName), create);
+			return root.GetOrCreateSubPackage (ModuleNameHelper.ExtractPackageName (module.ModuleName), create);
 		}
 
-		public static DModule GetModule(string basePath, string moduleName, out ModulePackage pack)
+		public static DModule GetModule (string basePath, string moduleName, out ModulePackage pack)
 		{
-			pack = GetPackage (basePath, ModuleNameHelper.ExtractPackageName(moduleName));
+			pack = GetPackage (basePath, ModuleNameHelper.ExtractPackageName (moduleName));
 
 			if (pack == null)
 				return null;
 
-			return pack.GetModule(ModuleNameHelper.ExtractModuleName(moduleName));
+			return pack.GetModule (ModuleNameHelper.ExtractModuleName (moduleName));
 		}
 
-		public static DModule GetModule(string basePath, string moduleName)
+		public static DModule GetModule (string basePath, string moduleName)
 		{
-			var pack = GetPackage (basePath, ModuleNameHelper.ExtractPackageName(moduleName));
+			var pack = GetPackage (basePath, ModuleNameHelper.ExtractPackageName (moduleName));
 
 			if (pack == null)
 				return null;
 
-			return pack.GetModule(ModuleNameHelper.ExtractModuleName(moduleName));
+			return pack.GetModule (ModuleNameHelper.ExtractModuleName (moduleName));
 		}
 
-		public static DModule GetModule(string file)
+		public static DModule GetModule (string file)
 		{
 			DModule ret;
 			if (!fileLookup.TryGetValue (file, out ret)) {
@@ -524,11 +518,11 @@ namespace D_Parser.Misc
 					if (!file.StartsWith (kv.Key))
 						continue;
 
-					var modName = DModule.GetModuleName(kv.Key, file);
-					var pack = kv.Value.GetOrCreateSubPackage(ModuleNameHelper.ExtractPackageName(modName));
+					var modName = DModule.GetModuleName (kv.Key, file);
+					var pack = kv.Value.GetOrCreateSubPackage (ModuleNameHelper.ExtractPackageName (modName));
 
-					if(pack != null)
-						ret = pack.GetModule(modName);
+					if (pack != null)
+						ret = pack.GetModule (modName);
 					break;
 				}
 			}
@@ -536,28 +530,30 @@ namespace D_Parser.Misc
 			return ret;
 		}
 
-		public static IEnumerable<ModulePackage> EnumPackages(params string[] basePaths)
+		public static IEnumerable<ModulePackage> EnumPackages (params string[] basePaths)
 		{
 			return null;
 		}
 
-		public static IEnumerable<DModule> EnumModules(string basePath, string packageName=null)
+		public static IEnumerable<DModule> EnumModules (string basePath, string packageName=null)
 		{
 			return null;
 		}
+
 		#endregion
 
 		#region Module management
-		public static bool AddOrUpdateModule(DModule module)
+
+		public static bool AddOrUpdateModule (DModule module)
 		{
 			ModulePackage p;
 			return AddOrUpdateModule (module, out p);
 		}
 
-		public static bool AddOrUpdateModule(DModule module, out ModulePackage pack)
+		public static bool AddOrUpdateModule (DModule module, out ModulePackage pack)
 		{
 			pack = null;
-			if (module == null || string.IsNullOrEmpty(module.ModuleName))
+			if (module == null || string.IsNullOrEmpty (module.ModuleName))
 				return false;
 
 			pack = GetPackage (module, true);
@@ -569,34 +565,33 @@ namespace D_Parser.Misc
 
 			// Check if a module is already in the file lookup
 			DModule oldMod;
-			if (file != null && fileLookup.TryGetValue(file, out oldMod))
-			{
+			if (file != null && fileLookup.TryGetValue (file, out oldMod)) {
 				RemoveModule (oldMod);
 				oldMod = null;
 			}
 
 			pack.AddModule (module);
-			fileLookup.Add(file,module);
+			fileLookup.Add (file, module);
 			return true;
 		}
 
-		public static bool RemoveModule(string file)
+		public static bool RemoveModule (string file)
 		{
 			return RemoveModule (GetModule (file));
 		}
 
-		public static bool RemoveModule(string basePath, string moduleName)
+		public static bool RemoveModule (string basePath, string moduleName)
 		{
 			ModulePackage pack;
-			return RemoveModule (GetModule(basePath, moduleName, out pack), pack);
+			return RemoveModule (GetModule (basePath, moduleName, out pack), pack);
 		}
 
-		public static bool RemoveModule(DModule module)
+		public static bool RemoveModule (DModule module)
 		{
 			return RemoveModule (module, GetPackage (module));
 		}
 
-		internal static bool RemoveModule(DModule ast, ModulePackage pack)
+		internal static bool RemoveModule (DModule ast, ModulePackage pack)
 		{
 			if (ast == null || pack == null)
 				return false;
@@ -614,6 +609,7 @@ namespace D_Parser.Misc
 		}
 
 		#endregion
+
 	}
 }
 
