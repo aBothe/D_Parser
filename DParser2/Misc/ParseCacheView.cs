@@ -137,14 +137,15 @@ namespace D_Parser.Misc
 		public IEnumerable<ModulePackage> LookupPackage(string packName)
 		{
 			foreach (var root in this)
-				yield return root.GetSubPackage (packName);
+				if(root != null)
+					yield return root.GetSubPackage (packName);
 		}
 
 		public IEnumerable<DModule> LookupModuleName(string moduleName)
 		{
 			DModule m;
 			foreach (var root in this)
-				if((m = root.GetSubModule(moduleName)) != null)
+				if(root != null && (m = root.GetSubModule(moduleName)) != null)
 					yield return m;
 		}
 	}
