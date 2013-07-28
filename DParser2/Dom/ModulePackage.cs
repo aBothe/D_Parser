@@ -41,6 +41,7 @@ namespace D_Parser.Dom
 
 	public class RootPackage : ModulePackage
 	{
+		internal DateTime LastParseTime;
 		#region Ufcs caching
 		public readonly UFCSCache UfcsCache;
 		#endregion

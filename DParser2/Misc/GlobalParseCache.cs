@@ -241,18 +241,24 @@ namespace D_Parser.Misc
 					if (!Directory.Exists (path))
 						continue;
 
-					var newRoot = new RootPackage();
-					var statIm = new StatIntermediate{ 
+					var statIm = new StatIntermediate { 
 						skipFunctionBodies = tup.skipFunctionBodies, 
 						basePath = path,
 						finishedHandler = tup.finished
 					};
-					statIm.sw.Restart();
+
+					// Check if it's necessary to reparse the directory
+					RootPackage oldRoot;
+					if (ParsedDirectories.TryGetValue (path, out oldRoot) &&
+						oldRoot.LastParseTime < Directory.GetLastWriteTimeUtc (path)) {
+						noticeFinish (new ParseIntermediate (statIm, oldRoot, string.Empty));
+					}
+
+					statIm.sw.Restart ();
 
 					lock (ParseStatistics)
 						ParseStatistics [path] = statIm;
 
-					try{
 					//ISSUE: wild card character ? seems to behave differently across platforms
 					// msdn: -> Exactly zero or one character.
 					// monodocs: -> Exactly one character.
@@ -260,6 +266,11 @@ namespace D_Parser.Misc
 					var ifiles= Directory.GetFiles (path, "*.di", SearchOption.AllDirectories);
 
 					statIm.totalFiles = statIm.remainingFiles = files.Length + ifiles.Length;
+				
+					var newRoot = new RootPackage {
+						LastParseTime = Directory.GetLastWriteTimeUtc(path)
+					};
+				
 					
 					if (statIm.totalFiles == 0) {
 						noticeFinish(new ParseIntermediate(statIm, newRoot, string.Empty));
@@ -416,15 +427,6 @@ namespace D_Parser.Misc
 			return im;
 		}
 
-		public static bool UpdateRequired(params string[] basePaths)
-		{
-			return UpdateRequired(basePaths as IEnumerable<string>);
-		}
-
-		public static bool UpdateRequired(IEnumerable<string> basePaths)
-		{
-			return true;
-		}
 
 		public static bool RemoveRoot(string basePath)
 		{
