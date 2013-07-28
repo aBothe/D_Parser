@@ -215,6 +215,14 @@ namespace D_Parser.Misc
 
 			var c = basePaths.Count ();
 
+			if (c == 0) {
+				var im = new StatIntermediate { finishedHandler = finishedHandler };
+				im.completed.Set ();
+				Interlocked.Increment (ref parsingThreads);
+				noticeFinish (new ParseIntermediate (im, null, null));
+				return;
+			}
+
 			var countObj = c > 1 ? new IntContainer (c) : null;
 
 			foreach (var path in basePaths) {
@@ -347,7 +355,6 @@ namespace D_Parser.Misc
 					if (Interlocked.Decrement (ref im.remainingFiles) <= 0)
 						noticeFinish (p);
 				}
-
 			}
 		}
 
@@ -355,8 +362,10 @@ namespace D_Parser.Misc
 		{
 			p.im.sw.Stop ();
 			p.im.completed.Set ();
-			ParsedDirectories [p.im.basePath] = p.root;
-			p.root.TryPreResolveCommonTypes ();
+			if (!string.IsNullOrEmpty (p.im.basePath) && p.root != null) {
+				ParsedDirectories [p.im.basePath] = p.root;
+				p.root.TryPreResolveCommonTypes ();
+			}
 
 			var pf = new ParsingFinishedEventArgs (p.im.basePath, p.root, p.im.actualTimeNeeded, p.im.totalFiles);
 
