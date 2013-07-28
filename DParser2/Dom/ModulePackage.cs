@@ -6,6 +6,7 @@ using D_Parser.Misc;
 using D_Parser.Resolver;
 using D_Parser.Resolver.TypeResolution;
 using D_Parser.Parser;
+using System.Collections.Concurrent;
 
 namespace D_Parser.Dom
 {
@@ -128,8 +129,8 @@ namespace D_Parser.Dom
 		}
 
 		public readonly string Name;
-		internal Dictionary<string, ModulePackage> packages = new Dictionary<string, ModulePackage>();
-		internal Dictionary<string, DModule> modules = new Dictionary<string, DModule>();
+		internal ConcurrentDictionary<string, ModulePackage> packages = new ConcurrentDictionary<string, ModulePackage>();
+		internal ConcurrentDictionary<string, DModule> modules = new ConcurrentDictionary<string, DModule>();
 		
 		public IEnumerable<KeyValuePair<string,ModulePackage>> Packages {get{return packages;}}
 		public IEnumerable<KeyValuePair<string, DModule>> Modules {get{return modules;}}
@@ -182,28 +183,23 @@ namespace D_Parser.Dom
 
 		public IEnumerator<DModule> GetEnumerator()
 		{
-			lock(modules)
-				foreach (var kv in modules)
-					yield return kv.Value;
+			foreach (var kv in modules)
+				yield return kv.Value;
 
-			lock(packages)
-				foreach (var kv in packages)
-					lock(kv.Value)
-						foreach (var ast in kv.Value)
-							yield return ast;
+			foreach (var kv in packages)
+					foreach (var ast in kv.Value)
+						yield return ast;
 		}
 
 		IEnumerator<ModulePackage> IEnumerable<ModulePackage>.GetEnumerator()
 		{
-			lock(packages)
-				foreach (var kv in packages)
-				{
-					yield return kv.Value;
+			foreach (var kv in packages)
+			{
+				yield return kv.Value;
 
-					lock ((IEnumerable<ModulePackage>)kv.Value)
-						foreach (var p in (IEnumerable<ModulePackage>)kv.Value)
-							yield return p;
-				}
+				foreach (var p in (IEnumerable<ModulePackage>)kv.Value)
+					yield return p;
+			}
 		}
 
 		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
@@ -218,24 +214,22 @@ namespace D_Parser.Dom
 
 			var pack = Root.GetOrCreateSubPackage (ModuleNameHelper.ExtractPackageName (ast.ModuleName), true);
 
-			lock(pack.modules)
-				pack.modules[ModuleNameHelper.ExtractModuleName(ast.ModuleName)] = ast;
+			pack.modules[ModuleNameHelper.ExtractModuleName(ast.ModuleName)] = ast;
 			return true;
 		}
 		
 		internal bool RemovePackage(string name)
 		{
-			return packages.Remove(ModuleNameHelper.ExtractModuleName(name));
+			ModulePackage p;
+			return packages.TryRemove(ModuleNameHelper.ExtractModuleName(name), out p);
 		}
 		
 		internal bool RemoveModule(string name)
 		{
 			name = ModuleNameHelper.ExtractModuleName(name);
 			DModule ast;
-			if(modules.TryGetValue(name, out ast))
+			if(modules.TryRemove(name, out ast))
 			{
-				modules.Remove(name);
-
 				var root = Root;
 				if (root != null)
 					root.UfcsCache.RemoveModuleMethods (ast);
@@ -275,14 +269,13 @@ namespace D_Parser.Dom
 			{
 				ModulePackage returnValue;
 
-				lock(currentPackage.packages)
-					if (!currentPackage.packages.TryGetValue(parts[k], out returnValue))
-					{
-						if (create)
-							returnValue = currentPackage.packages[parts[k]] = new ModulePackage(currentPackage, parts[k]);
-						else
-							return null;
-					}
+				if (!currentPackage.packages.TryGetValue(parts[k], out returnValue))
+				{
+					if (create)
+						returnValue = currentPackage.packages[parts[k]] = new ModulePackage(currentPackage, parts[k]);
+					else
+						return null;
+				}
 
 				currentPackage = returnValue;
 			}
