@@ -28,14 +28,14 @@ using System.Collections.Generic;
 using D_Parser.Dom;
 using D_Parser.Resolver;
 using D_Parser.Parser;
+using System.Collections.Concurrent;
+using System.Threading;
 
 namespace D_Parser.Misc
 {
 	public class ParseCacheView : IEnumerable<RootPackage>
 	{
-		protected IEnumerable<string> basePaths;
-		protected List<RootPackage> packs = new List<RootPackage> ();
-		bool initedPacks = false;
+		protected List<RootPackage> packs;
 
 		static protected readonly AbstractType defaultSizeT = new AliasedType(
 			new DVariable{ Name = "size_t", Type = new DTokenDeclaration(DTokens.Uint)}, new PrimitiveType(DTokens.Uint), null);
@@ -48,7 +48,8 @@ namespace D_Parser.Misc
 		{
 			if (basePaths == null)
 				throw new ArgumentNullException ("basePaths");
-			this.basePaths = basePaths;
+			packs = new List<RootPackage> ();
+			Add (basePaths);
 		}
 
 		public ParseCacheView(IEnumerable<RootPackage> roots)
@@ -111,30 +112,20 @@ namespace D_Parser.Misc
 			}
 		}
 
-		void InitPacks()
+		public int Count
 		{
-			if (!initedPacks && basePaths != null) {
-				foreach (var p in basePaths)
-					packs.Add (GlobalParseCache.GetRootPackage (p));
-				initedPacks = true;
-			}
+			get{return packs.Count;}
 		}
 
 		public RootPackage this[int i]
 		{
 			get{
-				InitPacks ();
-
-				if (packs != null)
-					return packs[i];
-				return null;
+				return packs[i];
 			}
 		}
 
 		public IEnumerator<RootPackage> GetEnumerator ()
 		{
-			InitPacks ();
-
 			return packs.GetEnumerator ();
 		}
 
