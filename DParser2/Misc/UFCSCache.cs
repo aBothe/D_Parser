@@ -86,8 +86,6 @@ namespace D_Parser.Misc
 							th.Start(pcList);
 						}
 					}
-	
-					sw.Stop();
 				}
 			}
 			finally
@@ -133,6 +131,7 @@ namespace D_Parser.Misc
 
 			Interlocked.Add (ref methodCount, count);
 			if (Interlocked.Decrement (ref parsingThreads) < 1) {
+				sw.Stop ();
 				completedEvent.Set ();
 				if (AnalysisFinished != null)
 					AnalysisFinished (Root);
