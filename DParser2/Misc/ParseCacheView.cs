@@ -133,13 +133,9 @@ namespace D_Parser.Misc
 
 		public IEnumerator<RootPackage> GetEnumerator ()
 		{
-			if (packs == null)
-				InitPacks ();
+			InitPacks ();
 
-			if (packs != null)
-				return packs.GetEnumerator ();
-			else
-				return new RootPackage[0].GetEnumerator () as IEnumerator<RootPackage>;
+			return packs.GetEnumerator ();
 		}
 
 		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator ()

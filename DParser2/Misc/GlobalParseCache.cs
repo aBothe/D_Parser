@@ -418,7 +418,7 @@ namespace D_Parser.Misc
 
 		public static bool UpdateRequired(params string[] basePaths)
 		{
-			return UpdateRequired(basePaths);
+			return UpdateRequired(basePaths as IEnumerable<string>);
 		}
 
 		public static bool UpdateRequired(IEnumerable<string> basePaths)
@@ -483,6 +483,9 @@ namespace D_Parser.Misc
 
 		public static ModulePackage GetPackage(DModule module, bool create = false)
 		{
+			if (module == null)
+				return null;
+
 			var root = GetRootPackage (module.FileName);
 
 			if (root == null)
