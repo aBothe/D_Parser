@@ -78,6 +78,7 @@ namespace D_Parser.Misc
 		public static int NumThreads = Environment.ProcessorCount;
 		static Thread preparationThread;
 		static AutoResetEvent preparationThreadStartEvent = new AutoResetEvent (false);
+		static AutoResetEvent criticalPreparationSection = new AutoResetEvent(true);
 		static ManualResetEvent parseThreadStartEvent = new ManualResetEvent (false);
 		static Thread[] threads;
 
@@ -85,14 +86,12 @@ namespace D_Parser.Misc
 		{
 			public string basePath;
 			public bool skipFunctionBodies;
-			public ParseFinishedHandler finished;
-			public IntContainer finished_untilCount;
+			public ParseSubtaskContainer finished_untilCount;
 
-			public PathQueueArgs (string p, bool s, ParseFinishedHandler h, IntContainer hc)
+			public PathQueueArgs (string p, bool s, ParseSubtaskContainer hc)
 			{
 				basePath = p;
 				skipFunctionBodies = s;
-				finished = h;
 				finished_untilCount = hc;
 			}
 		}
@@ -148,13 +147,15 @@ namespace D_Parser.Misc
 
 		#region Parsing
 
-		internal class IntContainer
+		internal class ParseSubtaskContainer
 		{
-			public IntContainer (int i)
+			public ParseSubtaskContainer (int i, ParseFinishedHandler f)
 			{
 				this.i = i;
+				this.finishedHandler = f;
 			}
 
+			public ParseFinishedHandler finishedHandler;
 			public int i;
 		}
 
@@ -171,8 +172,7 @@ namespace D_Parser.Misc
 			/// <summary>
 			/// Stores an integer!
 			/// </summary>
-			internal IntContainer parseSubTasksUntilFinished;
-			internal ParseFinishedHandler finishedHandler;
+			internal readonly List<ParseSubtaskContainer> parseSubTasksUntilFinished = new List<ParseSubtaskContainer>();
 			internal ManualResetEvent completed = new ManualResetEvent (false);
 			internal System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch ();
 
@@ -181,6 +181,16 @@ namespace D_Parser.Misc
 			/// </summary>
 			public long actualTimeNeeded {
 				get{ return sw.ElapsedMilliseconds; }
+			}
+
+			public override bool Equals (object obj)
+			{
+				return obj is StatIntermediate && (obj as StatIntermediate).basePath == basePath;
+			}
+
+			public override int GetHashCode ()
+			{
+				return basePath != null ? basePath.GetHashCode () : base.GetHashCode();
 			}
 		}
 
@@ -208,6 +218,13 @@ namespace D_Parser.Misc
 			if (basePaths == null)
 				throw new ArgumentNullException ("basePaths");
 
+			if (System.Diagnostics.Debugger.IsAttached) {
+				Console.WriteLine ("BeginAddOrUpdatePaths: ");
+				foreach (var p in basePaths)
+					Console.WriteLine (p);
+				Console.WriteLine ("---------");
+			}
+
 			GC.Collect ();
 
 			parseCompletedEvent.Reset ();
@@ -216,18 +233,20 @@ namespace D_Parser.Misc
 			var c = basePaths.Count ();
 
 			if (c == 0) {
-				var im = new StatIntermediate { finishedHandler = finishedHandler };
+				var im = new StatIntermediate();
+				if(finishedHandler!=null)
+					im.parseSubTasksUntilFinished.Add (new ParseSubtaskContainer(1,finishedHandler));
 				im.completed.Set ();
 				Interlocked.Increment (ref parsingThreads);
 				noticeFinish (new ParseIntermediate (im, null, null));
 				return;
 			}
 
-			var countObj = c > 1 ? new IntContainer (c) : null;
+			var countObj = new ParseSubtaskContainer (c, finishedHandler);
 
 			foreach (var path in basePaths) {
 				Interlocked.Increment (ref parsingThreads);
-				basePathQueue.Push (new PathQueueArgs (path, skipFunctionBodies, finishedHandler, countObj));
+				basePathQueue.Push (new PathQueueArgs (path, skipFunctionBodies, countObj));
 			}
 			preparationThreadStartEvent.Set ();
 		}
@@ -245,25 +264,43 @@ namespace D_Parser.Misc
 
 					var path = tup.basePath;
 					if (!Directory.Exists (path))
-						continue;
+						continue; // Is it okay to directly skip it w/o calling noticeFinished?
 
-					var statIm = new StatIntermediate { 
-						skipFunctionBodies = tup.skipFunctionBodies, 
-						basePath = path,
-						finishedHandler = tup.finished
-					};
+					StatIntermediate statIm;
+
+					// Check if path is being parsed currently.
+					{
+						criticalPreparationSection.WaitOne ();
+
+						if (ParseStatistics.TryGetValue (path, out statIm)) {
+							if(tup.finished_untilCount != null)
+								statIm.parseSubTasksUntilFinished.Add (tup.finished_untilCount);
+
+							if (Interlocked.Decrement (ref parsingThreads) < 1)
+								throw new InvalidOperationException ("Race-condition during parse process: There must be two or more parse tasks active!");
+
+							criticalPreparationSection.Set ();
+							continue;
+						}
+
+						ParseStatistics [path] = statIm = new StatIntermediate { 
+							skipFunctionBodies = tup.skipFunctionBodies, 
+							basePath = path,
+						};
+						if(tup.finished_untilCount != null)
+							statIm.parseSubTasksUntilFinished.Add (tup.finished_untilCount);
+
+						criticalPreparationSection.Set ();
+					}
 
 					// Check if it's necessary to reparse the directory
 					RootPackage oldRoot;
 					if (ParsedDirectories.TryGetValue (path, out oldRoot) &&
-						oldRoot.LastParseTime < Directory.GetLastWriteTimeUtc (path)) {
+						oldRoot.LastParseTime >= Directory.GetLastWriteTimeUtc (path)) {
 						noticeFinish (new ParseIntermediate (statIm, oldRoot, string.Empty));
 					}
 
 					statIm.sw.Restart ();
-
-					lock (ParseStatistics)
-						ParseStatistics [path] = statIm;
 
 					//ISSUE: wild card character ? seems to behave differently across platforms
 					// msdn: -> Exactly zero or one character.
@@ -276,7 +313,7 @@ namespace D_Parser.Misc
 					var newRoot = new RootPackage {
 						LastParseTime = Directory.GetLastWriteTimeUtc(path)
 					};
-				
+
 					if (statIm.totalFiles == 0) {
 						noticeFinish (new ParseIntermediate (statIm, newRoot, string.Empty));
 						continue;
@@ -302,15 +339,15 @@ namespace D_Parser.Misc
 
 		static void parseTh (object s)
 		{
-			int i = (int)s;
+			//int threadId = (int)s;
 			while (true) {
 				if (queue.IsEmpty) {
-					//Console.WriteLine("queue empty..waiting (Thread #"+i+")");
+					//Console.WriteLine("queue empty..waiting (Thread #"+threadId+")");
 					parseThreadStartEvent.WaitOne ();
-					//Console.WriteLine("parsethreadstartevent set! (Thread #"+i+")");
+					//Console.WriteLine("parsethreadstartevent set! (Thread #"+threadId+")");
 				}
 
-				//if(!queue.IsEmpty)	Console.WriteLine("queue not empty..working (Thread #"+i+")");
+				//if(!queue.IsEmpty)	Console.WriteLine("queue not empty..working (Thread #"+threadId+")");
 
 				ParseIntermediate p;
 				while (queue.TryPop(out p)) {
@@ -360,22 +397,32 @@ namespace D_Parser.Misc
 
 		static void noticeFinish (ParseIntermediate p)
 		{
-			p.im.sw.Stop ();
-			p.im.completed.Set ();
+			var im = p.im;
+
+			im.sw.Stop ();
+			im.completed.Set ();
+
 			if (!string.IsNullOrEmpty (p.im.basePath) && p.root != null) {
-				ParsedDirectories [p.im.basePath] = p.root;
+				ParsedDirectories [im.basePath] = p.root;
 				p.root.TryPreResolveCommonTypes ();
 			}
 
-			var pf = new ParsingFinishedEventArgs (p.im.basePath, p.root, p.im.actualTimeNeeded, p.im.totalFiles);
+			var pf = new ParsingFinishedEventArgs (im.basePath, p.root, im.actualTimeNeeded, im.totalFiles);
 
 			if (ParseTaskFinished != null)
 				ParseTaskFinished (pf);
 
-			if (p.im.finishedHandler != null) {
-				var o = p.im.parseSubTasksUntilFinished;
-				if (o == null || Interlocked.Decrement (ref o.i) < 1)
-					p.im.finishedHandler (pf);
+			criticalPreparationSection.WaitOne ();
+			var subTasks = im.parseSubTasksUntilFinished.ToArray ();
+
+			if(p.im.basePath != null)
+				ParseStatistics.Remove (p.im.basePath);
+
+			criticalPreparationSection.Set ();
+
+			foreach(var subtask in subTasks) {
+				if (Interlocked.Decrement (ref subtask.i) < 1)
+					subtask.finishedHandler (pf); // Generic issue: The wrong statistics will be passed, if we fire the event for a task which was added some time afterwards
 			}
 
 			if (Interlocked.Decrement (ref parsingThreads) <= 0)
