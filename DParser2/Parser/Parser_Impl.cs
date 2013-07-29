@@ -2094,6 +2094,11 @@ namespace D_Parser.Parser
 										OverPeekBrackets(OpenParenthesis);
 									else
 										Peek();
+
+									if (Lexer.CurrentPeekToken.Kind == EOF) {
+										Peek (1);
+										return true;
+									}
 								}
 							}
 
@@ -2114,6 +2119,11 @@ namespace D_Parser.Parser
 												OverPeekBrackets(OpenParenthesis);
 											else 
 												Peek();
+										}
+
+										if (Lexer.CurrentPeekToken.Kind == EOF) {
+											Peek (1);
+											return true;
 										}
 									}
 								}
