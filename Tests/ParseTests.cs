@@ -179,7 +179,7 @@ void main() {
 			Console.WriteLine(sw.ElapsedMilliseconds);
 		}
 
-		[Test]
+		//[Test]
 		public void TestPhobos()
 		{
 			var pc = ParsePhobos();

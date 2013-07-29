@@ -209,10 +209,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 			catch (Exception ex)
 			{
-#if DEBUG
-				Console.Error.WriteLine("Exception while evaluating " + x.ToString() + ": " + ex.Message);
-				Console.Error.WriteLine(ex.StackTrace);
-#endif
+				if (Debugger.IsAttached)
+					throw ex;
+				Console.WriteLine("Exception while evaluating " + x.ToString() + ": " + ex.Message);
+				Console.WriteLine(ex.StackTrace);
 			}
 			finally
 			{
