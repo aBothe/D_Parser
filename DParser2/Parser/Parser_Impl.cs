@@ -2457,7 +2457,14 @@ namespace D_Parser.Parser
 
 				AllowWeakTypeParsing = wkParsing;
 
-				if (td!=null && ((t.Kind!=OpenParenthesis && laKind == CloseParenthesis && Peek(1).Kind == Dot && Peek(2).Kind == Identifier) || 
+				/*
+				 * (a. -- expression: (a.myProp + 2) / b;
+				 * (int. -- must be expression anyway
+				 * (const).asdf -- definitely unary expression ("type")
+				 * (const). -- also treat it as type accessor
+				 */
+				if (td!=null && t.Kind!=OpenParenthesis && laKind == CloseParenthesis && 
+				    ((Peek(1).Kind == Dot && Peek(2).Kind == Identifier) || 
 					(IsEOF || Peek(1).Kind==EOF || Peek(2).Kind==EOF))) // Also take it as a type declaration if there's nothing following (see Expression Resolving)
 				{
 					Lexer.PopLookAheadBackup();
