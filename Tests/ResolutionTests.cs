@@ -199,7 +199,7 @@ void foo()
 			Assert.That((t as MemberSymbol).Base, Is.InstanceOf(typeof(PointerType)));
 			
 			t = Evaluation.EvaluateType((foo.Body.SubStatements[2] as ExpressionStatement).Expression, ctxt);
-			Assert.That(t, Is.Null);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			
 			t = Evaluation.EvaluateType((foo.Body.SubStatements[3] as ExpressionStatement).Expression, ctxt);
 			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
@@ -215,9 +215,16 @@ void foo()
 			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
 			
 			t = Evaluation.EvaluateType((foo.Body.SubStatements[7] as ExpressionStatement).Expression, ctxt);
-			Assert.That(t, Is.Null);
+			Assert.That(t, Is.Not.Null);
 			
 			ctxt.CurrentContext.Set(pcl[0]["B"]);
+
+			// test protected across modules
+			t = Evaluation.EvaluateType((foo.Body.SubStatements[2] as ExpressionStatement).Expression, ctxt);
+			Assert.That(t, Is.Null);
+
+			t = Evaluation.EvaluateType((foo.Body.SubStatements[7] as ExpressionStatement).Expression, ctxt);
+			Assert.That(t, Is.Null);
 			
 			var ex = DParser.ParseExpression("inst.b");
 			t = Evaluation.EvaluateType(ex, ctxt);
@@ -1038,7 +1045,7 @@ void foo(U)(U u)
 		public void EmptyTypeTuple()
 		{
 			var pcl = CreateCache(@"module A;
-void writeln(T...)(T t)
+int writeln(T...)(T t)
 {
 }");
 			var ctxt = CreateDefCtxt(pcl, pcl[0]["A"]);

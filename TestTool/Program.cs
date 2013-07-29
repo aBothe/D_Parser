@@ -21,8 +21,10 @@ namespace TestTool
 			sw2.Start();
 			var ast = DParser.ParseString(code, true);
 			sw2.Stop();*/
-			(new ParseTests()).TestPhobos();
-			//return;
+			(new ResolutionTests ()).EmptyTypeTuple ();
+			//(new ParseTests()).TestPhobos();
+			return;
+
 			// Indent testing
 			/*var code = @"
 ";

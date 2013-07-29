@@ -61,7 +61,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			// Deduce template parameters later on
 			AbstractType[] baseExpression;
 			ISymbolValue baseValue;
-			TemplateInstanceExpression tix;
+			TemplateInstanceExpression tix=null;
 			
 			GetRawCallOverloads(call, out baseExpression, out baseValue, out tix);
 
@@ -415,6 +415,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					// The usual case: A tuple of a variable length is put at the end of a parameter list..
 					// take all arguments from i until the end of the argument list..
 					lastArgumentToTake = callArguments.Count - 1;
+
+					// Also accept empty tuples..
+					if (callArguments.Count == 0)
+						lastArgumentToTake = 0;
 				}
 				else
 				{
