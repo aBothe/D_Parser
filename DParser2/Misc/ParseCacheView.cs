@@ -61,13 +61,16 @@ namespace D_Parser.Misc
 
 		public void Add(RootPackage pack)
 		{
-			packs.Add (pack);
+			if(pack!=null)
+				packs.Add (pack);
 		}
 
 		public void Add(IEnumerable<string> roots)
 		{
+			RootPackage rp;
 			foreach (var r in roots)
-				packs.Add (GlobalParseCache.GetRootPackage (r));
+				if((rp=GlobalParseCache.GetRootPackage (r))!=null)
+					packs.Add (rp);
 		}
 
 		public virtual DClassLike ObjectClass {
