@@ -262,17 +262,15 @@ namespace D_Parser.Resolver
 	public abstract class DSymbol : DerivedDataType
 	{
 		protected WeakReference definition;
+
 		public DNode Definition { get {
-				return definition != null ? definition.Target as DNode : null;
+				return definition.Target as DNode;
 			}
-			private set {
-				if (value == null)
-					definition = null;
-				else if (definition == null)
-					definition = new WeakReference (value);
-				else
-					definition.Target = value;
-			}
+		}
+
+		public bool ValidSymbol
+		{
+			get{ return definition.IsAlive; }
 		}
 
 		/// <summary>
@@ -282,21 +280,18 @@ namespace D_Parser.Resolver
 		public ReadOnlyCollection<TemplateParameterSymbol> DeducedTypes;
 
 
-		public string Name
-		{
-			get
-			{
-				if (Definition != null)
-					return Definition.Name;
-				return null;
-			}
-		}
+		public readonly string Name;
 
 		public DSymbol(DNode Node, AbstractType BaseType, ReadOnlyCollection<TemplateParameterSymbol> deducedTypes, ISyntaxRegion td)
 			: base(BaseType, td)
 		{
 			this.DeducedTypes = deducedTypes;
-			this.Definition = Node;
+
+			if (Node == null)
+				throw new ArgumentNullException ("Node");
+
+			this.definition = new WeakReference(Node);
+			Name = Node.Name;
 		}
 
 		public DSymbol(DNode Node, AbstractType BaseType, IEnumerable<TemplateParameterSymbol> deducedTypes, ISyntaxRegion td)
@@ -304,12 +299,18 @@ namespace D_Parser.Resolver
 		{
 			if(deducedTypes!=null)
 				this.DeducedTypes = new ReadOnlyCollection<TemplateParameterSymbol>(deducedTypes.ToArray());
-			this.Definition = Node;
+
+			if (Node == null)
+				throw new ArgumentNullException ("Node");
+
+			this.definition = new WeakReference(Node);
+			Name = Node.Name;
 		}
 
 		public override string ToCode()
 		{
-			return Definition.ToString(false, true);
+			var def = Definition;
+			return def != null ? def.ToString(false, true) : "<Node object no longer exists>";
 		}
 	}
 
