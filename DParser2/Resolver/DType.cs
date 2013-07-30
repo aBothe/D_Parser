@@ -453,6 +453,10 @@ namespace D_Parser.Resolver
 
 	public class MemberSymbol : DSymbol
 	{
+		/// <summary>
+		/// 'Transmitter' helper variable used for UFCS resolution.
+		/// </summary>
+		internal ISemantic FirstArgument;
 		public bool IsUFCSResult;
 		public MemberSymbol(DNode member, AbstractType memberType, ISyntaxRegion td,
 			ReadOnlyCollection<TemplateParameterSymbol> deducedTypes = null)

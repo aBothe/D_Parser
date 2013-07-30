@@ -61,7 +61,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			// Deduce template parameters later on
 			AbstractType[] baseExpression;
 			ISymbolValue baseValue;
-			TemplateInstanceExpression tix=null;
+			TemplateInstanceExpression tix;
 			
 			GetRawCallOverloads(call, out baseExpression, out baseValue, out tix);
 
@@ -243,7 +243,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						// In the case of an ufcs, insert the first argument into the CallArguments list
 						if (ms.IsUFCSResult && !hasHandledUfcsResultBefore)
 						{
-							callArguments.Insert(0, eval ? baseValue as ISemantic : ((MemberSymbol)baseExpression[0]).Base);
+							callArguments.Insert(0, eval ? baseValue as ISemantic : ((MemberSymbol)baseExpression[0]).FirstArgument);
 							hasHandledUfcsResultBefore = true;
 						}
 						else if (!ms.IsUFCSResult && hasHandledUfcsResultBefore) // In the rare case of having a ufcs result occuring _after_ a normal member result, remove the initial arg again
@@ -490,8 +490,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (call.PostfixForeExpression is PostfixExpression_Access)
 			{
 				var pac = (PostfixExpression_Access)call.PostfixForeExpression;
-				if (pac.AccessExpression is TemplateInstanceExpression)
-					tix = (TemplateInstanceExpression)pac.AccessExpression;
+				tix = pac.AccessExpression as TemplateInstanceExpression;
 
 				var vs = E(pac, null, false, false);
 
@@ -519,10 +518,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				else if (eval)
 				{
 					if (call.PostfixForeExpression is TemplateInstanceExpression)
-					{
-						tix = (TemplateInstanceExpression)call.PostfixForeExpression;
-						baseValue = E(tix, false) as ISymbolValue;
-					}
+						baseValue = E(tix = call.PostfixForeExpression as TemplateInstanceExpression, false) as ISymbolValue;
 					else if (call.PostfixForeExpression is IdentifierExpression)
 						baseValue = E((IdentifierExpression)call.PostfixForeExpression, false) as ISymbolValue;
 					else
