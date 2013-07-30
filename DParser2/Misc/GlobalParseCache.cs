@@ -143,7 +143,7 @@ namespace D_Parser.Misc
 					Name = "Parse thread #" + i.ToString (),
 					Priority = ThreadPriority.Lowest
 				};
-				th.Start (i);
+				th.Start ();
 			}
 		}
 
@@ -185,6 +185,16 @@ namespace D_Parser.Misc
 			/// </summary>
 			public long actualTimeNeeded {
 				get{ return sw.ElapsedMilliseconds; }
+			}
+
+			/// <summary>
+			/// The time one had to wait until the actual parse process (which excludes file content loading, thread synchronizing etc) finished. Milliseconds.
+			/// </summary>
+			public long ActualParseTimeNeeded
+			{
+				get{
+					return totalMilliseconds / NumThreads;
+				}
 			}
 
 			public override bool Equals (object obj)
@@ -341,17 +351,12 @@ namespace D_Parser.Misc
 		static readonly string phobosDFile = Path.DirectorySeparatorChar + "phobos.d";
 		static readonly string indexDFile = Path.DirectorySeparatorChar + "index.d";
 
-		static void parseTh (object s)
+		static void parseTh ()
 		{
-			//int threadId = (int)s;
 			while (true) {
 				if (queue.IsEmpty) {
-					//Console.WriteLine("queue empty..waiting (Thread #"+threadId+")");
 					parseThreadStartEvent.WaitOne ();
-					//Console.WriteLine("parsethreadstartevent set! (Thread #"+threadId+")");
 				}
-
-				//if(!queue.IsEmpty)	Console.WriteLine("queue not empty..working (Thread #"+threadId+")");
 
 				ParseIntermediate p;
 				while (queue.TryPop(out p)) {
@@ -368,18 +373,29 @@ namespace D_Parser.Misc
 
 					var sw = new System.Diagnostics.Stopwatch ();
 
-					var code = File.ReadAllText (p.file);
+					DModule ast;
+					try{
+						var code = File.ReadAllText (p.file);
 
-					sw.Start ();
+						sw.Start ();
 
-					// If no debugger attached, save time + memory by skipping function bodies
-					var ast = DParser.ParseString (code, im.skipFunctionBodies);
+						// If no debugger attached, save time + memory by skipping function bodies
+						ast = DParser.ParseString (code, im.skipFunctionBodies);
+					}
+					catch(Exception ex) {
+						ast = null;
+
+						Console.WriteLine ("Exception occurred on \"" + p.file + "\":");
+						Console.WriteLine (ex.Message);
+						Console.WriteLine ("-------------------------------");
+						Console.WriteLine ("Stacktrace");
+						Console.WriteLine (ex.StackTrace);
+						Console.WriteLine ("-------------------------------");
+					}
 
 					sw.Stop ();
 
 					Interlocked.Add (ref im.totalMilliseconds, sw.ElapsedMilliseconds);
-
-					code = null;
 
 					if (ast != null)
 						ast.FileName = p.file;
