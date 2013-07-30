@@ -83,7 +83,6 @@ namespace D_Parser.Misc
 	/// </summary>
 	public sealed class GlobalParseCache
 	{
-
 		#region Properties
 
 		public static int NumThreads = Environment.ProcessorCount;
@@ -521,6 +520,9 @@ namespace D_Parser.Misc
 		/// <param name="path">Path which may contains a part of some root package's path</param>
 		public static RootPackage GetRootPackage (string path)
 		{
+			if (path == null)
+				return null;
+
 			foreach (var kv in ParsedDirectories)
 				if (path.StartsWith (kv.Key))
 					return kv.Value;
