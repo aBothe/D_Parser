@@ -45,6 +45,7 @@ namespace D_Parser.Misc
 		/// Milliseconds.
 		/// </summary>
 		public readonly long Duration;
+		public readonly long ParseDuration;
 		public readonly int FileAmount;
 
 		public double FileDuration {
@@ -56,11 +57,21 @@ namespace D_Parser.Misc
 			}
 		}
 
-		public ParsingFinishedEventArgs (string dir, RootPackage pack, long duration, int fileCount)
+		public double FileParseDuration {
+			get {
+				if (FileAmount < 1)
+					return 0;
+
+				return ParseDuration / FileAmount;
+			}
+		}
+
+		public ParsingFinishedEventArgs (string dir, RootPackage pack, long duration, long parseDuration, int fileCount)
 		{
 			Directory = dir;
 			Package = pack;
 			Duration = duration;
+			ParseDuration = parseDuration;
 			FileAmount = fileCount;
 		}
 	}
@@ -427,7 +438,7 @@ namespace D_Parser.Misc
 				p.root.TryPreResolveCommonTypes ();
 			}
 
-			var pf = new ParsingFinishedEventArgs (im.basePath, p.root, im.actualTimeNeeded, im.totalFiles);
+			var pf = new ParsingFinishedEventArgs (im.basePath, p.root, im.actualTimeNeeded, im.ActualParseTimeNeeded, im.totalFiles);
 
 			if (ParseTaskFinished != null)
 				ParseTaskFinished (pf);
