@@ -86,7 +86,7 @@ namespace D_Parser.Dom
 				n.OptionalModuleStatement.Accept(this);
 		}
 
-		public virtual void Visit(TemplateParameterNode n)
+		public virtual void Visit(TemplateParameter.Node n)
 		{
 			VisitDNode(n);
 

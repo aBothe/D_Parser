@@ -607,7 +607,8 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			if (imp == null || imp.ModuleIdentifier == null)
 				return false;
 
-			var thisModuleName = (ctxt.ScopedBlock != null && ctxt.ScopedBlock.NodeRoot is DModule) ? ((DModule)ctxt.ScopedBlock.NodeRoot).ModuleName : string.Empty;
+			DModule mod;
+			var thisModuleName = (ctxt.ScopedBlock != null && (mod=ctxt.ScopedBlock.NodeRoot as DModule)!=null) ? mod.ModuleName : string.Empty;
 			
 			if(string.IsNullOrEmpty(thisModuleName))
 				return false;

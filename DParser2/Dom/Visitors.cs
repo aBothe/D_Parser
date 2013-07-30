@@ -38,7 +38,7 @@ namespace D_Parser.Dom
 		void Visit(DEnum dEnum);
 		void Visit(DModule dModule);
 		void VisitBlock(DBlockNode dBlockNode);
-		void Visit(TemplateParameterNode templateParameterNode);
+		void Visit(TemplateParameter.Node templateParameterNode);
 		void Visit(NamedTemplateMixinNode n);
 
 		void VisitAttribute(Modifier attribute);
@@ -62,7 +62,7 @@ namespace D_Parser.Dom
 		R Visit(DEnum dEnum);
 		R Visit(DModule dModule);
 		R Visit(DBlockNode dBlockNode);
-		R Visit(TemplateParameterNode templateParameterNode);
+		R Visit(TemplateParameter.Node templateParameterNode);
 		R Visit(NamedTemplateMixinNode n);
 
 		R VisitAttribute(Modifier attr);

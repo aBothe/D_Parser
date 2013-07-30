@@ -35,7 +35,7 @@ namespace D_Parser.Dom
 		void AssignFrom(INode Other);
 
 		INode Parent { get; set; }
-		INode NodeRoot { get; set; }
+		INode NodeRoot { get; }
 
 		R Accept<R>(NodeVisitor<R> vis);
 	}

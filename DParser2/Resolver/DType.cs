@@ -469,20 +469,20 @@ namespace D_Parser.Resolver
 	
 	public class TemplateParameterSymbol : MemberSymbol
 	{
-		public readonly ITemplateParameter Parameter;
+		public readonly TemplateParameter Parameter;
 		/// <summary>
 		/// Only used for template value parameters.
 		/// </summary>
 		public readonly ISymbolValue ParameterValue;
 
-		public TemplateParameterSymbol(TemplateParameterNode tpn, ISemantic typeOrValue, ISyntaxRegion paramIdentifier = null)
-			: base(tpn, AbstractType.Get(typeOrValue), paramIdentifier)
+		public TemplateParameterSymbol(TemplateParameter tpn, ISemantic typeOrValue, ISyntaxRegion paramIdentifier = null)
+			: base(tpn != null ? tpn.Representation : null, AbstractType.Get(typeOrValue), paramIdentifier)
 		{
-			this.Parameter = tpn != null ? tpn.TemplateParameter : null;
+			this.Parameter = tpn;
 			this.ParameterValue = typeOrValue as ISymbolValue;
 		}
-
-		public TemplateParameterSymbol(ITemplateParameter tp,
+		/*
+		public TemplateParameterSymbol(TemplateParameter tp,
 			ISemantic representedTypeOrValue,
 			ISyntaxRegion originalParameterIdentifier = null,
 			DNode parentNode = null)
@@ -491,7 +491,7 @@ namespace D_Parser.Resolver
 		{
 			this.Parameter = tp;
 			this.ParameterValue = representedTypeOrValue as ISymbolValue;
-		}
+		}*/
 		
 		public override string ToCode()
 		{

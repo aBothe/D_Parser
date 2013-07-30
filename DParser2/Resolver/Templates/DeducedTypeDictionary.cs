@@ -10,16 +10,11 @@ namespace D_Parser.Resolver.Templates
 {
 	public class DeducedTypeDictionary : Dictionary<string,TemplateParameterSymbol>	{
 
-		/// <summary>
-		/// Used for final template parameter symbol creation.
-		/// Might be specified for better code completion because parameters can be identified with the owner node now.
-		/// </summary>
-		public readonly DNode ParameterOwner;
-		public readonly ITemplateParameter[] ExpectedParameters;
+		public readonly TemplateParameter[] ExpectedParameters;
 
 		public DeducedTypeDictionary() { }
 
-		public DeducedTypeDictionary(ITemplateParameter[] parameters)
+		public DeducedTypeDictionary(TemplateParameter[] parameters)
 		{
 			ExpectedParameters = parameters;
 			if (parameters != null)
@@ -32,19 +27,12 @@ namespace D_Parser.Resolver.Templates
 		}
 
 		public DeducedTypeDictionary(DNode owner)
-		{
-			ParameterOwner = owner;
-			if (owner.TemplateParameters != null)
-			{
-				ExpectedParameters = owner.TemplateParameters;
-				foreach (var tpar in owner.TemplateParameters)
-					this[tpar.Name] = null;
-			}
-		}
+			: this(owner.TemplateParameters)
+		{}
+
 		public DeducedTypeDictionary(DSymbol ms)
 		{
-			ParameterOwner = ms.Definition;
-			ExpectedParameters = ParameterOwner.TemplateParameters;
+			ExpectedParameters = ms.Definition.TemplateParameters;
 
 			if (ms.DeducedTypes != null)
 				foreach (var i in ms.DeducedTypes)

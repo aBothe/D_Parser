@@ -371,7 +371,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			// .. so only check if it's an identifer & if the id represents a tuple parameter
 			var id = dm.Parameters[currentParameter].Type as IdentifierDeclaration;
 			var curNode = dm as DNode;
-			ITemplateParameter tpar = null;
+			TemplateParameter tpar = null;
 			while (curNode != null && !curNode.TryGetTemplateParameter(id.Id, out tpar))
 				curNode = curNode.Parent as DNode;
 

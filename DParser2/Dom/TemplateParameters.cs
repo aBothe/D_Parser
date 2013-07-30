@@ -1,13 +1,89 @@
-﻿using D_Parser.Dom.Expressions;
+using D_Parser.Dom.Expressions;
+using System;
 
 namespace D_Parser.Dom
 {
-	public interface ITemplateParameter : ISyntaxRegion, IVisitable<TemplateParameterVisitor>
+	public abstract class TemplateParameter : ISyntaxRegion, IVisitable<TemplateParameterVisitor>
 	{
-		string Name { get; }
-		DNode Parent {get;}
+		public readonly string Name;
+		public readonly CodeLocation NameLocation;
 
-		R Accept<R>(TemplateParameterVisitor<R> vis);
+		public CodeLocation Location {
+			get;
+			set;
+		}
+
+		public CodeLocation EndLocation {
+			get;
+			set;
+		}
+
+		readonly WeakReference parent;
+		public DNode Parent {get{ return parent.Target as DNode; }}
+
+		Node representation;
+		public Node Representation
+		{
+			get{
+				if (representation == null)
+					representation = new Node (this);
+
+				return representation;
+			}
+		}
+
+		public TemplateParameter(string name, CodeLocation nameLoc, DNode par)
+		{
+			Name = name;
+			NameLocation = nameLoc;
+			this.parent = new WeakReference (par);
+		}
+
+		public static explicit operator TemplateParameter(Node tp)
+		{
+			return tp != null ? tp.TemplateParameter : null;
+		}
+
+		public abstract void Accept (TemplateParameterVisitor vis);
+		public abstract R Accept<R>(TemplateParameterVisitor<R> vis);
+
+
+		public class Node : DNode
+		{
+			public readonly TemplateParameter TemplateParameter;
+
+			public Node(TemplateParameter param)
+			{
+				TemplateParameter = param;
+
+				Name = param.Name;
+				NameLocation = param.NameLocation;
+				_Parent = param.parent;
+
+				Location = param.Location;
+				EndLocation = param.EndLocation;
+			}
+
+			public sealed override string ToString()
+			{
+				return TemplateParameter.ToString();
+			}
+
+			public sealed override string ToString(bool Attributes, bool IncludePath)
+			{
+				return (GetNodePath(this, false) + "." + ToString()).TrimEnd('.');
+			}
+
+			public override void Accept(NodeVisitor vis)
+			{
+				vis.Visit(this);
+			}
+
+			public override R Accept<R>(NodeVisitor<R> vis)
+			{
+				return vis.Visit(this);
+			}
+		}
 	}
 
 	/// <summary>
@@ -17,7 +93,7 @@ namespace D_Parser.Dom
 	/// </summary>
 	public class ITemplateParameterDeclaration : AbstractTypeDeclaration
 	{
-		public ITemplateParameter TemplateParameter;
+		public TemplateParameter TemplateParameter;
 
 		public override string ToString(bool IncludesBase)
 		{
@@ -35,49 +111,12 @@ namespace D_Parser.Dom
 		}
 	}
 
-	public class TemplateParameterNode : DNode
+	public class TemplateTypeParameter : TemplateParameter
 	{
-		public readonly ITemplateParameter TemplateParameter;
-
-		public TemplateParameterNode(ITemplateParameter param)
-		{
-			TemplateParameter = param;
-
-			Name = param.Name;
-			Parent = param.Parent;
-
-			Location = NameLocation = param.Location;
-			EndLocation = param.EndLocation;
-		}
-
-		public sealed override string ToString()
-		{
-			return TemplateParameter.ToString();
-		}
-
-		public sealed override string ToString(bool Attributes, bool IncludePath)
-		{
-			return (GetNodePath(this, false) + "." + ToString()).TrimEnd('.');
-		}
-
-		public override void Accept(NodeVisitor vis)
-		{
-			vis.Visit(this);
-		}
-
-		public override R Accept<R>(NodeVisitor<R> vis)
-		{
-			return vis.Visit(this);
-		}
-	}
-
-	public class TemplateTypeParameter : ITemplateParameter
-	{
-		public string Name { get; set; }
-		public DNode Parent {get; set;}
-
 		public ITypeDeclaration Specialization;
 		public ITypeDeclaration Default;
+
+		public TemplateTypeParameter(string name, CodeLocation nameLoc, DNode parent) : base(name, nameLoc, parent) {}
 
 		public sealed override string ToString()
 		{
@@ -92,40 +131,37 @@ namespace D_Parser.Dom
 			return ret;
 		}
 
-		public CodeLocation Location { get; set; }
-		public CodeLocation EndLocation { get; set; }
-
-		public void Accept(TemplateParameterVisitor vis) { vis.Visit(this);	}
-		public R Accept<R>(TemplateParameterVisitor<R> vis) { return vis.Visit(this); }
+		public override void Accept(TemplateParameterVisitor vis) { vis.Visit(this);	}
+		public override R Accept<R>(TemplateParameterVisitor<R> vis) { return vis.Visit(this); }
 	}
 
-	public class TemplateThisParameter : ITemplateParameter
+	public class TemplateThisParameter : TemplateParameter
 	{
-		public string Name { get { return FollowParameter.Name; } }
-		public DNode Parent {get; set;}
+		public readonly TemplateParameter FollowParameter;
 
-		public ITemplateParameter FollowParameter;
+		public TemplateThisParameter(TemplateParameter followParam, DNode parent) 
+		: base( followParam != null ? followParam.Name : string.Empty, 
+			       followParam != null ? followParam.NameLocation : new CodeLocation(), parent) {
+			FollowParameter = followParam;
+		}
 
 		public sealed override string ToString()
 		{
 			return "this" + (FollowParameter != null ? (" " + FollowParameter.ToString()) : "");
 		}
 
-		public CodeLocation Location { get; set; }
-		public CodeLocation EndLocation { get; set; }
-
-		public void Accept(TemplateParameterVisitor vis) { vis.Visit(this); }
-		public R Accept<R>(TemplateParameterVisitor<R> vis) { return vis.Visit(this); }
+		public override void Accept(TemplateParameterVisitor vis) { vis.Visit(this); }
+		public override R Accept<R>(TemplateParameterVisitor<R> vis) { return vis.Visit(this); }
 	}
 
-	public class TemplateValueParameter : ITemplateParameter
+	public class TemplateValueParameter : TemplateParameter
 	{
-		public string Name { get; set; }
-		public DNode Parent {get; set;}
 		public ITypeDeclaration Type;
 
 		public IExpression SpecializationExpression;
 		public IExpression DefaultExpression;
+
+		public TemplateValueParameter(string name, CodeLocation nameLoc, DNode parent) : base(name, nameLoc, parent) {}
 
 		public override string ToString()
 		{
@@ -133,17 +169,16 @@ namespace D_Parser.Dom
 				(DefaultExpression!=null?("="+DefaultExpression.ToString()):"")*/;
 		}
 
-		public CodeLocation Location { get; set; }
-		public CodeLocation EndLocation { get; set; }
-
-		public virtual void Accept(TemplateParameterVisitor vis) { vis.Visit(this); }
-		public virtual R Accept<R>(TemplateParameterVisitor<R> vis) { return vis.Visit(this); }
+		public override void Accept(TemplateParameterVisitor vis) { vis.Visit(this); }
+		public override R Accept<R>(TemplateParameterVisitor<R> vis) { return vis.Visit(this); }
 	}
 
 	public class TemplateAliasParameter : TemplateValueParameter
 	{
 		public ITypeDeclaration SpecializationType;
 		public ITypeDeclaration DefaultType;
+
+		public TemplateAliasParameter(string name, CodeLocation nameLoc, DNode parent) : base(name, nameLoc, parent) {}
 
 		public sealed override string ToString()
 		{
@@ -154,20 +189,17 @@ namespace D_Parser.Dom
 		public override R Accept<R>(TemplateParameterVisitor<R> vis) { return vis.Visit(this); }
 	}
 
-	public class TemplateTupleParameter : ITemplateParameter
+	public class TemplateTupleParameter : TemplateParameter
 	{
-		public string Name { get; set; }
-		public DNode Parent {get; set;}
-
 		public sealed override string ToString()
 		{
 			return Name + " ...";
 		}
 
-		public CodeLocation Location { get; set; }
-		public CodeLocation EndLocation { get; set; }
+		public TemplateTupleParameter(string name, CodeLocation nameLoc, DNode parent) : base(name, nameLoc, parent) {}
 
-		public void Accept(TemplateParameterVisitor vis) { vis.Visit(this); }
-		public R Accept<R>(TemplateParameterVisitor<R> vis) { return vis.Visit(this); }
+
+		public override void Accept(TemplateParameterVisitor vis) { vis.Visit(this); }
+		public override R Accept<R>(TemplateParameterVisitor<R> vis) { return vis.Visit(this); }
 	}
 }

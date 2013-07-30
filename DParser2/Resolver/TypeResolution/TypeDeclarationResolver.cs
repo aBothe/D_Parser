@@ -626,13 +626,13 @@ namespace D_Parser.Resolver.TypeResolution
 			}
 			else if (m is DEnum)
 				ret = new EnumType((DEnum)m, typeBase as ISyntaxRegion);
-			else if (m is TemplateParameterNode)
+			else if (m is TemplateParameter.Node)
 			{
 				//ResolveResult[] templateParameterType = null;
 
 				//TODO: Resolve the specialization type
 				//var templateParameterType = TemplateInstanceHandler.ResolveTypeSpecialization(tmp, ctxt);
-				ret = new TemplateParameterSymbol((TemplateParameterNode)m, null, typeBase as ISyntaxRegion);
+				ret = new TemplateParameterSymbol((m as TemplateParameter.Node).TemplateParameter, null, typeBase as ISyntaxRegion);
 			}
 			else if(m is NamedTemplateMixinNode)
 			{

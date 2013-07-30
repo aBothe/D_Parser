@@ -42,10 +42,10 @@ namespace D_Parser.Resolver
 
 	public class TemplateParameterDeductionError : ResolutionError
 	{
-		public ITemplateParameter Parameter { get { return SyntacticalContext as ITemplateParameter; } }
+		public TemplateParameter Parameter { get { return SyntacticalContext as TemplateParameter; } }
 		public readonly ISemantic Argument;
 
-		public TemplateParameterDeductionError(ITemplateParameter parameter, ISemantic argument, string msg)
+		public TemplateParameterDeductionError(TemplateParameter parameter, ISemantic argument, string msg)
 			: base(parameter, msg)
 		{
 			this.Argument = argument;

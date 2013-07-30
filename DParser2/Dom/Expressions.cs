@@ -1761,6 +1761,7 @@ namespace D_Parser.Dom.Expressions
 	{
 		public ITypeDeclaration TestedType;
 		public string TypeAliasIdentifier;
+		public CodeLocation TypeAliasIdLocation;
 
 		private TemplateTypeParameter ptp;
 		/// <summary>
@@ -1771,9 +1772,8 @@ namespace D_Parser.Dom.Expressions
 			get {
 				if (ptp == null)
 				{
-					return ptp = new TemplateTypeParameter { 
-						Specialization = TypeSpecialization,
-						Name=TypeAliasIdentifier
+					return ptp = new TemplateTypeParameter(TypeAliasIdentifier, TypeAliasIdLocation, null) { 
+						Specialization = TypeSpecialization
 					};
 				}
 				return ptp;
@@ -1788,7 +1788,7 @@ namespace D_Parser.Dom.Expressions
 		public ITypeDeclaration TypeSpecialization;
 		public byte TypeSpecializationToken;
 
-		public ITemplateParameter[] TemplateParameterList;
+		public TemplateParameter[] TemplateParameterList;
 
 		public override string ToString()
 		{

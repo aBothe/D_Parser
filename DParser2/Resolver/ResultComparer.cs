@@ -93,7 +93,7 @@ namespace D_Parser.Resolver
 
 			if (targetType is DSymbol)
 			{
-				var tpn = ((DSymbol)targetType).Definition as TemplateParameterNode;
+				var tpn = ((DSymbol)targetType).Definition as TemplateParameter.Node;
 
 				if (tpn!=null)
 				{

@@ -3150,6 +3150,7 @@ namespace D_Parser.Parser
 				{
 					Step();
 					ce.TypeAliasIdentifier = strVal;
+					ce.TypeAliasIdLocation = t.Location;
 				}
 
 				if (laKind == CloseParenthesis)
@@ -3203,7 +3204,7 @@ namespace D_Parser.Parser
 				// TemplateParameterList
 				if (laKind == Comma)
 				{
-					var ret = new List<ITemplateParameter>();
+					var ret = new List<TemplateParameter>();
 					do
 					{
 						Step();
@@ -4924,7 +4925,7 @@ namespace D_Parser.Parser
 			if (!Expect(OpenParenthesis))
 			{
 				SynErr(OpenParenthesis, "Template parameter list expected");
-				dn.TemplateParameters = new ITemplateParameter[0];
+				dn.TemplateParameters = new TemplateParameter[0];
 				return;
 			}
 
@@ -4934,7 +4935,7 @@ namespace D_Parser.Parser
 				return;
 			}
 
-			var ret = new List<ITemplateParameter>();
+			var ret = new List<TemplateParameter>();
 
 			bool init = true;
 			while (init || laKind == (Comma))
@@ -4950,51 +4951,50 @@ namespace D_Parser.Parser
 			dn.TemplateParameters = ret.ToArray();
 		}
 
-		ITemplateParameter TemplateParameter(DNode parent)
+		TemplateParameter TemplateParameter(DNode parent)
 		{
+			CodeLocation startLoc;
+
 			// TemplateThisParameter
 			if (laKind == (This))
 			{
 				Step();
 
-				var ret= new TemplateThisParameter()
-				{
-					Location=t.Location,
-					FollowParameter=TemplateParameter(parent),
-					EndLocation=t.EndLocation,
-					Parent = parent
-				};
+				startLoc = t.Location;
+				var end = t.EndLocation;
+
+				var ret= new TemplateThisParameter(TemplateParameter(parent), parent) { Location=startLoc, EndLocation=end };
 				LastParsedObject = ret;
 				return ret;
 			}
 
 			// TemplateTupleParameter
-			if (laKind == (Identifier) && Lexer.CurrentPeekToken.Kind == TripleDot)
+			else if (laKind == (Identifier) && Lexer.CurrentPeekToken.Kind == TripleDot)
 			{
 				Step();
-				var startLoc = t.Location;
+				startLoc = t.Location;
 				var id = t.Value;
 				Step();
 
-				var ret=new TemplateTupleParameter() { 
-					Name=id, 
-					Location=startLoc, 
-					EndLocation=t.EndLocation,
-					Parent = parent
-				};
+				var ret=new TemplateTupleParameter(id, startLoc, parent) { Location=startLoc, EndLocation=t.EndLocation	};
 				LastParsedObject = ret;
 				return ret;
 			}
 
 			// TemplateAliasParameter
-			if (laKind == (Alias))
+			else if (laKind == (Alias))
 			{
 				Step();
-				var al = new TemplateAliasParameter() { Location=t.Location, Parent = parent };
-				LastParsedObject = al;
+
+				startLoc = t.Location;
+				TemplateAliasParameter al;
 
 				if(Expect(Identifier))
-					al.Name = t.Value;
+					al = new TemplateAliasParameter(t.Value, t.Location, parent);
+				else
+					al = new TemplateAliasParameter(null, CodeLocation.Empty, parent);
+				al.Location = startLoc;
+				LastParsedObject = al;
 
 				// TODO?:
 				// alias BasicType Declarator TemplateAliasParameterSpecialization_opt TemplateAliasParameterDefault_opt
@@ -5029,13 +5029,11 @@ namespace D_Parser.Parser
 			}
 
 			// TemplateTypeParameter
-			if (laKind == (Identifier) && (Lexer.CurrentPeekToken.Kind == (Colon) || Lexer.CurrentPeekToken.Kind == (Assign) || Lexer.CurrentPeekToken.Kind == (Comma) || Lexer.CurrentPeekToken.Kind == (CloseParenthesis)))
+			else if (laKind == (Identifier) && (Lexer.CurrentPeekToken.Kind == (Colon) || Lexer.CurrentPeekToken.Kind == (Assign) || Lexer.CurrentPeekToken.Kind == (Comma) || Lexer.CurrentPeekToken.Kind == (CloseParenthesis)))
 			{
 				Expect(Identifier);
-				var tt = new TemplateTypeParameter() { Location=t.Location, Parent = parent };
+				var tt = new TemplateTypeParameter(t.Value, t.Location, parent) { Location = t.Location };
 				LastParsedObject = tt;
-
-				tt.Name = t.Value;
 
 				if (laKind == Colon)
 				{
@@ -5053,9 +5051,7 @@ namespace D_Parser.Parser
 			}
 
 			// TemplateValueParameter
-			var tv = new TemplateValueParameter() { Location=la.Location, Parent = parent };
-			LastParsedObject = tv;
-				
+			startLoc = la.Location;
 			var bt = BasicType();
 			var dv = Declarator(bt,false, null);
 
@@ -5064,8 +5060,11 @@ namespace D_Parser.Parser
 				return null;
 			}
 
-			tv.Type = dv.Type;
-			tv.Name = dv.Name;
+			var tv = new TemplateValueParameter(dv.Name, dv.NameLocation, parent) { 
+				Location=la.Location,
+				Type = dv.Type
+			};
+			LastParsedObject = tv;
 
 			if (laKind == (Colon))
 			{

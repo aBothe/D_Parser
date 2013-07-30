@@ -114,7 +114,7 @@ namespace D_Parser.Completion
 						return new ImportStatementCompletionProvider (dataGen, (ImportStatement.ImportBindings)trackVars.LastParsedObject);
 					else if (trackVars.LastParsedObject is ModuleStatement)
 						return new ModuleStatementCompletionProvider(dataGen);
-					else if ((trackVars.LastParsedObject is ITemplateParameter || 
+					else if ((trackVars.LastParsedObject is TemplateParameter || 
 					    trackVars.LastParsedObject is ForeachStatement) && EnteredText != null)
 						return null;
 				}

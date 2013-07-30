@@ -35,7 +35,7 @@ namespace D_Parser.Resolver.Templates
 		}
 		#endregion
 
-		public bool Handle(ITemplateParameter parameter, ISemantic argumentToAnalyze)
+		public bool Handle(TemplateParameter parameter, ISemantic argumentToAnalyze)
 		{
 			// Packages aren't allowed at all
 			if (argumentToAnalyze is PackageSymbol)
@@ -122,7 +122,7 @@ namespace D_Parser.Resolver.Templates
 		/// Returns false if the item has already been set before and if the already set item is not equal to 'r'.
 		/// Inserts 'r' into the target dictionary and returns true otherwise.
 		/// </summary>
-		bool Set(ITemplateParameter p, ISemantic r, string name=null)
+		bool Set(TemplateParameter p, ISemantic r, string name=null)
 		{
 			if (p == null)
 			{
@@ -145,7 +145,7 @@ namespace D_Parser.Resolver.Templates
 			TemplateParameterSymbol rl;
 			if (!TargetDictionary.TryGetValue(name, out rl) || rl == null)
 			{
-				TargetDictionary[name] = new TemplateParameterSymbol(p, r, null, TargetDictionary.ParameterOwner);
+				TargetDictionary[name] = new TemplateParameterSymbol(p, r);
 				return true;
 			}
 			else
@@ -158,7 +158,7 @@ namespace D_Parser.Resolver.Templates
 						// Error: Ambiguous assignment
 					}
 
-				TargetDictionary[name] = new TemplateParameterSymbol(p, r, null, TargetDictionary.ParameterOwner);
+				TargetDictionary[name] = new TemplateParameterSymbol(p, r);
 
 				return false;
 			}

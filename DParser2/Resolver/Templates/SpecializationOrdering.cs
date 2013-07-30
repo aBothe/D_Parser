@@ -97,13 +97,13 @@ namespace D_Parser.Resolver.Templates
 			var tp2_enum = dn2.TemplateParameters.GetEnumerator();
 
 			while (tp1_enum.MoveNext() && tp2_enum.MoveNext())
-				if (!IsMoreSpecialized((ITemplateParameter)tp1_enum.Current, (ITemplateParameter)tp2_enum.Current, dummyList))
+				if (!IsMoreSpecialized((TemplateParameter)tp1_enum.Current, (TemplateParameter)tp2_enum.Current, dummyList))
 					return false;
 
 			return true;
 		}
 
-		bool IsMoreSpecialized(ITemplateParameter t1, ITemplateParameter t2, Dictionary<string, ISemantic> t1_dummyParameterList)
+		bool IsMoreSpecialized(TemplateParameter t1, TemplateParameter t2, Dictionary<string, ISemantic> t1_dummyParameterList)
 		{
 			if (t1 is TemplateTypeParameter && t2 is TemplateTypeParameter &&
 				!IsMoreSpecialized((TemplateTypeParameter)t1, (TemplateTypeParameter)t2, t1_dummyParameterList))
@@ -164,7 +164,7 @@ namespace D_Parser.Resolver.Templates
 			return IsMoreSpecialized(t1.Specialization, t2, t1_DummyParamList);
 		}
 
-		bool IsMoreSpecialized(ITypeDeclaration Spec, ITemplateParameter t2, Dictionary<string, ISemantic> t1_DummyParamList)
+		bool IsMoreSpecialized(ITypeDeclaration Spec, TemplateParameter t2, Dictionary<string, ISemantic> t1_DummyParamList)
 		{
 			// Make a type out of t1's specialization
 			var pop = ctxt.ScopedBlock != null;

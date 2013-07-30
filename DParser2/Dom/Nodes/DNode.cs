@@ -7,20 +7,18 @@ namespace D_Parser.Dom
     public abstract class DNode : AbstractNode
 	{
 		#region Properties
-		public ITemplateParameter[] TemplateParameters; // Functions, Templates
+		public TemplateParameter[] TemplateParameters; // Functions, Templates
 		public IExpression TemplateConstraint;
 		public List<DAttribute> Attributes;
 
-		public IEnumerable<TemplateParameterNode> TemplateParameterNodes
+		public IEnumerable<TemplateParameter.Node> TemplateParameterNodes
 		{
 			get
 			{
 				if (TemplateParameters != null)
 					foreach (var p in TemplateParameters)
-						if (p == null)
-							yield return null;
-						else
-							yield return new TemplateParameterNode(p) { Parent = this };
+						if (p != null)
+							yield return p.Representation;
 			}
 		}
 
@@ -62,7 +60,7 @@ namespace D_Parser.Dom
 		}
 		#endregion
 		
-		public bool ContainsTemplateParameter(ITemplateParameter p)
+		public bool ContainsTemplateParameter(TemplateParameter p)
 		{
 			if(TemplateParameters != null)
 				for(int i = 0; i < TemplateParameters.Length; i++)
@@ -71,7 +69,7 @@ namespace D_Parser.Dom
 			return false;
 		}
 
-		public bool TryGetTemplateParameter(string name, out ITemplateParameter p)
+		public bool TryGetTemplateParameter(string name, out TemplateParameter p)
 		{
 			if (TemplateParameters != null)
 				for (int i = 0; i < TemplateParameters.Length; i++)

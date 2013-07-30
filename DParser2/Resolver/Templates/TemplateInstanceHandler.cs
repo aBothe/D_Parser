@@ -260,7 +260,7 @@ namespace D_Parser.Resolver.TypeResolution
 			DSymbol overload, 
 			DeducedTypeDictionary deducedTypes,
 			IEnumerator<ISemantic> argEnum, 
-			ITemplateParameter expectedParam)
+			TemplateParameter expectedParam)
 		{
 			if (expectedParam is TemplateThisParameter && overload.Base != null)
 			{
@@ -321,7 +321,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return true;
 		}
 
-		public static bool HasDefaultType(ITemplateParameter p)
+		public static bool HasDefaultType(TemplateParameter p)
 		{
 			if (p is TemplateTypeParameter)
 				return ((TemplateTypeParameter)p).Default != null;
@@ -337,7 +337,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return false;
 		}
 
-		static bool CheckAndDeduceTypeAgainstTplParameter(ITemplateParameter handledParameter, 
+		static bool CheckAndDeduceTypeAgainstTplParameter(TemplateParameter handledParameter, 
 			ISemantic argumentToCheck,
 			DeducedTypeDictionary deducedTypes,
 			ResolutionContext ctxt)
