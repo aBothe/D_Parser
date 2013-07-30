@@ -36,7 +36,6 @@ namespace Tests
 			UFCSCache.SingleThreaded = true;
 			var pcl = new ParseCacheView (new [] { r });
 			r.UfcsCache.BeginUpdate (pcl);
-			r.UfcsCache.WaitForFinish ();
 
 			return pcl;
 		}
@@ -1045,14 +1044,29 @@ void foo(U)(U u)
 		public void EmptyTypeTuple()
 		{
 			var pcl = CreateCache(@"module A;
+enum E {A,B}
+
 int writeln(T...)(T t)
 {
 }");
 			var ctxt = CreateDefCtxt(pcl, pcl[0]["A"]);
-			
-			var ex = DParser.ParseExpression("writeln()");
-			var x = Evaluation.EvaluateType(ex, ctxt);
+
+			IExpression ex;
+			AbstractType x;
+
+			ex = DParser.ParseExpression("\"asdf\".writeln()");
+			x = Evaluation.EvaluateType(ex, ctxt);
 			Assert.That(x, Is.TypeOf(typeof(PrimitiveType)));
+
+			ex = DParser.ParseExpression("writeln()");
+			x = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(x, Is.TypeOf(typeof(PrimitiveType)));
+
+			ex = DParser.ParseExpression("writeln(E.A)");
+			x = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(x, Is.TypeOf(typeof(PrimitiveType)));
+
+
 		}
 		
 		[Test]
