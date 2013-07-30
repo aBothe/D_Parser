@@ -129,16 +129,20 @@ namespace D_Parser.Misc
 
 		static GlobalParseCache ()
 		{
-			preparationThread = new Thread (preparationTh);
-			preparationThread.IsBackground = true;
-			preparationThread.Name = "Preparation thread";
+			preparationThread = new Thread (preparationTh) {
+				IsBackground = true,
+				Name = "Preparation thread",
+				Priority = ThreadPriority.BelowNormal
+			};
 			preparationThread.Start ();
 
 			threads = new Thread[NumThreads];
 			for (int i=0; i< NumThreads; i++) {
-				var th = threads [i] = new Thread (parseTh);
-				th.IsBackground = true;
-				th.Name = "Parse thread #" + i.ToString ();
+				var th = threads [i] = new Thread (parseTh) {
+					IsBackground = true,
+					Name = "Parse thread #" + i.ToString (),
+					Priority = ThreadPriority.Lowest
+				};
 				th.Start (i);
 			}
 		}

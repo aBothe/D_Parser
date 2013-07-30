@@ -76,7 +76,7 @@ namespace D_Parser.Misc
 					for (int i = 0; i < GlobalParseCache.NumThreads; i++) {
 						var th = threads [i] = new Thread (parseThread) {
 							IsBackground = true,
-							Priority = ThreadPriority.BelowNormal,
+							Priority = ThreadPriority.Lowest,
 							Name = "UFCS Analysis thread #" + i
 						};
 						th.Start (pcList);
