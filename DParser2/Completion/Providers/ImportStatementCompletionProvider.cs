@@ -75,6 +75,9 @@ namespace D_Parser.Completion.Providers
 
 			foreach (var p in Editor.ParseCache.LookupPackage(pack))
 			{
+				if (p == null)
+					continue;
+
 				foreach (var kv_pack in p.Packages)
 					CompletionDataGenerator.AddPackage(kv_pack.Key);
 
