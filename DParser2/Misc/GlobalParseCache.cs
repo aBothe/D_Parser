@@ -90,7 +90,7 @@ namespace D_Parser.Misc
 		static AutoResetEvent preparationThreadStartEvent = new AutoResetEvent (false);
 		static AutoResetEvent criticalPreparationSection = new AutoResetEvent(true);
 		static ManualResetEvent parseThreadStartEvent = new ManualResetEvent (false);
-		static Thread[] threads;
+		static Thread[] threads = new Thread[NumThreads];
 
 		class PathQueueArgs
 		{
@@ -135,31 +135,42 @@ namespace D_Parser.Misc
 
 		#endregion
 
-		#region Init/Ctor
+		#region Parsing
+		static AutoResetEvent launchEvent = new AutoResetEvent(true);
+		static AutoResetEvent parseThreadLaunchevent = new AutoResetEvent(true);
 
-		static GlobalParseCache ()
+		static void LaunchPreparationThread()
 		{
-			preparationThread = new Thread (preparationTh) {
-				IsBackground = true,
-				Name = "Preparation thread",
-				Priority = ThreadPriority.BelowNormal
-			};
-			preparationThread.Start ();
-
-			threads = new Thread[NumThreads];
-			for (int i=0; i< NumThreads; i++) {
-				var th = threads [i] = new Thread (parseTh) {
-					IsBackground = true,
-					Name = "Parse thread #" + i.ToString (),
-					Priority = ThreadPriority.Lowest
-				};
-				th.Start ();
+			if(launchEvent.WaitOne(0)){
+				if (preparationThread == null || !preparationThread.IsAlive) {
+					preparationThread = new Thread (preparationTh) {
+						IsBackground = true,
+						Name = "Preparation thread",
+						Priority = ThreadPriority.BelowNormal
+					};
+					preparationThread.Start ();
+				}
+				launchEvent.Set ();
 			}
 		}
 
-		#endregion
+		static void LaunchParseThreads()
+		{
+			if (parseThreadLaunchevent.WaitOne (0)) {
 
-		#region Parsing
+				for (int i= NumThreads -1 ; i>=0; i--) {
+					if (threads [i] == null || !threads [i].IsAlive) {
+						(threads [i] = new Thread (parseTh) {
+							IsBackground = true,
+							Name = "Parse thread #" + i.ToString (),
+							Priority = ThreadPriority.Lowest
+						}).Start();
+					}
+				}
+
+				parseThreadLaunchevent.Set ();
+			}
+		}
 
 		internal class ParseSubtaskContainer
 		{
@@ -273,13 +284,17 @@ namespace D_Parser.Misc
 				basePathQueue.Push (new PathQueueArgs (path, skipFunctionBodies, countObj));
 			}
 			preparationThreadStartEvent.Set ();
+
+			LaunchPreparationThread ();
 		}
+
+		const int ThreadWaitTimeout = 5000;
 
 		static void preparationTh ()
 		{
 			while (true) {
-				if (basePathQueue.IsEmpty)
-					preparationThreadStartEvent.WaitOne ();
+				if (basePathQueue.IsEmpty && !preparationThreadStartEvent.WaitOne (ThreadWaitTimeout))
+					return;
 
 				PathQueueArgs tup;
 				while (basePathQueue.TryPop(out tup)) {
@@ -342,8 +357,10 @@ namespace D_Parser.Misc
 						noticeFinish (new ParseIntermediate (statIm, newRoot, string.Empty));
 						continue;
 					}
-				
+
 					parseThreadStartEvent.Set ();
+
+					LaunchParseThreads ();
 
 					if (files.Length != 0)
 						for (int i = 0; i < files.Length; i++)
@@ -364,9 +381,8 @@ namespace D_Parser.Misc
 		static void parseTh ()
 		{
 			while (true) {
-				if (queue.IsEmpty) {
-					parseThreadStartEvent.WaitOne ();
-				}
+				if (queue.IsEmpty && !parseThreadStartEvent.WaitOne (ThreadWaitTimeout))
+					return;
 
 				ParseIntermediate p;
 				while (queue.TryPop(out p)) {
