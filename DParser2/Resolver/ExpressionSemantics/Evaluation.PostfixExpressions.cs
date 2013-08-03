@@ -730,16 +730,16 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			{
 				foreExpression = DResolver.StripMemberSymbols(AbstractType.Get(foreExpression));
 				
-				if (foreExpression is AssocArrayType)
-				{
-					var ar = (AssocArrayType)foreExpression;
+				if (foreExpression is AssocArrayType) {
+					var ar = foreExpression as AssocArrayType;
 					/*
 					 * myType_Array[0] -- returns TypeResult myType
 					 * return the value type of a given array result
 					 */
 					//TODO: Handle opIndex overloads
 
-					return new ArrayAccessSymbol(x,ar.ValueType);
+					return ar.ValueType;
+					//return new ArrayAccessSymbol(x,ar.ValueType);
 				}
 				/*
 				 * int* a = new int[10];
@@ -747,7 +747,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				 * a[0] = 12;
 				 */
 				else if (foreExpression is PointerType)
-					return new ArrayAccessSymbol(x,((PointerType)foreExpression).Base);
+					return (foreExpression as PointerType).Base;
+					//return new ArrayAccessSymbol(x,((PointerType)foreExpression).Base);
 
 				else if (foreExpression is DTuple)
 				{

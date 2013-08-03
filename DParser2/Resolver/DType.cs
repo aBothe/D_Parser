@@ -509,11 +509,17 @@ namespace D_Parser.Resolver
 	/// <summary>
 	/// Intermediate result when evaluating e.g. myArray[0]
 	/// </summary>
-	public class ArrayAccessSymbol : MemberSymbol
+	/*public class ArrayAccessSymbol : DerivedDataType
 	{
 		public ArrayAccessSymbol(PostfixExpression_Index indexExpr, AbstractType arrayValueType):
-			base(null,arrayValueType,indexExpr)	{ }
-	}
+			base(arrayValueType,indexExpr)	{ }
+
+		public override string ToCode ()
+		{
+			return (Base != null ? Base.ToCode () : string.Empty) + "[" + 
+				base.DeclarationOrExpressionBase.ToString() + "]";
+		}
+	}*/
 
 	public class ModuleSymbol : DSymbol
 	{
