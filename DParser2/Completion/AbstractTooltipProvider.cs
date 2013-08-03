@@ -38,7 +38,7 @@ namespace D_Parser.Completion
 					if(v!=null && !(v is ErrorValue))
 						l.Add(BuildTooltipContent(v));
 					else
-					  rr = Evaluation.EvaluateTypes((IExpression)o, ctxt);
+					  rr = Evaluation.EvaluateTypes(x, ctxt);
 				}
 				else if(o is ITypeDeclaration)
 					rr = TypeDeclarationResolver.Resolve((ITypeDeclaration)o, ctxt);
