@@ -34,11 +34,6 @@ namespace D_Parser
 		static System.Threading.AutoResetEvent access = new System.Threading.AutoResetEvent(true);
 		static readonly Dictionary<int,string> Table = new Dictionary<int, string>();
 
-		static Strings()
-		{
-			//Table [0] = string.Empty;
-		}
-
 		public static void Add(string s)
 		{
 			if (s != null && s.Length != 0) {
@@ -50,13 +45,13 @@ namespace D_Parser
 
 		public static string TryGet(int hash)
 		{
-			if (hash == 0)
-				return null;
-			string s;
-			access.WaitOne ();
-			Table.TryGetValue (hash, out s);
-			access.Set ();
-			return s;
+			if (hash != 0)
+			{
+				string s;
+				Table.TryGetValue(hash, out s);
+				return s;
+			}
+			return null;
 		}
 	}
 }
