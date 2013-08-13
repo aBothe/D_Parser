@@ -1892,19 +1892,19 @@ namespace D_Parser.Parser
 					Step(); // Skip (
 	
 					TrackerVariables.ExpectingIdentifier = true;
-					var n = "";
+					var sb = new StringBuilder ();
 					while (!IsEOF && laKind != CloseParenthesis)
 					{
 						Step();
-						n += t.ToString();
+						sb.Append(t.ToString());
 
 						TrackerVariables.ExpectingIdentifier = false;
 	
 						if (t.Kind == Identifier && laKind == Identifier)
-							n += ' ';
+							sb.Append(' ');
 					}
 	
-					m.LiteralContent = n;
+					m.LiteralContent = sb.ToString();
 	
 					if (!Expect(CloseParenthesis))
 						return;

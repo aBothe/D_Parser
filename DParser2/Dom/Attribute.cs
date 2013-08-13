@@ -117,24 +117,37 @@ namespace D_Parser.Dom
     public class Modifier : DAttribute
     {
         public readonly byte Token;
-        public object LiteralContent;
+		public int ContentHash;
+		object content;
+		public object LiteralContent { 
+			get{
+				return content ?? Strings.TryGet (ContentHash); 
+			} 
+			set{ 
+				if (value is string) {
+					ContentHash = value.GetHashCode ();
+					Strings.Add (value as string);
+					content = null;
+				} else
+					content = value;
+			 }
+		}
         public static readonly Modifier Empty = new Modifier(0xff);
 
         public Modifier(byte Token)
         {
             this.Token = Token;
-            LiteralContent = null;
         }
 
-        public Modifier(byte Token, object Content)
+        public Modifier(byte Token, string Content)
         {
             this.Token = Token;
-            this.LiteralContent = Content;
+			LiteralContent = Content;
         }
 
         public override string ToString()
         {
-			if (LiteralContent != null)
+			if (ContentHash != 0 || content != null)
                 return DTokens.GetTokenString(Token) + "(" + LiteralContent.ToString() + ")";
 			return DTokens.GetTokenString(Token);
         }
@@ -245,11 +258,9 @@ namespace D_Parser.Dom
     
     public class DeprecatedAttribute : Modifier
     {
-    	public IExpression DeprecationMessage
-    	{
-    		get{return LiteralContent as IExpression;}
-    	}
-    	public DeprecatedAttribute(CodeLocation loc, CodeLocation endLoc, IExpression msg = null)
+		public IExpression DeprecationMessage {get{ return LiteralContent as IExpression; }}
+
+		public DeprecatedAttribute(CodeLocation loc, CodeLocation endLoc, IExpression msg = null)
     		: base(DTokens.Deprecated)
     	{
     		this.Location = loc;
@@ -312,11 +323,15 @@ namespace D_Parser.Dom
 
 	public class VersionCondition : DeclarationCondition
 	{
-		public readonly string VersionId;
+		public readonly int VersionIdHash;
+		public string VersionId {get{ return Strings.TryGet(VersionIdHash); }}
 		public readonly int VersionNumber;
 		public CodeLocation IdLocation;
 
-		public VersionCondition(string versionIdentifier) { VersionId = versionIdentifier; }
+		public VersionCondition(string versionIdentifier) { 
+			VersionIdHash = versionIdentifier.GetHashCode();
+			Strings.Add (versionIdentifier); 
+		}
 		public VersionCondition(int versionNumber) { VersionNumber = versionNumber; }
 
 		public override void Accept(NodeVisitor vis)
@@ -337,18 +352,22 @@ namespace D_Parser.Dom
 		public override bool Equals(IDeclarationCondition other)
 		{
 			var v = other as VersionCondition;
-			return v != null && v.VersionId == VersionId && v.VersionNumber == VersionNumber;
+			return v != null && v.VersionIdHash == VersionIdHash && v.VersionNumber == VersionNumber;
 		}
 	}
 
 	public class DebugCondition : DeclarationCondition
 	{
-		public string DebugId { get; private set; }
-		public int DebugLevel { get; private set; }
+		public readonly int DebugIdHash;
+		public string DebugId {get{ return Strings.TryGet(DebugIdHash); }}
+		public readonly int DebugLevel;
 		public CodeLocation IdLocation;
 
 		public DebugCondition() { }
-		public DebugCondition(string debugIdentifier) { DebugId = debugIdentifier; }
+		public DebugCondition(string debugIdentifier) { 
+			DebugIdHash = debugIdentifier.GetHashCode ();
+			Strings.Add(debugIdentifier); 
+		}
 		public DebugCondition(int debugLevel) { DebugLevel = debugLevel; }
 
 		public override void Accept(NodeVisitor vis)
@@ -364,19 +383,19 @@ namespace D_Parser.Dom
 		public bool HasNoExplicitSpecification
 		{
 			get {
-				return DebugId == null && DebugLevel == 0;
+				return DebugIdHash == 0 && DebugLevel == 0;
 			}
 		}
 
 		public override string ToString()
 		{
-			return HasNoExplicitSpecification ? "debug" : ("debug(" + (DebugId ?? DebugLevel.ToString()) + ")");
+			return HasNoExplicitSpecification ? "debug" : ("debug(" + (DebugIdHash != 0 ? DebugId : DebugLevel.ToString()) + ")");
 		}
 
 		public override bool Equals(IDeclarationCondition other)
 		{
 			var v = other as DebugCondition;
-			return v != null && v.DebugId == DebugId && v.DebugLevel == DebugLevel;
+			return v != null && v.DebugIdHash == DebugIdHash && v.DebugLevel == DebugLevel;
 		}
 	}
 
