@@ -10,6 +10,37 @@ namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public class StaticPropertyResolver
 	{
+		class StaticProps
+		{
+			public static readonly int init = "init".GetHashCode ();
+			public static readonly int @sizeof = "sizeof".GetHashCode ();
+			public static readonly int length = "length".GetHashCode ();
+			public static readonly int ptr = "ptr".GetHashCode ();
+			public static readonly int dup = "dup".GetHashCode ();
+			public static readonly int idup = "idup".GetHashCode ();
+			public static readonly int reverse = "reverse".GetHashCode ();
+			public static readonly int sort = "sort".GetHashCode ();
+			public static readonly int keys = "keys".GetHashCode ();
+			public static readonly int values = "values".GetHashCode ();
+			public static readonly int rehash = "rehash".GetHashCode ();
+			public static readonly int byKey = "byKey".GetHashCode ();
+			public static readonly int byValue = "byValue".GetHashCode ();
+			public static readonly int @get = "get".GetHashCode ();
+			public static readonly int funcptr = "funcptr".GetHashCode ();
+			//public static readonly int  = "".GetHashCode ();
+
+		}
+
+		public static ISemantic TryResolveStaticProperties(
+			ISemantic InitialResult, 
+			string propertyIdentifier, 
+			ResolutionContext ctxt = null, 
+			bool Evaluate = false,
+			IdentifierDeclaration idContainter = null)
+		{
+			return TryResolveStaticProperties (InitialResult, propertyIdentifier.GetHashCode (), ctxt, Evaluate, idContainter);
+		}
+
 		/// <summary>
 		/// Tries to resolve a static property's name.
 		/// Returns a result describing the theoretical member (".init"-%gt;MemberResult; ".typeof"-&gt;TypeResult etc).
@@ -19,7 +50,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// <returns></returns>
 		public static ISemantic TryResolveStaticProperties(
 			ISemantic InitialResult, 
-			string propertyIdentifier, 
+			int propertyIdentifierHash, 
 			ResolutionContext ctxt = null, 
 			bool Evaluate = false,
 			IdentifierDeclaration idContainter = null)
@@ -71,21 +102,21 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				if (InitialResult is ArrayType)
 				{
 					var at = (ArrayType)InitialResult;
-					switch (propertyIdentifier)
+					switch (propertyIdentifierHash)
 					{
-						case "init":
+						case StaticProps.init:
 							prop = new StaticProperty("init",
 									at.IsStaticArray ? "Returns an array literal with each element of the literal being the .init property of the array element type." : "Returns null.",
 									at, relatedNode, idContainter);
 							//TODO
 							break;
-						case "sizeof":
+						case StaticProps.@sizeof:
 							prop = new StaticProperty("sizeof", 
 									"Returns the array length multiplied by the number of bytes per array element.",
 									ctxt.ParseCache.SizeT, relatedNode, idContainter);
 							
 							break;
-						case "length":
+						case StaticProps.length:
 							if (Evaluate && val is ArrayValue)
 							{
 								var av = val as ArrayValue;
@@ -95,7 +126,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 									"Returns the number of elements in the array. This is a fixed quantity for static arrays.",
 									ctxt.ParseCache.SizeT, relatedNode, idContainter);
 							break;
-						case "ptr":
+						case StaticProps.ptr:
 							if(!Evaluate)
 							{
 								return new StaticProperty("ptr", 
@@ -103,25 +134,25 @@ namespace D_Parser.Resolver.ExpressionSemantics
 									new PointerType(at.ValueType, idContainter), relatedNode, idContainter);
 							}
 							break;
-						case "dup":
+						case StaticProps.dup:
 							if (!Evaluate)
 								return new StaticProperty("dup", 
 									"Create a dynamic array of the same size and copy the contents of the array into it.",
 									at, relatedNode, idContainter);
 							break;
-						case "idup":
+						case StaticProps.idup:
 							if (!Evaluate)
 								return new StaticProperty("idup",
 									"Create a dynamic array of the same size and copy the contents of the array into it. The copy is typed as being immutable. D 2.0 only",
 									at, relatedNode, idContainter);
 							break;
-						case "reverse":
+						case StaticProps.reverse:
 							if (!Evaluate)
 								return new StaticProperty("reverse",
 									"Reverses in place the order of the elements in the array. Returns the array.",
 									at, relatedNode, idContainter);
 							break;
-						case "sort":
+						case StaticProps.sort:
 							if (!Evaluate)
 								return new StaticProperty("sort",
 									"Sorts in place the order of the elements in the array. Returns the array.",
@@ -132,39 +163,39 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				else if (InitialResult is AssocArrayType)
 				{
 					var aat = (AssocArrayType)InitialResult;
-					switch (propertyIdentifier)
+					switch (propertyIdentifierHash)
 					{
-						case "sizeof":
+						case StaticProps.@sizeof:
 							if (!Evaluate)
 								return new StaticProperty("sizeof",
 									"Returns the size of the reference to the associative array; it is 4 in 32-bit builds and 8 on 64-bit builds.",
 									ctxt.ParseCache.SizeT, relatedNode, idContainter);
 							break;
-						case "length":
+						case StaticProps.length:
 							if (!Evaluate)
 								return new StaticProperty("length",
 									"Returns number of values in the associative array. Unlike for dynamic arrays, it is read-only.",
 									ctxt.ParseCache.SizeT, relatedNode, idContainter);
 							break;
-						case "keys":
+						case StaticProps.keys:
 							if (!Evaluate)
 								return new StaticProperty("keys",
 									"Returns dynamic array, the elements of which are the keys in the associative array.",
 									new ArrayType(aat.KeyType, idContainter), relatedNode, idContainter);
 							break;
-						case "values":
+						case StaticProps.values:
 							if (!Evaluate)
 								return new StaticProperty("values",
 									"Returns dynamic array, the elements of which are the values in the associative array.",
 									new ArrayType(aat.ValueType, idContainter), relatedNode, idContainter);
 							break;
-						case "rehash":
+						case StaticProps.rehash:
 							if (!Evaluate)
 								return new StaticProperty("rehash",
 									"Reorganizes the associative array in place so that lookups are more efficient. rehash is effective when, for example, the program is done loading up a symbol table and now needs fast lookups in it. Returns a reference to the reorganized array.",
 									aat, relatedNode, idContainter);
 							break;
-						case "byKey":
+						case StaticProps.byKey:
 							if (!Evaluate)
 								return new StaticProperty("byKey",
 									"Returns a delegate suitable for use as an Aggregate to a ForeachStatement which will iterate over the keys of the associative array.",
@@ -172,7 +203,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 										new DelegateDeclaration{ ReturnType = aat.KeyType.DeclarationOrExpressionBase as ITypeDeclaration }), 
 									relatedNode, idContainter);
 							break;
-						case "byValue":
+						case StaticProps.byValue:
 							if (!Evaluate)
 								return new StaticProperty("byValue",
 									"Returns a delegate suitable for use as an Aggregate to a ForeachStatement which will iterate over the values of the associative array.",
@@ -180,7 +211,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 										new DelegateDeclaration { ReturnType = aat.ValueType.DeclarationOrExpressionBase as ITypeDeclaration }),
 									relatedNode, idContainter);
 							break;
-						case "get":
+						case StaticProps.@get:
 							if (!Evaluate)
 								return new StaticProperty("get",
 									"Looks up key; if it exists returns corresponding value else evaluates and returns defaultValue.",
@@ -206,7 +237,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				{
 					var tt = InitialResult as DTuple;
 					
-					if(propertyIdentifier == "length"){
+					if(propertyIdentifierHash == StaticProps.length){
 						if(Evaluate)
 							return new PrimitiveValue(DTokens.Uint, tt.Items == null ? 0m : (decimal)tt.Items.Length, null, 0m);
 						return new StaticProperty("length",
@@ -220,9 +251,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				{
 					if(!Evaluate)
 					{
-						if (propertyIdentifier == "ptr")
+						if (propertyIdentifierHash == StaticProps.ptr)
 							return new PointerType(new PrimitiveType(DTokens.Void), idContainter);
-						else if (propertyIdentifier == "funcptr")
+						else if (propertyIdentifierHash == StaticProps.funcptr)
 							return InitialResult;
 					}
 				}
@@ -232,9 +263,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					var pt = (PrimitiveType)InitialResult;
 					
 					if(DTokens.BasicTypes_Integral[pt.TypeToken])
-						switch(propertyIdentifier)
+						switch(propertyIdentifierHash)
 						{
-							case "init":
+							case StaticProps.init:
 								if (!Evaluate)
 									return new StaticProperty("init", "Initializer (0)", pt, relatedNode, idContainter);
 								break;
@@ -248,9 +279,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 								break;
 						}
 					else if(DTokens.BasicTypes_FloatingPoint[pt.TypeToken])
-						switch(propertyIdentifier)
+						switch(propertyIdentifierHash)
 						{
-							case "init":
+							case StaticProps.init:
 								if (!Evaluate)
 									return new StaticProperty("init", "Initializer (NaN)", pt, relatedNode, idContainter);
 								break;
@@ -321,7 +352,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return prop;
 
 			#region init
-			if (propertyIdentifier == "init")
+			if (propertyIdentifierHash == StaticProps.init)
 			{
 				var prop_Init = new DVariable
 				{
@@ -349,7 +380,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			#endregion
 
 			#region sizeof
-			if (propertyIdentifier == "sizeof")
+			if (propertyIdentifierHash == StaticProps.@sizeof)
 				return new MemberSymbol(new DVariable
 					{
 						Name = "sizeof",
@@ -360,7 +391,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			#endregion
 
 			#region alignof
-			if (propertyIdentifier == "alignof")
+			if (propertyIdentifierHash == "alignof")
 			{
 				if(Evaluate)
 				{
@@ -377,7 +408,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			#endregion
 
 			#region mangleof
-			if (propertyIdentifier == "mangleof")
+			if (propertyIdentifierHash == "mangleof")
 			{
 				if(Evaluate)
 					return new ArrayValue(Evaluation.GetStringType(ctxt), "<todo>"/*NameMangling.Mangle(AbstractType.Get(InitialResult))*/);
@@ -390,13 +421,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			#endregion
 
 			#region stringof
-			if (propertyIdentifier == "stringof")
+			if (propertyIdentifierHash == "stringof")
 				return new StaticProperty("stringof", "String representing the source representation of the type",
 					Evaluation.GetStringType(ctxt), relatedNode, idContainter);
 			#endregion
 
 			#region classinfo
-			else if (propertyIdentifier == "classinfo")
+			else if (propertyIdentifierHash == "classinfo")
 			{
 				var tr = DResolver.StripMemberSymbols(AbstractType.Get(InitialResult)) as TemplateIntermediateType;
 

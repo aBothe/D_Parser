@@ -596,9 +596,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				if (!ResolveImmediateBaseType)
 					ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.DontResolveBaseTypes;
 
-				var id = (acc.AccessExpression as IdentifierExpression).Value as string;
+				var id = acc.AccessExpression as IdentifierExpression;
 
-				overloads = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(id, new[] { AbstractType.Get(baseExpression) }, ctxt, acc.AccessExpression);
+				overloads = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(id.ValueStringHash, new[] { AbstractType.Get(baseExpression) }, ctxt, acc.AccessExpression);
 
 				if (!ResolveImmediateBaseType)
 					ctxt.CurrentContext.ContextDependentOptions = optBackup;
@@ -606,7 +606,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				// Might be a static property
 				if (overloads == null)
 				{
-					var staticTypeProperty = StaticPropertyResolver.TryResolveStaticProperties(baseExpression, id, ctxt, eval);
+					var staticTypeProperty = StaticPropertyResolver.TryResolveStaticProperties(baseExpression, id.ValueStringHash, ctxt, eval);
 
 					if (staticTypeProperty != null)
 						return new[] { staticTypeProperty };
