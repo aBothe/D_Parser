@@ -38,7 +38,7 @@ namespace D_Parser.Dom
 		public string Name
 		{
 			get { return Strings.TryGet(nameHash); }
-			set { nameHash = value.GetHashCode(); Strings.Add (value); }
+			set { nameHash = value != null ? value.GetHashCode() : 0; Strings.Add (value); }
 		}
 
 		public int NameHash

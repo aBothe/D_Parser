@@ -35,7 +35,7 @@ namespace D_Parser.Dom
 
 		public TemplateParameter(string name, CodeLocation nameLoc, DNode par)
 		{
-			NameHash = name.GetHashCode();
+			NameHash = name != null ? name.GetHashCode() : 0;
 			Strings.Add (name);
 			NameLocation = nameLoc;
 			this.parent = new WeakReference (par);

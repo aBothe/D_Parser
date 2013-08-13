@@ -21,9 +21,9 @@ namespace TestTool
 			sw2.Start();
 			var ast = DParser.ParseString(code, true);
 			sw2.Stop();*/
-			(new ResolutionTests ()).EmptyTypeTuple ();
+			//(new ResolutionTests ()).EmptyTypeTuple ();
 			//(new ParseTests()).TestPhobos();
-			return;
+			//return;
 
 			// Indent testing
 			/*var code = @"
@@ -42,36 +42,48 @@ namespace TestTool
 			Console.ReadKey(true);
 			return;*/
 
-			/*
+			
 			// Phobos & Druntime parsing
 			UFCSCache.SingleThreaded = true;
-			var pc = new ParseCache ();
-			pc.EnableUfcsCaching = false;
-			pc.ParsedDirectories.Add ();
-			//pc.ParsedDirectories.Add (@"/usr/include/dmd/druntime/import");
 			
 			Console.WriteLine ("Begin parsing...");
 
-			foreach (var dir in pc.ParsedDirectories) {
-				var ppd = ThreadedDirectoryParser.Parse(dir, pc.Root, false);
-				Console.WriteLine("Parsed {0} in {1}s", dir, ppd.TotalDuration);
-			}
+			var dirs = new[]{@"D:\D\dmd2\src\phobos", @"D:\D\dmd2\src\druntime\import"};
+			var dirsLeft = dirs.Length;
+			var ev=new System.Threading.AutoResetEvent(false);
+			GlobalParseCache.BeginAddOrUpdatePaths(dirs, false, (pc) =>
+			{
+				Console.WriteLine("{1}ms", pc.Directory, pc.Duration);
+				ev.Set();
+			});
+
+			ev.WaitOne();
+
 			Console.WriteLine("done.");
 			Console.WriteLine();
-			var uc = new UFCSCache();
-			var pcl = ParseCacheList.Create(pc);
+			var pcw = new ParseCacheView(dirs);
 			var ccf = new ConditionalCompilationFlags(new[]{ "Windows", "D2" }, 1, true, null, 0);
 			
 			Console.WriteLine("Begin building ufcs cache...");
 			var sw = new Stopwatch();
 			sw.Restart();
-			uc.Update(pcl, ccf, pc);
+			foreach (var dir in dirs)
+			{
+				var ufcs = GlobalParseCache.GetRootPackage(dir).UfcsCache;
+				ufcs.AnalysisFinished += (root) =>
+				{
+					if (System.Threading.Interlocked.Decrement(ref dirsLeft) <= 0)
+						ev.Set();
+				};
+				ufcs.BeginUpdate(pcw, ccf);
+			}
+			ev.WaitOne();
 			sw.Stop();
 			Console.WriteLine("done. {0}ms needed.", sw.ElapsedMilliseconds);
-			*/
+			
 			Console.WriteLine();
 			Console.Write("Press any key to continue . . . ");
-			Console.ReadKey(true);
+			//Console.ReadKey(true);
 		}
 		
 		static void formattingTests()

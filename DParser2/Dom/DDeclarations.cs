@@ -15,7 +15,7 @@ namespace D_Parser.Dom
 		public string Id
 		{
 			get{ return Strings.TryGet (IdHash); }
-			set{ IdHash = value.GetHashCode (); Strings.Add (value); }
+			set{ IdHash = value != null ? value.GetHashCode () : 0; Strings.Add (value); }
 		}
 
         public IdentifierDeclaration() { }
