@@ -37,8 +37,9 @@ namespace D_Parser
 		public static void Add(string s)
 		{
 			if (s != null && s.Length != 0) {
+				var hash = s.GetHashCode ();
 				access.WaitOne ();
-				Table [s.GetHashCode ()] = s;
+				Table [hash] = s;
 				access.Set ();
 			}
 		}
