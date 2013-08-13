@@ -68,7 +68,7 @@ void main(){
 
 			lpo = GetLastParsedObject ("templ!(hello.", out expectNodeName);
 			Assert.That (lpo, Is.TypeOf (typeof(PostfixExpression_Access)));
-			Assert.That (((lpo as PostfixExpression_Access).PostfixForeExpression as IdentifierExpression).Value, Is.EqualTo ("hello"));
+			Assert.That (((lpo as PostfixExpression_Access).PostfixForeExpression as IdentifierExpression).StringValue, Is.EqualTo ("hello"));
 			Assert.That (expectNodeName, Is.False);
 
 			lpo = GetLastParsedObject ("templ!(hello).", out expectNodeName);

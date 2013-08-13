@@ -74,7 +74,7 @@ namespace D_Parser.Resolver.TypeResolution
 				while (!ctxt.CurrentContext.DeducedTemplateParameters.TryGetValue(idHash, out dedTemplateParam))
 				{
 					if (ctxt.PrevContextIsInSameHierarchy) {
-						if(tstk!=null)
+						if(tstk==null)
 							tstk = new Stack<ContextFrame>();
 						tstk.Push (ctxt.Pop ());
 					}

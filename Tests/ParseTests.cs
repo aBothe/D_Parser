@@ -37,7 +37,7 @@ namespace Tests
 		{
 			var e = DParser.ParseExpression(@"`a`\n""lolol""");
 
-			Assert.AreEqual("a\nlolol", (e as IdentifierExpression).Value);
+			Assert.AreEqual("a\nlolol", (e as IdentifierExpression).StringValue);
 		}
 
 		public void ParseEmptyCharLiteral()

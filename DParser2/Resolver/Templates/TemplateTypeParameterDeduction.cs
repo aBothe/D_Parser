@@ -27,7 +27,7 @@ namespace D_Parser.Resolver.Templates
 				return false;
 
 			// Apply the entire argument to parameter p if there hasn't been no explicit association yet
-			if (!TargetDictionary.ContainsKey(p.NameHash) || TargetDictionary[p.NameHash] == null)
+			if (TargetDictionary[p.NameHash] == null)
 				TargetDictionary[p.NameHash] = new TemplateParameterSymbol(p, arg);
 
 			return true;
@@ -81,10 +81,10 @@ namespace D_Parser.Resolver.Templates
 		bool HandleDecl(TemplateTypeParameter p, IdentifierDeclaration id, ISemantic r)
 		{
 			// Bottom-level reached
-			if (id.InnerDeclaration == null && Contains(id.Id) && !id.ModuleScoped)
+			if (id.InnerDeclaration == null && Contains(id.IdHash) && !id.ModuleScoped)
 			{
 				// Associate template param with r
-				return Set((p != null && id.Id == p.Name) ? p : null, r, id.Id);
+				return Set((p != null && id.IdHash == p.NameHash) ? p : null, r, id.IdHash);
 			}
 
 			/*
@@ -293,7 +293,7 @@ namespace D_Parser.Resolver.Templates
 				 * test if it's part of the parameter list
 				 */
 				var id = x_param as IdentifierExpression;
-				if(id!=null && id.IsIdentifier && Contains((string)id.Value))
+				if(id!=null && id.IsIdentifier && Contains(id.ValueStringHash))
 				{
 					// If an expression (the usual case) has been passed as argument, evaluate its value, otherwise is its type already resolved.
 					ISemantic finalArg = null;
@@ -313,7 +313,7 @@ namespace D_Parser.Resolver.Templates
 					// The affected parameter must also be a value parameter then, if an expression was given.
 
 					// and handle it as if it was an identifier declaration..
-					result = Set(parameterRef, finalArg, (string)id.Value); 
+					result = Set(parameterRef, finalArg, id.ValueStringHash); 
 				}
 				else if (ad_Argument != null && ad_Argument.KeyExpression != null)
 				{

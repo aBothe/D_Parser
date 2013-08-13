@@ -20,9 +20,7 @@ namespace D_Parser.Resolver.Templates
 			if (parameters != null)
 			{
 				foreach (var tpar in parameters)
-				{
-					this[tpar.NameHash] = null;
-				}
+					this.Add(tpar.NameHash,null);
 			}
 		}
 
@@ -36,7 +34,7 @@ namespace D_Parser.Resolver.Templates
 
 			if (ms.DeducedTypes != null)
 				foreach (var i in ms.DeducedTypes)
-					this[i.NameHash] = i;
+					this.Add(i.NameHash,i);
 		}
 		/*
 		public DeducedTypeDictionary(IEnumerable<TemplateParameterSymbol> l, DNode parameterOwner)
@@ -64,6 +62,19 @@ namespace D_Parser.Resolver.Templates
 						return false;
 
 				return true;
+			}
+		}
+
+		public new TemplateParameterSymbol this[int nameHash]
+		{
+			get{
+				TemplateParameterSymbol tps;
+				base.TryGetValue (nameHash, out tps);
+				return tps;
+			}
+			set{
+				base.Remove (nameHash);
+				base.Add (nameHash, value);
 			}
 		}
 	}

@@ -36,12 +36,12 @@ namespace D_Parser
 
 		static Strings()
 		{
-			Table [0] = string.Empty;
+			//Table [0] = string.Empty;
 		}
 
 		public static void Add(string s)
 		{
-			if (s != null) {
+			if (s != null && s.Length != 0) {
 				access.WaitOne ();
 				Table [s.GetHashCode ()] = s;
 				access.Set ();
@@ -50,6 +50,8 @@ namespace D_Parser
 
 		public static string TryGet(int hash)
 		{
+			if (hash == 0)
+				return null;
 			string s;
 			access.WaitOne ();
 			Table.TryGetValue (hash, out s);

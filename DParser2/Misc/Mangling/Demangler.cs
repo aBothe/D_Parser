@@ -307,11 +307,11 @@ namespace D_Parser.Misc.Mangling
 				case 'I':
 					return new MemberSymbol(null,null, QualifiedName());
 				case 'C':
-					return new ClassType(null, QualifiedName(), null);
+					return new ClassType(new DClassLike(DTokens.Class), QualifiedName(), null);
 				case 'S':
-					return new StructType(null, QualifiedName());
+					return new StructType(new DClassLike(DTokens.Struct), QualifiedName());
 				case 'E':
-					return new EnumType(null, null, QualifiedName());
+					return new EnumType(new DEnum(), null, QualifiedName());
 				case 'T':
 					return new AliasedType(null, null, QualifiedName());
 				case 'D':

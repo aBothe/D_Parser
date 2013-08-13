@@ -115,6 +115,11 @@ namespace D_Parser.Resolver.Templates
 			return TargetDictionary.ContainsKey (parameterName.GetHashCode ());
 		}
 
+		bool Contains(int parameterNameHash)
+		{
+			return TargetDictionary.ContainsKey (parameterNameHash);
+		}
+
 		bool Set(TemplateParameter p, ISemantic r, string name=null)
 		{
 			return Set (p, r, name != null ? name.GetHashCode () : 0);
