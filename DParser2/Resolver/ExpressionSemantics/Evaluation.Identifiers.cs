@@ -201,9 +201,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			
 			AbstractType[] res;
 			if (resultBases == null)
-				res = TypeDeclarationResolver.ResolveIdentifier(tix.TemplateId, ctxt, tix, tix.ModuleScopedIdentifier);
+				res = TypeDeclarationResolver.ResolveIdentifier(tix.TemplateIdHash, ctxt, tix, tix.ModuleScopedIdentifier);
 			else
-				res = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(tix.TemplateId, resultBases, ctxt, tix);
+				res = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(tix.TemplateIdHash, resultBases, ctxt, tix);
 
 			return (ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) == 0 && deduceParameters ?
 				TemplateInstanceHandler.DeduceParamsAndFilterOverloads(res, tix, ctxt) : res;

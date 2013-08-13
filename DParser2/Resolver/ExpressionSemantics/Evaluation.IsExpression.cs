@@ -51,7 +51,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			 */
 
 			var tpl_params = new DeducedTypeDictionary(isExpression.TemplateParameterList);
-			tpl_params[isExpression.TypeAliasIdentifier] = null;
+			tpl_params[isExpression.TypeAliasIdentifier.GetHashCode()] = null;
 
 			var tpd = new TemplateParameterDeduction(tpl_params, ctxt);
 			bool retTrue = false;
@@ -69,7 +69,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				{
 					var r = evalIsExpression_EvalSpecToken(isExpression, typeToCheck, true);
 					retTrue = r.Item1;
-					tpl_params[isExpression.TypeAliasIdentifier] = new TemplateParameterSymbol(null, r.Item2);
+					tpl_params[isExpression.TypeAliasIdentifier.GetHashCode()] = new TemplateParameterSymbol(null, r.Item2);
 				}
 			}
 			else // 5.
@@ -77,7 +77,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			if (retTrue && isExpression.TemplateParameterList != null)
 				foreach (var p in isExpression.TemplateParameterList)
-					if (!tpd.Handle(p, tpl_params[p.Name] != null ? tpl_params[p.Name].Base : null))
+					if (!tpd.Handle(p, tpl_params[p.NameHash] != null ? tpl_params[p.NameHash].Base : null))
 						return false;
 
 			//TODO: Put all tpl_params results into the resolver context or make a new scope or something! 

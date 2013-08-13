@@ -50,11 +50,16 @@ namespace D_Parser.Resolver.TypeResolution
 			return l.ToArray();
 		}
 
+		public static AbstractType[] ResolveIdentifier(string id, ResolutionContext ctxt, object idObject, bool ModuleScope = false)
+		{
+			return ResolveIdentifier (id.GetHashCode (), ctxt, idObject, ModuleScope);
+		}
+
 		/// <summary>
 		/// Resolves an identifier and returns the definition + its base type.
 		/// Does not deduce any template parameters or nor filters out unfitting template specifications!
 		/// </summary>
-		public static AbstractType[] ResolveIdentifier(string id, ResolutionContext ctxt, object idObject, bool ModuleScope = false)
+		public static AbstractType[] ResolveIdentifier(int idHash, ResolutionContext ctxt, object idObject, bool ModuleScope = false)
 		{
 			var loc = idObject is ISyntaxRegion ? ((ISyntaxRegion)idObject).Location : CodeLocation.Empty;
 
@@ -64,24 +69,28 @@ namespace D_Parser.Resolver.TypeResolution
 			// If there are symbols that must be preferred, take them instead of scanning the ast
 			else
 			{
-				var tstk = new Stack<ContextFrame>();
-				TemplateParameterSymbol dedTemplateParam = null;
-				while (!ctxt.CurrentContext.DeducedTemplateParameters.TryGetValue(id, out dedTemplateParam))
+				Stack<ContextFrame> tstk = null;
+				TemplateParameterSymbol dedTemplateParam;
+				while (!ctxt.CurrentContext.DeducedTemplateParameters.TryGetValue(idHash, out dedTemplateParam))
 				{
-					if (ctxt.PrevContextIsInSameHierarchy)
-						tstk.Push(ctxt.Pop());
+					if (ctxt.PrevContextIsInSameHierarchy) {
+						if(tstk!=null)
+							tstk = new Stack<ContextFrame>();
+						tstk.Push (ctxt.Pop ());
+					}
 					else
 						break;
 				}
 
-				while (tstk.Count > 0)
-					ctxt.Push(tstk.Pop());
+				if(tstk != null)
+					while (tstk.Count > 0)
+						ctxt.Push(tstk.Pop());
 
 				if (dedTemplateParam != null)
 					return new[] { dedTemplateParam };
 			}
 
-			var res = NameScan.SearchAndResolve(ctxt, loc, id, idObject);
+			var res = NameScan.SearchAndResolve(ctxt, loc, idHash, idObject);
 
 			if (ModuleScope)
 				ctxt.Pop();
@@ -115,10 +124,10 @@ namespace D_Parser.Resolver.TypeResolution
 
 		public static AbstractType[] Resolve(IdentifierDeclaration id, ResolutionContext ctxt, AbstractType[] resultBases = null, bool filterForTemplateArgs = true)
 		{
-			AbstractType[] res = null;
+			AbstractType[] res;
 
 			if (id.InnerDeclaration == null && resultBases == null)
-				res = ResolveIdentifier(id.Id, ctxt, id, id.ModuleScoped);
+				res = ResolveIdentifier(id.IdHash, ctxt, id, id.ModuleScoped);
 			else
 			{
 				var rbases = resultBases ?? Resolve(id.InnerDeclaration, ctxt);
@@ -126,7 +135,7 @@ namespace D_Parser.Resolver.TypeResolution
 				if (rbases == null || rbases.Length == 0)
 					return null;
 
-				res = ResolveFurtherTypeIdentifier(id.Id, rbases, ctxt, id);
+				res = ResolveFurtherTypeIdentifier(id.IdHash, rbases, ctxt, id);
 			}
 
 			if (filterForTemplateArgs && (ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) == 0)
@@ -143,12 +152,20 @@ namespace D_Parser.Resolver.TypeResolution
 				return res;
 		}
 
+		public static AbstractType[] ResolveFurtherTypeIdentifier(string nextIdentifier,
+		                                                          IEnumerable<AbstractType> resultBases,
+		                                                          ResolutionContext ctxt,
+		                                                          object typeIdObject = null)
+		{
+			return ResolveFurtherTypeIdentifier (nextIdentifier.GetHashCode (), resultBases, ctxt, typeIdObject);
+		}
+
 		/// <summary>
 		/// Used for searching further identifier list parts.
 		/// 
 		/// a.b -- nextIdentifier would be 'b' whereas <param name="resultBases">resultBases</param> contained the resolution result for 'a'
 		/// </summary>
-		public static AbstractType[] ResolveFurtherTypeIdentifier(string nextIdentifier,
+		public static AbstractType[] ResolveFurtherTypeIdentifier(int nextIdentifierHash,
 			IEnumerable<AbstractType> resultBases,
 			ResolutionContext ctxt,
 			object typeIdObject = null)
@@ -170,7 +187,7 @@ namespace D_Parser.Resolver.TypeResolution
 						ctxt.PushNewScope(bn);
 					ctxt.CurrentContext.IntroduceTemplateParameterTypes(udt);
 
-					r.AddRange(SingleNodeNameScan.SearchChildrenAndResolve(ctxt, b, bn, nextIdentifier, typeIdObject));
+					r.AddRange(SingleNodeNameScan.SearchChildrenAndResolve(ctxt, b, bn, nextIdentifierHash, typeIdObject));
 
 					List<TemplateParameterSymbol> dedTypes = null;
 					foreach (var t in r)
@@ -193,14 +210,14 @@ namespace D_Parser.Resolver.TypeResolution
 				{
 					var pack = (b as PackageSymbol).Package;
 
-					var accessedModule = pack.GetModule(nextIdentifier);
+					var accessedModule = pack.GetModule(nextIdentifierHash);
 					if (accessedModule != null)
 						r.Add(new ModuleSymbol(accessedModule as DModule, typeIdObject as ISyntaxRegion, b as PackageSymbol));
-					else if ((pack = pack.GetPackage(nextIdentifier)) != null)
+					else if ((pack = pack.GetPackage(nextIdentifierHash)) != null)
 						r.Add(new PackageSymbol(pack, typeIdObject as ISyntaxRegion));
 				}
 				else if (b is ModuleSymbol)
-					r.AddRange(SingleNodeNameScan.SearchChildrenAndResolve(ctxt, b, (b as ModuleSymbol).Definition, nextIdentifier, typeIdObject));
+					r.AddRange(SingleNodeNameScan.SearchChildrenAndResolve(ctxt, b, (b as ModuleSymbol).Definition, nextIdentifierHash, typeIdObject));
 			}
 
 			return r.Count == 0 ? null : r.ToArray();

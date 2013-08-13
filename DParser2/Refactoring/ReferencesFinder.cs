@@ -18,6 +18,7 @@ namespace D_Parser.Refactoring
 		readonly INode symbol;
 		readonly DModule ast;
 		readonly string searchId;
+		readonly int searchHash;
 		#endregion
 
 		#region Constructor / External
@@ -26,6 +27,7 @@ namespace D_Parser.Refactoring
 			this.ast = ast;
 			this.symbol = symbol;
 			searchId = symbol.Name;
+			searchHash = symbol.NameHash;
 			this.ctxt = ctxt;
 		}
 
@@ -60,14 +62,14 @@ namespace D_Parser.Refactoring
 				if (dc != null && dc.ClassType == D_Parser.Parser.DTokens.Template &&
 					dc.Name == symbol.Name)
 				{
-					f.l.Insert(0, new IdentifierDeclaration(dc.Name)
+					f.l.Insert(0, new IdentifierDeclaration(dc.NameHash)
 					{
 						Location = dc.NameLocation,
 						EndLocation = new CodeLocation(dc.NameLocation.Column + dc.Name.Length, dc.NameLocation.Line)
 					});
 				}
 
-				f.l.Insert(0, new IdentifierDeclaration(symbol.Name)
+				f.l.Insert(0, new IdentifierDeclaration(symbol.NameHash)
 				{
 					Location = symbol.NameLocation,
 					EndLocation = new CodeLocation(symbol.NameLocation.Column + symbol.Name.Length,	symbol.NameLocation.Line)
@@ -99,7 +101,7 @@ namespace D_Parser.Refactoring
 			{
 				var id = (IdentifierDeclaration)o;
 
-				if (id.Id != searchId)
+				if (id.IdHash != searchHash)
 					return;
 
 				if (resolvedSymbol == null)
@@ -109,7 +111,7 @@ namespace D_Parser.Refactoring
 			{
 				var tix = (TemplateInstanceExpression)o;
 
-				if (tix.TemplateId != searchId)
+				if (tix.TemplateIdHash != searchHash)
 					return;
 
 				if (resolvedSymbol == null)
@@ -132,7 +134,7 @@ namespace D_Parser.Refactoring
 				if ((acc.AccessExpression is IdentifierExpression &&
 				(string)((IdentifierExpression)acc.AccessExpression).Value != searchId) ||
 				(acc.AccessExpression is TemplateInstanceExpression &&
-				(string)((TemplateInstanceExpression)acc.AccessExpression).TemplateId != searchId))
+				((TemplateInstanceExpression)acc.AccessExpression).TemplateIdHash != searchHash))
 				{
 					Handle(acc.PostfixForeExpression, null);
 					return;
@@ -142,9 +144,9 @@ namespace D_Parser.Refactoring
 					var nex = (NewExpression)acc.AccessExpression;
 
 					if ((nex.Type is IdentifierDeclaration &&
-						((IdentifierDeclaration)nex.Type).Id != searchId) ||
+						((IdentifierDeclaration)nex.Type).IdHash != searchHash) ||
 						(nex.Type is TemplateInstanceExpression &&
-						(string)((TemplateInstanceExpression)acc.AccessExpression).TemplateId != searchId))
+						((TemplateInstanceExpression)acc.AccessExpression).TemplateIdHash != searchHash))
 					{
 						Handle(acc.PostfixForeExpression, null);
 						return;

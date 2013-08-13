@@ -8,7 +8,7 @@ using System.Collections.ObjectModel;
 
 namespace D_Parser.Resolver.Templates
 {
-	public class DeducedTypeDictionary : Dictionary<string,TemplateParameterSymbol>	{
+	public class DeducedTypeDictionary : Dictionary<int,TemplateParameterSymbol>	{
 
 		public readonly TemplateParameter[] ExpectedParameters;
 
@@ -21,7 +21,7 @@ namespace D_Parser.Resolver.Templates
 			{
 				foreach (var tpar in parameters)
 				{
-					this[tpar.Name] = null;
+					this[tpar.NameHash] = null;
 				}
 			}
 		}
@@ -36,7 +36,7 @@ namespace D_Parser.Resolver.Templates
 
 			if (ms.DeducedTypes != null)
 				foreach (var i in ms.DeducedTypes)
-					this[i.Name] = i;
+					this[i.NameHash] = i;
 		}
 		/*
 		public DeducedTypeDictionary(IEnumerable<TemplateParameterSymbol> l, DNode parameterOwner)

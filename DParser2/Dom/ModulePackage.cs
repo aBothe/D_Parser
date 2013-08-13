@@ -116,7 +116,8 @@ namespace D_Parser.Dom
 	{
 		internal ModulePackage(ModulePackage parent, string name) {
 			this.Parent = parent;
-			this.Name = name;
+			Strings.Add (name);
+			NameHash = name.GetHashCode ();
 		}
 
 		public readonly ModulePackage Parent;
@@ -128,12 +129,13 @@ namespace D_Parser.Dom
 			}
 		}
 
-		public readonly string Name;
-		internal ConcurrentDictionary<string, ModulePackage> packages = new ConcurrentDictionary<string, ModulePackage>();
-		internal ConcurrentDictionary<string, DModule> modules = new ConcurrentDictionary<string, DModule>();
+		public string Name {get{return Strings.TryGet (NameHash);}}
+		public readonly int NameHash;
+		internal ConcurrentDictionary<int, ModulePackage> packages = new ConcurrentDictionary<int, ModulePackage>();
+		internal ConcurrentDictionary<int, DModule> modules = new ConcurrentDictionary<int, DModule>();
 		
-		public IEnumerable<KeyValuePair<string,ModulePackage>> Packages {get{return packages;}}
-		public IEnumerable<KeyValuePair<string, DModule>> Modules {get{return modules;}}
+		public IEnumerable<KeyValuePair<int,ModulePackage>> Packages {get{return packages;}}
+		public IEnumerable<KeyValuePair<int, DModule>> Modules {get{return modules;}}
 		
 		public bool IsEmpty {get{return packages.Count == 0 && modules.Count == 0;}}
 		
@@ -153,18 +155,33 @@ namespace D_Parser.Dom
 		
 		public ModulePackage GetPackage(string name)
 		{
+			return GetPackage (name.GetHashCode ());
+		}
+
+		public ModulePackage GetPackage(int nameHash)
+		{
 			ModulePackage pack;
-			packages.TryGetValue(name,out pack);
+			packages.TryGetValue(nameHash,out pack);
 			return pack;
 		}
-		
+
 		public DModule GetModule(string name)
 		{
 			var pack = GetSubPackage (ModuleNameHelper.ExtractPackageName (name));
 			DModule ast;
 			if (pack == null)
 				return null;
-			pack.modules.TryGetValue(name, out ast);
+			pack.modules.TryGetValue(ModuleNameHelper.ExtractModuleName(name).GetHashCode(), out ast);
+			return ast;
+		}
+
+		/// <summary>
+		/// Looks up a sub-module. Unlike GetModule(string name), there is no sub-package lookup!!
+		/// </summary>
+		public DModule GetModule(int nameHash)
+		{
+			DModule ast;
+			modules.TryGetValue(nameHash, out ast);
 			return ast;
 		}
 
@@ -214,21 +231,28 @@ namespace D_Parser.Dom
 
 			var pack = Root.GetOrCreateSubPackage (ModuleNameHelper.ExtractPackageName (ast.ModuleName), true);
 
-			pack.modules[ModuleNameHelper.ExtractModuleName(ast.ModuleName)] = ast;
+			var modName = ModuleNameHelper.ExtractModuleName (ast.ModuleName);
+			Strings.Add (modName);
+			pack.modules[modName.GetHashCode()] = ast;
 			return true;
 		}
 		
 		internal bool RemovePackage(string name)
 		{
+			return RemovePackage(ModuleNameHelper.ExtractModuleName(name).GetHashCode());
+		}
+
+		internal bool RemovePackage(int nameHash)
+		{
 			ModulePackage p;
-			return packages.TryRemove(ModuleNameHelper.ExtractModuleName(name), out p);
+			return packages.TryRemove(nameHash, out p);
 		}
 		
 		internal bool RemoveModule(string name)
 		{
 			name = ModuleNameHelper.ExtractModuleName(name);
 			DModule ast;
-			if(modules.TryRemove(name, out ast))
+			if(modules.TryRemove(name.GetHashCode(), out ast))
 			{
 				var root = Root;
 				if (root != null)
@@ -268,11 +292,11 @@ namespace D_Parser.Dom
 			for(int k = 0; k < parts.Length; k++)
 			{
 				ModulePackage returnValue;
-
-				if (!currentPackage.packages.TryGetValue(parts[k], out returnValue))
+				var hash = parts [k].GetHashCode ();
+				if (!currentPackage.packages.TryGetValue(hash, out returnValue))
 				{
 					if (create)
-						returnValue = currentPackage.packages[parts[k]] = new ModulePackage(currentPackage, parts[k]);
+						returnValue = currentPackage.packages [hash] = new ModulePackage (currentPackage, parts [k]);
 					else
 						return null;
 				}

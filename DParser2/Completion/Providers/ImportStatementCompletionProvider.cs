@@ -79,10 +79,10 @@ namespace D_Parser.Completion.Providers
 					continue;
 
 				foreach (var kv_pack in p.Packages)
-					CompletionDataGenerator.AddPackage(kv_pack.Key);
+					CompletionDataGenerator.AddPackage(kv_pack.Value.Name);
 
 				foreach (var kv_mod in p.Modules)
-					CompletionDataGenerator.AddModule(kv_mod.Value, kv_mod.Key);
+					CompletionDataGenerator.AddModule(kv_mod.Value);
 			}
 		}
 	}

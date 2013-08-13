@@ -1,15 +1,15 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Concurrent;
 
 namespace D_Parser.Dom
 {
 	/// <summary>
-	/// Stores node children.
-	/// Not thread safe.
+	/// Stores node children. Thread safe.
 	/// </summary>
 	public class NodeDictionary : IEnumerable<INode>
 	{
-		Dictionary<string, List<INode>> nameDict = new Dictionary<string, List<INode>>();
+		ConcurrentDictionary<int, List<INode>> nameDict = new ConcurrentDictionary<int, List<INode>>();
 		/// <summary>
 		/// For faster enum access, store a separate list of INodes
 		/// </summary>
@@ -28,12 +28,12 @@ namespace D_Parser.Dom
 			if (ParentNode != null)
 				Node.Parent = ParentNode;
 
-			var n = Node.Name ?? "";
-			List<INode> l = null;
+			var n = Node.NameHash;
+			List<INode> l;
 
-			lock (nameDict)
-				if (!nameDict.TryGetValue(n, out l))
-					nameDict[n] = l = new List<INode>();
+			if (!nameDict.TryGetValue (n, out l)) {
+				nameDict [n] = l = new List<INode> ();
+			}
 
 			l.Add(Node);
 			children.Add(Node);
@@ -44,32 +44,15 @@ namespace D_Parser.Dom
 			if(nodes!=null)
 				foreach (var n in nodes)
 					Add(n);
-		}
-
-		public bool Remove(string Name)
-		{
-			if (Name == null)
-				Name = "";
-
-			var l = this[Name];
-
-			if (l != null)
-			{
-				foreach (var i in l)
-					children.Remove(i);
-
-				nameDict[Name] = null;
-				return true;
-			}
-			return false;
+			children.TrimExcess ();
 		}
 
 		public bool Remove(INode n)
 		{
 			var gotRemoved = children.Remove(n);
 			
-			var Name = n.Name ?? "";
-			List<INode> l = null;
+			var Name = n.NameHash;
+			List<INode> l;
 			if(nameDict.TryGetValue(Name, out l))
 			{
 				gotRemoved = l.Remove(n) || gotRemoved;
@@ -84,6 +67,7 @@ namespace D_Parser.Dom
 		{
 			nameDict.Clear();
 			children.Clear();
+			children.TrimExcess ();
 		}
 
 		public int Count
@@ -94,14 +78,19 @@ namespace D_Parser.Dom
 			}
 		}
 
-		public bool HasMultipleOverloads(string Name)
+		public bool HasMultipleOverloads(int NameHash)
 		{
-			List<INode> l = null;
+			List<INode> l;
 
-			if (nameDict.TryGetValue(Name ?? "", out l))
+			if (nameDict.TryGetValue(NameHash, out l))
 				return l.Count > 1;
 
 			return false;
+		}
+
+		public bool HasMultipleOverloads(string Name)
+		{
+			return HasMultipleOverloads (Name.GetHashCode ());
 		}
 
 		public IEnumerator<INode> GetEnumerator()
@@ -118,11 +107,21 @@ namespace D_Parser.Dom
 		{
 			get
 			{
-				List<INode> l;
-				if(nameDict.TryGetValue(Name ?? "", out l))
-					return new ReadOnlyCollection<INode>(l);
-				return null;
+				return GetNodes ((Name ?? string.Empty).GetHashCode ());
 			}
+		}
+
+		public ReadOnlyCollection<INode> GetNodes(string Name)
+		{
+			return GetNodes((Name ?? string.Empty).GetHashCode ());
+		}
+
+		public ReadOnlyCollection<INode> GetNodes(int nameHash)
+		{
+			List<INode> l;
+			if(nameDict.TryGetValue(nameHash, out l))
+				return new ReadOnlyCollection<INode>(l);
+			return null;
 		}
 
 		public INode this[int Index]

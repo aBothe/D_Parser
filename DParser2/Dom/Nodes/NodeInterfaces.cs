@@ -21,6 +21,7 @@ namespace D_Parser.Dom
 	public interface INode : ISyntaxRegion, IVisitable<NodeVisitor>
 	{
 		string Name { get; set; }
+		int NameHash { get; set; }
 		CodeLocation NameLocation { get; set; }
 		string Description { get; set; }
 		ITypeDeclaration Type { get; set; }

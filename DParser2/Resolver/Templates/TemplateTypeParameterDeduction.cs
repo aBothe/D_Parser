@@ -19,7 +19,7 @@ namespace D_Parser.Resolver.Templates
 
 			// If no spezialization given, assign argument immediately
 			if (p.Specialization == null)
-				return Set(p, arg);
+				return Set(p, arg, 0);
 
 			bool handleResult= HandleDecl(p,p.Specialization,arg);
 
@@ -27,8 +27,8 @@ namespace D_Parser.Resolver.Templates
 				return false;
 
 			// Apply the entire argument to parameter p if there hasn't been no explicit association yet
-			if (!TargetDictionary.ContainsKey(p.Name) || TargetDictionary[p.Name] == null)
-				TargetDictionary[p.Name] = new TemplateParameterSymbol(p, arg);
+			if (!TargetDictionary.ContainsKey(p.NameHash) || TargetDictionary[p.NameHash] == null)
+				TargetDictionary[p.NameHash] = new TemplateParameterSymbol(p, arg);
 
 			return true;
 		}
@@ -42,7 +42,7 @@ namespace D_Parser.Resolver.Templates
 			ctxt.PushNewScope(DResolver.SearchBlockAt(ctxt.ScopedBlock.NodeRoot as IBlockNode, p.Default.Location, out stmt), stmt);
 
 			var defaultTypeRes = TypeDeclarationResolver.Resolve(p.Default, ctxt);
-			var b = defaultTypeRes != null && Set(p, defaultTypeRes.First());
+			var b = defaultTypeRes != null && Set(p, defaultTypeRes.First(), 0);
 
 			ctxt.Pop();
 
@@ -192,7 +192,7 @@ namespace D_Parser.Resolver.Templates
 			var optBackup = ctxt.CurrentContext.ContextDependentOptions;
 			ctxt.CurrentContext.ContextDependentOptions = ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.DontResolveBaseTypes;
 
-			var initialResults = TypeDeclarationResolver.ResolveIdentifier(tix.TemplateId, ctxt, tix);
+			var initialResults = TypeDeclarationResolver.ResolveIdentifier(tix.TemplateIdHash, ctxt, tix);
 			var l = _handleResStep(initialResults);
 
 			ctxt.CurrentContext.ContextDependentOptions = optBackup;

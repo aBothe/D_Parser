@@ -7,19 +7,35 @@ namespace D_Parser.Resolver.ASTScanner
 {
 	public class NameScan : AbstractVisitor
 	{
-		protected readonly string filterId;
+		protected readonly int filterHash;
 		protected readonly object idObject;
 		protected readonly List<AbstractType> matches_types = new List<AbstractType>();
-
+		/*
 		protected NameScan(ResolutionContext ctxt, string filterId, object idObject) : base(ctxt)
 		{
 			this.filterId = filterId;
+			this.filterHash = filterId.GetHashCode ();
 			this.idObject = idObject;
 		}
-
+		*/
+		protected NameScan(ResolutionContext ctxt, int filterHash, object idObject) : base(ctxt)
+		{
+			this.filterHash = filterHash;
+			this.idObject = idObject;
+		}
+		/*
 		public static List<AbstractType> SearchAndResolve(ResolutionContext ctxt, CodeLocation caret, string name, object idObject=null)
 		{
 			var scan = new NameScan(ctxt, name, idObject);
+
+			scan.IterateThroughScopeLayers(caret);
+
+			return scan.matches_types;
+		}*/
+
+		public static List<AbstractType> SearchAndResolve(ResolutionContext ctxt, CodeLocation caret, int nameHash, object idObject=null)
+		{
+			var scan = new NameScan(ctxt, nameHash, idObject);
 
 			scan.IterateThroughScopeLayers(caret);
 
@@ -52,18 +68,18 @@ namespace D_Parser.Resolver.ASTScanner
 		
 		public override IEnumerable<INode> PrefilterSubnodes(IBlockNode bn)
 		{
-			return bn.Children[filterId];
+			return bn.Children.GetNodes(filterHash);
 		}
 		
 		public override IEnumerable<DModule> PrefilterSubnodes(ModulePackage pack, out ModulePackage[] subPackages)
 		{
-			var subPack = pack.GetPackage(filterId);
+			var subPack = pack.GetPackage(filterHash);
 			if(subPack != null)
 				subPackages = new[]{ subPack };
 			else
 				subPackages = null;
 			
-			var ast = pack.GetModule(filterId);
+			var ast = pack.GetModule(filterHash);
 			if(ast != null)
 				return new[]{ast};
 			return null;
@@ -71,7 +87,7 @@ namespace D_Parser.Resolver.ASTScanner
 
 		protected override bool HandleItem(INode n)
 		{
-            if (n != null && n.Name == filterId)
+            if (n != null && n.NameHash == filterHash)
             {
             	matches_types.Add(TypeDeclarationResolver.HandleNodeMatch(n, ctxt, null, idObject));
             	return true;
@@ -91,15 +107,20 @@ namespace D_Parser.Resolver.ASTScanner
 	public class SingleNodeNameScan : NameScan
 	{
 		AbstractType resultBase;
-		protected SingleNodeNameScan(ResolutionContext ctxt, string filter, object idObject) : base(ctxt, filter, idObject) {}
-		
+		protected SingleNodeNameScan(ResolutionContext ctxt, int filterHash, object idObject) : base(ctxt, filterHash, idObject) {}
+
+		public static List<AbstractType> SearchChildrenAndResolve(ResolutionContext ctxt, AbstractType resultBase, IBlockNode block, string name, object idObject = null)
+		{
+			return SearchChildrenAndResolve (ctxt, resultBase, block, name.GetHashCode(), idObject);
+		}
+
 		/// <summary>
 		/// Scans a block node. Not working with DMethods.
 		/// Automatically resolves node matches so base types etc. will be specified directly after the search operation.
 		/// </summary>
-		public static List<AbstractType> SearchChildrenAndResolve(ResolutionContext ctxt, AbstractType resultBase, IBlockNode block, string name, object idObject = null)
+		public static List<AbstractType> SearchChildrenAndResolve(ResolutionContext ctxt, AbstractType resultBase, IBlockNode block, int nameHash, object idObject = null)
 		{
-			var scan = new SingleNodeNameScan(ctxt, name, idObject) { resultBase = resultBase };
+			var scan = new SingleNodeNameScan(ctxt, nameHash, idObject) { resultBase = resultBase };
 
 			scan.ScanBlock(block, CodeLocation.Empty, MemberFilter.All);
 

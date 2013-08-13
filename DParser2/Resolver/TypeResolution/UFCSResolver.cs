@@ -21,12 +21,12 @@ namespace D_Parser.Resolver.TypeResolution
 			if (ctxt == null)
 				return null;
 			
-			var name="";
+			int name=0;
 
 			if (acc.AccessExpression is IdentifierExpression)
-				name = ((IdentifierExpression)acc.AccessExpression).Value as string;
+				name = (((IdentifierExpression)acc.AccessExpression).Value as string).GetHashCode();
 			else if (acc.AccessExpression is TemplateInstanceExpression)
-				name = ((TemplateInstanceExpression)acc.AccessExpression).TemplateId;
+				name = ((TemplateInstanceExpression)acc.AccessExpression).TemplateIdHash;
 			else
 				return null;
 

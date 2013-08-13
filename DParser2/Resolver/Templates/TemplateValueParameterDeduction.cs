@@ -18,7 +18,7 @@ namespace D_Parser.Resolver.Templates
 					if (eval == null)
 						return false;
 
-					return Set(p, eval);
+					return Set(p, eval, 0);
 				}
 				else
 					return false;
@@ -49,7 +49,7 @@ namespace D_Parser.Resolver.Templates
 					return false;
 			}
 
-			return Set(p, arg);
+			return Set(p, arg, 0);
 		}
 	}
 }

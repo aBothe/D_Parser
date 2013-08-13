@@ -133,9 +133,9 @@ namespace D_Parser.Misc.Mangling
 				if(ds.Definition != null && td != null)
 				{
 					if(td is IdentifierDeclaration)
-						ds.Definition.Name = (td as IdentifierDeclaration).Id;
+						ds.Definition.NameHash = (td as IdentifierDeclaration).IdHash;
 					else if(td is TemplateInstanceExpression)
-						ds.Definition.Name = (td as TemplateInstanceExpression).TemplateId;
+						ds.Definition.NameHash = (td as TemplateInstanceExpression).TemplateIdHash;
 					
 					if(isStatic && ds.Definition is DMethod)
 						(ds.Definition as DMethod).Attributes.Add(new Modifier(DTokens.Static));
@@ -206,14 +206,14 @@ namespace D_Parser.Misc.Mangling
 			if(td == null)
 				return null;
 			
-			string id;
+			int id;
 			
 			if(td is IdentifierDeclaration)
-				id = (td as IdentifierDeclaration).Id;
+				id = (td as IdentifierDeclaration).IdHash;
 			else if(td is TemplateInstanceExpression)
 			{
 				var tix = td as TemplateInstanceExpression;
-				id = tix.TemplateId;
+				id = tix.TemplateIdHash;
 				
 				if(tix.Arguments!=null && tix.Arguments.Length != 0)
 					foreach(var arg in tix.Arguments)
@@ -226,10 +226,10 @@ namespace D_Parser.Misc.Mangling
 			}
 			
 			if(td.InnerDeclaration is IdentifierDeclaration &&
-			   (td.InnerDeclaration as IdentifierDeclaration).Id == id)
+			   (td.InnerDeclaration as IdentifierDeclaration).IdHash == id)
 				return td.InnerDeclaration;
 			if(td.InnerDeclaration is TemplateInstanceExpression &&
-			   (td.InnerDeclaration as TemplateInstanceExpression).TemplateId == id)
+			   (td.InnerDeclaration as TemplateInstanceExpression).TemplateIdHash == id)
 				return td.InnerDeclaration;
 			
 			return td;

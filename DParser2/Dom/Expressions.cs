@@ -1157,7 +1157,8 @@ namespace D_Parser.Dom.Expressions
 
 	public class TemplateInstanceExpression : AbstractTypeDeclaration,PrimaryExpression,ContainerExpression
 	{
-		public readonly string TemplateId;
+		public readonly int TemplateIdHash;
+		public string TemplateId {get{return Strings.TryGet (TemplateIdHash);}}
 		public bool ModuleScopedIdentifier;
 		public readonly ITypeDeclaration Identifier;
 		public IExpression[] Arguments;
@@ -1171,7 +1172,7 @@ namespace D_Parser.Dom.Expressions
 				if (curtd is IdentifierDeclaration)
 				{
 					var i = curtd as IdentifierDeclaration;
-					TemplateId = i.Id;
+					TemplateIdHash = i.IdHash;
 					ModuleScopedIdentifier = i.ModuleScoped;
 					break;
 				}
@@ -1220,6 +1221,7 @@ namespace D_Parser.Dom.Expressions
 			unchecked {
 				if (Identifier != null)
 					hashCode += 1000000007 * Identifier.GetHash();
+				hashCode += (ulong)TemplateIdHash;
 				if (Arguments != null)
 					for(ulong i = (ulong)Arguments.Length; i!=0;)
 						hashCode += 1000000009 * i * Arguments[(int)--i].GetHash();

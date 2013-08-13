@@ -11,15 +11,21 @@ namespace D_Parser.Dom
     public class IdentifierDeclaration : AbstractTypeDeclaration
     {
 		public bool ModuleScoped;
-		public string Id;
+		public int IdHash;
+		public string Id
+		{
+			get{ return Strings.TryGet (IdHash); }
+			set{ IdHash = value.GetHashCode (); Strings.Add (value); }
+		}
 
         public IdentifierDeclaration() { }
+		public IdentifierDeclaration(int IdHash) { this.IdHash = IdHash; }
         public IdentifierDeclaration(string Value)
         { this.Id = Value; }
 
 		public override string ToString(bool IncludesBase)
 		{
-			return (ModuleScoped?".":"")+ (IncludesBase&& InnerDeclaration != null ? (InnerDeclaration.ToString() + ".") : "") +Convert.ToString(Id);
+			return (ModuleScoped?".":"")+ (IncludesBase&& InnerDeclaration != null ? (InnerDeclaration.ToString() + ".") : "") + Id;
 		}
 
 		public override void Accept(TypeDeclarationVisitor vis)

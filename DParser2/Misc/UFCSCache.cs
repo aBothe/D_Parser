@@ -187,7 +187,7 @@ namespace D_Parser.Misc
 			t = null;
 		}
 
-		public IEnumerable<DMethod> FindFitting(ResolutionContext ctxt, CodeLocation currentLocation, ISemantic firstArgument, string nameFilter = null)
+		public IEnumerable<DMethod> FindFitting(ResolutionContext ctxt, CodeLocation currentLocation, ISemantic firstArgument, int nameFilterHash = 0)
 		{
 			if(firstArgument is MemberSymbol)
 				firstArgument = DResolver.StripMemberSymbols(firstArgument as AbstractType);
@@ -198,7 +198,7 @@ namespace D_Parser.Misc
 
 			// Then filter out methods which cannot be accessed in the current context 
 			// (like when the method is defined in a module that has not been imported)
-			var mv = new UfcsMatchScanner(ctxt, CachedMethods, firstArgument, nameFilter);
+			var mv = new UfcsMatchScanner(ctxt, CachedMethods, firstArgument, nameFilterHash);
 
 			mv.IterateThroughScopeLayers(currentLocation);
 
@@ -209,17 +209,17 @@ namespace D_Parser.Misc
 		{
 			ConcurrentDictionary<DMethod, AbstractType> cache;
 			public List<DMethod> filteredMethods = new List<DMethod>();
-			string nameFilter;
+			int nameFilterHash;
 			ISemantic firstArgument;
 
 			public UfcsMatchScanner(ResolutionContext ctxt, 
 			    ConcurrentDictionary<DMethod, AbstractType> CachedMethods, 
 				ISemantic firstArgument,
-				string nameFilter = null)
+				int nameFilterHash = 0)
 				: base(ctxt)
 			{
 				this.firstArgument = firstArgument;
-				this.nameFilter = nameFilter;
+				this.nameFilterHash = nameFilterHash;
 				this.cache = CachedMethods;
 			}
 
@@ -229,7 +229,7 @@ namespace D_Parser.Misc
 				{
 					foreach (var n in bn)
 					{
-						if (n is DMethod && (nameFilter == null || nameFilter == n.Name))
+						if (n is DMethod && n.NameHash == nameFilterHash)
 							yield return n;
 					}
 				}
@@ -239,7 +239,7 @@ namespace D_Parser.Misc
 			{
 				AbstractType t;
 				if (n is DMethod && 
-					(nameFilter == null || nameFilter == n.Name) && 
+					n.NameHash == nameFilterHash && 
 					cache.TryGetValue(n as DMethod, out t) &&
 					ResultComparer.IsImplicitlyConvertible(firstArgument, t, ctxt))
 					filteredMethods.Add(n as DMethod);

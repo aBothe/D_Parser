@@ -280,7 +280,8 @@ namespace D_Parser.Resolver
 		public ReadOnlyCollection<TemplateParameterSymbol> DeducedTypes;
 
 
-		public readonly string Name;
+		public readonly int NameHash;
+		public string Name {get{return Strings.TryGet (NameHash);}}
 
 		public DSymbol(DNode Node, AbstractType BaseType, ReadOnlyCollection<TemplateParameterSymbol> deducedTypes, ISyntaxRegion td)
 			: base(BaseType, td)
@@ -291,7 +292,7 @@ namespace D_Parser.Resolver
 				throw new ArgumentNullException ("Node");
 
 			this.definition = new WeakReference(Node);
-			Name = Node.Name;
+			NameHash = Node.NameHash;
 		}
 
 		public DSymbol(DNode Node, AbstractType BaseType, IEnumerable<TemplateParameterSymbol> deducedTypes, ISyntaxRegion td)
@@ -304,7 +305,7 @@ namespace D_Parser.Resolver
 				throw new ArgumentNullException ("Node");
 
 			this.definition = new WeakReference(Node);
-			Name = Node.Name;
+			NameHash = Node.NameHash;
 		}
 
 		public override string ToCode()

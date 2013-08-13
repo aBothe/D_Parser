@@ -224,6 +224,7 @@
     <Compile Include="Misc\GlobalParseCache.cs" />
     <Compile Include="Misc\Mangling\Mangler.cs" />
     <Compile Include="Misc\ParseCacheView.cs" />
+    <Compile Include="Misc\StringCache.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="readme.txt" />

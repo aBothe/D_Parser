@@ -5,11 +5,11 @@ namespace D_Parser.Dom
 	public abstract class AbstractNode:INode
 	{
 		ITypeDeclaration _Type;
-		string _Name="";
 		protected WeakReference _Parent;
-		string _Description="";
+		string _Description=null;
 		CodeLocation _StartLocation;
 		CodeLocation _EndLocation;
+		protected int nameHash;
 
 		public CodeLocation EndLocation
 		{
@@ -37,8 +37,14 @@ namespace D_Parser.Dom
 
 		public string Name
 		{
-			get { return _Name; }
-			set { _Name = value; }
+			get { return Strings.TryGet(nameHash); }
+			set { nameHash = value.GetHashCode(); Strings.Add (value); }
+		}
+
+		public int NameHash
+		{
+			get{ return nameHash; }
+			set{ nameHash = value; }
 		}
 
 		public CodeLocation NameLocation

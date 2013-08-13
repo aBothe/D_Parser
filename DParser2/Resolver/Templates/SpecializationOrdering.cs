@@ -89,9 +89,9 @@ namespace D_Parser.Resolver.Templates
 			if (dn1 == null || dn1.TemplateParameters == null || dn2 == null || dn2.TemplateParameters == null)
 				return false;
 
-			var dummyList = new Dictionary<string, ISemantic>();
+			var dummyList = new Dictionary<int, ISemantic>();
 			foreach (var t in dn1.TemplateParameters)
-				dummyList.Add(t.Name, null);
+				dummyList.Add(t.NameHash, null);
 
 			var tp1_enum = dn1.TemplateParameters.GetEnumerator();
 			var tp2_enum = dn2.TemplateParameters.GetEnumerator();
@@ -103,7 +103,7 @@ namespace D_Parser.Resolver.Templates
 			return true;
 		}
 
-		bool IsMoreSpecialized(TemplateParameter t1, TemplateParameter t2, Dictionary<string, ISemantic> t1_dummyParameterList)
+		bool IsMoreSpecialized(TemplateParameter t1, TemplateParameter t2, Dictionary<int, ISemantic> t1_dummyParameterList)
 		{
 			if (t1 is TemplateTypeParameter && t2 is TemplateTypeParameter &&
 				!IsMoreSpecialized((TemplateTypeParameter)t1, (TemplateTypeParameter)t2, t1_dummyParameterList))
@@ -123,7 +123,7 @@ namespace D_Parser.Resolver.Templates
 			return false;
 		}
 
-		bool IsMoreSpecialized(TemplateAliasParameter t1, TemplateAliasParameter t2, Dictionary<string,ISemantic> t1_DummyParamList)
+		bool IsMoreSpecialized(TemplateAliasParameter t1, TemplateAliasParameter t2, Dictionary<int,ISemantic> t1_DummyParamList)
 		{
 			if (t1.SpecializationExpression != null)
 			{
@@ -153,7 +153,7 @@ namespace D_Parser.Resolver.Templates
 		/// <summary>
 		/// Tests if t1 is more specialized than t2
 		/// </summary>
-		bool IsMoreSpecialized(TemplateTypeParameter t1, TemplateTypeParameter t2, Dictionary<string,ISemantic> t1_DummyParamList)
+		bool IsMoreSpecialized(TemplateTypeParameter t1, TemplateTypeParameter t2, Dictionary<int,ISemantic> t1_DummyParamList)
 		{
 			// If one parameter is not specialized it should be clear
 			if (t1.Specialization != null && t2.Specialization == null)
@@ -164,7 +164,7 @@ namespace D_Parser.Resolver.Templates
 			return IsMoreSpecialized(t1.Specialization, t2, t1_DummyParamList);
 		}
 
-		bool IsMoreSpecialized(ITypeDeclaration Spec, TemplateParameter t2, Dictionary<string, ISemantic> t1_DummyParamList)
+		bool IsMoreSpecialized(ITypeDeclaration Spec, TemplateParameter t2, Dictionary<int, ISemantic> t1_DummyParamList)
 		{
 			// Make a type out of t1's specialization
 			var pop = ctxt.ScopedBlock != null;

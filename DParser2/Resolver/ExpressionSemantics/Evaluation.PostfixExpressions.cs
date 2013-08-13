@@ -255,8 +255,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						var deducedTypeDict = new DeducedTypeDictionary(ms);
 						if(dm.TemplateParameters != null)
 							foreach(var tpar in dm.TemplateParameters)
-								if(!deducedTypeDict.ContainsKey(tpar.Name))
-									deducedTypeDict[tpar.Name] = null;
+								if(!deducedTypeDict.ContainsKey(tpar.NameHash))
+									deducedTypeDict[tpar.NameHash] = null;
 						var templateParamDeduction = new TemplateParameterDeduction(deducedTypeDict, ctxt);
 
 						int currentArg = 0;
@@ -296,14 +296,14 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						{
 							foreach (var tpar in dm.TemplateParameters)
 							{
-								if (deducedTypeDict[tpar.Name] == null)
+								if (deducedTypeDict[tpar.NameHash] == null)
 								{
 									add = templateParamDeduction.Handle(tpar, null);
 									if (!add)
 									{
 										if (hasNonFinalArgs)
 										{
-											deducedTypeDict[tpar.Name] = new TemplateParameterSymbol(tpar, null);
+											deducedTypeDict[tpar.NameHash] = new TemplateParameterSymbol(tpar, null);
 											add = true;
 										}
 										else
@@ -390,7 +390,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 				TemplateParameterSymbol tps;
 				DTuple tuple = null;
-				if (deducedTypeDict.TryGetValue(tpar.Name, out tps) && tps != null)
+				if (deducedTypeDict.TryGetValue(tpar.NameHash, out tps) && tps != null)
 				{
 					if (tps.Parameter == tpar)
 					{
@@ -470,7 +470,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					tps = new TemplateParameterSymbol(tpar, tt);
 
 					//   and set the actual template tuple parameter deduction
-					deducedTypeDict[tpar.Name] = tps;
+					deducedTypeDict[tpar.NameHash] = tps;
 				}
 				add = true;
 				return true;

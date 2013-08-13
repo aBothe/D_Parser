@@ -5,8 +5,9 @@ namespace D_Parser.Dom
 {
 	public abstract class TemplateParameter : ISyntaxRegion, IVisitable<TemplateParameterVisitor>
 	{
-		public readonly string Name;
+		public readonly int NameHash;
 		public readonly CodeLocation NameLocation;
+		public string Name {get{return Strings.TryGet (NameHash);}}
 
 		public CodeLocation Location {
 			get;
@@ -34,7 +35,8 @@ namespace D_Parser.Dom
 
 		public TemplateParameter(string name, CodeLocation nameLoc, DNode par)
 		{
-			Name = name;
+			NameHash = name.GetHashCode();
+			Strings.Add (name);
 			NameLocation = nameLoc;
 			this.parent = new WeakReference (par);
 		}
@@ -56,7 +58,7 @@ namespace D_Parser.Dom
 			{
 				TemplateParameter = param;
 
-				Name = param.Name;
+				nameHash = param.NameHash;
 				NameLocation = param.NameLocation;
 				_Parent = param.parent;
 

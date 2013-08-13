@@ -104,7 +104,7 @@ namespace D_Parser.Resolver.Templates
 					else
 						l.Add(arg);				
 
-			return Set(p, new DTuple(p, l.Count == 0 ? null : l));
+			return Set(p, new DTuple(p, l.Count == 0 ? null : l), 0);
 		}
 
 		/// <summary>
@@ -112,24 +112,25 @@ namespace D_Parser.Resolver.Templates
 		/// </summary>
 		bool Contains(string parameterName)
 		{
-			foreach (var kv in TargetDictionary)
-				if (kv.Key == parameterName)
-					return true;
-			return false;
+			return TargetDictionary.ContainsKey (parameterName.GetHashCode ());
 		}
 
+		bool Set(TemplateParameter p, ISemantic r, string name=null)
+		{
+			return Set (p, r, name != null ? name.GetHashCode () : 0);
+		}
 		/// <summary>
 		/// Returns false if the item has already been set before and if the already set item is not equal to 'r'.
 		/// Inserts 'r' into the target dictionary and returns true otherwise.
 		/// </summary>
-		bool Set(TemplateParameter p, ISemantic r, string name=null)
+		bool Set(TemplateParameter p, ISemantic r, int nameHash=0)
 		{
 			if (p == null)
 			{
-				if (name != null  && TargetDictionary.ExpectedParameters != null)
+				if (nameHash != 0 && TargetDictionary.ExpectedParameters != null)
 				{
 					foreach (var tpar in TargetDictionary.ExpectedParameters)
-						if (tpar.Name == name)
+						if (tpar.NameHash == nameHash)
 						{
 							p = tpar;
 							break;
@@ -139,13 +140,13 @@ namespace D_Parser.Resolver.Templates
 						throw new System.ArgumentNullException("p");
 				}
 			}
-			else if (string.IsNullOrEmpty(name))
-				name = p.Name;
+			else if (nameHash == 0)
+				nameHash = p.NameHash;
 			
 			TemplateParameterSymbol rl;
-			if (!TargetDictionary.TryGetValue(name, out rl) || rl == null)
+			if (!TargetDictionary.TryGetValue(nameHash, out rl) || rl == null)
 			{
-				TargetDictionary[name] = new TemplateParameterSymbol(p, r);
+				TargetDictionary[nameHash] = new TemplateParameterSymbol(p, r);
 				return true;
 			}
 			else
@@ -158,7 +159,7 @@ namespace D_Parser.Resolver.Templates
 						// Error: Ambiguous assignment
 					}
 
-				TargetDictionary[name] = new TemplateParameterSymbol(p, r);
+				TargetDictionary[nameHash] = new TemplateParameterSymbol(p, r);
 
 				return false;
 			}
