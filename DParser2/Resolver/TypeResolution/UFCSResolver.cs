@@ -24,7 +24,7 @@ namespace D_Parser.Resolver.TypeResolution
 			int name=0;
 
 			if (acc.AccessExpression is IdentifierExpression)
-				name = (((IdentifierExpression)acc.AccessExpression).Value as string).GetHashCode();
+				name = ((IdentifierExpression)acc.AccessExpression).ValueStringHash;
 			else if (acc.AccessExpression is TemplateInstanceExpression)
 				name = ((TemplateInstanceExpression)acc.AccessExpression).TemplateIdHash;
 			else

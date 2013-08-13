@@ -16,6 +16,7 @@ namespace D_Parser.Dom
 		void Clear();
 
 		ReadOnlyCollection<INode> this[string Name] { get; }
+		ReadOnlyCollection<INode> this[int NameHash] { get; }
 	}
 
 	public interface INode : ISyntaxRegion, IVisitable<NodeVisitor>

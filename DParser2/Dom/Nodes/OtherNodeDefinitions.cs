@@ -236,6 +236,14 @@ namespace D_Parser.Dom
 			}
 		}
 
+		public System.Collections.ObjectModel.ReadOnlyCollection<INode> this[int NameHash]
+		{
+			get
+			{
+				return children.GetNodes(NameHash);
+			}
+		}
+
 		public IEnumerator<INode> GetEnumerator()
 		{
 			if (children == null)

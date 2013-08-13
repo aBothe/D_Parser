@@ -384,8 +384,7 @@ auto o = new Obj();
 			var ex = DParser.ParseExpression("arr[0]");
 			var t = Evaluation.EvaluateType(ex, ctxt);
 			
-			Assert.That(t, Is.TypeOf(typeof(ArrayAccessSymbol)));
-			Assert.That((t as ArrayAccessSymbol).Base, Is.TypeOf(typeof(ClassType)));
+			Assert.That(t, Is.TypeOf(typeof(ClassType)));
 			
 			ex = DParser.ParseExpression("arr[0].myProp");
 			t = Evaluation.EvaluateType(ex, ctxt);
@@ -1913,8 +1912,6 @@ void foo() {
 			Assert.That(ms.Base, Is.TypeOf(typeof(PrimitiveType)));
 			
 			t = Evaluation.EvaluateType((foo.Body.SubStatements[3] as ExpressionStatement).Expression,ctxt);
-			Assert.That(t, Is.TypeOf(typeof(ArrayAccessSymbol)));
-			t = (t as ArrayAccessSymbol).Base;
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 			

@@ -126,6 +126,14 @@ namespace D_Parser.Dom
 			}
 		}
 
+		public ReadOnlyCollection<INode> this[int NameHash]
+		{
+			get
+			{
+				return _Children.GetNodes(NameHash);
+			}
+		}
+
 		public IEnumerator<INode> GetEnumerator()
 		{
 			return _Children.GetEnumerator();

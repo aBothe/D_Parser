@@ -5,6 +5,7 @@ using D_Parser.Parser;
 using D_Parser.Resolver;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Text;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
@@ -108,10 +109,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (stringLiteralResult.DeclarationOrExpressionBase is IdentifierExpression)
 			{
 				StringFormat = ((IdentifierExpression)stringLiteralResult.DeclarationOrExpressionBase).Subformat;
-				StringValue = ((IdentifierExpression)stringLiteralResult.DeclarationOrExpressionBase).Value as string;
+				StringValue = ((IdentifierExpression)stringLiteralResult.DeclarationOrExpressionBase).StringValue;
 			}
 			else
-				StringValue = stringLiteral.Value as string;
+				StringValue = stringLiteral.StringValue;
 		}
 
 		/// <summary>
@@ -144,16 +145,19 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return "\"" + StringValue + "\"" + suff;
 			}
 
-			var s = "[";
-
-			if (Elements != null)
-				foreach (var e in Elements)
+			var sb = new StringBuilder ("[");
+			var elements = Elements;
+			if (elements != null) {
+				foreach (var e in elements)
 					if (e == null)
-						s += "[null], ";
+						sb.Append ("[null], ");
 					else
-						s += e.ToCode() + ", ";
+						sb.Append (e.ToCode ()).Append (", ");
+				if (elements.Length > 0)
+					sb.Remove (sb.Length-2, 2);
+			}
 
-			return s.TrimEnd(',',' ') + "]";
+			return sb.Append(']').ToString();
 		}
 	}
 
@@ -173,18 +177,17 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public override string ToCode()
 		{
-			var s = "[";
+			var sb = new StringBuilder ("[");
 
-			if(Elements!=null)
-				foreach (var e in Elements)
-				{
-					var k = e.Key == null ? "[null]" : e.Key.ToCode();
-					var v = e.Value == null ? "[null]" : e.Value.ToCode();
-
-					s += k + ":" + v + ", ";
+			if (Elements != null) {
+				foreach (var e in Elements) {
+					sb.Append (e.Key == null ? "[null]" : e.Key.ToCode ()).Append (':');
+					sb.Append (e.Value == null ? "[null]" : e.Value.ToCode ()).Append (", ");
 				}
+				sb.Remove (sb.Length - 2, 2);
+			}
 
-			return s.TrimEnd(',',' ') + "]";
+			return sb.Append(']').ToString();
 		}
 	}
 

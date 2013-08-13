@@ -86,7 +86,7 @@ namespace D_Parser.Refactoring
 			// If no results:
 
 			// Extract a concrete id from that syntax object. (If access expression/nested decl, use the inner-most one)
-			string id = null;
+			int idHash=0;
 
 			chkAgain:
 			if (o is ITypeDeclaration)
@@ -94,9 +94,9 @@ namespace D_Parser.Refactoring
 				var td = ((ITypeDeclaration)o).InnerMost;
 
 				if (td is IdentifierDeclaration)
-					id = ((IdentifierDeclaration)td).Id;
+					idHash = ((IdentifierDeclaration)td).IdHash;
 				else if (td is TemplateInstanceExpression)
-					id = ((TemplateInstanceExpression)td).TemplateId;
+					idHash = ((TemplateInstanceExpression)td).TemplateIdHash;
 			}
 			else if (o is IExpression)
 			{
@@ -106,9 +106,9 @@ namespace D_Parser.Refactoring
 					x = ((PostfixExpression)x).PostfixForeExpression;
 
 				if (x is IdentifierExpression && ((IdentifierExpression)x).IsIdentifier)
-					id = (string)((IdentifierExpression)x).Value;
+					idHash = ((IdentifierExpression)x).ValueStringHash;
 				else if (x is TemplateInstanceExpression)
-					id = ((TemplateInstanceExpression)x).TemplateId;
+					idHash = ((TemplateInstanceExpression)x).TemplateIdHash;
 				else if (x is NewExpression)
 				{
 					o = ((NewExpression)x).Type;
@@ -116,17 +116,17 @@ namespace D_Parser.Refactoring
 				}
 			}
 
-			if (string.IsNullOrEmpty(id))
+			if (idHash == 0)
 				throw new Exception("No extractable identifier found");
 
 			// Rawly scan through all modules' roots of the parse cache to find that id.
 			foreach(var pc in ed.ParseCache)
 				foreach (var mod in pc)
 				{
-					if (mod.Name == id)
+					if (mod.NameHash == idHash)
 						l.Add(mod);
 
-					var ch = mod[id];
+					var ch = mod[idHash];
 					if(ch!=null)
 						foreach (var c in ch)
 						{

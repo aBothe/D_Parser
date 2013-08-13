@@ -216,7 +216,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public static AbstractType[] GetOverloads(IdentifierExpression id, ResolutionContext ctxt, bool deduceParameters = true)
 		{
-			var raw=TypeDeclarationResolver.ResolveIdentifier(id.Value as string, ctxt, id, id.ModuleScoped);
+			var raw=TypeDeclarationResolver.ResolveIdentifier(id.ValueStringHash, ctxt, id, id.ModuleScoped);
 			var f = DResolver.FilterOutByResultPriority(ctxt, raw);
 			
 			if(f==null)

@@ -227,19 +227,18 @@ namespace D_Parser.Misc
 			{
 				if (bn is DModule)
 				{
-					foreach (var n in bn)
-					{
-						if (n is DMethod && n.NameHash == nameFilterHash)
-							yield return n;
-					}
+					if (nameFilterHash == 0)
+						return bn.Children;
+					return bn [nameFilterHash];
 				}
+				return null;
 			}
 
 			protected override bool HandleItem(INode n)
 			{
 				AbstractType t;
 				if (n is DMethod && 
-					n.NameHash == nameFilterHash && 
+					(nameFilterHash == 0 || n.NameHash == nameFilterHash) && 
 					cache.TryGetValue(n as DMethod, out t) &&
 					ResultComparer.IsImplicitlyConvertible(firstArgument, t, ctxt))
 					filteredMethods.Add(n as DMethod);

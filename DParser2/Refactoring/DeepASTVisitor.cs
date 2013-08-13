@@ -233,7 +233,7 @@ namespace D_Parser.Refactoring
 			else if (sr is IdentifierExpression)
 			{
 				var id = (IdentifierExpression)sr;
-				idLength = ((string)id.Value).Length;
+				idLength = id.StringValue.Length;
 				return id.Location;
 			}
 			else if (sr is TemplateInstanceExpression)
