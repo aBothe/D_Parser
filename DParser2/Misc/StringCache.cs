@@ -29,30 +29,24 @@ using System.Collections.Generic;
 
 namespace D_Parser
 {
-	public class Strings
+	public static class StringHelpers
 	{
-		static System.Threading.AutoResetEvent access = new System.Threading.AutoResetEvent(true);
-		static readonly Dictionary<int,string> Table = new Dictionary<int, string>();
-
-		public static void Add(string s)
+		static readonly Dictionary<int, WeakReference<string>> StringTable = new Dictionary<int, WeakReference<string>>();
+		
+		public static string Pool(this string s)
 		{
-			if (s != null && s.Length != 0) {
-				var hash = s.GetHashCode ();
-				access.WaitOne ();
-				Table [hash] = s;
-				access.Set ();
-			}
-		}
-
-		public static string TryGet(int hash)
-		{
-			if (hash != 0)
+			WeakReference<string> wref;
+			if (StringTable.TryGetValue(s.GetHashCode()))
 			{
-				string s;
-				Table.TryGetValue(hash, out s);
-				return s;
+				string val;
+				if (wref.TryGetValue(out val))
+					return val;
 			}
-			return null;
+			lock(StringTable)
+			{
+				StringTable[s.GetHashCode()] = new WeakReference<string>(s);
+			}
+			return s;
 		}
 	}
 }
