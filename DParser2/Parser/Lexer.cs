@@ -564,14 +564,14 @@ namespace D_Parser.Parser
 							{
 								ReaderRead(); // Skip the "
 
-								string numString = "";
+								var numString = new StringBuilder();
 
 								while ((next = ReaderRead()) != -1)
 								{
 									ch = (char)next;
 
 									if (IsHex(ch))
-										numString += ch;
+										numString.Append(ch);
 									else if (!Char.IsWhiteSpace(ch))
 										break;
 								}
@@ -1036,7 +1036,7 @@ namespace D_Parser.Parser
 				#endregion
 
 				#region Parse the digit string
-				var num = ParseFloatValue(sb.ToString(), NumBase);
+				var num = ParseFloatValue(sb, NumBase);
 
 				if (exponent != 0)
 				{
@@ -1886,11 +1886,16 @@ namespace D_Parser.Parser
 			return 0;
 		}
 
-		public static decimal ParseFloatValue(string digit, int NumBase)
+		public static decimal ParseFloatValue(StringBuilder digit, int NumBase)
 		{
 			decimal ret = 0M;
 
-			int commaPos = digit.IndexOf('.');
+			int commaPos = -1;
+			for (int i = digit.Length -1; i >= 0; i--)
+				if (digit [i] == '.') {
+					commaPos = i;
+					break;
+				}
 			int k = digit.Length - 1;
 			if (commaPos >= 0)
 				k = commaPos - 1;

@@ -660,7 +660,7 @@ namespace D_Parser.Misc.Mangling
 			while(Lexer.IsHex((char)r.Peek()))
 				sb.Append((char)r.Read());
 			
-			return Lexer.ParseFloatValue(sb.ToString(), 16);
+			return Lexer.ParseFloatValue(sb, 16);
 		}
 		
 		decimal Number(bool clearSb = true)
@@ -670,7 +670,7 @@ namespace D_Parser.Misc.Mangling
 			while(PeekIsDecNumber)
 				sb.Append((char)r.Read());
 			
-			return Lexer.ParseFloatValue(sb.ToString(), 10);
+			return Lexer.ParseFloatValue(sb, 10);
 		}
 		#endregion
 	}
