@@ -898,19 +898,27 @@ namespace D_Parser.Parser
 			else
 				ttd = BasicType();
 
-			/*
-			 * T! -- tix.Arguments == null
-			 * T!(int, -- last argument == null
-			 * T!(int, bool, -- ditto
-			 * T!(int) -- now every argument is complete
-			 */
-			var tix=ttd as TemplateInstanceExpression;
-			if (IsEOF && tix!=null && (tix.Arguments == null || tix.Arguments.Length == 0 ||
-				(tix.Arguments[tix.Arguments.Length-1] is TokenExpression &&
-				((TokenExpression)tix.Arguments[tix.Arguments.Length-1]).Token == DTokens.INVALID)))
+
+			if (IsEOF)
 			{
-				LastParsedObject = ttd;
-				return null;
+				/*
+				 * T! -- tix.Arguments == null
+				 * T!(int, -- last argument == null
+				 * T!(int, bool, -- ditto
+				 * T!(int) -- now every argument is complete
+				 */
+				var tix=ttd as TemplateInstanceExpression;
+				if (tix != null) {
+					if (tix.Arguments == null || tix.Arguments.Length == 0 ||
+					    (tix.Arguments [tix.Arguments.Length - 1] is TokenExpression &&
+					    (tix.Arguments [tix.Arguments.Length - 1] as TokenExpression).Token == DTokens.INVALID)) {
+						LastParsedObject = ttd;
+						return null;
+					}
+				} else if (ttd is MemberFunctionAttributeDecl && (ttd as MemberFunctionAttributeDecl).InnerType == null) {
+					LastParsedObject = ttd;
+					return null;
+				}
 			}
 
 			// Declarators
@@ -1037,6 +1045,9 @@ namespace D_Parser.Parser
 				{
 					Step();
 					p = true;
+
+					if (IsEOF)
+						return md;
 				}
 
 				// e.g. cast(const)
