@@ -48,7 +48,7 @@ namespace TestTool
 			
 			Console.WriteLine ("Begin parsing...");
 
-			var dirs = new[]{@"D:\D\dmd2\src\phobos", @"D:\D\dmd2\src\druntime\import"};
+			var dirs = Environment.OSVersion.Platform == PlatformID.Unix ? new[]{@"/usr/include/d"} : new[]{@"D:\D\dmd2\src\phobos", @"D:\D\dmd2\src\druntime\import"};
 			var dirsLeft = dirs.Length;
 			var ev=new System.Threading.AutoResetEvent(false);
 			GlobalParseCache.BeginAddOrUpdatePaths(dirs, false, (pc) =>

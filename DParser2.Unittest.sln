@@ -60,7 +60,7 @@ Global
 		{F6C093DA-4643-4063-8587-E61C1F38779B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
-		StartupItem = Tests\Tests.csproj
+		StartupItem = TestTool\TestTool.csproj
 	EndGlobalSection
 	GlobalSection(TestCaseManagementSettings) = postSolution
 		CategoryFile = DParser2.Unittest.vsmdi

@@ -684,22 +684,7 @@ namespace D_Parser.Parser
 									object literalValue = null;
 
 									// Fill in static string surrogates directly
-									if (s == "__DATE__")
-									{
-										literalFormat = LiteralFormat.StringLiteral;
-										literalValue = DateTime.Now.ToString("MMM dd yyyy", System.Globalization.CultureInfo.InvariantCulture.DateTimeFormat);
-									}
-									else if (s == "__TIME__")
-									{
-										literalFormat = LiteralFormat.StringLiteral;
-										literalValue = DateTime.Now.ToString("HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture.DateTimeFormat);
-									}
-									else if (s == "__TIMESTAMP__")
-									{
-										literalFormat = LiteralFormat.StringLiteral;
-										literalValue = DateTime.Now.ToString("ddd MMM dd HH:mm:ss yyyy", System.Globalization.CultureInfo.InvariantCulture.DateTimeFormat);
-									}
-									else if (s == "__VENDOR__")
+									if (s == "__VENDOR__")
 									{
 										literalFormat = LiteralFormat.StringLiteral;
 										literalValue = "D Parser v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(3) + " by Alexander Bothe";
@@ -1891,14 +1876,14 @@ namespace D_Parser.Parser
 			decimal ret = 0M;
 
 			int commaPos = -1;
+			int k = digit.Length - 1;
+
 			for (int i = digit.Length -1; i >= 0; i--)
 				if (digit [i] == '.') {
 					commaPos = i;
+					k = i - 1;
 					break;
 				}
-			int k = digit.Length - 1;
-			if (commaPos >= 0)
-				k = commaPos - 1;
 
 			for (int i = 0; i < digit.Length; i++)
 			{
