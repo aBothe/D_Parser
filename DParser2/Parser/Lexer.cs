@@ -384,9 +384,8 @@ namespace D_Parser.Parser
 			}
 
 			// Got EOF before EOL
-			var retStr = sb.ToString();
-			Col += retStr.Length;
-			return retStr;
+			Col += sb.Length;
+			return sb.ToString();
 		}
 
 		/// <summary>
