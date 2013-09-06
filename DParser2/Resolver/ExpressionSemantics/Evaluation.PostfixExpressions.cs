@@ -336,10 +336,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 					//TODO: Param-Arg check
 						
-					if (eval || !returnBaseTypeOnly)
-						argTypeFilteredOverloads.Add(new DelegateType(bt, dg.DeclarationOrExpressionBase as FunctionLiteral, dg.Parameters));
-					else
+					if (!eval || returnBaseTypeOnly)
 						argTypeFilteredOverloads.Add(bt);
+					else
+						argTypeFilteredOverloads.Add(new DelegateType(bt, dg.DeclarationOrExpressionBase as FunctionLiteral, dg.Parameters));
 				}
 			}
 			#endregion
