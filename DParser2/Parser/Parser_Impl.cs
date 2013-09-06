@@ -3311,6 +3311,15 @@ namespace D_Parser.Parser
 
 			OverPeekBrackets(OpenParenthesis, false);
 
+			bool at = false;
+			while (DTokens.StorageClass [Lexer.CurrentPeekToken.Kind] || (at = Lexer.CurrentPeekToken.Kind == At)) {
+				Lexer.Peek ();
+				if (at)
+					Lexer.Peek ();
+				if (Lexer.CurrentPeekToken.Kind == OpenParenthesis)
+					OverPeekBrackets (OpenParenthesis, false);
+			}
+
 			return Lexer.CurrentPeekToken.Kind == OpenCurlyBrace;
 		}
 
