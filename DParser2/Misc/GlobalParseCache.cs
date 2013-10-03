@@ -467,7 +467,7 @@ namespace D_Parser.Misc
 			criticalPreparationSection.Set ();
 
 			foreach(var subtask in subTasks) {
-				if (Interlocked.Decrement (ref subtask.i) < 1)
+				if (Interlocked.Decrement (ref subtask.i) < 1 && subtask.finishedHandler != null)
 					subtask.finishedHandler (pf); // Generic issue: The wrong statistics will be passed, if we fire the event for a task which was added some time afterwards
 			}
 
