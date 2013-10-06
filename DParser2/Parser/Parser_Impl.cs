@@ -4360,28 +4360,37 @@ namespace D_Parser.Parser
 				ExpectingNodeName = true;
 
 			if (laKind == (OpenParenthesis))
-			{
 				TemplateParameterList(dc);
 
-				// Constraints
-				if (laKind == If)
-				{
-					Step();
-					Expect(OpenParenthesis);
-
-					dc.TemplateConstraint = Expression();
-
-					Expect(CloseParenthesis);
-				}
+			// Constraints
+			// http://dlang.org/template.html#ClassTemplateDeclaration
+			if (Constraint (dc)) { // Constraint_opt BaseClassList_opt
+				if (laKind == (Colon))
+					BaseClassList (dc);
+			} else if (laKind == (Colon)) { // Constraint_opt BaseClassList_opt
+				BaseClassList (dc);
+				Constraint (dc);
 			}
-
-			if (laKind == (Colon))
-				BaseClassList(dc);
 
 			ClassBody(dc);
 
 			dc.EndLocation = t.EndLocation;
 			return dc;
+		}
+
+		bool Constraint(DClassLike dc)
+		{
+			if (laKind == If) {
+				Step ();
+				Expect (OpenParenthesis);
+
+				dc.TemplateConstraint = Expression ();
+
+				Expect (CloseParenthesis);
+
+				return true;
+			}
+			return false;
 		}
 
 		private void BaseClassList(DClassLike dc,bool ExpectColon=true)
