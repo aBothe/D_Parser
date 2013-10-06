@@ -300,7 +300,7 @@ namespace D_Parser.Dom
 
 			if (Arguments != null && Arguments.Length > 0)
 				foreach (var e in Arguments)
-					r += "," + e != null ? e.ToString() : "";
+					r += "," + (e != null ? e.ToString() : "");
 
 			return r + ")";
 		}
