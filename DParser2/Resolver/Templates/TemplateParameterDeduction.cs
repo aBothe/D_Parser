@@ -156,13 +156,14 @@ namespace D_Parser.Resolver.Templates
 			}
 			else
 			{
-				if (rl!=null)
-					if (ResultComparer.IsEqual(rl.Base, r))
-						return true;
-					else
-					{
-						// Error: Ambiguous assignment
-					}
+				if (ResultComparer.IsEqual(rl.Base, r))
+				{
+					return true;
+				}
+				else
+				{
+					// Error: Ambiguous assignment
+				}
 
 				TargetDictionary[nameHash] = new TemplateParameterSymbol(p, r);
 

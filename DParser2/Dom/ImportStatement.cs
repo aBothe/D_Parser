@@ -11,7 +11,7 @@ namespace D_Parser.Dom
 
 		public override string ToCode()
 		{
-			return "module "+ModuleName==null?"": ModuleName.ToString();
+			return "module " + (ModuleName==null ? "" : ModuleName.ToString());
 		}
 
 		public override void Accept(StatementVisitor vis)

@@ -1182,7 +1182,7 @@ namespace D_Parser.Dom.Statements
 	{
 		public override string ToCode()
 		{
-			return "volatile "+ScopedStatement==null?"":ScopedStatement.ToCode();
+			return "volatile " + (ScopedStatement==null?"":ScopedStatement.ToCode());
 		}
 
 		public override void Accept(StatementVisitor vis)
