@@ -158,13 +158,14 @@ namespace D_Parser.Formatting.Indent
 				return string.Empty;
 			
 			builder = new StringBuilder ();
-			for (int i = 0; i < indent.Length; i++) {
-				if (indent[i] == '\t')
+			foreach (char c in indent)
+			{
+				if (c == '\t')
 					builder.Append (' ', indentWith);
 				else
-					builder.Append (indent[i]);
+					builder.Append (c);
 			}
-			
+
 			return builder.ToString ();
 		}
 		

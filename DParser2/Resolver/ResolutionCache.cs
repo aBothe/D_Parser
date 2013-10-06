@@ -84,9 +84,8 @@ namespace D_Parser.Resolver
 		{
 			foreach(var p in l2)
 			{
-				for(int i = 0; i<l1.Count; i++)
+				foreach (var ex in l1)
 				{
-					var ex = l1[i];
 					if(p.Parameter == ex.Parameter)
 					{
 						if(!ResultComparer.IsEqual(p.Base,ex.Base)){

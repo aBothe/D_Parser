@@ -1530,9 +1530,9 @@ namespace D_Parser.Dom.Expressions
 				else
 				{
 					sb.Append('(');
-					for(int i = 0; i < AnonymousMethod.Parameters.Count; i++)
+					foreach (INode param in AnonymousMethod.Parameters)
 					{
-						sb.Append(AnonymousMethod.Parameters[i].ToString()).Append(',');
+						sb.Append(param).Append(',');
 					}
 
 					if(AnonymousMethod.Parameters.Count > 0)
