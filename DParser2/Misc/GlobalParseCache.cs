@@ -363,12 +363,12 @@ namespace D_Parser.Misc
 					LaunchParseThreads ();
 
 					if (files.Length != 0)
-						for (int i = 0; i < files.Length; i++)
-							queue.Push (new ParseIntermediate (statIm, newRoot, files [i]));
+						foreach (string file in files)
+							queue.Push (new ParseIntermediate (statIm, newRoot, file));
 
 					if (ifiles.Length != 0)
-						for (int i = 0; i < ifiles.Length; i++)
-							queue.Push (new ParseIntermediate (statIm, newRoot, ifiles [i]));
+						foreach (string ifile in ifiles)
+							queue.Push (new ParseIntermediate (statIm, newRoot,ifile));
 
 					parseThreadStartEvent.Reset ();
 				}

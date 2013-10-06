@@ -2,37 +2,38 @@
 
 namespace D_Parser.Dom
 {
-	public abstract class AbstractNode:INode
+	public abstract class AbstractNode : INode
 	{
-		ITypeDeclaration _Type;
 		protected WeakReference _Parent;
-		string _Description=null;
-		CodeLocation _StartLocation;
-		CodeLocation _EndLocation;
 		protected int nameHash;
+
+		protected AbstractNode()
+		{
+			Description = null;
+		}
 
 		public CodeLocation EndLocation
 		{
-			get { return _EndLocation; }
-			set { _EndLocation = value; }
+			get;
+			set;
 		}
 
 		public CodeLocation Location
 		{
-			get { return _StartLocation; }
-			set { _StartLocation = value; }
+			get;
+			set;
 		}
 
 		public virtual string Description
 		{
-			get { return _Description; }
-			set { _Description = value; }
+			get;
+			set;
 		}
 
 		public virtual ITypeDeclaration Type
 		{
-			get { return _Type; }
-			set { _Type = value; }
+			get;
+			set;
 		}
 
 		public string Name

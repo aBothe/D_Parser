@@ -4,35 +4,37 @@ using D_Parser.Parser;
 
 namespace D_Parser.Formatting.Indent
 {
-	public enum Inside {
-		Empty              = 0,
+	[Flags]
+	public enum Inside
+	{
+		Empty                  = 0,
 		
-		PreProcessor       = (1 << 0),
-		Shebang = (1<<1),
+		PreProcessor           = (1 << 0),
+		Shebang                = (1 << 1),
 		
-		BlockComment   = (1 << 2),
-		NestedComment      = (1 << 3),
-		LineComment        = (1 << 4),
-		DocComment         = (1 << 5),
-		Comment            = (BlockComment | NestedComment | LineComment | DocComment),
+		BlockComment           = (1 << 2),
+		NestedComment          = (1 << 3),
+		LineComment            = (1 << 4),
+		DocComment             = (1 << 5),
+		Comment                = (BlockComment | NestedComment | LineComment | DocComment),
 		
-		VerbatimString     = (1 << 6),
-		AlternateVerbatimString = 1 << 14,
-		StringLiteral      = (1 << 7),
-		CharLiteral        = (1 << 8),
-		String             = (VerbatimString | StringLiteral | AlternateVerbatimString),
-		StringOrChar       = (String | CharLiteral),
+		VerbatimString          = (1 << 6),
+		AlternateVerbatimString = (1 << 14),
+		StringLiteral           = (1 << 7),
+		CharLiteral             = (1 << 8),
+		String                  = (VerbatimString | StringLiteral | AlternateVerbatimString),
+		StringOrChar            = (String | CharLiteral),
 		
-		Attribute          = (1 << 9),
-		ParenList          = (1 << 10),
-		SquareBracketList = (1<<15),
+		Attribute               = (1 << 9),
+		ParenList               = (1 << 10),
+		SquareBracketList       = (1 << 15),
 		
-		FoldedStatement    = (1 << 11),
-		Block              = (1 << 12),
-		Case               = (1 << 13),
+		FoldedStatement         = (1 << 11),
+		Block                   = (1 << 12),
+		Case                    = (1 << 13),
 		
-		FoldedOrBlock      = (FoldedStatement | Block | SquareBracketList),
-		FoldedBlockOrCase  = (FoldedStatement | Block | SquareBracketList | Case)
+		FoldedOrBlock           = (FoldedStatement | Block | SquareBracketList),
+		FoldedBlockOrCase       = (FoldedStatement | Block | SquareBracketList | Case)
 	}
 	
 	/// <summary>
