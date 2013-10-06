@@ -781,24 +781,23 @@ namespace D_Parser.Dom.Expressions
 
 		public override string ToString()
 		{
-			var ret = "cast(";
+			var ret = new StringBuilder("cast(");
 
 			if (IsTypeCast)
-				ret += Type.ToString();
-			else
+				ret.Append(Type.ToString());
+			else if (CastParamTokens != null && CastParamTokens.Length != 0) 
 			{
-				if(CastParamTokens!=null)
-					foreach (var tk in CastParamTokens)
-						ret += DTokens.GetTokenString(tk) + " ";
-				ret = ret.TrimEnd(' ');
+				foreach (var tk in CastParamTokens)
+					ret.Append(DTokens.GetTokenString (tk)).Append(' ');
+				ret.Remove (ret.Length - 1, 1);
 			}
 
-			ret += ") ";
+			ret.Append(')');
 			
 			if(UnaryExpression!=null)
-				UnaryExpression.ToString();
+				ret.Append(' ').Append(UnaryExpression.ToString());
 
-			return ret;
+			return ret.ToString();
 		}
 
 		public CodeLocation Location
