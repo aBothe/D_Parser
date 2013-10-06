@@ -122,8 +122,8 @@ namespace D_Parser.Formatting
 			}
 			
 			// Handle all children that have not been handled yet.
-			for(int k = 0; k < children.Count; k++)
-				children[k].Accept(this);
+			foreach (INode child in children)
+				child.Accept(this);
 		}
 		
 		void VisitMetaBlockChildren(List<INode> children, List<StaticStatement> staticStatements, AbstractMetaDeclaration mb)

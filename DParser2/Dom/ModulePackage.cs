@@ -289,14 +289,14 @@ namespace D_Parser.Dom
 			var currentPackage = this;
 			var parts = ModuleNameHelper.SplitModuleName(package);
 
-			for(int k = 0; k < parts.Length; k++)
+			foreach (string part in parts)
 			{
 				ModulePackage returnValue;
-				var hash = parts [k].GetHashCode ();
+				var hash = part.GetHashCode ();
 				if (!currentPackage.packages.TryGetValue(hash, out returnValue))
 				{
 					if (create)
-						returnValue = currentPackage.packages [hash] = new ModulePackage (currentPackage, parts [k]);
+						returnValue = currentPackage.packages [hash] = new ModulePackage (currentPackage, part);
 					else
 						return null;
 				}

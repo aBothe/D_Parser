@@ -171,8 +171,8 @@ namespace D_Parser.Dom
 		{
 			var ss = stmtContainer.SubStatements;
 			if (ss != null)
-				for (int i = 0; i < ss.Length; i++)
-					ss[i].Accept(this);
+				foreach (IStatement substatement in ss)
+					substatement.Accept(this);
 		}
 
 		/// <summary>

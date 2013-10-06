@@ -518,7 +518,7 @@ namespace D_Parser.Formatting
 		int SearchWhitespaceStart(int startOffset)
 		{
 			if (startOffset < 0) {
-				throw new ArgumentOutOfRangeException ("startoffset", "value : " + startOffset);
+				throw new ArgumentOutOfRangeException ("startOffset", "value : " + startOffset);
 			}
 			for (int offset = startOffset - 1; offset >= 0; offset--) {
 				char ch = document[offset];
@@ -532,7 +532,7 @@ namespace D_Parser.Formatting
 		int SearchWhitespaceEnd(int startOffset)
 		{
 			if (startOffset > document.TextLength) {
-				throw new ArgumentOutOfRangeException ("startoffset", "value : " + startOffset);
+				throw new ArgumentOutOfRangeException ("startOffset", "value : " + startOffset);
 			}
 			for (int offset = startOffset + 1; offset < document.TextLength; offset++) {
 				char ch = document[offset];
@@ -546,7 +546,7 @@ namespace D_Parser.Formatting
 		int SearchWhitespaceLineStart(int startOffset)
 		{
 			if (startOffset < 0) {
-				throw new ArgumentOutOfRangeException ("startoffset", "value : " + startOffset);
+				throw new ArgumentOutOfRangeException ("startOffset", "value : " + startOffset);
 			}
 			for (int offset = startOffset - 1; offset >= 0; offset--) {
 				char ch = document[offset];
