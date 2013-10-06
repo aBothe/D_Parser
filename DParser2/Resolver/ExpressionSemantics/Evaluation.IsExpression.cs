@@ -30,7 +30,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				{
 					// case 1, 4
 					if (isExpression.TypeSpecialization == null && isExpression.TypeSpecializationToken == 0)
-						retTrue = typeToCheck != null;
+						retTrue = true;
 
 					// The probably most frequented usage of this expression
 					else if (string.IsNullOrEmpty(isExpression.TypeAliasIdentifier))
