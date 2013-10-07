@@ -635,16 +635,54 @@ namespace D_Parser.Misc
 			return ret;
 		}
 
-		public static IEnumerable<ModulePackage> EnumPackages (params string[] basePaths)
+		public static IEnumerable<ModulePackage> EnumPackagesRecursively (bool includeRoots,params string[] basePaths)
 		{
-			return null;
+			var l = new List<ModulePackage>();
+			foreach (var path in basePaths)
+			{
+				var root = GetRootPackage(path);
+				if (root == null)
+					continue;
+
+				if (includeRoots)
+					l.Add(root);
+
+				EnumPackagesRecursively(root,l);
+			}
+			return l;
 		}
 
-		public static IEnumerable<DModule> EnumModules (string basePath, string packageName=null)
+		public static void EnumPackagesRecursively(ModulePackage pack, List<ModulePackage> list)
 		{
-			return null;
+			if (pack != null)
+				foreach (var kv in pack.packages)
+				{
+					list.Add(kv.Value);
+					EnumPackagesRecursively(kv.Value, list);
+				}
 		}
 
+		public static IEnumerable<DModule> EnumModulesRecursively (string basePath, string packageName=null)
+		{
+			var l = new List<DModule>();
+			var pack = GetRootPackage(basePath);
+
+			if (pack == null)
+				return l;
+
+			EnumModulesRecursively(pack, l);
+			return l;
+		}
+
+		public static void EnumModulesRecursively(ModulePackage pack, List<DModule> list)
+		{
+			if (pack != null)
+			{
+				list.AddRange(pack.modules.Values);
+				foreach (var sub in pack.packages)
+					EnumModulesRecursively(sub.Value, list);
+			}
+		}
 		#endregion
 
 		#region Module management
