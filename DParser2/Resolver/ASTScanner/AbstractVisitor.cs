@@ -226,23 +226,40 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				}
 			}
 
+			List<InterfaceType> interfaces = null;
+
 			while(udt!= null)
 			{
 				if(scanChildren(udt.Definition as DBlockNode, vis, false, isBase, false, takeStaticChildrenOnly, scopeIsInInheritanceHierarchy))
 					return true;
-				
+
 				if(udt is TemplateIntermediateType){
+					var tit = udt as TemplateIntermediateType;
+					if (tit.BaseInterfaces != null) {
+						if (interfaces == null)
+							interfaces = new List<InterfaceType> ();
+						foreach (var I in tit.BaseInterfaces)
+							if (!interfaces.Contains (I))
+								interfaces.Add (I);
+					}
+
 					if(resolveBaseClassIfRequired && udt.Base == null && 
-					   udt.Definition is DClassLike && (udt.Definition as DClassLike).ClassType == DTokens.Class)
-						udt = DResolver.ResolveBaseClasses(udt, ctxt, true);
-					
+						udt.Definition is DClassLike && (udt.Definition as DClassLike).ClassType == DTokens.Class)
+						udt = DResolver.ResolveBaseClasses(udt, ctxt);
+
 					udt = udt.Base as UserDefinedType;
-					
+
 					isBase = true;
 				}
 				else
 					break;
 			}
+
+			if (interfaces != null)
+				foreach (var I in interfaces)
+					if (scanChildren (I.Definition, vis, false, true, false, takeStaticChildrenOnly, scopeIsInInheritanceHierarchy))
+						return true;
+
 			return false;
 		}
 		
