@@ -121,7 +121,7 @@ namespace D_Parser.Refactoring
 			{
 				var id = (IdentifierExpression)o;
 
-				if ((string)id.Value != searchId)
+				if (!id.IsIdentifier || id.ValueStringHash != searchHash)
 					return;
 
 				if (resolvedSymbol == null)
