@@ -132,7 +132,7 @@ namespace D_Parser.Refactoring
 				var acc = (PostfixExpression_Access)o;
 
 				if ((acc.AccessExpression is IdentifierExpression &&
-				(string)((IdentifierExpression)acc.AccessExpression).Value != searchId) ||
+					(acc.AccessExpression as IdentifierExpression).ValueStringHash != searchHash) ||
 				(acc.AccessExpression is TemplateInstanceExpression &&
 				((TemplateInstanceExpression)acc.AccessExpression).TemplateIdHash != searchHash))
 				{
