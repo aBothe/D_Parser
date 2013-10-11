@@ -10,7 +10,7 @@ namespace D_Parser.Dom
 	{
 		public IExpression Initializer; // Variable
 		public bool IsAlias = false;
-		public bool IsAliasThis { get { return IsAlias && Name == "this"; } }
+		public bool IsAliasThis;
 
 		public bool IsLocal
 		{

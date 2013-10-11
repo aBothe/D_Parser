@@ -733,8 +733,9 @@ namespace D_Parser.Parser
                     var dv = new DVariable { 
                         Description = _t.Description,
                         Location=t.Location, 
-                        IsAlias=true, 
-                        Name="this",
+                        IsAlias=true,
+						IsAliasThis = true,
+						Name = "this",
 						Parent = Scope,
 						Attributes = _t.Attributes
                     };
@@ -744,12 +745,13 @@ namespace D_Parser.Parser
 					if(secondWay)
 					{
 						Step(); // Step beyond 'this'
-						Step(); // Step beyong '='
+						dv.NameLocation=t.Location;
+						Step(); // Step beyond '='
 						if(Expect(Identifier))
 						{
 							dv.Type= new IdentifierDeclaration(t.Value)
 							{
-								Location = dv.NameLocation = t.Location,
+								Location = t.Location,
 								EndLocation = t.EndLocation
 							};
 						}
@@ -764,6 +766,7 @@ namespace D_Parser.Parser
 	                    };
 	
 	                    Step(); // Step beyond 'this'
+						dv.NameLocation=t.Location;
 					}
                     
 					dv.EndLocation = t.EndLocation;
