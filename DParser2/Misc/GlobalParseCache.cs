@@ -423,8 +423,10 @@ namespace D_Parser.Misc
 
 					Interlocked.Add (ref im.totalMilliseconds, sw.ElapsedMilliseconds);
 
-					if (ast != null)
-						ast.FileName = p.file;
+					if (ast == null)
+						continue;
+
+					ast.FileName = p.file;
 
 					if (string.IsNullOrEmpty (ast.ModuleName))
 						ast.ModuleName = DModule.GetModuleName (im.basePath, p.file);
