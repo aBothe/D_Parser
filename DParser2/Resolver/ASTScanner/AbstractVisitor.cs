@@ -278,7 +278,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				foreach (var n in ch)
 				{
 					var dn = n as DNode;
-					if(dn!=null && !ctxt.CurrentContext.MatchesDeclarationEnvironment(dn))
+					if(dn==null || 
+						!ctxt.CurrentContext.MatchesDeclarationEnvironment(dn) || 
+						!CanAddMemberOfType(VisibleMembers, dn))
 						continue;
 					
 					if((ctxt.Options & ResolutionOptions.IgnoreAllProtectionAttributes) != ResolutionOptions.IgnoreAllProtectionAttributes){
@@ -292,7 +294,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					}
 
 					// Add anonymous enums' items
-					if (dn is DEnum && string.IsNullOrEmpty(dn.Name) && CanAddMemberOfType(VisibleMembers, dn))
+					if (dn is DEnum && dn.NameHash == 0)
 					{
 						var ch2 = PrefilterSubnodes(dn as DEnum);
 						if (ch2 != null)
@@ -301,8 +303,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					}
 
 					var dm3 = dn as DMethod; // Only show normal & delegate methods
-					if (!CanAddMemberOfType(VisibleMembers, n) ||
-						(dm3 != null && !(dm3.SpecialType == DMethod.MethodType.Normal || dm3.SpecialType == DMethod.MethodType.Delegate || dm3.Name != null)))
+					if (dm3 != null && !(dm3.SpecialType == DMethod.MethodType.Normal || dm3.SpecialType == DMethod.MethodType.Delegate || dm3.NameHash != 0))
 						continue;
 
 					foundItems |= HandleItem(n);
@@ -372,7 +373,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		public static bool CanAddMemberOfType(MemberFilter vis, INode n)
 		{
 			if (n is DMethod)
-				return !string.IsNullOrEmpty(n.Name) && ((vis & MemberFilter.Methods) == MemberFilter.Methods);
+				return n.NameHash != 0 && ((vis & MemberFilter.Methods) == MemberFilter.Methods);
 
 			else if (n is DVariable)
 			{
