@@ -1,4 +1,4 @@
-﻿using D_Parser.Dom;
+﻿﻿using D_Parser.Dom;
 using D_Parser.Parser;
 using D_Parser.Resolver.TypeResolution;
 using System.Collections.Generic;
@@ -50,7 +50,7 @@ namespace D_Parser.Resolver.ASTScanner
 				foreach(var mod in pc)
 				{
 					var nodes = mod[funcName];
-					if(nodes != null && nodes.Count != 0)
+					if(nodes != null)
 					{
 						foreach(var n in nodes){
 							if(n is DMethod)
