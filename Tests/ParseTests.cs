@@ -162,7 +162,7 @@ void main() {
 		[Test]
 		public void LexingPerformance()
 		{
-			var f = File.ReadAllText(Environment.OSVersion.Platform == PlatformID.Win32NT ? @"D:\D\dmd2\src\phobos\std\string.d" : "/usr/include/d/std/string.d");
+			var f = File.ReadAllText(Environment.OSVersion.Platform == PlatformID.Win32NT ? @"D:\D\dmd2\src\phobos\std\string.d" : "/usr/include/dlang/std/string.d");
 			
 			var lx = new Lexer(new StringReader(f));
 			var sw = new Stopwatch();
