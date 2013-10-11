@@ -48,7 +48,7 @@ namespace TestTool
 			
 			Console.WriteLine ("Begin parsing...");
 
-			var dirs = Environment.OSVersion.Platform == PlatformID.Unix ? new[]{@"/usr/include/d"} : new[]{@"D:\D\dmd2\src\phobos", @"D:\D\dmd2\src\druntime\import"};
+			var dirs = Environment.OSVersion.Platform == PlatformID.Unix ? new[]{@"/usr/include/dlang"} : new[]{@"D:\D\dmd2\src\phobos", @"D:\D\dmd2\src\druntime\import"};
 			var dirsLeft = dirs.Length;
 			var ev=new System.Threading.AutoResetEvent(false);
 			GlobalParseCache.BeginAddOrUpdatePaths(dirs, false, (pc) =>
@@ -62,8 +62,26 @@ namespace TestTool
 			Console.WriteLine("done.");
 			Console.WriteLine();
 			var pcw = new ParseCacheView(dirs);
-			var ccf = new ConditionalCompilationFlags(new[]{ "Windows", "D2" }, 1, true, null, 0);
-			
+			var ccf = new ConditionalCompilationFlags(new[]{ Environment.OSVersion.Platform == PlatformID.Unix ?"Posix":"Windows", "D2" }, 1, true, null, 0);
+
+			Console.WriteLine ("Dump parse errors:");
+
+			foreach (var dir in dirs)
+				foreach (var mod in GlobalParseCache.EnumModulesRecursively(dir)) {
+					if (mod.ParseErrors.Count > 0) {
+						Console.WriteLine (" "+mod.FileName);
+						Console.WriteLine ("  ("+mod.ModuleName+")");
+
+						foreach (var err in mod.ParseErrors) {
+							Console.WriteLine ("({0}):", err.Location.ToString ());
+							Console.WriteLine ("\t"+err.Message);
+						}
+					}
+				}
+
+			Console.WriteLine ("--------");
+
+
 			Console.WriteLine("Begin building ufcs cache...");
 			var sw = new Stopwatch();
 			sw.Restart();
