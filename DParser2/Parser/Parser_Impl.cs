@@ -4013,8 +4013,8 @@ namespace D_Parser.Parser
 				if (Expect(OpenParenthesis))
 				{
 					s.AssertedExpression = Expression(Scope);
-					if(Expect(CloseParenthesis))
-						Expect(Semicolon);
+					if(Expect(CloseParenthesis) && Expect(Semicolon))
+						LastParsedObject = null;
 				}
 				s.EndLocation = t.EndLocation;
 
