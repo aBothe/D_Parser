@@ -55,31 +55,31 @@ namespace D_Parser.Parser
 		}
 
 		#region Comments
-		string PreviousComment = "";
+		StringBuilder PreviousComment = new StringBuilder();
 
 		string GetComments()
 		{
-			string ret = "";
+			var sb = new StringBuilder ();
 
 			foreach (var c in Lexer.Comments)
 			{
 				if (c.CommentType.HasFlag(Comment.Type.Documentation))
-					ret += c.CommentText + Environment.NewLine;
+					sb.AppendLine(c.CommentText);
 			}
 
 			TrackerVariables.Comments.AddRange(Lexer.Comments);
 			Lexer.Comments.Clear();
 
-			ret = ret.Trim();
+			sb.Trim ();
 
-			if (String.IsNullOrEmpty(ret)) 
-				return ""; 
+			if (sb.Length == 0)
+				return string.Empty;
 
 			// Overwrite only if comment is not 'ditto'
-			if (ret.ToLowerInvariant() != "ditto")
-				PreviousComment = ret;
+			if (sb.Length != 5 || sb.ToString().ToLowerInvariant() != "ditto")
+				PreviousComment = sb;
 
-			return PreviousComment;
+			return PreviousComment.ToString();
 		}
 
 		/// <summary>
@@ -89,11 +89,11 @@ namespace D_Parser.Parser
 		string CheckForPostSemicolonComment()
 		{
 			if (t == null)
-				return "";
+				return string.Empty;
 
 			int ExpectedLine = t.Line;
 
-			string ret = "";
+			var ret = new StringBuilder ();
 
 			int i=0;
 			foreach (var c in Lexer.Comments)
@@ -111,7 +111,7 @@ namespace D_Parser.Parser
 					else if (c.StartPosition.Line > ExpectedLine)
 						break;
 
-					ret += c.CommentText + Environment.NewLine;
+					ret.AppendLine(c.CommentText);
 				}
 				
 				i++;
@@ -119,21 +119,23 @@ namespace D_Parser.Parser
 			}
 			Lexer.Comments.RemoveRange(0, i);
 
-			if (string.IsNullOrEmpty(ret))
-				return "";
+			if (ret.Length == 0)
+				return string.Empty;
 
-			ret = ret.Trim();
+			ret.Trim();
 			
 			// Add post-declaration string if comment text is 'ditto'
-			if (ret.ToLowerInvariant() == "ditto")
-				return PreviousComment;
+			if (ret.Length == 5 && ret.ToString().ToLowerInvariant() == "ditto")
+				return PreviousComment.ToString();
 
 			// Append post-semicolon comment string to previously read comments
-			if (!string.IsNullOrWhiteSpace(PreviousComment)) // If no previous comment given, do not insert a new-line
-				return PreviousComment = ret;
+			if (PreviousComment.Length != 0) // If no previous comment given, do not insert a new-line
+				return (PreviousComment = ret).ToString();
 
-			PreviousComment += Environment.NewLine + ret;
-			return Environment.NewLine + ret;
+			ret.Insert (0, Environment.NewLine);
+
+			PreviousComment.Append(ret.ToString());
+			return ret.ToString();
 		}
 
 		#endregion
@@ -4248,7 +4250,7 @@ namespace D_Parser.Parser
 		public BlockStatement BlockStatement(INode ParentNode=null, IStatement Parent=null)
 		{
 			var OldPreviousCommentString = PreviousComment;
-			PreviousComment = "";
+			PreviousComment = new StringBuilder ();
 
 			var bs = new BlockStatement() { Location=la.Location, ParentNode=ParentNode, Parent=Parent};
 			LastParsedObject = bs;
@@ -4425,7 +4427,7 @@ namespace D_Parser.Parser
 		public void ClassBody(DBlockNode ret,bool KeepBlockAttributes=false,bool UpdateBoundaries=true)
 		{
 			var OldPreviousCommentString = PreviousComment;
-			PreviousComment = "";
+			PreviousComment = new StringBuilder ();
 
 			if (Expect(OpenCurlyBrace))
 			{
@@ -4696,7 +4698,7 @@ namespace D_Parser.Parser
 		public void EnumBody(DEnum mye)
 		{
 			var OldPreviousComment = PreviousComment;
-			PreviousComment = "";
+			PreviousComment = new StringBuilder();
 			mye.BlockStartLocation = la.Location;
 
 			// While there are commas, loop through
