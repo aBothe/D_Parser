@@ -103,7 +103,7 @@ namespace D_Parser.Dom
 			return children.GetEnumerator();
 		}
 
-		public ReadOnlyCollection<INode> this[string Name]
+		public IEnumerable<INode> this[string Name]
 		{
 			get
 			{
@@ -111,16 +111,16 @@ namespace D_Parser.Dom
 			}
 		}
 
-		public ReadOnlyCollection<INode> GetNodes(string Name)
+		public IEnumerable<INode> GetNodes(string Name)
 		{
 			return GetNodes((Name ?? string.Empty).GetHashCode ());
 		}
 
-		public ReadOnlyCollection<INode> GetNodes(int nameHash)
+		public IEnumerable<INode> GetNodes(int nameHash)
 		{
 			List<INode> l;
 			if(nameDict.TryGetValue(nameHash, out l))
-				return new ReadOnlyCollection<INode>(l);
+				return l;
 			return null;
 		}
 

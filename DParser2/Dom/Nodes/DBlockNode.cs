@@ -118,7 +118,7 @@ namespace D_Parser.Dom
 			_Children.Clear();
 		}
 
-		public ReadOnlyCollection<INode> this[string Name]
+		public IEnumerable<INode> this[string Name]
 		{
 			get
 			{
@@ -126,7 +126,7 @@ namespace D_Parser.Dom
 			}
 		}
 
-		public ReadOnlyCollection<INode> this[int NameHash]
+		public IEnumerable<INode> this[int NameHash]
 		{
 			get
 			{

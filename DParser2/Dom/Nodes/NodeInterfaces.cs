@@ -15,8 +15,8 @@ namespace D_Parser.Dom
 		int Count { get; }
 		void Clear();
 
-		ReadOnlyCollection<INode> this[string Name] { get; }
-		ReadOnlyCollection<INode> this[int NameHash] { get; }
+		IEnumerable<INode> this[string Name] { get; }
+		IEnumerable<INode> this[int NameHash] { get; }
 	}
 
 	public interface INode : ISyntaxRegion, IVisitable<NodeVisitor>

@@ -228,7 +228,7 @@ namespace D_Parser.Dom
 			}
 		}
 
-		public System.Collections.ObjectModel.ReadOnlyCollection<INode> this[string Name]
+		public IEnumerable<INode> this[string Name]
 		{
 			get
 			{
@@ -236,7 +236,7 @@ namespace D_Parser.Dom
 			}
 		}
 
-		public System.Collections.ObjectModel.ReadOnlyCollection<INode> this[int NameHash]
+		public IEnumerable<INode> this[int NameHash]
 		{
 			get
 			{
