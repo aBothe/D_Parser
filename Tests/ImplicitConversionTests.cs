@@ -121,7 +121,7 @@ int[] p=[1,2,3,4,5];
 ");
 			var ctxt = ResolutionContext.Create(pcl, null, pcl[0]["modA"]);
 
-			var foo = pcl[0]["modA"]["foo"][0] as DMethod;
+			var foo = pcl[0]["modA"]["foo"].First() as DMethod;
 			ctxt.PushNewScope(foo);
 			var foo_firstArg= TypeDeclarationResolver.Resolve(foo.Parameters[0].Type, ctxt);
 			

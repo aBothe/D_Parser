@@ -39,7 +39,7 @@ void main(){
 	{ // 10
 	}";
 			var mod = DParser.ParseString(code);
-			var main = mod["main"][0] as DMethod;
+			var main = mod["main"].First() as DMethod;
 			
 			var l = new CodeLocation(1,4);
 			var off = DocumentHelper.LocationToOffset(code,l);

@@ -106,13 +106,13 @@ void asdf(int ni=23) {
 			t = TypeDeclarationResolver.ResolveIdentifier("U", ctxt, null);
 			Assert.That(t.Length, Is.EqualTo(2));
 
-			ctxt.CurrentContext.Set((mod["N"][0] as DClassLike)["foo"][0] as DMethod);
+			ctxt.CurrentContext.Set((mod["N"].First() as DClassLike)["foo"].First() as DMethod);
 			t = TypeDeclarationResolver.ResolveIdentifier("X",ctxt,null);
 			Assert.That(t.Length, Is.EqualTo(1));
 			Assert.That(t[0], Is.TypeOf(typeof(ClassType)));
 
 			mod = pcl[0]["modF"];
-			var f = mod["asdf"][0] as DMethod;
+			var f = mod["asdf"].First() as DMethod;
 			ctxt.CurrentContext.Set(f, ((f.Body.SubStatements[0] as IfStatement).ThenStatement as BlockStatement).SubStatements[1]);
 			t = TypeDeclarationResolver.ResolveIdentifier("ni", ctxt, null);
 			Assert.That(t.Length, Is.EqualTo(2));
@@ -147,7 +147,7 @@ class baseFoo
 			t = TypeDeclarationResolver.ResolveSingle("privConst", ctxt, null);
 			Assert.That(t, Is.Null);
 			
-			ctxt.CurrentContext.Set(modA["foo"][0] as IBlockNode);
+			ctxt.CurrentContext.Set(modA["foo"].First() as IBlockNode);
 			t = TypeDeclarationResolver.ResolveSingle("heyHo", ctxt, null);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 		}
@@ -190,7 +190,7 @@ void foo()
 	o.statBase;
 	o.baseB;
 }", @"module B; import A; cl inst;");
-			var foo = pcl[0]["A"]["foo"][0] as DMethod;
+			var foo = pcl[0]["A"]["foo"].First() as DMethod;
 			var ctxt = CreateDefCtxt(pcl, foo, foo.Body);
 			
 			var t = Evaluation.EvaluateType((foo.Body.SubStatements[1] as ExpressionStatement).Expression, ctxt);
@@ -233,7 +233,7 @@ void foo()
 			t = Evaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.Null);
 			
-			ctxt.CurrentContext.Set((pcl[0]["A"]["cl"][0] as DClassLike)["bar"][0] as DMethod);
+			ctxt.CurrentContext.Set((pcl[0]["A"]["cl"].First() as DClassLike)["bar"].First() as DMethod);
 			
 			ex = DParser.ParseExpression("statVar");
 			t = Evaluation.EvaluateType(ex, ctxt);
@@ -355,7 +355,7 @@ void foo()
 }");
 			
 			var A = pcl[0]["A"];
-			var foo = A["foo"][0] as DMethod;
+			var foo = A["foo"].First() as DMethod;
 			var case1 = ((foo.Body.SubStatements[1] as SwitchStatement).ScopedStatement as BlockStatement).SubStatements[1] as SwitchStatement.CaseStatement;
 			var colStmt = case1.SubStatements[1] as ExpressionStatement;
 			
@@ -420,8 +420,8 @@ auto o = new Obj();
 						}
 				}");
 
-			var A = pcl[0]["modA"]["A"][0] as DClassLike;
-			var bar = A["bar"][0] as DMethod;
+			var A = pcl[0]["modA"]["A"].First() as DClassLike;
+			var bar = A["bar"].First() as DMethod;
 			var call_fooC = bar.Body.SubStatements[0];
 
 			Assert.IsInstanceOfType(typeof(ExpressionStatement),call_fooC);
@@ -573,8 +573,8 @@ class A
 }
 
 ");
-			var A = pcl[0]["modA"]["A"][0] as DClassLike;
-			var bar = A["bar"][0] as DMethod;
+			var A = pcl[0]["modA"]["A"].First() as DClassLike;
+			var bar = A["bar"].First() as DMethod;
 			var ctxt = CreateDefCtxt(pcl, bar, bar.Body);
 
 			var e = DParser.ParseExpression("123.foo");
@@ -582,7 +582,7 @@ class A
 			var t = Evaluation.EvaluateType(e, ctxt);
 
 			Assert.IsInstanceOfType(typeof(MemberSymbol),t);
-			Assert.AreEqual(pcl[0]["modA"]["foo"][0], ((MemberSymbol)t).Definition);
+			Assert.AreEqual(pcl[0]["modA"]["foo"].First(), ((MemberSymbol)t).Definition);
 		}
 
 		[Test]
@@ -656,7 +656,7 @@ class IClient ( P, R : IRegistry!(P) ){}
 class Client : IClient!(Params, ConcreteRegistry){}");
 
 			var mod=pcl[0]["modA"];
-			var Client = mod["Client"][0] as DClassLike;
+			var Client = mod["Client"].First() as DClassLike;
 			var ctxt = CreateDefCtxt(pcl, mod);
 
 			var res = TypeDeclarationResolver.HandleNodeMatch(Client, ctxt);
@@ -669,10 +669,10 @@ class Client : IClient!(Params, ConcreteRegistry){}");
 			Assert.AreEqual(ct.DeducedTypes.Count, 2);
 			var dedtype = ct.DeducedTypes[0];
 			Assert.AreEqual("P", dedtype.Name);
-			Assert.AreEqual(mod["Params"][0],((DSymbol)dedtype.Base).Definition);
+			Assert.AreEqual(mod["Params"].First(),((DSymbol)dedtype.Base).Definition);
 			dedtype = ct.DeducedTypes[1];
 			Assert.AreEqual("R", dedtype.Name);
-			Assert.AreEqual(mod["ConcreteRegistry"][0], ((DSymbol)dedtype.Base).Definition);
+			Assert.AreEqual(mod["ConcreteRegistry"].First(), ((DSymbol)dedtype.Base).Definition);
 
 
 			ctxt.CurrentContext.Set(mod);
@@ -695,7 +695,7 @@ class D : C!B {}");
 			var mod = pcl[0]["modA"];
 			var ctxt = CreateDefCtxt(pcl, mod);
 
-			var res = TypeDeclarationResolver.HandleNodeMatch(mod["D"][0], ctxt);
+			var res = TypeDeclarationResolver.HandleNodeMatch(mod["D"].First(), ctxt);
 			Assert.IsInstanceOfType(typeof(ClassType),res);
 			var ct = (ClassType)res;
 
@@ -879,7 +879,7 @@ int sym;
 			Assert.That(t, Is.InstanceOfType(typeof(PrimitiveValue)));
 			Assert.That((t as PrimitiveValue).Value == 0m);
 
-			ctxt.CurrentContext.Set(modA["tt"][0] as IBlockNode);
+			ctxt.CurrentContext.Set(modA["tt"].First() as IBlockNode);
 			ex = DParser.ParseExpression("Tmpl!U");
 			t = Evaluation.EvaluateValue(ex, ctxt);
 			Assert.That(t, Is.InstanceOfType(typeof(PrimitiveValue)));
@@ -1000,7 +1000,7 @@ void foo(U)(U u)
 	tmplFoo2!U(123);
 }");
 			
-			var foo = pcl[0]["A"]["foo"][0] as DMethod;
+			var foo = pcl[0]["A"]["foo"].First() as DMethod;
 			var ctxt = CreateDefCtxt(pcl, foo, foo.Body);
 			
 			var ex = (foo.Body.SubStatements[0] as ExpressionStatement).Expression;
@@ -1083,7 +1083,7 @@ template bar(T...) {
 auto foo() {
     
 }");
-			var foo = pcl[0]["A"]["foo"][0] as DMethod;
+			var foo = pcl[0]["A"]["foo"].First() as DMethod;
 			var ctxt = CreateDefCtxt(pcl, foo, foo.Body);
 			
 			var ex = DParser.ParseExpression("bar!int");
@@ -1111,8 +1111,8 @@ class B : A{
 	}
 }");
 
-			var B = pcl[0]["modA"]["B"][0] as DClassLike;
-			var this_ = (DMethod)B[DMethod.ConstructorIdentifier][0];
+			var B = pcl[0]["modA"]["B"].First() as DClassLike;
+			var this_ = (DMethod)B[DMethod.ConstructorIdentifier].First();
 			var ctxt = CreateDefCtxt(pcl, this_);
 
 			var super = (this_.Body.SubStatements[0] as IExpressionContainingStatement).SubExpressions[0] as PostfixExpression_MethodCall;
@@ -1317,8 +1317,8 @@ debug(4)
 ");
 
 			var m = pcl[0]["m"];
-			var A = m["A"][0] as DClassLike;
-			var foo = A["foo"][0] as DMethod;
+			var A = m["A"].First() as DClassLike;
+			var foo = A["foo"].First() as DMethod;
 			var ctxt = CreateDefCtxt(pcl, foo, foo.Body.SubStatements[0]);
 
 			var x = TypeDeclarationResolver.ResolveIdentifier("x", ctxt, null);
@@ -1458,7 +1458,7 @@ void main()
 			t = ((MemberSymbol)t).Base;
 			Assert.That(t,Is.TypeOf(typeof(ArrayType)));
 
-			var main = pcl[0]["B"]["main"][0] as DMethod;
+			var main = pcl[0]["B"]["main"].First() as DMethod;
 			var body = main.Body;
 			ctxt.PushNewScope(main, body);
 
@@ -1554,7 +1554,7 @@ void bar();
 class imp{}");
 			
 			var B = (DModule)pcl[0]["B"];
-			var ctxt = CreateDefCtxt(pcl, B["bar"][0] as DMethod);
+			var ctxt = CreateDefCtxt(pcl, B["bar"].First() as DMethod);
 			
 			var x = TypeDeclarationResolver.ResolveIdentifier("imp",ctxt, null);
 			Assert.That(x.Length, Is.EqualTo(0));
@@ -1591,14 +1591,14 @@ class aa(T) if(is(T==int)) {}");
 			Assert.That(x.Length, Is.EqualTo(1));
 			var t = x[0] as ClassType;
 			Assert.That(t, Is.Not.Null);
-			Assert.That(t.Definition, Is.EqualTo(A["aa"][0]));
+			Assert.That(t.Definition, Is.EqualTo(A["aa"].First()));
 			
 			ex = DParser.ParseAssignExpression("aa!int");
 			x = Evaluation.EvaluateTypes(ex, ctxt);
 			Assert.That(x.Length, Is.EqualTo(1));
 			t = x[0] as ClassType;
 			Assert.That(t, Is.Not.Null);
-			Assert.That(t.Definition, Is.EqualTo(A["aa"][1]));
+			Assert.That(t.Definition, Is.EqualTo((A["aa"] as List<INode>)[1]));
 			
 			ex = DParser.ParseAssignExpression("aa!string");
 			x = Evaluation.EvaluateTypes(ex, ctxt);
@@ -1675,7 +1675,7 @@ void main()
 ");
 			
 			var A = pcl[0]["A"];
-			var main = A["main"][0] as DMethod;
+			var main = A["main"].First() as DMethod;
 			var stmt = main.Body.SubStatements[1];
 			var ctxt = ResolutionTests.CreateDefCtxt(pcl, main, stmt);
 			
@@ -1725,7 +1725,7 @@ class cl
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That((t as MemberSymbol).Definition, Is.TypeOf(typeof(DMethod)));
 			
-			var bar = (B["cl"][0] as DClassLike)["bar"][0] as DMethod;
+			var bar = (B["cl"].First() as DClassLike)["bar"].First() as DMethod;
 			ctxt.CurrentContext.Set(bar, bar.Body);
 			
 			t = TypeDeclarationResolver.ResolveSingle("CFoo", ctxt, null);
@@ -1900,7 +1900,7 @@ void foo() {
 	arrayTest[0];
 }");
 			var A = pcl[0]["A"];
-			var foo = A["foo"][0] as DMethod;
+			var foo = A["foo"].First() as DMethod;
 			var ctxt = ResolutionTests.CreateDefCtxt(pcl, foo, foo.Body);
 			
 			var t = Evaluation.EvaluateType((foo.Body.SubStatements[0] as ExpressionStatement).Expression,ctxt);
@@ -1919,12 +1919,12 @@ void foo() {
 			t = Evaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			
-			foo = (A["Singleton"][0] as DClassLike)["singletonBar"][0] as DMethod;
+			foo = (A["Singleton"].First() as DClassLike)["singletonBar"].First() as DMethod;
 			ctxt.CurrentContext.Set(foo, foo.Body);
 			t = TypeDeclarationResolver.ResolveSingle("I",ctxt,null);
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			
-			foo = (A["clA"][0] as DClassLike)["clFoo"][0] as DMethod;
+			foo = (A["clA"].First() as DClassLike)["clFoo"].First() as DMethod;
 			ctxt.CurrentContext.Set(foo, foo.Body);
 			t = TypeDeclarationResolver.ResolveSingle("I",ctxt,null);
 			Assert.That(t, Is.Null);
@@ -1948,7 +1948,7 @@ void CFoo() {}");
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That((t as MemberSymbol).Definition, Is.TypeOf(typeof(DMethod)));
 			
-			var bar = (B["cl"][0] as DClassLike)["bar"][0] as DMethod;
+			var bar = (B["cl"].First() as DClassLike)["bar"].First() as DMethod;
 			ctxt.CurrentContext.Set(bar, bar.Body);
 			
 			t = TypeDeclarationResolver.ResolveSingle("CFoo", ctxt, null);

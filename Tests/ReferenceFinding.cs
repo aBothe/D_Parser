@@ -37,7 +37,7 @@ void main()
 ");
 			var ctxt = ResolutionContext.Create(pcl, null, pcl[0]["modA"]);
 
-			var refs = ReferencesFinder.Scan(pcl[0]["modA"]["A"][0],ctxt) as List<ISyntaxRegion>;
+			var refs = ReferencesFinder.Scan(pcl[0]["modA"]["A"].First(),ctxt) as List<ISyntaxRegion>;
 
 			Assert.IsNotNull(refs);
 			Assert.AreEqual(8, refs.Count);

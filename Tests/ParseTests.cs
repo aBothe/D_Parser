@@ -63,7 +63,7 @@ namespace Tests
 void bar();");
 
 			Assert.AreEqual(2, mod.Children.Count);
-			Assert.IsInstanceOfType(typeof(DMethod),mod["bar"][0]);
+			Assert.IsInstanceOfType(typeof(DMethod),mod["bar"].First());
 		}
 
 		[Test]
@@ -80,7 +80,7 @@ void bar();");
 		{
 			var n = DParser.ParseString("align(2) align int a;");
 
-			var a = n["a"][0] as DVariable;
+			var a = n["a"].First() as DVariable;
 			Assert.IsNotNull(a);
 			Assert.AreEqual(1, a.Attributes.Count);
 
@@ -89,19 +89,19 @@ void bar();");
 			Assert.AreEqual(null, attr.LiteralContent);
 
 			n = DParser.ParseString("private public int a;");
-			a = n["a"][0] as DVariable;
+			a = n["a"].First() as DVariable;
 			Assert.IsNotNull(a);
 			Assert.AreEqual(1, a.Attributes.Count);
 
 			n = DParser.ParseString(@"private:
 public int a;
 int b;");
-			a = n["a"][0] as DVariable;
+			a = n["a"].First() as DVariable;
 			Assert.IsNotNull(a);
 			Assert.AreEqual(1, a.Attributes.Count);
 			Assert.AreEqual(DTokens.Public,((Modifier)a.Attributes[0]).Token);
 
-			a = n["b"][0] as DVariable;
+			a = n["b"].First() as DVariable;
 			Assert.IsNotNull(a);
 			Assert.AreEqual(1, a.Attributes.Count);
 			Assert.AreEqual(DTokens.Private, ((Modifier)a.Attributes[0]).Token);
@@ -122,15 +122,15 @@ debug
 else version(D)
 	int B;
 else int C;");
-			var a = m["a"][0] as DVariable;
-			var b = m["b"][0] as DVariable;
+			var a = m["a"].First() as DVariable;
+			var b = m["b"].First() as DVariable;
 
 			Assert.AreEqual(2,a.Attributes.Count);
 			Assert.AreEqual(0,b.Attributes.Count);
 
-			var A = m["A"][0] as DVariable;
-			var B = m["B"][0] as DVariable;
-			var C = m["C"][0] as DVariable;
+			var A = m["A"].First() as DVariable;
+			var B = m["B"].First() as DVariable;
+			var C = m["C"].First() as DVariable;
 
 			Assert.AreEqual(1, A.Attributes.Count);
 			Assert.AreEqual(2,B.Attributes.Count);
@@ -286,7 +286,7 @@ void main()
 			//pcl.Add(pc);
 
 			var sw = new Stopwatch();
-			var main = pcl[0]["modA"]["main"][0] as DMethod;
+			var main = pcl[0]["modA"]["main"].First() as DMethod;
 			Assert.AreEqual(0, (pcl[0]["modA"] as DModule).ParseErrors.Count);
 			var s = main.Body.SubStatements[main.Body.SubStatements.Length - 1] as IExpressionContainingStatement;
 			var ctxt = ResolutionContext.Create(pcl, null, main, s);
@@ -357,21 +357,21 @@ class C
 }");
 
 			IStatement s;
-			var n = DResolver.SearchBlockAt(m, ((IBlockNode)m["A"][0])["d"][0].Location, out s);
+			var n = DResolver.SearchBlockAt(m, ((IBlockNode)m["A"].First())["d"].First().Location, out s);
 			Assert.AreEqual("A", n.Name);
 
-			var loc = ((IBlockNode)m["C"][0]).BlockStartLocation;
+			var loc = ((IBlockNode)m["C"].First()).BlockStartLocation;
 			n = DResolver.SearchBlockAt(m, loc, out s);
 			Assert.AreEqual("C", n.Name);
 
-			loc = ((IBlockNode)((IBlockNode)m["B"][0])["subB"][0])["c"][0].Location;
+			loc = ((IBlockNode)((IBlockNode)m["B"].First())["subB"].First())["c"].First().Location;
 			n = DResolver.SearchBlockAt(m, loc, out s);
 			Assert.AreEqual("subB", n.Name);
 
 			n = DResolver.SearchBlockAt(m, new CodeLocation(1, 10), out s);
 			Assert.AreEqual(m,n);
 
-			loc = ((IBlockNode)m["main"][0])["a"][0].EndLocation;
+			loc = ((IBlockNode)m["main"].First())["a"].First().EndLocation;
 			n = DResolver.SearchBlockAt(m, loc, out s);
 			Assert.AreEqual("main", n.Name);
 		}

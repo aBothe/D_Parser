@@ -30,7 +30,7 @@ void main(){
 			var modA=pcl[0]["modA"];
 			var ctxt = ResolutionContext.Create(pcl, null, modA);
 
-			var main=modA["main"][0] as DMethod;
+			var main=modA["main"].First() as DMethod;
 			var s = main.Body.Declarations[0];
 			var s_res= TypeDeclarationResolver.HandleNodeMatch(s, ctxt);
 
