@@ -179,7 +179,7 @@ namespace D_Parser.Completion
 
 		public static bool CanItemBeShownGenerally(INode dn)
 		{
-			if (dn == null || string.IsNullOrEmpty(dn.Name))
+			if (dn == null || dn.NameHash == 0)
 				return false;
 
 			if (dn is DMethod)

@@ -17,7 +17,6 @@ namespace D_Parser.Refactoring
 		readonly List<ISyntaxRegion> l = new List<ISyntaxRegion>();
 		readonly INode symbol;
 		readonly DModule ast;
-		readonly string searchId;
 		readonly int searchHash;
 		#endregion
 
@@ -26,7 +25,6 @@ namespace D_Parser.Refactoring
 		{
 			this.ast = ast;
 			this.symbol = symbol;
-			searchId = symbol.Name;
 			searchHash = symbol.NameHash;
 			this.ctxt = ctxt;
 		}
@@ -60,7 +58,7 @@ namespace D_Parser.Refactoring
 			{
 				var dc = symbol.Parent as DClassLike;
 				if (dc != null && dc.ClassType == D_Parser.Parser.DTokens.Template &&
-					dc.Name == symbol.Name)
+					dc.NameHash == symbol.NameHash)
 				{
 					f.l.Insert(0, new IdentifierDeclaration(dc.NameHash)
 					{

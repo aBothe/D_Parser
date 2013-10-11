@@ -54,7 +54,7 @@ namespace D_Parser.Dom
 			set;
 		}
 
-		public bool IsAnonymous { get { return string.IsNullOrEmpty(Name); } }
+		public bool IsAnonymous { get { return nameHash == 0; } }
 
 		public INode Parent
 		{

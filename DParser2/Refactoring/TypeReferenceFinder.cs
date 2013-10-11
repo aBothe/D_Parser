@@ -75,7 +75,7 @@ namespace D_Parser.Refactoring
 			if (vis != null)
 				foreach (var n in vis)
 				{
-					if (!string.IsNullOrEmpty(n.Name))
+					if (n.NameHash != 0)
 						dd[n.Name] = n;
 				}
 

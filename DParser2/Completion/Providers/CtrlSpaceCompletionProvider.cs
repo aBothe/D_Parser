@@ -73,7 +73,7 @@ namespace D_Parser.Completion
 				if (trackVars.ExpectingNodeName) {
 					if (dv != null && dv.IsAlias && dv.Type == null) {
 						// Show completion because no aliased type has been entered yet
-					} else if (n != null && string.IsNullOrEmpty (n.Name) && EnteredText != null)
+					} else if (n != null && n.NameHash==0 && EnteredText != null)
 						return false;
 				}
 

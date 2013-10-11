@@ -1556,7 +1556,7 @@ namespace D_Parser.Dom.Expressions
 				return sb.ToString();
 			}
 
-			return DTokens.GetTokenString(LiteralToken) + (string.IsNullOrEmpty (AnonymousMethod.Name)?"": " ") + AnonymousMethod.ToString();
+			return DTokens.GetTokenString(LiteralToken) + (AnonymousMethod.NameHash == 0 ?"": " ") + AnonymousMethod.ToString();
 		}
 
 		public CodeLocation Location

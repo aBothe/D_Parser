@@ -234,8 +234,7 @@ namespace D_Parser.Parser
 	            
 	            identifierChain = p.IdentifierList();
 	            if(identifierChain is IdentifierDeclaration)
-	            	n.Name = (identifierChain as IdentifierDeclaration).Id;
-	            
+					n.NameHash = (identifierChain as IdentifierDeclaration).IdHash;
 	            
 	            n.Parameters = p.Parameters(n);
 	            

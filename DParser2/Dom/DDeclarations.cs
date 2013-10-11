@@ -176,7 +176,7 @@ namespace D_Parser.Dom
                 if (n.Type != null)
                     ret += n.Type.ToString();
 
-                if (!String.IsNullOrEmpty(n.Name))
+				if (n.NameHash != 0)
                     ret += (" " + n.Name);
 
                 if (n.Initializer != null)
