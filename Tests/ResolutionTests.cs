@@ -828,7 +828,15 @@ V foo3(V)(V v) {}");
 			IExpression x;
 			AbstractType t;
 			MemberSymbol ms;
-			/*
+
+			x = DParser.ParseExpression("foo3(\"asdf\")");
+			t = Evaluation.EvaluateType(x, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			ms = t as MemberSymbol;
+			var tps = ms.Base as TemplateParameterSymbol;
+			Assert.That(tps, Is.Not.Null);
+			Assert.That(tps.Base, Is.TypeOf(typeof(ArrayType)));
+
 			x = DParser.ParseExpression("foo(123)");
 			t = Evaluation.EvaluateType(x, ctxt);
 			Assert.That(t, Is.Null);
@@ -839,14 +847,6 @@ V foo3(V)(V v) {}");
 			ms = t as MemberSymbol;
 			Assert.That(ms.DeducedTypes, Is.Not.Null);
 			Assert.That(ms.DeducedTypes[0].Base, Is.TypeOf(typeof(PrimitiveType)));
-			*/
-			x = DParser.ParseExpression("foo3(\"asdf\")");
-			t = Evaluation.EvaluateType(x, ctxt);
-			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
-			ms = t as MemberSymbol;
-			var tps = ms.Base as TemplateParameterSymbol;
-			Assert.That(tps, Is.Not.Null);
-			Assert.That(tps.Base, Is.TypeOf(typeof(ArrayType)));
 		}
 
 		[Test]
