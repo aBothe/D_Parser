@@ -149,7 +149,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		{
 			if (curScope is DClassLike)
 			{
-				return DeepScanClass(curScope as DClassLike, VisibleMembers);
+				return DeepScanClass(new ClassType(curScope as DClassLike, null,null), VisibleMembers);
 			}
 			else if (curScope is DMethod)
 			{
@@ -196,12 +196,6 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			}
 			else
 				return scanChildren(curScope as DBlockNode, VisibleMembers);
-		}
-		
-		
-		bool DeepScanClass(DClassLike cls, MemberFilter VisibleMembers)
-		{
-			return DeepScanClass(new ClassType(cls, null, null), VisibleMembers, true);
 		}
 		
 		protected bool DeepScanClass(UserDefinedType udt, MemberFilter vis, bool resolveBaseClassIfRequired = false)
@@ -496,7 +490,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 				if ((r = DResolver.StripMemberSymbols(r)) != null)
 					if (r is TemplateIntermediateType && 
-						DeepScanClass((r as TemplateIntermediateType).Definition as DClassLike, VisibleMembers))
+					DeepScanClass(r as TemplateIntermediateType, VisibleMembers))
 							return true;
 			}
 
