@@ -373,6 +373,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			{
 				var d = n as DVariable;
 
+				if (d.IsAliasThis)
+					return false;
+
 				// Only add aliases if at least types,methods or variables shall be shown.
 				if (d.IsAlias)
 					return
