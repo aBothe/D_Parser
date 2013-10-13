@@ -146,6 +146,34 @@ namespace D_Parser.Resolver
 			}
 		}
 
+		public bool GetTemplateParam(int idHash, out TemplateParameterSymbol tps)
+		{
+			tps = null;
+			Stack<ContextFrame> backup = null;
+			bool ret = false;
+
+			while (stack.Count != 0) {
+				var cur = stack.Peek ();
+
+				if(ret = cur.DeducedTemplateParameters.TryGetValue(idHash, out tps))
+					break;
+
+				if (backup == null)
+					backup = new Stack<ContextFrame> ();
+
+				backup.Push(stack.Pop ());
+
+				if (cur.ScopedBlock == null || stack.Count == 0 || cur.ScopedBlock.Parent != stack.Peek ().ScopedBlock)
+					break;
+			}
+
+			if(backup != null)
+				while (backup.Count != 0)
+					stack.Push (backup.Pop ());
+
+			return ret;
+		}
+
 		/// <summary>
 		/// Returns true if the currently scoped node block is located somewhere inside the hierarchy of n.
 		/// Used for prevention of unnecessary context pushing/popping.

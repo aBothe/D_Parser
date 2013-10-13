@@ -69,24 +69,8 @@ namespace D_Parser.Resolver.TypeResolution
 			// If there are symbols that must be preferred, take them instead of scanning the ast
 			else
 			{
-				Stack<ContextFrame> tstk = null;
 				TemplateParameterSymbol dedTemplateParam;
-				while (!ctxt.CurrentContext.DeducedTemplateParameters.TryGetValue(idHash, out dedTemplateParam))
-				{
-					if (ctxt.PrevContextIsInSameHierarchy) {
-						if(tstk==null)
-							tstk = new Stack<ContextFrame>();
-						tstk.Push (ctxt.Pop ());
-					}
-					else
-						break;
-				}
-
-				if(tstk != null)
-					while (tstk.Count > 0)
-						ctxt.Push(tstk.Pop());
-
-				if (dedTemplateParam != null)
+				if (ctxt.GetTemplateParam(idHash, out dedTemplateParam))
 					return new[] { dedTemplateParam };
 			}
 
