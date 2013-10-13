@@ -207,7 +207,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		protected bool DeepScanClass(UserDefinedType udt, MemberFilter vis, bool resolveBaseClassIfRequired = false)
 		{
 			bool isBase = false;
-			bool scopeIsInInheritanceHierarchy = udt != null && ctxt.NodeIsInCurrentScopeHierarchy(udt.Definition);
+			bool scopeIsInInheritanceHierarchy = udt != null && ctxt.ScopedBlockIsInNodeHierarchy(udt.Definition);
 			bool takeStaticChildrenOnly = ctxt.ScopedBlock is DMethod && (ctxt.ScopedBlock as DMethod).IsStatic;
 			
 			// Check if the scoped node's parent is the current class
@@ -764,7 +764,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				ctxt.LogError(tmx.Qualifier, "Mixin qualifier must resolve to a mixin template declaration.");
 			else
 			{
-				bool pop = !ctxt.NodeIsInCurrentScopeHierarchy(tmxTemplate.Definition);
+				bool pop = !ctxt.ScopedBlockIsInNodeHierarchy(tmxTemplate.Definition);
 				if(pop)
 					ctxt.PushNewScope(tmxTemplate.Definition);
 				ctxt.CurrentContext.IntroduceTemplateParameterTypes(tmxTemplate);

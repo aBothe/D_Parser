@@ -475,7 +475,7 @@ namespace D_Parser.Resolver.TypeResolution
 				popAfterwards = ctxt.ScopedBlock != newScope;
 				if (popAfterwards) {
 					var options = ctxt.CurrentContext.ContextDependentOptions;
-					var applyOptions = ctxt.NodeIsInCurrentScopeHierarchy (m);
+					var applyOptions = ctxt.ScopedBlockIsInNodeHierarchy (m);
 					ctxt.PushNewScope (newScope);
 					if (applyOptions)
 						ctxt.CurrentContext.ContextDependentOptions = options;

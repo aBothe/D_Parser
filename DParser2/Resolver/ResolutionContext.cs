@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿﻿using System.Collections.Generic;
 using D_Parser.Completion;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
@@ -178,10 +178,10 @@ namespace D_Parser.Resolver
 		/// Returns true if the currently scoped node block is located somewhere inside the hierarchy of n.
 		/// Used for prevention of unnecessary context pushing/popping.
 		/// </summary>
-		public bool NodeIsInCurrentScopeHierarchy(INode n)
+		public bool ScopedBlockIsInNodeHierarchy(INode n)
 		{
 			var t_node_scoped = CurrentContext.ScopedBlock;
-			var t_node = n is IBlockNode ? (IBlockNode)n : n.Parent as IBlockNode;
+			var t_node = n as IBlockNode ?? n.Parent as IBlockNode;
 
 			while (t_node != null)
 			{

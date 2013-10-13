@@ -30,7 +30,7 @@ namespace D_Parser.Resolver.Templates
 				return false;
 
 			// Prepare a new context
-			bool pop = !ctxt.NodeIsInCurrentScopeHierarchy(template.Definition);
+			bool pop = !ctxt.ScopedBlockIsInNodeHierarchy(template.Definition);
 			if (pop)
 				ctxt.PushNewScope(template.Definition);
 
