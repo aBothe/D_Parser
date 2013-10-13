@@ -1273,6 +1273,26 @@ version(C)
 		}
 
 		[Test]
+		public void NestedTypes()
+		{
+			var ctxt = CreateDefCtxt (@"
+module A;
+class cl
+{
+	subCl inst;
+	class subCl { int b; }
+}
+
+cl clInst;
+");
+
+			var x = DParser.ParseExpression ("clInst.inst.b");
+			var v = Evaluation.EvaluateType (x, ctxt);
+			Assert.That (v, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That ((v as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+		}
+
+		[Test]
 		public void AliasThis()
 		{
 			var pcl = CreateCache (@"
