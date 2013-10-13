@@ -20,7 +20,7 @@ namespace D_Parser.Formatting
 			internal readonly int Offset;
 			internal readonly int RemovalLength;
 			internal readonly string NewText;
-			internal TextReplaceAction DependsOn;
+			//internal TextReplaceAction DependsOn;
 
 #if DEBUG
 			internal readonly string StackTrace;
@@ -117,9 +117,9 @@ namespace D_Parser.Formatting
 				if (!skipChange) {
 					documentReplace(change.Offset + delta, change.RemovalLength, change.NewText);
 					delta += change.NewText.Length - change.RemovalLength;
-					if (change.DependsOn != null) {
+					/*if (change.DependsOn != null) {
 						depChanges.Add(change.DependsOn);
-					}
+					}*/
 				}
 			}
 			changes.Clear();

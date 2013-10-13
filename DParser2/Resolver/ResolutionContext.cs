@@ -1,4 +1,4 @@
-﻿﻿using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using D_Parser.Completion;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
@@ -61,7 +61,7 @@ namespace D_Parser.Resolver
 		#region Init/Constructor
 		public static ResolutionContext Create(IEditorData editor, ConditionalCompilationFlags globalConditions = null)
 		{
-			IStatement stmt = null;
+			IStatement stmt;
 			return new ResolutionContext(editor.ParseCache, globalConditions ?? new ConditionalCompilationFlags(editor),
 										 DResolver.SearchBlockAt(editor.SyntaxTree, editor.CaretLocation, out stmt) ?? editor.SyntaxTree,
 										 stmt);
@@ -72,10 +72,10 @@ namespace D_Parser.Resolver
 			return new ResolutionContext(pcl, globalConditions, scopedBlock, scopedStatement);
 		}
 
-		public ResolutionContext(ParseCacheView ParseCache, ConditionalCompilationFlags gFlags, IBlockNode bn, IStatement stmt=null)
+		public ResolutionContext(ParseCacheView parseCache, ConditionalCompilationFlags gFlags, IBlockNode bn, IStatement stmt=null)
 		{
 			this.CompilationEnvironment = gFlags;
-			this.ParseCache = ParseCache;
+			this.ParseCache = parseCache;
 			
 			var initCtxt = new ContextFrame(this, bn, stmt);
 			
@@ -197,22 +197,20 @@ namespace D_Parser.Resolver
 		/// </summary>
 		public bool CheckForSingleResult<T>(T[] results, ISyntaxRegion td) where T : ISemantic
 		{
-			if (results == null || results.Length == 0)
-			{
-				LogError(new NothingFoundError(td));
+			if (results == null || results.Length == 0) {
+				LogError (new NothingFoundError (td));
 				return false;
 			}
-			else if (results.Length > 1)
-			{
-				var r = new List<ISemantic>();
+			if (results.Length > 1) {
+				var r = new List<ISemantic> ();
 				foreach (var res in results)
-					r.Add(res);
+					r.Add (res);
 
-				LogError(new AmbiguityError(td, r));
+				LogError (new AmbiguityError (td, r));
 				return false;
 			}
 
-			return results[0] != null;
+			return results [0] != null;
 		}
 
 		#region Result caching

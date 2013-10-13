@@ -814,7 +814,7 @@ namespace D_Parser.Parser
 				int y = Line;
 				sb.Length = 0;
 				sb.Append(ch);
-				string prefix = null;
+				//string prefix = null;
 				string expSuffix = "";
 				string suffix = null;
 				int exponent = 0;
@@ -823,8 +823,8 @@ namespace D_Parser.Parser
 				LiteralSubformat subFmt = 0;
 				bool isFloat = false;
 				bool isImaginary = false;
-				bool isUnsigned = false;
-				bool isLong = false;
+				//bool isUnsigned = false;
+				//bool isLong = false;
 				int NumBase = 0; // Set it to 0 initially - it'll be set to another value later for sure
 
 				char peek = (char)ReaderPeek();
@@ -834,7 +834,7 @@ namespace D_Parser.Parser
 				{
 					if (peek == 'x' || peek == 'X') // Hex values
 					{
-						prefix = "0x";
+						//prefix = "0x";
 						ReaderRead(); // skip 'x'
 						sb.Length = 0; // Remove '0' from 0x prefix from the stringvalue
 						NumBase = 16;
@@ -850,7 +850,7 @@ namespace D_Parser.Parser
 					}
 					else if (peek == 'b' || peek == 'B') // Bin values
 					{
-						prefix = "0b";
+						//prefix = "0b";
 						ReaderRead(); // skip 'b'
 						sb.Length = 0;
 						NumBase = 2;
@@ -973,7 +973,7 @@ namespace D_Parser.Parser
 						ReaderRead();
 						suffix += "u";
 						subFmt |= LiteralSubformat.Unsigned;
-						isUnsigned = true;
+						//isUnsigned = true;
 						peek = (char)ReaderPeek();
 					}
 
@@ -982,7 +982,7 @@ namespace D_Parser.Parser
 						subFmt |= LiteralSubformat.Long;
 						ReaderRead();
 						suffix += "L";
-						isLong = true;
+						//isLong = true;
 						peek = (char)ReaderPeek();
 						if (!subFmt.HasFlag(LiteralSubformat.Unsigned) && (peek == 'u' || peek == 'U'))
 							goto unsigned;
@@ -1002,7 +1002,7 @@ namespace D_Parser.Parser
 					else if (peek == 'L')
 					{ // real value
 						ReaderRead();
-						isLong = true;
+						//isLong = true;
 						suffix += 'L';
 						subFmt |= LiteralSubformat.Real;
 						peek = (char)ReaderPeek();
@@ -1027,7 +1027,7 @@ namespace D_Parser.Parser
 					try{
 						num *= (decimal)Math.Pow(NumBase == 16 ? 2 : 10, exponent);
 					}
-					catch(OverflowException ox)
+					catch(OverflowException)
 					{
 						num = decimal.MaxValue;
 						//HACK: Don't register these exceptions. The user will notice the issues at least when compiling stuff.
@@ -1394,11 +1394,11 @@ namespace D_Parser.Parser
 			}
 			char ch = (char)nextChar;
 			char chValue = ch;
-			string escapeSequence = String.Empty;
+			//string escapeSequence = String.Empty;
 			string surrogatePair = null;
 			if (ch == '\\')
 			{
-				escapeSequence = ReadEscapeSequence(out chValue, out surrogatePair);
+				/*escapeSequence =*/ ReadEscapeSequence(out chValue, out surrogatePair);
 				if (surrogatePair != null)
 				{
 					// Although we'll pass back a string as literal value, it's originally handled as char literal!
@@ -1894,7 +1894,7 @@ namespace D_Parser.Parser
 				int n = GetHexNumber(digit[i]);
 				try{
 				ret += n * (decimal)Math.Pow(NumBase, k - i);
-				}catch(OverflowException ox) { return ret; }
+				}catch(OverflowException) { return ret; }
 			}
 
 			return ret;

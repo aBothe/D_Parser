@@ -192,7 +192,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 					// afterwards, evaluate the operation between the result just returned and the sx.RightOperand.
 					return E(sx, intermediateResult);
-					}catch(DivideByZeroException d)
+					}catch(DivideByZeroException)
 					{
 						EvalError(sx, "Divide by 0");
 						return null;
@@ -200,7 +200,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				}
 
 				return HandleSingleMathOp(x, l, TryGetValue(rValue ?? E(x.RightOperand)), mult);
-				}catch(DivideByZeroException d)
+				}catch(DivideByZeroException)
 				{
 					EvalError(x, "Divide by 0");
 					return null;

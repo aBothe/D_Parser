@@ -117,9 +117,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					}
 					
 					ctxt.ContextIndependentOptions = optionsBackup;
-					return new ArrayValue(GetStringType(), prot);
-					break;
-					
+					return new ArrayValue(GetStringType(), prot);					
 					
 				case "getVirtualFunctions":
 					break;

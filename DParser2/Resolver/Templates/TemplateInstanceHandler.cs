@@ -238,7 +238,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 			var paramEnum = tplNode.TemplateParameters.GetEnumerator();
 
-			var args= givenTemplateArguments == null ? new List<ISemantic>() : givenTemplateArguments;
+			var args = givenTemplateArguments ?? new List<ISemantic> ();
 
 			var argEnum = args.GetEnumerator();
 			foreach (var expectedParam in tplNode.TemplateParameters)

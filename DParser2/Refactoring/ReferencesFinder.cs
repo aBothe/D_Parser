@@ -16,14 +16,12 @@ namespace D_Parser.Refactoring
 		readonly ResolutionContext ctxt;
 		readonly List<ISyntaxRegion> l = new List<ISyntaxRegion>();
 		readonly INode symbol;
-		readonly DModule ast;
 		readonly int searchHash;
 		#endregion
 
 		#region Constructor / External
 		ReferencesFinder(INode symbol, DModule ast, ResolutionContext ctxt)
 		{
-			this.ast = ast;
 			this.symbol = symbol;
 			searchHash = symbol.NameHash;
 			this.ctxt = ctxt;

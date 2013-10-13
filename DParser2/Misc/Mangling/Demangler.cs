@@ -52,7 +52,7 @@ namespace D_Parser.Misc.Mangling
 		public static AbstractType DemangleAndResolve(string mangledString, ResolutionContext ctxt, out ITypeDeclaration qualifier)
 		{
 			bool isCFunction;
-			var sym = D_Parser.Misc.Mangling.Demangler.Demangle(mangledString, out qualifier, out isCFunction);
+			Demangler.Demangle(mangledString, out qualifier, out isCFunction);
 			
 			// Seek for C functions | Functions that have no direct module association (e.g. _Dmain)
 			if(qualifier is IdentifierDeclaration && qualifier.InnerDeclaration == null)

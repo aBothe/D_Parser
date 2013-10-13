@@ -31,7 +31,7 @@ namespace D_Parser.Resolver
 				try{
 					lock(paramLessCache)
 						paramLessCache.Add(element, resolvedElement);
-				}catch(Exception x)
+				}catch(Exception)
 				{
 					
 				}

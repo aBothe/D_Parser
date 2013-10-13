@@ -1,4 +1,4 @@
-﻿﻿using D_Parser.Dom;
+﻿using D_Parser.Dom;
 using D_Parser.Parser;
 using D_Parser.Resolver.TypeResolution;
 using System.Collections.Generic;
@@ -106,21 +106,20 @@ namespace D_Parser.Resolver.ASTScanner
 	
 	public class SingleNodeNameScan : NameScan
 	{
-		AbstractType resultBase;
 		protected SingleNodeNameScan(ResolutionContext ctxt, int filterHash, object idObject) : base(ctxt, filterHash, idObject) {}
 
-		public static List<AbstractType> SearchChildrenAndResolve(ResolutionContext ctxt, AbstractType resultBase, IBlockNode block, string name, object idObject = null)
+		public static List<AbstractType> SearchChildrenAndResolve(ResolutionContext ctxt, IBlockNode block, string name, object idObject = null)
 		{
-			return SearchChildrenAndResolve (ctxt, resultBase, block, name.GetHashCode(), idObject);
+			return SearchChildrenAndResolve (ctxt, block, name.GetHashCode(), idObject);
 		}
 
 		/// <summary>
 		/// Scans a block node. Not working with DMethods.
 		/// Automatically resolves node matches so base types etc. will be specified directly after the search operation.
 		/// </summary>
-		public static List<AbstractType> SearchChildrenAndResolve(ResolutionContext ctxt, AbstractType resultBase, IBlockNode block, int nameHash, object idObject = null)
+		public static List<AbstractType> SearchChildrenAndResolve(ResolutionContext ctxt, IBlockNode block, int nameHash, object idObject = null)
 		{
-			var scan = new SingleNodeNameScan(ctxt, nameHash, idObject) { resultBase = resultBase };
+			var scan = new SingleNodeNameScan(ctxt, nameHash, idObject);
 
 			scan.ScanBlock(block, CodeLocation.Empty, MemberFilter.All);
 
