@@ -466,11 +466,21 @@ namespace D_Parser.Resolver.TypeResolution
 				stackCalls[m] = stkC = 1;
 			/*
 			 * Pushing a new scope is only required if current scope cannot be found in the handled node's hierarchy.
+			 * Edit: No, it is required nearly every time because of nested type declarations - then, we do need the 
+			 * current block scope.
 			 */
-			bool popAfterwards = !ctxt.NodeIsInCurrentScopeHierarchy(m);
-
-			if (popAfterwards)
-				ctxt.PushNewScope(m is IBlockNode ? (IBlockNode)m : m.Parent as IBlockNode);
+			bool popAfterwards;
+			{
+				var newScope = m is IBlockNode ? (IBlockNode)m : m.Parent as IBlockNode;
+				popAfterwards = ctxt.ScopedBlock != newScope;
+				if (popAfterwards) {
+					var options = ctxt.CurrentContext.ContextDependentOptions;
+					var applyOptions = ctxt.NodeIsInCurrentScopeHierarchy (m);
+					ctxt.PushNewScope (newScope);
+					if (applyOptions)
+						ctxt.CurrentContext.ContextDependentOptions = options;
+				}
+			}
 
 			var canResolveBase = ((ctxt.Options & ResolutionOptions.DontResolveBaseTypes) != ResolutionOptions.DontResolveBaseTypes) && 
 			                     stkC < 10 && (m.Type == null || m.Type.ToString(false) != m.Name);
