@@ -730,12 +730,12 @@ namespace D_Parser.Parser
 				if ((laKind == Identifier && Lexer.CurrentPeekToken.Kind == This) ||
 				    (secondWay=(laKind == This && Lexer.CurrentPeekToken.Kind == Assign)))
 				{
-                    var dv = new DVariable { 
+					var dv = new DVariable { 
                         Description = _t.Description,
                         Location=t.Location, 
                         IsAlias=true,
 						IsAliasThis = true,
-						Name = "this",
+						NameHash = DVariable.AliasThisIdentifierHash,
 						Parent = Scope,
 						Attributes = _t.Attributes
                     };

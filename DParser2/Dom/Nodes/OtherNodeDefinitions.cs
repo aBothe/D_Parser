@@ -9,6 +9,9 @@ namespace D_Parser.Dom
 	public class DVariable : DNode
 	{
 		public IExpression Initializer; // Variable
+
+		public const string AliasThisIdentifier = "this";
+		public static readonly int AliasThisIdentifierHash = AliasThisIdentifier.GetHashCode();
 		public bool IsAlias = false;
 		public bool IsAliasThis;
 
