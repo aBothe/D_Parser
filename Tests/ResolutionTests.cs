@@ -47,6 +47,26 @@ namespace Tests
 			return r;
 		}
 
+		public static ResolutionContext CreateDefCtxt(params string[] modules)
+		{
+			var pcl = CreateCache (modules);
+			return CreateDefCtxt (pcl, pcl[0].GetModules()[0]);
+		}
+
+		public static ResolutionContext CreateCtxt(string scopedModule,params string[] modules)
+		{
+			var pcl = CreateCache (modules);
+			return CreateDefCtxt (pcl, pcl [0] [scopedModule]);
+		}
+
+		public static ResolutionContext CreateDefCtxt(string scopedModule,out DModule mod, params string[] modules)
+		{
+			var pcl = CreateCache (modules);
+			mod = pcl [0] [scopedModule];
+
+			return CreateDefCtxt (pcl, mod);
+		}
+
 		[Test]
 		public void BasicResolution0()
 		{
@@ -797,27 +817,30 @@ mixin(def!(-1,""bar""));
 		[Test]
 		public void TestParamDeduction10()
 		{
-			var pcl = CreateCache(@"module modA;
+			var ctxt = CreateCtxt("A",@"module A;
 
 void foo(T)(int a) {}
 void foo2(T=double)(bool b) {}
-V foo3(V)(int a,V v) {}");
+V foo3(V)(V v) {}");
 
-			var ctxt = CreateDefCtxt(pcl, pcl[0]["modA"]);
 			ctxt.ContextIndependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
 
-			var x = DParser.ParseExpression("foo(123)");
-			var t = Evaluation.EvaluateType(x, ctxt);
+			IExpression x;
+			AbstractType t;
+			MemberSymbol ms;
+			/*
+			x = DParser.ParseExpression("foo(123)");
+			t = Evaluation.EvaluateType(x, ctxt);
 			Assert.That(t, Is.Null);
 
 			x = DParser.ParseExpression("foo2(true)");
 			t = Evaluation.EvaluateType(x, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
-			var ms = t as MemberSymbol;
+			ms = t as MemberSymbol;
 			Assert.That(ms.DeducedTypes, Is.Not.Null);
 			Assert.That(ms.DeducedTypes[0].Base, Is.TypeOf(typeof(PrimitiveType)));
-
-			x = DParser.ParseExpression("foo3(123,\"asdf\")");
+			*/
+			x = DParser.ParseExpression("foo3(\"asdf\")");
 			t = Evaluation.EvaluateType(x, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			ms = t as MemberSymbol;
@@ -1247,6 +1270,41 @@ version(C)
 
 			ms = TypeDeclarationResolver.ResolveIdentifier("pubC", ctxt, null);
 			Assert.AreEqual(0, ms.Length);
+		}
+
+		[Test]
+		public void AliasThis()
+		{
+			var pcl = CreateCache (@"
+module A;
+
+class cl
+{
+	int a;
+	subCl inst;
+	alias inst this;
+	class subCl { int b; }
+}
+
+cl clInst;
+");
+
+			var mod = pcl [0] ["A"];
+			var ctxt = ResolutionContext.Create (pcl, null, mod);
+
+			var x = DParser.ParseExpression ("clInst.a");
+			var v = Evaluation.EvaluateType (x, ctxt);
+			Assert.That ((v as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+
+			x = DParser.ParseExpression ("clInst.inst.b");
+			v = Evaluation.EvaluateType (x, ctxt);
+			Assert.That (v, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That ((v as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+
+			x = DParser.ParseExpression ("clInst.b");
+			v = Evaluation.EvaluateType (x, ctxt);
+			Assert.That (v, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That ((v as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 		}
 
 		[Test]
