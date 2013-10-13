@@ -1258,8 +1258,7 @@ namespace D_Parser.Dom.Expressions
 		public override string ToString()
 		{
 			if (Format != Parser.LiteralFormat.None)
-				switch (Format)
-				{
+				switch (Format) {
 					case Parser.LiteralFormat.CharLiteral:
 						return "'" + (Value ?? "") + "'";
 					case Parser.LiteralFormat.StringLiteral:
@@ -1267,8 +1266,9 @@ namespace D_Parser.Dom.Expressions
 					case Parser.LiteralFormat.VerbatimStringLiteral:
 						return "r\"" + StringValue + "\"";
 				}
-			else if (IsIdentifier && ModuleScoped)
-				return "." + StringValue;
+			else if (IsIdentifier) {
+				return (ModuleScoped ? ".": "") + StringValue;
+			}
 			
 			if (Value is decimal)
 				return ((decimal)Value).ToString(System.Globalization.CultureInfo.InvariantCulture);
