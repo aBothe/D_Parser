@@ -741,11 +741,8 @@ namespace D_Parser.Parser
                     };
 					LastParsedObject = dv;
 
-					{
-						var dcl = Scope as DClassLike;
-						if(dcl == null || !(dcl.ClassType==DTokens.Struct || dcl.ClassType == DTokens.Class))
-							SemErr(DTokens.This, "alias this declarations are only allowed in structs and classes!");
-					}
+					if(!(Scope is DClassLike))
+						SemErr(DTokens.This, "alias this declarations are only allowed in structs and classes!");
 					
 					// alias this = Identifier
 					if(secondWay)
