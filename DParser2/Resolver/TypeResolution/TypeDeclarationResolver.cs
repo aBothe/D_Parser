@@ -472,7 +472,8 @@ namespace D_Parser.Resolver.TypeResolution
 			if (popAfterwards)
 				ctxt.PushNewScope(m is IBlockNode ? (IBlockNode)m : m.Parent as IBlockNode);
 
-			var canResolveBase = stkC < 10 && (m.Type == null || m.Type.ToString(false) != m.Name);
+			var canResolveBase = ((ctxt.Options & ResolutionOptions.DontResolveBaseTypes) != ResolutionOptions.DontResolveBaseTypes) && 
+			                     stkC < 10 && (m.Type == null || m.Type.ToString(false) != m.Name);
 			
 			// To support resolving type parameters to concrete types if the context allows this, introduce all deduced parameters to the current context
 			if (resultBase is DSymbol)
@@ -526,7 +527,7 @@ namespace D_Parser.Resolver.TypeResolution
 				var v = m as DVariable;
 				AbstractType bt = null;
 
-				if (canResolveBase && ((ctxt.Options & ResolutionOptions.DontResolveBaseTypes) != ResolutionOptions.DontResolveBaseTypes))
+				if (canResolveBase)
 				{
 					var bts = TypeDeclarationResolver.Resolve(v.Type, ctxt);
 					ctxt.CheckForSingleResult(bts, v.Type);
@@ -552,10 +553,7 @@ namespace D_Parser.Resolver.TypeResolution
 			}
 			else if (m is DMethod)
 			{
-				ret = new MemberSymbol((DNode)m,
-					canResolveBase && ((ctxt.Options & ResolutionOptions.DontResolveBaseTypes) != ResolutionOptions.DontResolveBaseTypes) ? 
-					GetMethodReturnType((DMethod)m, ctxt) : null
-					, typeBase as ISyntaxRegion);
+				ret = new MemberSymbol(m as DNode,canResolveBase ? GetMethodReturnType(m as DMethod, ctxt) : null, typeBase as ISyntaxRegion);
 			}
 			else if (m is DClassLike)
 			{
@@ -610,8 +608,7 @@ namespace D_Parser.Resolver.TypeResolution
 				}
 
 				if (dc.ClassType == DTokens.Class || dc.ClassType == DTokens.Interface)
-					ret = canResolveBase && ((ctxt.Options & ResolutionOptions.DontResolveBaseClasses) != ResolutionOptions.DontResolveBaseClasses) ? 
-						DResolver.ResolveBaseClasses(udt, ctxt) : udt;
+					ret = canResolveBase? DResolver.ResolveBaseClasses(udt, ctxt) : udt;
 			}
 			else if (m is DModule)
 			{
@@ -638,16 +635,13 @@ namespace D_Parser.Resolver.TypeResolution
 			else if(m is NamedTemplateMixinNode)
 			{
 				var tmxNode = m as NamedTemplateMixinNode;
-				ret = new MemberSymbol(tmxNode, canResolveBase && ((ctxt.Options & ResolutionOptions.DontResolveBaseTypes) != ResolutionOptions.DontResolveBaseTypes) ? 
-				                       ResolveSingle(tmxNode.Type, ctxt) : null, 
-				                       typeBase as ISyntaxRegion);
+				ret = new MemberSymbol(tmxNode, canResolveBase ? ResolveSingle(tmxNode.Type, ctxt) : null, typeBase as ISyntaxRegion);
 			}
-
-			if (resultBase is DSymbol)
-				ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals((DSymbol)resultBase);
 
 			if (popAfterwards)
 				ctxt.Pop();
+			else if (resultBase is DSymbol)
+				ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals((DSymbol)resultBase);
 
 			if (stkC == 1)
 				stackCalls.Remove(m);
@@ -704,7 +698,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 		public static AbstractType GetMethodReturnType(DMethod method, ResolutionContext ctxt)
 		{
-			if (ctxt != null && (ctxt.Options & ResolutionOptions.DontResolveBaseTypes) != 0)
+			if ((ctxt.Options & ResolutionOptions.DontResolveBaseTypes) == ResolutionOptions.DontResolveBaseTypes)
 				return null;
 
 			/*
