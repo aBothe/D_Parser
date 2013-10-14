@@ -229,6 +229,12 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 				if(udt is TemplateIntermediateType){
 					var tit = udt as TemplateIntermediateType;
+					var type = (tit.Definition as DClassLike).ClassType;
+
+					if ((type == DTokens.Struct || type == DTokens.Class || type == DTokens.Template) &&
+						HandleAliasThisDeclarations (tit, vis))
+						return true;
+
 					if (tit.BaseInterfaces != null) {
 						if (interfaces == null)
 							interfaces = new List<InterfaceType> ();
@@ -237,8 +243,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 								interfaces.Add (I);
 					}
 
-					if(resolveBaseClassIfRequired && udt.Base == null && 
-						udt.Definition is DClassLike && (udt.Definition as DClassLike).ClassType == DTokens.Class)
+					if(resolveBaseClassIfRequired && udt.Base == null && type == DTokens.Class)
 						udt = DResolver.ResolveBaseClasses(udt, ctxt);
 
 					udt = udt.Base as UserDefinedType;
@@ -553,6 +558,69 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 							return true;
 					}
 				}
+
+			return false;
+		}
+
+		bool HandleAliasThisDeclarations(TemplateIntermediateType tit, MemberFilter vis)
+		{
+			bool pop;
+			var ch = tit.Definition [DVariable.AliasThisIdentifierHash];
+			if(ch != null){
+				foreach (DVariable aliasDef in ch) {
+					if (!ctxt.CurrentContext.MatchesDeclarationEnvironment (aliasDef) || aliasDef.Type == null)
+						continue;
+
+					pop = ctxt.ScopedBlock != tit.Definition;
+					if (pop)
+						ctxt.PushNewScope (tit.Definition);
+
+					// Resolve the aliased symbol and expect it to be a member symbol(?).
+					//TODO: Check if other cases are allowed as well!
+					var aliasedSymbol = DResolver.StripAliasSymbol(TypeDeclarationResolver.ResolveSingle (aliasDef.Type, ctxt));
+					var aliasedMember = aliasedSymbol as MemberSymbol;
+
+					if (pop)
+						ctxt.Pop ();
+
+					if (aliasedMember == null) {
+						if (aliasedSymbol != null)
+							ctxt.LogError (aliasDef, "Aliased type from 'alias this' definition is expected to be a type instance, not "+aliasedSymbol.ToString()+"!");
+
+						continue;
+					}
+
+					/*
+					 * The aliased member's type can be everything!
+					 */
+					aliasedSymbol = aliasedMember.Base;
+
+					/** TODO:
+					 * Tear all the completion items generation code down into this or 
+					 * a similar Resolver-leveled class in order to let this method 
+					 * render all available properties properly!
+					 * -- mainly for static properties, ufcs recommendations and other things that
+					 * become added in e.g. MemberCompletionProvider
+					 */
+
+					var tit_ = aliasedSymbol as TemplateIntermediateType;
+					if(tit_ != null)
+					{
+						pop = !ctxt.ScopedBlockIsInNodeHierarchy(tit_.Definition);
+						if(pop)
+							ctxt.PushNewScope(tit_.Definition);
+						ctxt.CurrentContext.IntroduceTemplateParameterTypes(tit_);
+						var r = DeepScanClass(tit_, vis, true);
+						if(pop)
+							ctxt.Pop();
+						else
+							ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(tit_);
+						if(r)
+							return true;
+					}
+
+				}
+			}
 
 			return false;
 		}
