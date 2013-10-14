@@ -13,7 +13,6 @@ namespace D_Parser.Resolver
 		
 		public DParserException(ISyntaxRegion x,string Msg)	:base(Msg) {
 			Location = x;
-			Message = Msg;
 		}
 	}
 

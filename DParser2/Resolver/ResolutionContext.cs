@@ -238,14 +238,14 @@ namespace D_Parser.Resolver
 		{
 			ResolutionErrors.Add(err);
 			if (ResolutionErrors.Count > maxErrorCount)
-				throw new TooManyErrorsException (ResolutionErrors.ToArray());
+				throw new TooManyResolutionErrors (ResolutionErrors.ToArray());
 		}
 
 		public void LogError(ISyntaxRegion syntaxObj, string msg)
 		{
 			ResolutionErrors.Add(new ResolutionError(syntaxObj,msg));
 			if (ResolutionErrors.Count > maxErrorCount)
-				throw new TooManyErrorsException (ResolutionErrors.ToArray());
+				throw new TooManyResolutionErrors (ResolutionErrors.ToArray());
 		}
 		#endregion
 	}
