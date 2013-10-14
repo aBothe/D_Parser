@@ -119,9 +119,8 @@ namespace D_Parser.Dom
 		public IEnumerable<INode> GetNodes(int nameHash)
 		{
 			List<INode> l;
-			if(nameDict.TryGetValue(nameHash, out l))
-				return l;
-			return null;
+			nameDict.TryGetValue (nameHash, out l);
+			return l;
 		}
 
 		public INode this[int Index]
