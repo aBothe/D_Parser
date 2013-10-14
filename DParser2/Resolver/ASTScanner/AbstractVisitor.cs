@@ -198,7 +198,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				return scanChildren(curScope as DBlockNode, VisibleMembers);
 		}
 		
-		protected bool DeepScanClass(UserDefinedType udt, MemberFilter vis, bool resolveBaseClassIfRequired = false)
+		protected bool DeepScanClass(UserDefinedType udt, MemberFilter vis, bool resolveBaseClassIfRequired = true)
 		{
 			bool isBase = false;
 			bool scopeIsInInheritanceHierarchy = udt != null && ctxt.ScopedBlockIsInNodeHierarchy(udt.Definition);
