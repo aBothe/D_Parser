@@ -160,12 +160,32 @@ namespace D_Parser.Resolver.TypeResolution
 				sortedAndFilteredOverloads.Length == 1 && 
 				sortedAndFilteredOverloads[0] is TemplateType)
 			{
-				AbstractType[] matchingChild;
-				if(ImplicitTemplateProperties.TryGetImplicitProperty(sortedAndFilteredOverloads[0] as TemplateType, ctxt, out matchingChild))
-					return matchingChild;
+				return TryGetImplicitProperty (sortedAndFilteredOverloads [0] as TemplateType, ctxt) ?? sortedAndFilteredOverloads;
 			}
 
 			return sortedAndFilteredOverloads;
+		}
+
+		static AbstractType[] TryGetImplicitProperty(TemplateType template, ResolutionContext ctxt)
+		{
+			// Prepare a new context
+			bool pop = !ctxt.ScopedBlockIsInNodeHierarchy(template.Definition);
+			if (pop)
+				ctxt.PushNewScope(template.Definition);
+
+			// Introduce the deduced params to the current resolution context
+			ctxt.CurrentContext.IntroduceTemplateParameterTypes(template);
+
+			// Get actual overloads
+			var matchingChild = TypeDeclarationResolver.ResolveFurtherTypeIdentifier( template.NameHash, new[]{ template }, ctxt);
+
+			// Undo context-related changes
+			if (pop)
+				ctxt.Pop();
+			else
+				ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(template);
+
+			return matchingChild;
 		}
 
 		private static List<AbstractType> DeduceOverloads(

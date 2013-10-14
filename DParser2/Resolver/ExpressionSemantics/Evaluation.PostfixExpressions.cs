@@ -195,8 +195,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					 * If the overload is a template, it quite exclusively means that we'll handle a method that is the only
 					 * child inside a template + that is named as the template.
 					 */
-					else if (b is TemplateType && 
-						ImplicitTemplateProperties.ContainsEquallyNamedChildrenOnly(((TemplateType)b).Definition))
+					else if (b is TemplateType)
 						methodOverloads.Add(b);
 				}
 
