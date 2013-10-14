@@ -1785,7 +1785,7 @@ void main()
 		[Test]
 		public void Mixins3()
 		{
-			var pcl = ResolutionTests.CreateCache(@"module A;
+			var ctxt = ResolutionTests.CreateDefCtxt(@"module A;
 template Temp(string v)
 {
 	mixin(v);
@@ -1795,16 +1795,16 @@ class cl
 {
 	mixin(""int someInt=345;"");
 }");
-			var A =pcl[0]["A"];
-			var ctxt = ResolutionTests.CreateDefCtxt(pcl, A);
-			
-			var ex = DParser.ParseExpression("Temp!\"int Temp;\"");
-			var x = Evaluation.EvaluateType(ex,ctxt);
-			Assert.That(x, Is.InstanceOf(typeof(MemberSymbol)));
-			
+			IExpression ex;
+			AbstractType t;
+
 			ex = DParser.ParseExpression("(new cl()).someInt");
-			x = Evaluation.EvaluateType(ex, ctxt);
-			Assert.That(x, Is.InstanceOf(typeof(MemberSymbol)));
+			t = Evaluation.EvaluateType(ex, ctxt);
+			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
+
+			ex = DParser.ParseExpression("Temp!\"int Temp;\"");
+			t = Evaluation.EvaluateType(ex,ctxt);
+			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
 		}
 		
 		[Test]
