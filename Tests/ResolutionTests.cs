@@ -1306,7 +1306,14 @@ class cl
 	class subCl { int b; }
 }
 
+class notherClass
+{
+	int[] arr;
+	alias arr this;
+}
+
 cl clInst;
+notherClass ncl;
 ");
 
 			var mod = pcl [0] ["A"];
@@ -1322,6 +1329,17 @@ cl clInst;
 			Assert.That ((v as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 
 			x = DParser.ParseExpression ("clInst.b");
+			v = Evaluation.EvaluateType (x, ctxt);
+			Assert.That (v, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That ((v as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+
+			x = DParser.ParseExpression ("ncl.arr");
+			v = Evaluation.EvaluateType (x, ctxt);
+			Assert.That (v, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That ((v as MemberSymbol).Base, Is.TypeOf(typeof(ArrayType)));
+
+			// Test for static properties
+			x = DParser.ParseExpression ("ncl.length");
 			v = Evaluation.EvaluateType (x, ctxt);
 			Assert.That (v, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That ((v as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
