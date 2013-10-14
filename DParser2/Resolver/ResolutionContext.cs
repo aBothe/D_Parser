@@ -6,9 +6,19 @@ using D_Parser.Dom.Statements;
 using D_Parser.Misc;
 using System.Diagnostics;
 using D_Parser.Resolver.TypeResolution;
+using D_Parser.Parser;
 
 namespace D_Parser.Resolver
 {
+	public class TooManyResolutionErrors : System.InvalidOperationException
+	{
+		public ResolutionError[] Errors;
+		public TooManyResolutionErrors(ResolutionError[] errors) : base("Too many resolution errors!")
+		{
+			Errors = errors;
+		}
+	}
+
 	public class ResolutionContext
 	{
 		#region Properties
@@ -223,14 +233,19 @@ namespace D_Parser.Resolver
 		#endregion
 		
 		#region Error handling
+		const int maxErrorCount = 20;
 		public void LogError(ResolutionError err)
 		{
 			ResolutionErrors.Add(err);
+			if (ResolutionErrors.Count > maxErrorCount)
+				throw new TooManyErrorsException (ResolutionErrors.ToArray());
 		}
 
 		public void LogError(ISyntaxRegion syntaxObj, string msg)
 		{
 			ResolutionErrors.Add(new ResolutionError(syntaxObj,msg));
+			if (ResolutionErrors.Count > maxErrorCount)
+				throw new TooManyErrorsException (ResolutionErrors.ToArray());
 		}
 		#endregion
 	}

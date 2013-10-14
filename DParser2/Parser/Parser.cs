@@ -455,7 +455,7 @@ namespace D_Parser.Parser
 
 	public class TooManyErrorsException : Exception
 	{
-		public TooManyErrorsException() : base("Too many errors - stop parsing") { }
+		public TooManyErrorsException() : base("Too many errors") { }
 	}
 
 	public class ParserTrackerVariables

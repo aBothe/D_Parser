@@ -7,14 +7,12 @@ using D_Parser.Resolver;
 
 namespace D_Parser.Resolver
 {
-	public class DParserException {
-		public readonly string Message;
-		
+	public class DParserException : Exception {
 		public readonly string Module;
-		public readonly ISyntaxRegion TargetSite;
+		public readonly ISyntaxRegion Location;
 		
-		public DParserException(ISyntaxRegion x,string Msg) {
-			TargetSite = x;
+		public DParserException(ISyntaxRegion x,string Msg)	:base(Msg) {
+			Location = x;
 			Message = Msg;
 		}
 	}
@@ -40,7 +38,7 @@ namespace D_Parser.Resolver
 	{
 		public IExpression EvaluatedExpression
 		{
-			get { return TargetSite as IExpression; }
+			get { return Location as IExpression; }
 		}
 		
 		public EvaluationException(IExpression x,string Message, params ISemantic[] LastSubresults)
