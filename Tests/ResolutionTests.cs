@@ -776,7 +776,7 @@ Appender!(E[]) appender(A : E[], E)(A array = null)
 		[Test]
 		public void TestParamDeduction9()
 		{
-			var pcl = Tests.ResolutionTests.CreateCache(@"module A;
+			var ctxt = CreateDefCtxt(@"module A;
 template mxTemp(int i)
 {
 	static if(i < 0)
@@ -792,8 +792,6 @@ template def(int i,string name)
 
 mixin(def!(-1,""bar""));
 ");
-			var A = pcl[0]["A"];
-			var ctxt = Tests.ResolutionTests.CreateDefCtxt(pcl, A);
 			
 			var ex = DParser.ParseExpression(@"def!(2,""someVar"")");
 			var val = Evaluation.EvaluateValue(ex, ctxt);

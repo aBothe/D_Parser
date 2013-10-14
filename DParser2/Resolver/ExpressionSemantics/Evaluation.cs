@@ -108,16 +108,23 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 			
 			var bt = v.Member;
+			var ctxt = vp.ResolutionContext;
+			bool pop=false;
 
 			if(bt != null)
 			{
-				vp.ResolutionContext.CurrentContext.IntroduceTemplateParameterTypes(bt);
+				//TODO: This is not tested entirely - but it makes test passing successfully!
+				pop = true;
+				ctxt.PushNewScope (bt.Definition.Parent as Dom.IBlockNode);
+				ctxt.CurrentContext.IntroduceTemplateParameterTypes(bt);
 			}
 			
 			var val = vp[v.Variable];
 			
 			if(bt != null)
 			{
+				if (pop)
+					ctxt.Pop ();
 				vp.ResolutionContext.CurrentContext.RemoveParamTypesFromPreferredLocals(bt);
 			}
 			
