@@ -37,60 +37,9 @@ namespace D_Parser.Resolver.Templates
 			// Introduce the deduced params to the current resolution context
 			ctxt.CurrentContext.IntroduceTemplateParameterTypes(template);
 
-			// Get actual overloads,
-			var rawOverloads = template.Definition[template.Name];
-
-			// Pre-check version/debug conditions
-			var overloads = new List<DNode>();
-			if(rawOverloads!=null)
-				foreach(DNode oo in rawOverloads) //TODO: Private/Package check
-					if(ctxt.CurrentContext.MatchesDeclarationEnvironment(oo))
-					   overloads.Add(oo);
+			// Get actual overloads
+			matchingChild = TypeDeclarationResolver.ResolveFurtherTypeIdentifier( template.NameHash, new[]{ template }, ctxt);
 			
-			if(template.Definition.StaticStatements != null &&
-			   template.Definition.StaticStatements.Count != 0)
-			{
-				foreach(var ss in template.Definition.StaticStatements){
-					if(ss is MixinStatement && (
-						ss.Attributes == null || 
-						ctxt.CurrentContext.MatchesDeclarationEnvironment(ss.Attributes)))
-					{
-						var ast = MixinAnalysis.ParseMixinDeclaration((MixinStatement)ss, ctxt);
-						if(ast==null)
-							continue;
-						
-						rawOverloads = ast[template.Name];
-						if(rawOverloads != null)
-							foreach(DNode oo in rawOverloads) //TODO: Private/Package check
-								if(ctxt.CurrentContext.MatchesDeclarationEnvironment(oo))
-								   overloads.Add(oo);
-					}
-				}
-			}
-			
-			// resolve them
-			var resolvedOverloads = TypeDeclarationResolver.HandleNodeMatches(overloads, ctxt, null, template.DeclarationOrExpressionBase);
-
-			// and deduce their parameters whereas this time, the parent's parameter are given already, in the case it's e.g.
-			// needed as return type or in a declaration condition:
-
-			// Furthermore, pass all the arguments that have been passed to the super template, to the child,
-			// so these arguments may be used again for some inner parameters.
-			var args = new List<ISemantic>();
-			if(template.DeducedTypes!=null)
-			{
-				foreach (var kv in template.DeducedTypes)
-					args.Add((ISemantic)kv.ParameterValue ?? kv.Base);
-			}
-
-			matchingChild = TemplateInstanceHandler.DeduceParamsAndFilterOverloads(resolvedOverloads, args, true, ctxt);
-			
-			if(matchingChild != null)
-			{
-				foreach(DSymbol ch in matchingChild)
-					ch.DeducedTypes = template.DeducedTypes;
-			}
-
 			// Undo context-related changes
 			if (pop)
 				ctxt.Pop();
