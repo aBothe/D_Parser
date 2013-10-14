@@ -1240,7 +1240,7 @@ namespace D_Parser.Dom.Expressions
 
 		public readonly object Value;
 		public readonly int ValueStringHash;
-		public string StringValue {get{return Strings.TryGet (ValueStringHash);}}
+		public string StringValue {get{return ValueStringHash != 0 ? Strings.TryGet (ValueStringHash) : Value as string;}}
 		public readonly LiteralFormat Format;
 		public readonly LiteralSubformat Subformat;
 
