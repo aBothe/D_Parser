@@ -608,14 +608,15 @@ namespace D_Parser.Resolver.TypeResolution
 
 		static AbstractType HandleClassLikeMatch (INode m, ResolutionContext ctxt, object typeBase, bool canResolveBase)
 		{
-			AbstractType ret;
+			AbstractType ret = null;
 			UserDefinedType udt = null;
 			var dc = (DClassLike)m;
 			var invisibleTypeParams = new List<TemplateParameterSymbol> ();
 			/*
-				 * Add 'superior' template parameters to the current symbol because the parameters 
-				 * might be re-used in the nested class.
-				 */var tStk = new Stack<ContextFrame> ();
+			 * Add 'superior' template parameters to the current symbol because the parameters 
+			 * might be re-used in the nested class.
+			 */
+			var tStk = new Stack<ContextFrame> ();
 			do {
 				var curCtxt = ctxt.Pop ();
 				tStk.Push (curCtxt);
