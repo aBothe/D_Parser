@@ -112,9 +112,9 @@ namespace D_Parser.Resolver
 			}
 			catch
 			{
-				return true; //TODO: Remove the try / Notify the user on an exception case -- when the evaluation is considered stable only!!
+				return false; //TODO: Remove the try / Notify the user on an exception case -- when the evaluation is considered stable only!!
 			}
-			return v == null || !Evaluation.IsFalseZeroOrNull(v); //TODO: Just because the expression evaluation isn't working properly currently, let it return true to have it e.g. in the completion list
+			return !Evaluation.IsFalseZeroOrNull(v); //TODO: Just because the expression evaluation isn't working properly currently, let it return true to have it e.g. in the completion list
 		}
 	}
 
