@@ -127,12 +127,14 @@ namespace D_Parser.Misc
 				Interlocked.Add (ref methodCount, count);
 			}
 			catch(Exception ex) {
-				Console.WriteLine ("Exception occurred on analysing method \"" + (dm != null ? dm.ToString(true) : "<no method>") + "\":");
-				Console.WriteLine (ex.Message);
-				Console.WriteLine ("-------------------------------");
-				Console.WriteLine ("Stacktrace");
-				Console.WriteLine (ex.StackTrace);
-				Console.WriteLine ("-------------------------------");
+				if (CompletionOptions.Instance.DumpResolutionErrors) {
+					Console.WriteLine ("Exception occurred on analysing method \"" + (dm != null ? dm.ToString (true) : "<no method>") + "\":");
+					Console.WriteLine (ex.Message);
+					Console.WriteLine ("-------------------------------");
+					Console.WriteLine ("Stacktrace");
+					Console.WriteLine (ex.StackTrace);
+					Console.WriteLine ("-------------------------------");
+				}
 			}
 			finally {
 				if (Interlocked.Decrement (ref parsingThreads) < 1)

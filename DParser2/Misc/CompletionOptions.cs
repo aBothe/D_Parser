@@ -6,6 +6,8 @@ namespace D_Parser.Misc
 	{
 		public static CompletionOptions Instance = new CompletionOptions();
 
+		public bool DumpResolutionErrors = System.Diagnostics.Debugger.IsAttached;
+
 		public bool EnableSuggestionMode = false;
 
 		public bool ShowUFCSItems = true;
