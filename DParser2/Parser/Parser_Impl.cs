@@ -2256,10 +2256,13 @@ namespace D_Parser.Parser
 
 			Expect(Question);
 			var se = new ConditionalExpression() { OrOrExpression = trigger };
-			LastParsedObject = se;
 			se.TrueCaseExpression = Expression(Scope);
-			Expect(Colon);
-			se.FalseCaseExpression = ConditionalExpression(Scope);
+			if (Expect (Colon))
+				se.FalseCaseExpression = ConditionalExpression (Scope);
+			if (!IsEOF)
+				LastParsedObject = se;
+			else
+				TrackerVariables.IsParsingAssignExpression = true;
 			return se;
 		}
 

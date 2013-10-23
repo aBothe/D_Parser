@@ -160,7 +160,7 @@ namespace D_Parser.Dom.Expressions
 
 		public CodeLocation EndLocation
 		{
-			get { return FalseCaseExpression.EndLocation; }
+			get { return (FalseCaseExpression ?? TrueCaseExpression ?? OrOrExpression).EndLocation; }
 		}
 
 		public IExpression[] SubExpressions
