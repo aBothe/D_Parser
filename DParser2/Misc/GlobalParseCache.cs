@@ -337,6 +337,7 @@ namespace D_Parser.Misc
 					if (ParsedDirectories.TryGetValue (path, out oldRoot) &&
 						oldRoot.LastParseTime >= Directory.GetLastWriteTimeUtc (path)) {
 						noticeFinish (new ParseIntermediate (statIm, oldRoot, string.Empty));
+						continue;
 					}
 
 					statIm.sw.Restart ();
