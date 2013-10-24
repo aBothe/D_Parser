@@ -162,15 +162,25 @@ namespace D_Parser.Refactoring
 		protected void S(IExpression x)
 		{
 			if (x is UnaryExpression_Type)
-				S(((UnaryExpression_Type)x).Type);
+				S (((UnaryExpression_Type)x).Type);
 			else if (x is NewExpression)
-				S(((NewExpression)x).Type);
+				S (((NewExpression)x).Type);
 			else if (x is PostfixExpression_Access)
-				Handle(x);
+				Handle (x);
 			else if (x is IdentifierExpression && ((IdentifierExpression)x).IsIdentifier)
-				Handle(x);
+				Handle (x);
 			else if (x is TemplateInstanceExpression)
-				Handle(x);
+				Handle (x);
+			else if (x is IsExpression) {
+				var isEx = x as IsExpression;
+				S (isEx.TestedType);
+				S (isEx.TypeSpecialization);
+				Handle (isEx.ArtificialFirstSpecParam);
+
+				if (isEx.TemplateParameterList != null)
+					foreach (var tp in isEx.TemplateParameterList)
+						Handle (tp);
+			}
 			else if (x is ContainerExpression)
 			{
 				var ec = (ContainerExpression)x;
@@ -188,30 +198,27 @@ namespace D_Parser.Refactoring
 			{
 				if (type is DelegateDeclaration)
 					foreach (var p in ((DelegateDeclaration)type).Parameters)
-						S(p);
-				else if (type is ArrayDecl)
-				{
+						S (p);
+				else if (type is ArrayDecl) {
 					var ad = (ArrayDecl)type;
 
 					if (ad.KeyExpression != null)
-						S(ad.KeyExpression);
+						S (ad.KeyExpression);
 					if (ad.KeyType != null)
-						S(ad.KeyType);
-				}
-				else if (type is TemplateInstanceExpression)
-				{
+						S (ad.KeyType);
+				} else if (type is TemplateInstanceExpression) {
 					var tix = (TemplateInstanceExpression)type;
 
-					Handle(type);
+					Handle (type);
 
-					if (tix.Arguments != null && tix.Arguments.Length!=0)
+					if (tix.Arguments != null && tix.Arguments.Length != 0)
 						foreach (var x in tix.Arguments)
-							S(x);
-				}
-				else if (type is IdentifierDeclaration)
-				{
-					Handle(type);
+							S (x);
+				} else if (type is IdentifierDeclaration) {
+					Handle (type);
 					break;
+				} else if (type is MemberFunctionAttributeDecl) {
+					S((type as MemberFunctionAttributeDecl).InnerType);
 				}
 
 				type = type.InnerDeclaration;
