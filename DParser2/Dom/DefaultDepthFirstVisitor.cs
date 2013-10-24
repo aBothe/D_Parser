@@ -14,7 +14,6 @@ namespace D_Parser.Dom
 		{
 			foreach (var n in block)
 				n.Accept(this);
-			
 		}
 
 		/// <summary>
@@ -422,6 +421,7 @@ namespace D_Parser.Dom
 		
 		public virtual void VisitMixinStatement(MixinStatement s)
 		{
+			VisitAbstractStmt (s);
 			if(s.Attributes!=null && s.Attributes.Length != 0)
 				foreach(var attr in s.Attributes)
 					attr.Accept(this);
@@ -917,8 +917,13 @@ namespace D_Parser.Dom
 		#endregion
 
 		#region Template parameters
+		public virtual void VisitTemplateParameter(TemplateParameter tp) {
+		}
+
 		public virtual void Visit(TemplateTypeParameter p)
 		{
+			VisitTemplateParameter (p);
+
 			if (p.Specialization != null)
 				p.Specialization.Accept(this);
 
@@ -928,12 +933,14 @@ namespace D_Parser.Dom
 
 		public virtual void Visit(TemplateThisParameter p)
 		{
+			VisitTemplateParameter (p);
 			if (p.FollowParameter != null)
 				p.FollowParameter.Accept(this);
 		}
 
 		public virtual void Visit(TemplateValueParameter p)
 		{
+			VisitTemplateParameter (p);
 			if (p.Type != null)
 				p.Type.Accept(this);
 
@@ -955,7 +962,7 @@ namespace D_Parser.Dom
 
 		public virtual void Visit(TemplateTupleParameter p)
 		{
-			
+			VisitTemplateParameter (p);
 		}
 		#endregion
 	}

@@ -99,6 +99,7 @@ namespace D_Parser.Dom
 
 	public interface TemplateParameterVisitor : IVisitor
 	{
+		void VisitTemplateParameter (TemplateParameter tp);
 		void Visit(TemplateTypeParameter templateTypeParameter);
 		void Visit(TemplateThisParameter templateThisParameter);
 		void Visit(TemplateValueParameter templateValueParameter);
@@ -108,6 +109,7 @@ namespace D_Parser.Dom
 
 	public interface TemplateParameterVisitor<out R> : IVisitor<R>
 	{
+		R VisitTemplateParameter (TemplateParameter tp);
 		R Visit(TemplateTypeParameter templateTypeParameter);
 		R Visit(TemplateThisParameter templateThisParameter);
 		R Visit(TemplateValueParameter templateValueParameter);
