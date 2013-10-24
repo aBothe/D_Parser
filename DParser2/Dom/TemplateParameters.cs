@@ -33,10 +33,14 @@ namespace D_Parser.Dom
 			}
 		}
 
-		public TemplateParameter(string name, CodeLocation nameLoc, DNode par)
+		public TemplateParameter(string name, CodeLocation nameLoc, DNode par) : this(name.GetHashCode(), nameLoc, par)
 		{
-			NameHash = name != null ? name.GetHashCode() : 0;
 			Strings.Add (name);
+		}
+
+		public TemplateParameter(int nameHash, CodeLocation nameLoc, DNode par)
+		{
+			NameHash = nameHash;
 			NameLocation = nameLoc;
 			this.parent = new WeakReference (par);
 		}
@@ -119,6 +123,7 @@ namespace D_Parser.Dom
 		public ITypeDeclaration Default;
 
 		public TemplateTypeParameter(string name, CodeLocation nameLoc, DNode parent) : base(name, nameLoc, parent) {}
+		public TemplateTypeParameter(int nameHash, CodeLocation nameLoc, DNode parent) : base(nameHash, nameLoc, parent) {}
 
 		public sealed override string ToString()
 		{

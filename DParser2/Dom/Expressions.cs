@@ -1770,7 +1770,8 @@ namespace D_Parser.Dom.Expressions
 	public class IsExpression : PrimaryExpression,ContainerExpression
 	{
 		public ITypeDeclaration TestedType;
-		public string TypeAliasIdentifier;
+		public int TypeAliasIdentifierHash;
+		public string TypeAliasIdentifier {get{ return Strings.TryGet (TypeAliasIdentifierHash); }}
 		public CodeLocation TypeAliasIdLocation;
 
 		private TemplateTypeParameter ptp;
@@ -1782,7 +1783,7 @@ namespace D_Parser.Dom.Expressions
 			get {
 				if (ptp == null)
 				{
-					return ptp = new TemplateTypeParameter(TypeAliasIdentifier, TypeAliasIdLocation, null) { 
+					return ptp = new TemplateTypeParameter(TypeAliasIdentifierHash, TypeAliasIdLocation, null) { 
 						Specialization = TypeSpecialization
 					};
 				}
@@ -1807,7 +1808,7 @@ namespace D_Parser.Dom.Expressions
 			if (TestedType != null)
 				ret += TestedType.ToString();
 
-			if (TypeAliasIdentifier != null)
+			if (TypeAliasIdentifierHash != 0)
 				ret += ' ' + TypeAliasIdentifier;
 
 			if (TypeSpecialization != null || TypeSpecializationToken!=0)
@@ -1856,8 +1857,7 @@ namespace D_Parser.Dom.Expressions
 			unchecked {
 				if (TestedType != null)
 					hashCode += 1000000007 * TestedType.GetHash();
-				if (TypeAliasIdentifier != null)
-					hashCode += 1000000009 * (ulong)TypeAliasIdentifier.GetHashCode();
+				hashCode += 1000000009 * (ulong)TypeAliasIdentifierHash;
 				if (ptp != null)//TODO: Create hash functions of template type parameters
 					hashCode += 1000000021 * (ulong)ptp.ToString().GetHashCode();
 				hashCode += 1000000033uL * (EqualityTest?2uL:1uL);

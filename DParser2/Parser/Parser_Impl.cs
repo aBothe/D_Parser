@@ -3171,7 +3171,8 @@ namespace D_Parser.Parser
 					|| Lexer.CurrentPeekToken.Kind == Colon))
 				{
 					Step();
-					ce.TypeAliasIdentifier = strVal;
+					Strings.Add(strVal);
+					ce.TypeAliasIdentifierHash = strVal.GetHashCode();
 					ce.TypeAliasIdLocation = t.Location;
 				}
 

@@ -33,7 +33,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						retTrue = true;
 
 					// The probably most frequented usage of this expression
-					else if (string.IsNullOrEmpty(isExpression.TypeAliasIdentifier))
+					else if (isExpression.TypeAliasIdentifierHash == 0)
 						retTrue = evalIsExpression_NoAlias(isExpression, typeToCheck);
 					else
 						retTrue = evalIsExpression_WithAliases(isExpression, typeToCheck);
@@ -51,7 +51,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			 */
 
 			var tpl_params = new DeducedTypeDictionary(isExpression.TemplateParameterList);
-			tpl_params[isExpression.TypeAliasIdentifier.GetHashCode()] = null;
+			tpl_params[isExpression.TypeAliasIdentifierHash] = null;
 
 			var tpd = new TemplateParameterDeduction(tpl_params, ctxt);
 			bool retTrue = false;
@@ -69,7 +69,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				{
 					var r = evalIsExpression_EvalSpecToken(isExpression, typeToCheck, true);
 					retTrue = r.Item1;
-					tpl_params[isExpression.TypeAliasIdentifier.GetHashCode()] = new TemplateParameterSymbol(null, r.Item2);
+					tpl_params[isExpression.TypeAliasIdentifierHash] = new TemplateParameterSymbol(null, r.Item2);
 				}
 			}
 			else // 5.

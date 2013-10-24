@@ -283,8 +283,10 @@ namespace D_Parser.Refactoring
 
 		public override void Visit (IsExpression x)
 		{
-			if (x.TypeAliasIdentifier == searchHash) {
-
+			if (x.TypeAliasIdentifierHash == searchHash && 
+				symbol is TemplateParameter.Node &&
+				(symbol as TemplateParameter.Node).TemplateParameter == x.ArtificialFirstSpecParam) {
+				l.Add (x.ArtificialFirstSpecParam);
 			}
 			base.Visit (x);
 		}
