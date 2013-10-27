@@ -1,129 +1,67 @@
-﻿using System;
+//
+// ItemEnumeration.cs
+//
+// Author:
+//       Alexander Bothe <info@alexanderbothe.com>
+//
+// Copyright (c) 2013 Alexander Bothe
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-using D_Parser.Completion;
 using D_Parser.Dom;
-using D_Parser.Dom.Statements;
-using D_Parser.Misc;
 
 namespace D_Parser.Resolver.ASTScanner
 {
-	/// <summary>
-	/// A whitelisting filter for members to show in completion menus.
-	/// </summary>
-	[Flags]
-	public enum MemberFilter
-	{
-		None=0,
-		Variables=1,
-		Methods=1<<2,
-		Classes=1<<3,
-		Interfaces=1<<4,
-		Templates=1<<5,
-		StructsAndUnions=1<<6,
-		Enums=1<<7,
-		Keywords=1<<8,
-		TypeParameters=1<<9,
-
-		Types = Classes | Interfaces | Templates | StructsAndUnions,
-		All = Variables | Methods | Types | Enums | Keywords | TypeParameters
-	}
-
 	public class ItemEnumeration : AbstractVisitor
 	{
-		protected ItemEnumeration(ResolutionContext ctxt): base(ctxt) { }
-
-		public static IEnumerable<INode> EnumAllAvailableMembers(
-			ResolutionContext ctxt,
-			CodeLocation Caret,
-			MemberFilter VisibleMembers)
+		protected ItemEnumeration (ResolutionContext ctxt) : base (ctxt)
 		{
-			var en = new ItemEnumeration(ctxt);
-
-			en.IterateThroughScopeLayers(Caret, VisibleMembers);
-
-			return en.Nodes.Count <1 ? null : en.Nodes;
 		}
 
-		List<INode> Nodes = new List<INode>();
-		protected override bool HandleItem(INode n)
+		public static List<INode> EnumScopedBlockChildren (ResolutionContext ctxt,MemberFilter VisibleMembers)
 		{
-			Nodes.Add(n);
+			var en = new ItemEnumeration (ctxt);
+
+			en.ScanBlock(ctxt.ScopedBlock, ctxt.ScopedBlock.EndLocation, VisibleMembers);
+
+			return en.Nodes;
+		}
+
+		List<INode> Nodes = new List<INode> ();
+
+		protected override bool HandleItem (INode n)
+		{
+			Nodes.Add (n);
 			return false;
 		}
 
-		protected override bool HandleItems(IEnumerable<INode> nodes)
+		protected override bool HandleItems (IEnumerable<INode> nodes)
 		{
-			Nodes.AddRange(nodes);
+			Nodes.AddRange (nodes);
 			return false;
 		}
-		
-		protected override bool HandleItem(PackageSymbol pack)
-		{
-			return false;
-		}
-	}
-	
-	public class MemberCompletionEnumeration : AbstractVisitor
-	{
-		bool isVarInst;
-		readonly ICompletionDataGenerator gen;
-		protected MemberCompletionEnumeration(ResolutionContext ctxt, ICompletionDataGenerator gen) : base(ctxt) 
-		{
-			this.gen = gen;
-		}
-		
-		public static void EnumAllAvailableMembers(ICompletionDataGenerator cdgen, IBlockNode ScopedBlock
-			, IStatement ScopedStatement,
-			CodeLocation Caret,
-		    ParseCacheView CodeCache,
-			MemberFilter VisibleMembers,
-			ConditionalCompilationFlags compilationEnvironment = null)
-		{
-			var ctxt = ResolutionContext.Create(CodeCache, compilationEnvironment, ScopedBlock, ScopedStatement);
-			
-			var en = new MemberCompletionEnumeration(ctxt, cdgen) {isVarInst = true};
 
-			en.IterateThroughScopeLayers(Caret, VisibleMembers);
-		}
-		
-		public static void EnumChildren(ICompletionDataGenerator cdgen,ResolutionContext ctxt, UserDefinedType udt, bool isVarInstance, 
-			MemberFilter vis = MemberFilter.Methods | MemberFilter.Types | MemberFilter.Variables | MemberFilter.Enums)
+		protected override bool HandleItem (PackageSymbol pack)
 		{
-			var scan = new MemberCompletionEnumeration(ctxt, cdgen) { isVarInst = isVarInstance };
-
-			scan.DeepScanClass(udt, vis);
-		}
-		
-		public static void EnumChildren(ICompletionDataGenerator cdgen,ResolutionContext ctxt, IBlockNode block, bool isVarInstance,
-			MemberFilter vis = MemberFilter.Methods | MemberFilter.Types | MemberFilter.Variables | MemberFilter.Enums)
-		{
-			var scan = new MemberCompletionEnumeration(ctxt, cdgen) { isVarInst = isVarInstance };
-
-			scan.ScanBlock(block, CodeLocation.Empty, vis);
-		}
-		
-		protected override bool HandleItem(INode n)
-		{
-			var dv = n as DVariable;
-			if(isVarInst || !(n is DMethod || dv != null || n is TemplateParameter.Node) || 
-			   (n as DNode).IsStatic ||
-			   (dv != null && dv.IsConst))
-			{
-				if(n is DModule)
-					gen.AddModule(n as DModule);
-				else
-					gen.Add(n);
-			}
-			return false;
-		}
-		
-		protected override bool HandleItem(PackageSymbol pack)
-		{
-			gen.AddPackage(pack.Package.Name);
 			return false;
 		}
 	}
 }
+

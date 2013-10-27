@@ -24,31 +24,30 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
-using D_Parser.Dom;
-using D_Parser.Resolver;
 using System.Collections.Generic;
+using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
-using D_Parser.Resolver.TypeResolution;
-using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Dom.Statements;
+using D_Parser.Resolver;
+using D_Parser.Resolver.ASTScanner;
+using D_Parser.Resolver.ExpressionSemantics;
+using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Refactoring
 {
-	public class ReferencesFinder : DefaultDepthFirstVisitor
+	public class ReferencesFinder : AbstractResolutionVisitor
 	{
 		#region Properties
-		readonly ResolutionContext ctxt;
 		readonly List<ISyntaxRegion> l = new List<ISyntaxRegion>();
 		readonly INode symbol;
 		readonly int searchHash;
 		#endregion
 
 		#region Constructor / External
-		ReferencesFinder(INode symbol, DModule ast, ResolutionContext ctxt)
+		ReferencesFinder(INode symbol, DModule ast, ResolutionContext ctxt) : base(ctxt)
 		{
 			this.symbol = symbol;
 			searchHash = symbol.NameHash;
-			this.ctxt = ctxt;
 		}
 
 		public static IEnumerable<ISyntaxRegion> Scan(INode symbol, ResolutionContext ctxt, bool includeDefinition = true)
@@ -133,54 +132,6 @@ namespace D_Parser.Refactoring
 			return CodeLocation.Empty;
 		}
 		*/
-		#region Scoping visit overloads
-		public override void VisitAbstractStmt (AbstractStatement stmt)
-		{
-			var back = ctxt.ScopedStatement;
-			if (back != stmt)
-				ctxt.CurrentContext.Set (stmt);
-			base.VisitAbstractStmt (stmt);
-			if (back != stmt)
-				ctxt.CurrentContext.Set (back);
-		}
-
-		public override void VisitChildren (StatementContainingStatement stmt)
-		{
-			var back = ctxt.ScopedStatement;
-			if (back != stmt)
-				ctxt.CurrentContext.Set (stmt);
-			base.VisitSubStatements (stmt);
-			if (back != stmt)
-				ctxt.CurrentContext.Set (back);
-		}
-
-		public override void VisitBlock (DBlockNode bn)
-		{
-			var back = ctxt.ScopedBlock;
-			if(bn != back)
-				ctxt.CurrentContext.Set (bn);
-			base.VisitBlock (bn);
-			if(bn != back)
-				ctxt.CurrentContext.Set (bn);
-		}
-
-		// Only for parsing the base class identifiers!
-		public override void Visit (DClassLike dc)
-		{
-			var back = ctxt.ScopedBlock;
-			ctxt.CurrentContext.Set (dc);
-			base.Visit (dc); 
-			ctxt.CurrentContext.Set (dc);
-		}
-
-		public override void Visit (DMethod dm)
-		{
-			var back = ctxt.ScopedBlock;
-			ctxt.CurrentContext.Set (dm);
-			base.Visit (dm);
-			ctxt.CurrentContext.Set (dm);
-		}
-		#endregion
 
 		#region Id filter visit overloads
 		Stack<DSymbol> postfixForeExprAccessStack=new Stack<DSymbol>();
