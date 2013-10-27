@@ -124,13 +124,10 @@
     <Compile Include="Dom\IDeclarationCondition.cs" />
     <Compile Include="Dom\ParserError.cs" />
     <Compile Include="Dom\StaticStatement.cs" />
-    <Compile Include="Dom\IVisitable.cs" />
     <Compile Include="Dom\Nodes\AttributeBlock.cs" />
     <Compile Include="Dom\Nodes\DBlockNode.cs" />
-    <Compile Include="Dom\DefaultDepthFirstVisitor.cs" />
     <Compile Include="Dom\Nodes\OtherNodeDefinitions.cs" />
     <Compile Include="Dom\ISyntaxRegion.cs" />
-    <Compile Include="Dom\Visitors.cs" />
     <Compile Include="Dom\ModulePackage.cs" />
     <Compile Include="Dom\Nodes\NodeDictionary.cs" />
     <Compile Include="Dom\TemplateParameters.cs" />
@@ -149,7 +146,6 @@
     <Compile Include="Refactoring\DeepASTVisitor.cs" />
     <Compile Include="Refactoring\ImportDirectiveCreator.cs" />
     <Compile Include="Refactoring\ReferencesFinder.cs" />
-    <Compile Include="Refactoring\TypeReferenceFinder.cs" />
     <Compile Include="Resolver\ConditionalCompilation.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Caching\ExpressionCache.cs" />
     <Compile Include="Resolver\ExpressionSemantics\CTFE\FunctionEvaluation.cs" />
@@ -168,7 +164,6 @@
     <Compile Include="Resolver\ExpressionSemantics\SymbolValueComparer.cs" />
     <Compile Include="Misc\CompletionOptions.cs" />
     <Compile Include="Misc\ModuleNameHelper.cs" />
-    <Compile Include="Resolver\ASTScanner\ItemEnumeration.cs" />
     <Compile Include="Resolver\ASTScanner\NameScan.cs" />
     <Compile Include="Misc\UFCSCache.cs" />
     <Compile Include="Resolver\DType.cs" />
@@ -225,6 +220,15 @@
     <Compile Include="Misc\ParseCacheView.cs" />
     <Compile Include="Misc\StringCache.cs" />
     <Compile Include="Misc\StringExtension.cs" />
+    <Compile Include="Refactoring\OldTypeReferenceFinder.cs" />
+    <Compile Include="Refactoring\TypeReferenceFinder.cs" />
+    <Compile Include="Resolver\ASTScanner\MemberFilter.cs" />
+    <Compile Include="Completion\MemberCompletionEnumeration.cs" />
+    <Compile Include="Resolver\ASTScanner\ItemEnumeration.cs" />
+    <Compile Include="Resolver\ASTScanner\AbstractResolutionVisitor.cs" />
+    <Compile Include="Dom\Visitors\DefaultDepthFirstVisitor.cs" />
+    <Compile Include="Dom\Visitors\Visitors.cs" />
+    <Compile Include="Dom\Visitors\IVisitable.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="readme.txt" />
@@ -242,4 +246,7 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <ItemGroup>
+    <Folder Include="Dom\Visitors\" />
+  </ItemGroup>
 </Project>
