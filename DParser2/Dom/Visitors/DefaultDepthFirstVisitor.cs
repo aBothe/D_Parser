@@ -583,6 +583,8 @@ namespace D_Parser.Dom
 		public virtual void Visit(Expressions.NewExpression x)
 		{
 			VisitChildren(x);
+			if (!(x.Type is IExpression))
+				x.Type.Accept (this);
 		}
 
 		public virtual void Visit(Expressions.AnonymousClassExpression x)
