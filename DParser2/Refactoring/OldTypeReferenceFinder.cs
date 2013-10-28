@@ -277,6 +277,7 @@ namespace D_Parser.Refactoring
 
 	public class TypeReferencesResult
 	{
+		public Dictionary<int, List<ISyntaxRegion>> Matches = new Dictionary<int, List<ISyntaxRegion>>();
 		public List<ISyntaxRegion> TypeMatches = new List<ISyntaxRegion>();
 	}
 }

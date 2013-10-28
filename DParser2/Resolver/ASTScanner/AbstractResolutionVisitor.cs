@@ -51,7 +51,7 @@ namespace D_Parser.Resolver.ASTScanner
 		#region Scoping visit overloads
 		public override void VisitAbstractStmt (AbstractStatement stmt)
 		{
-			var back = ctxt.CurrentContext.ScopedStatement;
+			var back = ctxt.ScopedStatement;
 			if (back != stmt) {
 				ctxt.CurrentContext.Set (stmt);
 				OnScopedStatementChanged (stmt);
@@ -63,9 +63,9 @@ namespace D_Parser.Resolver.ASTScanner
 
 		public override void VisitChildren (StatementContainingStatement stmt)
 		{
-			var back = ctxt.CurrentContext.ScopedStatement;
+			var back = ctxt.ScopedStatement;
 			if (back != stmt) {
-				ctxt.PushNewScope (ctxt.CurrentContext.ScopedBlock, stmt);
+				ctxt.PushNewScope (ctxt.ScopedBlock, stmt);
 				OnScopedStatementChanged (stmt);
 			}
 			base.VisitSubStatements (stmt);
@@ -75,7 +75,7 @@ namespace D_Parser.Resolver.ASTScanner
 
 		public override void VisitBlock (DBlockNode bn)
 		{
-			var back = ctxt.CurrentContext.ScopedBlock;
+			var back = ctxt.ScopedBlock;
 			if (bn != back) {
 				ctxt.PushNewScope (bn);
 				OnScopedBlockChanged (bn);
@@ -88,7 +88,7 @@ namespace D_Parser.Resolver.ASTScanner
 		// Only for parsing the base class identifiers!
 		public override void Visit (DClassLike dc)
 		{
-			var back = ctxt.CurrentContext.ScopedBlock;
+			var back = ctxt.ScopedBlock;
 			if (back != dc) {
 				ctxt.PushNewScope (dc);
 				OnScopedBlockChanged (dc);
@@ -100,7 +100,7 @@ namespace D_Parser.Resolver.ASTScanner
 
 		public override void Visit (DMethod dm)
 		{
-			var back = ctxt.CurrentContext.ScopedBlock;
+			var back = ctxt.ScopedBlock;
 			if (back != dm) {
 				ctxt.PushNewScope (dm);
 				OnScopedBlockChanged (dm);
