@@ -56,7 +56,7 @@ namespace D_Parser.Completion.Providers
 				 * + items of anonymous enums
 				 */
 
-				MemberCompletionEnumeration.EnumChildren(CompletionDataGenerator, ctxt, mod, false, MemberFilter.All);
+				MemberCompletionEnumeration.EnumChildren(CompletionDataGenerator, ctxt, mod, true, MemberFilter.All);
 
 				return;
 			}
