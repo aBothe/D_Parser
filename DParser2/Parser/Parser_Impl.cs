@@ -1173,7 +1173,7 @@ namespace D_Parser.Parser
 						cd = new ArrayDecl() { KeyType=null, KeyExpression=fromExpression,ClampsEmpty=false,Location=startLoc };
 				}
 
-				if (AllowWeakTypeParsing && laKind != CloseSquareBracket)
+				if ((AllowWeakTypeParsing && laKind != CloseSquareBracket) || IsEOF)
 					return null;
 
 				Expect(CloseSquareBracket);
@@ -1232,6 +1232,9 @@ namespace D_Parser.Parser
 					ret.Type = ttd; 
 				}
 			}
+
+			if (IsEOF)
+				return null;
 			/*
 			 * Add some syntax possibilities here
 			 * like
