@@ -370,9 +370,22 @@ namespace D_Parser.Resolver.TypeResolution
 					break;
 			}
 
-			if (Parent is DMethod)
+			var dm = Parent as DMethod;
+			if (dm != null)
 			{
-				var body = ((DMethod)Parent).GetSubBlockAt(Where);
+				// Do an extra re-scan for anonymous methods etc.
+				foreach (var ch in dm.AdditionalChildren)
+					if (Where >= ch.Location && Where <= ch.EndLocation) {
+						if (ch is IBlockNode)
+							Parent = ch as IBlockNode;
+						dm = Parent as DMethod;
+
+						if (dm == null)
+							return Parent;
+						break;
+					}
+
+				var body = dm.GetSubBlockAt(Where);
 
 				// First search the deepest statement under the caret
 				if (body != null){
