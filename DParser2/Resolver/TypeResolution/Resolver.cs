@@ -361,8 +361,7 @@ namespace D_Parser.Resolver.TypeResolution
 					len -= midIndex;
 				}
 
-				if (midElement is IBlockNode)
-				{
+				if (midElement is IBlockNode) {
 					Parent = (IBlockNode)midElement;
 					pCount = Parent.Count;
 				}
@@ -393,14 +392,14 @@ namespace D_Parser.Resolver.TypeResolution
 
 					if (ScopedStatement is IDeclarationContainingStatement)
 					{
-						var dcs = ((IDeclarationContainingStatement)ScopedStatement).Declarations;
+						var dcs = (ScopedStatement as IDeclarationContainingStatement).Declarations;
 
-						if(dcs!=null && dcs.Length != 0)
+						if (dcs != null && dcs.Length != 0)
 							foreach (var decl in dcs)
 								if (decl is IBlockNode &&
-									Where > decl.Location &&
-									Where < decl.EndLocation)
-									return SearchBlockAt((IBlockNode)decl, Where, out ScopedStatement);
+								    Where > decl.Location &&
+								    Where < decl.EndLocation)
+									return SearchBlockAt (decl as IBlockNode, Where, out ScopedStatement);
 					}
 				}
 			}
