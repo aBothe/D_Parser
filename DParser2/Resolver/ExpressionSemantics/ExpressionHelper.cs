@@ -134,21 +134,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 				if (Statement is StatementContainingStatement)
 				{
-					var stmts = (Statement as StatementContainingStatement).SubStatements;
+					var subSt = (Statement as StatementContainingStatement).SearchStatement (Caret);
 
-					bool foundDeeperStmt = false;
-
-					if (stmts != null && stmts.Length > 0)
-						foreach (var stmt in stmts)
-							if (stmt != null && Caret >= stmt.Location && Caret <= stmt.EndLocation)
-							{
-								foundDeeperStmt = true;
-								Statement = stmt;
-								break;
-							}
-
-					if (foundDeeperStmt)
+					if (subSt != null && subSt != Statement) {
+						Statement = subSt;
 						continue;
+					}
 				}
 
 				break;

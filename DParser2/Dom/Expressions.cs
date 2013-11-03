@@ -1542,13 +1542,14 @@ namespace D_Parser.Dom.Expressions
 
 				sb.Append(" => ");
 
-				IStatement[] stmts=null;
 				if(AnonymousMethod.Body != null)
 				{
-					if ((stmts = AnonymousMethod.Body.SubStatements).Length > 0 && stmts[0] is ReturnStatement)
-						sb.Append((stmts[0] as ReturnStatement).ReturnExpression.ToString());
+					var en = AnonymousMethod.Body.SubStatements.GetEnumerator();
+					if(en.MoveNext() && en.Current is ReturnStatement)
+						sb.Append((en.Current as ReturnStatement).ReturnExpression.ToString());
 					else
 						sb.Append(AnonymousMethod.Body.ToCode());
+					en.Dispose ();
 				}
 				else 
 					sb.Append("{}");

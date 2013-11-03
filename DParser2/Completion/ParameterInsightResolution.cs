@@ -87,19 +87,10 @@ namespace D_Parser.Completion
 			if (parsedStmtBlock != null)
 			{
 				// Search the returned statement block (i.e. function body) for the current statement;
-				while (parsedStmtBlock is StatementContainingStatement)
-				{
-					if (parsedStmtBlock is BlockStatement)
-					{
-						if (parsedStmtBlock ==
-							(parsedStmtBlock = BlockStatement.SearchBlockStatement(parsedStmtBlock as BlockStatement, Editor.CaretLocation)))
-							break;
-					}
-					else
-						parsedStmtBlock = (parsedStmtBlock as StatementContainingStatement).ScopedStatement;
-				}
+				if (parsedStmtBlock is StatementContainingStatement)
+					parsedStmtBlock = (parsedStmtBlock as StatementContainingStatement).SearchStatementDeeply (Editor.CaretLocation);
 
-				lastParamExpression = ExpressionHelper.SearchForMethodCallsOrTemplateInstances(parsedStmtBlock as IExpressionContainingStatement, Editor.CaretLocation);
+				lastParamExpression = ExpressionHelper.SearchForMethodCallsOrTemplateInstances(parsedStmtBlock, Editor.CaretLocation);
 			}
 			else if (trackVars != null && trackVars.IsParsingInitializer)
 			{

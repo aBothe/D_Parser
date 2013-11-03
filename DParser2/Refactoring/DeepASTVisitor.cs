@@ -116,10 +116,7 @@ namespace D_Parser.Refactoring
 
 			if (s is StatementContainingStatement)
 			{
-				var sstmts = ((StatementContainingStatement)s).SubStatements;
-
-				if (sstmts != null && sstmts.Length > 0)
-					foreach (var stmt in sstmts)
+				foreach (var stmt in (s as StatementContainingStatement).SubStatements)
 						S(stmt);
 			}
 

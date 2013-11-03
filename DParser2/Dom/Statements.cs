@@ -79,11 +79,44 @@ namespace D_Parser.Dom.Statements
 	{
 		public virtual IStatement ScopedStatement { get; set; }
 
-		public virtual IStatement[] SubStatements { get { return new[] { ScopedStatement }; } }
+		public virtual IEnumerable<IStatement> SubStatements { get { return new[] { ScopedStatement }; } }
 
 		public override string ToCode()
 		{
 			throw new NotImplementedException();
+		}
+
+		public IStatement SearchStatement(CodeLocation Where)
+		{
+			// First check if one sub-statement is located at the code location
+			var ss = SubStatements;
+
+			if(ss!=null)
+				foreach (var s in ss)
+					if (Where >= s.Location && Where <= s.EndLocation)
+						return s;
+
+			// If nothing was found, check if this statement fits to the coordinates
+			if (Where >= Location && Where <= EndLocation)
+				return this;
+
+			// If not, return null
+			return null;
+		}
+
+		/// <summary>
+		/// Scans the current scope. If a scoping statement was found, also these ones get searched then recursively.
+		/// </summary>
+		/// <param name="Where"></param>
+		public IStatement SearchStatementDeeply(CodeLocation Where)
+		{
+			var lastS = this;
+			IStatement ret;
+
+			while (lastS != null && (ret = lastS.SearchStatement (Where)) != lastS)
+				lastS = ret as StatementContainingStatement;
+
+			return ret;
 		}
 	}
 	#endregion
@@ -120,11 +153,11 @@ namespace D_Parser.Dom.Statements
 			_Statements.Add(s);
 		}
 
-		public override IStatement[] SubStatements
+		public override IEnumerable<IStatement> SubStatements
 		{
 			get
 			{
-				return _Statements.ToArray(); ;
+				return _Statements;
 			}
 		}
 		
@@ -168,71 +201,6 @@ namespace D_Parser.Dom.Statements
 			return vis.Visit(this);
 		}
 
-		public virtual IStatement SearchStatement(CodeLocation Where)
-		{
-			return SearchBlockStatement(this, Where);
-		}
-
-		/// <summary>
-		/// Scans the current scope. If a scoping statement was found, also these ones get searched then recursively.
-		/// </summary>
-		/// <param name="Where"></param>
-		/// <returns></returns>
-		public IStatement SearchStatementDeeply(CodeLocation Where)
-		{
-			var s = SearchStatement(Where);
-
-			while (s!=null)
-			{
-				if (s is BlockStatement)
-				{
-					var s2 = (s as BlockStatement).SearchStatement(Where);
-
-					if (s == s2)
-						break;
-
-					if (s2 != null)
-						s = s2;
-				}
-				else if (s is StatementContainingStatement)
-				{
-					bool foundMatch = false;
-					foreach(var s2 in (s as StatementContainingStatement).SubStatements)
-						if (s2 != null && Where >= s2.Location && Where <= s2.EndLocation)
-						{
-							s = s2;
-							foundMatch = true;
-							break;
-						}
-
-					if (!foundMatch)
-						break;
-				}
-				else 
-					break;
-			}
-
-			return s;
-		}
-
-		public static IStatement SearchBlockStatement(StatementContainingStatement BlockStmt, CodeLocation Where)
-		{
-			// First check if one sub-statement is located at the code location
-			var ss = BlockStmt.SubStatements;
-
-			if(ss!=null)
-				foreach (var s in ss)
-					if (Where >= s.Location && Where <= s.EndLocation)
-						return s;
-
-			// If nothing was found, check if this statement fits to the coordinates
-			if (Where >= BlockStmt.Location && Where <= BlockStmt.EndLocation)
-				return BlockStmt;
-
-			// If not, return null
-			return null;
-		}
-
 		public override string ToString()
 		{
 			return "<block> "+base.ToString();
@@ -271,13 +239,13 @@ namespace D_Parser.Dom.Statements
 		}
 		public IStatement ElseStatement;
 
-		public override IStatement[] SubStatements
+		public override IEnumerable<IStatement> SubStatements
 		{
 			get
 			{
-				if (ThenStatement != null && ElseStatement != null)
-					return new[] { ThenStatement, ElseStatement };
-				return new[] { ThenStatement };
+				if (ThenStatement != null)
+					yield return ThenStatement;
+				yield return ElseStatement;
 			}
 		}
 
@@ -402,11 +370,12 @@ namespace D_Parser.Dom.Statements
 			get { return new[] { Test,Increment }; }
 		}
 
-		public override IStatement[] SubStatements
+		public override IEnumerable<IStatement> SubStatements
 		{
 			get
 			{
-				return new[]{Initialize, ScopedStatement};
+				yield return Initialize;
+				yield return ScopedStatement;
 			}
 		}
 
@@ -586,7 +555,7 @@ namespace D_Parser.Dom.Statements
 				get { return new[]{ArgumentList,LastExpression}; }
 			}
 
-			public override IStatement[] SubStatements
+			public override IEnumerable<IStatement> SubStatements
 			{
 				get
 				{
@@ -617,7 +586,7 @@ namespace D_Parser.Dom.Statements
 		{
 			public IStatement[] ScopeStatementList;
 
-			public override IStatement[] SubStatements
+			public override IEnumerable<IStatement> SubStatements
 			{
 				get
 				{
@@ -856,24 +825,19 @@ namespace D_Parser.Dom.Statements
 		public CatchStatement[] Catches;
 		public FinallyStatement FinallyStmt;
 
-		public override IStatement[] SubStatements
+		public override IEnumerable<IStatement> SubStatements
 		{
 			get
 			{
-				var l = new List<IStatement>();
-
 				if (ScopedStatement != null)
-					l.Add(ScopedStatement);
+					yield return ScopedStatement;
 
 				if (Catches != null && Catches.Length > 0)
-					l.AddRange(Catches);
+					foreach (var c in Catches)
+						yield return c;
 
 				if (FinallyStmt != null)
-					l.Add(FinallyStmt);
-
-				if (l.Count > 0)
-					return l.ToArray();
-				return null;
+					yield return FinallyStmt;
 			}
 		}
 
@@ -1092,13 +1056,13 @@ namespace D_Parser.Dom.Statements
 		public IStatement ElseStatement;
 		public DeclarationCondition Condition;
 
-		public override IStatement[] SubStatements
+		public override IEnumerable<IStatement> SubStatements
 		{
 			get
 			{
 				if (ElseStatement != null)
-					return new[] { ScopedStatement, ElseStatement };
-				return new[] { ScopedStatement };
+					yield return ElseStatement;
+				yield return ScopedStatement;
 			}
 		}
 
