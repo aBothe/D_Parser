@@ -39,7 +39,7 @@ namespace D_Parser
 
 			if (sb.Length != 0) {
 				for (trimLen = sb.Length - 1; trimLen >= 0 && char.IsWhiteSpace (sb [trimLen]); trimLen--);
-				sb.Length = trimLen;
+				sb.Length = trimLen + 1;
 			}
 			return sb;
 		}
