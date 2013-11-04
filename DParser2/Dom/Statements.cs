@@ -93,7 +93,7 @@ namespace D_Parser.Dom.Statements
 
 			if(ss!=null)
 				foreach (var s in ss)
-					if (Where >= s.Location && Where <= s.EndLocation)
+					if (s != null && Where >= s.Location && Where <= s.EndLocation)
 						return s;
 
 			// If nothing was found, check if this statement fits to the coordinates
