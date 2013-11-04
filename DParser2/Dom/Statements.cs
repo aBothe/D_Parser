@@ -111,7 +111,7 @@ namespace D_Parser.Dom.Statements
 		public IStatement SearchStatementDeeply(CodeLocation Where)
 		{
 			var lastS = this;
-			IStatement ret;
+			IStatement ret = null;
 
 			while (lastS != null && (ret = lastS.SearchStatement (Where)) != lastS)
 				lastS = ret as StatementContainingStatement;
