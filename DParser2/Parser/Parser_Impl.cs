@@ -1552,9 +1552,8 @@ namespace D_Parser.Parser
 
 			DNode p;
 
-			if (laKind != TripleDot)
+			if (laKind != TripleDot && (p = Parameter(Parent)) != null)
 			{
-				p = Parameter(Parent);
 				p.Parent = Parent;
 				ret.Add(p);
 			}
@@ -1562,9 +1561,8 @@ namespace D_Parser.Parser
 			while (laKind == (Comma))
 			{
 				Step();
-				if (laKind == TripleDot || laKind==CloseParenthesis)
+				if (laKind == TripleDot || laKind==CloseParenthesis || (p = Parameter(Parent)) == null)
 					break;
-				p = Parameter(Parent);
 				p.Parent = Parent;
 				ret.Add(p);
 			}
@@ -1620,6 +1618,8 @@ namespace D_Parser.Parser
 			var td = BasicType();
 
 			var ret = Declarator(td,true, Scope);
+			if (ret == null)
+				return null;
 			ret.Location = startLocation;
 
 			if (attr.Count > 0) {
