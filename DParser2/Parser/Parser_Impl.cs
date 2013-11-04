@@ -1233,8 +1233,10 @@ namespace D_Parser.Parser
 				}
 			}
 
-			if (IsEOF)
+			// Only return no variable if the BasicType2 wasn't parsed properly to ensure good code completion
+			if (IsEOF && ret != LastParsedObject)
 				return null;
+
 			/*
 			 * Add some syntax possibilities here
 			 * like
