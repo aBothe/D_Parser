@@ -211,7 +211,7 @@ namespace D_Parser.Resolver
 				this.Parameters = Parameters.ToArray();
 		}
 
-		public DelegateType(AbstractType ReturnType, FunctionLiteral Literal, IEnumerable<AbstractType> Parameters = null)
+		public DelegateType(AbstractType ReturnType, FunctionLiteral Literal, IEnumerable<AbstractType> Parameters)
 			: base(ReturnType, Literal)
 		{
 			this.IsFunction = Literal.LiteralToken == DTokens.Function;

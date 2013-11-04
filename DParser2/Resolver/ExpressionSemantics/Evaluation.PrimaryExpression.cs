@@ -381,7 +381,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		ISemantic E(FunctionLiteral x)
 		{
-			var dg = new DelegateType(TypeDeclarationResolver.GetMethodReturnType(x.AnonymousMethod, ctxt),x);
+			var dg = new DelegateType(
+				(ctxt.Options & ResolutionOptions.DontResolveBaseTypes | ResolutionOptions.ReturnMethodReferencesOnly) != 0 ? null : TypeDeclarationResolver.GetMethodReturnType (x.AnonymousMethod, ctxt),
+				x,
+				TypeResolution.TypeDeclarationResolver.HandleNodeMatches(x.AnonymousMethod.Parameters, ctxt));
 
 			if (eval)
 				return new DelegateValue(dg);
