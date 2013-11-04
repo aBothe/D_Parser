@@ -781,6 +781,8 @@ namespace D_Parser.Resolver.TypeResolution
 
 					return t;
 				}
+
+				return new PrimitiveType (DTokens.Void);
 			}
 
 			return null;
