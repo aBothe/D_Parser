@@ -288,7 +288,7 @@ void main()
 			var sw = new Stopwatch();
 			var main = pcl[0]["modA"]["main"].First() as DMethod;
 			Assert.AreEqual(0, (pcl[0]["modA"] as DModule).ParseErrors.Count);
-			var s = main.Body.SubStatements[main.Body.SubStatements.Length - 1] as IExpressionContainingStatement;
+			var s = main.Body.SubStatements.Last() as IExpressionContainingStatement;
 			var ctxt = ResolutionContext.Create(pcl, null, main, s);
 			//ctxt.ContextIndependentOptions |= ResolutionOptions.StopAfterFirstOverloads | ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.DontResolveBaseTypes;
 			var x = s.SubExpressions[0];

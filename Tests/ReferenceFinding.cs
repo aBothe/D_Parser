@@ -46,7 +46,7 @@ void main()
 		[Test]
 		public void TypeRefFinding()
 		{
-			var pcl = ResolutionTests.CreateCache(@"module modA;
+			var pcl = ResolutionTests.CreateDefCtxt(@"module modA;
 
 class A(T)
 {
@@ -65,7 +65,7 @@ void main()
 }
 ");
 
-			var res = TypeReferenceFinder.Scan(pcl[0]["modA"], pcl);
+			var res = TypeReferenceFinder.Scan(pcl.ParseCache[0]["modA"], pcl);
 
 			//Assert.AreEqual(6, res.TypeMatches.Count);
 			//TODO: Correct variable recognization

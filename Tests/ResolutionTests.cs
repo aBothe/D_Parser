@@ -133,7 +133,7 @@ void asdf(int ni=23) {
 
 			mod = pcl[0]["modF"];
 			var f = mod["asdf"].First() as DMethod;
-			ctxt.CurrentContext.Set(f, ((f.Body.SubStatements[0] as IfStatement).ThenStatement as BlockStatement).SubStatements[1]);
+			ctxt.CurrentContext.Set(f, ((f.Body.SubStatements.First() as IfStatement).ThenStatement as BlockStatement).SubStatements.ElementAt(1));
 			t = TypeDeclarationResolver.ResolveIdentifier("ni", ctxt, null);
 			Assert.That(t.Length, Is.EqualTo(2));
 
@@ -212,37 +212,38 @@ void foo()
 }", @"module B; import A; cl inst;");
 			var foo = pcl[0]["A"]["foo"].First() as DMethod;
 			var ctxt = CreateDefCtxt(pcl, foo, foo.Body);
+			var subSt = foo.Body.SubStatements as List<IStatement>;
 			
-			var t = Evaluation.EvaluateType((foo.Body.SubStatements[1] as ExpressionStatement).Expression, ctxt);
+			var t = Evaluation.EvaluateType((subSt[1] as ExpressionStatement).Expression, ctxt);
 			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
 			Assert.That((t as MemberSymbol).Base, Is.InstanceOf(typeof(PointerType)));
 			
-			t = Evaluation.EvaluateType((foo.Body.SubStatements[2] as ExpressionStatement).Expression, ctxt);
+			t = Evaluation.EvaluateType((subSt[2] as ExpressionStatement).Expression, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			
-			t = Evaluation.EvaluateType((foo.Body.SubStatements[3] as ExpressionStatement).Expression, ctxt);
+			t = Evaluation.EvaluateType((subSt[3] as ExpressionStatement).Expression, ctxt);
 			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
 			Assert.That((t as MemberSymbol).Base, Is.InstanceOf(typeof(PrimitiveType)));
 			
-			t = Evaluation.EvaluateType((foo.Body.SubStatements[4] as ExpressionStatement).Expression, ctxt);
+			t = Evaluation.EvaluateType((subSt[4] as ExpressionStatement).Expression, ctxt);
 			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
 			
-			t = Evaluation.EvaluateType((foo.Body.SubStatements[5] as ExpressionStatement).Expression, ctxt);
+			t = Evaluation.EvaluateType((subSt[5] as ExpressionStatement).Expression, ctxt);
 			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
 			
-			t = Evaluation.EvaluateType((foo.Body.SubStatements[6] as ExpressionStatement).Expression, ctxt);
+			t = Evaluation.EvaluateType((subSt[6] as ExpressionStatement).Expression, ctxt);
 			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
 			
-			t = Evaluation.EvaluateType((foo.Body.SubStatements[7] as ExpressionStatement).Expression, ctxt);
+			t = Evaluation.EvaluateType((subSt[7] as ExpressionStatement).Expression, ctxt);
 			Assert.That(t, Is.Not.Null);
 			
 			ctxt.CurrentContext.Set(pcl[0]["B"]);
 
 			// test protected across modules
-			t = Evaluation.EvaluateType((foo.Body.SubStatements[2] as ExpressionStatement).Expression, ctxt);
+			t = Evaluation.EvaluateType((foo.Body.SubStatements.ElementAt(2) as ExpressionStatement).Expression, ctxt);
 			Assert.That(t, Is.Null);
 
-			t = Evaluation.EvaluateType((foo.Body.SubStatements[7] as ExpressionStatement).Expression, ctxt);
+			t = Evaluation.EvaluateType((foo.Body.SubStatements.ElementAt(7) as ExpressionStatement).Expression, ctxt);
 			Assert.That(t, Is.Null);
 			
 			var ex = DParser.ParseExpression("inst.b");
@@ -376,8 +377,8 @@ void foo()
 			
 			var A = pcl[0]["A"];
 			var foo = A["foo"].First() as DMethod;
-			var case1 = ((foo.Body.SubStatements[1] as SwitchStatement).ScopedStatement as BlockStatement).SubStatements[1] as SwitchStatement.CaseStatement;
-			var colStmt = case1.SubStatements[1] as ExpressionStatement;
+			var case1 = ((foo.Body.SubStatements.ElementAt(1) as SwitchStatement).ScopedStatement as BlockStatement).SubStatements.ElementAt(1) as SwitchStatement.CaseStatement;
+			var colStmt = case1.SubStatements.ElementAt(1) as ExpressionStatement;
 			
 			var ctxt = CreateDefCtxt(pcl, foo, colStmt);
 			
@@ -442,7 +443,7 @@ auto o = new Obj();
 
 			var A = pcl[0]["modA"]["A"].First() as DClassLike;
 			var bar = A["bar"].First() as DMethod;
-			var call_fooC = bar.Body.SubStatements[0];
+			var call_fooC = bar.Body.SubStatements.First();
 
 			Assert.IsInstanceOfType(typeof(ExpressionStatement),call_fooC);
 
@@ -1023,8 +1024,9 @@ void foo(U)(U u)
 			
 			var foo = pcl[0]["A"]["foo"].First() as DMethod;
 			var ctxt = CreateDefCtxt(pcl, foo, foo.Body);
-			
-			var ex = (foo.Body.SubStatements[0] as ExpressionStatement).Expression;
+			var subSt = foo.Body.SubStatements as List<IStatement>;
+
+			var ex = (subSt[0] as ExpressionStatement).Expression;
 			var t = Evaluation.GetOverloads(ex  as TemplateInstanceExpression, ctxt, null, true);
 			Assert.That(t, Is.Not.Null);
 			Assert.That(t.Length, Is.EqualTo(1));
@@ -1033,7 +1035,7 @@ void foo(U)(U u)
 			Assert.That(t_ , Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That((t_ as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 			
-			ex = (foo.Body.SubStatements[1] as ExpressionStatement).Expression;
+			ex = (subSt[1] as ExpressionStatement).Expression;
 			t = Evaluation.GetOverloads(ex  as TemplateInstanceExpression, ctxt, null, true);
 			Assert.That(t, Is.Not.Null);
 			Assert.That(t.Length, Is.EqualTo(1));
@@ -1042,7 +1044,7 @@ void foo(U)(U u)
 			Assert.That(t_ , Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That((t_ as MemberSymbol).Base, Is.TypeOf(typeof(ArrayType)));
 			
-			ex = (foo.Body.SubStatements[2] as ExpressionStatement).Expression;
+			ex = (subSt[2] as ExpressionStatement).Expression;
 			t = Evaluation.GetOverloads((ex as PostfixExpression_MethodCall).PostfixForeExpression as TemplateInstanceExpression, ctxt, null, true);
 			Assert.That(t, Is.Not.Null);
 			Assert.That(t.Length, Is.EqualTo(1));
@@ -1051,11 +1053,11 @@ void foo(U)(U u)
 			t_ = Evaluation.EvaluateType(ex, ctxt);
 			Assert.That(t_, Is.TypeOf(typeof(PointerType)));
 			
-			ex = (foo.Body.SubStatements[3] as ExpressionStatement).Expression;
+			ex = (subSt[3] as ExpressionStatement).Expression;
 			t_ = Evaluation.EvaluateType(ex, ctxt);
 			Assert.That(t_, Is.TypeOf(typeof(ArrayType)));
 
-			ex = (foo.Body.SubStatements[4] as ExpressionStatement).Expression;
+			ex = (subSt[4] as ExpressionStatement).Expression;
 			t_ = Evaluation.EvaluateType(ex, ctxt);
 			Assert.That(t_, Is.TypeOf(typeof(ArrayType)));
 		}
@@ -1136,7 +1138,7 @@ class B : A{
 			var this_ = (DMethod)B[DMethod.ConstructorIdentifier].First();
 			var ctxt = CreateDefCtxt(pcl, this_);
 
-			var super = (this_.Body.SubStatements[0] as IExpressionContainingStatement).SubExpressions[0] as PostfixExpression_MethodCall;
+			var super = (this_.Body.SubStatements.First() as IExpressionContainingStatement).SubExpressions[0] as PostfixExpression_MethodCall;
 
 			var t = Evaluation.EvaluateType(super.PostfixForeExpression, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(ClassType)));
@@ -1413,7 +1415,8 @@ debug(4)
 			var m = pcl[0]["m"];
 			var A = m["A"].First() as DClassLike;
 			var foo = A["foo"].First() as DMethod;
-			var ctxt = CreateDefCtxt(pcl, foo, foo.Body.SubStatements[0]);
+			var subst = foo.Body.SubStatements as List<IStatement>;
+			var ctxt = CreateDefCtxt(pcl, foo, subst[0]);
 
 			var x = TypeDeclarationResolver.ResolveIdentifier("x", ctxt, null);
 			Assert.AreEqual(1, x.Length);
@@ -1431,20 +1434,20 @@ debug(4)
 			Assert.AreEqual(0, x.Length);
 
 			IStatement ss;
-			ctxt.CurrentContext.Set(ss=((foo.Body.SubStatements[2] as StatementCondition).ScopedStatement as BlockStatement).SubStatements[0]);
+			ctxt.CurrentContext.Set(ss=((subst[2] as StatementCondition).ScopedStatement as BlockStatement).SubStatements.First());
 
 			var x2 = Evaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
 			Assert.That(x2, Is.TypeOf(typeof(MemberSymbol)));
 
-			ctxt.CurrentContext.Set(ss = foo.Body.SubStatements[4]);
+			ctxt.CurrentContext.Set(ss = subst[4]);
 			x2 = Evaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
 			Assert.IsNull(x2);
 
-			ctxt.CurrentContext.Set(ss =  foo.Body.SubStatements[5]);
+			ctxt.CurrentContext.Set(ss =  subst[5]);
 			x2 = Evaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
 			Assert.IsNull(x2);
 
-			ctxt.CurrentContext.Set(ss = foo.Body.SubStatements[6]);
+			ctxt.CurrentContext.Set(ss = subst[6]);
 			x2 = Evaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
 			Assert.IsNotNull(x2);
 
@@ -1553,22 +1556,22 @@ void main()
 			Assert.That(t,Is.TypeOf(typeof(ArrayType)));
 
 			var main = pcl[0]["B"]["main"].First() as DMethod;
-			var body = main.Body;
-			ctxt.PushNewScope(main, body);
+			var subSt = main.Body.SubStatements as List<IStatement>;
+			ctxt.PushNewScope(main, main.Body);
 
-			var ss = body.SubStatements[0] as ExpressionStatement;
+			var ss = subSt[0] as ExpressionStatement;
 			t = Evaluation.EvaluateType(ss.Expression, ctxt);
 			Assert.IsNotNull(t);
 
-			ss = body.SubStatements[1] as ExpressionStatement;
+			ss = subSt[1] as ExpressionStatement;
 			t = Evaluation.EvaluateType(ss.Expression, ctxt);
 			Assert.IsNull(t);
 
-			ss = body.SubStatements[2] as ExpressionStatement;
+			ss = subSt[2] as ExpressionStatement;
 			t = Evaluation.EvaluateType(ss.Expression, ctxt);
 			Assert.IsNotNull(t);
 
-			ss = body.SubStatements[3] as ExpressionStatement;
+			ss = subSt[3] as ExpressionStatement;
 			t = Evaluation.EvaluateType(ss.Expression, ctxt);
 			Assert.IsNull(t);
 		}
@@ -1770,7 +1773,7 @@ void main()
 			
 			var A = pcl[0]["A"];
 			var main = A["main"].First() as DMethod;
-			var stmt = main.Body.SubStatements[1];
+			var stmt = main.Body.SubStatements.ElementAt(1);
 			var ctxt = ResolutionTests.CreateDefCtxt(pcl, main, stmt);
 			
 			var x = TypeDeclarationResolver.ResolveIdentifier("x", ctxt, stmt);
@@ -1996,16 +1999,17 @@ void foo() {
 			var A = pcl[0]["A"];
 			var foo = A["foo"].First() as DMethod;
 			var ctxt = ResolutionTests.CreateDefCtxt(pcl, foo, foo.Body);
+			var subSt = foo.Body.SubStatements as List<IStatement>;
 			
-			var t = Evaluation.EvaluateType((foo.Body.SubStatements[0] as ExpressionStatement).Expression,ctxt);
+			var t = Evaluation.EvaluateType((subSt[0] as ExpressionStatement).Expression,ctxt);
 			Assert.That(t, Is.Null);
 			
-			t = Evaluation.EvaluateType((foo.Body.SubStatements[2] as ExpressionStatement).Expression,ctxt);
+			t = Evaluation.EvaluateType((subSt[2] as ExpressionStatement).Expression,ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			var ms = t as MemberSymbol;
 			Assert.That(ms.Base, Is.TypeOf(typeof(PrimitiveType)));
 			
-			t = Evaluation.EvaluateType((foo.Body.SubStatements[3] as ExpressionStatement).Expression,ctxt);
+			t = Evaluation.EvaluateType((subSt[3] as ExpressionStatement).Expression,ctxt);
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 			
