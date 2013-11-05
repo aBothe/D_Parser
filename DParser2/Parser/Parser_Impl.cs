@@ -5038,7 +5038,7 @@ namespace D_Parser.Parser
 				if(Expect(Identifier))
 					al = new TemplateAliasParameter(t.Value, t.Location, parent);
 				else
-					al = new TemplateAliasParameter(null, CodeLocation.Empty, parent);
+					al = new TemplateAliasParameter(0, CodeLocation.Empty, parent);
 				al.Location = startLoc;
 				LastParsedObject = al;
 
@@ -5106,7 +5106,7 @@ namespace D_Parser.Parser
 				return null;
 			}
 
-			var tv = new TemplateValueParameter(dv.Name, dv.NameLocation, parent) { 
+			var tv = new TemplateValueParameter(dv.NameHash, dv.NameLocation, parent) { 
 				Location=la.Location,
 				Type = dv.Type
 			};

@@ -169,6 +169,7 @@ namespace D_Parser.Dom
 		public IExpression DefaultExpression;
 
 		public TemplateValueParameter(string name, CodeLocation nameLoc, DNode parent) : base(name, nameLoc, parent) {}
+		public TemplateValueParameter(int name, CodeLocation nameLoc, DNode parent) : base(name, nameLoc, parent) {}
 
 		public override string ToString()
 		{
@@ -186,6 +187,7 @@ namespace D_Parser.Dom
 		public ITypeDeclaration DefaultType;
 
 		public TemplateAliasParameter(string name, CodeLocation nameLoc, DNode parent) : base(name, nameLoc, parent) {}
+		public TemplateAliasParameter(int name, CodeLocation nameLoc, DNode parent) : base(name, nameLoc, parent) {}
 
 		public sealed override string ToString()
 		{
