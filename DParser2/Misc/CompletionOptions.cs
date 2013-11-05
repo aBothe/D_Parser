@@ -6,6 +6,7 @@ namespace D_Parser.Misc
 	{
 		public static CompletionOptions Instance = new CompletionOptions();
 
+		public bool LimitResolutionErrors = System.Diagnostics.Debugger.IsAttached;
 		public bool DumpResolutionErrors = System.Diagnostics.Debugger.IsAttached;
 
 		public bool EnableSuggestionMode = false;
