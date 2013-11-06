@@ -998,7 +998,7 @@ namespace D_Parser.Parser
 			}
 
 			// BasicType Declarator FunctionBody
-			else if (firstNode is DMethod && IsFunctionBody)
+			else if (firstNode is DMethod && (IsFunctionBody || IsEOF))
 			{
 				firstNode.Description += CheckForPostSemicolonComment();
 
