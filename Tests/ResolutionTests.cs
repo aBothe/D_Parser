@@ -14,6 +14,7 @@ using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.Templates;
 using D_Parser.Resolver.TypeResolution;
 using NUnit.Framework;
+using System.IO;
 
 namespace Tests
 {
@@ -418,6 +419,28 @@ auto o = new Obj();
 			
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+		}
+
+		[Test]
+		public void PackageModuleImport()
+		{
+			var ctxt = CreateCtxt ("test",
+				          @"module libweb.client; void runClient() { }", 
+				          @"module libweb.server; void runServer() { }",
+				          @"module libweb; public import libweb.client; public import libweb.server;",
+				          @"module test; import libweb;");
+			var ch = ctxt.ParseCache [0];
+
+			ch.GetSubModule("libweb.client").FileName = Path.Combine("libweb","client.d");
+			ch.GetSubModule("libweb.server").FileName = Path.Combine("libweb","server.d");
+			ch ["libweb"].FileName = Path.Combine("libweb","package.d");
+			ch ["test"].FileName = Path.Combine("test.d");
+
+			var t = TypeDeclarationResolver.ResolveSingle ("runServer", ctxt, null);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			
+			t = TypeDeclarationResolver.ResolveSingle ("runClient", ctxt, null);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 		}
 
 		[Test]
