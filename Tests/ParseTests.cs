@@ -431,6 +431,28 @@ void foo()
 			ITypeDeclaration q;
 			bool isCFun;
 			var t = Demangler.Demangle("_D3std5stdio35__T7writelnTC3std6stream4FileTAAyaZ7writelnFC3std6stream4FileAAyaZv", out q, out isCFun);
+
+			Assert.IsFalse (isCFun);
+		}
+
+		[Test]
+		public void EponymousTemplates()
+		{
+			var m = DParser.ParseString(@"
+enum isIntOrFloat(T) = is(T == int) || is(T == float);
+alias isInt(T) = is(T == int);
+");
+
+			Assert.AreEqual(0, m.ParseErrors.Count);
+			TemplateParameter tp;
+
+			var dc = m.Children ["isIntOrFloat"].First () as EponymousTemplate;
+			Assert.That (dc, Is.Not.Null);
+			Assert.That (dc.TryGetTemplateParameter("T".GetHashCode(), out tp), Is.True);
+
+			dc = m.Children ["isInt"].First () as EponymousTemplate;
+			Assert.That (dc, Is.Not.Null);
+			Assert.That (dc.TryGetTemplateParameter("T".GetHashCode(), out tp), Is.True);
 		}
 	}
 }

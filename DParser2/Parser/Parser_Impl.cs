@@ -716,157 +716,159 @@ namespace D_Parser.Parser
 			// Enum possible storage class attributes
 			bool HasStorageClassModifiers = CheckForStorageClasses(Scope as DBlockNode);
 
-			#region Aliases
+			// Aliases
 			if (laKind == (Alias) || laKind == Typedef)
-			{
-				Step();
-				// _t is just a synthetic node which holds possible following attributes
-				var _t = new DVariable();
-				ApplyAttributes(_t);
-				_t.Description = GetComments();
-
-				// AliasThis
-				bool secondWay=false;
-				if ((laKind == Identifier && Lexer.CurrentPeekToken.Kind == This) ||
-				    (secondWay=(laKind == This && Lexer.CurrentPeekToken.Kind == Assign)))
-				{
-					var dv = new DVariable { 
-                        Description = _t.Description,
-                        Location=t.Location, 
-                        IsAlias=true,
-						IsAliasThis = true,
-						NameHash = DVariable.AliasThisIdentifierHash,
-						Parent = Scope,
-						Attributes = _t.Attributes
-                    };
-					LastParsedObject = dv;
-
-					if(!(Scope is DClassLike))
-						SemErr(DTokens.This, "alias this declarations are only allowed in structs and classes!");
-					
-					// alias this = Identifier
-					if(secondWay)
-					{
-						Step(); // Step beyond 'this'
-						dv.NameLocation=t.Location;
-						Step(); // Step beyond '='
-						if(Expect(Identifier))
-						{
-							dv.Type= new IdentifierDeclaration(t.Value)
-							{
-								Location = t.Location,
-								EndLocation = t.EndLocation
-							};
-						}
-					}
-					else
-					{
-	                    Step(); // Step beyond Identifier
-	                    dv.Type = new IdentifierDeclaration(t.Value)
-	                    {
-	                        Location=dv.NameLocation =t.Location, 
-	                        EndLocation=t.EndLocation 
-	                    };
-	
-	                    Step(); // Step beyond 'this'
-						dv.NameLocation=t.Location;
-					}
-                    
-					dv.EndLocation = t.EndLocation;
-					
-					Expect(Semicolon);
-					dv.Description += CheckForPostSemicolonComment();
-
-					return new[]{dv};
-				}
-				
-				// AliasInitializerList
-				else if(laKind == Identifier && Lexer.CurrentPeekToken.Kind == Assign)
-				{
-					var decls = new List<INode>();
-					do{
-						if(laKind == Comma)
-							Step();
-						if(!Expect(Identifier))
-							break;
-						var dv = new DVariable{
-							IsAlias = true,
-							Attributes = _t.Attributes,
-							Description = _t.Description,
-							Name = t.Value,
-							NameLocation = t.Location,
-							Location = t.Location,
-							Parent = Scope
-						};
-						if(Expect(Assign))
-						{
-							Lexer.PushLookAheadBackup();
-							dv.Type = Type();
-							if(!(laKind == Comma || laKind == Semicolon))
-							{
-								Lexer.RestoreLookAheadBackup();
-								dv.Initializer = AssignExpression(Scope);
-							}
-							else
-								Lexer.PopLookAheadBackup();
-						}
-						decls.Add(dv);
-					}
-					while(laKind == Comma);
-					
-					Expect(Semicolon);
-					decls[decls.Count-1].Description += CheckForPostSemicolonComment();
-					return decls.ToArray();
-				}
-				else // alias BasicType Declarator
-				{
-					var decls=Decl(HasStorageClassModifiers,Scope);
-
-					if(decls!=null && decls.Length>0){
-						foreach (var n in decls)
-							if (n is DVariable){
-								((DNode)n).Attributes.AddRange(_t.Attributes);
-								((DVariable)n).IsAlias = true;
-							}
-						
-						decls[decls.Length-1].Description += CheckForPostSemicolonComment();
-					}
-					return decls;
-				}
-			}
-			#endregion
-			
+				return AliasDeclaration (Scope, HasStorageClassModifiers);
 			else if (laKind == (Struct) || laKind == (Union))
-				return new[]{ AggregateDeclaration(Scope)};
-			else if (laKind == Enum)
-			{
+				return new[]{ AggregateDeclaration (Scope) };
+			else if (laKind == Enum) {
 				// As another meta-programming feature, it is possible to create static functions 
 				// that return enums, i.e. a constant value or something
-				if (Lexer.CurrentPeekToken.Kind == Identifier && Peek().Kind == OpenParenthesis)
-				{
-					Peek(1);
-					return Decl(HasStorageClassModifiers, Scope);
+				// Additionally, eponymous template declarations are there since 2.064 - and both syntaxes are quite similar
+				if (Lexer.CurrentPeekToken.Kind == Identifier && Peek ().Kind == OpenParenthesis) {
+					Peek (1);
+					var l = Decl (HasStorageClassModifiers, Scope);
+					return l != null ? l.ToArray () : null;
 				}
 
-				return EnumDeclaration(Scope);
-			}
-			else if (laKind == (Class))
-				return new[]{ ClassDeclaration(Scope)};
-			else if (laKind == (Template) || (laKind==Mixin && Peek(1).Kind==Template))
-				return new[]{ TemplateDeclaration(Scope)};
+				return EnumDeclaration (Scope);
+			} else if (laKind == (Class))
+				return new[]{ ClassDeclaration (Scope) };
+			else if (laKind == (Template) || (laKind == Mixin && Peek (1).Kind == Template))
+				return new[]{ TemplateDeclaration (Scope) };
 			else if (laKind == (Interface))
-				return new[]{ InterfaceDeclaration(Scope)};
-			else if (IsBasicType() || laKind==Ref)
-				return Decl(HasStorageClassModifiers,Scope);
-			else
+				return new[]{ InterfaceDeclaration (Scope) };
+			else if (IsBasicType () || laKind == Ref) {
+				var l = Decl(HasStorageClassModifiers, Scope);
+				return l != null ? l.ToArray () : null;
+			}
+				
+			SynErr(laKind,"Declaration expected, not "+GetTokenString(laKind));
+			Step();
+			return null;
+		}
+
+		INode[] AliasDeclaration(IBlockNode Scope, bool HasStorageClassModifiers)
+		{
+			Step();
+			// _t is just a synthetic node which holds possible following attributes
+			var _t = new DVariable();
+			ApplyAttributes(_t);
+			_t.Description = GetComments();
+			List<INode> decls;
+
+			// AliasThis
+			if ((laKind == Identifier && Lexer.CurrentPeekToken.Kind == This) ||
+				(laKind == This && Lexer.CurrentPeekToken.Kind == Assign))
+				return new[]{AliasThisDeclaration(_t, Scope)};
+
+			// AliasInitializerList
+			else if(laKind == Identifier && Lexer.CurrentPeekToken.Kind == Assign)
 			{
-				SynErr(laKind,"Declaration expected, not "+GetTokenString(laKind));
-				Step();
+				decls = new List<INode>();
+				do{
+					if(laKind == Comma)
+						Step();
+					if(!Expect(Identifier))
+						break;
+					var dv = new DVariable{
+						IsAlias = true,
+						Attributes = _t.Attributes,
+						Description = _t.Description,
+						Name = t.Value,
+						NameLocation = t.Location,
+						Location = t.Location,
+						Parent = Scope
+					};
+					if(Expect(Assign))
+					{
+						Lexer.PushLookAheadBackup();
+						dv.Type = Type();
+						if(!(laKind == Comma || laKind == Semicolon))
+						{
+							Lexer.RestoreLookAheadBackup();
+							dv.Initializer = AssignExpression(Scope);
+						}
+						else
+							Lexer.PopLookAheadBackup();
+					}
+					decls.Add(dv);
+				}
+				while(laKind == Comma);
+
+				Expect(Semicolon);
+				decls[decls.Count-1].Description += CheckForPostSemicolonComment();
+				return decls.ToArray();
+			}
+
+			// alias BasicType Declarator
+			decls=Decl(HasStorageClassModifiers,Scope, laKind != Identifier || Lexer.CurrentPeekToken.Kind != OpenParenthesis ? null : new Modifier(DTokens.Alias));
+
+			if(decls!=null){
+				foreach (var n in decls)
+					if (n is DVariable){
+						((DNode)n).Attributes.AddRange(_t.Attributes);
+						((DVariable)n).IsAlias = true;
+					}
+
+				decls[decls.Count-1].Description += CheckForPostSemicolonComment();
+				return decls.ToArray ();
 			}
 			return null;
 		}
 
-		INode[] Decl(bool HasStorageClassModifiers,IBlockNode Scope)
+		DVariable AliasThisDeclaration(DVariable initiallyParsedNode, IBlockNode Scope)
+		{
+			var dv = new DVariable { 
+				Description = initiallyParsedNode.Description,
+				Location=t.Location, 
+				IsAlias=true,
+				IsAliasThis = true,
+				NameHash = DVariable.AliasThisIdentifierHash,
+				Parent = Scope,
+				Attributes = initiallyParsedNode.Attributes
+			};
+			LastParsedObject = dv;
+
+			if(!(Scope is DClassLike))
+				SemErr(DTokens.This, "alias this declarations are only allowed in structs and classes!");
+
+			// alias this = Identifier
+			if(laKind == This && Lexer.CurrentPeekToken.Kind == Assign)
+			{
+				Step(); // Step beyond 'this'
+				dv.NameLocation=t.Location;
+				Step(); // Step beyond '='
+				if(Expect(Identifier))
+				{
+					dv.Type= new IdentifierDeclaration(t.Value)
+					{
+						Location = t.Location,
+						EndLocation = t.EndLocation
+					};
+				}
+			}
+			else
+			{
+				Step(); // Step beyond Identifier
+				dv.Type = new IdentifierDeclaration(t.Value)
+				{
+					Location=dv.NameLocation =t.Location, 
+					EndLocation=t.EndLocation 
+				};
+
+				Step(); // Step beyond 'this'
+				dv.NameLocation=t.Location;
+			}
+
+			dv.EndLocation = t.EndLocation;
+
+			Expect(Semicolon);
+			dv.Description += CheckForPostSemicolonComment();
+			return dv;
+		}
+
+		List<INode> Decl(bool HasStorageClassModifiers,IBlockNode Scope, DAttribute StorageClass = null)
 		{
 			var startLocation = la.Location;
 			var initialComment = GetComments();
@@ -882,7 +884,8 @@ namespace D_Parser.Parser
 			}
 
 			// Autodeclaration
-			var StorageClass = DTokens.ContainsStorageClass(DeclarationAttributes.ToArray());
+			if(StorageClass == null)
+				StorageClass = DTokens.ContainsStorageClass(DeclarationAttributes);
 
 			if (laKind == Enum)
 			{
@@ -892,7 +895,7 @@ namespace D_Parser.Parser
 			
 			// If there's no explicit type declaration, leave our node's type empty!
 			if ((StorageClass != Modifier.Empty && 
-				laKind == (Identifier) && DeclarationAttributes.Count > 0)) // public auto var=0; // const foo(...) {} 
+				laKind == (Identifier) && (DeclarationAttributes.Count > 0 || Lexer.CurrentPeekToken.Kind == OpenParenthesis))) // public auto var=0; // const foo(...) {} 
 			{
 				if (Lexer.CurrentPeekToken.Kind == Assign || Lexer.CurrentPeekToken.Kind ==OpenParenthesis) 
 				{ }
@@ -994,7 +997,7 @@ namespace D_Parser.Parser
 				if (ret.Count > 0)
 					ret[ret.Count - 1].Description += CheckForPostSemicolonComment();
 
-				return ret.ToArray();
+				return ret;
 			}
 
 			// BasicType Declarator FunctionBody
@@ -1006,7 +1009,9 @@ namespace D_Parser.Parser
 
 				firstNode.Description += CheckForPostSemicolonComment();
 
-				return new[]{ firstNode};
+				var ret = new List<INode> ();
+				ret.Add (firstNode);
+				return ret;
 			}
 			else
 				SynErr(OpenCurlyBrace, "; or function body expected after declaration stub.");
@@ -1219,14 +1224,13 @@ namespace D_Parser.Parser
 		{
 			DNode ret = new DVariable() { Type=basicType, Location = la.Location, Parent = parent };
 			LastParsedObject = ret;
-			ITypeDeclaration ttd = null;
 
 			while (IsBasicType2())
 			{
 				if (ret.Type == null) 
 					ret.Type = BasicType2();
 				else { 
-					ttd = BasicType2(); 
+					var ttd = BasicType2(); 
 					if(ttd!=null)
 						ttd.InnerDeclaration = ret.Type; 
 					ret.Type = ttd; 
@@ -1237,71 +1241,7 @@ namespace D_Parser.Parser
 			if (IsEOF && ret != LastParsedObject)
 				return null;
 
-			/*
-			 * Add some syntax possibilities here
-			 * like
-			 * int (x);
-			 * int(*foo);
-			 */
-			#region This way of declaring function pointers is deprecated
-			if (laKind == (OpenParenthesis))
-			{
-				Step();
-				//SynErr(OpenParenthesis,"C-style function pointers are deprecated. Use the function() syntax instead."); // Only deprecated in D2
-				var cd = new DelegateDeclaration() as ITypeDeclaration;
-				LastParsedObject = cd;
-				ret.Type = cd;
-				var deleg = cd as DelegateDeclaration;
-
-				/* 
-				 * Parse all basictype2's that are following the initial '('
-				 */
-				while (IsBasicType2())
-				{
-					ttd = BasicType2();
-
-					if (deleg.ReturnType == null) 
-						deleg.ReturnType = ttd;
-					else
-					{
-						if(ttd!=null)
-							ttd.InnerDeclaration = deleg.ReturnType;
-						deleg.ReturnType = ttd;
-					}
-				}
-
-				/*
-				 * Here can be an identifier with some optional DeclaratorSuffixes
-				 */
-				if (laKind != (CloseParenthesis))
-				{
-					if (IsParam && laKind != (Identifier))
-					{
-						/* If this Declarator is a parameter of a function, don't expect anything here
-						 * except a '*' that means that here's an anonymous function pointer
-						 */
-						if (t.Kind != (Times))
-							SynErr(Times);
-					}
-					else
-					{
-						if(Expect(Identifier))
-							ret.Name = t.Value;
-
-						/*
-						 * Just here suffixes can follow!
-						 */
-						if (laKind != (CloseParenthesis))
-						{
-							DeclaratorSuffixes(ret);
-						}
-					}
-				}
-				ret.Type = cd;
-				Expect(CloseParenthesis);
-			}
-			#endregion
-			else
+			if (laKind != (OpenParenthesis))
 			{
 				// On external function declarations, no parameter names are required.
 				// extern void Cfoo(HANDLE,char**);
@@ -1316,6 +1256,20 @@ namespace D_Parser.Parser
 				{
 					ret.Name = t.Value;
 					ret.NameLocation = t.Location;
+
+					if (laKind == OpenParenthesis && ret.Type == null) {
+						OverPeekBrackets (DTokens.OpenParenthesis, true);
+						// enum asdf(...) = ...;
+						if (Lexer.CurrentPeekToken.Kind == Assign) {
+							var eponymousTemplateDecl = new EponymousTemplate ();
+							eponymousTemplateDecl.AssignFrom (ret);
+							ret = eponymousTemplateDecl;
+
+							TemplateParameterList (eponymousTemplateDecl);
+
+							return ret;
+						}
+					}
 				}
 				else
 				{
@@ -1332,6 +1286,8 @@ namespace D_Parser.Parser
 					return null;
 				}
 			}
+			else
+				OldCStyleFunctionPointer(ret, IsParam);
 
 			if (IsDeclaratorSuffix || IsFunctionAttribute)
 			{
@@ -1348,6 +1304,69 @@ namespace D_Parser.Parser
 			}
 
 			return ret;
+		}
+
+		/// <summary>
+		/// Add some syntax possibilities here
+		/// int (x);
+		/// int(*foo);
+		/// This way of declaring function pointers is deprecated
+		/// </summary>
+		void OldCStyleFunctionPointer(DNode ret, bool IsParam)
+		{
+			Step();
+			//SynErr(OpenParenthesis,"C-style function pointers are deprecated. Use the function() syntax instead."); // Only deprecated in D2
+			var cd = new DelegateDeclaration() as ITypeDeclaration;
+			LastParsedObject = cd;
+			ret.Type = cd;
+			var deleg = cd as DelegateDeclaration;
+
+			/*			 
+			 * Parse all basictype2's that are following the initial '('
+			 */
+			while (IsBasicType2())
+			{
+				var ttd = BasicType2();
+
+				if (deleg.ReturnType == null) 
+					deleg.ReturnType = ttd;
+				else
+				{
+					if(ttd!=null)
+						ttd.InnerDeclaration = deleg.ReturnType;
+					deleg.ReturnType = ttd;
+				}
+			}
+
+			/*			
+			 * Here can be an identifier with some optional DeclaratorSuffixes
+			 */
+			if (laKind != (CloseParenthesis))
+			{
+				if (IsParam && laKind != (Identifier))
+				{
+					/* If this Declarator is a parameter of a function, don't expect anything here
+					 * except a '*' that means that here's an anonymous function pointer
+					 */
+					if (t.Kind != (Times))
+						SynErr(Times);
+				}
+				else
+				{
+					if(Expect(Identifier))
+						ret.Name = t.Value;
+
+					/*					
+					 * Just here suffixes can follow!
+					 */
+					if (laKind != (CloseParenthesis))
+					{
+						DeclaratorSuffixes(ret);
+					}
+				}
+			}
+			ret.Type = cd;
+			Expect(CloseParenthesis);
 		}
 
 		bool IsDeclaratorSuffix
@@ -4616,7 +4635,7 @@ namespace D_Parser.Parser
 
 			ApplyAttributes(mye);
 
-			if (IsBasicType() && laKind != Identifier)
+			if (laKind != Identifier && IsBasicType())
 				mye.Type = Type();
 			else if (laKind == Auto)
 			{
@@ -4628,16 +4647,14 @@ namespace D_Parser.Parser
 			{
 				// Normal enum identifier
 				if (Lexer.CurrentPeekToken.Kind == (Assign) || // enum e = 1234;
-					Lexer.CurrentPeekToken.Kind == (OpenCurlyBrace) || // enum e { A,B,C, }
-					Lexer.CurrentPeekToken.Kind == (Semicolon) || // enum e;
-					Lexer.CurrentPeekToken.Kind == Colon) // enum e : uint {..}
-				{
-					Step();
+				    Lexer.CurrentPeekToken.Kind == (OpenCurlyBrace) || // enum e { A,B,C, }
+				    Lexer.CurrentPeekToken.Kind == (Semicolon) || // enum e;
+				    Lexer.CurrentPeekToken.Kind == Colon) { // enum e : uint {..}
+					Step ();
 					mye.Name = t.Value;
 					mye.NameLocation = t.Location;
 				}
-				else
-				{
+				else {
 					if (mye.Type == null)
 						mye.Type = Type();
 

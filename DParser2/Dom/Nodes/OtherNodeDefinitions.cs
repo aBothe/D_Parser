@@ -423,4 +423,35 @@ namespace D_Parser.Dom
 			vis.Visit(this);
 		}
 	}
+
+	/// <summary>
+	/// enum isIntOrFloat(T) = is(T == int) || is(T == float);
+	/// </summary>
+	public class EponymousTemplate : DVariable
+	{
+		public override string ToString (bool Attributes, bool IncludePath)
+		{
+			var sb = new StringBuilder();
+			if (Attributes)
+				sb.Append(AttributeString).Append(' ');
+
+			sb.Append(IncludePath ? GetNodePath(this, true) : Name);
+
+			if (TemplateParameters != null && TemplateParameters.Length > 0)
+			{
+				sb.Append('(');
+				foreach (var tp in TemplateParameters)
+				{
+					if (tp != null)
+						sb.Append(tp.ToString());
+					sb.Append(',');
+				}
+				if (TemplateParameters.Length > 0)
+					sb.Remove(sb.Length - 1, 1);
+				sb.Append(')');
+			}
+
+			return sb.ToString();
+		}
+	}
 }
