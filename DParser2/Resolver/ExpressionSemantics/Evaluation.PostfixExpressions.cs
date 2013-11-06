@@ -371,7 +371,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var id = dm.Parameters[currentParameter].Type as IdentifierDeclaration;
 			var curNode = dm as DNode;
 			TemplateParameter tpar = null;
-			while (curNode != null && !curNode.TryGetTemplateParameter(id.Id, out tpar))
+			while (curNode != null && !curNode.TryGetTemplateParameter(id.IdHash, out tpar))
 				curNode = curNode.Parent as DNode;
 
 			if (tpar is TemplateTupleParameter)

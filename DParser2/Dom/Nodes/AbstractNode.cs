@@ -115,7 +115,7 @@ namespace D_Parser.Dom
 		public virtual void AssignFrom(INode other)
 		{
 			Type = other.Type;
-			Name = other.Name;
+			NameHash = other.NameHash;
 			NameLocation = other.NameLocation;
 
 			Parent = other.Parent;

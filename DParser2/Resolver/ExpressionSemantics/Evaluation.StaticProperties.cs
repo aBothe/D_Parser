@@ -356,7 +356,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				if (relatedNode != null) {
 					if (!(relatedNode is DVariable)) {
 						prop_Init.Parent = relatedNode.Parent;
-						prop_Init.Type = new IdentifierDeclaration (relatedNode.Name);
+						prop_Init.Type = new IdentifierDeclaration (relatedNode.NameHash);
 					} else {
 						prop_Init.Parent = relatedNode;
 						prop_Init.Initializer = (relatedNode as DVariable).Initializer;

@@ -96,7 +96,7 @@ namespace D_Parser.Misc
 					var dm = n as DMethod;
 
 					// UFCS only allows free function that contain at least one parameter
-					if (dm == null || dm.Parameters.Count == 0 || dm.Parameters[0].Type == null)
+					if (dm == null || dm.NameHash == 0 || dm.Parameters.Count == 0 || dm.Parameters[0].Type == null)
 						continue;
 
 					queue.Push(dm);
@@ -167,7 +167,7 @@ namespace D_Parser.Misc
 				{
 					var dm = (DMethod)m;
 
-					if (dm.Parameters == null || dm.Parameters.Count == 0 || dm.Parameters[0].Type == null)
+					if (dm.Parameters == null || dm.NameHash == 0 || dm.Parameters.Count == 0 || dm.Parameters[0].Type == null)
 						continue;
 
 					ctxt.PushNewScope(dm);
