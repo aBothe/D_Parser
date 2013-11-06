@@ -92,6 +92,20 @@ namespace D_Parser.Resolver
 			stack.Push(initCtxt);
 		}
 		#endregion
+
+		~ResolutionContext()
+		{
+			if (Debugger.IsLogging ()) {
+				var c = CurrentContext;
+				if(c != null && c.ScopedBlock != null)
+					Debugger.Log (0, "Resolution Error", c.ToString());
+				foreach (var err in ResolutionErrors) {
+					if(err.SyntacticalContext != null)
+						Debugger.Log (0, "Resolution Error", err.SyntacticalContext.ToString ());
+					Debugger.Log (0, "Resolution Error", err.Message);
+				}
+			}
+		}
 		
 		#region ContextFrame stacking
 		public ContextFrame Pop()
@@ -236,16 +250,16 @@ namespace D_Parser.Resolver
 		const int maxErrorCount = 20;
 		public void LogError(ResolutionError err)
 		{
-			ResolutionErrors.Add(err);
+			ResolutionErrors.Add(err);/*
 			if (ResolutionErrors.Count > maxErrorCount && CompletionOptions.Instance.LimitResolutionErrors)
-				throw new TooManyResolutionErrors (ResolutionErrors.ToArray());
+				throw new TooManyResolutionErrors (ResolutionErrors.ToArray());*/
 		}
 
 		public void LogError(ISyntaxRegion syntaxObj, string msg)
 		{
-			ResolutionErrors.Add(new ResolutionError(syntaxObj,msg));
+			ResolutionErrors.Add(new ResolutionError(syntaxObj,msg));/*
 			if (ResolutionErrors.Count > maxErrorCount && CompletionOptions.Instance.LimitResolutionErrors)
-				throw new TooManyResolutionErrors (ResolutionErrors.ToArray());
+				throw new TooManyResolutionErrors (ResolutionErrors.ToArray());*/
 		}
 		#endregion
 	}
