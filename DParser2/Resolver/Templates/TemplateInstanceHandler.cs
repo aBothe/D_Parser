@@ -157,10 +157,13 @@ namespace D_Parser.Resolver.TypeResolution
 			}
 
 			if (sortedAndFilteredOverloads != null &&
-				sortedAndFilteredOverloads.Length == 1 && 
-				sortedAndFilteredOverloads[0] is TemplateType)
+				sortedAndFilteredOverloads.Length == 1)
 			{
-				return TryGetImplicitProperty (sortedAndFilteredOverloads [0] as TemplateType, ctxt) ?? sortedAndFilteredOverloads;
+				var t = sortedAndFilteredOverloads [0];
+				if(t is TemplateType)
+					return TryGetImplicitProperty (t as TemplateType, ctxt) ?? sortedAndFilteredOverloads;
+				if (t is EponymousTemplateType)
+					return new[]{ DeduceEponymousTemplate(t as EponymousTemplateType, ctxt) };
 			}
 
 			return sortedAndFilteredOverloads;
@@ -186,6 +189,27 @@ namespace D_Parser.Resolver.TypeResolution
 				ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(template);
 
 			return matchingChild;
+		}
+
+		static AbstractType DeduceEponymousTemplate(EponymousTemplateType ept, ResolutionContext ctxt)
+		{
+			if (ept.Definition.Initializer == null) {
+				ctxt.LogError (ept.Definition, "Can't deduce type from empty initializer!");
+				return null;
+			}
+
+			// Introduce the deduced params to the current resolution context
+			ctxt.CurrentContext.IntroduceTemplateParameterTypes(ept);
+
+			// Get actual overloads
+			AbstractType deducedType = null;
+
+			deducedType = new MemberSymbol (ept.Definition, Evaluation.EvaluateType (ept.Definition.Initializer, ctxt), null, ept.DeducedTypes); //ept; //Evaluation.EvaluateType (ept.Definition.Initializer, ctxt);
+
+			// Undo context-related changes
+			ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(ept);
+
+			return deducedType;
 		}
 
 		private static List<AbstractType> DeduceOverloads(

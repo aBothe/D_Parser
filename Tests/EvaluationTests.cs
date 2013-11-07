@@ -369,6 +369,82 @@ template isDynArg(T) {
 			
 			Assert.That(h1, Is.EqualTo(h2));
 		}
+
+		[Test]
+		public void AliasedTypeTuple()
+		{
+			var ctxt = ResolutionTests.CreateDefCtxt (@"module A;
+template Tuple(T...) { alias Tuple = T; }
+alias Tup = Tuple!(int, float, string);
+");
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression ("Tup[0]");
+			t = Evaluation.EvaluateType (x, ctxt);
+			Assert.That (t, Is.TypeOf(typeof(PrimitiveType)));
+
+			x = DParser.ParseExpression ("Tup[1]");
+			t = Evaluation.EvaluateType (x, ctxt);
+			Assert.That (t, Is.TypeOf(typeof(PrimitiveType)));
+
+			x = DParser.ParseExpression ("Tup[2]");
+			t = DResolver.StripAliasSymbol(Evaluation.EvaluateType (x, ctxt));
+			Assert.That (t, Is.TypeOf(typeof(ArrayType)));
+		}
+
+		[Test] 
+		public void EponymousTemplates()
+		{
+			var ctxt = ResolutionTests.CreateDefCtxt (@"module B;
+alias Tuple(T...) = T;
+alias Tup = Tuple!(int, float, string);
+
+enum isIntOrFloat(T) = is(T == int) || is(T == float);
+");
+			IExpression x;
+			ISymbolValue v;
+			AbstractType t;
+
+			DToken tk;
+			var td = DParser.ParseBasicType ("Tuple!(int, float, string)", out tk);
+			//t = TypeDeclarationResolver.ResolveSingle (td, ctxt);
+			//Assert.That (t, Is.TypeOf(typeof(MemberSymbol)));
+			//Assert.That ((t as MemberSymbol).Base, Is.TypeOf(typeof(DTuple)));
+
+			x = DParser.ParseExpression ("Tup[0]");
+			t = Evaluation.EvaluateType (x, ctxt);
+			Assert.That (t, Is.TypeOf(typeof(PrimitiveType)));
+
+			x = DParser.ParseExpression ("Tup[1]");
+			t = Evaluation.EvaluateType (x, ctxt);
+			Assert.That (t, Is.TypeOf(typeof(PrimitiveType)));
+
+			x = DParser.ParseExpression ("Tup[2]");
+			t = DResolver.StripAliasSymbol(Evaluation.EvaluateType (x, ctxt));
+			Assert.That (t, Is.TypeOf(typeof(ArrayType)));
+
+
+			x = DParser.ParseExpression ("isIntOrFloat!int");
+			v = Evaluation.EvaluateValue (x, ctxt);
+			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			Assert.That ((v as PrimitiveValue).Value, Is.Not.EqualTo (0m));
+
+			x = DParser.ParseExpression ("isIntOrFloat!(Tup[0])");
+			v = Evaluation.EvaluateValue (x, ctxt);
+			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			Assert.That ((v as PrimitiveValue).Value, Is.Not.EqualTo (0m));
+
+			x = DParser.ParseExpression ("isIntOrFloat!float");
+			v = Evaluation.EvaluateValue (x, ctxt);
+			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			Assert.That ((v as PrimitiveValue).Value, Is.Not.EqualTo (0m));
+
+			x = DParser.ParseExpression ("isIntOrFloat!string");
+			v = Evaluation.EvaluateValue (x, ctxt);
+			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			Assert.That ((v as PrimitiveValue).Value, Is.EqualTo (0m));
+		}
 		
 		#region Traits
 		[Test]

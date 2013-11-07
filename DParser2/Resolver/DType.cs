@@ -439,6 +439,22 @@ namespace D_Parser.Resolver
 		{ }
 	}
 
+	public class EponymousTemplateType : UserDefinedType
+	{
+		public new EponymousTemplate Definition { get { return base.Definition as EponymousTemplate; } }
+
+		public EponymousTemplateType(EponymousTemplate ep,
+			ReadOnlyCollection<TemplateParameterSymbol> deducedTypes = null, ISyntaxRegion td = null) : base(ep, null, deducedTypes, td)
+		{
+
+		}
+
+		public override string ToString ()
+		{
+			return "(Eponymous Template Type) "+ Definition;
+		}
+	}
+
 	public class StaticProperty : MemberSymbol
 	{
 		public StaticProperty(string propertyName, string propertyDescription, AbstractType propertyType, INode baseNode, ISyntaxRegion td)

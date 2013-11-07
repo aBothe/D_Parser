@@ -499,36 +499,37 @@ namespace D_Parser.Resolver.TypeResolution
 			{
 				AbstractType bt = null;
 
-				if (canResolveBase)
-				{
-					var bts = TypeDeclarationResolver.Resolve(variable.Type, ctxt);
-					ctxt.CheckForSingleResult(bts, variable.Type);
+				if (!(variable is EponymousTemplate)) {
+					if (canResolveBase) {
+						var bts = TypeDeclarationResolver.Resolve (variable.Type, ctxt);
+						ctxt.CheckForSingleResult (bts, variable.Type);
 
-					if (bts != null && bts.Length != 0)
-						bt = bts[0];
+						if (bts != null && bts.Length != 0)
+							bt = bts [0];
 
 					// For auto variables, use the initializer to get its type
-					else if (variable.Initializer != null)
-					{
-						bt = DResolver.StripMemberSymbols(Evaluation.EvaluateType(variable.Initializer, ctxt));
+					else if (variable.Initializer != null) {
+							bt = DResolver.StripMemberSymbols (Evaluation.EvaluateType (variable.Initializer, ctxt));
+						}
+
+						// Check if inside an foreach statement header
+						if (bt == null && ctxt.ScopedStatement != null)
+							bt = GetForeachIteratorType (variable, ctxt);
 					}
 
-					// Check if inside an foreach statement header
-					if (bt == null && ctxt.ScopedStatement != null)
-						bt = GetForeachIteratorType(variable, ctxt);
-				}
-
-				// Note: Also works for aliases! In this case, we simply try to resolve the aliased type, otherwise the variable's base type
-				ret = variable.IsAlias ?
-					new AliasedType(variable, bt, typeBase as ISyntaxRegion) as MemberSymbol :
-					new MemberSymbol(variable, bt, typeBase as ISyntaxRegion);
+					// Note: Also works for aliases! In this case, we simply try to resolve the aliased type, otherwise the variable's base type
+					ret = variable.IsAlias ?
+					new AliasedType (variable, bt, typeBase as ISyntaxRegion) as MemberSymbol :
+					new MemberSymbol (variable, bt, typeBase as ISyntaxRegion);
+				} else
+					ret = new EponymousTemplateType (variable as EponymousTemplate, GetInvisibleTypeParameters(variable, ctxt).AsReadOnly(), typeBase as ISyntaxRegion);
 			}
 			else if (m is DMethod)
 			{
 				ret = new MemberSymbol(m as DNode,canResolveBase ? GetMethodReturnType(m as DMethod, ctxt) : null, typeBase as ISyntaxRegion);
 			}
 			else if (m is DClassLike)
-				ret = HandleClassLikeMatch (m, ctxt, typeBase, canResolveBase);
+				ret = HandleClassLikeMatch (m as DClassLike, ctxt, typeBase, canResolveBase);
 			else if (m is DModule)
 			{
 				var mod = (DModule)m;
@@ -606,29 +607,35 @@ namespace D_Parser.Resolver.TypeResolution
 			return ret;
 		}
 
-		static AbstractType HandleClassLikeMatch (INode m, ResolutionContext ctxt, object typeBase, bool canResolveBase)
+		/// <summary>
+		/// Add 'superior' template parameters to the current symbol because 
+		/// the parameters might be re-used in the nested class.
+		/// </summary>
+		static List<TemplateParameterSymbol> GetInvisibleTypeParameters(DNode n,ResolutionContext ctxt)
 		{
-			AbstractType ret = null;
-			UserDefinedType udt = null;
-			var dc = (DClassLike)m;
 			var invisibleTypeParams = new List<TemplateParameterSymbol> ();
-			/*
-			 * Add 'superior' template parameters to the current symbol because the parameters 
-			 * might be re-used in the nested class.
-			 */
+
 			var tStk = new Stack<ContextFrame> ();
 			do {
 				var curCtxt = ctxt.Pop ();
 				tStk.Push (curCtxt);
-				foreach (var kv in curCtxt.DeducedTemplateParameters) {
-					if (!dc.ContainsTemplateParameter (kv.Value.Parameter)) {
+				foreach (var kv in curCtxt.DeducedTemplateParameters)
+					if (!n.ContainsTemplateParameter (kv.Value.Parameter))
 						invisibleTypeParams.Add (kv.Value);
-					}
-				}
 			}
 			while (ctxt.PrevContextIsInSameHierarchy);
 			while (tStk.Count != 0)
 				ctxt.Push (tStk.Pop ());
+
+			return invisibleTypeParams;
+		}
+
+		static AbstractType HandleClassLikeMatch (DClassLike dc, ResolutionContext ctxt, object typeBase, bool canResolveBase)
+		{
+			AbstractType ret;
+			UserDefinedType udt = null;
+			var invisibleTypeParams = GetInvisibleTypeParameters (dc, ctxt);
+
 			switch (dc.ClassType) {
 				case DTokens.Struct:
 					ret = new StructType (dc, typeBase as ISyntaxRegion, invisibleTypeParams);
@@ -649,7 +656,8 @@ namespace D_Parser.Resolver.TypeResolution
 						ret = new TemplateType (dc, typeBase as ISyntaxRegion, invisibleTypeParams);
 					break;
 				default:
-					ctxt.LogError (new ResolutionError (m, "Unknown type (" + DTokens.GetTokenString (dc.ClassType) + ")"));
+					ret = null;
+					ctxt.LogError (new ResolutionError (dc, "Unknown type (" + DTokens.GetTokenString (dc.ClassType) + ")"));
 					break;
 			}
 			if (dc.ClassType == DTokens.Class || dc.ClassType == DTokens.Interface)
