@@ -1259,6 +1259,14 @@ namespace D_Parser.Parser
 
 					if (laKind == OpenParenthesis && ret.Type == null) {
 						OverPeekBrackets (DTokens.OpenParenthesis, true);
+
+						var k = Lexer.LastToken.Kind;
+						if (k == DTokens.Alias || k == DTokens.Enum) {
+							if (ret.Attributes == null)
+								ret.Attributes = new List<DAttribute> ();
+							ret.Attributes.Add (new Modifier (k));
+						}
+
 						// enum asdf(...) = ...;
 						if (Lexer.CurrentPeekToken.Kind == Assign) {
 							var eponymousTemplateDecl = new EponymousTemplate ();

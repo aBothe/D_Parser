@@ -451,6 +451,11 @@ namespace D_Parser.Dom
 				sb.Append(')');
 			}
 
+			sb.Append (" = ");
+
+			if (Initializer != null)
+				sb.Append (Initializer.ToString ());
+
 			return sb.ToString();
 		}
 	}
