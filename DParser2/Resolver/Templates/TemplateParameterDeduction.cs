@@ -110,25 +110,16 @@ namespace D_Parser.Resolver.Templates
 		/// <summary>
 		/// Returns true if <param name="parameterName">parameterName</param> is expected somewhere in the template parameter list.
 		/// </summary>
-		bool Contains(string parameterName)
-		{
-			return TargetDictionary.ContainsKey (parameterName.GetHashCode ());
-		}
-
 		bool Contains(int parameterNameHash)
 		{
 			return TargetDictionary.ContainsKey (parameterNameHash);
 		}
 
-		bool Set(TemplateParameter p, ISemantic r, string name=null)
-		{
-			return Set (p, r, name != null ? name.GetHashCode () : 0);
-		}
 		/// <summary>
 		/// Returns false if the item has already been set before and if the already set item is not equal to 'r'.
 		/// Inserts 'r' into the target dictionary and returns true otherwise.
 		/// </summary>
-		bool Set(TemplateParameter p, ISemantic r, int nameHash=0)
+		bool Set(TemplateParameter p, ISemantic r, int nameHash)
 		{
 			if (p == null)
 			{
