@@ -1170,6 +1170,48 @@ class B : A{
 			Assert.IsNull(t);
 		}
 
+		/// <summary>
+		/// Implicit Function Template Instantiation now supports enclosing type/scope deduction.
+		/// </summary>
+		[Test]
+		public void ImprovedIFTI()
+		{
+			var ctxt = CreateCtxt("modA",@"module modA;
+struct A{    struct Foo { } }
+struct B{    struct Foo { } }
+
+int call(T)(T t, T.Foo foo) { }
+
+auto a = A();
+auto a_f = A.Foo();
+
+auto b = B();
+auto b_f = B.Foo();
+");
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression ("call(a, a_f)");
+			t = Evaluation.EvaluateType (x, ctxt);
+
+			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
+
+			x = DParser.ParseExpression ("call(b, b_f)");
+			t = Evaluation.EvaluateType (x, ctxt);
+
+			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
+
+			x = DParser.ParseExpression ("call(a, b_f)");
+			t = Evaluation.EvaluateType (x, ctxt);
+
+			Assert.That (t, Is.Null);
+
+			x = DParser.ParseExpression ("call(b, a_f)");
+			t = Evaluation.EvaluateType (x, ctxt);
+
+			Assert.That (t, Is.Null);
+		}
+
 		[Test]
 		public void TemplateAliasing()
 		{
