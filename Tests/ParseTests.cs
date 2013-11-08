@@ -454,5 +454,17 @@ alias isInt(T) = is(T == int);
 			Assert.That (dc, Is.Not.Null);
 			Assert.That (dc.TryGetTemplateParameter("T".GetHashCode(), out tp), Is.True);
 		}
+
+		[Test]
+		/// <summary>
+		/// Since 2.064. new Server(args).run(); is allowed
+		/// </summary>
+		public void PostNewExpressions()
+		{
+			var x = DParser.ParseExpression ("new Server(args).run()") as PostfixExpression;
+
+			Assert.That (x, Is.TypeOf(typeof(PostfixExpression_MethodCall)));
+			Assert.That ((x.PostfixForeExpression as PostfixExpression_Access).PostfixForeExpression, Is.TypeOf(typeof(NewExpression)));
+		}
 	}
 }

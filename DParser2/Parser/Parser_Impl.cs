@@ -2567,17 +2567,12 @@ namespace D_Parser.Parser
 				return ae;
 			}
 
-			// NewExpression
-			if (laKind == (New))
-				return NewExpression(Scope);
-
 			// DeleteExpression
 			if (laKind == (Delete))
 			{
 				Step();
 				return new DeleteExpression() { UnaryExpression = UnaryExpression(Scope) };
 			}
-
 
 			// PowExpression
 			var left = PostfixExpression(Scope);
@@ -2787,7 +2782,7 @@ namespace D_Parser.Parser
 					leftExpr = e;
 
 					if (laKind == New)
-						e.AccessExpression = NewExpression(Scope);
+						e.AccessExpression = PostfixExpression(Scope);
 					else if (IsTemplateInstance)
 						e.AccessExpression = TemplateInstance();
 					else if (Expect(Identifier))
@@ -3274,6 +3269,10 @@ namespace D_Parser.Parser
 				return ce;
 			}
 			#endregion
+
+			// NewExpression
+			if (laKind == (New))
+				return NewExpression(Scope);
 
 			// ( Expression )
 			if (laKind == OpenParenthesis)
