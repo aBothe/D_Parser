@@ -658,9 +658,11 @@ namespace D_Parser.Resolver.TypeResolution
 					break;
 				case DTokens.Class:
 					udt = new ClassType (dc, typeBase as ISyntaxRegion, null, null, invisibleTypeParams);
+					ret = null;
 					break;
 				case DTokens.Interface:
 					udt = new InterfaceType (dc, typeBase as ISyntaxRegion, null, invisibleTypeParams);
+					ret = null;
 					break;
 				case DTokens.Template:
 					if (dc.ContainsAttribute (DTokens.Mixin))
