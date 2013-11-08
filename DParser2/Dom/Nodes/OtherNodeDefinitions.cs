@@ -34,7 +34,7 @@ namespace D_Parser.Dom
 			return (IsAlias ? "alias " : "") + base.ToString(Attributes, IncludePath) + (initializer && Initializer != null ? (" = " + Initializer.ToString()) : "");
 		}
 
-		public bool IsConst
+		public virtual bool IsConst
 		{
 			get
 			{
@@ -429,6 +429,12 @@ namespace D_Parser.Dom
 	/// </summary>
 	public class EponymousTemplate : DVariable
 	{
+		public override bool IsConst {
+			get {
+				return true;
+			}
+		}
+
 		public override string ToString (bool Attributes, bool IncludePath)
 		{
 			var sb = new StringBuilder();

@@ -24,7 +24,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			if (isExpression.TestedType != null)
 			{
-				var typeToCheck = DResolver.StripAliasSymbol(TypeDeclarationResolver.ResolveSingle(isExpression.TestedType, ctxt));
+				var typeToCheck = DResolver.StripMemberSymbols(TypeDeclarationResolver.ResolveSingle(isExpression.TestedType, ctxt));
 
 				if (typeToCheck != null)
 				{

@@ -309,7 +309,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return keyType;
 		}
 
-		public static AssocArrayType Resolve(ArrayDecl ad, ResolutionContext ctxt)
+		public static AbstractType Resolve(ArrayDecl ad, ResolutionContext ctxt)
 		{
 			var valueTypes = Resolve(ad.ValueType, ctxt);
 
@@ -325,11 +325,24 @@ namespace D_Parser.Resolver.TypeResolution
 			ISymbolValue val;
 			keyType = ResolveKey(ad, out fixedArrayLength, out val, ctxt);
 
+			if (keyType == null || (keyType is PrimitiveType &&
+			    ((PrimitiveType)keyType).TypeToken == DTokens.Int)) {
 
-			if (keyType == null || (keyType is PrimitiveType && ((PrimitiveType)keyType).TypeToken == DTokens.Int))
-				return fixedArrayLength == -1 ?
-					new ArrayType(valueType, ad) :
-					new ArrayType(valueType, fixedArrayLength, ad);
+				if (fixedArrayLength >= 0) {
+					// D Magic: One might access tuple items directly in the pseudo array declaration - so stuff like Tup[0] i; becomes e.g. int i;
+					var dtup = DResolver.StripMemberSymbols (valueType) as DTuple;
+					if (dtup == null)
+						return new ArrayType (valueType, fixedArrayLength, ad);
+
+					if (fixedArrayLength < dtup.Items.Length)
+						return AbstractType.Get(dtup.Items [fixedArrayLength]);
+					else {
+						ctxt.LogError (ad, "TypeTuple only consists of " + dtup.Items.Length + " items. Can't access item at index " + fixedArrayLength);
+						return null;
+					}
+				}
+				return new ArrayType (valueType, ad);
+			}
 
 			return new AssocArrayType(valueType, keyType, ad);
 		}
