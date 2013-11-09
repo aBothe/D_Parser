@@ -632,7 +632,7 @@ class A
 		[Test]
 		public void TestParamDeduction4()
 		{
-			var pcl = CreateCache(@"module modA;
+			var ctxt = CreateCtxt("modA",@"module modA;
 
 void fo(T:U[], U)(T o) {}
 void f(T:U[n], U,int n)(T o) {}
@@ -644,8 +644,6 @@ double foo(T)(T a) {}
 int delegate(int b) myDeleg;
 
 ");
-
-			var ctxt = CreateDefCtxt(pcl, pcl[0]["modA"]);
 			ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
 
 			var x = DParser.ParseExpression("f!(char[5])");
