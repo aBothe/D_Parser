@@ -218,13 +218,7 @@ namespace D_Parser.Resolver.TypeResolution
 			bool isMethodCall, 
 			ResolutionContext ctxt)
 		{
-			bool hasTemplateArgsPassed = givenTemplateArguments != null;
-			if (hasTemplateArgsPassed)
-			{
-				var enumm = givenTemplateArguments.GetEnumerator();
-				hasTemplateArgsPassed = enumm.MoveNext();
-				enumm.Dispose();
-			}
+			bool hasTemplateArgsPassed = givenTemplateArguments != null && givenTemplateArguments.FirstOrDefault() != null;
 
 			var filteredOverloads = new List<AbstractType>();
 
