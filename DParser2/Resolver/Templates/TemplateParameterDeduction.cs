@@ -121,24 +121,18 @@ namespace D_Parser.Resolver.Templates
 		/// </summary>
 		bool Set(TemplateParameter p, ISemantic r, int nameHash)
 		{
-			if (p == null)
-			{
-				if (nameHash != 0 && TargetDictionary.ExpectedParameters != null)
-				{
+			if (p == null) {
+				if (nameHash != 0 && TargetDictionary.ExpectedParameters != null) {
 					foreach (var tpar in TargetDictionary.ExpectedParameters)
-						if (tpar.NameHash == nameHash)
-						{
+						if (tpar.NameHash == nameHash) {
 							p = tpar;
 							break;
 						}
-
-					if (p == null)
-						throw new System.ArgumentNullException("p");
 				}
 			}
-			else if (nameHash == 0)
-				nameHash = p.NameHash;
 
+			if (nameHash == 0 && p != null)
+				nameHash = p.NameHash;
 			// void call(T)(T t) {}
 			// call(myA) -- T is *not* myA but A, so only assign myA's type to T. 
 			if (p is TemplateTypeParameter)

@@ -21,7 +21,7 @@ namespace D_Parser.Resolver.Templates
 			if (p.Specialization == null)
 				return Set(p, arg, 0);
 
-			bool handleResult= HandleDecl(p,p.Specialization,arg);
+			bool handleResult= HandleDecl(null,p.Specialization,arg);
 
 			if (!handleResult)
 				return false;
