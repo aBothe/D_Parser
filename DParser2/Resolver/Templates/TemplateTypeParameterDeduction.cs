@@ -87,6 +87,18 @@ namespace D_Parser.Resolver.Templates
 				return Set((p != null && id.IdHash == p.NameHash) ? p : null, r, id.IdHash);
 			}
 
+			var deducee = DResolver.StripMemberSymbols(AbstractType.Get(r)) as DSymbol;
+			if (id.InnerDeclaration != null && deducee != null && deducee.Definition.NameHash == id.IdHash)
+			{
+				var physicalParentType = TypeDeclarationResolver.HandleNodeMatch(deducee.Definition.Parent, ctxt, null, id.InnerDeclaration);
+				if (HandleDecl(p, id.InnerDeclaration, physicalParentType))
+				{
+					if (Contains(id.IdHash))
+						Set((p != null && id.IdHash == p.NameHash) ? p : null, deducee, id.IdHash);
+					return true;
+				}
+			}
+
 			/*
 			 * If not stand-alone identifier or is not required as template param, resolve the id and compare it against r
 			 */

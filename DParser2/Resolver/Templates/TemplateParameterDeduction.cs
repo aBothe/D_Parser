@@ -138,6 +138,15 @@ namespace D_Parser.Resolver.Templates
 			}
 			else if (nameHash == 0)
 				nameHash = p.NameHash;
+
+			// void call(T)(T t) {}
+			// call(myA) -- T is *not* myA but A, so only assign myA's type to T. 
+			if (p is TemplateTypeParameter)
+			{
+				var newR = Resolver.TypeResolution.DResolver.StripMemberSymbols(AbstractType.Get(r));
+				if (newR != null)
+					r = newR;
+			}
 			
 			TemplateParameterSymbol rl;
 			if (!TargetDictionary.TryGetValue(nameHash, out rl) || rl == null)
