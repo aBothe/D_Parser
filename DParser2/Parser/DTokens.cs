@@ -395,6 +395,8 @@ namespace D_Parser.Parser
 		public static BitArray BasicTypes_Integral = NewSet(Bool, Byte,Ubyte,Short,Ushort,Int,Uint,Long,Ulong,Cent, Ucent, Char,Wchar, Dchar);
 		public static BitArray BasicTypes_FloatingPoint = NewSet(Float,Double,Real,Ifloat,Idouble,Ireal,Cfloat,Cdouble,Creal);
 		public static BitArray BasicTypes_Unsigned = NewSet(Ubyte, Ushort, Uint, Ulong, Ucent);
+
+		public static BitArray CharTypes = NewSet (Char, Wchar, Dchar);
 		
 		public static BitArray AssnStartOp = NewSet(Plus, Minus, Not, Tilde, Times);
         public static BitArray AssignOps = NewSet(

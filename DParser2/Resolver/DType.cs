@@ -8,6 +8,7 @@ using D_Parser.Parser;
 using D_Parser.Resolver.Templates;
 using D_Parser.Resolver.ExpressionSemantics;
 using System.Text;
+using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Resolver
 {
@@ -166,6 +167,17 @@ namespace D_Parser.Resolver
 	public class AssocArrayType : DerivedDataType
 	{
 		public readonly AbstractType KeyType;
+
+		public bool IsString
+		{
+			get{
+				var kt = DResolver.StripMemberSymbols (KeyType);
+				return (kt == null || (kt is PrimitiveType &&
+					((kt as PrimitiveType).TypeToken == DTokens.Int))) &&
+					(kt = DResolver.StripMemberSymbols (ValueType)) is PrimitiveType &&
+					DTokens.CharTypes[(kt as PrimitiveType).TypeToken];
+			}
+		}
 
 		/// <summary>
 		/// Aliases <see cref="Base"/>

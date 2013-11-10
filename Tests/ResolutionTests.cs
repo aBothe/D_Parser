@@ -1803,7 +1803,7 @@ class aa(T) if(is(T==int)) {}");
 			x = Evaluation.EvaluateTypes(ex, ctxt);
 			Assert.That(x, Is.Null);
 		}
-		/*
+
 		/// <summary>
 		/// Strings literals which are sliced are now implicitly convertible to a char pointer:
 		/// 
@@ -1830,7 +1830,7 @@ class aa(T) if(is(T==int)) {}");
 			t = Evaluation.EvaluateType (x, ctxt);
 
 			Assert.That (ResultComparer.IsImplicitlyConvertible (t, constChar, ctxt));
-		}*/
+		}
 		#endregion
 		
 		#region Mixins

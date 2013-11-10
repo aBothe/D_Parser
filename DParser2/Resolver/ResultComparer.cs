@@ -82,6 +82,7 @@ namespace D_Parser.Resolver
 		public static bool IsImplicitlyConvertible(ISemantic resultToCheck, AbstractType targetType, ResolutionContext ctxt=null)
 		{
 			var resToCheck = AbstractType.Get(resultToCheck);
+			bool isVariable = resToCheck is MemberSymbol;
 
 			// Initially remove aliases from results
 			var _r=DResolver.StripMemberSymbols(resToCheck);
@@ -165,6 +166,12 @@ namespace D_Parser.Resolver
 
 			// http://dlang.org/type.html
 			//TODO: Pointer to non-pointer / vice-versa checkability? -- Can it really be done implicitly?
+			else if(!isVariable && 
+				resToCheck is ArrayType && 
+				targetType is PointerType && ((targetType = (targetType as PointerType).Base) is PrimitiveType) &&
+				DTokens.CharTypes[(targetType as PrimitiveType).TypeToken])
+				return (resultToCheck as ArrayType).IsString;
+
 
 			return false;
 		}
