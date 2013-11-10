@@ -629,6 +629,45 @@ class A
 			Assert.AreEqual(pcl[0]["modA"]["foo"].First(), ((MemberSymbol)t).Definition);
 		}
 
+		/// <summary>
+		/// Templated and non-template functions can now be overloaded against each other:
+		/// </summary>
+		[Test]
+		public void TestOverloads2()
+		{
+			var ctxt = CreateCtxt ("A", @"module A;
+int foo(int n) { }
+int* foo(T)(T t) { }
+long longVar = 10L;");
+
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression ("foo(100)");
+			t = Evaluation.EvaluateType (x, ctxt);
+
+			Assert.That (t, Is.TypeOf(typeof(PrimitiveType)));
+
+			x = DParser.ParseExpression ("foo(\"asdf\")");
+			t = Evaluation.EvaluateType (x, ctxt);
+
+			Assert.That (t, Is.TypeOf(typeof(PointerType)));
+
+			// Integer literal 10L can be converted to int without loss of precisions.
+			// Then the call matches to foo(int n).
+			x = DParser.ParseExpression ("foo(10L)");
+			t = Evaluation.EvaluateType (x, ctxt);
+
+			Assert.That (t, Is.TypeOf(typeof(PrimitiveType)));
+
+			// A runtime variable 'num' typed long is not implicitly convertible to int.
+			// Then the call matches to foo(T)(T t).
+			x = DParser.ParseExpression ("foo(longVar)");
+			t = Evaluation.EvaluateType (x, ctxt);
+
+			Assert.That (t, Is.TypeOf(typeof(PointerType)));
+		}
+
 		[Test]
 		public void TestParamDeduction4()
 		{
@@ -1764,6 +1803,34 @@ class aa(T) if(is(T==int)) {}");
 			x = Evaluation.EvaluateTypes(ex, ctxt);
 			Assert.That(x, Is.Null);
 		}
+		/*
+		/// <summary>
+		/// Strings literals which are sliced are now implicitly convertible to a char pointer:
+		/// 
+		/// To help ease interacting with C libraries which expect strings as 
+		/// null-terminated pointers, slicing string literals (not variables!) 
+		/// will now allow the implicit conversion to such a pointer:
+		/// </summary>
+		[Test]
+		public void StringSliceConvertability()
+		{
+			var ctxt = CreateCtxt ("A", @"module A;");
+
+			var constChar = new PointerType (new PrimitiveType(DTokens.Char, DTokens.Const), null);
+
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression ("\"abc\"");
+			t = Evaluation.EvaluateType (x, ctxt);
+
+			Assert.That (ResultComparer.IsImplicitlyConvertible (t, constChar, ctxt));
+
+			x = DParser.ParseExpression ("\"abc\"[0..2]");
+			t = Evaluation.EvaluateType (x, ctxt);
+
+			Assert.That (ResultComparer.IsImplicitlyConvertible (t, constChar, ctxt));
+		}*/
 		#endregion
 		
 		#region Mixins
