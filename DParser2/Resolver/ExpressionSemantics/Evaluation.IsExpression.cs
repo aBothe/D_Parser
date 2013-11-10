@@ -50,8 +50,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			 * in order to find aliases and/or specified template parameters!
 			 */
 
-			var tpl_params = new DeducedTypeDictionary(isExpression.TemplateParameterList);
-			tpl_params[isExpression.TypeAliasIdentifierHash] = null;
+			var expectedTemplateParams = new TemplateParameter[isExpression.TemplateParameterList.Length + 1];
+			expectedTemplateParams [0] = isExpression.ArtificialFirstSpecParam;
+			if(expectedTemplateParams.Length > 1)
+				isExpression.TemplateParameterList.CopyTo (expectedTemplateParams, 1);
+
+			var tpl_params = new DeducedTypeDictionary(expectedTemplateParams);
+
 
 			var tpd = new TemplateParameterDeduction(tpl_params, ctxt);
 			bool retTrue = false;

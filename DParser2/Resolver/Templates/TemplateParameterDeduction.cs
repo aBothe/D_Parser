@@ -131,8 +131,14 @@ namespace D_Parser.Resolver.Templates
 				}
 			}
 
-			if (nameHash == 0 && p != null)
+			if (p == null) {
+				ctxt.LogError (null, "no fitting template parameter found!");
+				return false;
+			}
+
+			if (nameHash == 0)
 				nameHash = p.NameHash;
+
 			// void call(T)(T t) {}
 			// call(myA) -- T is *not* myA but A, so only assign myA's type to T. 
 			if (p is TemplateTypeParameter)
@@ -141,7 +147,7 @@ namespace D_Parser.Resolver.Templates
 				if (newR != null)
 					r = newR;
 			}
-			
+
 			TemplateParameterSymbol rl;
 			if (!TargetDictionary.TryGetValue(nameHash, out rl) || rl == null)
 			{
