@@ -61,6 +61,27 @@ namespace Tests
 		}
 
 		[Test]
+		public void TestSyntaxError3()
+		{
+			DModule mod;
+
+			mod = DParser.ParseString (@"enum a = __traits(compiles, zip((S[5]).init[]));");
+			Assert.That (mod.ParseErrors.Count, Is.EqualTo (0));
+
+			mod = DParser.ParseString ("enum a = (new E[sizes[0]]).ptr;");
+			Assert.That (mod.ParseErrors.Count, Is.EqualTo (0));
+
+			mod = DParser.ParseString (@"
+			enum ptrdiff_t findCovariantFunction =
+            is(typeof((             Source).init.opDispatch!(finfo.name)(Params.init))) ||
+            is(typeof((       const Source).init.opDispatch!(finfo.name)(Params.init))) ||
+            is(typeof((   immutable Source).init.opDispatch!(finfo.name)(Params.init))) ||
+            is(typeof((      shared Source).init.opDispatch!(finfo.name)(Params.init))) ||
+            is(typeof((shared const Source).init.opDispatch!(finfo.name)(Params.init)));");
+			Assert.That (mod.ParseErrors.Count, Is.EqualTo (0));
+		}
+
+		[Test]
 		public void TestSyntaxError1()
 		{
 			var e = DParser.ParseExpression("new ubyte[size]");
