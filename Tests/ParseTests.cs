@@ -51,6 +51,16 @@ namespace Tests
 		}
 
 		[Test]
+		public void RefOnlyMethodDecl()
+		{
+			var mod = DParser.ParseString(@"ref foo(auto const ref char c) {}");
+			Assert.That (mod.ParseErrors.Count, Is.EqualTo (0));
+			var dm = mod ["foo"].First () as DMethod;
+			Assert.That (dm, Is.TypeOf (typeof(DMethod)));
+			Assert.That (dm.Parameters [0].Name, Is.EqualTo ("c"));
+		}
+
+		[Test]
 		public void TestSyntaxError1()
 		{
 			var e = DParser.ParseExpression("new ubyte[size]");

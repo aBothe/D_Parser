@@ -472,7 +472,7 @@ namespace D_Parser.Parser
 	        ,Pure
             ,Scope
             ,Static
-            ,Synchronized
+			,Synchronized, Ref
 			,__gshared
             );
 

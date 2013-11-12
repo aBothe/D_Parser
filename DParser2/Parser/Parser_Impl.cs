@@ -706,13 +706,6 @@ namespace D_Parser.Parser
 
 		public INode[] Declaration(IBlockNode Scope)
 		{
-			// Skip ref token
-			if (laKind == (Ref))
-			{
-				PushAttribute(new Modifier(Ref) { Location = la.Location, EndLocation = la.EndLocation }, false);
-				Step();
-			}
-
 			// Enum possible storage class attributes
 			bool HasStorageClassModifiers = CheckForStorageClasses(Scope as DBlockNode);
 
@@ -875,13 +868,6 @@ namespace D_Parser.Parser
 			ITypeDeclaration ttd = null;
 
 			CheckForStorageClasses(Scope as DBlockNode);
-			// Skip ref token
-			if (laKind == (Ref))
-			{
-				if (!Modifier.ContainsAttribute(DeclarationAttributes, Ref))
-					PushAttribute(new Modifier(Ref) { Location = la.Location, EndLocation = la.EndLocation }, false);
-				Step();
-			}
 
 			// Autodeclaration
 			if(StorageClass == null)
@@ -1491,6 +1477,7 @@ namespace D_Parser.Parser
 			laKind == (Static) ||
 			laKind == (Synchronized) ||
 			laKind == __gshared ||
+					laKind == Ref ||
 			IsAtAttribute;
 			}
 		}
@@ -1629,6 +1616,8 @@ namespace D_Parser.Parser
 		{
 			var attr = new List<DAttribute>();
 			var startLocation = la.Location;
+
+			CheckForStorageClasses (Scope as DBlockNode);
 
 			while ((ParamModifiers[laKind] && laKind != InOut) || (MemberFunctionAttribute[laKind] && Lexer.CurrentPeekToken.Kind != OpenParenthesis))
 			{
@@ -5013,6 +5002,9 @@ namespace D_Parser.Parser
 				if (init) init = false;
 				else Step();
 
+				if (laKind == CloseParenthesis)
+					break;
+
 				ret.Add(TemplateParameter(dn));
 			}
 
@@ -5204,6 +5196,9 @@ namespace D_Parser.Parser
 					{
 						if (!init) Step();
 						init = false;
+
+						if (laKind == CloseParenthesis)
+							break;
 
 						if (IsEOF)
 						{
