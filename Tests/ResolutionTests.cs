@@ -1307,6 +1307,57 @@ template Baz(B)
 			Assert.That(((DSymbol)s).Base, Is.TypeOf(typeof(PointerType)));
 		}
 
+		[Test]
+		public void CrossModuleTemplateDecl()
+		{
+			var ctxt = CreateCtxt ("c",@"
+module a;
+template Traits(T) if (is(T == string)){    enum Traits = ""abc"";}
+auto func(T, A...)(A args) if (is(T == string)){    return ""abc"";}
+", @"
+module b;
+template Traits(T) if (is(T == double)){ enum Traits = true;}
+auto func(T, A...)(A args) if (is(T == double)){    return 2;}
+", @"
+module c;
+import a, b;
+");
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression ("Traits!string");
+			t = Evaluation.EvaluateType (x, ctxt);
+
+			Assert.That (t, Is.TypeOf(typeof(MemberSymbol)));
+			t = (t as MemberSymbol).Base;
+			Assert.That (t, Is.TypeOf (typeof(ArrayType)));
+
+			x = DParser.ParseExpression ("Traits!double");
+			t = Evaluation.EvaluateType (x, ctxt);
+
+			Assert.That (t, Is.TypeOf(typeof(MemberSymbol)));
+			t = (t as MemberSymbol).Base;
+			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
+
+			x = DParser.ParseExpression ("Traits!int");
+			t = Evaluation.EvaluateType (x, ctxt);
+
+			Assert.That (t, Is.Null);
+
+			x = DParser.ParseExpression ("func!string(1)");
+			t = Evaluation.EvaluateType (x, ctxt);
+			Assert.That (t, Is.TypeOf (typeof(ArrayType)));
+
+			x = DParser.ParseExpression ("func!double(1)");
+			t = Evaluation.EvaluateType (x, ctxt);
+			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
+
+			x = DParser.ParseExpression ("func!int(1)");
+			t = Evaluation.EvaluateType (x, ctxt);
+			Assert.That (t, Is.Null);
+
+		}
+
 		#region Declaration conditions & constraints
 		[Test]
 		public void DeclCond1()
