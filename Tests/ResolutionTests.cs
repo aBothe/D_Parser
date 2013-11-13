@@ -358,6 +358,53 @@ class Blah(T){ T b; }");
 			t = DResolver.StripAliasSymbol(t);
 			Assert.That(t, Is.TypeOf(typeof(ArrayType)));
 		}
+
+		/// <summary>
+		/// Accessing a non-static field without a this reference is only allowed in certain contexts:
+		/// 		Accessing non-static fields used to be allowed in many contexts, but is now limited to only a few:
+		/// 		- offsetof, init, and other built-in properties are allowed:
+		/// </summary>
+		[Test]
+		public void NonStaticVariableAccessing()
+		{
+			var ctxt = CreateCtxt ("a",@"module a;
+struct S { int field; }
+
+struct Foo
+{
+    static struct Bar
+    {
+        static int get() { return 0; }
+    }
+
+    Bar bar;
+	alias bar this;
+}
+");
+
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression ("S.field.max"); // ok, statically known
+			t = Evaluation.EvaluateType (x, ctxt);
+
+			Assert.That (t, Is.TypeOf(typeof(StaticProperty)));
+			Assert.That((t as StaticProperty).Base,Is.TypeOf(typeof(PrimitiveType)));
+
+			x = DParser.ParseExpression ("S.field"); // disallowed, no `this` reference
+			t = Evaluation.EvaluateType (x, ctxt);
+			Assert.That (t, Is.Null);
+
+			x = DParser.ParseExpression ("Foo.bar.get()"); // ok, equivalent to `typeof(Foo.bar).get()'
+			t = Evaluation.EvaluateType (x, ctxt);
+
+			Assert.That (t, Is.TypeOf(typeof(PrimitiveType)));
+
+			x = DParser.ParseExpression ("Foo.get()"); // ok, equivalent to 'typeof(Foo.bar).get()'
+			t = Evaluation.EvaluateType (x, ctxt);
+
+			Assert.That (t, Is.TypeOf(typeof(PrimitiveType)));
+		}
 		
 		[Test]
 		public void SwitchLocals()
@@ -666,6 +713,65 @@ long longVar = 10L;");
 			t = Evaluation.EvaluateType (x, ctxt);
 
 			Assert.That (t, Is.TypeOf(typeof(PointerType)));
+		}
+
+		/// <summary>
+		/// Array slices are now r-values
+		/// </summary>
+		[Test]
+		public void ArraySlicesNoRValues()
+		{
+			var ctxt = CreateCtxt("modA",@"module modA;
+
+int take(int[] arr) { }
+int takeRef(ref int[] arr) { }
+int takeAutoRef(T)(auto ref T[] arr) { }
+
+int[] arr = [1, 2, 3, 4];
+int[] arr2 = arr[1 .. 2];");
+
+			IExpression x;
+			AbstractType t;
+
+			// ok
+			x = DParser.ParseExpression ("take(arr)");
+			t = Evaluation.EvaluateType (x,ctxt);
+			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
+
+			x = DParser.ParseExpression ("takeRef(arr)");
+			t = Evaluation.EvaluateType (x,ctxt);
+			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
+
+			x = DParser.ParseExpression ("takeAutoRef(arr)");
+			t = Evaluation.EvaluateType (x,ctxt);
+			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
+
+			// ok, arr2 is a variable
+			x = DParser.ParseExpression ("take(arr2)");
+			t = Evaluation.EvaluateType (x,ctxt);
+			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
+
+			x = DParser.ParseExpression ("takeRef(arr2)");
+			t = Evaluation.EvaluateType (x,ctxt);
+			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
+
+			x = DParser.ParseExpression ("takeAutoRef(arr2)");
+			t = Evaluation.EvaluateType (x,ctxt);
+			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
+
+
+			x = DParser.ParseExpression ("take(arr[1 .. 2])");
+			t = Evaluation.EvaluateType (x,ctxt);
+			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
+
+			// error, cannot pass r-value by reference
+			x = DParser.ParseExpression ("takeRef(arr[1 .. 2])");
+			t = Evaluation.EvaluateType (x,ctxt);
+			Assert.That (t, Is.Null);
+
+			x = DParser.ParseExpression ("takeAutoRef(arr[1 .. 2])");
+			t = Evaluation.EvaluateType (x,ctxt);
+			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
 		}
 
 		[Test]
@@ -1205,6 +1311,111 @@ class B : A{
 			
 			t = Evaluation.EvaluateType(super, ctxt);
 			Assert.IsNull(t);
+		}
+
+		/// <summary>
+		/// Constructor qualifiers are taken into account when constructing objects
+		/// </summary>
+		[Test]
+		public void QualifiedConstructors()
+		{
+			var ctxt = CreateCtxt("modA",@"module modA;
+class C
+{
+    this()           { }
+    this() const     { }
+    this() immutable { }
+    this() shared    { }
+}
+
+class D
+{
+    this() const { }
+    this() immutable { }
+}
+
+class P
+{
+    this() pure { }
+}
+");
+
+			IExpression x;
+			MemberSymbol ctor;
+			ClassType ct;
+
+			x = DParser.ParseExpression ("new C");
+			ctor = Evaluation.EvaluateType (x, ctxt) as MemberSymbol;
+
+			Assert.That (ctor, Is.Not.Null);
+			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
+			ct = ctor.Base as ClassType;
+			Assert.That (ct.Modifier, Is.EqualTo(0));
+
+			x = DParser.ParseExpression ("new const C");
+			ctor = Evaluation.EvaluateType (x, ctxt) as MemberSymbol;
+
+			Assert.That (ctor, Is.Not.Null);
+			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
+			ct = ctor.Base as ClassType;
+			Assert.That (ct.Modifier, Is.EqualTo(DTokens.Const));
+
+			x = DParser.ParseExpression ("new immutable C");
+			ctor = Evaluation.EvaluateType (x, ctxt) as MemberSymbol;
+
+			Assert.That (ctor, Is.Not.Null);
+			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
+			ct = ctor.Base as ClassType;
+			Assert.That (ct.Modifier, Is.EqualTo(DTokens.Immutable));
+
+			x = DParser.ParseExpression ("new shared C");
+			ctor = Evaluation.EvaluateType (x, ctxt) as MemberSymbol;
+
+			Assert.That (ctor, Is.Not.Null);
+			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
+			ct = ctor.Base as ClassType;
+			Assert.That (ct.Modifier, Is.EqualTo(DTokens.Shared));
+
+
+
+			x = DParser.ParseExpression ("new P");
+			ctor = Evaluation.EvaluateType (x, ctxt) as MemberSymbol;
+
+			Assert.That (ctor, Is.Not.Null);
+			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
+			ct = ctor.Base as ClassType;
+			Assert.That (ct.Modifier, Is.EqualTo(0));
+
+			x = DParser.ParseExpression ("new const P");
+			ctor = Evaluation.EvaluateType (x, ctxt) as MemberSymbol;
+
+			Assert.That (ctor, Is.Not.Null);
+			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
+			ct = ctor.Base as ClassType;
+			Assert.That (ct.Modifier, Is.EqualTo(DTokens.Const));
+
+			x = DParser.ParseExpression ("new immutable P");
+			ctor = Evaluation.EvaluateType (x, ctxt) as MemberSymbol;
+
+			Assert.That (ctor, Is.Not.Null);
+			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
+			ct = ctor.Base as ClassType;
+			Assert.That (ct.Modifier, Is.EqualTo(DTokens.Immutable));
+
+
+
+			x = DParser.ParseExpression ("new const D");
+			ctor = Evaluation.EvaluateType (x, ctxt) as MemberSymbol;
+
+			Assert.That (ctor, Is.Not.Null);
+			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
+			ct = ctor.Base as ClassType;
+			Assert.That (ct.Modifier, Is.EqualTo(DTokens.Const));
+
+			x = DParser.ParseExpression ("new D");
+			ctor = Evaluation.EvaluateType (x, ctxt) as MemberSymbol;
+
+			Assert.That (ctor, Is.Null);
 		}
 
 		/// <summary>
