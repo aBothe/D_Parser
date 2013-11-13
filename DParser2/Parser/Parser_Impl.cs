@@ -2498,44 +2498,6 @@ namespace D_Parser.Parser
 				return ae;
 			}
 
-			// ( Type ) . Identifier
-			if (laKind == OpenParenthesis)
-			{
-				var wkParsing = AllowWeakTypeParsing;
-				AllowWeakTypeParsing = true;
-				Lexer.PushLookAheadBackup();
-				Step();
-				var startLoc = t.Location;
-				var td = Type();
-
-				AllowWeakTypeParsing = wkParsing;
-
-				/*
-				 * (a. -- expression: (a.myProp + 2) / b;
-				 * (int. -- must be expression anyway
-				 * (const).asdf -- definitely unary expression ("type")
-				 * (const). -- also treat it as type accessor
-				 */
-				if (td!=null && t.Kind!=OpenParenthesis && laKind == CloseParenthesis && 
-				    ((Peek(1).Kind == Dot && Peek(2).Kind == Identifier) || 
-					(IsEOF || Peek(1).Kind==EOF || Peek(2).Kind==EOF))) // Also take it as a type declaration if there's nothing following (see Expression Resolving)
-				{
-					Lexer.PopLookAheadBackup();
-					Step();  // Skip to )
-					Step();  // Skip to .
-					Step();  // Skip to identifier
-
-					return new UnaryExpression_Type() { 
-						Type=td, 
-						AccessIdentifier=t.Value, 
-						Location = startLoc, 
-						EndLocation = t.EndLocation 
-					};
-				}
-				else
-					Lexer.RestoreLookAheadBackup();
-			}
-
 			// CastExpression
 			if (laKind == (Cast))
 			{
@@ -2750,9 +2712,54 @@ namespace D_Parser.Parser
 		IExpression PostfixExpression(IBlockNode Scope = null)
 		{
 			var curLastParsedObj = LastParsedObject;
+			IExpression leftExpr = null;
+
+			/*
+			 * Despite the following syntax is an explicit UnaryExpression (see http://dlang.org/expression.html#UnaryExpression),
+			 * stuff like (MyType).init[] is actually allowed - so it's obviously a PostfixExpression! (Nov 13 2013)
+			 */
+
+			// ( Type ) . Identifier
+			if (laKind == OpenParenthesis)
+			{
+				var wkParsing = AllowWeakTypeParsing;
+				AllowWeakTypeParsing = true;
+				Lexer.PushLookAheadBackup();
+				Step();
+				var startLoc = t.Location;
+				var td = Type();
+
+				AllowWeakTypeParsing = wkParsing;
+
+				/*				
+				 * (a. -- expression: (a.myProp + 2) / b;
+				 * (int. -- must be expression anyway
+				 * (const).asdf -- definitely unary expression ("type")
+				 * (const). -- also treat it as type accessor
+				 */
+				if (td!=null && t.Kind!=OpenParenthesis && laKind == CloseParenthesis && 
+					((Peek(1).Kind == Dot && Peek(2).Kind == Identifier) || 
+						(IsEOF || Peek(1).Kind==EOF || Peek(2).Kind==EOF))) // Also take it as a type declaration if there's nothing following (see Expression Resolving)
+				{
+					Lexer.PopLookAheadBackup();
+					Step();  // Skip to )
+					Step();  // Skip to .
+					Step();  // Skip to identifier
+
+					leftExpr = new UnaryExpression_Type() { 
+						Type=td, 
+						AccessIdentifier=t.Value, 
+						Location = startLoc, 
+						EndLocation = t.EndLocation 
+					};
+				}
+				else
+					Lexer.RestoreLookAheadBackup();
+			}
 
 			// PostfixExpression
-			IExpression leftExpr = PrimaryExpression(Scope);
+			if(leftExpr == null)
+				leftExpr = PrimaryExpression(Scope);
 			
 			if(curLastParsedObj==LastParsedObject)
 				LastParsedObject = leftExpr;
