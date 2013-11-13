@@ -81,11 +81,6 @@ namespace D_Parser.Dom.Statements
 
 		public virtual IEnumerable<IStatement> SubStatements { get { return new[] { ScopedStatement }; } }
 
-		public override string ToCode()
-		{
-			throw new NotImplementedException();
-		}
-
 		public IStatement SearchStatement(CodeLocation Where)
 		{
 			// First check if one sub-statement is located at the code location
@@ -1055,6 +1050,20 @@ namespace D_Parser.Dom.Statements
 	{
 		public IStatement ElseStatement;
 		public DeclarationCondition Condition;
+
+		public override string ToCode ()
+		{
+			var sb = new StringBuilder ("if(");
+
+			if (Condition != null)
+				sb.Append (Condition.ToString ());
+			sb.AppendLine (")");
+
+			if (ElseStatement != null)
+				sb.Append (ElseStatement);
+
+			return sb.ToString ();
+		}
 
 		public override IEnumerable<IStatement> SubStatements
 		{
