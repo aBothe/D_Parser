@@ -460,13 +460,11 @@ namespace D_Parser.Parser
 
 	public class ParserTrackerVariables
 	{
-		public object PreviousParsedObject { get; protected set; }
 		/// <summary>
 		/// Used to track the expression/declaration/statement/whatever which is handled currently.
 		/// Required for code completion.
 		/// </summary>
-		public object LastParsedObject { get { return lastParsedObj; } set { PreviousParsedObject = lastParsedObj; lastParsedObj = value; } }
-		object lastParsedObj;
+		public object LastParsedObject;
 
 		public readonly List<Comment> Comments = new List<Comment>();
 
