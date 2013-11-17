@@ -2621,7 +2621,8 @@ namespace D_Parser.Parser
 				while (IsBasicType2())
 				{
 					var bt=BasicType2();
-
+					if (bt == null)
+						break;
 					bt.InnerDeclaration = nt;
 					nt = bt;
 				}
