@@ -988,13 +988,18 @@ namespace D_Parser.Dom.Expressions
 
 		public override string ToString()
 		{
-			var ret = PostfixForeExpression.ToString() + "(";
+			var sb = new StringBuilder (PostfixForeExpression.ToString ());
+			sb.Append('(');
 
 			if (Arguments != null)
 				foreach (var a in Arguments)
-					ret += a.ToString() + ",";
+					if(a != null)
+						sb.Append(a.ToString()).Append(',');
 
-			return ret.TrimEnd(',') + ")";
+			if (sb [sb.Length - 1] != '(')
+				sb.Remove (sb.Length - 2, 1);
+
+			return sb.Append(')').ToString();
 		}
 
 		public sealed override CodeLocation EndLocation
