@@ -240,7 +240,8 @@ namespace D_Parser.Dom.Statements
 			{
 				if (ThenStatement != null)
 					yield return ThenStatement;
-				yield return ElseStatement;
+				if(ElseStatement != null)
+					yield return ElseStatement;
 			}
 		}
 
@@ -369,8 +370,10 @@ namespace D_Parser.Dom.Statements
 		{
 			get
 			{
-				yield return Initialize;
-				yield return ScopedStatement;
+				if(Initialize != null)
+					yield return Initialize;
+				if(ScopedStatement != null)
+					yield return ScopedStatement;
 			}
 		}
 
@@ -1071,7 +1074,8 @@ namespace D_Parser.Dom.Statements
 			{
 				if (ElseStatement != null)
 					yield return ElseStatement;
-				yield return ScopedStatement;
+				if(ScopedStatement != null)
+					yield return ScopedStatement;
 			}
 		}
 
