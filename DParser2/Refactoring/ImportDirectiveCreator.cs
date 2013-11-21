@@ -42,11 +42,14 @@ namespace D_Parser.Refactoring
 			if (!importRequired)
 				throw new Exception("Symbol imported already. No further import required!");
 
-
-			var loc = new CodeLocation(0, DParser.FindLastImportStatementEndLocation(editor.SyntaxTree, editor.ModuleCode).Line+1);
-			IOInterface.InsertIntoCode(loc, "import " + mod.ModuleName + ";\n");
+			GenerateImportStatementForNode (selection, editor, IOInterface.InsertIntoCode);
 		}
 
+		public static void GenerateImportStatementForNode(INode n, IEditorData ed, Action<CodeLocation, string> ci)
+		{
+			var loc = new CodeLocation(0, DParser.FindLastImportStatementEndLocation(ed.SyntaxTree, ed.ModuleCode).Line+1);
+			ci(loc, "import " + (n.NodeRoot as DModule).ModuleName + ";\n");
+		}
 
 		public static INode[] TryFindingSelectedIdImportIndependently(IEditorData ed, out bool importRequired, bool tryResolveNormally = true)
 		{
