@@ -128,7 +128,7 @@ namespace D_Parser.Parser
 				return m.OptionalModuleStatement.EndLocation;
 
 			if (moduleCode != null)
-				using(var sr = new StreamReader(moduleCode))
+				using(var sr = new StringReader(moduleCode))
 				using (var lx = new Lexer(sr) { OnlyEnlistDDocComments = false })
 				{
 					lx.NextToken();
