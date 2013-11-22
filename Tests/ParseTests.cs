@@ -497,5 +497,15 @@ alias isInt(T) = is(T == int);
 			Assert.That (x, Is.TypeOf(typeof(PostfixExpression_MethodCall)));
 			Assert.That ((x.PostfixForeExpression as PostfixExpression_Access).PostfixForeExpression, Is.TypeOf(typeof(NewExpression)));
 		}
+
+		[Test]
+		public void SpecialTokenSequences()
+		{
+			var m = DParser.ParseString(@"module A;
+#line 1
+#line 0x123 ""ohyeah/asd.d""");
+
+			Assert.AreEqual(0, m.ParseErrors.Count);
+		}
 	}
 }
