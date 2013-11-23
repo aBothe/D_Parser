@@ -242,6 +242,15 @@ namespace D_Parser.Resolver
 						}
 					}
 				});
+				ll.Add(new DMethod
+				{
+					Name = "remove",
+					Description = "remove(key) does nothing if the given key does not exist and returns false. If the given key does exist, it removes it from the AA and returns true.",
+					Type = new DTokenDeclaration(DTokens.Bool),
+					Parameters = new List<INode> { 
+						new DVariable{ Name = "key", Type = ad.KeyType }
+					}
+				});
 			}
 
 			foreach (var prop in ll)
