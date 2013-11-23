@@ -61,7 +61,7 @@ namespace D_Parser.Refactoring
 				ResolutionOptions.DontResolveAliases | ResolutionOptions.NoTemplateParameterDeduction;
 
 			// Get scoped object.
-			var o = DResolver.GetScopedCodeObject(ed, ctxt, DResolver.AstReparseOptions.AlsoParseBeyondCaret);
+			var o = DResolver.GetScopedCodeObject(ed, ctxt:ctxt);
 
 			if (o == null)
 				throw new Exception("No identifier selected");

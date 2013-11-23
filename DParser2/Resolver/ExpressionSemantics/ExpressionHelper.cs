@@ -26,25 +26,53 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// Scans through all container expressions recursively and returns the one that's nearest to 'Where'.
 		/// Will return 'e' if nothing found or if there wasn't anything to scan
 		/// </summary>
-		public static IExpression SearchExpressionDeeply(IExpression e, CodeLocation Where, bool WatchForParamSensitiveExpressions = false)
+		public static IExpression SearchExpressionDeeply(IExpression e, CodeLocation Where)
 		{
-			IExpression lastParamSensExpr = e;
-
-			if (e != null && e.EndLocation.Line < 0 && (e is PostfixExpression_MethodCall || e is NewExpression))
+			if (e is PostfixExpression_MethodCall || e is NewExpression)
 			{
-				var args = e is PostfixExpression_MethodCall ? 
-					(e as PostfixExpression_MethodCall).Arguments :
-					(e as NewExpression).Arguments;
-				
-				// A (-1;-1) is assumed as a safe indicator for handling the last expression in an expression chain!
-				if(args!=null && args.Length != 0){
-					var arg = SearchExpressionDeeply(args[args.Length-1], Where, WatchForParamSensitiveExpressions);
-						
-					if(!WatchForParamSensitiveExpressions || IsParamRelatedExpression(arg))
-						return arg;
+				IExpression[] args = null;
+				var mc = e as PostfixExpression_MethodCall;
+				if (mc != null)
+				{
+					if (Where >= mc.PostfixForeExpression.Location && Where <= mc.PostfixForeExpression.EndLocation)
+					{
+						var foreExpr = SearchExpressionDeeply(mc.PostfixForeExpression, Where);
+						if (foreExpr == mc.PostfixForeExpression)
+							return mc;
+					}
+					args = mc.Arguments;
 				}
-				return e;
+				var nex = e as NewExpression;
+				if (nex != null)
+				{
+					if (Where >= nex.Type.Location && Where <= nex.Type.EndLocation)
+						return nex;
+					args = nex.Arguments;
+				}
+
+				if (e.EndLocation.Line < 0)
+				{
+					// A (-1;-1) is assumed as a safe indicator for handling the last expression in an expression chain!
+					if (args != null && args.Length != 0)
+					{
+						var arg = SearchExpressionDeeply(args[args.Length - 1], Where);
+						if (arg != null && !(arg is TokenExpression) && (arg as TokenExpression).Token != DTokens.INVALID)
+							return arg;
+					}
+					return e;
+				}
 			}
+			else if (e is TemplateInstanceExpression)
+			{
+				var tix = e as TemplateInstanceExpression;
+				TokenExpression tex;
+				if(tix.Arguments == null || tix.Arguments.Length == 0 || ((tex = tix.Arguments[tix.Arguments.Length-1] as TokenExpression) != null && tex.Token == DTokens.INVALID))
+					return e;
+			}
+
+			var pfe = e as PostfixExpression;
+			if (pfe != null && Where >= pfe.PostfixForeExpression.Location && Where <= pfe.PostfixForeExpression.EndLocation)
+				return SearchExpressionDeeply(pfe.PostfixForeExpression, Where);
 
 			while (e is ContainerExpression)
 			{
@@ -68,20 +96,18 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						 */
 						var pfa = e as PostfixExpression_Access;
 						if (pfa != null && pfa.AccessExpression == se)
-						{
+						{/*
 							var tix = pfa.AccessExpression as TemplateInstanceExpression;
 							if(tix != null)
 							{
 								if(Where >= tix.Identifier.Location && Where <= tix.Identifier.EndLocation)
 									continue;
-							}
+							}*/
 							continue;
 						}
 						
-						se = SearchExpressionDeeply(se, Where, WatchForParamSensitiveExpressions);
+						se = SearchExpressionDeeply(se, Where);
 
-						if (IsParamRelatedExpression(se))
-							lastParamSensExpr = se;
 						e = se;
 						foundOne = true;
 						break;
@@ -92,7 +118,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					break;
 			}
 
-			return WatchForParamSensitiveExpressions ? lastParamSensExpr : e;
+			return e;
 		}
 
 		public static IExpression SearchForMethodCallsOrTemplateInstances(IStatement Statement, CodeLocation Caret)
@@ -165,7 +191,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				//TODO: Watch the node's type! Over there, there also can be template instances..
 			}
 
-			return curExpression == null ? null : SearchExpressionDeeply(curExpression, Caret, true);
+			return curExpression == null ? null : SearchExpressionDeeply(curExpression, Caret);
 		}
 	}
 }

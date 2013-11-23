@@ -21,36 +21,18 @@ namespace D_Parser.Completion
 
 	public class AbstractTooltipProvider
 	{
-		public static AbstractTooltipContent[] BuildToolTip(IEditorData Editor)
+		public static List<AbstractTooltipContent> BuildToolTip(IEditorData Editor)
 		{
-			try
-			{
-				var l = new List<AbstractTooltipContent>();
+			var rr = DResolver.ResolveType(Editor);
 
-				var ctxt=ResolutionContext.Create(Editor);
-				var o = DResolver.GetScopedCodeObject(Editor, ctxt, DResolver.AstReparseOptions.AlsoParseBeyondCaret);
+			if (rr == null || rr.Length < 1)
+				return null;
 
-				var x = o as IExpression;
-				AbstractType[] rr = null;
-				if (x != null)
-				{
-					var v = Evaluation.EvaluateValue(x, ctxt);
-					if(v!=null && !(v is ErrorValue))
-						l.Add(BuildTooltipContent(v));
-					else
-					  rr = Evaluation.EvaluateTypes(x, ctxt);
-				}
-				else if(o is ITypeDeclaration)
-					rr = TypeDeclarationResolver.Resolve((ITypeDeclaration)o, ctxt);
+			var l = new List<AbstractTooltipContent>();
+			foreach (var res in rr)
+				l.Add(BuildTooltipContent(res));
 
-				if (rr != null)
-					foreach (var res in rr)
-						l.Add(BuildTooltipContent(res));
-
-				return l.Count == 0 ? null : l.ToArray();
-			}
-			catch { }
-			return null;
+			return l;
 		}
 
 		static AbstractTooltipContent BuildTooltipContent(ISemantic res)

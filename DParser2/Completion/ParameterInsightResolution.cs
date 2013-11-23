@@ -96,7 +96,7 @@ namespace D_Parser.Completion
 			{
 				if (trackVars.InitializedNode is DVariable)
 					lastParamExpression = 
-						ExpressionHelper.SearchExpressionDeeply((trackVars.InitializedNode as DVariable).Initializer, Editor.CaretLocation, true);
+						ExpressionHelper.SearchExpressionDeeply((trackVars.InitializedNode as DVariable).Initializer, Editor.CaretLocation);
 			}
 
 			if (lastParamExpression == null)

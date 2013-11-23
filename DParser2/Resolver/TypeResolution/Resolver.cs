@@ -28,10 +28,6 @@ namespace D_Parser.Resolver.TypeResolution
 			/// Returns the expression without scanning it down depending on the caret location
 			/// </summary>
 			ReturnRawParsedExpression=4,
-			/// <summary>
-			/// If passed, the last call, template instance or new() expression will be returned
-			/// </summary>
-			WatchForParamExpressions=8,
 
 			DontCheckForCommentsOrStringSurrounding = 16,
 		}
@@ -45,8 +41,8 @@ namespace D_Parser.Resolver.TypeResolution
 		/// </summary>
 		/// <param name="ctxt">Can be null</param>
 		public static ISyntaxRegion GetScopedCodeObject(IEditorData editor,
-			ResolutionContext ctxt=null,
-			AstReparseOptions Options=0)
+			AstReparseOptions Options = AstReparseOptions.AlsoParseBeyondCaret,
+			ResolutionContext ctxt=null)
 		{
 			if (ctxt == null)
 				ctxt = ResolutionContext.Create(editor);
@@ -64,7 +60,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 				if (exprs != null)
 					foreach (var ex in exprs)
-						if ((targetExpr = ExpressionHelper.SearchExpressionDeeply(ex, editor.CaretLocation, Options.HasFlag(AstReparseOptions.WatchForParamExpressions)))
+						if ((targetExpr = ExpressionHelper.SearchExpressionDeeply(ex, editor.CaretLocation))
 							!= ex)
 							break;
 
@@ -125,7 +121,7 @@ namespace D_Parser.Resolver.TypeResolution
 				if (Options.HasFlag(AstReparseOptions.ReturnRawParsedExpression))
 					return parser.AssignExpression();
 				else
-					return ExpressionHelper.SearchExpressionDeeply(parser.AssignExpression(), editor.CaretLocation, Options.HasFlag(AstReparseOptions.WatchForParamExpressions));
+					return ExpressionHelper.SearchExpressionDeeply(parser.AssignExpression(), editor.CaretLocation);
 			}
 			else
 				td = parser.Type();
@@ -139,24 +135,28 @@ namespace D_Parser.Resolver.TypeResolution
 			return td;
 		}
 
-		public static AbstractType[] ResolveType(IEditorData editor,AstReparseOptions Options=0)
-		{
-			return ResolveType(editor, ResolutionContext.Create(editor), Options);
-		}
-
-		public static AbstractType[] ResolveType(IEditorData editor, ResolutionContext ctxt, AstReparseOptions Options=0)
+		public static AbstractType[] ResolveType(IEditorData editor, AstReparseOptions Options = AstReparseOptions.AlsoParseBeyondCaret, ResolutionContext ctxt = null)
 		{
 			if (ctxt == null)
-				return null;
+				ctxt = ResolutionContext.Create(editor);
 
-			var o = GetScopedCodeObject(editor, ctxt, Options);
+			var o = GetScopedCodeObject(editor, Options, ctxt);
+
+			var optionBackup = ctxt.CurrentContext.ContextDependentOptions;
+			ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
+
+			AbstractType[] ret;
 
 			if (o is IExpression)
-				return Evaluation.EvaluateTypes((IExpression)o, ctxt);
+				ret = Evaluation.EvaluateTypes((IExpression)o, ctxt);
 			else if(o is ITypeDeclaration)
-				return TypeDeclarationResolver.Resolve((ITypeDeclaration)o, ctxt);
+				ret = TypeDeclarationResolver.Resolve((ITypeDeclaration)o, ctxt);
 			else
-				return null;
+				ret = null;
+
+			ctxt.CurrentContext.ContextDependentOptions = optionBackup;
+
+			return ret;
 		}
 
 		static int bcStack = 0;
