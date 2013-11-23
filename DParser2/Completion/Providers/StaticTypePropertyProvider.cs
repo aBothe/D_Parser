@@ -18,19 +18,19 @@ namespace D_Parser.Resolver
 			{ Name = name; Description = desc; OverrideType = overrideType; }
 		}
 
-		public static StaticProperty[] GenericProps = new[]{
+		static StaticProperty[] GenericProps = new[]{
 				new StaticProperty("sizeof","Size of a type or variable in bytes",new IdentifierDeclaration("size_t")),
 				new StaticProperty("alignof","Variable offset",new DTokenDeclaration(DTokens.Int)),
 				new StaticProperty("mangleof","String representing the ‘mangled’ representation of the type",new IdentifierDeclaration("string")),
 				new StaticProperty("stringof","String representing the source representation of the type",new IdentifierDeclaration("string")),
 			};
 
-		public static StaticProperty[] IntegralProps = new[] { 
+		static StaticProperty[] IntegralProps = new[] { 
 				new StaticProperty("max","Maximum value"),
 				new StaticProperty("min","Minimum value")
 			};
 
-		public static StaticProperty[] FloatingTypeProps = new[] { 
+		static StaticProperty[] FloatingTypeProps = new[] { 
 				new StaticProperty("infinity","Infinity value"),
 				new StaticProperty("nan","Not-a-Number value"),
 				new StaticProperty("dig","Number of decimal digits of precision",new DTokenDeclaration(DTokens.Int)),
@@ -45,11 +45,11 @@ namespace D_Parser.Resolver
 				new StaticProperty("in","Imaginary part")
 			};
 
-		public static StaticProperty[] ClassTypeProps = new[]{
+		static StaticProperty[] ClassTypeProps = new[]{
 				new StaticProperty("classinfo","Information about the dynamic type of the class", new IdentifierDeclaration("TypeInfo_Class") { ExpressesVariableAccess=true, InnerDeclaration = new IdentifierDeclaration("object") })
 			};
 
-		public static StaticProperty[] ArrayProps = new[] { 
+		static StaticProperty[] ArrayProps = new[] { 
 				new StaticProperty("length","Array length",new IdentifierDeclaration("size_t")),
 				new StaticProperty("dup","Create a dynamic array of the same size and copy the contents of the array into it."),
 				new StaticProperty("idup","D2.0 only! Creates immutable copy of the array"),
@@ -57,7 +57,7 @@ namespace D_Parser.Resolver
 				new StaticProperty("sort","Sorts in place the order of the elements in the array. Returns the array.")
 			};
 
-		public static StaticProperty[] DelegateProps = new[] { 
+		static StaticProperty[] DelegateProps = new[] { 
 				new StaticProperty("ptr", "The .ptr property of a delegate will return the frame pointer value as a void*.", new PointerDecl(new DTokenDeclaration(DTokens.Void))),
 				new StaticProperty("funcptr", "The .funcptr property of a delegate will return the function pointer value as a function type.")
 		};
@@ -242,6 +242,7 @@ namespace D_Parser.Resolver
 						}
 					}
 				});
+
 				ll.Add(new DMethod
 				{
 					Name = "remove",
