@@ -137,7 +137,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// </summary>
 		public static AbstractType[] EvaluateTypes(IExpression x, ResolutionContext ctxt)
 		{
-			var t = new Evaluation(ctxt).E(x);
+			var ev = new Evaluation(ctxt);
+			ISemantic t = null;
+			if(!Debugger.IsAttached)
+				try { t = ev.E(x); }
+				catch { }
+			else
+				t = ev.E(x);
 
 			if (t is InternalOverloadValue)
 				return ((InternalOverloadValue)t).Overloads;
@@ -145,10 +151,17 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return t == null ? null : new[]{ AbstractType.Get(t) };
 		}
 
-		[DebuggerStepThrough]
 		public static AbstractType EvaluateType(IExpression x, ResolutionContext ctxt)
 		{
-			return AbstractType.Get(new Evaluation(ctxt).E(x));
+			var ev = new Evaluation(ctxt);
+			ISemantic t = null;
+			if(!Debugger.IsAttached)
+				try { t = ev.E(x); }
+				catch { }
+			else
+				t = ev.E(x);
+
+			return AbstractType.Get(t);
 		}
 
 		/// <summary>
@@ -165,9 +178,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			ISemantic ret = null;
 
-			try
-			{
-				if (x is Expression) // a,b,c;
+			try{
+			if (x is Expression) // a,b,c;
 				{
 					var ex = (Expression)x;
 					/*
@@ -213,13 +225,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 				else if (x is PrimaryExpression)
 					ret = E(x as PrimaryExpression);
-			}
-			catch (Exception ex)
-			{
-				if (Debugger.IsAttached)
-					throw ex;
-				Console.WriteLine("Exception while evaluating " + x.ToString() + ": " + ex.Message);
-				Console.WriteLine(ex.StackTrace);
 			}
 			finally
 			{
