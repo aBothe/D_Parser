@@ -452,7 +452,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					// - If there's been set an explicit type tuple, compare all arguments' types with those in the tuple
 					foreach (ISemantic item in tuple.Items)
 					{
-						if (!ResultComparer.IsImplicitlyConvertible(callArguments[currentArg++], AbstractType.Get(item), ctxt))
+						if (currentArg >= callArguments.Count || !ResultComparer.IsImplicitlyConvertible(callArguments[currentArg++], AbstractType.Get(item), ctxt))
 						{
 							add = false;
 							return true;
