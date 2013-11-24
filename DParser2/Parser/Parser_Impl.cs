@@ -1584,7 +1584,7 @@ namespace D_Parser.Parser
 			}
 
 			// It's not specified in the official D syntax spec, but we treat id-only typed anonymous parameters as non-typed id-full parameters
-			if (Parent.SpecialType == DMethod.MethodType.AnonymousDelegate)
+			if(Parent != null && Parent.SpecialType == DMethod.MethodType.AnonymousDelegate)
 			{
 				foreach(var r in ret)
 					if (r.NameHash == 0 && r.Type is IdentifierDeclaration && r.Type.InnerDeclaration == null)
