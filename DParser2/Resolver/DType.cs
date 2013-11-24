@@ -349,6 +349,14 @@ namespace D_Parser.Resolver
 		{
 			return Definition.ToString(false, true);
 		}
+
+		public override ITypeDeclaration TypeDeclarationOf
+		{
+			get
+			{
+				return Base != null ? Base.TypeDeclarationOf : DeclarationOrExpressionBase as ITypeDeclaration;
+			}
+		}
 	}
 
 	public class EnumType : UserDefinedType
