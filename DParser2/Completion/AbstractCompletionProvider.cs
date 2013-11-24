@@ -37,6 +37,8 @@ namespace D_Parser.Completion
 				Editor.CaretLocation,
 				out trackVars);
 
+			curBlock = DResolver.SearchBlockAt(curBlock, Editor.CaretLocation, out curStmt);
+
 			if (trackVars != null)
 			{
 				if(trackVars.ExpectingNodeName)

@@ -237,6 +237,7 @@ namespace D_Parser.Completion
 					else if (CurrentScope is DMethod)
 					{
 						psr.Step();
+						(CurrentScope as DMethod).Clear();
 						ret = psr.BlockStatement(CurrentScope);
 					}
 					else if (CurrentScope is DModule)
