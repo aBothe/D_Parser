@@ -520,7 +520,7 @@ namespace D_Parser.Dom.Expressions
 		public ITypeDeclaration Type { get; set; }
 		public int AccessIdentifierHash;
 		public string AccessIdentifier { get { return Strings.TryGet(AccessIdentifierHash); }
-			set { AccessIdentifierHash = value.GetHashCode(); Strings.Add(value); }
+			set { AccessIdentifierHash = value != null ? value.GetHashCode() : 0; Strings.Add(value); }
 		}
 
 		public override string ToString()
