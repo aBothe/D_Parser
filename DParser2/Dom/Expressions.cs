@@ -518,7 +518,10 @@ namespace D_Parser.Dom.Expressions
 	public class UnaryExpression_Type : UnaryExpression
 	{
 		public ITypeDeclaration Type { get; set; }
-		public string AccessIdentifier { get; set; }
+		public int AccessIdentifierHash;
+		public string AccessIdentifier { get { return Strings.TryGet(AccessIdentifierHash); }
+			set { AccessIdentifierHash = value.GetHashCode(); Strings.Add(value); }
+		}
 
 		public override string ToString()
 		{
@@ -546,8 +549,8 @@ namespace D_Parser.Dom.Expressions
 			unchecked {
 				if (Type != null)
 					hashCode += 1000000007 * (ulong)Type.GetHashCode();
-				if (AccessIdentifier != null)
-					hashCode += 1000000009 * (ulong)AccessIdentifier.GetHashCode();
+				if (AccessIdentifierHash != 0)
+					hashCode += 1000000009 * (ulong)AccessIdentifierHash;
 			}
 			return hashCode;
 		}

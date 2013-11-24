@@ -283,16 +283,16 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			if (types != null && types.Length != 0)
 			{
-				var id = new IdentifierDeclaration(uat.AccessIdentifier) { EndLocation = uat.EndLocation };
-
 				// First off, try to resolve static properties
-				var statProp = StaticPropertyResolver.TryResolveStaticProperties(types[0], uat.AccessIdentifier, ctxt, eval, id);
+				if(eval)  {
+					var statProp = StaticProperties.TryEvalPropertyValue(ValueProvider, types[0], uat.AccessIdentifierHash);
 
-				if (statProp != null)
-					return statProp;
+					if (statProp != null)
+						return statProp;
+				}
 
 				// If it's not the case, try the conservative way
-				var res = TypeDeclarationResolver.Resolve(id, ctxt, types);
+				var res = TypeDeclarationResolver.Resolve(new IdentifierDeclaration(uat.AccessIdentifierHash) { EndLocation = uat.EndLocation }, ctxt, types);
 
 				ctxt.CheckForSingleResult(res, x);
 

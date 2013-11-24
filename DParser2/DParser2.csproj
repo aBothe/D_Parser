@@ -187,12 +187,10 @@
     <Compile Include="Resolver\Templates\TemplateInstanceHandler.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.Traits.cs" />
     <Compile Include="Resolver\TypeResolution\TypeDeclarationResolver.cs" />
-    <Compile Include="Completion\Providers\StaticTypePropertyProvider.cs" />
     <Compile Include="Completion\ICompletionDataGenerator.cs" />
     <Compile Include="Parser\CaretContextAnalyzer.cs" />
     <Compile Include="Completion\ParameterInsightResolution.cs" />
     <Compile Include="Resolver\ResolutionContext.cs" />
-    <Compile Include="Resolver\ExpressionSemantics\Evaluation.StaticProperties.cs" />
     <Compile Include="Completion\IEditorData.cs" />
     <Compile Include="Dom\Nodes\AbstractNode.cs" />
     <Compile Include="Dom\CodeLocation.cs" />

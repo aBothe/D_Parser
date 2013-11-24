@@ -592,24 +592,22 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			else if (acc.AccessExpression is IdentifierExpression)
 			{
+				var id = acc.AccessExpression as IdentifierExpression;
+
+				if (eval && EvalAndFilterOverloads && resultBase != null)
+				{
+					var staticPropResult = StaticProperties.TryEvalPropertyValue(ValueProvider, resultBase, id.ValueStringHash);
+					if (staticPropResult != null)
+						return new[]{staticPropResult};
+				}
+
 				if (!ResolveImmediateBaseType)
 					ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.DontResolveBaseTypes;
-
-				var id = acc.AccessExpression as IdentifierExpression;
 
 				overloads = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(id.ValueStringHash, new[] { AbstractType.Get(baseExpression) }, ctxt, acc.AccessExpression);
 
 				if (!ResolveImmediateBaseType)
 					ctxt.CurrentContext.ContextDependentOptions = optBackup;
-
-				// Might be a static property
-				if (overloads == null)
-				{
-					var staticTypeProperty = StaticPropertyResolver.TryResolveStaticProperties(baseExpression, id.ValueStringHash, ctxt, eval);
-
-					if (staticTypeProperty != null)
-						return new[] { staticTypeProperty };
-				}
 			}
 			else
 			{

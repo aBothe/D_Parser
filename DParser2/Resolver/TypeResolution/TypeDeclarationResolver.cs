@@ -154,6 +154,7 @@ namespace D_Parser.Resolver.TypeResolution
 			ResolutionContext ctxt,
 			object typeIdObject = null)
 		{
+			MemberSymbol statProp;
 			if ((resultBases = DResolver.StripMemberSymbols(resultBases)) == null)
 				return null;
 
@@ -186,6 +187,10 @@ namespace D_Parser.Resolver.TypeResolution
 						}
 					}
 
+					statProp = StaticProperties.TryEvalPropertyType(ctxt, b, nextIdentifierHash);
+					if (statProp != null)
+						r.Add(statProp);
+
 					ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(udt);
 					if(!pop)
 						ctxt.Pop();
@@ -202,9 +207,13 @@ namespace D_Parser.Resolver.TypeResolution
 				}
 				else if (b is ModuleSymbol)
 					r.AddRange(SingleNodeNameScan.SearchChildrenAndResolve(ctxt, (b as ModuleSymbol).Definition, nextIdentifierHash, typeIdObject));
-
+				else
+				{
+					statProp = StaticProperties.TryEvalPropertyType(ctxt, b, nextIdentifierHash);
+					if (statProp != null)
+						r.Add(statProp);
+				}
 				// TODO: Search for UFCS symbols
-				// TODO: Search for static properties
 			}
 
 			return r.Count == 0 ? null : r.ToArray();

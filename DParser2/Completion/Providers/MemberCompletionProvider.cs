@@ -75,14 +75,14 @@ namespace D_Parser.Completion
 			else if (rr is TemplateIntermediateType)
 			{
 				var tr = (TemplateIntermediateType)rr;
-				
+
 				if (tr.DeclarationOrExpressionBase is TokenExpression)
 				{
 					int token = ((TokenExpression)tr.DeclarationOrExpressionBase).Token;
-					
+
 					isVariableInstance = token == DTokens.This || token == DTokens.Super;
 				}
-				
+
 				// Cases:
 
 				// myVar. (located in basetype definition)		<-- Show everything
@@ -93,37 +93,6 @@ namespace D_Parser.Completion
 				// myClass. (located in myClass)				<-- Show all static members
 
 				BuildCompletionData(tr, isVariableInstance);
-
-				if ((MemberFilter & MemberFilter.Variables) != 0)
-				{
-					if (resultParent == null)
-						StaticTypePropertyProvider.AddGenericProperties(rr, CompletionDataGenerator, tr.Definition);
-
-					StaticTypePropertyProvider.AddClassTypeProperties(CompletionDataGenerator, tr.Definition);
-				}
-			}
-			#endregion
-
-			#region Things like int. or char.
-			else if (rr is PrimitiveType)
-			{
-				var primType = (PrimitiveType)rr;
-
-				if (primType.TypeToken > 0)
-				{
-					// Determine whether float by the var's base type
-					bool isFloat = DTokens.BasicTypes_FloatingPoint[primType.TypeToken];
-
-					if (resultParent == null)
-						StaticTypePropertyProvider.AddGenericProperties(rr, CompletionDataGenerator, null, true);
-
-					// Float implies integral props
-					if (DTokens.BasicTypes_Integral[primType.TypeToken] || isFloat)
-						StaticTypePropertyProvider.AddIntegralTypeProperties(primType.TypeToken, rr, CompletionDataGenerator, null, isFloat);
-
-					if (isFloat)
-						StaticTypePropertyProvider.AddFloatingTypeProperties(primType.TypeToken, rr, CompletionDataGenerator, null);
-				}
 			}
 			#endregion
 
@@ -134,19 +103,8 @@ namespace D_Parser.Completion
 					BuildCompletionData(pt.Base, currentlyScopedBlock, true, pt);
 			}
 
-			else if (rr is AssocArrayType)
-			{
-				var ar = (AssocArrayType)rr;
-				var ad = ar.TypeDeclarationOf as ArrayDecl;
-
-				if (ar is ArrayType)
-					StaticTypePropertyProvider.AddArrayProperties(rr, CompletionDataGenerator, ad);
-				else
-					StaticTypePropertyProvider.AddAssocArrayProperties(rr, CompletionDataGenerator, ad);
-			}
-
-			else if(rr is DelegateType)
-				StaticTypePropertyProvider.AddDelegateProperties((DelegateType)rr, CompletionDataGenerator);
+			else
+				StaticProperties.ListProperties(CompletionDataGenerator, MemberFilter, rr, isVariableInstance);
 		}
 
 		void BuildCompletionData(MemberSymbol mrr, IBlockNode currentlyScopedBlock, bool isVariableInstance = false)
@@ -159,7 +117,7 @@ namespace D_Parser.Completion
 						mrr.Definition is DMethod),
 						mrr); 
 			else
-				StaticTypePropertyProvider.AddGenericProperties(mrr, CompletionDataGenerator, mrr.Definition, false);
+				StaticProperties.ListProperties(CompletionDataGenerator, MemberFilter, mrr, false);
 		}
 
 		void BuildCompletionData(PackageSymbol mpr)
@@ -191,6 +149,7 @@ namespace D_Parser.Completion
 		void BuildCompletionData(UserDefinedType tr, bool showInstanceItems)
 		{
 			MemberCompletionEnumeration.EnumChildren(CompletionDataGenerator, ctxt, tr, showInstanceItems, MemberFilter);
+			StaticProperties.ListProperties(CompletionDataGenerator, MemberFilter, tr, showInstanceItems);
 		}
 	}
 }
