@@ -64,7 +64,7 @@ namespace D_Parser.Refactoring
 			var o = DResolver.GetScopedCodeObject(ed, ctxt:ctxt);
 
 			if (o == null)
-				throw new Exception("No identifier selected");
+				return null;
 
 			// Try to resolve it using the usual (strictly filtered) way.
 			if (tryResolveNormally)
@@ -120,7 +120,7 @@ namespace D_Parser.Refactoring
 			}
 
 			if (idHash == 0)
-				throw new Exception("No extractable identifier found");
+				return null;
 
 			// Rawly scan through all modules' roots of the parse cache to find that id.
 			foreach(var pc in ed.ParseCache)
