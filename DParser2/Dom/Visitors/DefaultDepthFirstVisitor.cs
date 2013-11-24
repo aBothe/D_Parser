@@ -441,7 +441,8 @@ namespace D_Parser.Dom
 		{
 			if(x.SubExpressions != null)
 				foreach (var sx in x.SubExpressions)
-					sx.Accept(this);
+					if(sx != null)
+						sx.Accept(this);
 		}
 
 		public virtual void VisitOpBasedExpression(OperatorBasedExpression ox)
