@@ -1443,7 +1443,7 @@ namespace D_Parser.Parser
 				ITypeDeclaration ttd;
 
 				if (IsTemplateInstance)
-					ttd = TemplateInstance();
+					ttd = TemplateInstance(null);
 				else if (Expect(Identifier))
 					ttd = new IdentifierDeclaration(t.Value) { Location = t.Location, EndLocation = t.EndLocation };
 				else if (IsEOF)
@@ -1581,6 +1581,17 @@ namespace D_Parser.Parser
 					break;
 				p.Parent = Parent;
 				ret.Add(p);
+			}
+
+			// It's not specified in the official D syntax spec, but we treat id-only typed anonymous parameters as non-typed id-full parameters
+			if (Parent.SpecialType == DMethod.MethodType.AnonymousDelegate)
+			{
+				foreach(var r in ret)
+					if (r.NameHash == 0 && r.Type is IdentifierDeclaration && r.Type.InnerDeclaration == null)
+					{
+						r.NameHash = (r.Type as IdentifierDeclaration).IdHash;
+						r.Type = null;
+					}
 			}
 
 			/*
@@ -2724,39 +2735,49 @@ namespace D_Parser.Parser
 			// ( Type ) . Identifier
 			if (laKind == OpenParenthesis)
 			{
-				var wkParsing = AllowWeakTypeParsing;
-				AllowWeakTypeParsing = true;
-				Lexer.PushLookAheadBackup();
-				Step();
-				var startLoc = t.Location;
-				var td = Type();
+				Lexer.StartPeek();
+				OverPeekBrackets(OpenParenthesis, true);
+				var expectedCloseBracketLocation = Lexer.CurrentPeekToken.Location;
 
-				AllowWeakTypeParsing = wkParsing;
-
-				/*				
-				 * (a. -- expression: (a.myProp + 2) / b;
-				 * (int. -- must be expression anyway
-				 * (const).asdf -- definitely unary expression ("type")
-				 * (const). -- also treat it as type accessor
-				 */
-				if (td!=null && t.Kind!=OpenParenthesis && laKind == CloseParenthesis && 
-					((Peek(1).Kind == Dot && Peek(2).Kind == Identifier) || 
-						(IsEOF || Peek(1).Kind==EOF || Peek(2).Kind==EOF))) // Also take it as a type declaration if there's nothing following (see Expression Resolving)
+				if (Lexer.CurrentPeekToken.Kind == DTokens.Dot && 
+					(Peek().Kind == DTokens.Identifier || Lexer.CurrentPeekToken.Kind == EOF))
 				{
-					Lexer.PopLookAheadBackup();
-					Step();  // Skip to )
-					Step();  // Skip to .
-					Step();  // Skip to identifier
+					var wkParsing = AllowWeakTypeParsing;
+					AllowWeakTypeParsing = true;
+					Lexer.PushLookAheadBackup();
+					Step();
+					var startLoc = t.Location;
 
-					leftExpr = new UnaryExpression_Type() { 
-						Type=td, 
-						AccessIdentifier=t.Value, 
-						Location = startLoc, 
-						EndLocation = t.EndLocation 
-					};
+					var td = Type();
+
+					AllowWeakTypeParsing = wkParsing;
+
+					/*				
+					 * (a. -- expression: (a.myProp + 2) / b;
+					 * (int. -- must be expression anyway
+					 * (const).asdf -- definitely unary expression ("type")
+					 * (const). -- also treat it as type accessor
+					 */
+					if (td != null && 
+						laKind == CloseParenthesis &&
+						la.Location == expectedCloseBracketLocation) // Also take it as a type declaration if there's nothing following (see Expression Resolving)
+					{
+						Lexer.PopLookAheadBackup();
+						Step();  // Skip to )
+						Step();  // Skip to .
+						Step();  // Skip to identifier
+
+						leftExpr = new UnaryExpression_Type()
+						{
+							Type = td,
+							AccessIdentifier = t.Value,
+							Location = startLoc,
+							EndLocation = t.EndLocation
+						};
+					}
+					else
+						Lexer.RestoreLookAheadBackup();
 				}
-				else
-					Lexer.RestoreLookAheadBackup();
 			}
 
 			// PostfixExpression
@@ -2782,7 +2803,7 @@ namespace D_Parser.Parser
 					if (laKind == New)
 						e.AccessExpression = PostfixExpression(Scope);
 					else if (IsTemplateInstance)
-						e.AccessExpression = TemplateInstance();
+						e.AccessExpression = TemplateInstance(Scope);
 					else if (Expect(Identifier))
                         e.AccessExpression = new IdentifierExpression(t.Value) { Location=t.Location, EndLocation=t.EndLocation };
 
@@ -2907,7 +2928,7 @@ namespace D_Parser.Parser
 			// TemplateInstance
 			if (IsTemplateInstance)
 			{
-				var tix = TemplateInstance();
+				var tix = TemplateInstance(Scope);
 				if (tix != null)
 					tix.ModuleScopedIdentifier = isModuleScoped;
 				return tix;
@@ -5165,7 +5186,7 @@ namespace D_Parser.Parser
 			}
 		}
 
-		public TemplateInstanceExpression TemplateInstance()
+		public TemplateInstanceExpression TemplateInstance(IBlockNode Scope)
 		{
 			var loc = la.Location;
 
@@ -5230,7 +5251,7 @@ namespace D_Parser.Parser
 						}else
 						{
 							Lexer.RestoreLookAheadBackup();
-							args.Add(AssignExpression());
+							args.Add(AssignExpression(Scope));
 						}
 					}
 				}
