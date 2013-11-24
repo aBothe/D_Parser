@@ -477,14 +477,16 @@ namespace D_Parser.Resolver
 
 	public class StaticProperty : MemberSymbol
 	{
-		public StaticProperty(string propertyName, string propertyDescription, AbstractType propertyType, INode baseNode, ISyntaxRegion td)
-			: base(new DVariable{ 
-				Name = propertyName, 
-				Description = propertyDescription,
-				Type = propertyType.TypeDeclarationOf,
-				Parent = baseNode }, propertyType, td)
+		/// <summary>
+		/// For keeping the weak reference up!
+		/// </summary>
+		DNode n;
+		public readonly StaticProperties.ValueGetterHandler ValueGetter;
+
+		public StaticProperty(DNode n, AbstractType bt, StaticProperties.ValueGetterHandler valueGetter) : base(n, bt, null)
 		{
-			
+			this.n = n;
+			this.ValueGetter = valueGetter;
 		}
 	}
 
