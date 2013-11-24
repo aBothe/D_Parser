@@ -1639,6 +1639,7 @@ namespace D_Parser.Parser
 			if (ret == null)
 				return null;
 			ret.Location = startLocation;
+			ApplyAttributes(ret);
 
 			if (attr.Count > 0) {
 				if(ret.Attributes == null)
