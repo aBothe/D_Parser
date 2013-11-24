@@ -721,10 +721,10 @@ long longVar = 10L;");
 		[Test]
 		public void ArraySlicesNoRValues()
 		{
-			var ctxt = CreateCtxt("modA",@"module modA;
+			var ctxt = CreateCtxt("modA", @"module modA;
 
-int take(int[] arr) { }
 int takeRef(ref int[] arr) { }
+int take(int[] arr) { }
 int takeAutoRef(T)(auto ref T[] arr) { }
 
 int[] arr = [1, 2, 3, 4];
@@ -732,6 +732,11 @@ int[] arr2 = arr[1 .. 2];");
 
 			IExpression x;
 			AbstractType t;
+
+			// error, cannot pass r-value by reference
+			x = DParser.ParseExpression("takeRef(arr[1 .. 2])");
+			t = Evaluation.EvaluateType(x, ctxt);
+			//Assert.That(t, Is.Null);
 
 			// ok
 			x = DParser.ParseExpression ("take(arr)");
@@ -764,10 +769,7 @@ int[] arr2 = arr[1 .. 2];");
 			t = Evaluation.EvaluateType (x,ctxt);
 			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
 
-			// error, cannot pass r-value by reference
-			x = DParser.ParseExpression ("takeRef(arr[1 .. 2])");
-			t = Evaluation.EvaluateType (x,ctxt);
-			Assert.That (t, Is.Null);
+			
 
 			x = DParser.ParseExpression ("takeAutoRef(arr[1 .. 2])");
 			t = Evaluation.EvaluateType (x,ctxt);
@@ -1059,18 +1061,18 @@ int sym;
 
 			var ex = DParser.ParseExpression("Tmpl!sym");
 			var t = Evaluation.EvaluateValue(ex, ctxt);
-			Assert.That(t, Is.InstanceOfType(typeof(PrimitiveValue)));
+			Assert.That(t, Is.InstanceOf(typeof(PrimitiveValue)));
 			Assert.That((t as PrimitiveValue).Value == 1m);
 
 			ex = ex = DParser.ParseExpression("Tmpl!int");
 			t = Evaluation.EvaluateValue(ex, ctxt);
-			Assert.That(t, Is.InstanceOfType(typeof(PrimitiveValue)));
+			Assert.That(t, Is.InstanceOf(typeof(PrimitiveValue)));
 			Assert.That((t as PrimitiveValue).Value == 0m);
 
 			ctxt.CurrentContext.Set(modA["tt"].First() as IBlockNode);
 			ex = DParser.ParseExpression("Tmpl!U");
 			t = Evaluation.EvaluateValue(ex, ctxt);
-			Assert.That(t, Is.InstanceOfType(typeof(PrimitiveValue)));
+			Assert.That(t, Is.InstanceOf(typeof(PrimitiveValue)));
 			Assert.That((t as PrimitiveValue).Value == 1m);
 		}
 

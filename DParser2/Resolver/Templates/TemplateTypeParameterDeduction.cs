@@ -59,13 +59,13 @@ namespace D_Parser.Resolver.Templates
 			var at = DResolver.StripAliasSymbol(AbstractType.Get(rr));
 
 			if (td is ArrayDecl)
-				return HandleDecl(p,(ArrayDecl)td, at as AssocArrayType);
+				return HandleDecl(p,(ArrayDecl)td, DResolver.StripMemberSymbols(at) as AssocArrayType);
 			else if (td is DTokenDeclaration)
 				return HandleDecl((DTokenDeclaration)td, at);
 			else if (td is DelegateDeclaration)
-				return HandleDecl(p,(DelegateDeclaration)td, at as DelegateType);
+				return HandleDecl(p, (DelegateDeclaration)td, DResolver.StripMemberSymbols(at) as DelegateType);
 			else if (td is PointerDecl)
-				return HandleDecl(p,(PointerDecl)td, at as PointerType);
+				return HandleDecl(p, (PointerDecl)td, DResolver.StripMemberSymbols(at) as PointerType);
 			else if (td is MemberFunctionAttributeDecl)
 				return HandleDecl(p,(MemberFunctionAttributeDecl)td, at);
 			else if (td is TypeOfDeclaration)

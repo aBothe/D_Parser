@@ -63,7 +63,7 @@ namespace D_Parser.Resolver
 		public ContextFrame CurrentContext
 		{
 			get {
-				return stack.Peek();
+				return stack.Count > 0 ? stack.Peek() : null;
 			}
 		}
 		#endregion

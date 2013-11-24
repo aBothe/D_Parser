@@ -64,6 +64,12 @@ namespace D_Parser.Refactoring
 			if(ctxt.ScopedBlock == ast)
 				backupFrame = ctxt.Pop ();
 
+			if (ctxt.CurrentContext == null)
+			{
+				ctxt.Push(backupFrame);
+				backupFrame = null;
+			}
+
 			//typeRefFinder.ast = ast;
 			// Enum all identifiers
 			ast.Accept (typeRefFinder);

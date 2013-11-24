@@ -56,7 +56,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					if (args != null && args.Length != 0)
 					{
 						var arg = SearchExpressionDeeply(args[args.Length - 1], Where);
-						if (arg != null && !(arg is TokenExpression) && (arg as TokenExpression).Token != DTokens.INVALID)
+						if (arg != null && (!(arg is TokenExpression) || (arg as TokenExpression).Token != DTokens.INVALID))
 							return arg;
 					}
 					return e;
