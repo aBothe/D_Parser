@@ -202,6 +202,9 @@ namespace D_Parser.Resolver.TypeResolution
 				}
 				else if (b is ModuleSymbol)
 					r.AddRange(SingleNodeNameScan.SearchChildrenAndResolve(ctxt, (b as ModuleSymbol).Definition, nextIdentifierHash, typeIdObject));
+
+				// TODO: Search for UFCS symbols
+				// TODO: Search for static properties
 			}
 
 			return r.Count == 0 ? null : r.ToArray();
