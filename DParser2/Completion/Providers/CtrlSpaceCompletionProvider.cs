@@ -237,8 +237,35 @@ namespace D_Parser.Completion
 					else if (CurrentScope is DMethod)
 					{
 						psr.Step();
-						(CurrentScope as DMethod).Clear();
-						ret = psr.BlockStatement(CurrentScope);
+						var dm = CurrentScope as DMethod;
+						dm.Clear();
+
+						var methodRegion = DTokens.Body;
+
+						if (dm.In != null && blockStartLocation == dm.In.Location)
+							methodRegion = DTokens.In;
+
+						if (dm.Out != null && blockStartLocation == dm.Out.Location)
+							methodRegion = DTokens.Out;
+
+						var newBlock = psr.BlockStatement(CurrentScope);
+						ret = newBlock;
+
+						switch (methodRegion)
+						{
+							case DTokens.Body:
+								newBlock.EndLocation = dm.Body.EndLocation;
+								dm.Body = newBlock;
+								break;
+							case DTokens.In:
+								newBlock.EndLocation = dm.In.EndLocation;
+								dm.In = newBlock;
+								break;
+							case DTokens.Out:
+								newBlock.EndLocation = dm.Out.EndLocation;
+								dm.Out = newBlock;
+								break;
+						}
 					}
 					else if (CurrentScope is DModule)
 						ret = psr.Root();
