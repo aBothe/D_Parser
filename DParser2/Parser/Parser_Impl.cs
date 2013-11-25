@@ -3426,25 +3426,10 @@ namespace D_Parser.Parser
 
 			if (Expect(GoesTo))
 			{
-				if(laKind == OpenCurlyBrace)
-				{
-					fl.AnonymousMethod.Body = BlockStatement(fl.AnonymousMethod);
-				}
+				if (laKind == OpenCurlyBrace)
+					fl.AnonymousMethod.Body = BlockStatement (fl.AnonymousMethod);
 				else
-				{
-					fl.AnonymousMethod.Body = new BlockStatement { Location= la.Location, ParentNode = fl.AnonymousMethod };
-
-					var ae = AssignExpression(fl.AnonymousMethod);
-
-					fl.AnonymousMethod.Body.Add(new ReturnStatement
-					{
-						Location = ae.Location,
-						EndLocation = ae.EndLocation,
-						ReturnExpression=ae
-					});
-
-					fl.AnonymousMethod.Body.EndLocation = t.EndLocation;
-				}
+					LambdaSingleStatementBody (fl.AnonymousMethod);
 			}
 
 			fl.EndLocation = fl.AnonymousMethod.EndLocation = t.EndLocation;
@@ -3453,6 +3438,22 @@ namespace D_Parser.Parser
 				Scope.Add(fl.AnonymousMethod);
 
 			return fl;
+		}
+
+		internal void LambdaSingleStatementBody(DMethod lambdaFunction)
+		{
+			lambdaFunction.Body = new BlockStatement { Location= la.Location, ParentNode = lambdaFunction };
+
+			var ae = AssignExpression(lambdaFunction);
+
+			lambdaFunction.Body.Add(new ReturnStatement
+				{
+					Location = ae.Location,
+					EndLocation = ae.EndLocation,
+					ReturnExpression=ae
+				});
+
+			lambdaFunction.Body.EndLocation = t.EndLocation;
 		}
 		#endregion
 
