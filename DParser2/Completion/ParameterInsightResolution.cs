@@ -78,8 +78,10 @@ namespace D_Parser.Completion
 				return null;
 
 			// Get an updated abstract view on the module's code
+			CodeLocation parseEndLoc;
 			var sr = CtrlSpaceCompletionProvider.FindCurrentCaretContext(
-				Editor.ModuleCode, curBlock ,Editor.CaretOffset,	Editor.CaretLocation, out trackVars);
+				Editor.ModuleCode, curBlock ,Editor.CaretOffset,	Editor.CaretLocation, out trackVars, out parseEndLoc);
+			curBlock = D_Parser.Resolver.TypeResolution.DResolver.SearchBlockAt(curBlock, parseEndLoc, out curStmt);
 
 			IExpression lastParamExpression = null;
 

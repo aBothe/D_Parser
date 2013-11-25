@@ -25,6 +25,8 @@ namespace D_Parser.Completion
 
 			ParserTrackerVariables trackVars=null;
 			IStatement curStmt = null;
+			CodeLocation parseEndLoc;
+			
 			var curBlock = DResolver.SearchBlockAt(Editor.SyntaxTree, Editor.CaretLocation, out curStmt);
 
 			if (curBlock == null)
@@ -35,9 +37,9 @@ namespace D_Parser.Completion
 				curBlock,
 				Editor.CaretOffset,
 				Editor.CaretLocation,
-				out trackVars);
+				out trackVars, out parseEndLoc);
 
-			curBlock = DResolver.SearchBlockAt(curBlock, Editor.CaretLocation, out curStmt);
+			curBlock = DResolver.SearchBlockAt(curBlock, parseEndLoc, out curStmt);
 
 			if (trackVars != null)
 			{
