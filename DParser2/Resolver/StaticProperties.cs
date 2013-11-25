@@ -194,7 +194,9 @@ namespace D_Parser.Resolver
 				ValueGetter = 
 				(vp, v) => {
 					var tt = v as DTuple;
-					return new PrimitiveValue(DTokens.Int, tt.Items == null ? 0m : (decimal)tt.Items.Length, null, 0m); 
+					if (tt == null && v is TypeValue)
+						tt = (v as TypeValue).RepresentedType as DTuple;
+					return tt != null ? new PrimitiveValue(DTokens.Int, tt.Items == null ? 0m : (decimal)tt.Items.Length, null, 0m) : null; 
 				} });
 
 
@@ -267,7 +269,7 @@ namespace D_Parser.Resolver
 			}
 			else if (t is InstanceValue)
 				return PropOwnerType.ClassLike;
-			else if (t is DTuple)
+			else if (t is TypeValue && (t as TypeValue).RepresentedType is DTuple)
 				return PropOwnerType.TypeTuple;
 			return PropOwnerType.None;
 		}
