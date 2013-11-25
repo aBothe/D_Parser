@@ -3943,6 +3943,9 @@ namespace D_Parser.Parser
 								catchVar.NameLocation = t.Location;
 								Expect(CloseParenthesis);
 							}
+							else if(IsEOF)
+								ExpectingNodeName = true;
+
 							catchVar.EndLocation = t.EndLocation;
 							c.CatchParameter = catchVar;
 						}
