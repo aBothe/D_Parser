@@ -89,7 +89,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				foreach (var se_ in subExpressions)
 				{
 					var se = se_;
-					if (se != null && (Where >= se.Location && Where <= se.EndLocation) || se.EndLocation.Line < 0)
+					if (se != null && ((Where >= se.Location && Where <= se.EndLocation) || se.EndLocation.Line < 0))
 					{
 						/*
 						 * a.b -- take the entire access expression instead of b only in order to be able to resolve it correctly
