@@ -846,7 +846,7 @@ namespace D_Parser.Dom.Expressions
 
 		public CodeLocation Location
 		{
-			get { return PostfixForeExpression.Location; }
+			get { return PostfixForeExpression != null ? PostfixForeExpression.Location : CodeLocation.Empty; }
 		}
 
 		public abstract CodeLocation EndLocation { get; set; }
@@ -2008,7 +2008,7 @@ namespace D_Parser.Dom.Expressions
 
 		public override string ToString()
 		{
-			return "(" + Expression.ToString() + ")";
+			return "(" + (Expression != null ? Expression.ToString() : string.Empty) + ")";
 		}
 
 		public CodeLocation Location

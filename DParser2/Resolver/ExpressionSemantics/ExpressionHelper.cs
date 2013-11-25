@@ -34,7 +34,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				var mc = e as PostfixExpression_MethodCall;
 				if (mc != null)
 				{
-					if (Where >= mc.PostfixForeExpression.Location && Where <= mc.PostfixForeExpression.EndLocation)
+					if (mc.PostfixForeExpression != null && Where >= mc.PostfixForeExpression.Location && Where <= mc.PostfixForeExpression.EndLocation)
 					{
 						var foreExpr = SearchExpressionDeeply(mc.PostfixForeExpression, Where);
 						if (foreExpr == mc.PostfixForeExpression)
@@ -45,7 +45,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				var nex = e as NewExpression;
 				if (nex != null)
 				{
-					if (Where >= nex.Type.Location && Where <= nex.Type.EndLocation)
+					if (nex.Type != null && Where >= nex.Type.Location && Where <= nex.Type.EndLocation)
 						return nex;
 					args = nex.Arguments;
 				}
@@ -71,7 +71,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 
 			var pfe = e as PostfixExpression;
-			if (pfe != null && Where >= pfe.PostfixForeExpression.Location && Where <= pfe.PostfixForeExpression.EndLocation)
+			if (pfe != null && pfe.PostfixForeExpression != null && 
+				Where >= pfe.PostfixForeExpression.Location && Where <= pfe.PostfixForeExpression.EndLocation)
 				return SearchExpressionDeeply(pfe.PostfixForeExpression, Where);
 
 			while (e is ContainerExpression)
