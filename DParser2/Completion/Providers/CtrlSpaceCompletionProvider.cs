@@ -273,7 +273,7 @@ namespace D_Parser.Completion
 						}
 					}
 
-					lastTokenEndLocation = psr.Lexer.CurrentToken.EndLocation;
+					lastTokenEndLocation = psr.Lexer.CurrentToken != null ? psr.Lexer.CurrentToken.EndLocation : caretLocation;
 					TrackerVariables = psr.TrackerVariables;
 					return ret;
 				}
