@@ -315,11 +315,11 @@ namespace D_Parser.Resolver.TypeResolution
 		public static IBlockNode SearchBlockAt(IBlockNode Parent, CodeLocation Where, out IStatement ScopedStatement)
 		{
 			ScopedStatement = null;
-			int pCount = 0;
 
-			if (Parent == null || (pCount = Parent.Count) == 0)
-				return Parent;
+			if (Parent == null)
+				return null;
 
+			var pCount = Parent.Count;
 			while (pCount != 0)
 			{
 				var children = Parent.Children;

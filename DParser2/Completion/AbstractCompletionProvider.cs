@@ -65,6 +65,11 @@ namespace D_Parser.Completion
 					pfa = ex as PostfixExpression_Access;
 				else if (trackVars.LastParsedObject is ITypeDeclaration && !(trackVars.LastParsedObject is TemplateInstanceExpression))
 					pfa = TryConvertTypeDeclaration(trackVars.LastParsedObject as ITypeDeclaration) as PostfixExpression_Access;
+				else if (ex is UnaryExpression_Type)
+				{
+					pfa = null;
+					//TODO: (Type). -- lookup static properties, fields and methods.
+				}
 				else
 					pfa = null;
 

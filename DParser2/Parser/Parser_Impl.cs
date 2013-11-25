@@ -2765,7 +2765,7 @@ namespace D_Parser.Parser
 						if (laKind == DTokens.Dot)
 						{
 							Step();  // Skip to .
-							if (laKind == DTokens.Identifier)
+							if (laKind == DTokens.Identifier || IsEOF)
 							{
 								Lexer.PopLookAheadBackup();
 								Step();  // Skip to identifier
