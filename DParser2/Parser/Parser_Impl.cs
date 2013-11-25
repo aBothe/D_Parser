@@ -3396,7 +3396,7 @@ namespace D_Parser.Parser
 
 		FunctionLiteral LambaExpression(IBlockNode Scope=null)
 		{
-			var fl = new FunctionLiteral { IsLambda=true };
+			var fl = new FunctionLiteral(true);
 			
 			fl.Location = fl.AnonymousMethod.Location = la.Location;
 			

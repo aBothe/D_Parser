@@ -166,6 +166,7 @@ namespace D_Parser.Dom
 			Normal = 0,
 			Delegate,
 			AnonymousDelegate,
+			Lambda,
 			Constructor,
 			Allocator,
 			Destructor,

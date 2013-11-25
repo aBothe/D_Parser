@@ -1520,11 +1520,15 @@ namespace D_Parser.Dom.Expressions
 	public class FunctionLiteral : PrimaryExpression
 	{
 		public byte LiteralToken = DTokens.Delegate;
-		public bool IsLambda = false;
+		public readonly bool IsLambda;
 
-		public DMethod AnonymousMethod = new DMethod(DMethod.MethodType.AnonymousDelegate);
+		public readonly DMethod AnonymousMethod = new DMethod(DMethod.MethodType.AnonymousDelegate);
 
-		public FunctionLiteral() { }
+		public FunctionLiteral(bool lambda = false) {
+			IsLambda = lambda;
+			if (lambda)
+				AnonymousMethod.SpecialType |= DMethod.MethodType.Lambda;
+		}
 		public FunctionLiteral(byte InitialLiteral) { LiteralToken = InitialLiteral; }
 
 		public override string ToString()
