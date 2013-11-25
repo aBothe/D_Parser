@@ -2736,8 +2736,8 @@ namespace D_Parser.Parser
 			if (laKind == OpenParenthesis)
 			{
 				Lexer.StartPeek();
-				OverPeekBrackets(OpenParenthesis, true);
-				var expectedCloseBracketLocation = Lexer.CurrentPeekToken.Location;
+				OverPeekBrackets(OpenParenthesis, false);
+				var dotToken = Lexer.CurrentPeekToken;
 
 				if (Lexer.CurrentPeekToken.Kind == DTokens.Dot && 
 					(Peek().Kind == DTokens.Identifier || Lexer.CurrentPeekToken.Kind == EOF))
@@ -2759,21 +2759,30 @@ namespace D_Parser.Parser
 					 * (const). -- also treat it as type accessor
 					 */
 					if (td != null && 
-						laKind == CloseParenthesis &&
-						la.Location == expectedCloseBracketLocation) // Also take it as a type declaration if there's nothing following (see Expression Resolving)
+						laKind == CloseParenthesis && Lexer.CurrentPeekToken == dotToken) // Also take it as a type declaration if there's nothing following (see Expression Resolving)
 					{
-						Lexer.PopLookAheadBackup();
 						Step();  // Skip to )
-						Step();  // Skip to .
-						Step();  // Skip to identifier
-
-						leftExpr = new UnaryExpression_Type()
+						if (laKind == DTokens.Dot)
 						{
-							Type = td,
-							AccessIdentifier = t.Value,
-							Location = startLoc,
-							EndLocation = t.EndLocation
-						};
+							Step();  // Skip to .
+							if (laKind == DTokens.Identifier)
+							{
+								Lexer.PopLookAheadBackup();
+								Step();  // Skip to identifier
+
+								leftExpr = new UnaryExpression_Type()
+								{
+									Type = td,
+									AccessIdentifier = t.Value,
+									Location = startLoc,
+									EndLocation = t.EndLocation
+								};
+							}
+							else
+								Lexer.RestoreLookAheadBackup();
+						}
+						else
+							Lexer.RestoreLookAheadBackup();
 					}
 					else
 						Lexer.RestoreLookAheadBackup();
