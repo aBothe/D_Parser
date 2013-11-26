@@ -229,6 +229,7 @@
     <Compile Include="Dom\Visitors\Visitors.cs" />
     <Compile Include="Dom\Visitors\IVisitable.cs" />
     <Compile Include="Refactoring\ClassInterfaceDerivativeFinder.cs" />
+    <Compile Include="Completion\CodeCompletion.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="readme.txt" />

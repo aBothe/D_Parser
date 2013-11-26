@@ -22,7 +22,7 @@ namespace D_Parser.Completion
 
 		public MemberCompletionProvider(ICompletionDataGenerator cdg) : base(cdg) { }
 
-		protected override void BuildCompletionDataInternal(IEditorData Editor, string EnteredText)
+		protected override void BuildCompletionDataInternal(IEditorData Editor, char enteredChar)
 		{
 			ctxt = ResolutionContext.Create(Editor.ParseCache, new ConditionalCompilationFlags(Editor), ScopedBlock, ScopedStatement);
 			ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;

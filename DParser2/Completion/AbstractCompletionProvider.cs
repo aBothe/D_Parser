@@ -18,9 +18,9 @@ namespace D_Parser.Completion
 			this.CompletionDataGenerator = CompletionDataGenerator;
 		}
 
-		static AbstractCompletionProvider Create(ICompletionDataGenerator dataGen, IEditorData Editor, string EnteredText)
+		internal static AbstractCompletionProvider Create(ICompletionDataGenerator dataGen, IEditorData Editor, char ch)
 		{
-			if (PropertyAttributeCompletionProvider.CompletesEnteredText(EnteredText))
+			if (ch == '@')
 				return new PropertyAttributeCompletionProvider(dataGen);
 
 			ParserTrackerVariables trackVars;
@@ -112,11 +112,11 @@ namespace D_Parser.Completion
 					else if (trackVars.LastParsedObject is ModuleStatement)
 						return new ModuleStatementCompletionProvider(dataGen);
 					else if ((trackVars.LastParsedObject is TemplateParameter || 
-					    trackVars.LastParsedObject is ForeachStatement) && EnteredText != null)
+						trackVars.LastParsedObject is ForeachStatement) && ch != '\0')
 						return null;
 				}
 				
-				if (EnteredText == "(")
+				if (ch == '(')
 					return null;
 			}
 
@@ -128,17 +128,11 @@ namespace D_Parser.Completion
 			};
 		}
 
+		[Obsolete("Use CodeCompletion.GenerateCompletionData instead!")]
 		public static AbstractCompletionProvider BuildCompletionData(ICompletionDataGenerator dataGen, IEditorData editor, string EnteredText)
 		{
-			if (!IsCompletionAllowed(editor, EnteredText))
-				return null;
-
-			var provider = Create(dataGen, editor, EnteredText);
-
-			if (provider != null)
-				provider.BuildCompletionData(editor, EnteredText);
-
-			return provider;
+			CodeCompletion.GenerateCompletionData (editor, dataGen, string.IsNullOrEmpty (EnteredText) ? '\0' : EnteredText [0]);
+			return null;
 		}
 
 		#region Helper Methods
@@ -187,40 +181,14 @@ namespace D_Parser.Completion
 		}
 		#endregion
 
-		static bool IsCompletionAllowed(IEditorData Editor, string EnteredText)
-		{
-			if (Editor.CaretOffset > 0)
-			{
-				if (Editor.CaretLocation.Line == 1 && Editor.ModuleCode.Length > 0 && Editor.ModuleCode[0] == '#')
-					return false;
 
-				var enteredChar = string.IsNullOrEmpty(EnteredText) ? '\0' : EnteredText[0];
 
-				if (enteredChar == '.' || enteredChar == '_')
-				{
-					// Don't complete on a double/multi-dot
-					if (Editor.CaretOffset > 1 && Editor.ModuleCode[Editor.CaretOffset - 2] == enteredChar) 
-						// ISSUE: When a dot was typed, off-1 is the dot position, 
-						// if a letter was typed, off-1 is the char before the typed letter..
-						return false;
-				}
-				// If typing a begun identifier, return immediately
-				else if ((DTokens.IsIdentifierChar(enteredChar) || enteredChar == '\0') &&
-					DTokens.IsIdentifierChar(Editor.ModuleCode[Editor.CaretOffset - 1]))
-					return false;
-
-				return !CaretContextAnalyzer.IsInCommentAreaOrString(Editor.ModuleCode, Editor.CaretOffset);
-			}
-
-			return true;
-		}
-
-		protected abstract void BuildCompletionDataInternal(IEditorData Editor, string EnteredText);
+		protected abstract void BuildCompletionDataInternal(IEditorData Editor, char enteredChar);
 
 		public void BuildCompletionData(IEditorData Editor,
-			string EnteredText)
+			char enteredChar)
 		{
-			BuildCompletionDataInternal(Editor, EnteredText);
+			BuildCompletionDataInternal(Editor, enteredChar);
 		}
 	}
 }

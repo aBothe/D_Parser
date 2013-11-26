@@ -3,14 +3,9 @@ namespace D_Parser.Completion
 {
 	class PropertyAttributeCompletionProvider : AbstractCompletionProvider
 	{
-		public static bool CompletesEnteredText(string EnteredText)
-		{
-			return EnteredText == "@";
-		}
-
 		public PropertyAttributeCompletionProvider(ICompletionDataGenerator cdg) : base(cdg) { }
 
-		protected override void BuildCompletionDataInternal(IEditorData Editor, string EnteredText)
+		protected override void BuildCompletionDataInternal(IEditorData Editor, char enteredChar)
 		{
 			foreach (var propAttr in new[] {
 					"disable",

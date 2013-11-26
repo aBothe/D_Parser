@@ -19,11 +19,11 @@ namespace D_Parser.Completion
 
 		public CtrlSpaceCompletionProvider(ICompletionDataGenerator cdg) : base(cdg) { }
 
-		protected override void BuildCompletionDataInternal(IEditorData Editor, string EnteredText)
+		protected override void BuildCompletionDataInternal(IEditorData Editor, char enteredChar)
 		{
 			var visibleMembers = MemberFilter.All;
 
-			if(!GetVisibleMemberFilter(Editor, EnteredText, ref visibleMembers, ref curStmt))
+			if(!GetVisibleMemberFilter(Editor, enteredChar, ref visibleMembers, ref curStmt))
 				return;
 
 			MemberCompletionEnumeration.EnumAllAvailableMembers(
@@ -46,7 +46,7 @@ namespace D_Parser.Completion
 					CompletionDataGenerator.Add(kv);
 		}
 
-		private bool GetVisibleMemberFilter(IEditorData Editor, string EnteredText, ref MemberFilter visibleMembers, ref IStatement curStmt)
+		private bool GetVisibleMemberFilter(IEditorData Editor, char enteredChar, ref MemberFilter visibleMembers, ref IStatement curStmt)
 		{
 			if (trackVars == null)
 			{
@@ -60,14 +60,13 @@ namespace D_Parser.Completion
 				if (trackVars.ExpectingNodeName) {
 					if (dv != null && dv.IsAlias && dv.Type == null) {
 						// Show completion because no aliased type has been entered yet
-					} else if (n != null && n.NameHash==0 && EnteredText != null)
+					} else if (n != null && n.NameHash==0 && enteredChar != '\0')
 						return false;
 				}
 
 				else if (trackVars.LastParsedObject is TokenExpression &&
 					DTokens.BasicTypes[(trackVars.LastParsedObject as TokenExpression).Token] &&
-					!string.IsNullOrEmpty(EnteredText) &&
-					DTokens.IsIdentifierChar(EnteredText[0]))
+					DTokens.IsIdentifierChar(enteredChar))
 					return false;
 
 				if (trackVars.LastParsedObject is Modifier)
@@ -97,7 +96,7 @@ namespace D_Parser.Completion
 				if ((trackVars.LastParsedObject is NewExpression && trackVars.IsParsingInitializer) ||
 					trackVars.LastParsedObject is TemplateInstanceExpression && ((TemplateInstanceExpression)trackVars.LastParsedObject).Arguments == null)
 					visibleMembers = MemberFilter.Types;
-				else if (EnteredText == " ")
+				else if (enteredChar == ' ')
 					return false;
 				// In class bodies, do not show variables
 				else if (!(parsedBlock is BlockStatement || trackVars.IsParsingInitializer))

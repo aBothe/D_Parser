@@ -21,7 +21,7 @@ namespace D_Parser.Completion
 		public int DebugLevel { get; set; }
 		public string[] GlobalDebugIds { get; set; }
 		
-		public void ApplyFrom(IEditorData data)
+		public virtual void ApplyFrom(IEditorData data)
 		{
 			ModuleCode = data.ModuleCode;
 			CaretLocation = data.CaretLocation;

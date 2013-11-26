@@ -31,7 +31,7 @@ namespace D_Parser.Completion.Providers
 			imp = impBind.Module;
 		}
 
-		protected override void BuildCompletionDataInternal(IEditorData Editor, string EnteredText)
+		protected override void BuildCompletionDataInternal(IEditorData Editor, char enteredChar)
 		{
 			if(Editor.ParseCache == null)
 				return;

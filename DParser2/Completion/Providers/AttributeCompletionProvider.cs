@@ -10,7 +10,7 @@ namespace D_Parser.Completion.Providers
 
 		public AttributeCompletionProvider(ICompletionDataGenerator gen) : base(gen) { }
 
-		protected override void BuildCompletionDataInternal(IEditorData Editor, string EnteredText)
+		protected override void BuildCompletionDataInternal(IEditorData Editor, char enteredChar)
 		{
 			if (Attribute is VersionCondition)
 			{
@@ -101,7 +101,7 @@ namespace D_Parser.Completion.Providers
 
 		public ScopeAttributeCompletionProvider(ICompletionDataGenerator gen) : base(gen) { }
 
-		protected override void BuildCompletionDataInternal(IEditorData Editor, string EnteredText)
+		protected override void BuildCompletionDataInternal(IEditorData Editor, char enteredChar)
 		{
 			foreach (var kv in new Dictionary<string, string>{
 				{"exit","Executes on leaving current scope"}, 
@@ -117,7 +117,7 @@ namespace D_Parser.Completion.Providers
 
 		public TraitsExpressionCompletionProvider(ICompletionDataGenerator gen) : base(gen) { }
 
-		protected override void BuildCompletionDataInternal(IEditorData Editor, string EnteredText)
+		protected override void BuildCompletionDataInternal(IEditorData Editor, char enteredChar)
 		{
 			foreach (var kv in new Dictionary<string, string>{
 				{"isArithmetic","If the arguments are all either types that are arithmetic types, or expressions that are typed as arithmetic types, then true is returned. Otherwise, false is returned. If there are no arguments, false is returned."},

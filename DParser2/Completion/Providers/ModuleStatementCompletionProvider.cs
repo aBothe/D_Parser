@@ -8,7 +8,7 @@ namespace D_Parser.Completion
 	{
 		public ModuleStatementCompletionProvider(ICompletionDataGenerator dg) : base(dg){}
 		
-		protected override void BuildCompletionDataInternal(IEditorData Editor, string EnteredText)
+		protected override void BuildCompletionDataInternal(IEditorData Editor, char enteredChar)
 		{
 			CompletionDataGenerator.AddModule(Editor.SyntaxTree);
 		}
