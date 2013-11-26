@@ -146,13 +146,15 @@ namespace D_Parser.Completion
 
 		public static ISyntaxRegion FindCurrentCaretContext(IEditorData editor, 
 			out ParserTrackerVariables trackerVariables, 
-			out IBlockNode currentScope, 
+			ref IBlockNode currentScope, 
 			out IStatement currentStatement)
 		{
-			currentScope = DResolver.SearchBlockAt (editor.SyntaxTree, editor.CaretLocation, out currentStatement);
+			if(currentScope == null)
+				currentScope = DResolver.SearchBlockAt (editor.SyntaxTree, editor.CaretLocation, out currentStatement);
 
 			if (currentScope == null) {
 				trackerVariables = null;
+				currentStatement = null;
 				return null;
 			}
 
@@ -169,7 +171,7 @@ namespace D_Parser.Completion
 					blockStart = DocumentHelper.GetOffsetByRelativeLocation (editor.ModuleCode, editor.CaretLocation, editor.CaretOffset, blockStartLocation = block.Location);
 				else {
 					currentScope = currentScope.Parent as IBlockNode;
-					return FindCurrentCaretContext (editor, out trackerVariables, out currentScope, out currentStatement);
+					return FindCurrentCaretContext (editor, out trackerVariables, ref currentScope, out currentStatement);
 				}
 			}
 			else if (currentScope != null)

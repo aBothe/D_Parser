@@ -24,10 +24,10 @@ namespace D_Parser.Completion
 				return new PropertyAttributeCompletionProvider(dataGen);
 
 			ParserTrackerVariables trackVars;
-			IBlockNode curBlock;
+			IBlockNode curBlock = null;
 			IStatement curStmt;
 
-			var parsedBlock = CtrlSpaceCompletionProvider.FindCurrentCaretContext(Editor, out trackVars, out curBlock, out curStmt);
+			var parsedBlock = CtrlSpaceCompletionProvider.FindCurrentCaretContext(Editor, out trackVars, ref curBlock, out curStmt);
 
 			if (trackVars != null)
 			{
