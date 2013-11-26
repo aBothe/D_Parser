@@ -453,7 +453,7 @@ auto o = new Obj();
 			var ex = DParser.ParseExpression("arr[0]");
 			var t = Evaluation.EvaluateType(ex, ctxt);
 			
-			Assert.That(t, Is.TypeOf(typeof(ClassType)));
+			Assert.That(t, Is.TypeOf(typeof(ArrayAccessSymbol)));
 			
 			ex = DParser.ParseExpression("arr[0].myProp");
 			t = Evaluation.EvaluateType(ex, ctxt);

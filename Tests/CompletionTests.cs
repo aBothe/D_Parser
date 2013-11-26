@@ -45,7 +45,7 @@ void main(){
 			var off = DocumentHelper.LocationToOffset(code,l);
 			ParserTrackerVariables ptr;
 			CodeLocation caretLoc;
-			var parsedBlock = CtrlSpaceCompletionProvider.FindCurrentCaretContext(code,main, off,l,out ptr, out caretLoc);
+			//var parsedBlock = AbstractCompletionProvider.FindCurrentCaretContext(code,main, off,l,out ptr, out caretLoc);
 			
 			/*
 			 * a) Test if completion popup would open in each code situation

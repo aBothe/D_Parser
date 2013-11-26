@@ -530,6 +530,9 @@ namespace D_Parser.Resolver.TypeResolution
 		{
 			r = StripAliasSymbol(r);
 
+			if (r is ArrayAccessSymbol)
+				r = (r as ArrayAccessSymbol).Base;
+
 			var ms = r as MemberSymbol;
 			if(ms != null)
 				r = (ms as DerivedDataType).Base;
