@@ -9,7 +9,7 @@ using D_Parser.Resolver.ASTScanner;
 
 namespace D_Parser.Completion.Providers
 {
-	public class ImportStatementCompletionProvider : AbstractCompletionProvider
+	class ImportStatementCompletionProvider : AbstractCompletionProvider
 	{
 		readonly ImportStatement.Import imp;
 		readonly ImportStatement.ImportBindings impBind;

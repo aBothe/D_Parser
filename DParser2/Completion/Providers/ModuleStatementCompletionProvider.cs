@@ -4,7 +4,7 @@ using D_Parser.Parser;
 
 namespace D_Parser.Completion
 {
-	internal class ModuleStatementCompletionProvider : AbstractCompletionProvider
+	class ModuleStatementCompletionProvider : AbstractCompletionProvider
 	{
 		public ModuleStatementCompletionProvider(ICompletionDataGenerator dg) : base(dg){}
 		

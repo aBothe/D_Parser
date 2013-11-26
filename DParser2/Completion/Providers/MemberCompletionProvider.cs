@@ -12,7 +12,7 @@ using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Completion
 {
-	public class MemberCompletionProvider : AbstractCompletionProvider
+	class MemberCompletionProvider : AbstractCompletionProvider
 	{
 		ResolutionContext ctxt;
 		public PostfixExpression_Access AccessExpression;

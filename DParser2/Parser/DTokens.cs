@@ -731,5 +731,10 @@ Sys­tem func­tions are not co­vari­ant with trusted or safe func­tions.";
                 default: return "D Keyword";
             }
         }
+
+		public static bool IsIdentifierChar(char key)
+		{
+			return char.IsLetterOrDigit(key) || key == '_';
+		}
     }
 }

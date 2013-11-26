@@ -1,7 +1,7 @@
 ﻿
 namespace D_Parser.Completion
 {
-	public class PropertyAttributeCompletionProvider : AbstractCompletionProvider
+	class PropertyAttributeCompletionProvider : AbstractCompletionProvider
 	{
 		public static bool CompletesEnteredText(string EnteredText)
 		{

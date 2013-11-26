@@ -120,7 +120,6 @@ namespace D_Parser.Completion
 					return null;
 			}
 
-
 			return new CtrlSpaceCompletionProvider(dataGen) { 
 				trackVars=trackVars,
 				curBlock=curBlock,
@@ -167,11 +166,6 @@ namespace D_Parser.Completion
 			if (pfa.PostfixForeExpression == null)
 				return null;
 			return pfa;
-		}
-
-		public static bool IsIdentifierChar(char key)
-		{
-			return char.IsLetterOrDigit(key) || key == '_';
 		}
 
 		public static bool CanItemBeShownGenerally(INode dn)
@@ -251,8 +245,8 @@ namespace D_Parser.Completion
 						return false;
 				}
 				// If typing a begun identifier, return immediately
-				else if ((IsIdentifierChar(enteredChar) || enteredChar == '\0') &&
-					IsIdentifierChar(Editor.ModuleCode[Editor.CaretOffset - 1]))
+				else if ((DTokens.IsIdentifierChar(enteredChar) || enteredChar == '\0') &&
+					DTokens.IsIdentifierChar(Editor.ModuleCode[Editor.CaretOffset - 1]))
 					return false;
 
 				return !CaretContextAnalyzer.IsInCommentAreaOrString(Editor.ModuleCode, Editor.CaretOffset);

@@ -2,9 +2,9 @@
 using D_Parser.Dom;
 using D_Parser.Parser;
 
-namespace D_Parser.Completion
+namespace D_Parser.Completion.Providers
 {
-	internal class AttributeCompletionProvider : AbstractCompletionProvider
+	class AttributeCompletionProvider : AbstractCompletionProvider
 	{
 		public DAttribute Attribute;
 

@@ -5,7 +5,7 @@ namespace D_Parser.Completion.Providers
 	/// <summary>
 	/// Adds method items to the completion list if the current expression's type is matching the methods' first parameter
 	/// </summary>
-	public class UFCSCompletionProvider
+	class UFCSCompletionProvider
 	{
 		public static void Generate(ISemantic rr, ResolutionContext ctxt, IEditorData ed, ICompletionDataGenerator gen)
 		{

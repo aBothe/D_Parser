@@ -10,7 +10,7 @@ using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Completion
 {
-	public class CtrlSpaceCompletionProvider : AbstractCompletionProvider
+	class CtrlSpaceCompletionProvider : AbstractCompletionProvider
 	{
 		public object parsedBlock;
 		public IBlockNode curBlock;
@@ -67,7 +67,7 @@ namespace D_Parser.Completion
 				else if (trackVars.LastParsedObject is TokenExpression &&
 					DTokens.BasicTypes[(trackVars.LastParsedObject as TokenExpression).Token] &&
 					!string.IsNullOrEmpty(EnteredText) &&
-					IsIdentifierChar(EnteredText[0]))
+					DTokens.IsIdentifierChar(EnteredText[0]))
 					return false;
 
 				if (trackVars.LastParsedObject is Modifier)
