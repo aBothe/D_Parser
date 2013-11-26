@@ -18,7 +18,7 @@ namespace D_Parser.Completion
 			this.CompletionDataGenerator = CompletionDataGenerator;
 		}
 
-		public static AbstractCompletionProvider Create(ICompletionDataGenerator dataGen, IEditorData Editor, string EnteredText)
+		static AbstractCompletionProvider Create(ICompletionDataGenerator dataGen, IEditorData Editor, string EnteredText)
 		{
 			if (PropertyAttributeCompletionProvider.CompletesEnteredText(EnteredText))
 				return new PropertyAttributeCompletionProvider(dataGen);
@@ -184,46 +184,6 @@ namespace D_Parser.Completion
 			}
 
 			return true;
-		}
-
-		public static bool HaveSameAncestors(INode higherLeveledNode, INode lowerLeveledNode)
-		{
-			var curPar = higherLeveledNode;
-
-			while (curPar != null)
-			{
-				if (curPar == lowerLeveledNode)
-					return true;
-
-				curPar = curPar.Parent;
-			}
-			return false;
-		}
-
-		public static bool IsTypeNode(INode n)
-		{
-			return n is DEnum || n is DClassLike;
-		}
-
-		/// <summary>
-		/// Returns C:\fx\a\b when PhysicalFileName was "C:\fx\a\b\c\Module.d" , ModuleName= "a.b.c.Module" and WantedDirectory= "a.b"
-		/// 
-		/// Used when formatting package names in BuildCompletionData();
-		/// </summary>
-		public static string GetModulePath(string PhysicalFileName, string ModuleName, string WantedDirectory)
-		{
-			return GetModulePath(PhysicalFileName, ModuleName.Split('.').Length, WantedDirectory.Split('.').Length);
-		}
-
-		public static string GetModulePath(string PhysicalFileName, int ModuleNamePartAmount, int WantedDirectoryNamePartAmount)
-		{
-			var ret = "";
-
-			var physFileNameParts = PhysicalFileName.Split('\\');
-			for (int i = 0; i < physFileNameParts.Length - ModuleNamePartAmount + WantedDirectoryNamePartAmount; i++)
-				ret += physFileNameParts[i] + "\\";
-
-			return ret.TrimEnd('\\');
 		}
 		#endregion
 
