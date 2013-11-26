@@ -53,6 +53,12 @@ namespace D_Parser.Completion
 			if(rr.DeclarationOrExpressionBase is ITypeDeclaration)
 				isVariableInstance |= (rr.DeclarationOrExpressionBase as ITypeDeclaration).ExpressesVariableAccess;
 
+			if (rr is ArrayAccessSymbol)
+			{
+				isVariableInstance = true;
+				rr = (rr as ArrayAccessSymbol).Base;
+			}
+
 			if (rr is MemberSymbol)
 				BuildCompletionData((MemberSymbol)rr, currentlyScopedBlock, isVariableInstance);
 

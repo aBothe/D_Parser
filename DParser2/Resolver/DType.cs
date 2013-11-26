@@ -547,8 +547,9 @@ namespace D_Parser.Resolver
 	
 	/// <summary>
 	/// Intermediate result when evaluating e.g. myArray[0]
+	/// Required for proper completion of array access expressions (e.g. foo[0].)
 	/// </summary>
-	/*public class ArrayAccessSymbol : DerivedDataType
+	public class ArrayAccessSymbol : DerivedDataType
 	{
 		public ArrayAccessSymbol(PostfixExpression_Index indexExpr, AbstractType arrayValueType):
 			base(arrayValueType,indexExpr)	{ }
@@ -558,7 +559,7 @@ namespace D_Parser.Resolver
 			return (Base != null ? Base.ToCode () : string.Empty) + "[" + 
 				base.DeclarationOrExpressionBase.ToString() + "]";
 		}
-	}*/
+	}
 
 	public class ModuleSymbol : DSymbol
 	{

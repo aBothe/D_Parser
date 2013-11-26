@@ -735,8 +735,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					 */
 					//TODO: Handle opIndex overloads
 
-					return ar.ValueType;
-					//return new ArrayAccessSymbol(x,ar.ValueType);
+					return new ArrayAccessSymbol(x,ar.ValueType);
 				}
 				/*
 				 * int* a = new int[10];
