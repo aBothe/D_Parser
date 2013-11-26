@@ -6,6 +6,7 @@ using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ASTScanner;
 using System.IO;
+using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Completion
 {
@@ -21,24 +22,6 @@ namespace D_Parser.Completion
 		protected override void BuildCompletionDataInternal(IEditorData Editor, string EnteredText)
 		{
 			var visibleMembers = MemberFilter.All;
-
-			if (curBlock == null)
-				curBlock = D_Parser.Resolver.TypeResolution.DResolver.SearchBlockAt(Editor.SyntaxTree, Editor.CaretLocation, out curStmt);
-
-			if (curBlock == null)
-				return;
-
-			if (parsedBlock == null)
-			{
-				CodeLocation parseEndLoc;
-				parsedBlock = FindCurrentCaretContext(
-					Editor.ModuleCode,
-					curBlock,
-					Editor.CaretOffset,
-					Editor.CaretLocation,
-					out trackVars, out parseEndLoc);
-				curBlock = D_Parser.Resolver.TypeResolution.DResolver.SearchBlockAt(curBlock, parseEndLoc, out curStmt);
-			}
 
 			if(!GetVisibleMemberFilter(Editor, EnteredText, ref visibleMembers, ref curStmt))
 				return;
@@ -162,44 +145,51 @@ namespace D_Parser.Completion
 			return true;
 		}
 
-		/// <returns>Either CurrentScope, a BlockStatement object that is associated with the parent method or a complete new DModule object</returns>
-		public static ISyntaxRegion FindCurrentCaretContext(string code,
-			IBlockNode CurrentScope,
-			int caretOffset, CodeLocation caretLocation,
-			out ParserTrackerVariables TrackerVariables,
-			out CodeLocation lastTokenEndLocation)
+		public static ISyntaxRegion FindCurrentCaretContext(IEditorData editor, 
+			out ParserTrackerVariables trackerVariables, 
+			out IBlockNode currentScope, 
+			out IStatement currentStatement)
 		{
+			currentScope = DResolver.SearchBlockAt (editor.SyntaxTree, editor.CaretLocation, out currentStatement);
+
+			if (currentScope == null) {
+				trackerVariables = null;
+				return null;
+			}
+
 			bool ParseDecl = false;
 
 			int blockStart = 0;
-			var blockStartLocation = CurrentScope != null ? CurrentScope.BlockStartLocation : caretLocation;
+			var blockStartLocation = currentScope != null ? currentScope.BlockStartLocation : editor.CaretLocation;
 
-			if (CurrentScope is DMethod)
+			if (currentScope is DMethod)
 			{
-				var block = (CurrentScope as DMethod).GetSubBlockAt(caretLocation);
+				var block = (currentScope as DMethod).GetSubBlockAt(editor.CaretLocation);
 
 				if (block != null)
-					blockStart = DocumentHelper.GetOffsetByRelativeLocation(code, caretLocation, caretOffset, blockStartLocation = block.Location);
-				else
-					return FindCurrentCaretContext(code, CurrentScope.Parent as IBlockNode, caretOffset, caretLocation, out TrackerVariables, out lastTokenEndLocation);
+					blockStart = DocumentHelper.GetOffsetByRelativeLocation (editor.ModuleCode, editor.CaretLocation, editor.CaretOffset, blockStartLocation = block.Location);
+				else {
+					currentScope = currentScope.Parent as IBlockNode;
+					return FindCurrentCaretContext (editor, out trackerVariables, out currentScope, out currentStatement);
+				}
 			}
-			else if (CurrentScope != null)
+			else if (currentScope != null)
 			{
-				if (CurrentScope.BlockStartLocation.IsEmpty || (caretLocation < CurrentScope.BlockStartLocation && caretLocation > CurrentScope.Location))
+				if (currentScope.BlockStartLocation.IsEmpty || (editor.CaretLocation < currentScope.BlockStartLocation && editor.CaretLocation > currentScope.Location))
 				{
 					ParseDecl = true;
-					blockStart = DocumentHelper.GetOffsetByRelativeLocation(code, caretLocation, caretOffset, blockStartLocation = CurrentScope.Location);
+					blockStart = DocumentHelper.GetOffsetByRelativeLocation(editor.ModuleCode, editor.CaretLocation, editor.CaretOffset, blockStartLocation = currentScope.Location);
 				}
 				else
-					blockStart = DocumentHelper.GetOffsetByRelativeLocation(code, caretLocation, caretOffset, CurrentScope.BlockStartLocation);
+					blockStart = DocumentHelper.GetOffsetByRelativeLocation(editor.ModuleCode, editor.CaretLocation, editor.CaretOffset, currentScope.BlockStartLocation);
 			}
 
-			if (blockStart >= 0 && caretOffset - blockStart > 0)
-				using (var sr = new Misc.StringView(code, blockStart, caretOffset - blockStart))
+			if (blockStart >= 0 && editor.CaretOffset - blockStart > 0)
+				using (var sr = new Misc.StringView(editor.ModuleCode, blockStart, editor.CaretOffset - blockStart))
 				{
 					var psr = DParser.Create(sr);
 
-					/* Deadly important! For correct resolution behaviour, 
+					/*					 Deadly important! For correct resolution behaviour, 
 					 * it is required to set the parser virtually to the blockStart position, 
 					 * so that everything using the returned object is always related to 
 					 * the original code file, not our code extraction!
@@ -208,12 +198,12 @@ namespace D_Parser.Completion
 
 					ISyntaxRegion ret = null;
 
-					if (CurrentScope == null)
+					if (currentScope == null)
 						ret = psr.Parse();
-					else if (CurrentScope is DMethod)
+					else if (currentScope is DMethod)
 					{
 						psr.Step();
-						var dm = CurrentScope as DMethod;
+						var dm = currentScope as DMethod;
 						dm.Clear();
 
 						if ((dm.SpecialType & DMethod.MethodType.Lambda) != 0 &&
@@ -229,7 +219,7 @@ namespace D_Parser.Completion
 							if (dm.Out != null && blockStartLocation == dm.Out.Location)
 								methodRegion = DTokens.Out;
 
-							var newBlock = psr.BlockStatement (CurrentScope);
+							var newBlock = psr.BlockStatement (currentScope);
 							ret = newBlock;
 
 							switch (methodRegion) {
@@ -248,43 +238,45 @@ namespace D_Parser.Completion
 							}
 						}
 					}
-					else if (CurrentScope is DModule)
+					else if (currentScope is DModule)
 						ret = psr.Root();
 					else
 					{
 						psr.Step();
 						if (ParseDecl)
 						{
-							var ret2 = psr.Declaration(CurrentScope);
+							var ret2 = psr.Declaration(currentScope);
 
 							if (ret2 != null && ret2.Length > 0)
 								ret = ret2[0];
 						}
-						else if (CurrentScope is DClassLike)
+						else if (currentScope is DClassLike)
 						{
-							var t = new DClassLike((CurrentScope as DClassLike).ClassType);
-							t.AssignFrom(CurrentScope);
+							var t = new DClassLike((currentScope as DClassLike).ClassType);
+							t.AssignFrom(currentScope);
 							t.Clear();
 							psr.ClassBody(t);
 							ret = t;
 						}
-						else if (CurrentScope is DEnum)
+						else if (currentScope is DEnum)
 						{
 							var t = new DEnum();
-							t.AssignFrom(CurrentScope);
+							t.AssignFrom(currentScope);
 							t.Clear();
 							psr.EnumBody(t);
 							ret = t;
 						}
 					}
 
-					lastTokenEndLocation = psr.Lexer.CurrentToken != null ? psr.Lexer.CurrentToken.EndLocation : caretLocation;
-					TrackerVariables = psr.TrackerVariables;
+					currentScope = DResolver.SearchBlockAt (currentScope, 
+						psr.Lexer.CurrentToken != null ? psr.Lexer.CurrentToken.EndLocation : editor.CaretLocation, 
+						out currentStatement);
+					trackerVariables = psr.TrackerVariables;
 					return ret;
 				}
 
-			TrackerVariables = null;
-			lastTokenEndLocation = CodeLocation.Empty;
+			trackerVariables = null;
+			currentStatement = null;
 			return null;
 		}
 	}

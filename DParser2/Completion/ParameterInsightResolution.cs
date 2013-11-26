@@ -69,19 +69,10 @@ namespace D_Parser.Completion
 			ResolutionContext ctxt)
 		{
 			ParserTrackerVariables trackVars;
+			IBlockNode curBlock;
 			IStatement curStmt;
 
-			// Get the currently scoped block
-			var curBlock = DResolver.SearchBlockAt(Editor.SyntaxTree, Editor.CaretLocation, out curStmt);
-
-			if (curBlock == null)
-				return null;
-
-			// Get an updated abstract view on the module's code
-			CodeLocation parseEndLoc;
-			var sr = CtrlSpaceCompletionProvider.FindCurrentCaretContext(
-				Editor.ModuleCode, curBlock ,Editor.CaretOffset,	Editor.CaretLocation, out trackVars, out parseEndLoc);
-			curBlock = D_Parser.Resolver.TypeResolution.DResolver.SearchBlockAt(curBlock, parseEndLoc, out curStmt);
+			var sr = CtrlSpaceCompletionProvider.FindCurrentCaretContext(Editor, out trackVars, out curBlock, out curStmt);
 
 			IExpression lastParamExpression = null;
 

@@ -23,23 +23,11 @@ namespace D_Parser.Completion
 			if (PropertyAttributeCompletionProvider.CompletesEnteredText(EnteredText))
 				return new PropertyAttributeCompletionProvider(dataGen);
 
-			ParserTrackerVariables trackVars=null;
-			IStatement curStmt = null;
-			CodeLocation parseEndLoc;
-			
-			var curBlock = DResolver.SearchBlockAt(Editor.SyntaxTree, Editor.CaretLocation, out curStmt);
+			ParserTrackerVariables trackVars;
+			IBlockNode curBlock;
+			IStatement curStmt;
 
-			if (curBlock == null)
-				return null;
-
-			var parsedBlock = CtrlSpaceCompletionProvider.FindCurrentCaretContext(
-				Editor.ModuleCode,
-				curBlock,
-				Editor.CaretOffset,
-				Editor.CaretLocation,
-				out trackVars, out parseEndLoc);
-
-			curBlock = DResolver.SearchBlockAt(curBlock, parseEndLoc, out curStmt);
+			var parsedBlock = CtrlSpaceCompletionProvider.FindCurrentCaretContext(Editor, out trackVars, out curBlock, out curStmt);
 
 			if (trackVars != null)
 			{
