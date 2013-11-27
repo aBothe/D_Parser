@@ -497,7 +497,7 @@ namespace D_Parser.Resolver.TypeResolution
 			bool popAfterwards;
 			{
 				var newScope = m is IBlockNode ? (IBlockNode)m : m.Parent as IBlockNode;
-				popAfterwards = ctxt.ScopedBlock != newScope;
+				popAfterwards = ctxt.ScopedBlock != newScope && newScope != null;
 				if (popAfterwards) {
 					var options = ctxt.CurrentContext.ContextDependentOptions;
 					var applyOptions = ctxt.ScopedBlockIsInNodeHierarchy (m);

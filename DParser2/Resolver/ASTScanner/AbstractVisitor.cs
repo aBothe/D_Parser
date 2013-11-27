@@ -595,11 +595,11 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					 */
 					aliasedSymbol = aliasedMember.Base;
 
-					/** TODO:
-					 * Tear all the completion items generation code down into this or 
-					 * a similar Resolver-leveled class in order to let this method 
-					 * render all available properties properly!
-					 * -- mainly for static properties, ufcs recommendations and other things that
+					foreach (var statProp in StaticProperties.ListProperties (aliasedSymbol))
+						if (HandleItem (statProp))
+							return true;
+
+					/** TODO: Visit ufcs recommendations and other things that
 					 * become added in e.g. MemberCompletionProvider
 					 */
 

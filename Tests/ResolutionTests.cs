@@ -25,7 +25,8 @@ namespace Tests
 						alias immutable(char)[] string;
 						alias immutable(wchar)[] wstring;
 						alias immutable(dchar)[] dstring;
-						class Object { string toString(); }");
+						class Object { string toString(); }
+						alias int size_t;");
 
 		public static ParseCacheView CreateCache(params string[] moduleCodes)
 		{
@@ -1708,7 +1709,7 @@ notherClass ncl;
 			x = DParser.ParseExpression ("ncl.length");
 			v = Evaluation.EvaluateType (x, ctxt);
 			Assert.That (v, Is.TypeOf(typeof(MemberSymbol)));
-			Assert.That ((v as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.That (DResolver.StripAliasSymbol((v as MemberSymbol).Base), Is.TypeOf(typeof(PrimitiveType)));
 		}
 
 		[Test]
