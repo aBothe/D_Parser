@@ -52,7 +52,7 @@ namespace D_Parser
 				Table.TryGetValue(hash, out s);
 				return s;
 			}
-			return null;
+			return string.Empty;
 		}
 	}
 }
