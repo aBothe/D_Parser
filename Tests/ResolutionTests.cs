@@ -2096,6 +2096,22 @@ class aa(T) if(is(T==int)) {}");
 
 			Assert.That (ResultComparer.IsImplicitlyConvertible (t, constChar, ctxt));
 		}
+
+		[Test]
+		public void TypeofIntSize()
+		{
+			var ctxt = CreateDefCtxt();
+
+			ITypeDeclaration td;
+			AbstractType t;
+			DToken tk;
+
+			td = DParser.ParseBasicType ("typeof(double.sizeof)", out tk);
+			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
+
+			Assert.That (t, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.That ((t as PrimitiveType).TypeToken, Is.EqualTo(DTokens.Int));
+		}
 		#endregion
 		
 		#region Mixins
