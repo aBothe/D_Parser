@@ -101,5 +101,130 @@ void main(){
 				return parser.TrackerVariables.LastParsedObject;
 			}
 		}
+
+		[Test]
+		public void StaticMemberCompletion()
+		{
+			EditorData ed;
+			ResolutionContext ctxt = null;
+			INode[] wl;
+			INode[] bl;
+
+			var s = @"module A;
+class Class { static int statInt; int normal; }
+void main() { Class. }";
+
+			ed = GenEditorData (3, 21, s);
+
+			wl = new[]{ GetNode(ed, "A.Class.statInt", ref ctxt) };
+			bl = new[]{ GetNode(ed, "A.Class.normal", ref ctxt) };
+
+			TestCompletionListContents (ed, wl, bl);
+		}
+
+		#region Test lowlevel
+		class TestCompletionDataGen : ICompletionDataGenerator
+		{
+			public TestCompletionDataGen(INode[] whiteList, INode[] blackList)
+			{
+				if(whiteList != null){
+					remainingWhiteList= new List<INode>(whiteList);
+					this.whiteList = new List<INode>(whiteList);
+				}
+				if(blackList != null)
+					this.blackList = new List<INode>(blackList);
+			}
+
+			public List<INode> remainingWhiteList;
+			public List<INode> whiteList;
+			public List<INode> blackList;
+
+			#region ICompletionDataGenerator implementation
+
+			public void Add (byte Token)
+			{
+
+			}
+
+			public void AddPropertyAttribute (string AttributeText)
+			{
+
+			}
+
+			public void AddTextItem (string Text, string Description)
+			{
+
+			}
+
+			public void Add (INode n)
+			{
+				if (blackList != null)
+					Assert.That (blackList.Contains (n), Is.False);
+
+				if (whiteList != null && whiteList.Contains(n))
+					Assert.That (remainingWhiteList.Remove (n), Is.True, n+" occurred at least twice!");
+			}
+
+			public void AddModule (DModule module, string nameOverride = null)
+			{
+
+			}
+
+			public void AddPackage (string packageName)
+			{
+
+			}
+
+			#endregion
+
+			public bool HasRemainingItems { get{ return remainingWhiteList != null && remainingWhiteList.Count > 0; } }
+		}
+
+		INode GetNode(EditorData ed, string id, ref ResolutionContext ctxt)
+		{
+			if (ctxt == null)
+				ctxt = ResolutionContext.Create (ed);
+
+			DToken tk;
+			var bt = DParser.ParseBasicType (id, out tk);
+			var t = TypeDeclarationResolver.ResolveSingle(bt, ctxt);
+
+			var n = (t as DSymbol).Definition;
+			Assert.That (n, Is.Not.Null);
+			return n;
+		}
+
+		EditorData GenEditorData(int caretLine, int caretPos,string focusedModuleCode,params string[] otherModuleCodes)
+		{
+			var cache = ResolutionTests.CreateCache (otherModuleCodes);
+			var ed = new EditorData { ParseCache = cache };
+
+			UpdateEditorData (ed, caretLine, caretPos, focusedModuleCode);
+
+			return ed;
+		}
+
+		void UpdateEditorData(EditorData ed,int caretLine, int caretPos, string focusedModuleCode)
+		{
+			var mod = DParser.ParseString (focusedModuleCode);
+			var pack = ed.ParseCache [0] as MutableRootPackage;
+
+			pack.AddModule (mod);
+			pack.UfcsCache.CacheModuleMethods (mod, ResolutionContext.Create(ed));
+
+			ed.ModuleCode = focusedModuleCode;
+			ed.SyntaxTree = mod;
+			ed.CaretLocation = new CodeLocation (caretPos, caretLine);
+			ed.CaretOffset = DocumentHelper.LocationToOffset (focusedModuleCode, caretLine, caretPos);
+		}
+
+		void TestCompletionListContents(IEditorData ed, INode[] itemWhiteList, INode[] itemBlackList = null, char trigger = '\0')
+		{
+			var gen = new TestCompletionDataGen (itemWhiteList, itemBlackList);
+			Assert.That (CodeCompletion.GenerateCompletionData (ed, gen, trigger), Is.True);
+
+			Assert.That (gen.HasRemainingItems, Is.False, "Some items were not enlisted!");
+		}
+		#endregion
 	}
 }
