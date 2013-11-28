@@ -925,8 +925,6 @@ namespace D_Parser.Parser
 			firstNode.Description = initialComment;
 			firstNode.Location = startLocation;
 
-			ApplyAttributes(firstNode);
-
 			// Check for declaration constraints
 			if (laKind == (If))
 				Constraint();
@@ -1209,6 +1207,7 @@ namespace D_Parser.Parser
 		DNode Declarator(ITypeDeclaration basicType,bool IsParam, INode parent)
 		{
 			DNode ret = new DVariable() { Type=basicType, Location = la.Location, Parent = parent };
+			ApplyAttributes (ret);
 			LastParsedObject = ret;
 
 			while (IsBasicType2())
@@ -1566,6 +1565,9 @@ namespace D_Parser.Parser
 				return ret;
 			}
 
+			var stk_backup = BlockAttributes;
+			BlockAttributes = new Stack<DAttribute>();
+
 			DNode p;
 
 			if (laKind != TripleDot && (p = Parameter(Parent)) != null)
@@ -1620,6 +1622,7 @@ namespace D_Parser.Parser
 			}
 
 			Expect(CloseParenthesis);
+			BlockAttributes = stk_backup;
 			return ret;
 		}
 
@@ -1650,7 +1653,7 @@ namespace D_Parser.Parser
 			if (ret == null)
 				return null;
 			ret.Location = startLocation;
-			ApplyAttributes(ret);
+			ret.Attributes = new List<DAttribute> ();
 
 			if (attr.Count > 0) {
 				if(ret.Attributes == null)
