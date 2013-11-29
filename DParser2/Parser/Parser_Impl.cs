@@ -1653,7 +1653,6 @@ namespace D_Parser.Parser
 			if (ret == null)
 				return null;
 			ret.Location = startLocation;
-			ret.Attributes = new List<DAttribute> ();
 
 			if (attr.Count > 0) {
 				if(ret.Attributes == null)
@@ -4840,6 +4839,9 @@ namespace D_Parser.Parser
 				return;
 			}
 
+			var stk_Backup = BlockAttributes;
+			BlockAttributes = new Stack<DAttribute> ();
+
 			while (
 				(laKind == In && par.In == null) ||
 				(laKind == Out && par.Out == null))
@@ -4883,6 +4885,7 @@ namespace D_Parser.Parser
 				par.Body = BlockStatement(par);
 			}
 
+			BlockAttributes = stk_Backup;
 			par.EndLocation = t.EndLocation;
 		}
 		#endregion

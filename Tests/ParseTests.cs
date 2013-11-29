@@ -117,7 +117,7 @@ void bar();");
 
 			var attr = a.Attributes[0] as Modifier;
 			Assert.AreEqual(DTokens.Align, attr.Token);
-			Assert.AreEqual(null, attr.LiteralContent);
+			Assert.That(attr.LiteralContent == null || attr.LiteralContent as string == string.Empty);
 
 			n = DParser.ParseString("private public int a;");
 			a = n["a"].First() as DVariable;
@@ -167,6 +167,74 @@ else int C;");
 			Assert.AreEqual(2,B.Attributes.Count);
 			Assert.AreEqual(2, C.Attributes.Count);
 		}
+
+		[Test]
+		public void Attributes3()
+		{
+			var m = DParser.ParseString (@"module A;
+final class Class
+{
+	public:
+		static void statFoo(int i, ref double d) { int local; }
+		static void statBar(int i, ref double d) nothrow { int local; }
+	private:
+		int priv;
+}
+
+int ii;
+");
+			Assert.That (m.ParseErrors.Count, Is.EqualTo (0));
+			DNode dn;
+			DMethod dm;
+
+			var Class = m ["Class"].First() as DClassLike;
+			Assert.That (Class.ContainsAttribute (DTokens.Final));
+			dn = Class ["statFoo"].First () as DNode;
+			Assert.That (dn.Attributes.Count, Is.EqualTo (2));
+			Assert.That (dn.ContainsAttribute(DTokens.Public));
+			Assert.That (dn.ContainsAttribute(DTokens.Static));
+
+			dm = dn as DMethod;
+			dn = dm.Parameters [0] as DNode;
+			Assert.That (dn.Attributes.Count, Is.EqualTo(0));
+			Assert.That (dn.IsPublic);
+
+			dn = dm.Parameters [1] as DNode;
+			Assert.That (dn.Attributes.Count, Is.EqualTo(1));
+			Assert.That(dn.ContainsAttribute(DTokens.Ref));
+
+			dn = dm.Body.Declarations [0] as DNode;
+			Assert.That (dn.Attributes.Count, Is.EqualTo (0));
+
+
+
+			dn = Class ["statBar"].First () as DNode;
+			Assert.That (dn.Attributes.Count, Is.EqualTo (3));
+			Assert.That (dn.ContainsAttribute(DTokens.Public));
+			Assert.That (dn.ContainsAttribute(DTokens.Static));
+			Assert.That (dn.ContainsAttribute(DTokens.Nothrow));
+
+			dm = dn as DMethod;
+			dn = dm.Parameters [0] as DNode;
+			Assert.That (dn.Attributes.Count, Is.EqualTo(0));
+			Assert.That (dn.IsPublic);
+
+			dn = dm.Parameters [1] as DNode;
+			Assert.That (dn.Attributes.Count, Is.EqualTo(1));
+			Assert.That(dn.ContainsAttribute(DTokens.Ref));
+
+			dn = dm.Body.Declarations [0] as DNode;
+			Assert.That (dn.Attributes.Count, Is.EqualTo (0));
+
+
+
+			dn = Class["priv"].First() as DNode;
+			Assert.That (dn.Attributes.Count, Is.EqualTo(1));
+			Assert.That(dn.ContainsAttribute(DTokens.Private));
+
+			dn = m["ii"].First() as DNode;
+			Assert.That (dn.Attributes.Count, Is.EqualTo(0));
+		}
 		
 		[Test]
 		public void AccessExpression1()
@@ -190,7 +258,7 @@ void main() {
 			Assert.That(m.ParseErrors.Count, Is.EqualTo(0));
 		}
 		
-		[Test]
+		//[Test]
 		public void LexingPerformance()
 		{
 			var f = File.ReadAllText(Environment.OSVersion.Platform == PlatformID.Win32NT ? @"D:\D\dmd2\src\phobos\std\string.d" : "/usr/include/dlang/std/string.d");
