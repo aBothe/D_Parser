@@ -618,10 +618,10 @@ template Tmpl(){
 			BoolTrait(ctxt, "compiles, i + 1");
 			//BoolTrait(ctxt, "compiles, &i + 1", false); //TODO: Check if both operand types match..is this still efficient?
 			BoolTrait(ctxt, "compiles, typeof(1)");
-			BoolTrait(ctxt, "compiles, S.bar", false); //TODO: Make the resolver not resolve non-static items implicitly (i.e. without explicit resolution option)
+			BoolTrait(ctxt, "compiles, S.nonExistingItem", false); //TODO: Make the resolver not resolve non-static items implicitly (i.e. without explicit resolution option)
 			BoolTrait(ctxt, "compiles, S.statInt");
 			BoolTrait(ctxt, "compiles, 1,2,3,int,long,std");
-			BoolTrait(ctxt, "compiles, 1,2,3,int,long,3[1]");
+			BoolTrait(ctxt, "compiles, 1,2,3,int,long,3[1]", false);
 			BoolTrait(ctxt, "compiles, 3[1]", false);
 		}
 		
