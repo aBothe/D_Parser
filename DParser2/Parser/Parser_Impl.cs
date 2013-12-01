@@ -927,7 +927,7 @@ namespace D_Parser.Parser
 
 			// Check for declaration constraints
 			if (laKind == (If))
-				Constraint();
+				Constraint(firstNode);
 
 			// BasicType Declarators ;
 			if (laKind==Assign || laKind==Comma || laKind==Semicolon)
@@ -4405,7 +4405,7 @@ namespace D_Parser.Parser
 
 				// Constraint[opt]
 				if (laKind == (If))
-					Constraint();
+					Constraint(ret);
 			}
 
 			ClassBody(ret);
@@ -4455,13 +4455,13 @@ namespace D_Parser.Parser
 			return dc;
 		}
 
-		bool Constraint(DClassLike dc)
+		bool Constraint(DNode dn)
 		{
 			if (laKind == If) {
 				Step ();
 				Expect (OpenParenthesis);
 
-				dc.TemplateConstraint = Expression ();
+				dn.TemplateConstraint = Expression ();
 
 				Expect (CloseParenthesis);
 
@@ -4578,7 +4578,7 @@ namespace D_Parser.Parser
 				LastParsedObject = dm;
 
 			if (laKind == If)
-				Constraint();
+				Constraint(dm);
 
 			// handle post argument attributes
 			FunctionAttributes(dm);
@@ -4605,7 +4605,7 @@ namespace D_Parser.Parser
 			dm.Parameters = Parameters(dm);
 
 			if (laKind == (If))
-				Constraint();
+				Constraint(dm);
 
 			FunctionBody(dm);
 			return dm;
@@ -4639,7 +4639,7 @@ namespace D_Parser.Parser
 				TemplateParameterList(dc);
 
 			if (laKind == (If))
-				dc.TemplateConstraint=Constraint();
+				Constraint(dc);
 
 			if (laKind == (Colon))
 				BaseClassList(dc);
@@ -4652,16 +4652,6 @@ namespace D_Parser.Parser
 
 			dc.EndLocation = t.EndLocation;
 			return dc;
-		}
-
-		IExpression Constraint()
-		{
-			IExpression ret;
-			Expect(If);
-			Expect(OpenParenthesis);
-			ret=Expression();
-			Expect(CloseParenthesis);
-			return ret;
 		}
 		#endregion
 
@@ -4932,7 +4922,7 @@ namespace D_Parser.Parser
 			TemplateParameterList(dc);
 
 			if (laKind == (If))
-				dc.TemplateConstraint=Constraint();
+				Constraint(dc);
 
 			// [Must not contain a base class list]
 

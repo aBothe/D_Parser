@@ -142,6 +142,7 @@ int b;");
 		public void Attributes2()
 		{
 			var m = DParser.ParseString(@"
+int foo() if(is(T==string)) {}
 debug(1) private int a;
 int b;
 
@@ -157,6 +158,7 @@ else int C;");
 			var b = m["b"].First() as DVariable;
 
 			Assert.AreEqual(2,a.Attributes.Count);
+			Assert.That (a.ContainsAttribute(DTokens.Private));
 			Assert.AreEqual(0,b.Attributes.Count);
 
 			var A = m["A"].First() as DVariable;
@@ -166,6 +168,8 @@ else int C;");
 			Assert.AreEqual(1, A.Attributes.Count);
 			Assert.AreEqual(2,B.Attributes.Count);
 			Assert.AreEqual(2, C.Attributes.Count);
+
+			Assert.That ((m["foo"].First() as DMethod).TemplateConstraint, Is.TypeOf(typeof(IsExpression)));
 		}
 
 		[Test]
