@@ -66,11 +66,6 @@ namespace D_Parser.Resolver
 		/// <summary>
 		/// Returns true if a node fully matches its environment concerning static if() declaration constraints and version/debug() restrictions.
 		/// </summary>
-		public bool MatchesDeclarationEnvironment(DNode dn)
-		{
-			return declarationCondititons.IsMatching(dn.Attributes, ctxt);
-		}
-		
 		public bool MatchesDeclarationEnvironment(IEnumerable<DAttribute> conditions)
 		{
 			return declarationCondititons.IsMatching(conditions,ctxt);

@@ -23,6 +23,7 @@ namespace D_Parser.Resolver
 		ReturnMethodReferencesOnly = 16,
 		
 		IgnoreAllProtectionAttributes = 32,
+		IgnoreDeclarationConditions = 64,
 
 		Default = 0
 	}

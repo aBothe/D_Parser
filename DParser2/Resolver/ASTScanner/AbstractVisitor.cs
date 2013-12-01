@@ -278,7 +278,8 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				{
 					var dn = n as DNode;
 					if(dn==null || 
-						!ctxt.CurrentContext.MatchesDeclarationEnvironment(dn) || 
+						((ctxt.Options & ResolutionOptions.IgnoreDeclarationConditions) == 0 &&
+							!ctxt.CurrentContext.MatchesDeclarationEnvironment(dn.Attributes)) || 
 						!CanAddMemberOfType(VisibleMembers, dn))
 						continue;
 					
@@ -526,7 +527,11 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					{
 						var sc = (StatementCondition)s;
 
-						if (ctxt.CurrentContext.MatchesDeclarationEnvironment(sc.Condition))
+						if ((ctxt.Options & ResolutionOptions.IgnoreDeclarationConditions) != 0) {
+							return ScanSingleStatement (sc.ScopedStatement, Caret, VisibleMembers) ||
+								(sc.ElseStatement != null && ScanSingleStatement (sc.ElseStatement, Caret, VisibleMembers));
+						}
+						else if (ctxt.CurrentContext.MatchesDeclarationEnvironment(sc.Condition))
 							return ScanSingleStatement(sc.ScopedStatement, Caret, VisibleMembers);
 						else if (sc.ElseStatement != null)
 							return ScanSingleStatement(sc.ElseStatement, Caret, VisibleMembers);
@@ -568,7 +573,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			var ch = tit.Definition [DVariable.AliasThisIdentifierHash];
 			if(ch != null){
 				foreach (DVariable aliasDef in ch) {
-					if (!ctxt.CurrentContext.MatchesDeclarationEnvironment (aliasDef) || aliasDef.Type == null)
+					if (((ctxt.Options & ResolutionOptions.IgnoreDeclarationConditions) == 0 && 
+						!ctxt.CurrentContext.MatchesDeclarationEnvironment (aliasDef.Attributes)) || 
+						aliasDef.Type == null)
 						continue;
 
 					pop = ctxt.ScopedBlock != tit.Definition;

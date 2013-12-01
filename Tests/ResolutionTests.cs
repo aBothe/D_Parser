@@ -1755,6 +1755,11 @@ class A
 		int z3;
 }
 
+version(X)
+	int postx;
+else
+	int posty;
+
 
 debug = C
 
@@ -1765,6 +1770,8 @@ debug(C)
 	int dbg_b;
 else
 	int dbg_c;
+
+debug = 4;
 
 debug = 3;
 

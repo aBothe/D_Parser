@@ -103,10 +103,9 @@ namespace D_Parser.Resolver
 			while (block != null)
 			{
 				var dn = block as DNode;
-				if (dn is DModule)
-					GetDoneVersionDebugSpecs(cs, l, (DModule)block, ctxt);
-				else if (dn!=null)
+				if (dn!=null)
 				{
+					GetDoneVersionDebugSpecs(cs, l, (DModule)block, ctxt);
 					if(dn.Attributes!=null)
 						foreach (var attr in dn.Attributes)
 							if (attr is DeclarationCondition)
