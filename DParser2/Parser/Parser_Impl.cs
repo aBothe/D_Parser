@@ -343,7 +343,7 @@ namespace D_Parser.Parser
 			}
 		}
 
-		AbstractMetaDeclaration AttributeBlock(DBlockNode module)
+		IMetaDeclarationBlock AttributeBlock(DBlockNode module)
 		{
 			int popCount = DeclarationAttributes.Count;
 
@@ -352,7 +352,7 @@ namespace D_Parser.Parser
 			 * Also, pop them from the declarationAttributes stack on to the block attributes so they will be assigned to all child items later on.
 			 */
 
-			AbstractMetaDeclaration metaDeclBlock;
+			IMetaDeclarationBlock metaDeclBlock;
 
 			if (popCount != 0)
 				metaDeclBlock = new AttributeMetaDeclarationBlock(DeclarationAttributes.ToArray()) { BlockStartLocation = la.Location };
@@ -2042,7 +2042,7 @@ namespace D_Parser.Parser
 		/// <param name="previouslyParsedAttribute"></param>
 		/// <param name="RequireDeclDef">If no colon and no open curly brace is given as lookahead, a DeclDef may be parsed otherwise, if parameter is true.</param>
 		/// <returns></returns>
-		AbstractMetaDeclaration AttributeTrail(DBlockNode module, DAttribute previouslyParsedAttribute, bool RequireDeclDef = false)
+		IMetaDeclaration AttributeTrail(DBlockNode module, DAttribute previouslyParsedAttribute, bool RequireDeclDef = false)
 		{
 			if (laKind == Colon)
 			{

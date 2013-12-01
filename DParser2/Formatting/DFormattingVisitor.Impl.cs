@@ -23,7 +23,7 @@ namespace D_Parser.Formatting
 			var dbn = block as DBlockNode;
 			if(dbn != null && dbn.MetaBlocks.Count != 0)
 			{
-				var mbStack = new Stack<AbstractMetaDeclaration>();
+				var mbStack = new Stack<IMetaDeclaration>();
 				
 				for(int i = 0; i < dbn.MetaBlocks.Count; i++)
 				{
@@ -31,7 +31,7 @@ namespace D_Parser.Formatting
 				handleElse:
 					
 					// If mb is inside the peek meta decl of mbStack, push mb on top of it
-					AbstractMetaDeclaration peekMb; 
+					IMetaDeclaration peekMb; 
 					if(mbStack.Count == 0 || (mb.Location > (peekMb = mbStack.Peek()).Location && 
 					                          mb.EndLocation < peekMb.EndLocation && 
 					                          !(peekMb is AttributeMetaDeclarationSection))){
@@ -126,7 +126,7 @@ namespace D_Parser.Formatting
 				child.Accept(this);
 		}
 		
-		void VisitMetaBlockChildren(List<INode> children, List<StaticStatement> staticStatements, AbstractMetaDeclaration mb)
+		void VisitMetaBlockChildren(List<INode> children, List<StaticStatement> staticStatements, IMetaDeclaration mb)
 		{
 			for(int k = 0; k < children.Count; k++)
 			{

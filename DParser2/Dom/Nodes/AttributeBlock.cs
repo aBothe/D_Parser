@@ -1,29 +1,17 @@
 ﻿
 namespace D_Parser.Dom
 {
-	public abstract class AbstractMetaDeclaration : ISyntaxRegion, IVisitable<MetaDeclarationVisitor>
+	public interface IMetaDeclaration : ISyntaxRegion, IVisitable<MetaDeclarationVisitor>
 	{
-		public abstract CodeLocation Location
-		{
-			get;
-			set;
-		}
-
-		public CodeLocation EndLocation
-		{
-			get;
-			set;
-		}
-
-		public abstract void Accept(MetaDeclarationVisitor vis);
 	}
 
-	public interface IMetaDeclarationBlock : ISyntaxRegion, IVisitable<MetaDeclarationVisitor>
+	public interface IMetaDeclarationBlock : IMetaDeclaration
 	{
 		CodeLocation BlockStartLocation { get; set; }
+		CodeLocation EndLocation {get;set;}
 	}
 
-	public class AttributeMetaDeclaration : AbstractMetaDeclaration
+	public class AttributeMetaDeclaration : IMetaDeclaration
 	{
 		public DAttribute[] AttributeOrCondition;
 
@@ -37,33 +25,31 @@ namespace D_Parser.Dom
 		/// <summary>
 		/// The start location of the first given attribute
 		/// </summary>
-		public override CodeLocation Location
+		public CodeLocation Location
 		{
 			get
 			{
 				return AttributeOrCondition[0].Location;
 			}
-			set
-			{
-				AttributeOrCondition[0].Location = value;
-			}
+			set { throw new System.NotImplementedException (); }
+		}
+		public CodeLocation EndLocation {
+			get;
+			set;
 		}
 
-		public override void Accept(MetaDeclarationVisitor vis)
+		public void Accept(MetaDeclarationVisitor vis)
 		{
 			vis.Visit(this);
 		}
 	}
 
-	public class ElseMetaDeclaration : AbstractMetaDeclaration
+	public class ElseMetaDeclaration : IMetaDeclaration
 	{
-		public override CodeLocation Location
-		{
-			get;
-			set;
-		}
+		public CodeLocation Location	{ get;set; }
+		public CodeLocation EndLocation	{ get;set; }
 
-		public override void Accept(MetaDeclarationVisitor vis)
+		public void Accept(MetaDeclarationVisitor vis)
 		{
 			vis.Visit(this);
 		}
@@ -76,11 +62,6 @@ namespace D_Parser.Dom
 			get;
 			set;
 		}
-
-		public override void Accept(MetaDeclarationVisitor vis)
-		{
-			vis.Visit(this);
-		}
 	}
 
 	/// <summary>
@@ -89,11 +70,6 @@ namespace D_Parser.Dom
 	public class AttributeMetaDeclarationSection : AttributeMetaDeclaration
 	{
 		public AttributeMetaDeclarationSection(DAttribute attr) : base(attr) { }
-
-		public override void Accept(MetaDeclarationVisitor vis)
-		{
-			vis.Visit(this);
-		}
 	}
 
 	/// <summary>
@@ -114,11 +90,6 @@ namespace D_Parser.Dom
 			get;
 			set;
 		}
-
-		public override void Accept(MetaDeclarationVisitor vis)
-		{
-			vis.Visit(this);
-		}
 	}
 
 	/// <summary>
@@ -127,7 +98,7 @@ namespace D_Parser.Dom
 	///		int cascadedIntDecl;
 	/// }
 	/// </summary>
-	public class MetaDeclarationBlock : AbstractMetaDeclaration, IMetaDeclarationBlock
+	public class MetaDeclarationBlock : IMetaDeclarationBlock
 	{
 		public CodeLocation BlockStartLocation
 		{
@@ -135,13 +106,14 @@ namespace D_Parser.Dom
 			set;
 		}
 
-		public override CodeLocation Location
+		public CodeLocation Location
 		{
 			get { return BlockStartLocation; }
 			set { BlockStartLocation = value; }
 		}
+		public CodeLocation EndLocation	{ get;set; }
 
-		public override void Accept(MetaDeclarationVisitor vis)
+		public void Accept(MetaDeclarationVisitor vis)
 		{
 			vis.Visit(this);
 		}

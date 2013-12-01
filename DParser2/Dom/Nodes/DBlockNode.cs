@@ -27,16 +27,16 @@ namespace D_Parser.Dom
 		/// }
 		/// Primarily used for formatting reasons later on.
 		/// </summary>
-		public readonly List<AbstractMetaDeclaration> MetaBlocks = new List<AbstractMetaDeclaration>();
+		public readonly List<IMetaDeclaration> MetaBlocks = new List<IMetaDeclaration>();
 
 		/// <summary>
 		/// Returns an array consisting of meta declarations orderd from outer to inner-most, depending on the 'Where' parameter.
 		/// </summary>
-		public AbstractMetaDeclaration[] GetMetaBlockStack(CodeLocation Where, bool takeBlockStartLocations = false, bool mindAttributeSections = false)
+		public IMetaDeclaration[] GetMetaBlockStack(CodeLocation Where, bool takeBlockStartLocations = false, bool mindAttributeSections = false)
 		{
-			var l = new List<AbstractMetaDeclaration>();
+			var l = new List<IMetaDeclaration>();
 
-			AbstractMetaDeclaration lastSr = null;
+			IMetaDeclaration lastSr = null;
 			for (int i=0; i < MetaBlocks.Count; i++)
 			{
 				var mb = MetaBlocks[i];
@@ -88,7 +88,7 @@ namespace D_Parser.Dom
 			get { return StaticStatements.ToArray(); }
 		}
 
-		public void Add(AbstractMetaDeclaration MetaDecl)
+		public void Add(IMetaDeclaration MetaDecl)
 		{
 			MetaBlocks.Add(MetaDecl);
 		}
