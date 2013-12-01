@@ -446,18 +446,19 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				int argCountToHandle = lastArgumentToTake - currentArg;
 				if (argCountToHandle > 0)
 					argCountToHandle++;
-				
+
 				if (tuple != null)
 				{
 					// - If there's been set an explicit type tuple, compare all arguments' types with those in the tuple
-					foreach (ISemantic item in tuple.Items)
-					{
-						if (currentArg >= callArguments.Count || !ResultComparer.IsImplicitlyConvertible(callArguments[currentArg++], AbstractType.Get(item), ctxt))
+					if(tuple.Items != null)
+						foreach (ISemantic item in tuple.Items)
 						{
-							add = false;
-							return true;
+							if (currentArg >= callArguments.Count || !ResultComparer.IsImplicitlyConvertible(callArguments[currentArg++], AbstractType.Get(item), ctxt))
+							{
+								add = false;
+								return true;
+							}
 						}
-					}
 				}
 				else
 				{
