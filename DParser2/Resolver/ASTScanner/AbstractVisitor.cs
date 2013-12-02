@@ -276,35 +276,17 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			if (ch != null)
 				foreach (var n in ch)
 				{
-					var dn = n as DNode;
-					if(dn==null || 
-						((ctxt.Options & ResolutionOptions.IgnoreDeclarationConditions) == 0 &&
-							!ctxt.CurrentContext.MatchesDeclarationEnvironment(dn.Attributes)) || 
-						!CanAddMemberOfType(VisibleMembers, dn))
+					if (!CanHandleNode (n as DNode, VisibleMembers, isBaseClass, isMixinAst, takeStaticChildrenOnly, publicImports, scopeIsInInheritanceHierarchy))
 						continue;
-					
-					if((ctxt.Options & ResolutionOptions.IgnoreAllProtectionAttributes) != ResolutionOptions.IgnoreAllProtectionAttributes){
-						if((CanShowMember(dn, ctxt.ScopedBlock) || isBaseClass && !isMixinAst) && ((!takeStaticChildrenOnly && (!publicImports || !isBaseClass)) || IsConstOrStatic(dn)))
-						{
-							if (!(CheckForProtectedAttribute (dn, ctxt.ScopedBlock) || scopeIsInInheritanceHierarchy))
-								continue;
-						}
-						else
-							continue;
-					}
 
 					// Add anonymous enums' items
-					if (dn is DEnum && dn.NameHash == 0)
+					if (n is DEnum && n.NameHash == 0)
 					{
-						var ch2 = PrefilterSubnodes(dn as DEnum);
+						var ch2 = PrefilterSubnodes(n as DEnum);
 						if (ch2 != null)
 							foundItems |= HandleItems(ch2);
 						continue;
 					}
-
-					var dm3 = dn as DMethod; // Only show normal & delegate methods
-					if (dm3 != null && !(dm3.SpecialType == DMethod.MethodType.Normal || dm3.SpecialType == DMethod.MethodType.Delegate || dm3.NameHash != 0))
-						continue;
 
 					foundItems |= HandleItem(n);
 				}
@@ -334,94 +316,8 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			
 			return HandleDBlockNode(curScope, VisibleMembers, publicImports);
 		}
-		
-		static bool IsConstOrStatic(DNode dn)
-		{
-			return dn != null && (dn.IsStatic || ((dn is DVariable) && (dn as DVariable).IsConst));
-		}
 
-		static bool CanShowMember(DNode dn, IBlockNode scope)
-		{
-			if (dn.ContainsAttribute(DTokens.Deprecated) && CompletionOptions.Instance.HideDeprecatedNodes)
-				return false;
 
-			// http://dlang.org/attribute.html#ProtectionAttribute
-			if (dn.ContainsAttribute(DTokens.Private))
-				return dn.NodeRoot == scope.NodeRoot;
-			else if (dn.ContainsAttribute(DTokens.Package))
-				return dn.NodeRoot is DModule &&
-					ModuleNameHelper.ExtractPackageName((dn.NodeRoot as DModule).ModuleName) ==
-						ModuleNameHelper.ExtractPackageName((scope.NodeRoot as DModule).ModuleName);
-
-			return CheckForProtectedAttribute(dn, scope);
-		}
-		
-		static bool CheckForProtectedAttribute(DNode dn, IBlockNode scope)
-		{
-			if(!dn.ContainsAttribute(DTokens.Protected) || dn.NodeRoot == scope.NodeRoot)
-				return true;
-			
-			while(scope!=null)
-			{
-				if(dn == scope || dn.Parent == scope)
-					return true;
-				scope = scope.Parent as IBlockNode;
-			}
-			return false;
-		}
-
-		public static bool CanAddMemberOfType(MemberFilter vis, INode n)
-		{
-			if (n is DMethod)
-				return n.NameHash != 0 && ((vis & MemberFilter.Methods) == MemberFilter.Methods);
-
-			else if (n is DVariable)
-			{
-				var d = n as DVariable;
-
-				if (d.IsAliasThis)
-					return false;
-
-				// Only add aliases if at least types,methods or variables shall be shown.
-				if (d.IsAlias)
-					return
-						vis.HasFlag(MemberFilter.Methods) ||
-						vis.HasFlag(MemberFilter.Types) ||
-						vis.HasFlag(MemberFilter.Variables);
-
-				return (vis & MemberFilter.Variables) == MemberFilter.Variables;
-			}
-
-			else if (n is DClassLike)
-			{
-				var dc = n as DClassLike;
-				switch (dc.ClassType)
-				{
-					case DTokens.Class:
-						return (vis & MemberFilter.Classes) != 0;
-					case DTokens.Interface:
-						return (vis & MemberFilter.Interfaces) != 0;
-					case DTokens.Template:
-						return (vis & MemberFilter.Templates) != 0;
-					case DTokens.Struct:
-					case DTokens.Union:
-						return (vis & MemberFilter.StructsAndUnions) != 0;
-				}
-			}
-
-			else if (n is DEnum)
-			{
-				var d = n as DEnum;
-
-				// Only show enums if a) they're named and enums are allowed or b) variables are allowed
-				return d.IsAnonymous ? 
-					(vis & MemberFilter.Variables) != 0 :
-					(vis & MemberFilter.Enums) != 0;
-			}
-			else if (n is NamedTemplateMixinNode)
-				return (vis & (MemberFilter.Variables | MemberFilter.Types)) == (MemberFilter.Variables | MemberFilter.Types);
-			
-			return false;
 		}
 
 		/// <summary>
@@ -850,6 +746,122 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			
 			templateMixinsBeingAnalyzed.Remove(tmx);
 			return res;
+		}
+		#endregion
+
+		#region Handle-ability checks for Nodes
+		bool CanHandleNode(DNode dn, MemberFilter VisibleMembers, bool isBaseClass, bool isMixinAst, bool takeStaticChildrenOnly, bool publicImports, bool scopeIsInInheritanceHierarchy)
+		{
+			if (dn == null ||
+				((ctxt.Options & ResolutionOptions.IgnoreDeclarationConditions) == 0 &&
+					!ctxt.CurrentContext.MatchesDeclarationEnvironment (dn.Attributes)) ||
+				!CanAddMemberOfType (VisibleMembers, dn))
+				return false;
+
+			if((ctxt.Options & ResolutionOptions.IgnoreAllProtectionAttributes) != ResolutionOptions.IgnoreAllProtectionAttributes){
+				if((CanShowMember(dn, ctxt.ScopedBlock) || isBaseClass && !isMixinAst) && ((!takeStaticChildrenOnly && (!publicImports || !isBaseClass)) || IsConstOrStatic(dn)))
+				{
+					if (!(CheckForProtectedAttribute (dn, ctxt.ScopedBlock) || scopeIsInInheritanceHierarchy))
+						return false;
+				}
+				else
+					return false;
+			}
+
+			var dm3 = dn as DMethod; // Only show normal & delegate methods
+			if (dm3 != null && !(dm3.SpecialType == DMethod.MethodType.Normal || dm3.SpecialType == DMethod.MethodType.Delegate || dm3.NameHash != 0))
+				return false;
+
+			return true;
+		}
+
+		static bool IsConstOrStatic(DNode dn)
+		{
+			return dn != null && (dn.IsStatic || ((dn is DVariable) && (dn as DVariable).IsConst));
+		}
+
+		static bool CanShowMember(DNode dn, IBlockNode scope)
+		{
+			if (dn.ContainsAttribute(DTokens.Deprecated) && CompletionOptions.Instance.HideDeprecatedNodes)
+				return false;
+
+			// http://dlang.org/attribute.html#ProtectionAttribute
+			if (dn.ContainsAttribute(DTokens.Private))
+				return dn.NodeRoot == scope.NodeRoot;
+			else if (dn.ContainsAttribute(DTokens.Package))
+				return dn.NodeRoot is DModule &&
+					ModuleNameHelper.ExtractPackageName((dn.NodeRoot as DModule).ModuleName) ==
+					ModuleNameHelper.ExtractPackageName((scope.NodeRoot as DModule).ModuleName);
+
+			return CheckForProtectedAttribute(dn, scope);
+		}
+
+		static bool CheckForProtectedAttribute(DNode dn, IBlockNode scope)
+		{
+			if(!dn.ContainsAttribute(DTokens.Protected) || dn.NodeRoot == scope.NodeRoot)
+				return true;
+
+			while(scope!=null)
+			{
+				if(dn == scope || dn.Parent == scope)
+					return true;
+				scope = scope.Parent as IBlockNode;
+			}
+			return false;
+		}
+
+		public static bool CanAddMemberOfType(MemberFilter vis, INode n)
+		{
+			if (n is DMethod)
+				return n.NameHash != 0 && ((vis & MemberFilter.Methods) == MemberFilter.Methods);
+
+			else if (n is DVariable)
+			{
+				var d = n as DVariable;
+
+				if (d.IsAliasThis)
+					return false;
+
+				// Only add aliases if at least types,methods or variables shall be shown.
+				if (d.IsAlias)
+					return
+						vis.HasFlag(MemberFilter.Methods) ||
+						vis.HasFlag(MemberFilter.Types) ||
+						vis.HasFlag(MemberFilter.Variables);
+
+				return (vis & MemberFilter.Variables) == MemberFilter.Variables;
+			}
+
+			else if (n is DClassLike)
+			{
+				var dc = n as DClassLike;
+				switch (dc.ClassType)
+				{
+					case DTokens.Class:
+						return (vis & MemberFilter.Classes) != 0;
+					case DTokens.Interface:
+						return (vis & MemberFilter.Interfaces) != 0;
+					case DTokens.Template:
+						return (vis & MemberFilter.Templates) != 0;
+					case DTokens.Struct:
+					case DTokens.Union:
+						return (vis & MemberFilter.StructsAndUnions) != 0;
+				}
+			}
+
+			else if (n is DEnum)
+			{
+				var d = n as DEnum;
+
+				// Only show enums if a) they're named and enums are allowed or b) variables are allowed
+				return d.IsAnonymous ? 
+					(vis & MemberFilter.Variables) != 0 :
+					(vis & MemberFilter.Enums) != 0;
+			}
+			else if (n is NamedTemplateMixinNode)
+				return (vis & (MemberFilter.Variables | MemberFilter.Types)) == (MemberFilter.Variables | MemberFilter.Types);
+
+			return false;
 		}
 		#endregion
 	}
