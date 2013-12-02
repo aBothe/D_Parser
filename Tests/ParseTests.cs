@@ -510,7 +510,8 @@ class C
 		[Test]
 		public void StaticIf()
 		{
-			var m = DParser.ParseString(@"module m;
+			var m = DParser.ParseString(@"
+static assert(true);
 void foo()
 {
 	static if(true)
@@ -518,6 +519,12 @@ void foo()
 }");
 
 			Assert.AreEqual(0, m.ParseErrors.Count);
+
+			var foo = m ["foo"].First () as DMethod;
+			Assert.That (foo.Attributes.Count == 0);
+
+			Assert.That (m.StaticStatements.Count, Is.EqualTo(1));
+			Assert.That (m.StaticStatements[0], Is.TypeOf(typeof(StaticAssertStatement)));
 		}
 		
 		[Test]
@@ -605,8 +612,8 @@ private:
 			var aa = dn ["aa"].First () as DNode;
 			Assert.That (aa is DVariable);
 			Assert.That (aa.Attributes.Count == 2);
-			Assert.That (aa.Attributes [0] == attr);
-			Assert.That (aa.Attributes[1] == attr2);
+			Assert.That (aa.Attributes [0] == attr2);
+			Assert.That (aa.Attributes[1] == attr);
 		}
 	}
 }

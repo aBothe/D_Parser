@@ -244,7 +244,7 @@ namespace D_Parser.Parser
 				module.Add(vs as StaticStatement ?? ds);
 			}
 
-			else if (laKind == Version || laKind == Debug || laKind == If)
+			else if (laKind == Version || laKind == Debug || (laKind == Static && Lexer.CurrentPeekToken.Kind == If))
 				DeclarationCondition(module);
 
 			//StaticAssert
@@ -460,16 +460,10 @@ namespace D_Parser.Parser
 			 * StaticIfCondition: 
 			 *		static if ( AssignExpression )
 			 */
-			else if (laKind == If)
+			else if (laKind == Static)
 			{
-				if (t.Kind != Static)
-					if (Modifier.ContainsAttribute(DeclarationAttributes, Static))
-						Modifier.RemoveFromStack(DeclarationAttributes, Static);
-					else
-						SynErr(Static, "Conditional declaration checks must be static");
-
-				Step();
-				if (Expect(OpenParenthesis))
+				Step ();
+				if (Expect (If) && Expect(OpenParenthesis))
 				{
 					var x = AssignExpression(parent);
 					c = new StaticIfCondition(x);
@@ -1890,7 +1884,7 @@ namespace D_Parser.Parser
 		public static bool IsAttributeSpecifier(int laKind, int peekTokenKind=0)
 		{
 			return (laKind == (Extern) || laKind == (Export) || laKind == (Align) || laKind == Pragma || laKind == (Deprecated) || IsProtectionAttribute(laKind)
-				|| laKind == (Static) || laKind == (Final) || laKind == (Override) || laKind == (Abstract) || laKind == (Scope) || laKind == (__gshared) || laKind==Synchronized
+				|| (laKind == (Static) && peekTokenKind != If) || laKind == (Final) || laKind == (Override) || laKind == (Abstract) || laKind == (Scope) || laKind == (__gshared) || laKind==Synchronized
 				|| ((laKind == (Auto) || MemberFunctionAttribute[laKind]) && (peekTokenKind != OpenParenthesis && peekTokenKind != Identifier))
 				|| laKind == At);
 		}
@@ -4295,8 +4289,6 @@ namespace D_Parser.Parser
 		StatementCondition StmtCondition(IStatement Parent, IBlockNode Scope)
 		{
 			var sl = la.Location;
-			if (laKind == Static)
-				Step();
 
 			var c = Condition(Scope);
 			c.Location = sl;
