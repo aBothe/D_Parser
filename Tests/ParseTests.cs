@@ -579,5 +579,34 @@ alias isInt(T) = is(T == int);
 
 			Assert.AreEqual(0, m.ParseErrors.Count);
 		}
+
+		[Test]
+		public void MetaBlocks()
+		{
+			var dn = DParser.ParseString (@"module A;
+private:
+			static if(a == 0)
+{
+	int aa;
+}
+");
+			Assert.That (dn.ParseErrors.Count, Is.EqualTo(0));
+			Assert.That (dn.MetaBlocks.Count, Is.EqualTo(2));
+
+			Assert.That (dn.MetaBlocks[0], Is.TypeOf(typeof(AttributeMetaDeclarationSection)));
+			var attr = (dn.MetaBlocks [0] as AttributeMetaDeclarationSection).AttributeOrCondition [0];
+			Assert.That (attr, Is.TypeOf (typeof(Modifier)));
+			Assert.That ((attr as Modifier).Token, Is.EqualTo(DTokens.Private));
+
+			Assert.That (dn.MetaBlocks[1], Is.TypeOf(typeof(AttributeMetaDeclarationBlock)));
+			var attr2 = (dn.MetaBlocks [1] as AttributeMetaDeclarationBlock).AttributeOrCondition [0];
+			Assert.That (attr2, Is.TypeOf(typeof(StaticIfCondition)));
+
+			var aa = dn ["aa"].First () as DNode;
+			Assert.That (aa is DVariable);
+			Assert.That (aa.Attributes.Count == 2);
+			Assert.That (aa.Attributes [0] == attr);
+			Assert.That (aa.Attributes[1] == attr2);
+		}
 	}
 }
