@@ -105,7 +105,8 @@ namespace D_Parser.Resolver
 				var dn = block as DNode;
 				if (dn!=null)
 				{
-					GetDoneVersionDebugSpecs(cs, l, (DModule)block, ctxt);
+					if(dn is DBlockNode)
+						GetDoneVersionDebugSpecs(cs, l, dn as DBlockNode, ctxt);
 					if(dn.Attributes!=null)
 						foreach (var attr in dn.Attributes)
 							if (attr is DeclarationCondition)
@@ -116,7 +117,7 @@ namespace D_Parser.Resolver
 			}
 		}
 
-		static void GetDoneVersionDebugSpecs(ConditionSet cs, MutableConditionFlagSet l, DModule m, ResolutionContext ctxt)
+		static void GetDoneVersionDebugSpecs(ConditionSet cs, MutableConditionFlagSet l, DBlockNode m, ResolutionContext ctxt)
 		{
 			if (m.StaticStatements == null || m.StaticStatements.Count == 0)
 				return;
@@ -150,7 +151,7 @@ namespace D_Parser.Resolver
 			}
 		}
 		
-		static bool _checkForMatchinSpecConditions(DModule m,ConditionSet cs,StaticStatement ss, ResolutionContext ctxt)
+		static bool _checkForMatchinSpecConditions(DBlockNode m,ConditionSet cs,StaticStatement ss, ResolutionContext ctxt)
 		{
 			return ss.Attributes == null || cs.IsMatching(ss.Attributes,ctxt);
 		}
