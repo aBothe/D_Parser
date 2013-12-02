@@ -596,6 +596,10 @@ private:
 {
 	int aa;
 }
+
+debug = 2;
+version = ASDF;
+int dbg;
 ");
 			Assert.That (dn.ParseErrors.Count, Is.EqualTo(0));
 			Assert.That (dn.MetaBlocks.Count, Is.EqualTo(2));
@@ -614,6 +618,13 @@ private:
 			Assert.That (aa.Attributes.Count == 2);
 			Assert.That (aa.Attributes [0] == attr2);
 			Assert.That (aa.Attributes[1] == attr);
+
+			Assert.That (dn.StaticStatements.Count, Is.EqualTo(3));
+			Assert.That (dn.StaticStatements[1], Is.TypeOf(typeof(DebugSpecification)));
+			Assert.That (dn.StaticStatements[2], Is.TypeOf(typeof(VersionSpecification)));
+			aa = dn["dbg"].First() as DNode;
+			Assert.That (aa.Attributes.Count, Is.EqualTo(1));
+			Assert.That (aa.Attributes[0], Is.SameAs(attr));
 		}
 	}
 }
