@@ -469,8 +469,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			var ch = tit.Definition [DVariable.AliasThisIdentifierHash];
 			if(ch != null){
 				foreach (DVariable aliasDef in ch) {
-					if (((ctxt.Options & ResolutionOptions.IgnoreDeclarationConditions) == 0 && 
-						!ctxt.CurrentContext.MatchesDeclarationEnvironment (aliasDef.Attributes)) || 
+					if (MatchesCompilationConditions(aliasDef) || 
 						aliasDef.Type == null)
 						continue;
 
@@ -527,6 +526,18 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 			return false;
 		}
+
+		#region Declaration conditions & Static statements
+		bool MatchesCompilationConditions(DNode n)
+		{
+			if((ctxt.Options & ResolutionOptions.IgnoreDeclarationConditions) != 0)
+				return true;
+
+			return ctxt.CurrentContext.MatchesDeclarationEnvironment (n.Attributes);
+
+			return false;
+		}
+		#endregion
 
 		#region Imports
 		/// <summary>
@@ -752,9 +763,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		#region Handle-ability checks for Nodes
 		bool CanHandleNode(DNode dn, MemberFilter VisibleMembers, bool isBaseClass, bool isMixinAst, bool takeStaticChildrenOnly, bool publicImports, bool scopeIsInInheritanceHierarchy)
 		{
-			if (dn == null ||
-				((ctxt.Options & ResolutionOptions.IgnoreDeclarationConditions) == 0 &&
-					!ctxt.CurrentContext.MatchesDeclarationEnvironment (dn.Attributes)) ||
+			if (dn == null || !MatchesCompilationConditions(dn) ||
 				!CanAddMemberOfType (VisibleMembers, dn))
 				return false;
 
