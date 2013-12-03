@@ -24,6 +24,8 @@ namespace D_Parser.Resolver.ASTScanner
 		};
 
 		protected readonly ResolutionContext ctxt;
+
+		Stack<ConditionsFrame> ConditionsStack;// = new Stack<ConditionsFrame>();
 		#endregion
 
 		#region Constructor
@@ -272,10 +274,14 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		{
 			bool foundItems = false;
 
+			//ConditionsStack.Push (new ConditionsFrame (curScope.StaticStatements, curScope.MetaBlocks));
+
 			var ch = PrefilterSubnodes(curScope);
 			if (ch != null)
 				foreach (var n in ch)
 				{
+					//ContinueHandleStaticStatements (n.Location);
+
 					if (!CanHandleNode (n as DNode, VisibleMembers, isBaseClass, isMixinAst, takeStaticChildrenOnly, publicImports, scopeIsInInheritanceHierarchy))
 						continue;
 
@@ -291,8 +297,10 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					foundItems |= HandleItem(n);
 				}
 
-			if (foundItems)
+			if (foundItems) {
+				//ConditionsStack.Pop ();
 				return true;
+			}
 
 			if (!dontHandleTemplateParamsInNodeScan)
 			{
@@ -303,8 +311,10 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					{
 						if (t == curScope)
 						{
-							if (HandleItems(curScope.TemplateParameterNodes as IEnumerable<INode>))
+							if (HandleItems (curScope.TemplateParameterNodes as IEnumerable<INode>)) {
+								//ConditionsStack.Pop ();
 								return true;
+							}
 							break;
 						}
 						t = t.Parent as IBlockNode;
@@ -313,11 +323,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			}
 			else
 				dontHandleTemplateParamsInNodeScan = false;
-			
+
+			//ContinueHandleStaticStatements (curScope.EndLocation);	ConditionsStack.Pop ();
 			return HandleDBlockNode(curScope, VisibleMembers, publicImports);
-		}
-
-
 		}
 
 		/// <summary>
@@ -536,6 +544,39 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			return ctxt.CurrentContext.MatchesDeclarationEnvironment (n.Attributes);
 
 			return false;
+		}
+
+		// Following methods aren't used atm!
+		void ContinueHandleStaticStatements(CodeLocation until)
+		{
+			var cf = ConditionsStack.Peek ();
+			ISyntaxRegion next;
+			while ((next = cf.GetNextMetaBlockOrStatStmt (until)) != null) {
+
+				cf.PopMetaBlockDeclaration (next.Location);
+
+				if (next is StaticStatement)
+					HandleStaticStatement (next as StaticStatement);
+				else
+					HandleMetaDecl (next as IMetaDeclaration);
+			}
+
+			if (cf.nextStatStmt == null && cf.nextMetaDecl == null) {
+				if (cf.StaticStatementEnum != null || cf.MetaBlockEnum != null)
+					throw new InvalidOperationException ();
+
+				cf.PopMetaBlockDeclaration (until);
+			}
+		}
+
+		void HandleStaticStatement(StaticStatement ss)
+		{
+
+		}
+
+		void HandleMetaDecl(IMetaDeclaration md)
+		{
+
 		}
 		#endregion
 

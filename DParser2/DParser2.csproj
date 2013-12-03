@@ -230,6 +230,7 @@
     <Compile Include="Dom\Visitors\IVisitable.cs" />
     <Compile Include="Refactoring\ClassInterfaceDerivativeFinder.cs" />
     <Compile Include="Completion\CodeCompletion.cs" />
+    <Compile Include="Resolver\ASTScanner\ConditionsFrame.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="readme.txt" />
