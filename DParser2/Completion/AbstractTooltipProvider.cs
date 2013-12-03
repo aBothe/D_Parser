@@ -23,7 +23,8 @@ namespace D_Parser.Completion
 	{
 		public static List<AbstractTooltipContent> BuildToolTip(IEditorData Editor)
 		{
-			var rr = DResolver.ResolveType(Editor);
+			DResolver.NodeResolutionAttempt att;
+			var rr = DResolver.ResolveTypeLoosely(Editor, out att);
 
 			if (rr == null || rr.Length < 1)
 				return null;

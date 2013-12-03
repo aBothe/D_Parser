@@ -144,7 +144,6 @@
     <Compile Include="Misc\Mangling\Demangler.cs" />
     <Compile Include="Misc\StringView.cs" />
     <Compile Include="Refactoring\DeepASTVisitor.cs" />
-    <Compile Include="Refactoring\ImportDirectiveCreator.cs" />
     <Compile Include="Refactoring\ReferencesFinder.cs" />
     <Compile Include="Resolver\ConditionalCompilation.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Caching\ExpressionCache.cs" />

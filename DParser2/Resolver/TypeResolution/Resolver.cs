@@ -159,6 +159,119 @@ namespace D_Parser.Resolver.TypeResolution
 			return ret;
 		}
 
+		public enum NodeResolutionAttempt
+		{
+			Normal,
+			NoParameterOrTemplateDeduction,
+			RawSymbolLookup
+		}
+
+		public static AbstractType[] ResolveTypeLoosely(IEditorData editor, out NodeResolutionAttempt resolutionAttempt, ResolutionContext ctxt = null)
+		{
+			if (ctxt == null)
+				ctxt = ResolutionContext.Create(editor);
+
+			var o = GetScopedCodeObject(editor, ctxt:ctxt);
+
+			var optionBackup = ctxt.CurrentContext.ContextDependentOptions;
+			ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
+			resolutionAttempt = NodeResolutionAttempt.Normal;
+
+			AbstractType[] ret;
+
+			if (o is IExpression)
+				ret = Evaluation.EvaluateTypes((IExpression)o, ctxt);
+			else if(o is ITypeDeclaration)
+				ret = TypeDeclarationResolver.Resolve((ITypeDeclaration)o, ctxt);
+			else
+				ret = null;
+
+			if (ret == null) {
+				resolutionAttempt = NodeResolutionAttempt.NoParameterOrTemplateDeduction;
+
+				if (o is PostfixExpression_MethodCall)
+					o = (o as PostfixExpression_MethodCall).PostfixForeExpression;
+
+				if (o is IdentifierExpression)
+					ret = Evaluation.GetOverloads (o as IdentifierExpression, ctxt, false);
+				else if (o is ITypeDeclaration) {
+					ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.NoTemplateParameterDeduction;
+					ret = TypeDeclarationResolver.Resolve (o as ITypeDeclaration, ctxt);
+				}
+			}
+
+			if (ret == null) {
+				resolutionAttempt = NodeResolutionAttempt.RawSymbolLookup;
+				ret = TypeDeclarationResolver.HandleNodeMatches (LookupIdRawly (editor, o as ISyntaxRegion), ctxt);
+			}
+
+			ctxt.CurrentContext.ContextDependentOptions = optionBackup;
+			return ret;
+		}
+
+		public static List<DNode> LookupIdRawly(IEditorData ed, ISyntaxRegion o)
+		{
+			// Extract a concrete id from that syntax object. (If access expression/nested decl, use the inner-most one)
+			int idHash=0;
+
+			chkAgain:
+			if (o is ITypeDeclaration)
+			{
+				var td = ((ITypeDeclaration)o).InnerMost;
+
+				if (td is IdentifierDeclaration)
+					idHash = ((IdentifierDeclaration)td).IdHash;
+				else if (td is TemplateInstanceExpression)
+					idHash = ((TemplateInstanceExpression)td).TemplateIdHash;
+			}
+			else if (o is IExpression)
+			{
+				var x = (IExpression)o;
+
+				while (x is PostfixExpression)
+					x = ((PostfixExpression)x).PostfixForeExpression;
+
+				if (x is IdentifierExpression && ((IdentifierExpression)x).IsIdentifier)
+					idHash = ((IdentifierExpression)x).ValueStringHash;
+				else if (x is TemplateInstanceExpression)
+					idHash = ((TemplateInstanceExpression)x).TemplateIdHash;
+				else if (x is NewExpression)
+				{
+					o = ((NewExpression)x).Type;
+					goto chkAgain;
+				}
+			}
+
+			if (idHash == 0)
+				return null;
+
+			var l = new List<DNode> ();
+
+			// Rawly scan through all modules' roots of the parse cache to find that id.
+			foreach(var pc in ed.ParseCache)
+				foreach (var mod in pc)
+				{
+					if (mod.NameHash == idHash)
+						l.Add(mod);
+
+					var ch = mod[idHash];
+					if(ch!=null)
+						foreach (var c in ch)
+						{
+							var dn = c as DNode;
+
+							// TODO: At least check for proper protection attributes properly!
+							if (dn != null && !dn.ContainsAttribute(DTokens.Package, DTokens.Private, DTokens.Protected)) // Can this
+								l.Add(dn);
+						}
+
+					//TODO: Mixins
+				}
+
+			return l;
+		}
+
+
 		static int bcStack = 0;
 		/// <summary>
 		/// Takes the class passed via the tr, and resolves its base class and/or implemented interfaces.
