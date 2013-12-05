@@ -230,6 +230,7 @@
     <Compile Include="Refactoring\ClassInterfaceDerivativeFinder.cs" />
     <Compile Include="Completion\CodeCompletion.cs" />
     <Compile Include="Resolver\ASTScanner\ConditionsFrame.cs" />
+    <Compile Include="Resolver\TypeResolution\OpDispatchResolution.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="readme.txt" />

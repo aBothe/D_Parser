@@ -1572,6 +1572,75 @@ import a, b;
 
 		}
 
+		#region Operator overloading
+		[Test]
+		public void opDispatch()
+		{
+			var ctxt = CreateCtxt ("A", @"module A;
+struct S {
+  int opDispatch(string s)(){ }
+  int opDispatch(string s)(int i){ }
+}
+
+struct S2 {
+  T opDispatch(string s, T)(T i){ return i; }
+}
+
+struct S3 {
+  static int opDispatch(string s)(){ }
+}
+
+class C {
+  void opDispatch(string s)(int i) {
+    writefln(""C.opDispatch('%s', %s)"", s, i);
+  }
+}
+
+struct D {
+  template opDispatch(string s) {
+    enum int opDispatch = 8;
+  }
+}
+
+template Templ()
+{
+	enum int Templ = 8;
+}
+
+void main() {
+  
+  s.opDispatch!(""hello"")(7);
+  s.foo(7);
+
+  auto c = new C();
+  c.foo(8);
+
+  D d;
+  writefln(""d.foo = %s"", d.foo);
+  assert(d.foo == 8);
+}");
+			DSymbol t;
+			IExpression x;
+			ITypeDeclaration td;
+			ISymbolValue v;
+
+			x = DParser.ParseExpression ("D.foo");
+			t = Evaluation.EvaluateType (x, ctxt) as DSymbol;
+			Assert.That (t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That (t.Base, Is.TypeOf(typeof(PrimitiveType)));
+
+			v = Evaluation.EvaluateValue (x, ctxt);
+			Assert.That (v, Is.TypeOf(typeof(PrimitiveValue)));
+			Assert.That ((v as PrimitiveValue).Value, Is.EqualTo(8m));
+
+			td = DParser.ParseBasicType("D.foo");
+			t = TypeDeclarationResolver.ResolveSingle (td, ctxt) as DSymbol;
+			Assert.That (t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That (t.Base , Is.TypeOf(typeof(PrimitiveType)));
+		}
+
+		#endregion
+
 		#region Declaration conditions & constraints
 		[Test]
 		public void DeclCond1()

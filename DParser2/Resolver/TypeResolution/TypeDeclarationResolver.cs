@@ -191,6 +191,10 @@ namespace D_Parser.Resolver.TypeResolution
 					if (statProp != null)
 						r.Add(statProp);
 
+					// go the opDispatch way if possible - http://dlang.org/operatoroverloading.html#Dispatch
+					if (r.Count == 0 && nextIdentifierHash != OpDispatchResolution.opDispatchId)
+						r.AddRange(OpDispatchResolution.TryResolveFurtherIdViaOpDispatch (ctxt, nextIdentifierHash, b));
+
 					ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(udt);
 					if(!pop)
 						ctxt.Pop();
