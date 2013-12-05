@@ -209,17 +209,25 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				TemplateInstanceHandler.DeduceParamsAndFilterOverloads(res, tix, ctxt) : res;
 		}
 
-		public AbstractType[] GetOverloads(IdentifierExpression id, bool deduceParameters = true)
+		public AbstractType[] GetOverloads(IdentifierExpression id, IEnumerable<AbstractType> resultBases = null, bool deduceParameters = true)
 		{
-			return GetOverloads(id, ctxt, deduceParameters);
+			return GetOverloads(id, ctxt, resultBases, deduceParameters);
 		}
 
-		public static AbstractType[] GetOverloads(IdentifierExpression id, ResolutionContext ctxt, bool deduceParameters = true)
+		public static AbstractType[] GetOverloads(IdentifierExpression id, ResolutionContext ctxt, IEnumerable<AbstractType> resultBases = null, bool deduceParameters = true)
 		{
-			var raw=TypeDeclarationResolver.ResolveIdentifier(id.ValueStringHash, ctxt, id, id.ModuleScoped);
-			var f = DResolver.FilterOutByResultPriority(ctxt, raw);
-			
-			if(f==null)
+			AbstractType[] res;
+			if (resultBases == null)
+				res = TypeDeclarationResolver.ResolveIdentifier(id.ValueStringHash, ctxt, id, id.ModuleScoped);
+			else
+				res = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(id.ValueStringHash, resultBases, ctxt, id);
+
+			if (res == null)
+				return null;
+
+			var f = DResolver.FilterOutByResultPriority(ctxt, res);
+
+			if(f.Count == 0)
 				return null;
 
 			return (ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) == 0 && deduceParameters ?

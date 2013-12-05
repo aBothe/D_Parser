@@ -193,7 +193,7 @@ namespace D_Parser.Resolver.TypeResolution
 					o = (o as PostfixExpression_MethodCall).PostfixForeExpression;
 
 				if (o is IdentifierExpression)
-					ret = Evaluation.GetOverloads (o as IdentifierExpression, ctxt, false);
+					ret = Evaluation.GetOverloads (o as IdentifierExpression, ctxt, deduceParameters:false);
 				else if (o is ITypeDeclaration) {
 					ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.NoTemplateParameterDeduction;
 					ret = TypeDeclarationResolver.Resolve (o as ITypeDeclaration, ctxt);
@@ -546,55 +546,49 @@ namespace D_Parser.Resolver.TypeResolution
 			return Parent;
 		}
 
-		public static IEnumerable<T> FilterOutByResultPriority<T>(
+		public static List<T> FilterOutByResultPriority<T>(
 			ResolutionContext ctxt,
 			IEnumerable<T> results) where T : AbstractType
 		{
-			if (results == null)
-				return null;
-
 			var newRes = new List<T>();
 
-			foreach (var rb in results)
-			{
-				var n = GetResultMember(rb);
-				if (n != null)
-				{
-					// Put priority on locals
-					if (n is DVariable &&
-						(n as DVariable).IsLocal)
-						return new[] { rb };
+			if (results != null) {
+				foreach (var rb in results) {
+					var n = GetResultMember (rb);
+					if (n != null) {
+						// Put priority on locals
+						if (n is DVariable &&
+						   (n as DVariable).IsLocal) {
+							newRes.Clear ();
+							newRes.Add (rb);
+							break;
+						}
 
-					// If member/type etc. is part of the actual module, omit external symbols
-					if (n.NodeRoot != ctxt.CurrentContext.ScopedBlock.NodeRoot)
-					{
-						bool omit = false;
-						foreach (var r in newRes)
-						{
-							var k = GetResultMember(r);
-							if (k != null && k.NodeRoot == ctxt.CurrentContext.ScopedBlock.NodeRoot)
-							{
-								omit = true;
-								break;
+						// If member/type etc. is part of the actual module, omit external symbols
+						if (n.NodeRoot != ctxt.CurrentContext.ScopedBlock.NodeRoot) {
+							bool omit = false;
+							foreach (var r in newRes) {
+								var k = GetResultMember (r);
+								if (k != null && k.NodeRoot == ctxt.CurrentContext.ScopedBlock.NodeRoot) {
+									omit = true;
+									break;
+								}
 							}
-						}
 
-						if (omit)
-							continue;
+							if (omit)
+								continue;
+						} else
+							foreach (var r in newRes.ToArray()) {
+								var k = GetResultMember (r);
+								if (k != null && k.NodeRoot != ctxt.CurrentContext.ScopedBlock.NodeRoot)
+									newRes.Remove (r);
+							}
 					}
-					else
-						foreach (var r in newRes.ToArray())
-						{
-							var k = GetResultMember(r);
-							if (k != null && k.NodeRoot != ctxt.CurrentContext.ScopedBlock.NodeRoot)
-								newRes.Remove(r);
-						}
+					newRes.Add (rb);
 				}
-				
-				newRes.Add(rb);
 			}
 
-			return newRes.Count > 0 ? newRes.ToArray():null;
+			return newRes;
 		}
 
 		public static DNode GetResultMember(ISemantic res)

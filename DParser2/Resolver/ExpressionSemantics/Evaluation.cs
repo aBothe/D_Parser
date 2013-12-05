@@ -268,7 +268,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (foreExpression is TemplateInstanceExpression)
 				overloads = Evaluation.GetOverloads(foreExpression as TemplateInstanceExpression, ctxt, null);
 			else if (foreExpression is IdentifierExpression)
-				overloads = Evaluation.GetOverloads(foreExpression as IdentifierExpression, ctxt, false);
+				overloads = Evaluation.GetOverloads(foreExpression as IdentifierExpression, ctxt, deduceParameters:false);
 			else if (foreExpression is PostfixExpression_Access)
 			{
 				overloads = Evaluation.GetAccessedOverloads((PostfixExpression_Access)foreExpression, ctxt, null, false);

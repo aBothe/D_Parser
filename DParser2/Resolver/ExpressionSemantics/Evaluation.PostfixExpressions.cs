@@ -535,7 +535,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					if (call.PostfixForeExpression is TemplateInstanceExpression)
 						baseExpression = GetOverloads(tix = (TemplateInstanceExpression)call.PostfixForeExpression, null, false);
 					else if (call.PostfixForeExpression is IdentifierExpression)
-						baseExpression = GetOverloads((IdentifierExpression)call.PostfixForeExpression, false);
+						baseExpression = GetOverloads(call.PostfixForeExpression as IdentifierExpression, deduceParameters:false);
 					else
 						baseExpression = new[] { AbstractType.Get(E(call.PostfixForeExpression)) };
 				}
@@ -605,7 +605,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				if (!ResolveImmediateBaseType)
 					ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.DontResolveBaseTypes;
 
-				overloads = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(id.ValueStringHash, new[] { AbstractType.Get(baseExpression) }, ctxt, acc.AccessExpression);
+				overloads = GetOverloads(id, new[] { AbstractType.Get(baseExpression) }, EvalAndFilterOverloads);
 
 				if (!ResolveImmediateBaseType)
 					ctxt.CurrentContext.ContextDependentOptions = optBackup;
