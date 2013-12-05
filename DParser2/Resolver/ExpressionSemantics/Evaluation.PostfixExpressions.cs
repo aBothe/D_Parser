@@ -254,9 +254,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						var deducedTypeDict = new DeducedTypeDictionary(ms);
 						var templateParamDeduction = new TemplateParameterDeduction(deducedTypeDict, ctxt);
 
+
+						if(dm.Parameters.Count == 0 && callArguments.Count > 0)
+							continue;
+
 						int currentArg = 0;
 						bool add = true;
-						if (dm.Parameters.Count >= callArguments.Count)
+						if (dm.Parameters.Count > 0 || callArguments.Count > 0)
 							for (int i=0; i< dm.Parameters.Count; i++)
 							{
 								var paramType = dm.Parameters[i].Type;
@@ -285,8 +289,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 									break;
 								}
 							}
-						else
-							continue;
 
 						// If type params were unassigned, try to take the defaults
 						if (add && dm.TemplateParameters != null)
