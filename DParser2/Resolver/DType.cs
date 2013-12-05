@@ -311,7 +311,7 @@ namespace D_Parser.Resolver
 			: base(BaseType, td)
 		{
 			if(deducedTypes!=null)
-				this.DeducedTypes = new ReadOnlyCollection<TemplateParameterSymbol>(deducedTypes.ToArray());
+				this.DeducedTypes = new ReadOnlyCollection<TemplateParameterSymbol>(deducedTypes.ToList());
 
 			if (Node == null)
 				throw new ArgumentNullException ("Node");
