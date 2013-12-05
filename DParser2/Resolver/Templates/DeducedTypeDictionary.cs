@@ -81,5 +81,15 @@ namespace D_Parser.Resolver.Templates
 				base.Add (nameHash, value);
 			}
 		}
+
+		public override string ToString ()
+		{
+			var sb = new StringBuilder ("DeducedTypeDict: ");
+
+			foreach (var kv in this)
+				sb.Append (Strings.TryGet (kv.Key)).Append (": ").Append(kv.Value != null ? kv.Value.ToString() : "-").Append(',');
+
+			return sb.ToString ();
+		}
 	}
 }
