@@ -1591,9 +1591,9 @@ import a, b;
 		public void opDispatch()
 		{
 			var ctxt = CreateCtxt ("A", @"module A;
-struct S {
-  int opDispatch(string s)(){ }
-  int opDispatch(string s)(int i){ }
+class S {
+	int* opDispatch(string s)(int i){ }
+	int opDispatch(string s)(){ }
 }
 
 struct S2 {
@@ -1604,53 +1604,54 @@ struct S3 {
   static int opDispatch(string s)(){ }
 }
 
-class C {
-  void opDispatch(string s)(int i) {
-    writefln(""C.opDispatch('%s', %s)"", s, i);
-  }
-}
-
 struct D {
   template opDispatch(string s) {
     enum int opDispatch = 8;
   }
 }
 
-template Templ()
-{
-	enum int Templ = 8;
-}
+S s;
+S2 s2;
+S3 s3;
 
 void main() {
   
   s.opDispatch!(""hello"")(7);
   s.foo(7);
-
-  auto c = new C();
-  c.foo(8);
-
-  D d;
-  writefln(""d.foo = %s"", d.foo);
-  assert(d.foo == 8);
 }");
-			DSymbol t;
+			AbstractType t;
+			DSymbol ds;
 			IExpression x;
 			ITypeDeclaration td;
 			ISymbolValue v;
 
+			x = DParser.ParseExpression ("s2.bar(s)");
+			ds = Evaluation.EvaluateType (x, ctxt) as DSymbol;
+			Assert.That (ds, Is.TypeOf (typeof(TemplateParameterSymbol)));
+			Assert.That (ds.Base, Is.TypeOf(typeof(ClassType)));
+
+			x = DParser.ParseExpression ("s.foo(123)");
+			t = Evaluation.EvaluateType (x, ctxt);
+			Assert.That (t, Is.TypeOf(typeof(PointerType)));
+
+			x = DParser.ParseExpression ("s.foo");
+			ds = Evaluation.EvaluateType (x, ctxt) as DSymbol;
+			Assert.That (ds, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That (ds.Base, Is.TypeOf(typeof(PrimitiveType)));
+
 			x = DParser.ParseExpression ("D.foo");
-			t = Evaluation.EvaluateType (x, ctxt) as DSymbol;
-			Assert.That (t, Is.TypeOf(typeof(MemberSymbol)));
-			Assert.That (t.Base, Is.TypeOf(typeof(PrimitiveType)));
+			ds = Evaluation.EvaluateType (x, ctxt) as DSymbol;
+			Assert.That (ds, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That (ds.Base, Is.TypeOf(typeof(PrimitiveType)));
 
 			v = Evaluation.EvaluateValue (x, ctxt);
 			Assert.That (v, Is.TypeOf(typeof(PrimitiveValue)));
 			Assert.That ((v as PrimitiveValue).Value, Is.EqualTo(8m));
 
 			td = DParser.ParseBasicType("D.foo");
-			t = TypeDeclarationResolver.ResolveSingle (td, ctxt) as DSymbol;
-			Assert.That (t, Is.TypeOf(typeof(MemberSymbol)));
-			Assert.That (t.Base , Is.TypeOf(typeof(PrimitiveType)));
+			ds = TypeDeclarationResolver.ResolveSingle (td, ctxt) as DSymbol;
+			Assert.That (ds, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That (ds.Base , Is.TypeOf(typeof(PrimitiveType)));
 		}
 
 		#endregion

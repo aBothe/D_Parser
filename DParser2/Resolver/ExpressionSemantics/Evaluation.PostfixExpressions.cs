@@ -252,15 +252,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						}
 						
 						var deducedTypeDict = new DeducedTypeDictionary(ms);
-						if(dm.TemplateParameters != null)
-							foreach(var tpar in dm.TemplateParameters)
-								if(!deducedTypeDict.ContainsKey(tpar.NameHash))
-									deducedTypeDict[tpar.NameHash] = null;
 						var templateParamDeduction = new TemplateParameterDeduction(deducedTypeDict, ctxt);
 
 						int currentArg = 0;
 						bool add = true;
-						if (callArguments.Count > 0 || dm.Parameters.Count > 0)
+						if (dm.Parameters.Count >= callArguments.Count)
 							for (int i=0; i< dm.Parameters.Count; i++)
 							{
 								var paramType = dm.Parameters[i].Type;
@@ -289,6 +285,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 									break;
 								}
 							}
+						else
+							continue;
 
 						// If type params were unassigned, try to take the defaults
 						if (add && dm.TemplateParameters != null)
@@ -315,11 +313,17 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						if (add && (deducedTypeDict.AllParamatersSatisfied || hasNonFinalArgs))
 						{
 							ms.DeducedTypes = deducedTypeDict.ToReadonly();
+							var pop = ctxt.ScopedBlock != dm;
+							if(pop)
+								ctxt.PushNewScope(dm);
 							ctxt.CurrentContext.IntroduceTemplateParameterTypes(ms);
 
 							var bt=ms.Base ?? TypeDeclarationResolver.GetMethodReturnType(dm, ctxt);
 
-							ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(ms);
+							if(pop)
+								ctxt.Pop();
+							else
+								ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(ms);
 
 							if(eval || !returnBaseTypeOnly)
 								argTypeFilteredOverloads.Add(ms.Base == null ? new MemberSymbol(dm, bt, ms.DeclarationOrExpressionBase, ms.DeducedTypes) : ms);
