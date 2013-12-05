@@ -948,9 +948,9 @@ Appender!(E[]) appender(A : E[], E)(A array = null)
 		{
 			var ctxt = CreateDefCtxt(@"module A;
 const int k = 4;
-template mxTemp(int i)
+template mxTemp(int q)
 {
-	static if(i < 0)
+	static if(q < 0)
 		enum mxTemp = ""int"";
 	else
 		enum mxTemp = ""bool"";
@@ -961,10 +961,42 @@ template def(int i,string name)
 	enum def = mxTemp!(-i) ~ "" ""~name~"";"";
 }
 
+template def2(int i)
+{
+	enum def2 = i;
+}
+
 mixin(def!(-1,""bar""));
 ");
 			IExpression ex;
 			ISymbolValue val;
+
+			ex = DParser.ParseExpression(@"def!(2,""someVar"")");
+			val = Evaluation.EvaluateValue(ex, ctxt);
+			Assert.That(val, Is.TypeOf(typeof(ArrayValue)));
+			Assert.That((val as ArrayValue).IsString,Is.True);
+			Assert.That((val as ArrayValue).StringValue, Is.EqualTo("int someVar;"));
+
+			var def = ctxt.ParseCache [0] ["A"]["def"].First () as DClassLike;
+			var defS = new TemplateType (def, null, new[]{ 
+				new TemplateParameterSymbol(def.TemplateParameters[0], new PrimitiveValue(DTokens.Int, 2, null)), 
+				new TemplateParameterSymbol(def.TemplateParameters[1], new ArrayValue(Evaluation.GetStringType(ctxt), "someVar")) 
+			});
+			ctxt.CurrentContext.IntroduceTemplateParameterTypes (defS);
+
+			ex = DParser.ParseExpression("mxTemp!(-i) ~ \" \"~name~\";\"");
+			val = Evaluation.EvaluateValue(ex, ctxt);
+			Assert.That(val, Is.TypeOf(typeof(ArrayValue)));
+			Assert.That((val as ArrayValue).IsString,Is.True);
+			Assert.That((val as ArrayValue).StringValue, Is.EqualTo("int someVar;"));
+
+			ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals (defS);
+
+
+			ex = DParser.ParseExpression ("def2!5");
+			val = Evaluation.EvaluateValue (ex, ctxt);
+			Assert.That (val, Is.TypeOf (typeof(PrimitiveValue)));
+			Assert.That ((val as PrimitiveValue).Value, Is.EqualTo(5m));
 
 			ex = DParser.ParseExpression ("-k");
 			val = Evaluation.EvaluateValue (ex, ctxt);
@@ -977,11 +1009,8 @@ mixin(def!(-1,""bar""));
 			Assert.That((val as ArrayValue).IsString,Is.True);
 			Assert.That((val as ArrayValue).StringValue, Is.EqualTo("int"));
 
-			ex = DParser.ParseExpression(@"def!(2,""someVar"")");
-			val = Evaluation.EvaluateValue(ex, ctxt);
-			Assert.That(val, Is.TypeOf(typeof(ArrayValue)));
-			Assert.That((val as ArrayValue).IsString,Is.True);
-			Assert.That((val as ArrayValue).StringValue, Is.EqualTo("int someVar;"));
+
+
 			
 			ex = DParser.ParseExpression(@"def!(-5,""foolish"")");
 			val = Evaluation.EvaluateValue(ex, ctxt);
