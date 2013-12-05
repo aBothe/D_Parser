@@ -209,8 +209,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			if (eval)
 			{
-				if (v is AbstractType)
-					v = DResolver.StripMemberSymbols((AbstractType)v);
+				if(v is VariableValue)
+					v = EvaluateValue(v as VariableValue, ValueProvider);
 
 				if (v is PrimitiveValue)
 				{

@@ -947,6 +947,7 @@ Appender!(E[]) appender(A : E[], E)(A array = null)
 		public void TestParamDeduction9()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
+const int k = 4;
 template mxTemp(int i)
 {
 	static if(i < 0)
@@ -962,9 +963,22 @@ template def(int i,string name)
 
 mixin(def!(-1,""bar""));
 ");
-			
-			var ex = DParser.ParseExpression(@"def!(2,""someVar"")");
-			var val = Evaluation.EvaluateValue(ex, ctxt);
+			IExpression ex;
+			ISymbolValue val;
+
+			ex = DParser.ParseExpression ("-k");
+			val = Evaluation.EvaluateValue (ex, ctxt);
+			Assert.That (val, Is.TypeOf (typeof(PrimitiveValue)));
+			Assert.That ((val as PrimitiveValue).Value, Is.EqualTo(-4m));
+
+			ex = DParser.ParseExpression ("mxTemp!(-k)");
+			val = Evaluation.EvaluateValue (ex, ctxt);
+			Assert.That(val, Is.TypeOf(typeof(ArrayValue)));
+			Assert.That((val as ArrayValue).IsString,Is.True);
+			Assert.That((val as ArrayValue).StringValue, Is.EqualTo("int"));
+
+			ex = DParser.ParseExpression(@"def!(2,""someVar"")");
+			val = Evaluation.EvaluateValue(ex, ctxt);
 			Assert.That(val, Is.TypeOf(typeof(ArrayValue)));
 			Assert.That((val as ArrayValue).IsString,Is.True);
 			Assert.That((val as ArrayValue).StringValue, Is.EqualTo("int someVar;"));
