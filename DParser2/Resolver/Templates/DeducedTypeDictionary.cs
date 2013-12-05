@@ -32,9 +32,13 @@ namespace D_Parser.Resolver.Templates
 		{
 			ExpectedParameters = ms.Definition.TemplateParameters;
 
+			if (ExpectedParameters != null)
+				foreach (var tpar in ExpectedParameters)
+					Add (tpar.NameHash, null);
+
 			if (ms.DeducedTypes != null)
 				foreach (var i in ms.DeducedTypes)
-					this.Add(i.NameHash,i);
+					this [i.NameHash] = i;
 		}
 		/*
 		public DeducedTypeDictionary(IEnumerable<TemplateParameterSymbol> l, DNode parameterOwner)

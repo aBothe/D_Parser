@@ -252,7 +252,7 @@ namespace D_Parser.Resolver.TypeResolution
 					continue;
 				}
 
-				var deducedTypes = new DeducedTypeDictionary(tplNode);
+				var deducedTypes = new DeducedTypeDictionary(overload);
 
 				if (DeduceParams(givenTemplateArguments, isMethodCall, ctxt, overload, tplNode, deducedTypes))
 				{
