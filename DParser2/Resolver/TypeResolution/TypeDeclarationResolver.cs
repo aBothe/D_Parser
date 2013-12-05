@@ -167,8 +167,8 @@ namespace D_Parser.Resolver.TypeResolution
 					var udt = b as UserDefinedType;
 					var bn = udt.Definition as IBlockNode;
 					
-					bool pop = !(b is MixinTemplateType);
-					if(!pop)
+					bool pop = b is MixinTemplateType;
+					if(pop)
 						ctxt.PushNewScope(bn);
 					ctxt.CurrentContext.IntroduceTemplateParameterTypes(udt);
 
@@ -194,10 +194,11 @@ namespace D_Parser.Resolver.TypeResolution
 					// go the opDispatch way if possible - http://dlang.org/operatoroverloading.html#Dispatch
 					if (r.Count == 0 && nextIdentifierHash != OpDispatchResolution.opDispatchId)
 						r.AddRange(OpDispatchResolution.TryResolveFurtherIdViaOpDispatch (ctxt, nextIdentifierHash, b));
-
-					ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(udt);
-					if(!pop)
+						
+					if(pop)
 						ctxt.Pop();
+					else
+						ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(udt);
 				}
 				else if (b is PackageSymbol)
 				{
