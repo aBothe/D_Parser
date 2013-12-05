@@ -168,6 +168,12 @@ namespace D_Parser.Parser
 			return p.AssignExpression();
 		}
 
+		public static ITypeDeclaration ParseBasicType(string code)
+		{
+			DToken tk;
+			return ParseBasicType (code, out tk);
+		}
+
         public static ITypeDeclaration ParseBasicType(string Code,out DToken OptionalToken)
         {
             OptionalToken = null;
