@@ -1644,15 +1644,33 @@ S2 s2;
 S3 s3;
 
 void main() {
-  
-  s.opDispatch!(""hello"")(7);
-  s.foo(7);
+  S2 loc;
+	x;
 }");
 			AbstractType t;
 			DSymbol ds;
 			IExpression x;
 			ITypeDeclaration td;
 			ISymbolValue v;
+
+
+			var main = ctxt.ParseCache [0] ["A"] ["main"].First () as DMethod;
+			var stmt_x = main.Body.SubStatements.ElementAt (1);
+
+			x = new PostfixExpression_MethodCall{ 
+				Arguments = new[]{ new IdentifierExpression(123m, LiteralFormat.Scalar) },
+				PostfixForeExpression = new PostfixExpression_Access{ 
+					AccessExpression = new IdentifierExpression("bar"),
+					PostfixForeExpression = new IdentifierExpression("loc") { Location = stmt_x.Location }
+				} 
+			};
+			ctxt.PushNewScope (main, stmt_x);
+
+			ds = Evaluation.EvaluateType (x, ctxt) as DSymbol;
+			Assert.That (ds, Is.TypeOf(typeof(TemplateParameterSymbol)));
+			Assert.That (ds.Base, Is.TypeOf(typeof(PrimitiveType)));
+
+			ctxt.Pop ();
 
 			x = DParser.ParseExpression ("s2.bar(s)");
 			ds = Evaluation.EvaluateType (x, ctxt) as DSymbol;
