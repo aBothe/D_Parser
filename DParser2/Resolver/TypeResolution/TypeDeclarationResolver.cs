@@ -193,7 +193,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 					// go the opDispatch way if possible - http://dlang.org/operatoroverloading.html#Dispatch
 					if (r.Count == 0 && nextIdentifierHash != OpDispatchResolution.opDispatchId)
-						r.AddRange(OpDispatchResolution.TryResolveFurtherIdViaOpDispatch (ctxt, nextIdentifierHash, b));
+						r.AddRange(OpDispatchResolution.TryResolveFurtherIdViaOpDispatch (ctxt, nextIdentifierHash, udt));
 						
 					if(pop)
 						ctxt.Pop();

@@ -38,14 +38,26 @@ namespace D_Parser.Resolver.TypeResolution
 		/// Check for the existence of an opDispatch overload.
 		/// Important: Because static opDispatches are allowed as well, do check whether we can access non-static overloads from non-instance expressions or such
 		/// </summary>
-		public static IEnumerable<AbstractType> TryResolveFurtherIdViaOpDispatch (ResolutionContext ctxt, int nextIdentifierHash, AbstractType b)
+		public static IEnumerable<AbstractType> TryResolveFurtherIdViaOpDispatch (ResolutionContext ctxt, int nextIdentifierHash, UserDefinedType b)
 		{
 			// The usual SO prevention
-			if (nextIdentifierHash == opDispatchId)
+			if (nextIdentifierHash == opDispatchId || b == null)
 				yield break;
+				
+			var pop = ctxt.ScopedBlock != b.Definition;
+			if (pop) {
+				// Mainly required for not resolving opDispatch's return type, as this will be performed later on in higher levels
+				var opt = ctxt.CurrentContext.ContextDependentOptions;
+				ctxt.PushNewScope (b.Definition as IBlockNode);
+				ctxt.CurrentContext.IntroduceTemplateParameterTypes (b);
+				ctxt.CurrentContext.ContextDependentOptions = opt;
+			}
 
 			// Look for opDispatch-Members inside b's Definition
 			var overloads = TypeDeclarationResolver.ResolveFurtherTypeIdentifier (opDispatchId, new[]{b}, ctxt);
+
+			if(pop)
+				ctxt.Pop ();
 
 			if (overloads == null || overloads.Length < 0)
 				yield break;
