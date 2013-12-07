@@ -302,7 +302,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 									{
 										if (hasNonFinalArgs)
 										{
-											deducedTypeDict[tpar.NameHash] = new TemplateParameterSymbol(tpar, null);
+											deducedTypeDict[tpar] = new TemplateParameterSymbol(tpar, null);
 											add = true;
 										}
 										else
@@ -396,23 +396,16 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			TemplateParameterSymbol tps;
 			DTuple tuple = null;
-			if (deducedTypeDict.TryGetValue(tpar.NameHash, out tps) && tps != null)
+			if (deducedTypeDict.TryGetValue(tpar, out tps) && tps != null)
 			{
-				if (tps.Parameter == tpar)
+				if (tps.Base is DTuple)
 				{
-					if (tps.Base is DTuple)
-					{
-						tuple = tps.Base as DTuple;
-						lastArgumentToTake = currentParameter + (tuple.Items == null ? 0 : (tuple.Items.Length-1));
-					}
-					else
-					{
-						// Error: Type param must be tuple!
-					}
+					tuple = tps.Base as DTuple;
+					lastArgumentToTake = currentParameter + (tuple.Items == null ? 0 : (tuple.Items.Length-1));
 				}
 				else
 				{
-					// Error: Wrong parameter
+					// Error: Type param must be tuple!
 				}
 			}
 			// - Get the (amount of) arguments that shall be put into the tuple
@@ -477,7 +470,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				tps = new TemplateParameterSymbol(tpar, tt);
 
 				//   and set the actual template tuple parameter deduction
-				deducedTypeDict[tpar.NameHash] = tps;
+				deducedTypeDict[tpar] = tps;
 			}
 			add = true;
 			return true;

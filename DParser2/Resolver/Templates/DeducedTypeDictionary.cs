@@ -8,7 +8,7 @@ using System.Collections.ObjectModel;
 
 namespace D_Parser.Resolver.Templates
 {
-	public class DeducedTypeDictionary : Dictionary<int,TemplateParameterSymbol>	{
+	public class DeducedTypeDictionary : Dictionary<TemplateParameter,TemplateParameterSymbol>	{
 
 		public readonly TemplateParameter[] ExpectedParameters;
 
@@ -20,7 +20,7 @@ namespace D_Parser.Resolver.Templates
 			if (parameters != null)
 			{
 				foreach (var tpar in parameters)
-					this.Add(tpar.NameHash,null);
+					this.Add(tpar,null);
 			}
 		}
 
@@ -28,29 +28,12 @@ namespace D_Parser.Resolver.Templates
 			: this(owner.TemplateParameters)
 		{}
 
-		public DeducedTypeDictionary(DSymbol ms)
+		public DeducedTypeDictionary(DSymbol ms) : this(ms.Definition.TemplateParameters)
 		{
-			ExpectedParameters = ms.Definition.TemplateParameters;
-
-			if (ExpectedParameters != null)
-				foreach (var tpar in ExpectedParameters)
-					Add (tpar.NameHash, null);
-
 			if (ms.DeducedTypes != null)
 				foreach (var i in ms.DeducedTypes)
-					this [i.NameHash] = i;
+					this [i.Parameter] = i;
 		}
-		/*
-		public DeducedTypeDictionary(IEnumerable<TemplateParameterSymbol> l, DNode parameterOwner)
-		{
-			ParameterOwner = parameterOwner;
-			if (parameterOwner != null)
-				ExpectedParameters = parameterOwner.TemplateParameters;
-
-			if (l != null)
-				foreach (var i in l)
-					this[i.Name] = i;
-		}*/
 
 		public ReadOnlyCollection<TemplateParameterSymbol> ToReadonly()
 		{
@@ -72,13 +55,10 @@ namespace D_Parser.Resolver.Templates
 		public new TemplateParameterSymbol this[int nameHash]
 		{
 			get{
-				TemplateParameterSymbol tps;
-				base.TryGetValue (nameHash, out tps);
-				return tps;
-			}
-			set{
-				base.Remove (nameHash);
-				base.Add (nameHash, value);
+				foreach (var kv in this)
+					if (kv.Key.NameHash == nameHash)
+						return kv.Value;
+				return null;
 			}
 		}
 
@@ -87,7 +67,7 @@ namespace D_Parser.Resolver.Templates
 			var sb = new StringBuilder ("DeducedTypeDict: ");
 
 			foreach (var kv in this)
-				sb.Append (Strings.TryGet (kv.Key)).Append (": ").Append(kv.Value != null ? kv.Value.ToString() : "-").Append(',');
+				sb.Append (kv.Key.Name).Append (": ").Append(kv.Value != null ? kv.Value.ToString() : "-").Append(',');
 
 			return sb.ToString ();
 		}

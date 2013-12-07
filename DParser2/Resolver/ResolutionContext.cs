@@ -177,8 +177,12 @@ namespace D_Parser.Resolver
 			while (stack.Count != 0) {
 				var cur = stack.Peek ();
 
-				if(ret = cur.DeducedTemplateParameters.TryGetValue(idHash, out tps))
-					break;
+				foreach (var kv in cur.DeducedTemplateParameters)
+					if (kv.Key.NameHash == idHash) {
+						tps = kv.Value;
+						ret = true;
+						break;
+					}
 
 				if (backup == null)
 					backup = new Stack<ContextFrame> ();

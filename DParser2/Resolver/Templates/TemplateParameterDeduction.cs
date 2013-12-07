@@ -112,7 +112,10 @@ namespace D_Parser.Resolver.Templates
 		/// </summary>
 		bool Contains(int parameterNameHash)
 		{
-			return TargetDictionary.ContainsKey (parameterNameHash);
+			foreach (var kv in TargetDictionary)
+				if (kv.Key.NameHash == parameterNameHash)
+					return true;
+			return false;
 		}
 
 		/// <summary>
@@ -136,9 +139,6 @@ namespace D_Parser.Resolver.Templates
 				return false;
 			}
 
-			if (nameHash == 0)
-				nameHash = p.NameHash;
-
 			// void call(T)(T t) {}
 			// call(myA) -- T is *not* myA but A, so only assign myA's type to T. 
 			if (p is TemplateTypeParameter)
@@ -149,9 +149,9 @@ namespace D_Parser.Resolver.Templates
 			}
 
 			TemplateParameterSymbol rl;
-			if (!TargetDictionary.TryGetValue(nameHash, out rl) || rl == null)
+			if (!TargetDictionary.TryGetValue(p, out rl) || rl == null)
 			{
-				TargetDictionary[nameHash] = new TemplateParameterSymbol(p, r);
+				TargetDictionary[p] = new TemplateParameterSymbol(p, r);
 				return true;
 			}
 			else
@@ -165,7 +165,7 @@ namespace D_Parser.Resolver.Templates
 					// Error: Ambiguous assignment
 				}
 
-				TargetDictionary[nameHash] = new TemplateParameterSymbol(p, r);
+				TargetDictionary[p] = new TemplateParameterSymbol(p, r);
 
 				return false;
 			}

@@ -31,14 +31,14 @@ namespace D_Parser.Resolver
 		{
 			if(tir!=null && tir.DeducedTypes != null)
 				foreach (var dt in tir.DeducedTypes)
-					DeducedTemplateParameters[dt.NameHash] = dt;
+					DeducedTemplateParameters[dt.Parameter] = dt;
 		}
 
 		public void RemoveParamTypesFromPreferredLocals(DSymbol tir)
 		{
 			if (tir != null && tir.DeducedTypes != null)
 				foreach (var dt in tir.DeducedTypes)
-					DeducedTemplateParameters.Remove(dt.NameHash);
+					DeducedTemplateParameters.Remove(dt.Parameter);
 		}
 		
 		public void Set(IStatement stmt)

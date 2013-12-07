@@ -27,8 +27,9 @@ namespace D_Parser.Resolver.Templates
 				return false;
 
 			// Apply the entire argument to parameter p if there hasn't been no explicit association yet
-			if (TargetDictionary[p.NameHash] == null)
-				TargetDictionary[p.NameHash] = new TemplateParameterSymbol(p, arg);
+			TemplateParameterSymbol tps;
+			if (!TargetDictionary.TryGetValue(p, out tps) || tps == null)
+				TargetDictionary[p] = new TemplateParameterSymbol(p, arg);
 
 			return true;
 		}

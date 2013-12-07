@@ -74,7 +74,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				{
 					var r = evalIsExpression_EvalSpecToken(isExpression, typeToCheck, true);
 					retTrue = r.Item1;
-					tpl_params[isExpression.TypeAliasIdentifierHash] = new TemplateParameterSymbol(null, r.Item2);
+					tpl_params[isExpression.ArtificialFirstSpecParam] = new TemplateParameterSymbol(isExpression.ArtificialFirstSpecParam, r.Item2);
 				}
 			}
 			else // 5.
