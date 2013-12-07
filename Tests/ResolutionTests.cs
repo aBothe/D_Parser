@@ -948,9 +948,9 @@ Appender!(E[]) appender(A : E[], E)(A array = null)
 		{
 			var ctxt = CreateDefCtxt(@"module A;
 const int k = 4;
-template mxTemp(int q)
+template mxTemp(int i)
 {
-	static if(q < 0)
+	static if(i < 0)
 		enum mxTemp = ""int"";
 	else
 		enum mxTemp = ""bool"";
@@ -971,17 +971,18 @@ mixin(def!(-1,""bar""));
 			IExpression ex;
 			ISymbolValue val;
 
-			ex = DParser.ParseExpression(@"def!(2,""someVar"")");
+			ex = DParser.ParseExpression(@"def!(-2,""someVar"")");
 			val = Evaluation.EvaluateValue(ex, ctxt);
 			Assert.That(val, Is.TypeOf(typeof(ArrayValue)));
 			Assert.That((val as ArrayValue).IsString,Is.True);
-			Assert.That((val as ArrayValue).StringValue, Is.EqualTo("int someVar;"));
+			Assert.That((val as ArrayValue).StringValue, Is.EqualTo("bool someVar;"));
 
 			var def = ctxt.ParseCache [0] ["A"]["def"].First () as DClassLike;
 			var defS = new TemplateType (def, null, new[]{ 
 				new TemplateParameterSymbol(def.TemplateParameters[0], new PrimitiveValue(DTokens.Int, 2, null)), 
 				new TemplateParameterSymbol(def.TemplateParameters[1], new ArrayValue(Evaluation.GetStringType(ctxt), "someVar")) 
 			});
+			ctxt.PushNewScope (def);
 			ctxt.CurrentContext.IntroduceTemplateParameterTypes (defS);
 
 			ex = DParser.ParseExpression("mxTemp!(-i) ~ \" \"~name~\";\"");
@@ -990,7 +991,7 @@ mixin(def!(-1,""bar""));
 			Assert.That((val as ArrayValue).IsString,Is.True);
 			Assert.That((val as ArrayValue).StringValue, Is.EqualTo("int someVar;"));
 
-			ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals (defS);
+			ctxt.Pop ();
 
 
 			ex = DParser.ParseExpression ("def2!5");
