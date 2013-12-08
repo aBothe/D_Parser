@@ -52,13 +52,26 @@ namespace D_Parser.Resolver.ASTScanner
 		public override void VisitAbstractStmt (AbstractStatement stmt)
 		{
 			var back = ctxt.ScopedStatement;
+			bool pop = false;
 			if (back != stmt) {
-				ctxt.CurrentContext.Set (stmt);
+				var parentNode = stmt.ParentNode;
+				if (parentNode != null && ctxt.ScopedBlock != parentNode) {
+					ctxt.PushNewScope (stmt.ParentNode as IBlockNode, stmt);
+					pop = true;
+				}
+				else if (ctxt.ScopedBlock != null)
+					ctxt.CurrentContext.Set (stmt);
+				else
+					back = stmt;
 				OnScopedStatementChanged (stmt);
 			}
 			base.VisitAbstractStmt (stmt);
-			if (back != stmt)
-				ctxt.CurrentContext.Set (back);
+			if (back != stmt) {
+				if (!pop)
+					ctxt.CurrentContext.Set (back);
+				else
+					ctxt.Pop ();
+			}
 		}
 
 		public override void VisitChildren (StatementContainingStatement stmt)
