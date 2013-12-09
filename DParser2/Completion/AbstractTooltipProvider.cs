@@ -38,27 +38,41 @@ namespace D_Parser.Completion
 
 		static AbstractTooltipContent BuildTooltipContent(ISemantic res)
 		{
-			if (res is ISymbolValue) {
-				var sv = res as ISymbolValue;
-
-				if (sv is TypeValue)
-					return new AbstractTooltipContent { ResolveResult = res, Title = sv.RepresentedType.ToString() };
-
-				return new AbstractTooltipContent { 
-					ResolveResult = res,
-					Title = "(" + sv.RepresentedType + ") "+sv.ToCode()
-				};
-			}
-
 			// Only show one description for items sharing descriptions
-			string description = res is DSymbol ? ((DSymbol)res).Definition.Description : "";
+			var ds = res as DSymbol;
+			var description = ds != null ? ds.Definition.Description : "";
 
 			return new AbstractTooltipContent
 			{
 				ResolveResult = res,
-				Title = (res is ModuleSymbol ? ((ModuleSymbol)res).Definition.FileName : res.ToString()),
+				Title = BuildTooltipTitle(res),
 				Description = description
 			};
+		}
+
+		static string BuildTooltipTitle(ISemantic res)
+		{
+			if (res is TypeValue)
+				res = (res as TypeValue).RepresentedType;
+			else if (res is ISymbolValue) {
+				var sv = res as ISymbolValue;
+				return "(" + BuildTooltipTitle(sv.RepresentedType) + ") " + sv.ToCode ();
+			}
+			else if (res is PackageSymbol)
+				return "(Package) " + (res as PackageSymbol).Package.ToString ();
+
+			var ds = res as DSymbol;
+			if (ds == null)
+				return string.Empty;
+
+			if (ds is ModuleSymbol)
+				return "(Module) " + (ds as ModuleSymbol).Definition.FileName;
+				
+			var bt = DResolver.StripMemberSymbols (ds.Base);
+			if ((ds is MemberSymbol || ds is TemplateParameterSymbol) && bt != null) {
+				return string.Format("{1}\r\n(Deduced Type: {0})", bt.ToString(), ds.Definition.ToString());
+			} else
+				return ds.ToCode ();
 		}
 	}
 }
