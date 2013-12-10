@@ -11,6 +11,7 @@ using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
 using System.Threading;
 using D_Parser.Resolver.ASTScanner;
+using System.Threading.Tasks;
 
 namespace D_Parser.Refactoring
 {
@@ -174,26 +175,13 @@ namespace D_Parser.Refactoring
 				return;
 			}
 
-			var threads = new Thread[GlobalParseCache.NumThreads];
-			for (int i = 0; i < GlobalParseCache.NumThreads; i++)
-			{
-				var th = threads[i] = new Thread(_th)
-				{
-					IsBackground = true,
-					Priority = ThreadPriority.Lowest,
-					Name = "Type reference analysis thread #" + i
-				};
-				th.Start(sharedParseCache);
-			}
+            Parallel.For(0, GlobalParseCache.NumThreads, (i) => _th(sharedParseCache));
 
-			for (int i = 0; i < GlobalParseCache.NumThreads; i++)
-				if (threads[i].IsAlive)
-					threads[i].Join(10000);
 		}
 
-		void _th(object pcl_shared)
+        void _th(ParseCacheView pcl_shared)
 		{
-			var ctxt = ResolutionContext.Create((ParseCacheView)pcl_shared, gFlags_shared, ast);
+			var ctxt = ResolutionContext.Create(pcl_shared, gFlags_shared, ast);
 
 			// Make it as most performing as possible by avoiding unnecessary base types. 
 			// Aliases should be analyzed deeper though.
