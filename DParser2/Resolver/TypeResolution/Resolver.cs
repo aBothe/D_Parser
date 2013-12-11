@@ -637,21 +637,25 @@ namespace D_Parser.Resolver.TypeResolution
 		{
 			r = StripAliasSymbol(r);
 
-			if (r is ArrayAccessSymbol)
-				r = (r as ArrayAccessSymbol).Base;
+			var ds = r as DerivedDataType;
+			if (ds != null && ds.Base != null) {
+				if (ds is ArrayAccessSymbol || ds is MemberSymbol) {
+					r = ds.Base;
+					ds = r as DSymbol;
+				}
 
-			var ms = r as MemberSymbol;
-			if(ms != null)
-				r = (ms as DerivedDataType).Base;
-			
-			if(r is TemplateParameterSymbol)
-				r = (r as TemplateParameterSymbol).Base;
+				if (r is TemplateParameterSymbol) {
+					if (ds.Base == null)
+						return r;
+					r = ds.Base;
+					ds = r as DSymbol;
+				}
 
-			// There's one special case to handle (TODO: are there further cases?):
-			// auto o = new Class(); -- o will be MemberSymbol and its base type will be a MemberSymbol either (i.e. the constructor reference)
-			ms = r as MemberSymbol;			
-			if(ms!=null && ms.Definition is DMethod && ms.Name == DMethod.ConstructorIdentifier)
-				r = ms.Base;
+				// There's one special case to handle (TODO: are there further cases?):
+				// auto o = new Class(); -- o will be MemberSymbol and its base type will be a MemberSymbol either (i.e. the constructor reference)
+				if(ds is MemberSymbol && (ds as DSymbol).Definition is DMethod && (ds as DSymbol).NameHash == DMethod.ConstructorIdentifierHash)
+					r = ds.Base;
+			}
 
 			return StripAliasSymbol(r);
 		}

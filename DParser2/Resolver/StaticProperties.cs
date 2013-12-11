@@ -228,49 +228,34 @@ namespace D_Parser.Resolver
 		#endregion
 
 		#region I/O
-		static PropOwnerType GetOwnerType(AbstractType t)
+		static PropOwnerType GetOwnerType(ISemantic t)
 		{
-			if (t is ArrayType)
+			if (t is TypeValue)
+				t = (t as TypeValue).RepresentedType;
+
+			if (t is ArrayValue || t is ArrayType)
 				return PropOwnerType.Array;
-			else if (t is AssocArrayType)
+			else if (t is AssociativeArrayValue || t is AssocArrayType)
 				return PropOwnerType.AssocArray;
-			else if (t is DelegateType)
+			else if (t is DelegateValue || t is DelegateType)
 				return PropOwnerType.Delegate;
-			else if (t is PrimitiveType)
-			{
-				var tk = (t as PrimitiveType).TypeToken;
-				if (DTokens.BasicTypes_Integral[tk])
+			else if (t is PrimitiveValue || t is PrimitiveType) {
+				var tk = t is PrimitiveType ? (t as PrimitiveType).TypeToken : (t as PrimitiveValue).BaseTypeToken;
+				if (DTokens.BasicTypes_Integral [tk])
 					return PropOwnerType.Integral;
-				if (DTokens.BasicTypes_FloatingPoint[tk])
+				if (DTokens.BasicTypes_FloatingPoint [tk])
 					return PropOwnerType.FloatingPoint;
-			}
-			else if (t is ClassType || t is InterfaceType || t is TemplateType || t is StructType)
+			} else if (t is InstanceValue || t is ClassType || t is InterfaceType || t is TemplateType || t is StructType)
 				return PropOwnerType.ClassLike;
 			else if (t is DTuple)
 				return PropOwnerType.TypeTuple;
-			return PropOwnerType.None;
-		}
-
-		static PropOwnerType GetOwnerType(ISemantic t)
-		{
-			if (t is ArrayValue)
-				return PropOwnerType.Array;
-			else if (t is AssociativeArrayValue)
-				return PropOwnerType.AssocArray;
-			else if (t is DelegateValue)
-				return PropOwnerType.Delegate;
-			else if (t is PrimitiveValue)
-			{
-				var tk = (t as PrimitiveValue).BaseTypeToken;
-				if (DTokens.BasicTypes_Integral[tk])
-					return PropOwnerType.Integral;
-				if (DTokens.BasicTypes_FloatingPoint[tk])
-					return PropOwnerType.FloatingPoint;
+			else if (t is TemplateParameterSymbol) {
+				var tps = t as TemplateParameterSymbol;
+				if (tps != null && 
+					(tps.Parameter is TemplateThisParameter ? 
+						(tps.Parameter as TemplateThisParameter).FollowParameter : tps.Parameter) is TemplateTupleParameter)
+					return PropOwnerType.TypeTuple;
 			}
-			else if (t is InstanceValue)
-				return PropOwnerType.ClassLike;
-			else if (t is TypeValue && (t as TypeValue).RepresentedType is DTuple)
-				return PropOwnerType.TypeTuple;
 			return PropOwnerType.None;
 		}
 
@@ -281,15 +266,25 @@ namespace D_Parser.Resolver
 					gen.Add(n);
 		}
 
+		static void GetLookedUpType(ref AbstractType t)
+		{
+			while (t is AliasedType || t is PointerType)
+				t = (t as DerivedDataType).Base;
+
+			var tps = t as TemplateParameterSymbol;
+			if (tps != null && tps.Base == null && 
+				(tps.Parameter is TemplateThisParameter ? (tps.Parameter as TemplateThisParameter).FollowParameter : tps.Parameter) is TemplateTupleParameter)
+				return;
+			else
+				t = DResolver.StripMemberSymbols(t);
+
+			while (t is AliasedType || t is PointerType)
+				t = (t as DerivedDataType).Base;
+		}
+
 		public static IEnumerable<DNode> ListProperties(AbstractType t, bool staticOnly = false)
 		{
-			if (t is PointerType)
-				t = (t as PointerType).Base;
-
-			t = DResolver.StripMemberSymbols(t);
-
-			if (t is PointerType)
-				t = (t as PointerType).Base;
+			GetLookedUpType (ref t);
 
 			if (t == null)
 				yield break;
@@ -308,13 +303,7 @@ namespace D_Parser.Resolver
 
 		public static StaticProperty TryEvalPropertyType(ResolutionContext ctxt, AbstractType t, int propName, bool staticOnly = false)
 		{
-			if (t is PointerType)
-				t = (t as PointerType).Base;
-
-			t = DResolver.StripMemberSymbols(t);
-
-			if (t is PointerType)
-				t = (t as PointerType).Base;
+			GetLookedUpType (ref t);
 
 			if (t == null)
 				return null;

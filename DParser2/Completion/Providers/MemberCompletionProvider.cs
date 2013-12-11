@@ -59,6 +59,17 @@ namespace D_Parser.Completion
 				rr = (rr as ArrayAccessSymbol).Base;
 			}
 
+			if (rr is TemplateParameterSymbol) {
+				var tps = rr as TemplateParameterSymbol;
+				if (tps.Base == null) {
+					var tpp = tps.Parameter is TemplateThisParameter ? (tps.Parameter as TemplateThisParameter).FollowParameter : tps.Parameter;
+					if (tpp is TemplateTupleParameter) {
+						StaticProperties.ListProperties (CompletionDataGenerator, MemberFilter, tps, true);
+						return;
+					}
+				}
+			}
+
 			if (rr is MemberSymbol)
 				BuildCompletionData((MemberSymbol)rr, currentlyScopedBlock, isVariableInstance);
 

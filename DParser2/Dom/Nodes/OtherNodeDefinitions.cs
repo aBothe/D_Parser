@@ -82,6 +82,7 @@ namespace D_Parser.Dom
 		/// Used to identify constructor methods. Since it'd be a token otherwise it cannot be used as a regular method's name.
 		/// </summary>
 		public const string ConstructorIdentifier = "__ctor";
+		public readonly static int ConstructorIdentifierHash = ConstructorIdentifier.GetHashCode();
 
 		public DMethod()
 		{
