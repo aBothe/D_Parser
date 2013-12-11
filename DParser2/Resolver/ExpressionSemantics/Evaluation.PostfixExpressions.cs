@@ -363,7 +363,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			else
 			{
 				// Check if one overload remains and return that one.
-				ctxt.CheckForSingleResult(argTypeFilteredOverloads.ToArray(), call);
+				ctxt.CheckForSingleResult(argTypeFilteredOverloads, call);
 				return argTypeFilteredOverloads.Count != 0 ? argTypeFilteredOverloads[0] : null;
 			}
 		}

@@ -223,22 +223,20 @@ namespace D_Parser.Resolver
 		/// <summary>
 		/// Returns true if 'results' only contains one valid item
 		/// </summary>
-		public bool CheckForSingleResult<T>(T[] results, ISyntaxRegion td) where T : ISemantic
+		public bool CheckForSingleResult<T>(IEnumerable<T> results, ISyntaxRegion td) where T : ISemantic
 		{
-			if (results == null || results.Length == 0) {
+			IEnumerator<T> en;
+			if (results == null || !(en = results.GetEnumerator()).MoveNext() || en.Current == null) {
 				LogError (new NothingFoundError (td));
 				return false;
 			}
-			if (results.Length > 1) {
-				var r = new List<ISemantic> ();
-				foreach (var res in results)
-					r.Add (res);
 
-				LogError (new AmbiguityError (td, r));
+			if (en.MoveNext()) {
+				LogError (new AmbiguityError (td, results as IEnumerable<ISemantic>));
 				return false;
 			}
 
-			return results [0] != null;
+			return true;
 		}
 
 		#region Result caching
