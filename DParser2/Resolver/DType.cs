@@ -207,6 +207,31 @@ namespace D_Parser.Resolver
 		}
 	}
 
+	/// <summary>
+	/// Represents calling a delegate. 
+	/// Used to determine whether a delegate was called or just has been referenced.
+	/// </summary>
+	public class DelegateCallSymbol : DerivedDataType
+	{
+		public readonly DelegateType Delegate;
+
+		public DelegateCallSymbol (DelegateType dg, ISyntaxRegion callExpression) : base (dg.Base, callExpression)
+		{
+			this.Delegate = dg;
+		}
+
+		public override string ToCode ()
+		{
+			return DeclarationOrExpressionBase.ToString ();
+		}
+
+		public override ITypeDeclaration TypeDeclarationOf {
+			get {
+				return Delegate.TypeDeclarationOf;
+			}
+		}
+	}
+
 	public class DelegateType : DerivedDataType
 	{
 		public readonly bool IsFunction;

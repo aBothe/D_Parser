@@ -109,12 +109,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 								// Must be of type delegate
 								if (bt is DelegateType)
 								{
-									//TODO: Ensure that there's no further overload - inform the user elsewise
-
-									if (returnBaseTypeOnly)
-										return bt;
-									else
-										return new MemberSymbol(mr.Definition, bt, mr.DeclarationOrExpressionBase);
+									var ret = HandleCallDelegateType(bt as DelegateType, methodOverloads, returnBaseTypeOnly);
+									if(ret != null)
+										return ret;
 								}
 								else
 								{
@@ -139,28 +136,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					}
 					else if (b is DelegateType)
 					{
-						var dg = (DelegateType)b;
-
-						/*
-						 * int a = delegate(x) { return x*2; } (12); // a is 24 after execution
-						 * auto dg=delegate(x) {return x*3;};
-						 * int b = dg(4);
-						 */
-
-						if (dg.IsFunctionLiteral)
-							methodOverloads.Add(dg);
-						else
-						{
-							// If it's just wanted to pass back the delegate's return type, skip the remaining parts of this method.
-							if (eval) {
-								EvalError(call, "TODO", dg);
-								return null;
-							}
-							//TODO
-							//if(returnBaseTypeOnly)
-							//TODO: Check for multiple definitions. Also, make a parameter-argument check to inform the user about wrong arguments.
-							return dg;
-						}
+						var ret = HandleCallDelegateType(b as DelegateType, methodOverloads, returnBaseTypeOnly);
+						if(ret != null)
+							return ret;
 					}
 					else if (b is ClassType || b is StructType)
 					{
@@ -336,15 +314,23 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				}
 				else if(ov is DelegateType)
 				{
-					var dg = (DelegateType)ov;
-					var bt = TypeDeclarationResolver.GetMethodReturnType(dg, ctxt);
+					var dg = ov as DelegateType;
+					var bt = dg.Base ?? TypeDeclarationResolver.GetMethodReturnType(dg, ctxt);
 
 					//TODO: Param-Arg check
 						
-					if (!eval || returnBaseTypeOnly)
+					if (returnBaseTypeOnly)
 						argTypeFilteredOverloads.Add(bt);
 					else
-						argTypeFilteredOverloads.Add(new DelegateType(bt, dg.DeclarationOrExpressionBase as FunctionLiteral, dg.Parameters));
+					{
+						if(dg.Base == null){
+							if(dg.IsFunctionLiteral) 
+								dg = new DelegateType(bt, dg.DeclarationOrExpressionBase as FunctionLiteral, dg.Parameters);
+							else
+								dg = new DelegateType(bt, dg.DeclarationOrExpressionBase as DelegateDeclaration, dg.Parameters);
+						}
+						argTypeFilteredOverloads.Add(new DelegateCallSymbol(dg, call));
+					}
 				}
 			}
 			#endregion
@@ -365,6 +351,29 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				// Check if one overload remains and return that one.
 				ctxt.CheckForSingleResult(argTypeFilteredOverloads, call);
 				return argTypeFilteredOverloads.Count != 0 ? argTypeFilteredOverloads[0] : null;
+			}
+		}
+
+		ISemantic HandleCallDelegateType(DelegateType dg, List<AbstractType> methodOverloads, bool returnBaseTypeOnly)
+		{
+			if(returnBaseTypeOnly)
+				return eval ? new TypeValue(dg.Base) as ISemantic : dg.Base;
+
+			/*
+			 * int a = delegate(x) { return x*2; } (12); // a is 24 after execution
+			 * auto dg=delegate(x) {return x*3;};
+			 * int b = dg(4);
+			 */
+
+			if (!eval) {
+				methodOverloads.Add (dg);
+				return null;
+			}
+			else
+			{
+				// If it's just wanted to pass back the delegate's return type, skip the remaining parts of this method.
+				EvalError(dg.DeclarationOrExpressionBase as IExpression, "TODO", dg);
+				return null;
 			}
 		}
 

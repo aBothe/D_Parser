@@ -639,7 +639,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 			var ds = r as DerivedDataType;
 			if (ds != null && ds.Base != null) {
-				if (ds is ArrayAccessSymbol || ds is MemberSymbol) {
+				if (ds is ArrayAccessSymbol || ds is MemberSymbol || ds is DelegateCallSymbol) {
 					r = ds.Base;
 					ds = r as DSymbol;
 				}

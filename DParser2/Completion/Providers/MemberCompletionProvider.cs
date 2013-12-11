@@ -53,10 +53,10 @@ namespace D_Parser.Completion
 			if(rr.DeclarationOrExpressionBase is ITypeDeclaration)
 				isVariableInstance |= (rr.DeclarationOrExpressionBase as ITypeDeclaration).ExpressesVariableAccess;
 
-			if (rr is ArrayAccessSymbol)
+			if (rr is ArrayAccessSymbol || rr is DelegateCallSymbol)
 			{
 				isVariableInstance = true;
-				rr = (rr as ArrayAccessSymbol).Base;
+				rr = (rr as DerivedDataType).Base;
 			}
 
 			if (rr is TemplateParameterSymbol) {

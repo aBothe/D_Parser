@@ -821,9 +821,8 @@ int delegate(int b) myDeleg;
 
 			x=DParser.ParseExpression("myDeleg(123)");
 			r = Evaluation.EvaluateType(x, ctxt);
-			mr = r as MemberSymbol;
-			Assert.IsNotNull(mr);
-			Assert.That(mr.Base, Is.TypeOf(typeof(DelegateType)));
+			Assert.That (r, Is.TypeOf(typeof(DelegateCallSymbol)));
+			Assert.That((r as DerivedDataType).Base, Is.TypeOf(typeof(PrimitiveType)));
 
 			x = DParser.ParseExpression("foo(myDeleg(123))");
 			r = Evaluation.EvaluateType(x, ctxt);
