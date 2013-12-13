@@ -162,7 +162,6 @@
     <Compile Include="Misc\CompletionOptions.cs" />
     <Compile Include="Misc\ModuleNameHelper.cs" />
     <Compile Include="Resolver\ASTScanner\NameScan.cs" />
-    <Compile Include="Misc\UFCSCache.cs" />
     <Compile Include="Resolver\DType.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.PrimaryExpression.cs" />
     <Compile Include="Resolver\ISemantic.cs" />

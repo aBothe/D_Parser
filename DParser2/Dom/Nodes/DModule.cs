@@ -86,9 +86,6 @@ namespace D_Parser.Dom
 
 		public virtual void Dispose()
 		{
-			var root = GlobalParseCache.GetRootPackage (FileName);
-			if (root != null)
-				root.UfcsCache.RemoveModuleMethods (this);
 		}
 		
 		public Comment[] Comments;

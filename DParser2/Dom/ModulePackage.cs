@@ -43,13 +43,8 @@ namespace D_Parser.Dom
 	public class RootPackage : ModulePackage
 	{
 		internal DateTime LastParseTime;
-		#region Ufcs caching
-		public readonly UFCSCache UfcsCache;
-		#endregion
 
-		public RootPackage() : base(null, "<root>") {
-			UfcsCache = new UFCSCache (this);
-		}
+		public RootPackage() : base(null, "<root>") {}
 
 		#region Common type bypasses
 		public bool IsObjectClassDefined
@@ -252,15 +247,7 @@ namespace D_Parser.Dom
 		{
 			name = ModuleNameHelper.ExtractModuleName(name);
 			DModule ast;
-			if(modules.TryRemove(name.GetHashCode(), out ast))
-			{
-				var root = Root;
-				if (root != null)
-					root.UfcsCache.RemoveModuleMethods (ast);
-
-				return true;
-			}
-			return false;
+			return modules.TryRemove (name.GetHashCode (), out ast);
 		}
 
 		public ModulePackage GetSubPackage(string package)
