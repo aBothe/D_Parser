@@ -44,7 +44,7 @@ namespace D_Parser.Refactoring
 		#region Properties
 		readonly Dictionary<IBlockNode, HashSet<int>> TypeCache = new Dictionary<IBlockNode, HashSet<int>>();
 		//DModule ast;
-		TypeReferencesResult result = new TypeReferencesResult();
+		Dictionary<int, List<ISyntaxRegion>> Matches = new Dictionary<int, List<ISyntaxRegion>>();
 		#endregion
 
 		#region Constructor / IO
@@ -52,10 +52,10 @@ namespace D_Parser.Refactoring
 		{
 		}
 
-		public static TypeReferencesResult Scan(DModule ast, ResolutionContext ctxt)
+		public static Dictionary<int, List<ISyntaxRegion>> Scan(DModule ast, ResolutionContext ctxt)
 		{
 			if (ast == null)
-				return new TypeReferencesResult();
+				return new Dictionary<int, List<ISyntaxRegion>>();
 
 			var typeRefFinder = new TypeReferenceFinder(ctxt);
 
@@ -81,7 +81,7 @@ namespace D_Parser.Refactoring
 			/*typeRefFinder.queueCount = typeRefFinder.q.Count;
 			typeRefFinder.ResolveAllIdentifiers();
 			*/
-			return typeRefFinder.result;
+			return typeRefFinder.Matches;
 		}
 		#endregion
 
@@ -143,8 +143,8 @@ namespace D_Parser.Refactoring
 		void AddResult(INode n)
 		{
 			List<ISyntaxRegion> l;
-			if(!result.Matches.TryGetValue(n.NameLocation.Line, out l))
-				result.Matches[n.NameLocation.Line] = l = new List<ISyntaxRegion>();
+			if(!Matches.TryGetValue(n.NameLocation.Line, out l))
+				Matches[n.NameLocation.Line] = l = new List<ISyntaxRegion>();
 
 			l.Add(n);
 		}
@@ -152,8 +152,8 @@ namespace D_Parser.Refactoring
 		void AddResult(ISyntaxRegion sr)
 		{
 			List<ISyntaxRegion> l;
-			if(!result.Matches.TryGetValue(sr.Location.Line, out l))
-				result.Matches[sr.Location.Line] = l = new List<ISyntaxRegion>();
+			if(!Matches.TryGetValue(sr.Location.Line, out l))
+				Matches[sr.Location.Line] = l = new List<ISyntaxRegion>();
 
 			l.Add(sr);
 		}

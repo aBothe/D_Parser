@@ -143,7 +143,6 @@
     <Compile Include="Formatting\ITextEditorOptions.cs" />
     <Compile Include="Misc\Mangling\Demangler.cs" />
     <Compile Include="Misc\StringView.cs" />
-    <Compile Include="Refactoring\DeepASTVisitor.cs" />
     <Compile Include="Refactoring\ReferencesFinder.cs" />
     <Compile Include="Resolver\ConditionalCompilation.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Caching\ExpressionCache.cs" />
@@ -218,7 +217,6 @@
     <Compile Include="Misc\ParseCacheView.cs" />
     <Compile Include="Misc\StringCache.cs" />
     <Compile Include="Misc\StringExtension.cs" />
-    <Compile Include="Refactoring\OldTypeReferenceFinder.cs" />
     <Compile Include="Refactoring\TypeReferenceFinder.cs" />
     <Compile Include="Resolver\ASTScanner\MemberFilter.cs" />
     <Compile Include="Completion\MemberCompletionEnumeration.cs" />
