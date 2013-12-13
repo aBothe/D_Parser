@@ -273,7 +273,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						{
 							foreach (var tpar in dm.TemplateParameters)
 							{
-								if (deducedTypeDict[tpar.NameHash] == null)
+								if (deducedTypeDict[tpar] == null)
 								{
 									add = templateParamDeduction.Handle(tpar, null);
 									if (!add)

@@ -82,7 +82,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			if (retTrue && isExpression.TemplateParameterList != null)
 				foreach (var p in isExpression.TemplateParameterList)
-					if (!tpd.Handle(p, tpl_params[p.NameHash] != null ? tpl_params[p.NameHash].Base : null))
+					if (!tpd.Handle(p, tpl_params[p] != null ? tpl_params[p].Base : null))
 						return false;
 
 			//TODO: Put all tpl_params results into the resolver context or make a new scope or something! 

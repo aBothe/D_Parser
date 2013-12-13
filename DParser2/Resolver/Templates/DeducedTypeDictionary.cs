@@ -52,16 +52,6 @@ namespace D_Parser.Resolver.Templates
 			}
 		}
 
-		public new TemplateParameterSymbol this[int nameHash]
-		{
-			get{
-				foreach (var kv in this)
-					if (kv.Key.NameHash == nameHash)
-						return kv.Value;
-				return null;
-			}
-		}
-
 		public override string ToString ()
 		{
 			var sb = new StringBuilder ("DeducedTypeDict: ");
