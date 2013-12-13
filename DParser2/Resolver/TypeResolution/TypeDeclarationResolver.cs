@@ -194,7 +194,10 @@ namespace D_Parser.Resolver.TypeResolution
 					// go the opDispatch way if possible - http://dlang.org/operatoroverloading.html#Dispatch
 					if (r.Count == 0 && nextIdentifierHash != OpDispatchResolution.opDispatchId)
 						r.AddRange(OpDispatchResolution.TryResolveFurtherIdViaOpDispatch (ctxt, nextIdentifierHash, udt));
-						
+
+					if(r.Count == 0)
+						r.AddRange(UFCSResolver.TryResolveUFCS (b, nextIdentifierHash, ctxt.ScopedBlock.BlockStartLocation, ctxt, typeIdObject));
+
 					if(pop)
 						ctxt.Pop();
 					else
@@ -217,6 +220,9 @@ namespace D_Parser.Resolver.TypeResolution
 					statProp = StaticProperties.TryEvalPropertyType(ctxt, b, nextIdentifierHash);
 					if (statProp != null)
 						r.Add(statProp);
+
+					if(r.Count == 0)
+						r.AddRange(UFCSResolver.TryResolveUFCS (b, nextIdentifierHash, ctxt.ScopedBlock.BlockStartLocation, ctxt, typeIdObject));
 				}
 				// TODO: Search for UFCS symbols
 			}

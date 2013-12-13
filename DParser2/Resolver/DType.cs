@@ -15,6 +15,7 @@ namespace D_Parser.Resolver
 	public abstract class AbstractType : ISemantic
 	{
 		#region Properties
+		public object Tag;
 		public ISyntaxRegion DeclarationOrExpressionBase;
 
 		/// <summary>
@@ -517,11 +518,6 @@ namespace D_Parser.Resolver
 
 	public class MemberSymbol : DSymbol
 	{
-		/// <summary>
-		/// 'Transmitter' helper variable used for UFCS resolution.
-		/// </summary>
-		internal ISemantic FirstArgument;
-		public bool IsUFCSResult;
 		public MemberSymbol(DNode member, AbstractType memberType, ISyntaxRegion td,
 			ReadOnlyCollection<TemplateParameterSymbol> deducedTypes = null)
 			: base(member, memberType, deducedTypes, td) { }

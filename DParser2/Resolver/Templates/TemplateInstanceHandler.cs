@@ -182,6 +182,10 @@ namespace D_Parser.Resolver.TypeResolution
 			// Get actual overloads
 			var matchingChild = TypeDeclarationResolver.ResolveFurtherTypeIdentifier( template.NameHash, new[]{ template }, ctxt);
 
+			if (matchingChild != null) // Currently requried for proper UFCS resolution - sustain template's Tag
+				foreach (var ch in matchingChild)
+					ch.Tag = template.Tag;
+
 			// Undo context-related changes
 			if (pop)
 				ctxt.Pop();
@@ -205,6 +209,8 @@ namespace D_Parser.Resolver.TypeResolution
 			AbstractType deducedType = null;
 
 			deducedType = new MemberSymbol (ept.Definition, Evaluation.EvaluateType (ept.Definition.Initializer, ctxt), null, ept.DeducedTypes); //ept; //Evaluation.EvaluateType (ept.Definition.Initializer, ctxt);
+
+			deducedType.Tag = ept.Tag; // Currently requried for proper UFCS resolution - sustain ept's Tag
 
 			// Undo context-related changes
 			ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(ept);

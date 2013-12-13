@@ -435,6 +435,28 @@ void foo()
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 		}
+
+		[Test]
+		public void AccessUFCS()
+		{
+			var ctxt = CreateCtxt ("A", @"module A;
+template to(T)
+{
+    T to(A...)(A args)
+    {
+        return toImpl!T(args);
+    }
+}
+int a;
+");
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression ("a.to!string()");
+			t = Evaluation.EvaluateType (x, ctxt);
+			Assert.That (t, Is.TypeOf (typeof(TemplateParameterSymbol)));
+			Assert.That ((t as TemplateParameterSymbol).Base, Is.TypeOf (typeof(ArrayType)));
+		}
 		
 		[Test]
 		public void ArrayIndexer()

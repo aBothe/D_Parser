@@ -217,13 +217,15 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 					if (dm != null)
 					{
+						ISemantic firstUfcsArg;
+						bool isUfcs = UFCSResolver.IsUfcsResult(ov, out firstUfcsArg);
 						// In the case of an ufcs, insert the first argument into the CallArguments list
-						if (ms.IsUFCSResult && !hasHandledUfcsResultBefore)
+						if (isUfcs && !hasHandledUfcsResultBefore)
 						{
-							callArguments.Insert(0, eval ? baseValue as ISemantic : ((MemberSymbol)baseExpression[0]).FirstArgument);
+							callArguments.Insert(0, eval ? baseValue as ISemantic : firstUfcsArg);
 							hasHandledUfcsResultBefore = true;
 						}
-						else if (!ms.IsUFCSResult && hasHandledUfcsResultBefore) // In the rare case of having a ufcs result occuring _after_ a normal member result, remove the initial arg again
+						else if (!isUfcs && hasHandledUfcsResultBefore) // In the rare case of having a ufcs result occuring _after_ a normal member result, remove the initial arg again
 						{
 							callArguments.RemoveAt(0);
 							hasHandledUfcsResultBefore = false;
@@ -298,7 +300,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 								ctxt.PushNewScope(dm);
 							ctxt.CurrentContext.IntroduceTemplateParameterTypes(ms);
 
-							var bt=ms.Base ?? TypeDeclarationResolver.GetMethodReturnType(dm, ctxt);
+							var bt = TypeDeclarationResolver.GetMethodReturnType(dm, ctxt) ?? ms.Base;
 
 							if(pop)
 								ctxt.Pop();
@@ -306,7 +308,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 								ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(ms);
 
 							if(eval || !returnBaseTypeOnly)
-								argTypeFilteredOverloads.Add(ms.Base == null ? new MemberSymbol(dm, bt, ms.DeclarationOrExpressionBase, ms.DeducedTypes) : ms);
+								argTypeFilteredOverloads.Add(new MemberSymbol(dm, bt, ms.DeclarationOrExpressionBase, ms.DeducedTypes){ Tag = ms.Tag });
 							else
 								argTypeFilteredOverloads.Add(bt);
 						}
@@ -422,11 +424,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			{
 				// The usual case: A tuple of a variable length is put at the end of a parameter list..
 				// take all arguments from i until the end of the argument list..
+				// ; Also accept empty tuples
 				lastArgumentToTake = callArguments.Count - 1;
-
-				// Also accept empty tuples..
-				if (callArguments.Count == 0)
-					lastArgumentToTake = 0;
 			}
 			else
 			{
@@ -445,16 +444,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				}
 			}
 
-			if (lastArgumentToTake < 0)
-			{
-				// An error occurred somewhere..
-				add = false;
-				return true;
-			}
-
-			int argCountToHandle = lastArgumentToTake - currentArg;
-			if (argCountToHandle > 0)
-				argCountToHandle++;
+			int argCountToHandle = lastArgumentToTake - currentArg + 1;
 
 			if (tuple != null)
 			{
@@ -647,16 +637,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			 */
 			if(overloads == null || EvalAndFilterOverloads)
 			{
-				var	oo = UFCSResolver.TryResolveUFCS(baseExpression, acc, ctxt) as AbstractType[];
+				var	oo = UFCSResolver.TryResolveUFCS(baseExpression, acc, ctxt);
 	
-				if(oo != null)
-				{
-					int overloadsLength = overloads == null ? 0 : overloads.Length;
-					var newArr = new AbstractType[overloadsLength + oo.Length];
-					if(overloadsLength != 0)
-						overloads.CopyTo(newArr,0);
-					oo.CopyTo(newArr, overloadsLength);
-					overloads = newArr;
+				if (oo.Count > 0) {
+					if (overloads != null && overloads.Length != 0)
+						oo.AddRange (overloads);
+					overloads = oo.ToArray();
 				}
 			}
 
