@@ -139,7 +139,7 @@ namespace D_Parser.Resolver.TypeResolution
 		public static AbstractType[] ResolveFurtherTypeIdentifier(string nextIdentifier,
 		                                                          IEnumerable<AbstractType> resultBases,
 		                                                          ResolutionContext ctxt,
-		                                                          object typeIdObject = null)
+			ISyntaxRegion typeIdObject = null)
 		{
 			return ResolveFurtherTypeIdentifier (nextIdentifier.GetHashCode (), resultBases, ctxt, typeIdObject);
 		}
@@ -152,7 +152,7 @@ namespace D_Parser.Resolver.TypeResolution
 		public static AbstractType[] ResolveFurtherTypeIdentifier(int nextIdentifierHash,
 			IEnumerable<AbstractType> resultBases,
 			ResolutionContext ctxt,
-			object typeIdObject = null)
+			ISyntaxRegion typeIdObject = null)
 		{
 			MemberSymbol statProp;
 			if ((resultBases = DResolver.StripMemberSymbols(resultBases)) == null)
