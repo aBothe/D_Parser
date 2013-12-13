@@ -49,18 +49,15 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						return nex;
 					args = nex.Arguments;
 				}
-
-				if (e.EndLocation.Line < 0)
+					
+				// An INVALID token expression is assumed as a safe indicator for handling the last expression in an expression chain!
+				if (args != null && args.Length != 0)
 				{
-					// A (-1;-1) is assumed as a safe indicator for handling the last expression in an expression chain!
-					if (args != null && args.Length != 0)
-					{
-						var arg = SearchExpressionDeeply(args[args.Length - 1], Where);
-						if (arg != null && (!(arg is TokenExpression) || (arg as TokenExpression).Token != DTokens.INVALID))
-							return arg;
-					}
-					return e;
+					var arg = SearchExpressionDeeply(args[args.Length - 1], Where);
+					if (arg != null && (!(arg is TokenExpression) || (arg as TokenExpression).Token != DTokens.INVALID))
+						return arg;
 				}
+				return e;
 			}
 			else if (e is TemplateInstanceExpression)
 			{
