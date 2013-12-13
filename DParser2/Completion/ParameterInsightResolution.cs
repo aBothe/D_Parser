@@ -116,32 +116,19 @@ namespace D_Parser.Completion
 			};
 
 			// 1), 2)
-			if (lastParamExpression is PostfixExpression_MethodCall)
-			{
+			if (lastParamExpression is PostfixExpression_MethodCall) {
 				res.IsMethodArguments = true;
-				var call = (PostfixExpression_MethodCall) lastParamExpression;
+				var call = (PostfixExpression_MethodCall)lastParamExpression;
 
 				res.MethodIdentifier = call.PostfixForeExpression;
-				res.ResolvedTypesOrMethods = Evaluation.GetUnfilteredMethodOverloads(call.PostfixForeExpression, ctxt, call);
+				res.ResolvedTypesOrMethods = Evaluation.GetUnfilteredMethodOverloads (call.PostfixForeExpression, ctxt, call);
 
 				if (call.Arguments != null)
 					res.CurrentlyTypedArgumentIndex = call.ArgumentCount;
 			}
 			// 3)
 			else if (lastParamExpression is TemplateInstanceExpression)
-			{
-				var templ = (TemplateInstanceExpression)lastParamExpression;
-
-				res.IsTemplateInstanceArguments = true;
-
-				res.MethodIdentifier = templ;
-				res.ResolvedTypesOrMethods = Evaluation.GetOverloads(templ, ctxt, null, false);
-
-				if (templ.Arguments != null)
-					res.CurrentlyTypedArgumentIndex = templ.Arguments.Length;
-				else
-					res.CurrentlyTypedArgumentIndex = 0;
-			}
+				HandleTemplateInstance (lastParamExpression as TemplateInstanceExpression, res, Editor, ctxt, curBlock);
 			else if (lastParamExpression is PostfixExpression_Access)
 			{
 				var acc = (PostfixExpression_Access)lastParamExpression;
@@ -152,8 +139,10 @@ namespace D_Parser.Completion
 				if (res.ResolvedTypesOrMethods == null)
 					return res;
 
-				if (acc.AccessExpression is NewExpression)
-					CalculateCurrentArgument(acc.AccessExpression as NewExpression, res, Editor.CaretLocation, ctxt, res.ResolvedTypesOrMethods);
+				if (acc.AccessExpression is TemplateInstanceExpression)
+					HandleTemplateInstance (acc.AccessExpression as TemplateInstanceExpression, res, Editor, ctxt, curBlock, res.ResolvedTypesOrMethods);
+				else if (acc.AccessExpression is NewExpression)
+					HandleNewExpression(acc.AccessExpression as NewExpression, res, Editor, ctxt, curBlock, res.ResolvedTypesOrMethods);
 			}
 			else if (lastParamExpression is NewExpression)
 				HandleNewExpression((NewExpression)lastParamExpression,res,Editor,ctxt,curBlock);
@@ -176,11 +165,30 @@ namespace D_Parser.Completion
 			return res;
 		}
 
+		static void HandleTemplateInstance(TemplateInstanceExpression tix,
+			ArgumentsResolutionResult res,
+			IEditorData Editor,
+			ResolutionContext ctxt,
+			IBlockNode curBlock,
+			IEnumerable<AbstractType> resultBases = null)
+		{
+			res.IsTemplateInstanceArguments = true;
+
+			res.MethodIdentifier = tix;
+			res.ResolvedTypesOrMethods = Evaluation.GetOverloads(tix, ctxt, resultBases, false);
+
+			if (tix.Arguments != null)
+				res.CurrentlyTypedArgumentIndex = tix.Arguments.Length;
+			else
+				res.CurrentlyTypedArgumentIndex = 0;
+		}
+
 		static void HandleNewExpression(NewExpression nex, 
 			ArgumentsResolutionResult res, 
 			IEditorData Editor, 
 			ResolutionContext ctxt,
-			IBlockNode curBlock)
+			IBlockNode curBlock,
+			IEnumerable<AbstractType> resultBases = null)
 		{
 			res.MethodIdentifier = nex;
 			CalculateCurrentArgument(nex, res, Editor.CaretLocation, ctxt);
