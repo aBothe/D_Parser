@@ -19,11 +19,13 @@ namespace D_Parser.Completion
 		public IStatement ScopedStatement;
 		public IBlockNode ScopedBlock;
 		public MemberFilter MemberFilter = MemberFilter.All;
+		IEditorData ed;
 
 		public MemberCompletionProvider(ICompletionDataGenerator cdg) : base(cdg) { }
 
 		protected override void BuildCompletionDataInternal(IEditorData Editor, char enteredChar)
 		{
+			ed = Editor;
 			ctxt = ResolutionContext.Create(Editor.ParseCache, new ConditionalCompilationFlags(Editor), ScopedBlock, ScopedStatement);
 			ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
 
@@ -35,10 +37,6 @@ namespace D_Parser.Completion
 				return;
 
 			BuildCompletionData(r, ScopedBlock);
-
-			if(CompletionOptions.Instance.ShowUFCSItems && (MemberFilter & MemberFilter.Methods) != 0 &&
-				!(r is UserDefinedType || r is PrimitiveType || r is PackageSymbol || r is ModuleSymbol))
-				UFCSCompletionProvider.Generate(r, ctxt, Editor, CompletionDataGenerator);
 		}
 
 		void BuildCompletionData(
@@ -70,31 +68,31 @@ namespace D_Parser.Completion
 				}
 			}
 
-			if (rr is MemberSymbol)
-				BuildCompletionData((MemberSymbol)rr, currentlyScopedBlock, isVariableInstance);
+			var mrr = rr as MemberSymbol;
+			if (mrr != null && mrr.Base != null) {
+				BuildCompletionData(mrr.Base, currentlyScopedBlock,
+					isVariableInstance ||
+					(mrr.Definition is DVariable && !(mrr is AliasedType) || // True if we obviously have a variable handled here. Otherwise depends on the samely-named parameter..
+						mrr.Definition is DMethod),	mrr);
+			}
 
 			// A module path has been typed
 			else if (!isVariableInstance && rr is ModuleSymbol)
-				BuildCompletionData((ModuleSymbol)rr);
-
+				BuildCompletionData ((ModuleSymbol)rr);
 			else if (rr is PackageSymbol)
-				BuildCompletionData((PackageSymbol)rr);
+				BuildCompletionData ((PackageSymbol)rr);
 
 			#region A type was referenced directly
-			else if (rr is EnumType)
-			{
+			else if (rr is EnumType) {
 				var en = (EnumType)rr;
 
 				foreach (var e in en.Definition)
-					CompletionDataGenerator.Add(e);
-			}
-
-			else if (rr is TemplateIntermediateType)
-			{
+					CompletionDataGenerator.Add (e);
+				// TODO: Enlist ufcs items&stat props here aswell?
+			} else if (rr is TemplateIntermediateType) {
 				var tr = (TemplateIntermediateType)rr;
 
-				if (tr.DeclarationOrExpressionBase is TokenExpression)
-				{
+				if (tr.DeclarationOrExpressionBase is TokenExpression) {
 					int token = ((TokenExpression)tr.DeclarationOrExpressionBase).Token;
 
 					isVariableInstance = token == DTokens.This || token == DTokens.Super;
@@ -109,32 +107,19 @@ namespace D_Parser.Completion
 				// myClass. (not located in myClass)			<-- Show all static members
 				// myClass. (located in myClass)				<-- Show all static members
 
-				BuildCompletionData(tr, isVariableInstance);
+				BuildCompletionData (tr, isVariableInstance);
 			}
 			#endregion
 
-			else if (rr is PointerType)
-			{
+			else if (rr is PointerType) {
 				var pt = (PointerType)rr;
 				if (!(pt.Base is PrimitiveType && pt.Base.DeclarationOrExpressionBase is PointerDecl))
-					BuildCompletionData(pt.Base, currentlyScopedBlock, true, pt);
+					BuildCompletionData (pt.Base, currentlyScopedBlock, true, pt);
+			} else {
+				if (isVariableInstance)
+					GenUfcsCompletionItems (rr);
+				StaticProperties.ListProperties (CompletionDataGenerator, MemberFilter, rr, isVariableInstance);
 			}
-
-			else
-				StaticProperties.ListProperties(CompletionDataGenerator, MemberFilter, rr, isVariableInstance);
-		}
-
-		void BuildCompletionData(MemberSymbol mrr, IBlockNode currentlyScopedBlock, bool isVariableInstance = false)
-		{
-			if (mrr.Base != null)
-					BuildCompletionData(mrr.Base, 
-						currentlyScopedBlock,
-						isVariableInstance ||
-						(mrr.Definition is DVariable && !(mrr is AliasedType) || // True if we obviously have a variable handled here. Otherwise depends on the samely-named parameter..
-						mrr.Definition is DMethod),
-						mrr); 
-			else
-				StaticProperties.ListProperties(CompletionDataGenerator, MemberFilter, mrr, false);
 		}
 
 		void BuildCompletionData(PackageSymbol mpr)
@@ -166,7 +151,15 @@ namespace D_Parser.Completion
 		void BuildCompletionData(UserDefinedType tr, bool showInstanceItems)
 		{
 			MemberCompletionEnumeration.EnumChildren(CompletionDataGenerator, ctxt, tr, showInstanceItems, MemberFilter);
+			if (showInstanceItems)
+				GenUfcsCompletionItems (tr);
 			StaticProperties.ListProperties(CompletionDataGenerator, MemberFilter, tr, showInstanceItems);
+		}
+
+		void GenUfcsCompletionItems(AbstractType t)
+		{
+			foreach (var ufcsItem in UFCSResolver.TryResolveUFCS(t, 0, ed.CaretLocation, ctxt))
+				CompletionDataGenerator.Add ((ufcsItem as DSymbol).Definition);
 		}
 	}
 }

@@ -20,9 +20,9 @@ namespace D_Parser.Resolver.TypeResolution
 		readonly int nameFilterHash;
 		readonly ISemantic firstArgument;
 		readonly ISyntaxRegion sr;
-		public readonly List<AbstractType> matches = new List<AbstractType>();
+		readonly List<AbstractType> matches = new List<AbstractType>();
 
-		public UFCSResolver(ResolutionContext ctxt, ISemantic firstArg, int nameHash = 0, ISyntaxRegion sr = null) : base(ctxt)
+		UFCSResolver(ResolutionContext ctxt, ISemantic firstArg, int nameHash = 0, ISyntaxRegion sr = null) : base(ctxt)
 		{
 			this.firstArgument = firstArg;
 			this.nameFilterHash = nameHash;
@@ -54,7 +54,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 			var dc = n as DClassLike;
 			if (dc != null && dc.ClassType == DTokens.Template) {
-				if (sr is TemplateInstanceExpression) {
+				if (sr is TemplateInstanceExpression || nameFilterHash == 0) {
 					var templ = TypeDeclarationResolver.HandleNodeMatch (dc, ctxt, null, sr);
 					templ.Tag = new UfcsTag{ firstArgument=firstArgument };
 					matches.Add (templ);
@@ -129,7 +129,7 @@ namespace D_Parser.Resolver.TypeResolution
 			else if (acc.AccessExpression is TemplateInstanceExpression)
 				name = ((TemplateInstanceExpression)acc.AccessExpression).TemplateIdHash;
 			else
-				name = 0;
+				return new List<AbstractType> ();
 
 			return TryResolveUFCS (firstArgument, name, acc.PostfixForeExpression.Location, ctxt, acc);
 		}
