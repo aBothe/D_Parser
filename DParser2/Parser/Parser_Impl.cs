@@ -506,10 +506,18 @@ namespace D_Parser.Parser
 				c = new NegatedDeclarationCondition(c);
 
 				BlockAttributes.Push(c);
-				if (laKind == OpenCurlyBrace)
-				{
-					metaBlock.OptionalElseBlock = new ElseMetaDeclarationBlock { Location = t.Location, BlockStartLocation = la.Location };
-					ClassBody(module, true, false);
+				if (laKind == OpenCurlyBrace) {
+					metaBlock.OptionalElseBlock = new ElseMetaDeclarationBlock {
+						Location = t.Location,
+						BlockStartLocation = la.Location
+					};
+					ClassBody (module, true, false);
+				} else if (laKind == Colon) {
+					metaBlock.OptionalElseBlock = new ElseMetaDeclarationSection { 
+						Location = t.Location, 
+						EndLocation =la.EndLocation };
+					Step ();
+					return;
 				}
 				else
 				{

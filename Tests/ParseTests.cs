@@ -173,6 +173,29 @@ else int C;");
 		}
 
 		[Test]
+		public void DeclConditionElseSection()
+		{
+			var m = DParser.ParseString (@"module A;
+version(VersA)
+	int a;
+else:
+
+int b;
+");
+			Assert.That (m.ParseErrors.Count, Is.EqualTo (0));
+			DNode dn;
+
+			dn = m ["a"].First () as DNode;
+			Assert.That (dn.Attributes.Count, Is.EqualTo (1));
+			Assert.That (dn.Attributes [0], Is.TypeOf (typeof(VersionCondition)));
+
+			dn = m ["b"].First () as DNode;
+			Assert.That (dn.Attributes.Count, Is.EqualTo (1));
+			Assert.That (dn.Attributes [0], Is.TypeOf (typeof(NegatedDeclarationCondition)));
+			Assert.That ((dn.Attributes [0] as NegatedDeclarationCondition).FirstCondition, Is.TypeOf (typeof(VersionCondition)));
+		}
+
+		[Test]
 		public void Attributes3()
 		{
 			var m = DParser.ParseString (@"module A;

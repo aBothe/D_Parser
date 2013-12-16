@@ -64,6 +64,8 @@ namespace D_Parser.Dom
 		}
 	}
 
+	public class ElseMetaDeclarationSection : ElseMetaDeclaration { }
+
 	/// <summary>
 	/// Describes a meta block that begins with a colon. 'Ends' right after the colon.
 	/// </summary>
