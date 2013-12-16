@@ -10,6 +10,7 @@ using D_Parser.Resolver.TypeResolution;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom;
 using D_Parser.Dom.Statements;
+using D_Parser.Resolver.ExpressionSemantics;
 
 namespace Tests
 {
@@ -17,27 +18,31 @@ namespace Tests
 	public class UFCSTests
 	{
 		[Test]
-		public void TestBasicUFCS()
+		public void BasicResolution()
 		{
-			var pcl = ResolutionTests.CreateCache(@"module modA;
+			var ctxt = ResolutionTests.CreateCtxt("modA",@"module modA;
 void writeln(T...)(T t) {}
-string foo(string a) {}
-void foo(int a) {}
+int[] foo(string a) {}
+int foo(int a) {}
 
-void main(){
-	string s;
-}");
-			var modA=pcl[0]["modA"];
-			var ctxt = ResolutionContext.Create(pcl, null, modA);
+string globStr;
+int globI;
+");
+			IExpression x;
+			AbstractType t;
 
-			var main=modA["main"].First() as DMethod;
-			var s = main.Body.Declarations[0];
-			var s_res= TypeDeclarationResolver.HandleNodeMatch(s, ctxt);
+			x = DParser.ParseExpression ("globStr.foo()");
+			t = Evaluation.EvaluateType (x, ctxt);
+			Assert.That (t, Is.TypeOf (typeof(ArrayType)));
 
-			var methods=pcl[0].UfcsCache.FindFitting(ctxt, s.EndLocation, s_res).ToArray();
+			x = DParser.ParseExpression ("globI.foo()");
+			t = Evaluation.EvaluateType (x, ctxt);
+			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
 
-			// foo(string), writeln
-			Assert.AreEqual(methods.Length, 2);
+			x = DParser.ParseExpression ("globStr.writeln()");
+			t = Evaluation.EvaluateType (x, ctxt);
+			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
+			Assert.That ((t as PrimitiveType).TypeToken, Is.EqualTo(DTokens.Void));
 		}
 	}
 }

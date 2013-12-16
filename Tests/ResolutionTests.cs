@@ -35,11 +35,7 @@ namespace Tests
 			foreach (var code in moduleCodes)
 				r.AddModule(DParser.ParseString(code));
 
-			UFCSCache.SingleThreaded = true;
-			var pcl = new ParseCacheView (new [] { r });
-			r.UfcsCache.BeginUpdate (pcl);
-
-			return pcl;
+			return new ParseCacheView (new [] { r });
 		}
 
 		public static ResolutionContext CreateDefCtxt(ParseCacheView pcl, IBlockNode scope, IStatement stmt=null)

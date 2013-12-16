@@ -22,8 +22,8 @@ namespace TestTool
 			var ast = DParser.ParseString(code, true);
 			sw2.Stop();*/
 			//(new ResolutionTests ()).EmptyTypeTuple ();
-			//(new ParseTests()).TestPhobos();
-			//return;
+			(new UFCSTests()).BasicResolution();
+			return;
 
 			// Indent testing
 			/*var code = @"
@@ -44,8 +44,7 @@ namespace TestTool
 
 			
 			// Phobos & Druntime parsing
-			UFCSCache.SingleThreaded = true;
-			
+
 			Console.WriteLine ("Begin parsing...");
 
 			var dirs = Environment.OSVersion.Platform == PlatformID.Unix ? new[]{@"/usr/include/dlang"} : new[]{@"D:\D\dmd2\src\phobos", @"D:\D\dmd2\src\druntime\import"};
@@ -79,26 +78,6 @@ namespace TestTool
 					}
 				}
 
-			Console.WriteLine ("--------");
-
-
-			Console.WriteLine("Begin building ufcs cache...");
-			var sw = new Stopwatch();
-			sw.Restart();
-			foreach (var dir in dirs)
-			{
-				var ufcs = GlobalParseCache.GetRootPackage(dir).UfcsCache;
-				ufcs.AnalysisFinished += (root) =>
-				{
-					if (System.Threading.Interlocked.Decrement(ref dirsLeft) <= 0)
-						ev.Set();
-				};
-				ufcs.BeginUpdate(pcw, ccf);
-			}
-			ev.WaitOne();
-			sw.Stop();
-			Console.WriteLine("done. {0}ms needed.", sw.ElapsedMilliseconds);
-			
 			Console.WriteLine();
 			Console.Write("Press any key to continue . . . ");
 			//Console.ReadKey(true);

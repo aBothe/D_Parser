@@ -310,21 +310,11 @@ void main() {
 			var dir = "/usr/include/d";
 
 			GlobalParseCache.ParseTaskFinished += pc_FinishedParsing;
-			UFCSCache.SingleThreaded = true;
-			UFCSCache.AnyAnalysisFinished+=(ea) => 
-				Trace.WriteLine(string.Format("Finished UFCS analysis: {0} resolutions in {1}s; ~{2}ms/resolution", ea.UfcsCache.MethodCacheCount,
-				                              ea.UfcsCache.CachingDuration.TotalSeconds, Math.Round(ea.UfcsCache.CachingDuration.TotalMilliseconds/ea.UfcsCache.MethodCacheCount,3)), "ParserTests");
-
 			GlobalParseCache.BeginAddOrUpdatePaths (new[] { dir }, false);
 
 			GlobalParseCache.WaitForFinish();
 
-			var pc = new ParseCacheView(new[]{dir});
-
-			foreach (var root in pc)
-				root.UfcsCache.BeginUpdate (pc);
-
-			return pc;
+			return new ParseCacheView(new[]{dir});
 		}
 
 		static void pc_FinishedParsing(ParsingFinishedEventArgs ppd)

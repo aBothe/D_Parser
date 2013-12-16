@@ -210,7 +210,6 @@ void main() { Class. }";
 			var pack = ed.ParseCache [0] as MutableRootPackage;
 
 			pack.AddModule (mod);
-			pack.UfcsCache.CacheModuleMethods (mod, ResolutionContext.Create(ed));
 
 			ed.ModuleCode = focusedModuleCode;
 			ed.SyntaxTree = mod;
