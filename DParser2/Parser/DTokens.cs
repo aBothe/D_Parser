@@ -224,7 +224,10 @@ namespace D_Parser.Parser
 		public const byte __FUNCTION__ = 181;
 		public const byte __PRETTY_FUNCTION__ = 182;
 
-        public const byte MaxToken = 183;
+		public const byte Incomplete = 183;
+		public const string IncompleteId = "<Incomplete>";
+
+		public const byte MaxToken = 184;
         public static BitArray NewSet(params byte[] values)
         {
             BitArray bitArray = new BitArray(MaxToken);
@@ -308,7 +311,9 @@ namespace D_Parser.Parser
 	"ifloat"},{Import,
 	"import"},{Immutable,
 	"immutable"},{In,
-	"in"},{InOut,
+				"in"},
+			{Incomplete, IncompleteId},
+			{InOut,
 	"inout"},{Int,
 	"int"},{Interface,
 	"interface"},{Invariant,
