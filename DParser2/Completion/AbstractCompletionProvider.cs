@@ -45,44 +45,12 @@ namespace D_Parser.Completion
 				else
 					pfa = null;
 
-				if (pfa != null)
-				{
-					// myObj. <-- AccessExpression will be null there, 
-					// this.fileName | <-- AccessExpression will be 'fileName' - no trigger wished
-					if (pfa.AccessExpression == null)
-					{
-						var mcp = new MemberCompletionProvider(dataGen)
-						{
-							AccessExpression = pfa,
-							ScopedBlock = curBlock,
-							ScopedStatement = curStmt,
-						};
-						if (trackVars.IsParsingBaseClassList)
-						{
-							if (trackVars.InitializedNode is DClassLike && 
-								(trackVars.InitializedNode as DClassLike).ClassType == DTokens.Interface)
-								mcp.MemberFilter = MemberFilter.Interfaces | MemberFilter.Templates;
-							else
-								mcp.MemberFilter = MemberFilter.Classes | MemberFilter.Interfaces | MemberFilter.Templates;
-						}
-						return mcp;
-					}
-					else
-						return null;
-				}
-
 				if(trackVars.ExpectingIdentifier)
 				{
 					if (trackVars.LastParsedObject is DAttribute)
 						return new AttributeCompletionProvider (dataGen) {
 							Attribute = trackVars.LastParsedObject as DAttribute
 						};
-					else if (trackVars.LastParsedObject is ImportStatement.Import)
-						return new ImportStatementCompletionProvider (dataGen, (ImportStatement.Import)trackVars.LastParsedObject);
-					else if (trackVars.LastParsedObject is ImportStatement.ImportBindings)
-						return new ImportStatementCompletionProvider (dataGen, (ImportStatement.ImportBindings)trackVars.LastParsedObject);
-					else if (trackVars.LastParsedObject is ModuleStatement)
-						return new ModuleStatementCompletionProvider(dataGen);
 					else if ((trackVars.LastParsedObject is TemplateParameter || 
 						trackVars.LastParsedObject is ForeachStatement) && ch != '\0')
 						return null;
