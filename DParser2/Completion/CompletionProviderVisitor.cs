@@ -41,6 +41,7 @@ namespace D_Parser.Completion
 		public IStatement scopedStatement;
 
 		bool explicitlyNoCompletion;
+		bool handlesBaseClasses;
 		public AbstractCompletionProvider GeneratedProvider { 
 			get{ 
 				return prv ?? (explicitlyNoCompletion ? null : 
@@ -65,6 +66,42 @@ namespace D_Parser.Completion
 			}
 			else
 				base.VisitDNode (n);
+		}
+
+		public override void Visit (DClassLike n)
+		{
+			if (!halt) {
+				handlesBaseClasses = true;
+				foreach (var bc in n.BaseClasses)
+					bc.Accept (this);
+				handlesBaseClasses = false;
+
+				if (!halt)
+					VisitBlock (n);
+			}
+		}
+		#endregion
+
+		#region TypeDeclarations
+		public override void Visit (DTokenDeclaration td)
+		{
+			if (td.Token == DTokens.Incomplete) {
+
+				if (handlesBaseClasses) {
+					/*
+						if (trackVars.IsParsingBaseClassList)
+						{
+							if (trackVars.InitializedNode is DClassLike && 
+								(trackVars.InitializedNode as DClassLike).ClassType == DTokens.Interface)
+								mcp.MemberFilter = MemberFilter.Interfaces | MemberFilter.Templates;
+							else
+								mcp.MemberFilter = MemberFilter.Classes | MemberFilter.Interfaces | MemberFilter.Templates;
+						}
+					 */
+				}
+
+				halt = true;
+			}
 		}
 		#endregion
 

@@ -35,21 +35,6 @@ namespace D_Parser.Completion
 
 				PostfixExpression_Access pfa;
 
-				// if( asdf == E.| )
-				var ex = trackVars.LastParsedObject as IExpression;
-				while (ex is OperatorBasedExpression) {
-					var opEx = ex as OperatorBasedExpression;
-					var rop = opEx.RightOperand;
-					if (rop != null && Editor.CaretLocation >= rop.Location)
-						ex = rop;
-					else if ((rop = opEx.LeftOperand) != null && Editor.CaretLocation <= rop.EndLocation)
-						ex = rop;
-					else
-						break;
-				}
-
-				if (ex is PostfixExpression_Access)
-					pfa = ex as PostfixExpression_Access;
 				else if (trackVars.LastParsedObject is ITypeDeclaration && !(trackVars.LastParsedObject is TemplateInstanceExpression))
 					pfa = TryConvertTypeDeclaration(trackVars.LastParsedObject as ITypeDeclaration) as PostfixExpression_Access;
 				else if (ex is UnaryExpression_Type)
