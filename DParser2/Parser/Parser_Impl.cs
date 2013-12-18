@@ -950,29 +950,29 @@ namespace D_Parser.Parser
 				while (laKind == Comma)
 				{
 					Step();
-					if (Expect(Identifier))
-					{
-						var otherNode = new DVariable();
+					if (IsEOF || Expect (Identifier)) {
+						var otherNode = new DVariable ();
 						LastParsedObject = otherNode;
 
 						/// Note: In DDoc, all declarations that are made at once (e.g. int a,b,c;) get the same pre-declaration-description!
 						otherNode.Description = initialComment;
 
-						otherNode.AssignFrom(firstNode);
+						otherNode.AssignFrom (firstNode);
 						otherNode.Location = t.Location;
-						otherNode.Name = t.Value;
+						if (t.Kind == DTokens.Identifier)
+							otherNode.Name = t.Value;
+						else
+							otherNode.NameHash = IncompleteIdHash;
 						otherNode.NameLocation = t.Location;
 
-						if (laKind == (Assign))
-						{
+						if (laKind == (Assign)) {
 							TrackerVariables.InitializedNode = otherNode;
-							otherNode.Initializer = Initializer(Scope);
+							otherNode.Initializer = Initializer (Scope);
 						}
 
 						otherNode.EndLocation = t.EndLocation;
-						ret.Add(otherNode);
-					}
-					else
+						ret.Add (otherNode);
+					} else
 						break;
 				}
 
@@ -1001,6 +1001,9 @@ namespace D_Parser.Parser
 			}
 			else
 				SynErr(OpenCurlyBrace, "; or function body expected after declaration stub.");
+
+			if (IsEOF)
+				return new List<INode>{ firstNode };
 
 			return null;
 		}
@@ -1224,18 +1227,15 @@ namespace D_Parser.Parser
 				}
 			}
 
-			// Only return no variable if the BasicType2 wasn't parsed properly to ensure good code completion
-			if (IsEOF && ret != LastParsedObject)
-				return null;
-
 			if (laKind != (OpenParenthesis))
 			{
 				// On external function declarations, no parameter names are required.
 				// extern void Cfoo(HANDLE,char**);
 				if (IsParam && laKind != (Identifier))
 				{
-					if(ret.Type!=null && IsEOF)
-						ExpectingNodeName = true;
+					if ((!(ret.Type is DTokenDeclaration) || 
+						(ret.Type as DTokenDeclaration).Token != DTokens.Incomplete) && IsEOF)
+						ret.NameHash = DTokens.IncompleteIdHash;
 					return ret;
 				}
 
@@ -1268,9 +1268,9 @@ namespace D_Parser.Parser
 				}
 				else
 				{
-					if (IsEOF || IsParam)
+					if (IsEOF)
 					{
-						ExpectingNodeName = true;
+						ret.NameHash = DTokens.IncompleteIdHash;
 						return ret;
 					}
 
@@ -3954,7 +3954,7 @@ namespace D_Parser.Parser
 								Expect(CloseParenthesis);
 							}
 							else if(IsEOF)
-								ExpectingNodeName = true;
+								catchVar.NameHash = DTokens.IncompleteIdHash;
 
 							catchVar.EndLocation = t.EndLocation;
 							c.CatchParameter = catchVar;
@@ -4395,7 +4395,7 @@ namespace D_Parser.Parser
 				ret.NameLocation = t.Location;
 			}
 			else if (IsEOF)
-				ExpectingNodeName = true;
+				ret.NameHash = DTokens.IncompleteIdHash;
 
 			if (laKind == (Semicolon))
 			{
@@ -4439,7 +4439,7 @@ namespace D_Parser.Parser
 				dc.NameLocation = t.Location;
 			}
 			else if (IsEOF)
-				ExpectingNodeName = true;
+				dc.NameHash = DTokens.IncompleteIdHash;
 
 			if (laKind == (OpenParenthesis))
 				TemplateParameterList(dc);
@@ -4631,14 +4631,12 @@ namespace D_Parser.Parser
 
 			ApplyAttributes(dc);
 
-			if (!Expect(Identifier))
-			{
-				if (IsEOF)
-					ExpectingNodeName = true;
-				return dc;
+			if (Expect (Identifier)) {
+				dc.Name = t.Value;
+				dc.NameLocation = t.Location;
 			}
-			dc.Name = t.Value;
-			dc.NameLocation = t.Location;
+			else if(IsEOF)
+				dc.NameHash = DTokens.IncompleteIdHash;
 
 			if (laKind == (OpenParenthesis))
 				TemplateParameterList(dc);
@@ -4702,7 +4700,7 @@ namespace D_Parser.Parser
 				}
 			}
 			else if (IsEOF)
-				ExpectingNodeName = true;
+				mye.NameHash = DTokens.IncompleteIdHash;
 
 			if (IsDeclaratorSuffix)
 			{
@@ -4798,7 +4796,7 @@ namespace D_Parser.Parser
 						ev.NameLocation = t.Location;
 					}
 					else if (IsEOF)
-						ExpectingNodeName = true;
+						ev.NameHash = DTokens.IncompleteIdHash;
 				}
 
 				if (laKind == (Assign))
@@ -4922,7 +4920,7 @@ namespace D_Parser.Parser
 				dc.NameLocation = t.Location;
 			}
 			else if (IsEOF)
-				ExpectingNodeName = true;
+				dc.NameHash = DTokens.IncompleteIdHash;
 
 			TemplateParameterList(dc);
 

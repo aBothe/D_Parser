@@ -47,12 +47,6 @@ namespace D_Parser.Parser
 			set { TrackerVariables.LastParsedObject = value; }
 		}
 
-		/// <summary>
-		/// Required for code completion.
-		/// True if a type/variable/method/etc. identifier is expected.
-		/// </summary>
-		public bool ExpectingNodeName { set { TrackerVariables.ExpectingNodeName = value; } get { return TrackerVariables.ExpectingNodeName; } }
-
 		public readonly List<Comment> Comments = new List<Comment>();
 		public ParserTrackerVariables TrackerVariables = new ParserTrackerVariables();
 
