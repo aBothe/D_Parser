@@ -46,10 +46,10 @@ namespace D_Parser.Completion
 
 			IBlockNode scope = null;
 			IStatement stmt;
-
+			
 			var sr = CtrlSpaceCompletionProvider.FindCurrentCaretContext(editor, ref scope, out stmt);
 
-			var complVis = new CompletionProviderVisitor (completionDataGen) { scopedBlock = scope, scopedStatement = stmt };
+			var complVis = new CompletionProviderVisitor (completionDataGen, triggerChar) { scopedBlock = scope, scopedStatement = stmt };
 			if (sr is INode)
 				(sr as INode).Accept (complVis);
 			else if (sr is IStatement)
@@ -67,6 +67,9 @@ namespace D_Parser.Completion
 
 		public static bool IsCompletionAllowed(IEditorData Editor, char enteredChar)
 		{
+			if (enteredChar == '(')
+				return false;
+
 			if (Editor.CaretOffset > 0)
 			{
 				if (Editor.CaretLocation.Line == 1 && Editor.ModuleCode.Length > 0 && Editor.ModuleCode[0] == '#')

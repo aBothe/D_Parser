@@ -52,9 +52,10 @@ namespace D_Parser.Completion
 		readonly ICompletionDataGenerator cdgen;
 		#endregion
 
-		public CompletionProviderVisitor(ICompletionDataGenerator cdg)
+		public CompletionProviderVisitor(ICompletionDataGenerator cdg, char enteredChar = '\0')
 		{
 			this.cdgen = cdg;
+			explicitlyNoCompletion = char.IsWhiteSpace (enteredChar);
 		}
 
 		#region Nodes
