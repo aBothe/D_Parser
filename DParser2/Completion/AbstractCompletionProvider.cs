@@ -20,9 +20,8 @@ namespace D_Parser.Completion
 
 		internal static AbstractCompletionProvider Create(ICompletionDataGenerator dataGen, IEditorData Editor, char ch)
 		{
-			if (ch == '@')
-				return new PropertyAttributeCompletionProvider(dataGen);
-
+			return null;
+			/*
 			ParserTrackerVariables trackVars;
 			IBlockNode curBlock = null;
 			IStatement curStmt;
@@ -93,18 +92,6 @@ namespace D_Parser.Completion
 						return new AttributeCompletionProvider (dataGen) {
 							Attribute = trackVars.LastParsedObject as DAttribute
 						};
-					else if (trackVars.LastParsedObject is ScopeGuardStatement)
-						return new ScopeAttributeCompletionProvider (dataGen) {
-							//ScopeStmt = trackVars.LastParsedObject as ScopeGuardStatement
-						};
-					else if (trackVars.LastParsedObject is PragmaStatement)
-						return new AttributeCompletionProvider (dataGen) {
-							Attribute = (trackVars.LastParsedObject as PragmaStatement).Pragma
-						};
-					else if (trackVars.LastParsedObject is TraitsExpression)
-						return new TraitsExpressionCompletionProvider (dataGen) {
-							//TraitsExpr=trackVars.LastParsedObject as TraitsExpression 
-						};
 					else if (trackVars.LastParsedObject is ImportStatement.Import)
 						return new ImportStatementCompletionProvider (dataGen, (ImportStatement.Import)trackVars.LastParsedObject);
 					else if (trackVars.LastParsedObject is ImportStatement.ImportBindings)
@@ -125,7 +112,7 @@ namespace D_Parser.Completion
 				curBlock=curBlock,
 				curStmt = curStmt,
 				parsedBlock=parsedBlock
-			};
+			};*/
 		}
 
 		[Obsolete("Use CodeCompletion.GenerateCompletionData instead!")]

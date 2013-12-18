@@ -26,6 +26,9 @@
 using System;
 using D_Parser.Completion;
 using D_Parser.Parser;
+using D_Parser.Dom;
+using D_Parser.Dom.Statements;
+using D_Parser.Dom.Expressions;
 
 namespace D_Parser.Completion
 {
@@ -41,15 +44,25 @@ namespace D_Parser.Completion
 			if(!alreadyCheckedCompletionContext && !IsCompletionAllowed(editor, triggerChar))
 				return false;
 
-			var provider = AbstractCompletionProvider.Create(completionDataGen, editor, triggerChar);
+			IBlockNode scope = null;
+			IStatement stmt;
 
-			if (provider == null)
+			var sr = CtrlSpaceCompletionProvider.FindCurrentCaretContext(editor, ref scope, out stmt);
+
+			var complVis = new CompletionProviderVisitor (completionDataGen) { scopedBlock = scope, scopedStatement = stmt };
+			if (sr is INode)
+				(sr as INode).Accept (complVis);
+			else if (sr is IStatement)
+				(sr as IStatement).Accept (complVis);
+			else if (sr is IExpression)
+				(sr as IExpression).Accept (complVis);
+
+			if (complVis.GeneratedProvider == null)
 				return false;
 
-			provider.BuildCompletionData(editor, triggerChar);
+			complVis.GeneratedProvider.BuildCompletionData(editor, triggerChar);
 
 			return true;
-
 		}
 
 		public static bool IsCompletionAllowed(IEditorData Editor, char enteredChar)

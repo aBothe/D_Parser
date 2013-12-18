@@ -67,7 +67,7 @@ namespace D_Parser.Parser
 					sb.AppendLine(c.CommentText);
 			}
 
-			TrackerVariables.Comments.AddRange(Lexer.Comments);
+			Comments.AddRange(Lexer.Comments);
 			Lexer.Comments.Clear();
 
 			sb.Trim ();
@@ -105,7 +105,7 @@ namespace D_Parser.Parser
 					if (c.EndPosition <= t.Location)
 					{
 						i++;
-						TrackerVariables.Comments.Add(c);
+						Comments.Add(c);
 						continue;
 					}
 					else if (c.StartPosition.Line > ExpectedLine)
@@ -115,7 +115,7 @@ namespace D_Parser.Parser
 				}
 				
 				i++;
-				TrackerVariables.Comments.Add(c);
+				Comments.Add(c);
 			}
 			Lexer.Comments.RemoveRange(0, i);
 
@@ -2811,11 +2811,16 @@ namespace D_Parser.Parser
 					leftExpr = e;
 
 					if (laKind == New)
-						e.AccessExpression = PostfixExpression(Scope);
+						e.AccessExpression = PostfixExpression (Scope);
 					else if (IsTemplateInstance)
-						e.AccessExpression = TemplateInstance(Scope);
-					else if (Expect(Identifier))
-                        e.AccessExpression = new IdentifierExpression(t.Value) { Location=t.Location, EndLocation=t.EndLocation };
+						e.AccessExpression = TemplateInstance (Scope);
+					else if (Expect (Identifier))
+						e.AccessExpression = new IdentifierExpression (t.Value) {
+							Location = t.Location,
+							EndLocation = t.EndLocation
+						};
+					else if (IsEOF)
+						e.AccessExpression = new TokenExpression (DTokens.Incomplete);
 
 					e.EndLocation = t.EndLocation;
 				}

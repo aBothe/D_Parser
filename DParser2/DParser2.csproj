@@ -227,6 +227,7 @@
     <Compile Include="Completion\CodeCompletion.cs" />
     <Compile Include="Resolver\ASTScanner\ConditionsFrame.cs" />
     <Compile Include="Resolver\TypeResolution\OpDispatchResolution.cs" />
+    <Compile Include="Completion\CompletionProviderVisitor.cs" />
     <Compile Include="Completion\ParamInsightVisitor.cs" />
   </ItemGroup>
   <ItemGroup>

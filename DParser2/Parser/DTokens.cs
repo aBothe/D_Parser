@@ -226,6 +226,7 @@ namespace D_Parser.Parser
 
 		public const byte Incomplete = 183;
 		public const string IncompleteId = "<Incomplete>";
+		public static readonly int IncompleteIdHash = IncompleteId.GetHashCode();
 
 		public const byte MaxToken = 184;
         public static BitArray NewSet(params byte[] values)
@@ -238,44 +239,42 @@ namespace D_Parser.Parser
             return bitArray;
         }
 
-        public static readonly Dictionary<byte, string> Keywords = new Dictionary<byte, string>
-        {
-            {__gshared,"__gshared"},
-           // {__thread,	    "__thread"},
-            {__traits,	    "__traits"},
-			{__vector, "__vector"},
+		public static readonly Dictionary<byte, string> Keywords = new Dictionary<byte, string> {
+			{ __gshared,"__gshared" },
+			// {__thread,	    "__thread"},
+			{ __traits,	    "__traits" },
+			{ __vector, "__vector" },
 
-            {__LINE__,"__LINE__"},
-            {__FILE__,"__FILE__"},
-            {__EOF__,"__EOF__"},
+			{ __LINE__,"__LINE__" },
+			{ __FILE__,"__FILE__" },
+			{ __EOF__,"__EOF__" },
 
-			{__MODULE__,"__MODULE__"},
-			{__FUNCTION__,"__FUNCTION__"},
-			{__PRETTY_FUNCTION__, "__PRETTY_FUNCTION__"},
+			{ __MODULE__,"__MODULE__" },
+			{ __FUNCTION__,"__FUNCTION__" },
+			{ __PRETTY_FUNCTION__, "__PRETTY_FUNCTION__" },
 
-			{__VERSION__,"__VERSION__"},
-			{__DATE__,"__DATE__"},
-			{__TIME__,"__TIME__"},
-			{__TIMESTAMP__,"__TIMESTAMP__"},
-			{__VENDOR__,"__VENDOR__"},
+			{ __VERSION__,"__VERSION__" },
+			{ __DATE__,"__DATE__" },
+			{ __TIME__,"__TIME__" },
+			{ __TIMESTAMP__,"__TIMESTAMP__" },
+			{ __VENDOR__,"__VENDOR__" },
 
-            {Abstract,"abstract"},
-            {Alias,"alias"},
-            {Align,"align"},
-            {Asm,"asm"},
-            {Assert,"assert"},
-            {Auto,"auto"},
-            {Body,"body"},
-            {Bool,"bool"},
-            {Break,"break"},
-            {Byte,"byte"},
+			{ Abstract,"abstract" },
+			{ Alias,"alias" },
+			{ Align,"align" },
+			{ Asm,"asm" },
+			{ Assert,"assert" },
+			{ Auto,"auto" },
+			{ Body,"body" },
+			{ Bool,"bool" },
+			{ Break,"break" },
+			{ Byte,"byte" },
 
-            {Case,"case"},
-            {Cast,"cast"},
-            {Catch,"catch"},{Cdouble,	"cdouble"},
-            {Cent,	"cent"},
-            {Cfloat,	"cfloat"},
-            {Char,
+			{ Case,"case" },
+			{ Cast,"cast" },
+			{ Catch,"catch" }, { Cdouble,	"cdouble" },
+			{ Cent,	"cent" },
+			{ Cfloat,	"cfloat" }, {Char,
 	"char"},{Class,
 	"class"},{Const,
 	"const"},{Continue,
@@ -310,11 +309,8 @@ namespace D_Parser.Parser
 	"if"},{Ifloat,
 	"ifloat"},{Import,
 	"import"},{Immutable,
-	"immutable"},{In,
-				"in"},
-			{Incomplete, IncompleteId},
-			{InOut,
-	"inout"},{Int,
+	"immutable"},{In,"in"},
+	{InOut,"inout"},{Int,
 	"int"},{Interface,
 	"interface"},{Invariant,
 	"invariant"},{Ireal,

@@ -53,6 +53,7 @@ namespace D_Parser.Parser
 		/// </summary>
 		public bool ExpectingNodeName { set { TrackerVariables.ExpectingNodeName = value; } get { return TrackerVariables.ExpectingNodeName; } }
 
+		public readonly List<Comment> Comments = new List<Comment>();
 		public ParserTrackerVariables TrackerVariables = new ParserTrackerVariables();
 
 		DToken _backupt = new DToken();
@@ -424,7 +425,7 @@ namespace D_Parser.Parser
             doc=Root();
 			doc.ParseErrors = new System.Collections.ObjectModel.ReadOnlyCollection<ParserError>(ParseErrors);
 			if(KeepComments){
-				doc.Comments = TrackerVariables.Comments.ToArray();
+				doc.Comments = Comments.ToArray();
 			}
 			
             return doc;
@@ -472,7 +473,7 @@ namespace D_Parser.Parser
 		/// </summary>
 		public object LastParsedObject;
 
-		public readonly List<Comment> Comments = new List<Comment>();
+
 
 		/// <summary>
 		/// Required for code completion.

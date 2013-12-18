@@ -68,11 +68,9 @@ namespace D_Parser.Completion
 			IEditorData Editor,
 			ResolutionContext ctxt)
 		{
-			ParserTrackerVariables trackVars;
 			IBlockNode curBlock = null;
-			IStatement curStmt;
-
-			var sr = CtrlSpaceCompletionProvider.FindCurrentCaretContext(Editor, out trackVars, ref curBlock, out curStmt);
+			IStatement stmt;
+			var sr = CtrlSpaceCompletionProvider.FindCurrentCaretContext(Editor, ref curBlock, out stmt);
 
 			IExpression lastParamExpression = null;
 

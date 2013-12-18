@@ -29,19 +29,16 @@ namespace D_Parser.Completion
 			ctxt = ResolutionContext.Create(Editor.ParseCache, new ConditionalCompilationFlags(Editor), ScopedBlock, ScopedStatement);
 			ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
 
-			var ex = AccessExpression.AccessExpression == null ? AccessExpression.PostfixForeExpression : AccessExpression;
-
-			var r = DResolver.StripAliasSymbol(Evaluation.EvaluateType(ex, ctxt));
+			var r = DResolver.StripAliasSymbol(Evaluation.EvaluateType(AccessExpression.PostfixForeExpression, ctxt));
 
 			if (r == null) //TODO: Add after-space list creation when an unbound . (Dot) was entered which means to access the global scope
 				return;
 
-			BuildCompletionData(r, ScopedBlock);
+			BuildCompletionData(r);
 		}
 
 		void BuildCompletionData(
 			AbstractType rr,
-			IBlockNode currentlyScopedBlock,
 			bool isVariableInstance = false,
 			AbstractType resultParent = null)
 		{
@@ -70,7 +67,7 @@ namespace D_Parser.Completion
 
 			var mrr = rr as MemberSymbol;
 			if (mrr != null && mrr.Base != null) {
-				BuildCompletionData(mrr.Base, currentlyScopedBlock,
+				BuildCompletionData(mrr.Base,
 					isVariableInstance ||
 					(mrr.Definition is DVariable && !(mrr is AliasedType) || // True if we obviously have a variable handled here. Otherwise depends on the samely-named parameter..
 						mrr.Definition is DMethod),	mrr);
@@ -114,7 +111,7 @@ namespace D_Parser.Completion
 			else if (rr is PointerType) {
 				var pt = (PointerType)rr;
 				if (!(pt.Base is PrimitiveType && pt.Base.DeclarationOrExpressionBase is PointerDecl))
-					BuildCompletionData (pt.Base, currentlyScopedBlock, true, pt);
+					BuildCompletionData (pt.Base, true, pt);
 			} else {
 				if (isVariableInstance)
 					GenUfcsCompletionItems (rr);

@@ -144,16 +144,12 @@ namespace D_Parser.Completion
 			return true;
 		}
 
-		public static ISyntaxRegion FindCurrentCaretContext(IEditorData editor, 
-			out ParserTrackerVariables trackerVariables, 
-			ref IBlockNode currentScope, 
-			out IStatement currentStatement)
+		public static ISyntaxRegion FindCurrentCaretContext(IEditorData editor, ref IBlockNode currentScope, out IStatement currentStatement)
 		{
 			if(currentScope == null)
 				currentScope = DResolver.SearchBlockAt (editor.SyntaxTree, editor.CaretLocation, out currentStatement);
 
 			if (currentScope == null) {
-				trackerVariables = null;
 				currentStatement = null;
 				return null;
 			}
@@ -161,7 +157,7 @@ namespace D_Parser.Completion
 			bool ParseDecl = false;
 
 			int blockStart = 0;
-			var blockStartLocation = currentScope != null ? currentScope.BlockStartLocation : editor.CaretLocation;
+			var blockStartLocation = currentScope.BlockStartLocation;
 
 			if (currentScope is DMethod)
 			{
@@ -171,7 +167,7 @@ namespace D_Parser.Completion
 					blockStart = DocumentHelper.GetOffsetByRelativeLocation (editor.ModuleCode, editor.CaretLocation, editor.CaretOffset, blockStartLocation = block.Location);
 				else {
 					currentScope = currentScope.Parent as IBlockNode;
-					return FindCurrentCaretContext (editor, out trackerVariables, ref currentScope, out currentStatement);
+					return FindCurrentCaretContext (editor, ref currentScope, out currentStatement);
 				}
 			}
 			else if (currentScope != null)
@@ -272,11 +268,9 @@ namespace D_Parser.Completion
 					currentScope = DResolver.SearchBlockAt (currentScope, 
 						psr.Lexer.CurrentToken != null ? psr.Lexer.CurrentToken.EndLocation : editor.CaretLocation, 
 						out currentStatement);
-					trackerVariables = psr.TrackerVariables;
 					return ret;
 				}
 
-			trackerVariables = null;
 			currentStatement = null;
 			return null;
 		}
