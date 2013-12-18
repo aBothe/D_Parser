@@ -30,6 +30,7 @@ using D_Parser.Dom.Statements;
 using D_Parser.Parser;
 using System.Collections.Generic;
 using D_Parser.Completion.Providers;
+using D_Parser.Resolver.ASTScanner;
 
 namespace D_Parser.Completion
 {
@@ -41,12 +42,16 @@ namespace D_Parser.Completion
 		public IStatement scopedStatement;
 
 		bool explicitlyNoCompletion;
+
 		bool handlesBaseClasses;
+		DClassLike handledClass;
+
+		MemberFilter shownMembers = MemberFilter.All;
 		public AbstractCompletionProvider GeneratedProvider { 
 			get{ 
 				return prv ?? (explicitlyNoCompletion ? null : 
 					new CtrlSpaceCompletionProvider(cdgen) { curBlock = scopedBlock, curStmt = scopedStatement }); 
-			} 
+			}
 		}
 		AbstractCompletionProvider prv;
 		readonly ICompletionDataGenerator cdgen;
@@ -73,6 +78,7 @@ namespace D_Parser.Completion
 		{
 			if (!halt) {
 				handlesBaseClasses = true;
+				handledClass = n;
 				foreach (var bc in n.BaseClasses)
 					bc.Accept (this);
 				handlesBaseClasses = false;
@@ -87,21 +93,16 @@ namespace D_Parser.Completion
 		public override void Visit (DTokenDeclaration td)
 		{
 			if (td.Token == DTokens.Incomplete) {
-
 				if (handlesBaseClasses) {
-					/*
-						if (trackVars.IsParsingBaseClassList)
-						{
-							if (trackVars.InitializedNode is DClassLike && 
-								(trackVars.InitializedNode as DClassLike).ClassType == DTokens.Interface)
-								mcp.MemberFilter = MemberFilter.Interfaces | MemberFilter.Templates;
-							else
-								mcp.MemberFilter = MemberFilter.Classes | MemberFilter.Interfaces | MemberFilter.Templates;
-						}
-					 */
-				}
+					MemberFilter vis;
+					if (handledClass.ClassType == DTokens.Interface)
+						vis = MemberFilter.Interfaces | MemberFilter.Templates;
+					else
+						vis = MemberFilter.Classes | MemberFilter.Interfaces | MemberFilter.Templates;
 
-				halt = true;
+					halt = true;
+					prv = new CtrlSpaceCompletionProvider (cdgen) { curBlock = handledClass, visibleMembers = vis };
+				}
 			} else
 				base.Visit (td);
 		}

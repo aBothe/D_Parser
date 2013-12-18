@@ -16,13 +16,12 @@ namespace D_Parser.Completion
 		public IBlockNode curBlock;
 		public IStatement curStmt;
 		//public ParserTrackerVariables trackVars;
+		public MemberFilter visibleMembers = MemberFilter.All;
 
 		public CtrlSpaceCompletionProvider(ICompletionDataGenerator cdg) : base(cdg) { }
 
 		protected override void BuildCompletionDataInternal(IEditorData Editor, char enteredChar)
 		{
-			var visibleMembers = MemberFilter.All;
-
 			if(!GetVisibleMemberFilter(Editor, enteredChar, ref visibleMembers, ref curStmt))
 				return;
 
