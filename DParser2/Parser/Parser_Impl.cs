@@ -3717,6 +3717,7 @@ namespace D_Parser.Parser
 				if (laKind != (Semicolon))
 					s.ReturnExpression = Expression(Scope);
 
+				Expect(Semicolon);
 				s.EndLocation = t.EndLocation;
 
 				return s;
@@ -3749,6 +3750,7 @@ namespace D_Parser.Parser
 						s.CaseExpression = Expression(Scope);
 				}
 
+				Expect(Semicolon);
 				s.EndLocation = t.EndLocation;
 
 				return s;
@@ -4031,6 +4033,8 @@ namespace D_Parser.Parser
 			// a==b, a=9; is possible -> Expressions can be there, not only single AssignExpressions!
 			s.Expression = Expression(Scope);
 			s.EndLocation = t.EndLocation;
+
+			Expect (Semicolon);
 			return s;
 		}
 		
@@ -4235,6 +4239,8 @@ namespace D_Parser.Parser
 						bs.Add(s);
 					}
 				}
+
+				Expect (CloseCurlyBrace);
 			}
 			if(t!=null)
 				bs.EndLocation = t.EndLocation;
@@ -4385,6 +4391,8 @@ namespace D_Parser.Parser
 
 				while (!IsEOF && laKind != (CloseCurlyBrace))
 					DeclDef(ret);
+
+				Expect (CloseCurlyBrace);
 
 				if(UpdateBoundaries)
 					ret.EndLocation = t.EndLocation;
