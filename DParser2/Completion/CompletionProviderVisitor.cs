@@ -101,7 +101,17 @@ namespace D_Parser.Completion
 				}
 
 				halt = true;
-			}
+			} else
+				base.Visit (td);
+		}
+
+		static bool IsIncompleteDeclaration(ITypeDeclaration x)
+		{
+			if(x is DTokenDeclaration)
+				return (x as DTokenDeclaration).Token == DTokens.Incomplete;
+			if(x is IdentifierDeclaration)
+				return (x as IdentifierDeclaration).IdHash == DTokens.IncompleteIdHash;
+			return false;
 		}
 		#endregion
 
@@ -152,7 +162,44 @@ namespace D_Parser.Completion
 		#endregion
 
 		#region Statements
+		public override void Visit (ModuleStatement s)
+		{
+			if (IsIncompleteDeclaration (s.ModuleName)) {
+				prv = new ModuleStatementCompletionProvider (cdgen);
+				halt = true;
+			}
+			else
+				base.Visit (s);
+		}
 
+		public override void VisitImport (ImportStatement.Import i)
+		{
+			if (IsIncompleteDeclaration (i.ModuleIdentifier)) {
+				prv = new ImportStatementCompletionProvider (cdgen, i);
+				halt = true;
+			}
+			else
+				base.VisitImport (i);
+		}
+
+		ImportStatement.ImportBindings curBindings;
+		public override void VisitImport (ImportStatement.ImportBinding i)
+		{
+			if (!halt) {
+				if (IsIncompleteDeclaration (i.Symbol)) {
+					prv = new ImportStatementCompletionProvider (cdgen, curBindings);
+					halt = true;
+				} else
+					base.VisitImport (i);
+			}
+		}
+
+		public override void VisitImport (ImportStatement.ImportBindings i)
+		{
+			curBindings = i;
+			base.VisitImport (i);
+			curBindings = null;
+		}
 		#endregion
 
 		#region Expressions

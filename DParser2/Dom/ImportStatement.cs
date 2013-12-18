@@ -36,7 +36,7 @@ namespace D_Parser.Dom
 		public bool IsStatic;
 		public bool IsPublic;
 
-		public class Import
+		public class Import : IVisitable<StatementVisitor>
 		{
 			/// <summary>
 			/// import io=std.stdio;
@@ -53,9 +53,19 @@ namespace D_Parser.Dom
 
 				return r;
 			}
+
+			public void Accept (StatementVisitor vis)
+			{
+				vis.VisitImport (this);
+			}
+
+			public R Accept<R>(StatementVisitor<R> vis)
+			{
+				return vis.VisitImport(this);
+			}
 		}
 
-		public class ImportBinding
+		public class ImportBinding : IVisitable<StatementVisitor>
 		{
 			public IdentifierDeclaration Symbol;
 			public IdentifierDeclaration Alias;
@@ -75,9 +85,19 @@ namespace D_Parser.Dom
 					return Symbol.ToString();
 				return Alias + " = " + Symbol;
 			}
+
+			public void Accept (StatementVisitor vis)
+			{
+				vis.VisitImport (this);
+			}
+
+			public R Accept<R>(StatementVisitor<R> vis)
+			{
+				return vis.VisitImport(this);
+			}
 		}
 
-		public class ImportBindings
+		public class ImportBindings : IVisitable<StatementVisitor>
 		{
 			public Import Module;
 
@@ -105,6 +125,16 @@ namespace D_Parser.Dom
 				}
 
 				return sb.ToString();
+			}
+
+			public void Accept (StatementVisitor vis)
+			{
+				vis.VisitImport (this);
+			}
+
+			public R Accept<R>(StatementVisitor<R> vis)
+			{
+				return vis.VisitImport(this);
 			}
 		}
 

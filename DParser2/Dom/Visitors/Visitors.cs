@@ -121,6 +121,9 @@ namespace D_Parser.Dom
 	{
 		void Visit(ModuleStatement moduleStatement);
 		void Visit(ImportStatement importStatement);
+		void VisitImport (ImportStatement.Import import);
+		void VisitImport (ImportStatement.ImportBinding importBinding);
+		void VisitImport (ImportStatement.ImportBindings bindings);
 		void Visit(BlockStatement blockStatement);
 		void Visit(LabeledStatement labeledStatement);
 		void Visit(IfStatement ifStatement);
@@ -159,6 +162,9 @@ namespace D_Parser.Dom
 	{
 		R Visit(ModuleStatement moduleStatement);
 		R Visit(ImportStatement importStatement);
+		R VisitImport (ImportStatement.Import import);
+		R VisitImport (ImportStatement.ImportBinding importBinding);
+		R VisitImport (ImportStatement.ImportBindings bindings);
 		R Visit(BlockStatement blockStatement);
 		R Visit(LabeledStatement labeledStatement);
 		R Visit(IfStatement ifStatement);

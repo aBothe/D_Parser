@@ -537,16 +537,18 @@ namespace D_Parser.Parser
 
 		ITypeDeclaration ModuleFullyQualifiedName()
 		{
-			if (!Expect(Identifier))
-				return null;
+			if (!Expect (Identifier))
+				return IsEOF ? new DTokenDeclaration(DTokens.Incomplete) : null;
 
 			var td = new IdentifierDeclaration(t.Value) { Location=t.Location,EndLocation=t.EndLocation };
 
 			while (laKind == Dot)
 			{
 				Step();
-				Expect(Identifier);
-				td = new IdentifierDeclaration(t.Value) { Location=t.Location, EndLocation=t.EndLocation, InnerDeclaration = td };
+				if(Expect(Identifier))
+					td = new IdentifierDeclaration(t.Value) { Location=t.Location, EndLocation=t.EndLocation, InnerDeclaration = td };
+				else if(IsEOF)
+					td = new IdentifierDeclaration(DTokens.IncompleteIdHash) { InnerDeclaration = td };
 			}
 
 			return td;
@@ -625,22 +627,23 @@ namespace D_Parser.Parser
 				else
 					Step();
 
-				if (Expect(Identifier))
-				{
-					var symbolAlias = new IdentifierDeclaration(t.Value){ Location = t.Location, EndLocation = t.EndLocation };
+				var symbolAlias = Expect(Identifier) ? 
+					new IdentifierDeclaration(t.Value){ Location = t.Location, EndLocation = t.EndLocation } :
+					(IsEOF ? new IdentifierDeclaration(DTokens.IncompleteIdHash) : null);
 						
-					if (laKind == Assign)
-					{
-						Step();
-						if (Expect (Identifier))
-							importBindings.SelectedSymbols.Add (new ImportStatement.ImportBinding (new IdentifierDeclaration (t.Value) {
-								Location = t.Location,
-								EndLocation = t.EndLocation
-							}, symbolAlias));
-					}
-					else
-						importBindings.SelectedSymbols.Add(new ImportStatement.ImportBinding(symbolAlias));
+				if (laKind == Assign)
+				{
+					Step();
+					if (Expect (Identifier))
+						importBindings.SelectedSymbols.Add (new ImportStatement.ImportBinding (new IdentifierDeclaration (t.Value) {
+							Location = t.Location,
+							EndLocation = t.EndLocation
+						}, symbolAlias));
+					else if(IsEOF)
+						importBindings.SelectedSymbols.Add (new ImportStatement.ImportBinding (new IdentifierDeclaration (DTokens.IncompleteIdHash), symbolAlias));
 				}
+				else if(symbolAlias != null)
+					importBindings.SelectedSymbols.Add(new ImportStatement.ImportBinding(symbolAlias));
 			}
 
 			return importBindings;

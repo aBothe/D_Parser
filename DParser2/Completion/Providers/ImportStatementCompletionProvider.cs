@@ -12,7 +12,8 @@ namespace D_Parser.Completion.Providers
 	class ImportStatementCompletionProvider : AbstractCompletionProvider
 	{
 		readonly ImportStatement.Import imp;
-		readonly ImportStatement.ImportBindings impBind;
+		readonly ImportStatement.ImportBinding impBind;
+		readonly ImportStatement.ImportBindings impBinds;
 
 		public ImportStatementCompletionProvider(
 			ICompletionDataGenerator gen, 
@@ -24,11 +25,11 @@ namespace D_Parser.Completion.Providers
 
 		public ImportStatementCompletionProvider(
 			ICompletionDataGenerator gen, 
-			ImportStatement.ImportBindings imbBind)
+			ImportStatement.ImportBindings imbBinds)
 			: base(gen)
 		{
-			this.impBind = imbBind;
-			imp = impBind.Module;
+			this.impBinds = imbBinds;
+			imp = impBinds.Module;
 		}
 
 		protected override void BuildCompletionDataInternal(IEditorData Editor, char enteredChar)
@@ -36,7 +37,7 @@ namespace D_Parser.Completion.Providers
 			if(Editor.ParseCache == null)
 				return;
 
-			if (impBind != null)
+			if (impBinds != null)
 			{
 				DModule mod = null;
 

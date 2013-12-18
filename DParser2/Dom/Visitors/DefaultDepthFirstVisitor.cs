@@ -191,7 +191,44 @@ namespace D_Parser.Dom
 
 		public virtual void Visit(ImportStatement s)
 		{
+			if (s.Attributes != null)
+				foreach (var attr in s.Attributes)
+					attr.Accept (this);
+
+			if (s.Imports != null)
+				foreach (var imp in s.Imports)
+					imp.Accept (this);
+
+			if (s.ImportBindList != null)
+				s.ImportBindList.Accept (this);
+
 			VisitAbstractStmt(s);
+		}
+
+		public virtual void VisitImport (ImportStatement.Import i)
+		{
+			if (i.ModuleAlias != null)
+				i.ModuleAlias.Accept (this);
+			if (i.ModuleIdentifier != null)
+				i.ModuleIdentifier.Accept (this);
+		}
+
+		public virtual void VisitImport (ImportStatement.ImportBinding i)
+		{
+			if (i.Alias != null)
+				i.Alias.Accept (this);
+			if (i.Symbol != null)
+				i.Symbol.Accept (this);
+		}
+
+		public virtual void VisitImport (ImportStatement.ImportBindings i)
+		{
+			if(i.Module != null)
+				i.Module.Accept (this);
+
+			if(i.SelectedSymbols != null)
+				foreach (var imp in i.SelectedSymbols)
+					imp.Accept (this);
 		}
 
 		public virtual void Visit(BlockStatement s)
