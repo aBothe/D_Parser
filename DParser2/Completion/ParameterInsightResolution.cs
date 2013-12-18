@@ -76,28 +76,15 @@ namespace D_Parser.Completion
 
 			IExpression lastParamExpression = null;
 
-			var parsedStmtBlock = sr as IStatement;
-			if (parsedStmtBlock != null)
-			{
-				// Search the returned statement block (i.e. function body) for the current statement;
-				if (parsedStmtBlock is StatementContainingStatement)
-					parsedStmtBlock = (parsedStmtBlock as StatementContainingStatement).SearchStatementDeeply (Editor.CaretLocation);
+			var paramInsightVis = new ParamInsightVisitor ();
+			if (sr is INode)
+				(sr as INode).Accept (paramInsightVis);
+			else if (sr is IStatement)
+				(sr as IStatement).Accept (paramInsightVis);
+			else if (sr is IExpression)
+				(sr as IExpression).Accept (paramInsightVis);
 
-				lastParamExpression = ExpressionHelper.SearchForMethodCallsOrTemplateInstances(parsedStmtBlock, Editor.CaretLocation);
-			}
-			else if (trackVars != null && trackVars.IsParsingInitializer)
-			{
-				if (trackVars.InitializedNode is DVariable)
-					lastParamExpression = 
-						ExpressionHelper.SearchExpressionDeeply((trackVars.InitializedNode as DVariable).Initializer, Editor.CaretLocation);
-			}
-
-			if (lastParamExpression == null)
-			{
-				// Give it a last chance by handling the lastly parsed object 
-				// - which is a TemplateInstanceExpression in quite all cases
-				lastParamExpression = trackVars.LastParsedObject as IExpression;
-			}
+			lastParamExpression = paramInsightVis.LastCallExpression;
 
 			/*
 			 * Then handle the lastly found expression regarding the following points:
@@ -129,21 +116,6 @@ namespace D_Parser.Completion
 			// 3)
 			else if (lastParamExpression is TemplateInstanceExpression)
 				HandleTemplateInstance (lastParamExpression as TemplateInstanceExpression, res, Editor, ctxt, curBlock);
-			else if (lastParamExpression is PostfixExpression_Access)
-			{
-				var acc = (PostfixExpression_Access)lastParamExpression;
-
-				res.MethodIdentifier = acc.PostfixForeExpression;
-				res.ResolvedTypesOrMethods = Evaluation.GetUnfilteredMethodOverloads(acc.PostfixForeExpression, ctxt, acc);
-
-				if (res.ResolvedTypesOrMethods == null)
-					return res;
-
-				if (acc.AccessExpression is TemplateInstanceExpression)
-					HandleTemplateInstance (acc.AccessExpression as TemplateInstanceExpression, res, Editor, ctxt, curBlock, res.ResolvedTypesOrMethods);
-				else if (acc.AccessExpression is NewExpression)
-					HandleNewExpression(acc.AccessExpression as NewExpression, res, Editor, ctxt, curBlock, res.ResolvedTypesOrMethods);
-			}
 			else if (lastParamExpression is NewExpression)
 				HandleNewExpression((NewExpression)lastParamExpression,res,Editor,ctxt,curBlock);
 

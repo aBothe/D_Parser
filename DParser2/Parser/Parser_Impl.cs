@@ -1450,7 +1450,7 @@ namespace D_Parser.Parser
 				else if (IsEOF)
 				{
 					TrackerVariables.ExpectingIdentifier = true;
-					return td == null ? null : new DTokenDeclaration(DTokens.INVALID, td);
+					return new DTokenDeclaration(DTokens.Incomplete, td);
 				}
 				else 
 					ttd = null;
@@ -2649,51 +2649,48 @@ namespace D_Parser.Parser
 					Type=nt,
 					Location=startLoc
 				};
-				if(!IsEOF)
-					LastParsedObject = initExpr;
 
-				var args = new List<IExpression>();
+				List<IExpression> args;
 
 				var ad=nt as ArrayDecl;
 
-				if ((ad == null || ad.ClampsEmpty) && laKind == OpenParenthesis)
-				{
-					Step();
+				if ((ad == null || ad.ClampsEmpty) && laKind == OpenParenthesis) {
+					Step ();
 					if (laKind != CloseParenthesis)
-						args = ArgumentList(Scope);
+						args = ArgumentList (Scope);
+					else
+						args = new List<IExpression> ();
 
-					if (Expect(CloseParenthesis))
+					if (Expect (CloseParenthesis))
 						initExpr.EndLocation = t.EndLocation;
 					else
 						initExpr.EndLocation = CodeLocation.Empty;
 
-					if (ad != null)
-					{
-						if (args.Count == 0)
-						{
-							SemErr(CloseParenthesis, "Size for the rightmost array dimension needed");
+					if (ad != null) {
+						if (args.Count == 0) {
+							SemErr (CloseParenthesis, "Size for the rightmost array dimension needed");
 
 							initExpr.EndLocation = t.EndLocation;
 							return initExpr;
 						}
 
-						while (ad != null)
-						{
+						while (ad != null) {
 							if (args.Count == 0)
 								break;
 
 							ad.ClampsEmpty = false;
 							ad.KeyType = null;
-							ad.KeyExpression = args[args.Count - 1];
+							ad.KeyExpression = args [args.Count - 1];
 
-							args.RemoveAt(args.Count - 1);
+							args.RemoveAt (args.Count - 1);
 
 							ad = ad.InnerDeclaration as ArrayDecl;
 						}
 					}
-				}
-				else
+				} else {
 					initExpr.EndLocation = t.EndLocation;
+					args = new List<IExpression> ();
+				}
 
 				ad = nt as ArrayDecl;
 
@@ -3350,6 +3347,9 @@ namespace D_Parser.Parser
 			SynErr(Identifier);
 			if(laKind != CloseCurlyBrace)
 				Step();
+
+			if (IsEOF)
+				return new TokenExpression (DTokens.Incomplete) { Location = t.Location, EndLocation = t.Location };
 
 			// Don't know why, in rare situations, t tends to be null..
 			if (t == null)
@@ -5238,12 +5238,6 @@ namespace D_Parser.Parser
 
 						if (laKind == CloseParenthesis)
 							break;
-
-						if (IsEOF)
-						{
-							args.Add(new TokenExpression(DTokens.INVALID) { Location= la.Location, EndLocation=la.EndLocation });
-							break;
-						}
 						
 						Lexer.PushLookAheadBackup();
 
@@ -5268,8 +5262,6 @@ namespace D_Parser.Parser
 			}
 			else
 			{
-				Step();
-
 				/*
 				 * TemplateSingleArgument: 
 				 *		Identifier 
@@ -5285,50 +5277,20 @@ namespace D_Parser.Parser
 				 *		__LINE__
 				 */
 
-				IExpression arg= null;
-
-				if (t.Kind == Literal)
-					arg = new IdentifierExpression(t.LiteralFormat == LiteralFormat.StringLiteral || 
-					                               t.LiteralFormat == LiteralFormat.VerbatimStringLiteral ? 
-					                               t.Value :
-					                               t.LiteralValue,
-					                               t.LiteralFormat, 
-					                               t.Subformat)
-					{
+				if (BasicTypes [laKind]) {
+					Step ();
+					args.Add (new TypeDeclarationExpression (new DTokenDeclaration (t.Kind) {
 						Location = t.Location,
 						EndLocation = t.EndLocation
-					};
-				else if (t.Kind == Identifier)
-					arg = new IdentifierExpression(t.Value)
-					{
-						Location = t.Location,
-						EndLocation = t.EndLocation
-					};
-				else if (BasicTypes[t.Kind])
-					arg = new TypeDeclarationExpression(new DTokenDeclaration(t.Kind)
-					{
-						Location = t.Location,
-						EndLocation = t.EndLocation
-					});
-				else if (
-					t.Kind == True ||
-					t.Kind == False ||
-					t.Kind == Null ||
-					t.Kind == __FILE__ ||
-					t.Kind == __LINE__)
-					arg = new TokenExpression(t.Kind)
-					{
-						Location = t.Location,
-						EndLocation = t.EndLocation
-					};
-				else if (IsEOF)
-				{
-					TrackerVariables.ExpectingIdentifier = false;
-					td.EndLocation = CodeLocation.Empty;
-					return td as TemplateInstanceExpression;
+					}));
+				} else if (laKind == Literal || laKind == Identifier ||
+				           laKind == True || laKind == False || laKind == Null ||
+				           laKind == __FILE__ || laKind == __LINE__ || IsEOF)
+					args.Add (PrimaryExpression (Scope));
+				else {
+					SynErr (laKind, "Illegal token found on template instance expression argument");
+					Step ();
 				}
-
-				args.Add(arg);
 			}
 			(td as TemplateInstanceExpression).Arguments = args.ToArray();
 			td.EndLocation = t.EndLocation;

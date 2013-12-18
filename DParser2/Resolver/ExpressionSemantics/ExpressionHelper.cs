@@ -12,16 +12,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public class ExpressionHelper
 	{
-		public static bool IsParamRelatedExpression(IExpression subEx)
-		{
-			var pfa = subEx as PostfixExpression_Access;
-			return subEx is PostfixExpression_MethodCall ||
-							subEx is TemplateInstanceExpression ||
-							subEx is NewExpression ||
-							(pfa != null &&
-								(pfa.AccessExpression is NewExpression || pfa.AccessExpression is TemplateInstanceExpression));
-		}
-
 		/// <summary>
 		/// Scans through all container expressions recursively and returns the one that's nearest to 'Where'.
 		/// Will return 'e' if nothing found or if there wasn't anything to scan
@@ -117,79 +107,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 
 			return e;
-		}
-
-		public static IExpression SearchForMethodCallsOrTemplateInstances(IStatement Statement, CodeLocation Caret)
-		{
-			IExpression curExpression = null;
-			INode curDeclaration = null;
-
-			/*
-			 * Step 1: Step down the statement hierarchy to find the stmt that's most next to Caret
-			 * Note: As long we haven't found any fitting elements, go on searching
-			 */
-			while (Statement != null && curExpression == null && curDeclaration == null)
-			{
-				if (Statement is IExpressionContainingStatement)
-				{
-					var exprs = (Statement as IExpressionContainingStatement).SubExpressions;
-
-					if (exprs != null && exprs.Length > 0)
-						foreach (var expr in exprs)
-							if (expr != null && Caret >= expr.Location && (Caret <= expr.EndLocation || expr.EndLocation.IsEmpty))
-							{
-								curExpression = expr;
-								break;
-							}
-				}
-
-				if (Statement is IDeclarationContainingStatement)
-				{
-					var decls = (Statement as IDeclarationContainingStatement).Declarations;
-
-					if (decls != null && decls.Length > 0)
-						foreach (var decl in decls)
-							if (decl != null && Caret >= decl.Location && Caret <= decl.EndLocation)
-							{
-								curDeclaration = decl;
-								break;
-							}
-				}
-
-				if (Statement is StatementContainingStatement)
-				{
-					var subSt = (Statement as StatementContainingStatement).SearchStatement (Caret);
-
-					if (subSt != null && subSt != Statement) {
-						Statement = subSt;
-						continue;
-					}
-				}
-
-				break;
-			}
-
-			if (curDeclaration == null && curExpression == null)
-				return null;
-
-
-			/*
-			 * Step 2: If a declaration was found, check for its inner elements
-			 */
-			if (curDeclaration != null)
-			{
-				if (curDeclaration is DVariable)
-				{
-					var dv = curDeclaration as DVariable;
-
-					if (dv.Initializer != null && Caret >= dv.Initializer.Location && Caret <= dv.Initializer.EndLocation)
-						curExpression = dv.Initializer;
-				}
-
-				//TODO: Watch the node's type! Over there, there also can be template instances..
-			}
-
-			return curExpression == null ? null : SearchExpressionDeeply(curExpression, Caret);
 		}
 	}
 }
