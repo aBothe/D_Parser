@@ -37,16 +37,6 @@ namespace D_Parser.Parser
 		bool ParseStructureOnly = false;
 		public Lexer Lexer;
 
-		/// <summary>
-		/// Used to track the expression/declaration/statement/whatever which is handled currently.
-		/// Required for code completion.
-		/// </summary>
-		public object LastParsedObject
-		{ 
-			get { return TrackerVariables.LastParsedObject; } 
-			set { TrackerVariables.LastParsedObject = value; }
-		}
-
 		public readonly List<Comment> Comments = new List<Comment>();
 		public ParserTrackerVariables TrackerVariables = new ParserTrackerVariables();
 
@@ -91,7 +81,6 @@ namespace D_Parser.Parser
 			DeclarationAttributes = null;
 			Lexer.Dispose();
 			Lexer = null;
-			TrackerVariables = null;
 			ParseErrors = null;
 		}
 

@@ -12,10 +12,10 @@ namespace D_Parser.Completion
 {
 	class CtrlSpaceCompletionProvider : AbstractCompletionProvider
 	{
-		public object parsedBlock;
+		//public object parsedBlock;
 		public IBlockNode curBlock;
 		public IStatement curStmt;
-		public ParserTrackerVariables trackVars;
+		//public ParserTrackerVariables trackVars;
 
 		public CtrlSpaceCompletionProvider(ICompletionDataGenerator cdg) : base(cdg) { }
 
@@ -48,7 +48,7 @@ namespace D_Parser.Completion
 
 		private bool GetVisibleMemberFilter(IEditorData Editor, char enteredChar, ref MemberFilter visibleMembers, ref IStatement curStmt)
 		{
-			if (trackVars == null)
+			/*if (trackVars == null)
 			{
 				// --> Happens if no actual declaration syntax given --> Show types/keywords anyway
 				visibleMembers = MemberFilter.Types | MemberFilter.Keywords | MemberFilter.TypeParameters;
@@ -121,10 +121,8 @@ namespace D_Parser.Completion
 					   (trackVars.LastParsedObject as IdentifierExpression).Format == LiteralFormat.Scalar)
 					return false;
 
-				/*
-				 * Handle module-scoped things:
-				 * When typing a dot without anything following, trigger completion and show types, methods and vars that are located in the module & import scope
-				 */
+				// Handle module-scoped things:
+				// When typing a dot without anything following, trigger completion and show types, methods and vars that are located in the module & import scope
 				else if (trackVars.LastParsedObject is TokenExpression &&
 					((TokenExpression)trackVars.LastParsedObject).Token == DTokens.Dot)
 				{
@@ -140,7 +138,7 @@ namespace D_Parser.Completion
 				{}
 				else
 					curStmt = null;
-			}
+			}*/
 			return true;
 		}
 
