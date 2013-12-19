@@ -219,6 +219,34 @@ namespace D_Parser.Completion
 			else
 				base.VisitAttribute (a);
 		}
+
+		public override void VisitAttribute (VersionCondition vis)
+		{
+			if (vis.VersionIdHash == DTokens.IncompleteIdHash) {
+				halt = true;
+				prv = new AttributeCompletionProvider (cdgen){ Attribute = vis };
+			}
+			else
+				base.VisitAttribute (vis);
+		}
+
+		public override void VisitAttribute (DebugCondition c)
+		{
+			if (c.DebugIdHash == DTokens.IncompleteIdHash) {
+				halt = true;
+				// TODO: Perhaps show all globally defined debug IDs
+				explicitlyNoCompletion = true;
+			}
+			else
+				base.VisitAttribute (c);
+		}
+
+		public override void VisitAttribute (StaticIfCondition a)
+		{
+			handlesInitializer = true;
+			base.VisitAttribute (a);
+			handlesInitializer = false;
+		}
 		#endregion
 
 		#region Statements

@@ -389,30 +389,26 @@ namespace D_Parser.Parser
 				Step();
 				if (Expect(OpenParenthesis))
 				{
-					TrackerVariables.ExpectingIdentifier = true;
-					if (laKind == Unittest)
-					{
-						Step();
-						c = new VersionCondition("unittest") { IdLocation = t.Location };
-					}
-					else if (laKind == Assert)
-					{
-						Step();
-						c = new VersionCondition("assert") { IdLocation = t.Location };
-					}
-					else if (laKind == Literal)
-					{
-						Step();
+					if (laKind == Unittest) {
+						Step ();
+						c = new VersionCondition ("unittest") { IdLocation = t.Location };
+					} else if (laKind == Assert) {
+						Step ();
+						c = new VersionCondition ("assert") { IdLocation = t.Location };
+					} else if (laKind == Literal) {
+						Step ();
 						if (t.LiteralFormat != LiteralFormat.Scalar)
-							SynErr(t.Kind, "Version number must be an integer");
+							SynErr (t.Kind, "Version number must be an integer");
 						else
-							c = new VersionCondition(Convert.ToInt32(t.LiteralValue)) { IdLocation = t.Location };
+							c = new VersionCondition (Convert.ToInt32 (t.LiteralValue)) { IdLocation = t.Location };
+					} else if (Expect (Identifier))
+						c = new VersionCondition (t.Value) { IdLocation = t.Location };
+					else if (IsEOF) {
+						c = new VersionCondition (DTokens.IncompleteId);
+						parent.Add (new DVariable{ Attributes = new List<DAttribute>{ c } });
 					}
-					else if (Expect(Identifier))
-						c = new VersionCondition(t.Value) { IdLocation = t.Location };
 
-					if (Expect(CloseParenthesis))
-						TrackerVariables.ExpectingIdentifier = false;
+					Expect (CloseParenthesis);
 				}
 				
 				if(c==null)
@@ -431,25 +427,22 @@ namespace D_Parser.Parser
 				if (laKind == OpenParenthesis)
 				{
 					Step();
-					TrackerVariables.ExpectingIdentifier = true;
 
-					if (laKind == Literal)
-					{
-						Step();
+					if (laKind == Literal) {
+						Step ();
 						if (t.LiteralFormat != LiteralFormat.Scalar)
-							SynErr(t.Kind, "Debug level must be an integer");
+							SynErr (t.Kind, "Debug level must be an integer");
 						else
-							c = new DebugCondition(Convert.ToInt32(t.LiteralValue)) { IdLocation = t.Location };
+							c = new DebugCondition (Convert.ToInt32 (t.LiteralValue)) { IdLocation = t.Location };
+					} else if (Expect (Identifier))
+						c = new DebugCondition ((string)t.LiteralValue) { IdLocation = t.Location };
+					else if (IsEOF) {
+						c = new DebugCondition (DTokens.IncompleteId);
+						parent.Add (new DVariable{ Attributes = new List<DAttribute>{ c } });
 					}
-					else if (Expect(Identifier))
-						c = new DebugCondition((string)t.LiteralValue) { IdLocation = t.Location };
-					else
-						c = new DebugCondition();
-
-					if (Expect(CloseParenthesis))
-						TrackerVariables.ExpectingIdentifier = false;
 				}
-				else
+
+				if(c == null)
 					c = new DebugCondition();
 			}
 
@@ -465,7 +458,8 @@ namespace D_Parser.Parser
 					var x = AssignExpression(parent);
 					c = new StaticIfCondition(x);
 
-					Expect(CloseParenthesis);
+					if(!Expect(CloseParenthesis) && IsEOF)
+						parent.Add (new DVariable{ Attributes = new List<DAttribute>{ c } });
 				}
 				else
 					c = new StaticIfCondition(null);
