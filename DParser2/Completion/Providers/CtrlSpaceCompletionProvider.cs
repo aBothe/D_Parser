@@ -47,6 +47,9 @@ namespace D_Parser.Completion
 
 		private bool GetVisibleMemberFilter(IEditorData Editor, char enteredChar, ref MemberFilter visibleMembers, ref IStatement curStmt)
 		{
+			if (!(curBlock is DMethod)) {
+				visibleMembers = MemberFilter.Types | MemberFilter.Keywords | MemberFilter.TypeParameters;
+			}
 			/*if (trackVars == null)
 			{
 				// --> Happens if no actual declaration syntax given --> Show types/keywords anyway

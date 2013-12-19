@@ -46,7 +46,6 @@ namespace D_Parser.Completion
 		bool handlesBaseClasses;
 		DClassLike handledClass;
 
-		MemberFilter shownMembers = MemberFilter.All;
 		public AbstractCompletionProvider GeneratedProvider { 
 			get{ 
 				return prv ?? (explicitlyNoCompletion ? null : 
@@ -66,7 +65,6 @@ namespace D_Parser.Completion
 		#region Nodes
 		public override void VisitDNode (DNode n)
 		{
-			scopedBlock = n as IBlockNode ?? n.Parent as IBlockNode;
 			if (n.NameHash == DTokens.IncompleteIdHash) {
 				explicitlyNoCompletion = true;
 				halt = true;
@@ -87,6 +85,17 @@ namespace D_Parser.Completion
 				if (!halt)
 					VisitBlock (n);
 			}
+		}
+
+		public override void VisitChildren (IBlockNode block)
+		{
+			var b = scopedBlock;
+			var s = scopedStatement;
+			scopedStatement = null;
+			scopedBlock = block;
+			base.VisitChildren (block);
+			scopedBlock = b;
+			scopedStatement = s;
 		}
 		#endregion
 
