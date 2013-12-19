@@ -111,7 +111,15 @@ namespace D_Parser.Completion
 
 		public override void Visit (DVariable n)
 		{
-			if (n.Initializer != null) {
+			if (n.IsAlias) {
+				// alias |
+				if (IsIncompleteDeclaration (n.Type) && (n.NameHash == 0 || n.NameHash == DTokens.IncompleteIdHash)) {
+					prv = new CtrlSpaceCompletionProvider (cdgen) { 
+						curBlock = scopedBlock, curStmt = scopedStatement, 
+						visibleMembers = MemberFilter.All 
+					};
+				}
+			}else if (n.Initializer != null) {
 				handlesInitializer = true;
 				n.Initializer.Accept (this);
 				handlesInitializer = false;
