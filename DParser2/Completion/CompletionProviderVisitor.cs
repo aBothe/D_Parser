@@ -261,7 +261,16 @@ namespace D_Parser.Completion
 		{
 			if (IsIncompleteExpression(x.AccessExpression)) {
 				halt = true;
-				prv = new MemberCompletionProvider (cdgen, x.PostfixForeExpression, scopedBlock, scopedStatement);
+				if (x.PostfixForeExpression is DTokenDeclaration && (x.PostfixForeExpression as DTokenDeclaration).Token == DTokens.Dot) {
+					// Handle module-scoped things:
+					// When typing a dot without anything following, trigger completion and show types, methods and vars that are located in the module & import scope
+					prv = new CtrlSpaceCompletionProvider (cdgen) { 
+						curBlock = scopedBlock, 
+						visibleMembers = MemberFilter.Methods | MemberFilter.Types | MemberFilter.Variables | MemberFilter.TypeParameters 
+					};
+				}
+				else
+					prv = new MemberCompletionProvider (cdgen, x.PostfixForeExpression, scopedBlock, scopedStatement);
 			}
 			else
 				base.Visit (x);

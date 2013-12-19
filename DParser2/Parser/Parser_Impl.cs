@@ -2853,7 +2853,8 @@ namespace D_Parser.Parser
 				if (IsEOF)
 				{
 					TrackerVariables.ExpectingIdentifier = true;
-					return new TokenExpression(Dot) { Location = t.Location, EndLocation = t.EndLocation };
+					var dot = new TokenExpression(Dot) { Location = t.Location, EndLocation = t.EndLocation };
+					return new PostfixExpression_Access{ PostfixForeExpression = dot, AccessExpression = new TokenExpression(DTokens.Incomplete) };
 				}
 			}
 
