@@ -1413,10 +1413,7 @@ namespace D_Parser.Parser
 				else if (Expect(Identifier))
 					ttd = new IdentifierDeclaration(t.Value) { Location = t.Location, EndLocation = t.EndLocation };
 				else if (IsEOF)
-				{
-					TrackerVariables.ExpectingIdentifier = true;
 					return new DTokenDeclaration(DTokens.Incomplete, td);
-				}
 				else 
 					ttd = null;
 				if (ttd != null)
@@ -3915,12 +3912,12 @@ namespace D_Parser.Parser
 
 					if (Expect(Identifier) && t.Value != null) // exit, failure, success
 						s.GuardedScope = t.Value.ToLower();
+					else if(IsEOF)
+						s.GuardedScope = DTokens.IncompleteId;
 
-					if (Expect(CloseParenthesis))
-						TrackerVariables.ExpectingIdentifier = false;
+					Expect(CloseParenthesis);
 
-					if (!IsEOF)
-						s.ScopedStatement = Statement(Scope: Scope, Parent: s);
+					s.ScopedStatement = Statement(Scope: Scope, Parent: s);
 
 					s.EndLocation = t.EndLocation;
 					return s;
@@ -5167,8 +5164,7 @@ namespace D_Parser.Parser
 						al.Add(new TraitsArgument(Type()));
 				}
 
-				if (Expect(CloseParenthesis))
-					TrackerVariables.ExpectingIdentifier = false;
+				Expect (CloseParenthesis);
 				
 				if(al.Count != 0)
 					ce.Arguments = al.ToArray();

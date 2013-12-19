@@ -398,9 +398,8 @@ namespace D_Parser.Dom
 		{
 			if(s!=null)
 			{
+				s.Condition.Accept (this);
 				VisitChildren(s);
-				if(s.Condition is StaticIfCondition)
-					((StaticIfCondition)s.Condition).Expression.Accept(this);
 			}
 		}
 
