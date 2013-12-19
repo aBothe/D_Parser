@@ -277,6 +277,16 @@ namespace D_Parser.Completion
 			else
 				base.Visit (x);
 		}
+
+		public override void Visit (NewExpression x)
+		{
+			if (IsIncompleteDeclaration (x.Type)) {
+				halt = true;
+				prv = new CtrlSpaceCompletionProvider (cdgen) { visibleMembers = MemberFilter.Types, curBlock = scopedBlock, curStmt = scopedStatement };
+			}
+			else
+				base.Visit (x);
+		}
 		#endregion
 	}
 }
