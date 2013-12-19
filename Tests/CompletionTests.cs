@@ -16,6 +16,7 @@ using D_Parser.Resolver.Templates;
 using D_Parser.Resolver.TypeResolution;
 using NUnit.Framework;
 using System.IO;
+using NUnit.Framework.Constraints;
 
 namespace Tests
 {
@@ -75,7 +76,23 @@ foreach(
 }";
 			var ed = GenEditorData (3, 9, code);
 			var g = new TestCompletionDataGen (null, null);
-			Assert.That(CodeCompletion.GenerateCompletionData (ed, g, '\0', true), Is.False);
+			Assert.That(CodeCompletion.GenerateCompletionData (ed, g, 'a', true), Is.False);
+		}
+
+		[Test]
+		public void CompletionTrigger()
+		{
+			Assert.That (@"module ", Does.Trigger);
+			Assert.That (@"import ", Does.Trigger);
+
+			Assert.That (@"alias ", Does.Trigger);
+			Assert.That (@"alias string ", Does.Not.Trigger);
+			Assert.That (@"int ", Does.Not.Trigger);
+
+			Assert.That (@"class ", Does.Not.Trigger);
+			Assert.That (@"class A : ", Does.Trigger);
+			Assert.That (@"class A(T) if(is( ", Does.Trigger);
+
 		}
 
 		[Test]
@@ -146,7 +163,62 @@ void main() { Class. }";
 		}
 
 		#region Test lowlevel
-		class TestCompletionDataGen : ICompletionDataGenerator
+		public static class Does
+		{
+			public class TriggerConstraint : Constraint
+			{
+				readonly bool neg;
+				public TriggerConstraint(bool neg = false)
+				{
+					this.neg = neg;
+				}
+
+				public override bool Matches (object actual)
+				{
+					var code = actual as string;
+					if (code == null)
+						return false;
+
+					code += "\n";
+
+					var m = DParser.ParseString (code);
+					var cache = ResolutionTests.CreateCache ();
+					(cache [0] as MutableRootPackage).AddModule (m);
+
+					var ed = new EditorData{ 
+						ModuleCode = code, 
+						CaretOffset = code.Length-1, 
+						CaretLocation = DocumentHelper.OffsetToLocation(code,code.Length-1),
+						SyntaxTree = m,
+						ParseCache = cache
+					};
+
+					var gen = new TestCompletionDataGen (null, null);
+					var res = CodeCompletion.GenerateCompletionData (ed, gen, '\0');
+
+					if (neg ? res : !res)
+						return false;
+
+					res = CodeCompletion.GenerateCompletionData (ed, gen, 'a');
+
+					return neg ? !res : res;
+				}
+
+				public override void WriteDescriptionTo (MessageWriter writer)
+				{
+					writer.WriteLine ();
+				}
+			}
+
+			public readonly static TriggerConstraint Trigger = new TriggerConstraint();
+
+			public static class Not
+			{
+				public readonly static TriggerConstraint Trigger = new TriggerConstraint (true);
+			}
+		}
+
+		public class TestCompletionDataGen : ICompletionDataGenerator
 		{
 			public TestCompletionDataGen(INode[] whiteList, INode[] blackList)
 			{
@@ -209,7 +281,7 @@ void main() { Class. }";
 			public bool HasRemainingItems { get{ return remainingWhiteList != null && remainingWhiteList.Count > 0; } }
 		}
 
-		INode GetNode(EditorData ed, string id, ref ResolutionContext ctxt)
+		public static INode GetNode(EditorData ed, string id, ref ResolutionContext ctxt)
 		{
 			if (ctxt == null)
 				ctxt = ResolutionContext.Create (ed);
@@ -223,7 +295,7 @@ void main() { Class. }";
 			return n;
 		}
 
-		EditorData GenEditorData(int caretLine, int caretPos,string focusedModuleCode,params string[] otherModuleCodes)
+		public static EditorData GenEditorData(int caretLine, int caretPos,string focusedModuleCode,params string[] otherModuleCodes)
 		{
 			var cache = ResolutionTests.CreateCache (otherModuleCodes);
 			var ed = new EditorData { ParseCache = cache };
@@ -233,7 +305,7 @@ void main() { Class. }";
 			return ed;
 		}
 
-		void UpdateEditorData(EditorData ed,int caretLine, int caretPos, string focusedModuleCode)
+		public static void UpdateEditorData(EditorData ed,int caretLine, int caretPos, string focusedModuleCode)
 		{
 			var mod = DParser.ParseString (focusedModuleCode);
 			var pack = ed.ParseCache [0] as MutableRootPackage;
@@ -246,7 +318,7 @@ void main() { Class. }";
 			ed.CaretOffset = DocumentHelper.LocationToOffset (focusedModuleCode, caretLine, caretPos);
 		}
 
-		void TestCompletionListContents(IEditorData ed, INode[] itemWhiteList, INode[] itemBlackList = null, char trigger = '\0')
+		public static void TestCompletionListContents(IEditorData ed, INode[] itemWhiteList, INode[] itemBlackList = null, char trigger = '\0')
 		{
 			var gen = new TestCompletionDataGen (itemWhiteList, itemBlackList);
 			Assert.That (CodeCompletion.GenerateCompletionData (ed, gen, trigger), Is.True);
