@@ -15,13 +15,17 @@ namespace D_Parser.Completion
 	class MemberCompletionProvider : AbstractCompletionProvider
 	{
 		ResolutionContext ctxt;
-		public PostfixExpression_Access AccessExpression;
+		public ISyntaxRegion AccessExpression;
 		public IStatement ScopedStatement;
 		public IBlockNode ScopedBlock;
 		public MemberFilter MemberFilter = MemberFilter.All;
 		IEditorData ed;
 
-		public MemberCompletionProvider(ICompletionDataGenerator cdg) : base(cdg) { }
+		public MemberCompletionProvider(ICompletionDataGenerator cdg, ISyntaxRegion sr, IBlockNode b, IStatement stmt) : base(cdg) {
+			AccessExpression = sr;
+			ScopedBlock = b;
+			ScopedStatement = stmt;
+		}
 
 		protected override void BuildCompletionDataInternal(IEditorData Editor, char enteredChar)
 		{
@@ -29,12 +33,21 @@ namespace D_Parser.Completion
 			ctxt = ResolutionContext.Create(Editor.ParseCache, new ConditionalCompilationFlags(Editor), ScopedBlock, ScopedStatement);
 			ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
 
-			var r = DResolver.StripAliasSymbol(Evaluation.EvaluateType(AccessExpression.PostfixForeExpression, ctxt));
+			AbstractType t;
 
-			if (r == null) //TODO: Add after-space list creation when an unbound . (Dot) was entered which means to access the global scope
+			if (AccessExpression is IExpression)
+				t = Evaluation.EvaluateType (AccessExpression as IExpression, ctxt);
+			else if (AccessExpression is ITypeDeclaration)
+				t = TypeDeclarationResolver.ResolveSingle (AccessExpression as ITypeDeclaration, ctxt);
+			else
 				return;
 
-			BuildCompletionData(r);
+			t = DResolver.StripAliasSymbol (t);
+
+			if (t == null) //TODO: Add after-space list creation when an unbound . (Dot) was entered which means to access the global scope
+				return;
+
+			BuildCompletionData(t);
 		}
 
 		void BuildCompletionData(

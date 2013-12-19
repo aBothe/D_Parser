@@ -66,6 +66,7 @@ namespace D_Parser.Completion
 		#region Nodes
 		public override void VisitDNode (DNode n)
 		{
+			scopedBlock = n as IBlockNode ?? n.Parent as IBlockNode;
 			if (n.NameHash == DTokens.IncompleteIdHash) {
 				explicitlyNoCompletion = true;
 				halt = true;
@@ -100,10 +101,23 @@ namespace D_Parser.Completion
 					else
 						vis = MemberFilter.Classes | MemberFilter.Interfaces | MemberFilter.Templates;
 
-					halt = true;
 					prv = new CtrlSpaceCompletionProvider (cdgen) { curBlock = handledClass, visibleMembers = vis };
-				}
+				} else
+					prv = new MemberCompletionProvider (cdgen, td.InnerDeclaration, scopedBlock, scopedStatement);
+
+				halt = true;
 			} else
+				base.Visit (td);
+		}
+
+		public override void Visit (IdentifierDeclaration td)
+		{
+			if (td.IdHash == DTokens.IncompleteIdHash) {
+				halt = true;
+				if(td.InnerDeclaration != null)
+					prv = new MemberCompletionProvider (cdgen, td.InnerDeclaration, scopedBlock, scopedStatement);
+			}
+			else
 				base.Visit (td);
 		}
 
@@ -164,9 +178,16 @@ namespace D_Parser.Completion
 		#endregion
 
 		#region Statements
+		public override void VisitAbstractStmt (AbstractStatement stmt)
+		{
+			scopedStatement = stmt;
+			base.VisitAbstractStmt (stmt);
+		}
+
 		public override void Visit (ModuleStatement s)
 		{
 			if (IsIncompleteDeclaration (s.ModuleName)) {
+				scopedStatement = s;
 				prv = new ModuleStatementCompletionProvider (cdgen);
 				halt = true;
 			}
@@ -240,10 +261,7 @@ namespace D_Parser.Completion
 		{
 			if (IsIncompleteExpression(x.AccessExpression)) {
 				halt = true;
-				prv = new MemberCompletionProvider (cdgen) { 
-					AccessExpression = x as PostfixExpression_Access, 
-					ScopedBlock = scopedBlock, 
-					ScopedStatement = scopedStatement };
+				prv = new MemberCompletionProvider (cdgen, x.PostfixForeExpression, scopedBlock, scopedStatement);
 			}
 			else
 				base.Visit (x);

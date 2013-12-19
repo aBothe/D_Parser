@@ -44,12 +44,11 @@ namespace D_Parser.Completion
 			if(!alreadyCheckedCompletionContext && !IsCompletionAllowed(editor, triggerChar))
 				return false;
 
-			IBlockNode scope = null;
-			IStatement stmt;
-			
-			var sr = CtrlSpaceCompletionProvider.FindCurrentCaretContext(editor, ref scope, out stmt);
+			IBlockNode _b = null;
+			IStatement _s;
+			var sr = CtrlSpaceCompletionProvider.FindCurrentCaretContext(editor, ref _b, out _s);
 
-			var complVis = new CompletionProviderVisitor (completionDataGen, triggerChar) { scopedBlock = scope, scopedStatement = stmt };
+			var complVis = new CompletionProviderVisitor (completionDataGen, triggerChar) { scopedBlock = _b, scopedStatement = _s };
 			if (sr is INode)
 				(sr as INode).Accept (complVis);
 			else if (sr is IStatement)

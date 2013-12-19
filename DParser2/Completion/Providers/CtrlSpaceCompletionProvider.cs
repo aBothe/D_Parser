@@ -75,16 +75,6 @@ namespace D_Parser.Completion
 					if (attr.IsStorageClass && attr.Token != DTokens.Abstract)
 						return false;
 				}
-
-				else if (trackVars.IsParsingBaseClassList)
-				{
-					var dc = parsedBlock as DClassLike;
-					if (dc != null && dc.ClassType == DTokens.Interface)
-						visibleMembers = MemberFilter.Interfaces | MemberFilter.Templates;
-					else
-						visibleMembers = MemberFilter.Classes | MemberFilter.Interfaces | MemberFilter.Templates;
-					return true;
-				}
 				
 				if (trackVars.IsParsingAssignExpression)
 				{
