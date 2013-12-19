@@ -4109,12 +4109,10 @@ namespace D_Parser.Parser
 				}
 				
 				if(IsEOF){
-					TrackerVariables.ExpectingIdentifier = true;
-					SynErr(t.Kind,"Basic type or iteration variable identifier expected.");
-					return dbs;
+					SynErr (Identifier, "Element variable name or type expected");
+					forEachVar.NameHash = DTokens.IncompleteIdHash;
 				}
-
-				if (laKind == (Identifier) && (Lexer.CurrentPeekToken.Kind == (Semicolon) || Lexer.CurrentPeekToken.Kind == Comma))
+				else if (laKind == (Identifier) && (Lexer.CurrentPeekToken.Kind == (Semicolon) || Lexer.CurrentPeekToken.Kind == Comma))
 				{
 					Step();
 					forEachVar.NameLocation = t.Location;

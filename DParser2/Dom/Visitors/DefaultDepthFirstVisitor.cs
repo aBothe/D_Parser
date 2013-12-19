@@ -274,16 +274,11 @@ namespace D_Parser.Dom
 
 		public virtual void Visit(ForeachStatement s)
 		{
-			VisitChildren(s);
+			VisitChildren (s);
 
 			if (s.ForeachTypeList != null)
 				foreach (var t in s.ForeachTypeList)
 					t.Accept(this);
-
-			if (s.UpperAggregate != null)
-				s.UpperAggregate.Accept(this);
-			if (s.Aggregate != null)
-				s.Aggregate.Accept(this);
 		}
 
 		public virtual void Visit(SwitchStatement s)

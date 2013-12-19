@@ -79,7 +79,7 @@ namespace D_Parser.Dom.Statements
 	{
 		public virtual IStatement ScopedStatement { get; set; }
 
-		public virtual IEnumerable<IStatement> SubStatements { get { return new[] { ScopedStatement }; } }
+		public virtual IEnumerable<IStatement> SubStatements { get { return ScopedStatement != null ? new[] { ScopedStatement } : new IStatement[0]; } }
 
 		public IStatement SearchStatement(CodeLocation Where)
 		{
@@ -448,7 +448,16 @@ namespace D_Parser.Dom.Statements
 
 		public IExpression[] SubExpressions
 		{
-			get { return new[]{ Aggregate, UpperAggregate }; }
+			get {
+				if (Aggregate != null) {
+					if (UpperAggregate == null)
+						return new[]{ Aggregate };
+					return new[]{ Aggregate,UpperAggregate };
+				}
+				if (UpperAggregate != null)
+					return new[]{ UpperAggregate };
+				return new IExpression[0];
+			}
 		}
 
 		public override string ToCode()

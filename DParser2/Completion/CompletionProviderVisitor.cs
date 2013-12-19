@@ -202,6 +202,19 @@ namespace D_Parser.Completion
 			base.VisitImport (i);
 			curBindings = null;
 		}
+
+		public override void Visit (ForeachStatement s)
+		{
+			var decls = s.Declarations;
+			var lastDecl = decls [decls.Length - 1];
+			if (lastDecl.NameHash == DTokens.IncompleteIdHash) {
+				scopedStatement = s;
+				halt = true;
+				explicitlyNoCompletion = lastDecl.Type != null;
+			}
+			else
+				base.Visit (s);
+		}
 		#endregion
 
 		#region Expressions
