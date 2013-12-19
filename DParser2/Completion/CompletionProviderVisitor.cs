@@ -251,8 +251,7 @@ namespace D_Parser.Completion
 
 		public override void Visit (TraitsExpression x)
 		{
-			if(x.Arguments != null && x.Arguments.Length > 0 && 
-				IsIncompleteExpression(x.Arguments[x.Arguments.Length-1].AssignExpression))
+			if(x.Keyword == DTokens.IncompleteId)
 			{
 				prv = new TraitsExpressionCompletionProvider(cdgen);
 				halt = true;

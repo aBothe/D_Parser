@@ -5150,8 +5150,10 @@ namespace D_Parser.Parser
 			var ce = new TraitsExpression() { Location=t.Location};
 			if(Expect(OpenParenthesis))
 			{
-				if(Expect(Identifier))
+				if (Expect (Identifier))
 					ce.Keyword = t.Value;
+				else if (IsEOF)
+					ce.Keyword = DTokens.IncompleteId;
 
 				var al = new List<TraitsArgument>();
 
