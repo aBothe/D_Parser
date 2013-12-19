@@ -113,11 +113,14 @@ namespace D_Parser.Completion
 		{
 			if (n.IsAlias) {
 				// alias |
-				if (IsIncompleteDeclaration (n.Type) && (n.NameHash == 0 || n.NameHash == DTokens.IncompleteIdHash)) {
+				// alias id = |
+				// NOT alias Type |
+				if (IsIncompleteDeclaration (n.Type)) {
 					prv = new CtrlSpaceCompletionProvider (cdgen) { 
 						curBlock = scopedBlock, curStmt = scopedStatement, 
 						visibleMembers = MemberFilter.All 
 					};
+					halt = true;
 				}
 			}else if (n.Initializer != null) {
 				handlesInitializer = true;
