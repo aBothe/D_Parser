@@ -82,11 +82,7 @@ namespace D_Parser.Completion
 					return true;
 				}
 
-				if ((trackVars.LastParsedObject is NewExpression && trackVars.IsParsingInitializer) ||
-					trackVars.LastParsedObject is TemplateInstanceExpression && ((TemplateInstanceExpression)trackVars.LastParsedObject).Arguments == null)
-					visibleMembers = MemberFilter.Types;
-				else if (enteredChar == ' ')
-					return false;
+
 				// In class bodies, do not show variables
 				else if (!(parsedBlock is BlockStatement || trackVars.IsParsingInitializer))
 				{
@@ -109,16 +105,6 @@ namespace D_Parser.Completion
 				else if (trackVars.LastParsedObject is IdentifierExpression &&
 					   (trackVars.LastParsedObject as IdentifierExpression).Format == LiteralFormat.Scalar)
 					return false;
-
-				// Handle module-scoped things:
-				// When typing a dot without anything following, trigger completion and show types, methods and vars that are located in the module & import scope
-				else if (trackVars.LastParsedObject is TokenExpression &&
-					((TokenExpression)trackVars.LastParsedObject).Token == DTokens.Dot)
-				{
-					visibleMembers = MemberFilter.Methods | MemberFilter.Types | MemberFilter.Variables | MemberFilter.TypeParameters;
-					curBlock = Editor.SyntaxTree;
-					curStmt = null;
-				}
 
 				// In a method, parse from the method's start until the actual caret position to get an updated insight
 				if (visibleMembers.HasFlag(MemberFilter.Variables) &&
