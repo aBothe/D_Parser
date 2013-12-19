@@ -3148,13 +3148,18 @@ namespace D_Parser.Parser
 				if((ce.TestedType = Type())==null)
 					SynErr(laKind, "In an IsExpression, either a type or an expression is required!");
 
-				if (ce.TestedType!=null && laKind == Identifier && (Lexer.CurrentPeekToken.Kind == CloseParenthesis || Lexer.CurrentPeekToken.Kind == Equal
-					|| Lexer.CurrentPeekToken.Kind == Colon))
+				if(ce.TestedType!=null)
 				{
-					Step();
-					Strings.Add(strVal);
-					ce.TypeAliasIdentifierHash = strVal.GetHashCode();
-					ce.TypeAliasIdLocation = t.Location;
+					if (laKind == Identifier && (Lexer.CurrentPeekToken.Kind == CloseParenthesis || Lexer.CurrentPeekToken.Kind == Equal
+						|| Lexer.CurrentPeekToken.Kind == Colon))
+					{
+						Step();
+						Strings.Add(strVal);
+						ce.TypeAliasIdentifierHash = strVal.GetHashCode();
+						ce.TypeAliasIdLocation = t.Location;
+					}
+					else if(IsEOF)
+						ce.TypeAliasIdentifierHash = DTokens.IncompleteIdHash;
 				}
 
 				if (laKind == CloseParenthesis)

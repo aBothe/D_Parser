@@ -144,8 +144,10 @@ namespace D_Parser.Completion
 						vis = MemberFilter.Classes | MemberFilter.Interfaces | MemberFilter.Templates;
 
 					prv = new CtrlSpaceCompletionProvider (cdgen) { curBlock = handledClass, visibleMembers = vis };
-				} else
+				} else if (td.InnerDeclaration != null)
 					prv = new MemberCompletionProvider (cdgen, td.InnerDeclaration, scopedBlock, scopedStatement);
+				else
+					prv = new CtrlSpaceCompletionProvider (cdgen) { curBlock = scopedBlock, curStmt = scopedStatement, visibleMembers = MemberFilter.All };
 
 				halt = true;
 			} else
@@ -341,6 +343,17 @@ namespace D_Parser.Completion
 			if (IsIncompleteDeclaration (x.Type)) {
 				halt = true;
 				prv = new CtrlSpaceCompletionProvider (cdgen) { visibleMembers = MemberFilter.Types, curBlock = scopedBlock, curStmt = scopedStatement };
+			}
+			else
+				base.Visit (x);
+		}
+
+		public override void Visit (IsExpression x)
+		{
+			// is(Type |
+			if (x.TypeAliasIdentifierHash == DTokens.IncompleteIdHash) {
+				halt = true;
+				explicitlyNoCompletion = true;
 			}
 			else
 				base.Visit (x);
