@@ -43,13 +43,24 @@ namespace D_Parser.Completion
 
 		bool explicitlyNoCompletion;
 
+		bool handlesInitializer;
 		bool handlesBaseClasses;
 		DClassLike handledClass;
 
 		public AbstractCompletionProvider GeneratedProvider { 
-			get{ 
-				return prv ?? (explicitlyNoCompletion ? null : 
-					new CtrlSpaceCompletionProvider(cdgen) { curBlock = scopedBlock, curStmt = scopedStatement }); 
+			get{
+				if (prv != null)
+					return prv;
+
+				if (explicitlyNoCompletion)
+					return null;
+
+				var vis = MemberFilter.All;
+
+				if (!(scopedBlock is DMethod) && !handlesInitializer)
+					vis = MemberFilter.Types | MemberFilter.TypeParameters | MemberFilter.Keywords;
+
+				return prv = new CtrlSpaceCompletionProvider(cdgen) { curBlock = scopedBlock, curStmt = scopedStatement, visibleMembers = vis}; 
 			}
 		}
 		AbstractCompletionProvider prv;
@@ -96,6 +107,17 @@ namespace D_Parser.Completion
 			base.VisitChildren (block);
 			scopedBlock = b;
 			scopedStatement = s;
+		}
+
+		public override void Visit (DVariable n)
+		{
+			if (n.Initializer != null) {
+				handlesInitializer = true;
+				n.Initializer.Accept (this);
+				handlesInitializer = false;
+			}
+			if(!halt)
+				VisitDNode(n);
 		}
 		#endregion
 
@@ -258,6 +280,13 @@ namespace D_Parser.Completion
 		{
 			if (e.Token == DTokens.Incomplete) {
 				halt = true;
+				if (handlesInitializer) {
+					prv = new CtrlSpaceCompletionProvider (cdgen){ 
+						curBlock = scopedBlock, 
+						curStmt = scopedStatement, 
+						visibleMembers = MemberFilter.All 
+					};
+				}
 			}
 		}
 

@@ -48,6 +48,11 @@ namespace D_Parser.Completion
 			IStatement _s;
 			var sr = CtrlSpaceCompletionProvider.FindCurrentCaretContext(editor, ref _b, out _s);
 
+			if (editor.CaretLocation > _b.EndLocation) {
+				_b = editor.SyntaxTree;
+				_s = null;
+			}
+
 			var complVis = new CompletionProviderVisitor (completionDataGen, triggerChar) { scopedBlock = _b, scopedStatement = _s };
 			if (sr is INode)
 				(sr as INode).Accept (complVis);

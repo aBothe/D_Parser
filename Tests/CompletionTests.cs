@@ -56,6 +56,29 @@ void main(){
 		}
 
 		[Test]
+		public void ModuleCompletion()
+		{
+			var code = @"module 
+";
+
+			var ed = GenEditorData (1, 8, code);
+			ed.SyntaxTree.ModuleName = "asdf";
+			TestCompletionListContents (ed, new[]{ ed.SyntaxTree }, new INode[0]);
+		}
+
+		[Test]
+		public void ForeachCompletion()
+		{
+			var code =@"module A;
+void main() {
+foreach( 
+}";
+			var ed = GenEditorData (3, 9, code);
+			var g = new TestCompletionDataGen (null, null);
+			Assert.That(CodeCompletion.GenerateCompletionData (ed, g, '\0', true), Is.False);
+		}
+
+		[Test]
 		public void MemberCompletion()
 		{
 			bool expectNodeName;
@@ -141,14 +164,16 @@ void main() { Class. }";
 
 			#region ICompletionDataGenerator implementation
 
+			public List<byte> Tokens = new List<byte> ();
 			public void Add (byte Token)
 			{
-
+				Tokens.Add (Token);
 			}
 
+			public List<string> Attributes = new List<string> ();
 			public void AddPropertyAttribute (string AttributeText)
 			{
-
+				Attributes.Add (AttributeText);
 			}
 
 			public void AddTextItem (string Text, string Description)
@@ -156,6 +181,7 @@ void main() { Class. }";
 
 			}
 
+			public List<INode> addedItems = new List<INode> ();
 			public void Add (INode n)
 			{
 				if (blackList != null)
@@ -163,16 +189,19 @@ void main() { Class. }";
 
 				if (whiteList != null && whiteList.Contains(n))
 					Assert.That (remainingWhiteList.Remove (n), Is.True, n+" occurred at least twice!");
+
+				addedItems.Add (n);
 			}
 
 			public void AddModule (DModule module, string nameOverride = null)
 			{
-
+				this.Add (module);
 			}
 
+			public List<string> Packages = new List<string> ();
 			public void AddPackage (string packageName)
 			{
-
+				Packages.Add (packageName);
 			}
 
 			#endregion

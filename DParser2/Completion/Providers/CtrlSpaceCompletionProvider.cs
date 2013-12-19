@@ -47,9 +47,6 @@ namespace D_Parser.Completion
 
 		private bool GetVisibleMemberFilter(IEditorData Editor, char enteredChar, ref MemberFilter visibleMembers, ref IStatement curStmt)
 		{
-			if (!(curBlock is DMethod)) {
-				visibleMembers = MemberFilter.Types | MemberFilter.Keywords | MemberFilter.TypeParameters;
-			}
 			/*if (trackVars == null)
 			{
 				// --> Happens if no actual declaration syntax given --> Show types/keywords anyway
@@ -71,51 +68,10 @@ namespace D_Parser.Completion
 					DTokens.IsIdentifierChar(enteredChar))
 					return false;
 
-				if (trackVars.LastParsedObject is Modifier)
-				{
-					var attr = trackVars.LastParsedObject as Modifier;
-
-					if (attr.IsStorageClass && attr.Token != DTokens.Abstract)
-						return false;
-				}
-				
-				if (trackVars.IsParsingAssignExpression)
-				{
-					visibleMembers = MemberFilter.All;
-					return true;
-				}
-
-
-				// In class bodies, do not show variables
-				else if (!(parsedBlock is BlockStatement || trackVars.IsParsingInitializer))
-				{
-					bool showVariables = false;
-					var dbn = parsedBlock as DBlockNode;
-					if (dbn != null && dbn.StaticStatements != null && dbn.StaticStatements.Count > 0)
-					{
-						var ss = dbn.StaticStatements[dbn.StaticStatements.Count - 1];
-						if (Editor.CaretLocation > ss.Location && Editor.CaretLocation <= ss.EndLocation)
-						{
-							showVariables = true;
-						}
-					}
-
-					if (!showVariables)
-						visibleMembers = MemberFilter.All ^ MemberFilter.Variables;
-				}
-
 				// Hide completion if having typed a '0.' literal
 				else if (trackVars.LastParsedObject is IdentifierExpression &&
 					   (trackVars.LastParsedObject as IdentifierExpression).Format == LiteralFormat.Scalar)
 					return false;
-
-				// In a method, parse from the method's start until the actual caret position to get an updated insight
-				if (visibleMembers.HasFlag(MemberFilter.Variables) &&
-					curBlock is DMethod &&
-					parsedBlock is BlockStatement)
-				{}
-				else
-					curStmt = null;
 			}*/
 			return true;
 		}

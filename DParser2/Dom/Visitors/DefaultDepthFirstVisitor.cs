@@ -80,9 +80,6 @@ namespace D_Parser.Dom
 		public virtual void Visit(DModule n)
 		{
 			VisitBlock(n);
-
-			if (n.OptionalModuleStatement != null)
-				n.OptionalModuleStatement.Accept(this);
 		}
 
 		public virtual void Visit(TemplateParameter.Node n)
