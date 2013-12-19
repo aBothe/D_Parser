@@ -33,7 +33,7 @@ namespace D_Parser.Dom
 			}
 		}
 
-		public TemplateParameter(string name, CodeLocation nameLoc, DNode par) : this(name.GetHashCode(), nameLoc, par)
+		public TemplateParameter(string name, CodeLocation nameLoc, DNode par) : this(name != null ? name.GetHashCode() : 0, nameLoc, par)
 		{
 			Strings.Add (name);
 		}
