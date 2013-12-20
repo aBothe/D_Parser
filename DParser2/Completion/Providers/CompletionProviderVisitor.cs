@@ -125,8 +125,15 @@ namespace D_Parser.Completion
 				n.Initializer.Accept (this);
 				handlesInitializer = false;
 			}
+
 			if(!halt)
 				VisitDNode(n);
+
+			// auto |
+			if(!halt && n.NameHash == 0 && n.ContainsAttribute (DTokens.Auto)) {
+				halt = true;
+				explicitlyNoCompletion = true;
+			}
 		}
 		#endregion
 
