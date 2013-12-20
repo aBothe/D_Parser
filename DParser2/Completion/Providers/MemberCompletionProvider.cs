@@ -10,7 +10,7 @@ using D_Parser.Resolver.ASTScanner;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
 
-namespace D_Parser.Completion
+namespace D_Parser.Completion.Providers
 {
 	class MemberCompletionProvider : AbstractCompletionProvider
 	{

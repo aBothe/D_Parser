@@ -1,9 +1,9 @@
 ﻿using D_Parser.Dom.Expressions;
 using D_Parser.Dom;
 
-namespace D_Parser.Completion
+namespace D_Parser.Completion.Providers
 {
-	public abstract class AbstractCompletionProvider
+	abstract class AbstractCompletionProvider
 	{
 		public readonly ICompletionDataGenerator CompletionDataGenerator;
 		
@@ -57,8 +57,6 @@ namespace D_Parser.Completion
 			return true;
 		}
 		#endregion
-
-
 
 		protected abstract void BuildCompletionDataInternal(IEditorData Editor, char enteredChar);
 

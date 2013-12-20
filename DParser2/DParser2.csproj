@@ -111,7 +111,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Completion\AbstractCompletionProvider.cs" />
     <Compile Include="Completion\AbstractTooltipProvider.cs" />
     <Compile Include="Completion\Providers\AttributeCompletionProvider.cs" />
     <Compile Include="Completion\Providers\CtrlSpaceCompletionProvider.cs" />
@@ -227,8 +226,9 @@
     <Compile Include="Completion\CodeCompletion.cs" />
     <Compile Include="Resolver\ASTScanner\ConditionsFrame.cs" />
     <Compile Include="Resolver\TypeResolution\OpDispatchResolution.cs" />
-    <Compile Include="Completion\CompletionProviderVisitor.cs" />
     <Compile Include="Completion\ParamInsightVisitor.cs" />
+    <Compile Include="Completion\Providers\AbstractCompletionProvider.cs" />
+    <Compile Include="Completion\Providers\CompletionProviderVisitor.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="readme.txt" />

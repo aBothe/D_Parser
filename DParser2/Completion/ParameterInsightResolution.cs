@@ -70,7 +70,7 @@ namespace D_Parser.Completion
 		{
 			IBlockNode curBlock = null;
 			IStatement stmt;
-			var sr = CtrlSpaceCompletionProvider.FindCurrentCaretContext(Editor, ref curBlock, out stmt);
+			var sr = CodeCompletion.FindCurrentCaretContext(Editor, ref curBlock, out stmt);
 
 			IExpression lastParamExpression = null;
 

@@ -44,7 +44,6 @@ void main(){
 			
 			var l = new CodeLocation(1,4);
 			var off = DocumentHelper.LocationToOffset(code,l);
-			ParserTrackerVariables ptr;
 			CodeLocation caretLoc;
 			//var parsedBlock = AbstractCompletionProvider.FindCurrentCaretContext(code,main, off,l,out ptr, out caretLoc);
 			
@@ -93,53 +92,6 @@ foreach(
 			Assert.That (@"class A : ", Does.Trigger);
 			Assert.That (@"class A(T) if(is( ", Does.Trigger);
 
-		}
-
-		[Test]
-		public void MemberCompletion()
-		{
-			bool expectNodeName;
-
-			object lpo;
-
-			lpo = GetLastParsedObject ("std.templ!(hello).", out expectNodeName);
-			Assert.That (lpo, Is.TypeOf (typeof(PostfixExpression_Access)));
-			Assert.That ((lpo as PostfixExpression_Access).PostfixForeExpression, Is.TypeOf(typeof(PostfixExpression_Access)));
-			Assert.That (expectNodeName, Is.False);
-
-			lpo = GetLastParsedObject ("templ!(hello.", out expectNodeName);
-			Assert.That (lpo, Is.TypeOf (typeof(PostfixExpression_Access)));
-			Assert.That (((lpo as PostfixExpression_Access).PostfixForeExpression as IdentifierExpression).StringValue, Is.EqualTo ("hello"));
-			Assert.That (expectNodeName, Is.False);
-
-			lpo = GetLastParsedObject ("templ!(hello).", out expectNodeName);
-			Assert.That (lpo, Is.TypeOf (typeof(PostfixExpression_Access)));
-			Assert.That (((lpo as PostfixExpression_Access).PostfixForeExpression as TemplateInstanceExpression).TemplateId, Is.EqualTo ("templ"));
-			Assert.That (expectNodeName, Is.False);
-
-			Assert.That (GetLastParsedObject("std.templ!(hello.", out expectNodeName), 
-			             Is.TypeOf (typeof(PostfixExpression_Access)));
-			Assert.That (expectNodeName, Is.False);
-
-			Assert.That (GetLastParsedObject("b = B.", out expectNodeName), 
-			             Is.TypeOf (typeof(PostfixExpression_Access)));
-			Assert.That (expectNodeName, Is.False);
-
-			Assert.That (GetLastParsedObject("b = (B.", out expectNodeName), 
-			             Is.TypeOf (typeof(PostfixExpression_Access)));
-			Assert.That (expectNodeName, Is.False);
-		}
-
-		static object GetLastParsedObject(string code, out bool expectNodeId)
-		{
-			using (var sr = new StringReader(code)) {
-				var parser = DParser.Create (sr);
-				parser.Step ();
-				parser.Statement ();
-
-				expectNodeId = parser.TrackerVariables.ExpectingNodeName;
-				return parser.TrackerVariables.LastParsedObject;
-			}
 		}
 
 		[Test]

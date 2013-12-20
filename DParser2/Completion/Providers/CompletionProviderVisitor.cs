@@ -35,7 +35,7 @@ using D_Parser.Resolver.ASTScanner;
 namespace D_Parser.Completion
 {//TODO: don't show completion on '0.|'
 	//TODO: (Type). -- lookup static properties, fields and methods.
-	public class CompletionProviderVisitor : DefaultDepthFirstVisitor
+	class CompletionProviderVisitor : DefaultDepthFirstVisitor
 	{
 		#region Properties
 		bool halt; 

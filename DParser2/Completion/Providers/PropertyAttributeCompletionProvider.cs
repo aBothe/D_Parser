@@ -1,5 +1,5 @@
 ﻿
-namespace D_Parser.Completion
+namespace D_Parser.Completion.Providers
 {
 	class PropertyAttributeCompletionProvider : AbstractCompletionProvider
 	{
