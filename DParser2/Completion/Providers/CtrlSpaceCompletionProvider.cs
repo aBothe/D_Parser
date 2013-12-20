@@ -12,19 +12,19 @@ namespace D_Parser.Completion
 {
 	class CtrlSpaceCompletionProvider : AbstractCompletionProvider
 	{
-		//public object parsedBlock;
-		public IBlockNode curBlock;
-		public IStatement curStmt;
-		//public ParserTrackerVariables trackVars;
-		public MemberFilter visibleMembers = MemberFilter.All;
+		public readonly IBlockNode curBlock;
+		public readonly IStatement curStmt;
+		public readonly MemberFilter visibleMembers;
 
-		public CtrlSpaceCompletionProvider(ICompletionDataGenerator cdg) : base(cdg) { }
+		public CtrlSpaceCompletionProvider(ICompletionDataGenerator cdg, IBlockNode b, IStatement stmt, MemberFilter vis = MemberFilter.All)
+			: base(cdg) { 
+			this.curBlock = b;
+			this.curStmt = stmt;
+			visibleMembers = vis;
+		}
 
 		protected override void BuildCompletionDataInternal(IEditorData Editor, char enteredChar)
 		{
-			if(!GetVisibleMemberFilter(Editor, enteredChar, ref visibleMembers, ref curStmt))
-				return;
-
 			MemberCompletionEnumeration.EnumAllAvailableMembers(
 					CompletionDataGenerator,
 					curBlock,
@@ -43,37 +43,6 @@ namespace D_Parser.Completion
 			else if (visibleMembers.HasFlag(MemberFilter.StructsAndUnions))
 				foreach (var kv in DTokens.BasicTypes_Array)
 					CompletionDataGenerator.Add(kv);
-		}
-
-		private bool GetVisibleMemberFilter(IEditorData Editor, char enteredChar, ref MemberFilter visibleMembers, ref IStatement curStmt)
-		{
-			/*if (trackVars == null)
-			{
-				// --> Happens if no actual declaration syntax given --> Show types/keywords anyway
-				visibleMembers = MemberFilter.Types | MemberFilter.Keywords | MemberFilter.TypeParameters;
-			}
-			else
-			{
-				var n = trackVars.LastParsedObject as INode;
-				var dv = n as DVariable;
-				if (trackVars.ExpectingNodeName) {
-					if (dv != null && dv.IsAlias && dv.Type == null) {
-						// Show completion because no aliased type has been entered yet
-					} else if (n != null && n.NameHash==0 && enteredChar != '\0')
-						return false;
-				}
-
-				else if (trackVars.LastParsedObject is TokenExpression &&
-					DTokens.BasicTypes[(trackVars.LastParsedObject as TokenExpression).Token] &&
-					DTokens.IsIdentifierChar(enteredChar))
-					return false;
-
-				// Hide completion if having typed a '0.' literal
-				else if (trackVars.LastParsedObject is IdentifierExpression &&
-					   (trackVars.LastParsedObject as IdentifierExpression).Format == LiteralFormat.Scalar)
-					return false;
-			}*/
-			return true;
 		}
 
 		public static ISyntaxRegion FindCurrentCaretContext(IEditorData editor, ref IBlockNode currentScope, out IStatement currentStatement)

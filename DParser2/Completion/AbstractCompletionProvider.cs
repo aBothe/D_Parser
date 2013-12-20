@@ -1,11 +1,5 @@
-﻿using D_Parser.Dom;
-using D_Parser.Dom.Expressions;
-using D_Parser.Dom.Statements;
-using D_Parser.Parser;
-using D_Parser.Resolver.TypeResolution;
-using D_Parser.Completion.Providers;
-using D_Parser.Resolver.ASTScanner;
-using System;
+﻿using D_Parser.Dom.Expressions;
+using D_Parser.Dom;
 
 namespace D_Parser.Completion
 {
@@ -16,50 +10,6 @@ namespace D_Parser.Completion
 		public AbstractCompletionProvider(ICompletionDataGenerator CompletionDataGenerator)
 		{
 			this.CompletionDataGenerator = CompletionDataGenerator;
-		}
-
-		internal static AbstractCompletionProvider Create(ICompletionDataGenerator dataGen, IEditorData Editor, char ch)
-		{
-			return null;
-			/*
-			if (trackVars != null)
-			{
-				PostfixExpression_Access pfa;
-
-				else if (trackVars.LastParsedObject is ITypeDeclaration && !(trackVars.LastParsedObject is TemplateInstanceExpression))
-					pfa = TryConvertTypeDeclaration(trackVars.LastParsedObject as ITypeDeclaration) as PostfixExpression_Access;
-				else if (ex is UnaryExpression_Type)
-				{
-					pfa = null;
-					//TODO: (Type). -- lookup static properties, fields and methods.
-				}
-				else
-					pfa = null;
-
-				if(trackVars.ExpectingIdentifier)
-				{
-					else if ((trackVars.LastParsedObject is TemplateParameter || 
-						trackVars.LastParsedObject is ForeachStatement) && ch != '\0')
-						return null;
-				}
-				
-				if (ch == '(')
-					return null;
-			}
-
-			return new CtrlSpaceCompletionProvider(dataGen) { 
-				trackVars=trackVars,
-				curBlock=curBlock,
-				curStmt = curStmt,
-				parsedBlock=parsedBlock
-			};*/
-		}
-
-		[Obsolete("Use CodeCompletion.GenerateCompletionData instead!")]
-		public static AbstractCompletionProvider BuildCompletionData(ICompletionDataGenerator dataGen, IEditorData editor, string EnteredText)
-		{
-			CodeCompletion.GenerateCompletionData (editor, dataGen, string.IsNullOrEmpty (EnteredText) ? '\0' : EnteredText [0]);
-			return null;
 		}
 
 		#region Helper Methods
