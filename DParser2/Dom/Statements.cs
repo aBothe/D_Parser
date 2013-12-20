@@ -1216,7 +1216,7 @@ namespace D_Parser.Dom.Statements
 
 		public override string ToCode()
 		{
-			if (Declarations == null || Declarations.Length < 0)
+			if (Declarations == null || Declarations.Length < 1)
 				return ";";
 
 			var r = Declarations[0].ToString();
