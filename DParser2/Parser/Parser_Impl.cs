@@ -1986,7 +1986,7 @@ namespace D_Parser.Parser
 				return AttributeBlock(module);
 			else
 			{
-				if (IsEOF) // To enable attribute completion, add dummy node
+				if (IsEOF && module != null && previouslyParsedAttribute != null) // To enable attribute completion, add dummy node
 					module.Add (new DVariable{ Attributes = new List<DAttribute>{ previouslyParsedAttribute } });
 
 				if (RequireDeclDef)
