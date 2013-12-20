@@ -168,8 +168,9 @@ namespace D_Parser.Completion
 
 		void GenUfcsCompletionItems(AbstractType t)
 		{
-			foreach (var ufcsItem in UFCSResolver.TryResolveUFCS(t, 0, ed.CaretLocation, ctxt))
-				CompletionDataGenerator.Add ((ufcsItem as DSymbol).Definition);
+			if(CompletionOptions.Instance.ShowUFCSItems)
+				foreach (var ufcsItem in UFCSResolver.TryResolveUFCS(t, 0, ed.CaretLocation, ctxt))
+					CompletionDataGenerator.Add ((ufcsItem as DSymbol).Definition);
 		}
 	}
 }
