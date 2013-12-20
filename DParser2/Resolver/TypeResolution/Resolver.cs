@@ -362,7 +362,7 @@ namespace D_Parser.Resolver.TypeResolution
 					continue;
 				}
 
-				if (type == null || type.ToString(false) == dc.Name || dc.NodeRoot == dc)
+				if (type == null || (type is IdentifierDeclaration && (type as IdentifierDeclaration).IdHash == dc.NameHash) || dc.NodeRoot == dc)
 				{
 					ctxt.LogError(new ResolutionError(dc, "A class cannot inherit from itself"));
 					continue;
