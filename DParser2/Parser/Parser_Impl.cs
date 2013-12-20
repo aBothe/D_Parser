@@ -4512,12 +4512,19 @@ namespace D_Parser.Parser
 				mye.Type = Type();
 			}
 
-			// Variables with 'enum' as base type
-			if (laKind == (Assign) || laKind == (Semicolon))
+			if (laKind == OpenCurlyBrace) // Normal enum block
 			{
+				EnumBody(mye);
+				ret.Add(mye);
+				mye.Description += CheckForPostSemicolonComment();
+			}
+			// Variables with 'enum' as base type
+			else if (laKind == Assign || laKind == Semicolon || IsEOF)
+			{
+				DVariable enumVar = null;
 				do
 				{
-					var enumVar = new DVariable();
+					enumVar = new DVariable();
 
 					enumVar.AssignFrom(mye);
 
@@ -4546,14 +4553,8 @@ namespace D_Parser.Parser
 				while (laKind == Comma);
 
 				Expect(Semicolon);
+				enumVar.Description += CheckForPostSemicolonComment();
 			}
-			else if (laKind == OpenCurlyBrace) // Normal enum block
-			{
-				EnumBody(mye);
-				ret.Add(mye);
-			}
-
-			mye.Description += CheckForPostSemicolonComment();
 
 			return ret.ToArray();
 		}
