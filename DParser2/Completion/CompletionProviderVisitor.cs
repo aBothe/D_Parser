@@ -178,7 +178,8 @@ namespace D_Parser.Completion
 		#region Attributes
 		public override void VisitAttribute (Modifier a)
 		{
-			if (a.ContentHash == DTokens.IncompleteIdHash) {
+			string c;
+			if (a.ContentHash == DTokens.IncompleteIdHash || ((c = a.LiteralContent as string) != null && c.EndsWith(DTokens.IncompleteId))) {
 				prv = new AttributeCompletionProvider (cdgen) { Attribute = a };
 				halt = true;
 			}

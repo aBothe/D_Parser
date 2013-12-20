@@ -1897,23 +1897,22 @@ namespace D_Parser.Parser
 					Step(); // Skip extern
 					Step(); // Skip (
 	
-					TrackerVariables.ExpectingIdentifier = true;
 					var sb = new StringBuilder ();
+					// Check if EOF and append IncompleteID
 					while (!IsEOF && laKind != CloseParenthesis)
 					{
 						Step();
 						sb.Append(t.ToString());
 
-						TrackerVariables.ExpectingIdentifier = false;
-	
 						if (t.Kind == Identifier && laKind == Identifier)
 							sb.Append(' ');
 					}
+					if (IsEOF)
+						m.LiteralContent = DTokens.IncompleteId;
+					else
+						m.LiteralContent = sb.ToString();
 	
-					m.LiteralContent = sb.ToString();
-	
-					if (!Expect(CloseParenthesis))
-						return;
+					Expect (CloseParenthesis);
 				}
 				else if (laKind == Align && Lexer.CurrentPeekToken.Kind == OpenParenthesis)
 				{
@@ -1933,7 +1932,7 @@ namespace D_Parser.Parser
 
 			//TODO: What about these semicolons after e.g. a pragma? Enlist these attributes anyway in the meta decl list?
 			if (laKind != Semicolon)
-				AttributeTrail(scope, attr);
+				AttributeTrail (scope, attr);
 		}
 		
 		/// <summary>
@@ -2011,6 +2010,9 @@ namespace D_Parser.Parser
 				return AttributeBlock(module);
 			else
 			{
+				if (IsEOF) // To enable attribute completion, add dummy node
+					module.Add (new DVariable{ Attributes = new List<DAttribute>{ previouslyParsedAttribute } });
+
 				if (RequireDeclDef)
 					DeclDef(module);
 				return new AttributeMetaDeclaration(previouslyParsedAttribute) { EndLocation = previouslyParsedAttribute.EndLocation };
@@ -2843,7 +2845,6 @@ namespace D_Parser.Parser
 				Step();
 				if (IsEOF)
 				{
-					TrackerVariables.ExpectingIdentifier = true;
 					var dot = new TokenExpression(Dot) { Location = t.Location, EndLocation = t.EndLocation };
 					return new PostfixExpression_Access{ PostfixForeExpression = dot, AccessExpression = new TokenExpression(DTokens.Incomplete) };
 				}
