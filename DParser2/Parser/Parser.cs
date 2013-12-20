@@ -38,7 +38,6 @@ namespace D_Parser.Parser
 		public Lexer Lexer;
 
 		public readonly List<Comment> Comments = new List<Comment>();
-		public ParserTrackerVariables TrackerVariables = new ParserTrackerVariables();
 
 		DToken _backupt = new DToken();
 		DToken t
@@ -346,8 +345,6 @@ namespace D_Parser.Parser
 			}
 			else
 			{
-				if (n == Identifier && IsEOF)
-					TrackerVariables.ExpectingIdentifier = true;
 				SynErr(n, DTokens.GetTokenString(n) + " expected, "+DTokens.GetTokenString(laKind)+" found!");
 			}
             return false;
@@ -446,29 +443,5 @@ namespace D_Parser.Parser
 	public class TooManyErrorsException : Exception
 	{
 		public TooManyErrorsException() : base("Too many errors") { }
-	}
-
-	public class ParserTrackerVariables
-	{
-		/// <summary>
-		/// Used to track the expression/declaration/statement/whatever which is handled currently.
-		/// Required for code completion.
-		/// </summary>
-		public object LastParsedObject;
-
-
-
-		/// <summary>
-		/// Required for code completion.
-		/// True if a type/variable/method/etc. identifier is expected.
-		/// </summary>
-		public bool ExpectingNodeName;
-		public bool ExpectingIdentifier;
-		public bool IsParsingAssignExpression;
-
-		public INode InitializedNode;
-		public bool IsParsingInitializer;
-
-		public bool IsParsingBaseClassList;
 	}
 }

@@ -915,10 +915,10 @@ namespace D_Parser.Parser
 				// DeclaratorInitializer
 				if (laKind == (Assign))
 				{
-					TrackerVariables.InitializedNode = firstNode;
+					var init = Initializer (Scope);
 					var dv = firstNode as DVariable;
-					if(dv!=null)
-						dv.Initializer = Initializer(Scope);
+					if (dv != null)
+						dv.Initializer = init;
 				}
 				firstNode.EndLocation = t.EndLocation;
 				var ret = new List<INode>();
@@ -942,10 +942,8 @@ namespace D_Parser.Parser
 							otherNode.NameHash = IncompleteIdHash;
 						otherNode.NameLocation = t.Location;
 
-						if (laKind == (Assign)) {
-							TrackerVariables.InitializedNode = otherNode;
+						if (laKind == Assign)
 							otherNode.Initializer = Initializer (Scope);
-						}
 
 						otherNode.EndLocation = t.EndLocation;
 						ret.Add (otherNode);
@@ -1064,9 +1062,7 @@ namespace D_Parser.Parser
 			else
 				td.InnerMost = IdentifierList();
 
-			if (td == null)
-				TrackerVariables.ExpectingIdentifier = false;
-			else if(isModuleScoped)
+			if(isModuleScoped && td != null)
 			{
 				var innerMost = td.InnerMost;
 				if (innerMost is IdentifierDeclaration)
@@ -1629,17 +1625,11 @@ namespace D_Parser.Parser
 			{
 				Step();
 
-				TrackerVariables.InitializedNode = ret;
-				TrackerVariables.IsParsingInitializer = true;
-
 				var defInit = AssignExpression(Scope);
 
 				var dv = ret as DVariable;
 				if (dv!=null)
 					dv.Initializer = defInit;
-
-				if (!IsEOF)
-					TrackerVariables.IsParsingInitializer = false;
 			}
 			ret.EndLocation = t.EndLocation;
 
@@ -1662,9 +1652,6 @@ namespace D_Parser.Parser
 
 		IExpression NonVoidInitializer(IBlockNode Scope = null)
 		{
-			var isParsingInitializer_backup = TrackerVariables.IsParsingInitializer;
-			TrackerVariables.IsParsingInitializer = true;
-
 			// ArrayInitializers are handled in PrimaryExpression(), whereas setting IsParsingInitializer to true is required!
 
 			#region StructInitializer
@@ -1707,19 +1694,16 @@ namespace D_Parser.Parser
 				ae.MemberInitializers = inits.ToArray();
 				ae.EndLocation = t.EndLocation;
 
-				if (!IsEOF)
-					TrackerVariables.IsParsingInitializer = isParsingInitializer_backup;
-
 				return ae;
 			}
 			#endregion
 
-			var expr= AssignExpression(Scope);
+			#region ArrayLiteral | AssocArrayLiteral
+			if (laKind == OpenSquareBracket)
+				return ArrayLiteral(Scope, false);
+			#endregion
 
-			if (!IsEOF)
-				TrackerVariables.IsParsingInitializer = isParsingInitializer_backup;
-
-			return expr;
+			return AssignExpression(Scope);
 		}
 
 		/// <summary>
@@ -1778,12 +1762,7 @@ namespace D_Parser.Parser
 			var md = new VectorDeclaration { Location = startLoc };
 
 			if (Expect(OpenParenthesis))
-			{
 				md.Id = Expression();
-
-				if (Expect(CloseParenthesis))
-					TrackerVariables.ExpectingIdentifier = false;
-			}
 
 			md.EndLocation = t.EndLocation;
 			return md;
@@ -1827,9 +1806,6 @@ namespace D_Parser.Parser
 				}
 				if (l.Count > 0)
 					s.Arguments = l.ToArray();
-
-				if (Expect(CloseParenthesis))
-					TrackerVariables.ExpectingIdentifier = false;
 			}
 			s.EndLocation = t.EndLocation;
 			return s;
@@ -2211,14 +2187,6 @@ namespace D_Parser.Parser
 		public IExpression AssignExpression(IBlockNode Scope = null)
 		{
 			var left = ConditionalExpression(Scope);
-			if (Lexer.IsEOF)
-			{
-				if (!TrackerVariables.IsParsingAssignExpression)
-				{
-					TrackerVariables.IsParsingAssignExpression = true;
-				}
-				return left;
-			}
 			if (!AssignOps[laKind])
 				return left;
 
@@ -2240,8 +2208,6 @@ namespace D_Parser.Parser
 			se.TrueCaseExpression = Expression(Scope);
 			if (Expect (Colon))
 				se.FalseCaseExpression = ConditionalExpression (Scope);
-			if (IsEOF)
-				TrackerVariables.IsParsingAssignExpression = true;
 			return se;
 		}
 
@@ -2921,77 +2887,7 @@ namespace D_Parser.Parser
 
 			#region ArrayLiteral | AssocArrayLiteral
 			if (laKind == (OpenSquareBracket))
-			{
-				Step();
-				var startLoc = t.Location;
-
-				// Empty array literal
-				if (laKind == CloseSquareBracket)
-				{
-					Step();
-					return new ArrayLiteralExpression(null) {Location=startLoc, EndLocation = t.EndLocation };
-				}
-
-				/*
-				 * If it's an initializer, allow NonVoidInitializers as values.
-				 * Normal AssignExpressions otherwise.
-				 */
-				bool isInitializer = TrackerVariables.IsParsingInitializer;
-
-				var firstExpression = isInitializer? NonVoidInitializer(Scope) : AssignExpression(Scope);
-
-				// Associtative array
-				if (laKind == Colon)
-				{
-					Step();
-
-					var ae = isInitializer ?
-						new ArrayInitializer { Location = startLoc } : 
-						new AssocArrayExpression { Location=startLoc };
-
-					var firstValueExpression = isInitializer? NonVoidInitializer(Scope) : AssignExpression();
-
-					ae.Elements.Add(new KeyValuePair<IExpression,IExpression>(firstExpression, firstValueExpression));
-
-					while (laKind == Comma)
-					{
-						Step();
-
-						if (laKind == CloseSquareBracket)
-							break;
-
-						var keyExpr = AssignExpression();
-						var valExpr=Expect(Colon) ? 
-							(isInitializer? 
-								NonVoidInitializer(Scope) : 
-								AssignExpression(Scope)) : 
-							null;
-
-						ae.Elements.Add(new KeyValuePair<IExpression,IExpression>(keyExpr,valExpr));
-					}
-
-					Expect(CloseSquareBracket);
-					ae.EndLocation = t.EndLocation;
-					return ae;
-				}
-				else // Normal array literal
-				{
-					var ae = new List<IExpression>();
-
-					ae.Add(firstExpression);
-
-					while (laKind == Comma)
-					{
-						Step();
-						if (laKind == CloseSquareBracket) // And again, empty expressions are allowed
-							break;
-						ae.Add(isInitializer? NonVoidInitializer(Scope) : AssignExpression(Scope));
-					}
-
-					Expect(CloseSquareBracket);
-					return new ArrayLiteralExpression(ae){ Location=startLoc, EndLocation = t.EndLocation };
-				}
-			}
+				return ArrayLiteral(Scope);
 			#endregion
 
 			#region FunctionLiteral
@@ -3278,6 +3174,67 @@ namespace D_Parser.Parser
 			return new TokenExpression() { Location = t.Location, EndLocation = t.EndLocation };
 		}
 
+		IExpression ArrayLiteral(IBlockNode scope, bool nonInitializer = true)
+		{
+			Expect (OpenSquareBracket);
+			var startLoc = t.Location;
+
+			// Empty array literal
+			if (laKind == CloseSquareBracket)
+			{
+				Step();
+				return new ArrayLiteralExpression(null) {Location=startLoc, EndLocation = t.EndLocation };
+			}
+
+			var firstExpression = nonInitializer ? AssignExpression(scope) : NonVoidInitializer(scope);
+
+			// Associtative array
+			if (laKind == Colon)
+			{
+				Step();
+
+				var ae = nonInitializer ? new AssocArrayExpression { Location=startLoc } : new ArrayInitializer{ Location = startLoc };
+
+				var firstValueExpression = nonInitializer ? AssignExpression(scope) : NonVoidInitializer(scope);
+
+				ae.Elements.Add(new KeyValuePair<IExpression,IExpression>(firstExpression, firstValueExpression));
+
+				while (laKind == Comma)
+				{
+					Step();
+
+					if (laKind == CloseSquareBracket)
+						break;
+
+					var keyExpr = AssignExpression(scope);
+					var valExpr = Expect(Colon) ? (nonInitializer ? AssignExpression(scope) : NonVoidInitializer(scope)) : null;
+
+					ae.Elements.Add(new KeyValuePair<IExpression,IExpression>(keyExpr,valExpr));
+				}
+
+				Expect(CloseSquareBracket);
+				ae.EndLocation = t.EndLocation;
+				return ae;
+			}
+			else // Normal array literal
+			{
+				var ae = new List<IExpression>();
+
+				ae.Add(firstExpression);
+
+				while (laKind == Comma)
+				{
+					Step();
+					if (laKind == CloseSquareBracket) // And again, empty expressions are allowed
+						break;
+					ae.Add(nonInitializer ? AssignExpression(scope) : NonVoidInitializer(scope));
+				}
+
+				Expect(CloseSquareBracket);
+				return new ArrayLiteralExpression(ae){ Location=startLoc, EndLocation = t.EndLocation };
+			}
+		}
+
 		bool IsLambaExpression()
 		{
 			Lexer.StartPeek();
@@ -3401,7 +3358,7 @@ namespace D_Parser.Parser
 
 			AllowWeakTypeParsing = wkType;
 
-			if (tp != null && laKind == Identifier)
+			if (tp != null && (laKind == Identifier || IsEOF))
 			{
 				var dv = Declarator(tp, false, par.ParentNode) as DVariable;
 				if (dv == null)
@@ -3416,25 +3373,14 @@ namespace D_Parser.Parser
 					dv.Location = tp.Location;
 					dv.Initializer = Expression();
 					dv.EndLocation = t.EndLocation;
-
-					par.IfVariable = dv;
-					return;
 				}
-			}
 
-			if (IsEOF && tp != null && !(tp is IdentifierDeclaration || 
-			                             tp is DTokenDeclaration && (tp as DTokenDeclaration).Token == DTokens.INVALID))
-			{
-				/*
-				 * Ambigious situation: if(e| -- is this an inline declaration or the start of a postfix_access expression á la 'e.'? 
-				 */
-				TrackerVariables.ExpectingNodeName = true;
+				par.IfVariable = dv;
+				return;
 			}
-			else
-			{
-				Lexer.RestoreLookAheadBackup();
-				par.IfCondition = Expression();
-			}
+				
+			Lexer.RestoreLookAheadBackup();
+			par.IfCondition = Expression();
 		}
 
 		public bool IsStatement

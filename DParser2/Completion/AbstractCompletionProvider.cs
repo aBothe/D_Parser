@@ -22,17 +22,8 @@ namespace D_Parser.Completion
 		{
 			return null;
 			/*
-			ParserTrackerVariables trackVars;
-			IBlockNode curBlock = null;
-			IStatement curStmt;
-
-			var parsedBlock = CtrlSpaceCompletionProvider.FindCurrentCaretContext(Editor, out trackVars, ref curBlock, out curStmt);
-
 			if (trackVars != null)
 			{
-				if(trackVars.ExpectingNodeName)
-					return null;
-
 				PostfixExpression_Access pfa;
 
 				else if (trackVars.LastParsedObject is ITypeDeclaration && !(trackVars.LastParsedObject is TemplateInstanceExpression))
@@ -47,10 +38,6 @@ namespace D_Parser.Completion
 
 				if(trackVars.ExpectingIdentifier)
 				{
-					if (trackVars.LastParsedObject is DAttribute)
-						return new AttributeCompletionProvider (dataGen) {
-							Attribute = trackVars.LastParsedObject as DAttribute
-						};
 					else if ((trackVars.LastParsedObject is TemplateParameter || 
 						trackVars.LastParsedObject is ForeachStatement) && ch != '\0')
 						return null;
