@@ -1189,27 +1189,32 @@ namespace D_Parser.Dom.Expressions
 
 		public override string ToString(bool IncludesBase)
 		{
-			var ret = IncludesBase && InnerDeclaration != null ? (InnerDeclaration.ToString() + ".") : "";
-			
-			if(Identifier!=null)
-				ret+=Identifier.ToString();
+			var sb = new StringBuilder ();
+			if (IncludesBase && InnerDeclaration != null)
+				sb.Append (InnerDeclaration.ToString()).Append('.');
 
-			ret += "!";
+			if(Identifier!=null)
+				sb.Append(Identifier.ToString());
+
+			sb.Append('!');
 
 			if (Arguments != null)
 			{
 				if (Arguments.Length > 1)
 				{
-					ret += '(';
+					sb.Append('(');
 					foreach (var e in Arguments)
-						ret += e.ToString() + ",";
-					ret = ret.TrimEnd(',') + ")";
+						if(e != null)
+							sb.Append(e.ToString()).Append(',');
+					if (sb [sb.Length - 1] == ',')
+						sb.Remove (sb.Length - 1, 1);
+					sb.Append (')');
 				}
 				else if(Arguments.Length==1 && Arguments[0] != null)
-					ret += Arguments[0].ToString();
+					sb.Append(Arguments[0].ToString());
 			}
 
-			return ret;
+			return sb.ToString();
 		}
 
 		public IExpression[] SubExpressions
