@@ -231,23 +231,7 @@ namespace D_Parser.Parser
         	}
         }
 
-        /// <summary>
-        /// Parses the module again
-        /// </summary>
-        /// <param name="Module"></param>
-        public static void UpdateModule(DModule Module)
-        {
-            var m = DParser.ParseFile(Module.FileName);
-			Module.ParseErrors = m.ParseErrors;
-            Module.AssignFrom(m);
-        }
 
-        public static void UpdateModuleFromText(DModule Module, string Code)
-        {
-            var m = DParser.ParseString(Code);
-			Module.ParseErrors = m.ParseErrors;
-            Module.AssignFrom(m);
-        }
 
         public static DParser Create(TextReader tr)
         {
