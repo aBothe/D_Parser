@@ -235,7 +235,7 @@ namespace D_Parser.Parser
 		public static void UpdateBlockPartly(DBlockNode bn, string code,
 			int caretOffset, CodeLocation caretLocation)
 		{
-			// Blockende von vorletzter Declaration (bzw 0:0 falls kein solch Block da ist) in bn suchen,
+			// Get the end location of the declaration that appears before the caret.
 			var startLoc = bn.BlockStartLocation;
 			int startDeclIndex;
 			for(startDeclIndex = bn.Children.Count-1; startDeclIndex >= 0; startDeclIndex--) {
@@ -248,38 +248,49 @@ namespace D_Parser.Parser
 
 			var startOff = startLoc.Line > 1 ? DocumentHelper.GetOffsetByRelativeLocation (code, caretLocation, caretOffset, startLoc) : 0;
 
+			// Immediately break to waste no time if there's nothing to parse
 			if (startOff >= caretOffset)
 				return;
 
-			// MetaDecl stack nicht vergessen,
-			var metaDecls = bn.GetMetaBlockStack (startLoc, true, false);
+			// Get meta block stack so they can be registered while parsing 
+			//var metaDecls = bn.GetMetaBlockStack (startLoc, true, false);
 
-			// von da aus bis zum Caret parsen
-
+			// Parse region from start until caret for maximum efficiency
 			var tempBlock = new DBlockNode { BlockStartLocation = startLoc };
 			try{
-			using (var sv = new StringView (code, startOff, caretOffset - startOff))
-			using (var p = Create(sv)) {
-				p.Lexer.SetInitialLocation (startLoc);
-				p.Step ();
-				// falls zwischendurch } vorkommen, MetaDecl-stack abtragen
-				while (!p.IsEOF) {
-					if (p.laKind == DTokens.CloseCurlyBrace) {
-						p.Step ();
-						if (metaDecls.Count > 0)
-							metaDecls.RemoveAt (metaDecls.Count - 1);
-						continue;
-					}
+				using (var sv = new StringView (code, startOff, caretOffset - startOff))
+				using (var p = Create(sv)) {
+					p.Lexer.SetInitialLocation (startLoc);
+					p.Step ();
+					while (!p.IsEOF) {
+						// 
+						if (p.laKind == DTokens.CloseCurlyBrace) {
+							p.Step ();
+							/*if (metaDecls.Count > 0)
+								metaDecls.RemoveAt (metaDecls.Count - 1);*/
+							continue;
+						}
+						else if(p.laKind == DTokens.Module)
+							tempBlock.Add(p.ModuleDeclaration());
 
-					p.DeclDef (tempBlock);
+						p.DeclDef (tempBlock);
+					}
 				}
-			}
 			}catch(Exception ex) {
 				Console.WriteLine (ex.Message);
 			}
 			// alte deklarationen + static statements + metablöcke von prevDeclEnd bis caretLocation rausschmeißen,
 			/*bn.StaticStatements;
 			bn.MetaBlocks;*/
+			int startStatStmtIndex;
+			for (startStatStmtIndex = bn.StaticStatements.Count - 1; startStatStmtIndex >= 0; startStatStmtIndex--) {
+				var ss = bn.StaticStatements [startStatStmtIndex];
+				if (ss.Location >= startLoc && ss.Location <= caretLocation)
+					bn.StaticStatements.RemoveAt (startStatStmtIndex);
+				else if(ss.EndLocation < startLoc)
+					break;
+			}
+
 			for (int i = startDeclIndex + 1; i < bn.Count; i++) {
 				var d = bn.Children [i];
 				if (d.Location >= caretLocation)
@@ -292,6 +303,8 @@ namespace D_Parser.Parser
 				if(n != null)
 					bn.Children.Insert (n, ++startDeclIndex);
 			}
+
+			bn.StaticStatements.InsertRange(startStatStmtIndex+1, tempBlock.StaticStatements);
 		}
 
         public static DParser Create(TextReader tr)
