@@ -22,6 +22,21 @@ namespace D_Parser.Dom
 			ParentNode = parent;
 		}
 
+		public void Insert(INode Node, int i)
+		{
+			children.Insert(i,Node);
+
+			// Alter the node's parent
+			if (ParentNode != null)
+				Node.Parent = ParentNode;
+
+			List<INode> l;
+			if (!nameDict.TryGetValue (Node.NameHash, out l))
+				nameDict [Node.NameHash] = l = new List<INode> ();
+
+			l.Add(Node);
+		}
+
 		public void Add(INode Node)
 		{
 			// Alter the node's parent
@@ -51,13 +66,12 @@ namespace D_Parser.Dom
 		{
 			var gotRemoved = children.Remove(n);
 			
-			var Name = n.NameHash;
 			List<INode> l;
-			if(nameDict.TryGetValue(Name, out l))
+			if(nameDict.TryGetValue(n.NameHash, out l))
 			{
 				gotRemoved = l.Remove(n) || gotRemoved;
 				if (l.Count == 0)
-					nameDict[Name] = null;
+					nameDict.TryRemove(n.NameHash, out l);
 			}
 
 			return gotRemoved;

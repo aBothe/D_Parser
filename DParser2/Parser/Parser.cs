@@ -6,6 +6,7 @@ using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
 using System;
+using D_Parser.Misc;
 
 namespace D_Parser.Parser
 {
@@ -231,7 +232,67 @@ namespace D_Parser.Parser
         	}
         }
 
+		public static void UpdateBlockPartly(DBlockNode bn, string code,
+			int caretOffset, CodeLocation caretLocation)
+		{
+			// Blockende von vorletzter Declaration (bzw 0:0 falls kein solch Block da ist) in bn suchen,
+			var startLoc = bn.BlockStartLocation;
+			int startDeclIndex;
+			for(startDeclIndex = bn.Children.Count-1; startDeclIndex >= 0; startDeclIndex--) {
+				var n = bn.Children [startDeclIndex];
+				if (n.EndLocation.Line > 0 && n.EndLocation < caretLocation) {
+					startLoc = n.EndLocation;
+					break;
+				}
+			}
 
+			var startOff = startLoc.Line > 1 ? DocumentHelper.GetOffsetByRelativeLocation (code, caretLocation, caretOffset, startLoc) : 0;
+
+			if (startOff >= caretOffset)
+				return;
+
+			// MetaDecl stack nicht vergessen,
+			var metaDecls = bn.GetMetaBlockStack (startLoc, true, false);
+
+			// von da aus bis zum Caret parsen
+
+			var tempBlock = new DBlockNode { BlockStartLocation = startLoc };
+			try{
+			using (var sv = new StringView (code, startOff, caretOffset - startOff))
+			using (var p = Create(sv)) {
+				p.Lexer.SetInitialLocation (startLoc);
+				p.Step ();
+				// falls zwischendurch } vorkommen, MetaDecl-stack abtragen
+				while (!p.IsEOF) {
+					if (p.laKind == DTokens.CloseCurlyBrace) {
+						p.Step ();
+						if (metaDecls.Count > 0)
+							metaDecls.RemoveAt (metaDecls.Count - 1);
+						continue;
+					}
+
+					p.DeclDef (tempBlock);
+				}
+			}
+			}catch(Exception ex) {
+				Console.WriteLine (ex.Message);
+			}
+			// alte deklarationen + static statements + metablöcke von prevDeclEnd bis caretLocation rausschmeißen,
+			/*bn.StaticStatements;
+			bn.MetaBlocks;*/
+			for (int i = startDeclIndex + 1; i < bn.Count; i++) {
+				var d = bn.Children [i];
+				if (d.Location >= caretLocation)
+					break;
+				bn.Children.Remove (d);
+			}
+
+			// neue deklarationen + static statements + metablöcke eintragen
+			foreach (var n in tempBlock.Children) {
+				if(n != null)
+					bn.Children.Insert (n, ++startDeclIndex);
+			}
+		}
 
         public static DParser Create(TextReader tr)
         {

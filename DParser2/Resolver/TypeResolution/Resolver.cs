@@ -515,19 +515,22 @@ namespace D_Parser.Resolver.TypeResolution
 									return SearchBlockAt (decl as IBlockNode, Where, out ScopedStatement);
 					}
 				}
-			} else if(Parent is DBlockNode) {
-				var db = Parent as DBlockNode;
-				if (db.StaticStatements.Count != 0)
-					foreach (var ss in db.StaticStatements)
-						if (Where >= ss.Location && Where <= ss.EndLocation) {
-							ScopedStatement = ss;
-							if(ss is StatementContainingStatement)
-								ScopedStatement = (ss as StatementContainingStatement).SearchStatementDeeply(Where);
-							break;
-						}
-			}
+			} else if(Parent is DBlockNode)
+				ScopedStatement = GetStatementAt(Parent as DBlockNode, Where);
 
 			return Parent;
+		}
+
+		public static IStatement GetStatementAt(DBlockNode db, CodeLocation Where)
+		{
+			if (db.StaticStatements.Count != 0)
+				foreach (var ss in db.StaticStatements)
+					if (Where >= ss.Location && Where <= ss.EndLocation) {
+						if(ss is StatementContainingStatement)
+							return (ss as StatementContainingStatement).SearchStatementDeeply(Where);
+						return ss;
+					}
+			return null;
 		}
 
 		public static IBlockNode SearchClassLikeAt(IBlockNode Parent, CodeLocation Where)

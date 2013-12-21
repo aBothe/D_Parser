@@ -125,8 +125,12 @@ namespace D_Parser.Completion
 					return FindCurrentCaretContext (editor, ref currentScope, out currentStatement);
 				}
 			}
-			else if (currentScope != null)
+			else
 			{
+				DParser.UpdateBlockPartly (currentScope as DBlockNode, editor.ModuleCode, editor.CaretOffset, editor.CaretLocation);
+				currentStatement = DResolver.GetStatementAt (currentScope as DBlockNode, editor.CaretLocation);
+				return currentScope;
+
 				if (currentScope.BlockStartLocation.IsEmpty || (editor.CaretLocation < currentScope.BlockStartLocation && editor.CaretLocation > currentScope.Location))
 				{
 					ParseDecl = true;
