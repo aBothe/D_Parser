@@ -13,6 +13,15 @@ namespace D_Parser.Misc
 
 		public StringView(string code, int begin, int length)
 		{
+			if (code == null)
+				throw new System.ArgumentNullException ("code", "String must not be null");
+			if (begin < 0)
+				throw new System.ArgumentOutOfRangeException ("begin", "Start offset must not be negative");
+			if (length < 0)
+				throw new System.ArgumentOutOfRangeException ("length", "Length must not be negative");
+			if (begin + length > code.Length)
+				throw new System.ArgumentOutOfRangeException ("length", "End offset must not be larger than string's length");
+
 			s = code;
 			i = begin;
 			end = begin + length;
