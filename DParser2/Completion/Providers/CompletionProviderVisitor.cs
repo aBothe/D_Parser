@@ -170,7 +170,7 @@ namespace D_Parser.Completion
 				base.Visit (td);
 		}
 
-		static bool IsIncompleteDeclaration(ITypeDeclaration x)
+		public static bool IsIncompleteDeclaration(ITypeDeclaration x)
 		{
 			if(x is DTokenDeclaration)
 				return (x as DTokenDeclaration).Token == DTokens.Incomplete;
@@ -332,7 +332,7 @@ namespace D_Parser.Completion
 			}
 		}
 
-		static bool IsIncompleteExpression(IExpression x)
+		public static bool IsIncompleteExpression(IExpression x)
 		{
 			return x is TokenExpression && (x as TokenExpression).Token == DTokens.Incomplete;
 		}

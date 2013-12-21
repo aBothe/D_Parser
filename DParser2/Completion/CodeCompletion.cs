@@ -32,7 +32,7 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Completion
-{
+{//TODO: Flexible lambda completion
 	public static class CodeCompletion
 	{
 		/// <summary>
@@ -117,6 +117,11 @@ namespace D_Parser.Completion
 				return null;
 
 			BlockStatement blockStmt;
+			// Always skip lambdas as they're too quirky for accurate scope calculation // ISSUE: May be other anon symbols too?
+			var dm = currentScope as DMethod;
+			if (dm != null && (dm.SpecialType & DMethod.MethodType.Lambda) != 0)
+				currentScope = dm.Parent as IBlockNode;
+
 			if (currentScope is DMethod &&
 			    (blockStmt = (currentScope as DMethod).GetSubBlockAt (editor.CaretLocation)) != null) {
 				blockStmt.UpdateBlockPartly (editor, out isInsideNonCodeSegment);

@@ -3302,34 +3302,34 @@ namespace D_Parser.Parser
 
 			if (Expect(GoesTo))
 			{
+				var dm = fl.AnonymousMethod;
 				if (laKind == OpenCurlyBrace)
-					fl.AnonymousMethod.Body = BlockStatement (fl.AnonymousMethod);
-				else
-					LambdaSingleStatementBody (fl.AnonymousMethod);
+					dm.Body = BlockStatement (fl.AnonymousMethod);
+				else {
+					dm.Body = new BlockStatement { Location= t.EndLocation, ParentNode = dm };
+
+					var ae = AssignExpression(dm);
+
+					// +1 due to SearchRegionAt which is enforcing < on EndLocations and not <=
+					var endLocation = IsEOF ? new CodeLocation (la.EndColumn + 1, la.Line) : t.EndLocation;
+
+					dm.Body.Add(new ReturnStatement
+						{
+							Location = ae.Location,
+							EndLocation = endLocation,
+							ReturnExpression=ae
+						});
+
+					dm.Body.EndLocation = endLocation;
+				}
 			}
 
-			fl.EndLocation = fl.AnonymousMethod.EndLocation = t.EndLocation;
+			fl.EndLocation = fl.AnonymousMethod.EndLocation = fl.AnonymousMethod.Body.EndLocation;
 
 			if (Scope != null)
 				Scope.Add(fl.AnonymousMethod);
 
 			return fl;
-		}
-
-		internal void LambdaSingleStatementBody(DMethod lambdaFunction)
-		{
-			lambdaFunction.Body = new BlockStatement { Location= la.Location, ParentNode = lambdaFunction };
-
-			var ae = AssignExpression(lambdaFunction);
-
-			lambdaFunction.Body.Add(new ReturnStatement
-				{
-					Location = ae.Location,
-					EndLocation = ae.EndLocation,
-					ReturnExpression=ae
-				});
-
-			lambdaFunction.Body.EndLocation = t.EndLocation;
 		}
 		#endregion
 

@@ -149,5 +149,30 @@ namespace D_Parser.Dom
 				return children[Index];
 			}
 		}
+
+		class AscNodeLocationComparer : Comparer<INode>
+		{
+			public override int Compare (INode x, INode y)
+			{
+				if (x == y)
+					return 0;
+				return x.Location < y.Location ? -1 : 1;
+			}
+		}
+
+		class DescNodeLocationComparer : Comparer<INode>
+		{
+			public override int Compare (INode x, INode y)
+			{
+				if (x == y)
+					return 0;
+				return x.Location > y.Location ? -1 : 1;
+			}
+		}
+
+		public void Sort(bool asc = true)
+		{
+			children.Sort (asc ? new AscNodeLocationComparer() as IComparer<INode> : new DescNodeLocationComparer());
+		}
 	}
 }

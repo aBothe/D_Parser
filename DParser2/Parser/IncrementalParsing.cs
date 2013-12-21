@@ -71,16 +71,6 @@ namespace D_Parser.Parser
 
 					if(p.laKind == DTokens.OpenCurlyBrace)
 						p.Step();
-					// Mind lambdas
-					else if(finalParentMethod != null && 
-						bs == finalParentMethod.Body && 
-						finalParentMethod.SpecialType == DMethod.MethodType.Lambda)
-					{
-						finalParentMethod.Clear();
-						p.LambdaSingleStatementBody(finalParentMethod);
-						isInsideNonCodeSegment = p.Lexer.endedWhileBeingInNonCodeSequence;
-						return;
-					}
 
 					while (!p.IsEOF) {
 
