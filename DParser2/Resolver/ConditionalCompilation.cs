@@ -80,15 +80,14 @@ namespace D_Parser.Resolver
 				// and add them to the condition list
 				var mblocks = ((DBlockNode)block).GetMetaBlockStack(caret, false, true);
 
-				if(mblocks!=null && mblocks.Length!=0)
-					foreach(var mb in mblocks)
-					{
-						var amd = mb as AttributeMetaDeclaration;
-						if(amd!=null && amd.AttributeOrCondition!=null && amd.AttributeOrCondition.Length!=0)
-							foreach(var attr in amd.AttributeOrCondition)
-								if(attr is DeclarationCondition)
-									l.Add((DeclarationCondition)attr);
-					}
+				foreach(var mb in mblocks)
+				{
+					var amd = mb as AttributeMetaDeclaration;
+					if(amd!=null && amd.AttributeOrCondition!=null && amd.AttributeOrCondition.Length!=0)
+						foreach(var attr in amd.AttributeOrCondition)
+							if(attr is DeclarationCondition)
+								l.Add((DeclarationCondition)attr);
+				}
 			}
 
 			// Scan up the current statement when e.g. inside a method body

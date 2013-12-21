@@ -32,7 +32,7 @@ namespace D_Parser.Dom
 		/// <summary>
 		/// Returns an array consisting of meta declarations orderd from outer to inner-most, depending on the 'Where' parameter.
 		/// </summary>
-		public IMetaDeclaration[] GetMetaBlockStack(CodeLocation Where, bool takeBlockStartLocations = false, bool mindAttributeSections = false)
+		public List<IMetaDeclaration> GetMetaBlockStack(CodeLocation Where, bool takeBlockStartLocations = false, bool mindAttributeSections = false)
 		{
 			var l = new List<IMetaDeclaration>();
 
@@ -69,7 +69,7 @@ namespace D_Parser.Dom
 				}
 			}
 
-			return l.ToArray();
+			return l;
 		}
 
 		public CodeLocation BlockStartLocation
