@@ -42,7 +42,7 @@ namespace D_Parser.Parser
 		public static void UpdateBlockPartly(this BlockStatement bs, string code, int caretOffset, CodeLocation caretLocation, out bool isInsideNonCodeSegment)
 		{
 			isInsideNonCodeSegment = false;
-			var finalParentMethod = bs.ParentNode as DMethod; //TODO: Handle DBlockNode parents
+			var finalParentMethod = bs.ParentNode as DMethod;
 			var finalStmtsList = bs._Statements;
 
 			var startLoc = bs.Location;
@@ -91,10 +91,11 @@ namespace D_Parser.Parser
 							continue;
 						}
 
-						p.Statement (true, false, tempParentBlock, tempBlockStmt);
+						tempBlockStmt.Add(p.Statement (true, false, tempParentBlock, tempBlockStmt));
 					}
 
-					isInsideNonCodeSegment = p.Lexer.endedWhileBeingInNonCodeSequence;
+					if(isInsideNonCodeSegment = p.Lexer.endedWhileBeingInNonCodeSequence)
+						return;
 				}
 			}catch(Exception ex) {
 				Console.WriteLine (ex.Message);
@@ -109,6 +110,8 @@ namespace D_Parser.Parser
 			}
 
 			// Insert new statements
+			foreach (var stmt in tempBlockStmt._Statements)
+				stmt.Parent = bs;
 			finalStmtsList.InsertRange(startStmtIndex+1, tempBlockStmt._Statements);
 			
 			if (finalParentMethod != null) {
@@ -128,10 +131,14 @@ namespace D_Parser.Parser
 				}
 
 				// Insert new special declarations
+				foreach (var decl in tempParentBlock)
+					decl.Parent = finalParentMethod;
 				finalParentChildren.InsertRange(startDeclIndex+1, tempParentBlock);
 
 				finalParentMethod.UpdateChildrenArray ();
 			}
+
+			//TODO: Handle DBlockNode parents?
 		}
 		#endregion
 
@@ -203,12 +210,14 @@ namespace D_Parser.Parser
 						}
 					}
 
-					isInsideNonCodeSegment = p.Lexer.endedWhileBeingInNonCodeSequence;
+					if(isInsideNonCodeSegment = p.Lexer.endedWhileBeingInNonCodeSequence)
+						return;
 				}
 			}catch(Exception ex) {
 				Console.WriteLine (ex.Message);
 			}
-			// alte deklarationen + static statements + metablöcke von prevDeclEnd bis caretLocation rausschmeißen,
+
+			// Remove old static stmts, declarations and meta blocks from bn
 			/*bn.MetaBlocks;*/
 			int startStatStmtIndex;
 			for (startStatStmtIndex = bn.StaticStatements.Count - 1; startStatStmtIndex >= 0; startStatStmtIndex--) {
@@ -226,7 +235,7 @@ namespace D_Parser.Parser
 				bn.Children.Remove (d);
 			}
 
-			// neue deklarationen + static statements + metablöcke eintragen
+			// Insert new static stmts, declarations and meta blocks(?) into bn
 			foreach (var n in tempBlock.Children) {
 				if(n != null)
 					bn.Children.Insert (n, ++startDeclIndex);
