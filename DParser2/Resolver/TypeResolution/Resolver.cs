@@ -542,8 +542,10 @@ namespace D_Parser.Resolver.TypeResolution
 				if (subItem != null) {
 					if (!(subItem is DMethod))
 						subItem = subItem.Parent;
-					if (subItem is DMethod)
+					if (subItem is DMethod) {
 						dm = subItem as DMethod;
+						Parent = dm;
+					}
 				}
 
 				var body = dm.GetSubBlockAt(Where);
