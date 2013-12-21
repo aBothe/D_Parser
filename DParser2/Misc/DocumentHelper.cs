@@ -78,6 +78,9 @@ namespace D_Parser
 			if (string.IsNullOrEmpty(Text))
 				return 0;
 
+			if (caret.Line == target.Line)
+				return caretOffset - caret.Column + target.Column;
+
 			int line = caret.Line;
 
 			if (caretOffset >= Text.Length)
