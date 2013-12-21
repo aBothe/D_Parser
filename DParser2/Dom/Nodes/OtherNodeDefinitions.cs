@@ -142,7 +142,7 @@ namespace D_Parser.Dom
 			get { return additionalChildren; }
 		}
 
-		void UpdateChildrenArray()
+		public void UpdateChildrenArray()
 		{
 			lock (children)
 			{

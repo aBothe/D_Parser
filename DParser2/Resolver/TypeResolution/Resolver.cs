@@ -471,6 +471,49 @@ namespace D_Parser.Resolver.TypeResolution
 			return midElement;
 		}
 
+		public static SR SearchRegionAt<SR>(List<SR> children, CodeLocation Where) where SR : ISyntaxRegion
+		{
+			int start = 0;
+			SR midElement = default(SR);
+			int midIndex = 0;
+			int len = children.Count;
+
+			while (len > 0)
+			{
+				midIndex = (len % 2 + len) / 2;
+
+				// Take an element from the middle
+				if ((midElement = children[start + midIndex - 1]) == null)
+					break;
+
+				// If 'Where' is beyond its start location
+				if (Where > midElement.Location)
+				{
+					start += midIndex;
+
+					// If we've reached the (temporary) goal, break immediately
+					if (Where < midElement.EndLocation)
+						break;
+					// If it's the last tested element and if the caret is beyond the end location, 
+					// return the Parent instead the last tested child
+					else if (midIndex == len)
+					{
+						midElement = default(SR);
+						break;
+					}
+				}
+				else if (midIndex == len)
+				{
+					midElement = default(SR);
+					break;
+				}
+
+				len -= midIndex;
+			}
+
+			return midElement;
+		}
+
 		public static IBlockNode SearchBlockAt(IBlockNode Parent, CodeLocation Where, out IStatement ScopedStatement)
 		{
 			ScopedStatement = null;
@@ -495,16 +538,13 @@ namespace D_Parser.Resolver.TypeResolution
 			if (dm != null)
 			{
 				// Do an extra re-scan for anonymous methods etc.
-				foreach (var ch in dm.AdditionalChildren)
-					if (Where >= ch.Location && Where <= ch.EndLocation) {
-						if (ch is IBlockNode)
-							Parent = ch as IBlockNode;
-						dm = Parent as DMethod;
-
-						if (dm == null)
-							return Parent;
-						break;
-					}
+				var subItem = SearchRegionAt<INode> (dm.AdditionalChildren, Where);
+				if (subItem != null) {
+					if (!(subItem is DMethod))
+						subItem = subItem.Parent;
+					if (subItem is DMethod)
+						dm = subItem as DMethod;
+				}
 
 				var body = dm.GetSubBlockAt(Where);
 
@@ -533,12 +573,7 @@ namespace D_Parser.Resolver.TypeResolution
 		public static IStatement GetStatementAt(DBlockNode db, CodeLocation Where)
 		{
 			if (db.StaticStatements.Count != 0)
-				foreach (var ss in db.StaticStatements)
-					if (Where >= ss.Location && Where <= ss.EndLocation) {
-						if(ss is StatementContainingStatement)
-							return (ss as StatementContainingStatement).SearchStatementDeeply(Where);
-						return ss;
-					}
+				return SearchRegionAt<IStatement> ((i) => db.StaticStatements [i], db.StaticStatements.Count, Where);
 			return null;
 		}
 

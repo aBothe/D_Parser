@@ -47,7 +47,12 @@ namespace D_Parser.Completion
 
 			IBlockNode _b = null;
 			IStatement _s;
-			var sr = FindCurrentCaretContext(editor, ref _b, out _s);
+			bool inNonCode;
+
+			var sr = FindCurrentCaretContext(editor, ref _b, out _s, out inNonCode);
+
+			if (inNonCode)
+				return false;
 
 			if (editor.CaretLocation > _b.EndLocation) {
 				_b = editor.SyntaxTree;
@@ -70,7 +75,7 @@ namespace D_Parser.Completion
 			return true;
 		}
 
-		public static bool IsCompletionAllowed(IEditorData Editor, char enteredChar)
+		static bool IsCompletionAllowed(IEditorData Editor, char enteredChar)
 		{
 			if (enteredChar == '(')
 				return false;
@@ -92,146 +97,40 @@ namespace D_Parser.Completion
 				else if ((DTokens.IsIdentifierChar(enteredChar) || enteredChar == '\0') &&
 					DTokens.IsIdentifierChar(Editor.ModuleCode[Editor.CaretOffset - 1]))
 					return false;
-
-				return !CaretContextAnalyzer.IsInCommentAreaOrString(Editor.ModuleCode, Editor.CaretOffset);
 			}
 
 			return true;
 		}
 
-		public static ISyntaxRegion FindCurrentCaretContext(IEditorData editor, ref IBlockNode currentScope, out IStatement currentStatement)
+		public static ISyntaxRegion FindCurrentCaretContext(IEditorData editor, 
+			ref IBlockNode currentScope, 
+			out IStatement currentStatement,
+			out bool isInsideNonCodeSegment)
 		{
+			isInsideNonCodeSegment = false;
+			currentStatement = null;
+
 			if(currentScope == null)
 				currentScope = DResolver.SearchBlockAt (editor.SyntaxTree, editor.CaretLocation, out currentStatement);
 
-			if (currentScope == null) {
-				currentStatement = null;
+			if (currentScope == null)
 				return null;
-			}
 
-			bool ParseDecl = false;
-
-			int blockStart = 0;
-			var blockStartLocation = currentScope.BlockStartLocation;
-
-			if (currentScope is DMethod)
-			{
-				var block = (currentScope as DMethod).GetSubBlockAt(editor.CaretLocation);
-
-				if (block != null)
-					blockStart = DocumentHelper.GetOffsetByRelativeLocation (editor.ModuleCode, editor.CaretLocation, editor.CaretOffset, blockStartLocation = block.Location);
-				else {
+			BlockStatement blockStmt;
+			if (currentScope is DMethod &&
+			    (blockStmt = (currentScope as DMethod).GetSubBlockAt (editor.CaretLocation)) != null) {
+				blockStmt.UpdateBlockPartly (editor, out isInsideNonCodeSegment);
+				currentScope = DResolver.SearchBlockAt (currentScope, editor.CaretLocation, out currentStatement);
+			}else {
+				while (currentScope is DMethod)
 					currentScope = currentScope.Parent as IBlockNode;
-					return FindCurrentCaretContext (editor, ref currentScope, out currentStatement);
-				}
-			}
-			else
-			{
-				DParser.UpdateBlockPartly (currentScope as DBlockNode, editor.ModuleCode, editor.CaretOffset, editor.CaretLocation);
+				if (currentScope == null)
+					return null;
+
+				(currentScope as DBlockNode).UpdateBlockPartly (editor, out isInsideNonCodeSegment);
 				currentStatement = DResolver.GetStatementAt (currentScope as DBlockNode, editor.CaretLocation);
-				return currentScope;
-
-				if (currentScope.BlockStartLocation.IsEmpty || (editor.CaretLocation < currentScope.BlockStartLocation && editor.CaretLocation > currentScope.Location))
-				{
-					ParseDecl = true;
-					blockStart = DocumentHelper.GetOffsetByRelativeLocation(editor.ModuleCode, editor.CaretLocation, editor.CaretOffset, blockStartLocation = currentScope.Location);
-				}
-				else
-					blockStart = DocumentHelper.GetOffsetByRelativeLocation(editor.ModuleCode, editor.CaretLocation, editor.CaretOffset, currentScope.BlockStartLocation);
 			}
-
-			if (blockStart >= 0 && editor.CaretOffset - blockStart > 0)
-				using (var sr = new Misc.StringView(editor.ModuleCode, blockStart, editor.CaretOffset - blockStart))
-				{
-					var psr = DParser.Create(sr);
-
-					/*					 Deadly important! For correct resolution behaviour, 
-					 * it is required to set the parser virtually to the blockStart position, 
-					 * so that everything using the returned object is always related to 
-					 * the original code file, not our code extraction!
-					 */
-					psr.Lexer.SetInitialLocation(blockStartLocation);
-
-					ISyntaxRegion ret = null;
-
-					if (currentScope == null)
-						ret = psr.Parse();
-					else if (currentScope is DMethod)
-					{
-						psr.Step();
-						var dm = currentScope as DMethod;
-						dm.Clear();
-
-						if ((dm.SpecialType & DMethod.MethodType.Lambda) != 0 &&
-							psr.Lexer.LookAhead.Kind != DTokens.OpenCurlyBrace) {
-							psr.LambdaSingleStatementBody (dm);
-							ret = dm.Body;
-						} else {
-							var methodRegion = DTokens.Body;
-
-							if (dm.In != null && blockStartLocation == dm.In.Location)
-								methodRegion = DTokens.In;
-
-							if (dm.Out != null && blockStartLocation == dm.Out.Location)
-								methodRegion = DTokens.Out;
-
-							var newBlock = psr.BlockStatement (currentScope);
-							ret = newBlock;
-
-							switch (methodRegion) {
-								case DTokens.Body:
-									newBlock.EndLocation = dm.Body.EndLocation;
-									dm.Body = newBlock;
-									break;
-								case DTokens.In:
-									newBlock.EndLocation = dm.In.EndLocation;
-									dm.In = newBlock;
-									break;
-								case DTokens.Out:
-									newBlock.EndLocation = dm.Out.EndLocation;
-									dm.Out = newBlock;
-									break;
-							}
-						}
-					}
-					else if (currentScope is DModule)
-						ret = psr.Root();
-					else
-					{
-						psr.Step();
-						if (ParseDecl)
-						{
-							var ret2 = psr.Declaration(currentScope);
-
-							if (ret2 != null && ret2.Length > 0)
-								ret = ret2[0];
-						}
-						else if (currentScope is DClassLike)
-						{
-							var t = new DClassLike((currentScope as DClassLike).ClassType);
-							t.AssignFrom(currentScope);
-							t.Clear();
-							psr.ClassBody(t);
-							ret = t;
-						}
-						else if (currentScope is DEnum)
-						{
-							var t = new DEnum();
-							t.AssignFrom(currentScope);
-							t.Clear();
-							psr.EnumBody(t);
-							ret = t;
-						}
-					}
-
-					currentScope = DResolver.SearchBlockAt (currentScope, 
-						psr.Lexer.CurrentToken != null ? psr.Lexer.CurrentToken.EndLocation : editor.CaretLocation, 
-						out currentStatement);
-					return ret;
-				}
-
-			currentStatement = null;
-			return null;
+			return currentScope;
 		}
 	}
 }

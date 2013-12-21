@@ -9,6 +9,7 @@ namespace D_Parser.Parser
 	public sealed class Lexer : IDisposable
 	{
 		#region Properties
+		public bool endedWhileBeingInNonCodeSequence = false;
 		TextReader reader;
 		int Col = 1;
 		int Line = 1;
@@ -1840,6 +1841,7 @@ namespace D_Parser.Parser
 
 		void OnError(int line, int col, string message)
 		{
+			endedWhileBeingInNonCodeSequence |= reader.Peek () < 0;
 			if (LexerErrors != null)
 				LexerErrors.Add(new ParserError(false, message, CurrentToken != null ? CurrentToken.Kind : -1, new CodeLocation(col, line)));
 		}

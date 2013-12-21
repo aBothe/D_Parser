@@ -118,7 +118,7 @@ namespace D_Parser.Dom.Statements
 
 	public class BlockStatement : StatementContainingStatement, IEnumerable<IStatement>, IDeclarationContainingStatement
 	{
-		readonly List<IStatement> _Statements = new List<IStatement>();
+		internal readonly List<IStatement> _Statements = new List<IStatement>();
 
 		public IEnumerator<IStatement>  GetEnumerator()
 		{

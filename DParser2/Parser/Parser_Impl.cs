@@ -139,7 +139,7 @@ namespace D_Parser.Parser
 
 		#endregion
 
-		void DeclDef(DBlockNode module)
+		public void DeclDef(DBlockNode module)
 		{
 			while (IsAttributeSpecifier())
 				AttributeSpecifier(module);
@@ -513,7 +513,7 @@ namespace D_Parser.Parser
 			}
 		}
 
-		ModuleStatement ModuleDeclaration()
+		public ModuleStatement ModuleDeclaration()
 		{
 			Expect(Module);
 			var ret = new ModuleStatement { Location=t.Location };
@@ -4567,39 +4567,7 @@ namespace D_Parser.Parser
 				if (laKind == CloseCurlyBrace)
 					break;
 
-				var ev = new DEnumValue() { Location = la.Location, Description = GetComments(), Parent = mye };
-
-				if (laKind == Identifier && (
-					Lexer.CurrentPeekToken.Kind == Assign ||
-					Lexer.CurrentPeekToken.Kind == Comma ||
-					Lexer.CurrentPeekToken.Kind == CloseCurlyBrace))
-				{
-					Step();
-					ev.Name = t.Value;
-					ev.NameLocation = t.Location;
-				}
-				else
-				{
-					ev.Type = Type();
-					if (Expect(Identifier))
-					{
-						ev.Name = t.Value;
-						ev.NameLocation = t.Location;
-					}
-					else if (IsEOF)
-						ev.NameHash = DTokens.IncompleteIdHash;
-				}
-
-				if (laKind == (Assign))
-				{
-					Step();
-					ev.Initializer = AssignExpression();
-				}
-
-				ev.EndLocation = t.EndLocation;
-				ev.Description += CheckForPostSemicolonComment();
-
-				mye.Add(ev);
+				EnumValue(mye);
 			}
 			while (laKind == Comma);
 
@@ -4607,6 +4575,43 @@ namespace D_Parser.Parser
 			PreviousComment = OldPreviousComment;
 
 			mye.EndLocation = t.EndLocation;
+		}
+
+		public void EnumValue(DEnum mye)
+		{
+			var ev = new DEnumValue() { Location = la.Location, Description = GetComments(), Parent = mye };
+
+			if (laKind == Identifier && (
+				Lexer.CurrentPeekToken.Kind == Assign ||
+				Lexer.CurrentPeekToken.Kind == Comma ||
+				Lexer.CurrentPeekToken.Kind == CloseCurlyBrace))
+			{
+				Step();
+				ev.Name = t.Value;
+				ev.NameLocation = t.Location;
+			}
+			else
+			{
+				ev.Type = Type();
+				if (Expect(Identifier))
+				{
+					ev.Name = t.Value;
+					ev.NameLocation = t.Location;
+				}
+				else if (IsEOF)
+					ev.NameHash = DTokens.IncompleteIdHash;
+			}
+
+			if (laKind == (Assign))
+			{
+				Step();
+				ev.Initializer = AssignExpression(mye);
+			}
+
+			ev.EndLocation = t.EndLocation;
+			ev.Description += CheckForPostSemicolonComment();
+
+			mye.Add(ev);
 		}
 		#endregion
 

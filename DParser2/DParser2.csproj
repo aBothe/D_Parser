@@ -229,6 +229,7 @@
     <Compile Include="Completion\ParamInsightVisitor.cs" />
     <Compile Include="Completion\Providers\AbstractCompletionProvider.cs" />
     <Compile Include="Completion\Providers\CompletionProviderVisitor.cs" />
+    <Compile Include="Parser\IncrementalParsing.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="readme.txt" />
