@@ -137,6 +137,11 @@ namespace D_Parser.Dom
 			return l;
 		}
 
+		public INode ItemAt(int index)
+		{
+			return children [index];
+		}
+
 		public INode this[int Index]
 		{
 			get

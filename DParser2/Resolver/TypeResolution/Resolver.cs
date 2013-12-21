@@ -425,6 +425,52 @@ namespace D_Parser.Resolver.TypeResolution
 			return SearchBlockAt(Parent, Where, out s);
 		}
 
+		/// <summary>
+		/// Binary search implementation for ordered syntax region (derivative) lists. 
+		/// </summary>
+		public static SR SearchRegionAt<SR>(Func<int,SR> childGetter, int childCount, CodeLocation Where) where SR : ISyntaxRegion
+		{
+			int start = 0;
+			SR midElement = default(SR);
+			int midIndex = 0;
+			int len = childCount;
+
+			while (len > 0)
+			{
+				midIndex = (len % 2 + len) / 2;
+
+				// Take an element from the middle
+				if ((midElement = childGetter(start + midIndex - 1)) == null)
+					break;
+
+				// If 'Where' is beyond its start location
+				if (Where > midElement.Location)
+				{
+					start += midIndex;
+
+					// If we've reached the (temporary) goal, break immediately
+					if (Where < midElement.EndLocation)
+						break;
+					// If it's the last tested element and if the caret is beyond the end location, 
+					// return the Parent instead the last tested child
+					else if (midIndex == len)
+					{
+						midElement = default(SR);
+						break;
+					}
+				}
+				else if (midIndex == len)
+				{
+					midElement = default(SR);
+					break;
+				}
+
+				len -= midIndex;
+			}
+
+			return midElement;
+		}
+
 		public static IBlockNode SearchBlockAt(IBlockNode Parent, CodeLocation Where, out IStatement ScopedStatement)
 		{
 			ScopedStatement = null;
@@ -435,44 +481,7 @@ namespace D_Parser.Resolver.TypeResolution
 			var pCount = Parent.Count;
 			while (pCount != 0)
 			{
-				var children = Parent.Children;
-				int start = 0;
-				INode midElement = null;
-				int midIndex = 0;
-				int len = pCount;
-
-				while (len > 0)
-				{
-					midIndex = (len % 2 + len) / 2;
-
-					// Take an element from the middle
-					if ((midElement = children[start + midIndex - 1]) == null)
-						break;
-
-					// If 'Where' is beyond its start location
-					if (Where > midElement.Location)
-					{
-						start += midIndex;
-
-						// If we've reached the (temporary) goal, break immediately
-						if (Where < midElement.EndLocation)
-							break;
-						// If it's the last tested element and if the caret is beyond the end location, 
-						// return the Parent instead the last tested child
-						else if (midIndex == len)
-						{
-							midElement = null;
-							break;
-						}
-					}
-					else if (midIndex == len)
-					{
-						midElement = null;
-						break;
-					}
-
-					len -= midIndex;
-				}
+				var midElement = SearchRegionAt<INode> (Parent.Children.ItemAt, pCount, Where);
 
 				if (midElement is IBlockNode) {
 					Parent = (IBlockNode)midElement;
