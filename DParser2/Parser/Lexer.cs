@@ -1721,6 +1721,9 @@ namespace D_Parser.Parser
 			string comm = ReadToEndOfLine();
 			var end = new CodeLocation(st.Column + tagLen + comm.Length, Line);
 
+			if (reader.Peek () == -1 && st.Line == end.Line)
+				endedWhileBeingInNonCodeSequence = true;
+
 			if ((commentType &Comment.Type.Documentation) != 0 || !OnlyEnlistDDocComments)
 				Comments.Add(new Comment(commentType, comm.TrimStart('/',' ','\t'), st.Column < 2, st, end));
 		}
