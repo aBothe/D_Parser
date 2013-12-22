@@ -67,6 +67,32 @@ void main(){
 		}
 
 		[Test]
+		public void MemberCompletion()
+		{
+			var code = @"module A;
+int foo;
+class K { int member; }
+void main() { 
+}";
+
+			var ed = GenEditorData(5, 9, code);
+
+			ed.ModuleCode = @"module A;
+int foo;
+class K { int member; }
+void main() {
+new K(). 
+}";
+			ed.CaretOffset = DocumentHelper.LocationToOffset(ed.ModuleCode, ed.CaretLocation);
+
+			var foo = ed.SyntaxTree["foo"].First() as DVariable;
+			var K = (DClassLike)ed.SyntaxTree["K"].First();
+			var member = (DVariable)K["member"].First();
+
+			TestCompletionListContents(ed, new[] { member }, new INode[] { foo, K, ed.SyntaxTree });
+		}
+
+		[Test]
 		public void ForeachCompletion()
 		{
 			var code =@"module A;
@@ -75,7 +101,8 @@ foreach(
 }";
 			var ed = GenEditorData (3, 9, code);
 			var g = new TestCompletionDataGen (null, null);
-			Assert.That(CodeCompletion.GenerateCompletionData (ed, g, 'a', true), Is.False);
+			Assert.That(CodeCompletion.GenerateCompletionData (ed, g, 'a', true), Is.True);
+		}
 
 		[Test]
 		public void AutoCompletion()
