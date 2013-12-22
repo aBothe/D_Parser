@@ -76,6 +76,17 @@ foreach(
 			var ed = GenEditorData (3, 9, code);
 			var g = new TestCompletionDataGen (null, null);
 			Assert.That(CodeCompletion.GenerateCompletionData (ed, g, 'a', true), Is.False);
+
+		[Test]
+		public void AutoCompletion()
+		{
+			var code = @"module A;
+void main() {
+auto 
+}";
+			var ed = GenEditorData(3, 5, code);
+			var g = new TestCompletionDataGen(null, null);
+			Assert.That(CodeCompletion.GenerateCompletionData(ed, g, 'a', true), Is.False);
 		}
 
 		[Test]

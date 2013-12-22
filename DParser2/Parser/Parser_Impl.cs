@@ -708,7 +708,7 @@ namespace D_Parser.Parser
 				return new[]{ TemplateDeclaration (Scope) };
 			else if (laKind == (Interface))
 				return new[]{ InterfaceDeclaration (Scope) };
-			else if (IsBasicType () || laKind == Ref) {
+			else if (IsBasicType () || laKind == Ref || (HasStorageClassModifiers && IsEOF)) {
 				var l = Decl(HasStorageClassModifiers, Scope);
 				return l != null ? l.ToArray () : null;
 			}
