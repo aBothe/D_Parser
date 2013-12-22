@@ -160,6 +160,47 @@ int a;
 		}
 
 		[Test]
+		public void IncrementalParsing_LambdaParameters()
+		{
+			var code=@"module A;
+int foo;
+void main() {
+	
+}";
+
+			var m = DParser.ParseString (code);
+			var main = m ["main"].First () as DMethod;
+			var foo = m ["foo"].First () as DVariable;
+
+			IStatement stmt;
+			var b = DResolver.SearchBlockAt (m, new CodeLocation (1, 4), out stmt);
+			Assert.That (b, Is.SameAs (main));
+			Assert.That (stmt, Is.TypeOf(typeof(BlockStatement)));
+
+			code = @"module A;
+int foo;
+void main() {
+int a;
+(string ;
+}";
+			var caret = new CodeLocation (9, 5);
+			bool _u;
+			IncrementalParsing.UpdateBlockPartly (stmt as BlockStatement, code, DocumentHelper.LocationToOffset (code, caret), caret, out _u);
+
+			var main2 = m ["main"].First () as DMethod;
+			Assert.That (main, Is.SameAs (main2));
+
+			var foo2 = m ["foo"].First () as DVariable;
+			Assert.That (foo2, Is.SameAs(foo));
+
+			var lambda = main2.AdditionalChildren [0] as DMethod;
+			Assert.That (lambda, Is.Not.Null);
+			Assert.That (lambda.Parameters.Count, Is.EqualTo (1));
+			Assert.That (lambda.Parameters [0].Type, Is.Not.Null);
+			Assert.That (lambda.Parameters [0].NameHash, Is.EqualTo(DTokens.IncompleteIdHash));
+		}
+
+		[Test]
 		public void CompletionTrigger()
 		{
 			Assert.That (@"module ", Does.Trigger);

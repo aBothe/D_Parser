@@ -3246,7 +3246,25 @@ namespace D_Parser.Parser
 
 			OverPeekBrackets(OpenParenthesis, false);
 
-			return Lexer.CurrentPeekToken.Kind == GoesTo;
+			var k = Lexer.CurrentPeekToken.Kind;
+			// (string |
+			// (const |
+			// (string a, |
+			// (char[] |
+			// (char a |
+			// NOT (char* |
+			if (k == __EOF__ || k == EOF) {
+				var pk = Lexer.CurrentPeekToken;
+				var next = la;
+				while (pk != next.next)
+					next = next.next;
+
+				k = next.Kind;
+				return k == Comma || k == Identifier || k == CloseSquareBracket || k == CloseParenthesis || BasicTypes[k] || StorageClass [k];
+			}
+
+			// (...) => |
+			return k == GoesTo;
 		}
 
 		bool IsFunctionLiteral()
@@ -3300,31 +3318,29 @@ namespace D_Parser.Parser
 
 
 
-			if (Expect(GoesTo))
-			{
+			if (Expect (GoesTo)) {
 				var dm = fl.AnonymousMethod;
 				if (laKind == OpenCurlyBrace)
 					dm.Body = BlockStatement (fl.AnonymousMethod);
 				else {
-					dm.Body = new BlockStatement { Location= t.EndLocation, ParentNode = dm };
+					dm.Body = new BlockStatement { Location = t.EndLocation, ParentNode = dm };
 
-					var ae = AssignExpression(dm);
+					var ae = AssignExpression (dm);
 
 					// +1 due to SearchRegionAt which is enforcing < on EndLocations and not <=
 					var endLocation = IsEOF ? new CodeLocation (la.EndColumn + 1, la.Line) : t.EndLocation;
 
-					dm.Body.Add(new ReturnStatement
-						{
-							Location = ae.Location,
-							EndLocation = endLocation,
-							ReturnExpression=ae
-						});
+					dm.Body.Add (new ReturnStatement {
+						Location = ae.Location,
+						EndLocation = endLocation,
+						ReturnExpression = ae
+					});
 
 					dm.Body.EndLocation = endLocation;
 				}
-			}
-
-			fl.EndLocation = fl.AnonymousMethod.EndLocation = fl.AnonymousMethod.Body.EndLocation;
+				fl.EndLocation = fl.AnonymousMethod.EndLocation = fl.AnonymousMethod.Body.EndLocation;
+			} else // (string | -- see IsLambdaExpression()
+				fl.EndLocation = fl.AnonymousMethod.EndLocation = la.Location;
 
 			if (Scope != null)
 				Scope.Add(fl.AnonymousMethod);
