@@ -50,7 +50,8 @@ namespace D_Parser.Parser
 			for(startStmtIndex = finalStmtsList.Count-1; startStmtIndex >= 0; startStmtIndex--) {
 				var n = finalStmtsList [startStmtIndex];
 				if (n.EndLocation.Line > 0 && n.EndLocation < caretLocation) {
-					startLoc = n.EndLocation;
+					startLoc = --startStmtIndex == -1 ? 
+						bs.Location : finalStmtsList [startStmtIndex].EndLocation;
 					break;
 				}
 			}
@@ -149,7 +150,8 @@ namespace D_Parser.Parser
 			for(startDeclIndex = bn.Children.Count-1; startDeclIndex >= 0; startDeclIndex--) {
 				var n = bn.Children [startDeclIndex];
 				if (n.EndLocation.Line > 0 && n.EndLocation < caretLocation) {
-					startLoc = n.EndLocation;
+					startLoc = --startDeclIndex == -1 ? 
+						bn.BlockStartLocation : bn.Children [startDeclIndex].EndLocation;
 					break;
 				}
 			}

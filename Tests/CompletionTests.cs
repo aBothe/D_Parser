@@ -79,6 +79,42 @@ foreach(
 		}
 
 		[Test]
+		public void IncrementalParsing_()
+		{
+			var code=@"module A;
+int foo;
+void main() {}";
+
+			var m = DParser.ParseString (code);
+			var main = m ["main"].First () as DMethod;
+			var foo = m ["foo"].First () as DVariable;
+
+			IStatement stmt;
+			var b = DResolver.SearchBlockAt (m, new CodeLocation (11, 3), out stmt);
+			Assert.That (b, Is.SameAs (main));
+			Assert.That (stmt, Is.Null);
+
+			code = @"module A;
+int foo;
+void main(
+string ) {
+
+}";
+			var caret = new CodeLocation (8, 4);
+			bool _u;
+			IncrementalParsing.UpdateBlockPartly (m, code, DocumentHelper.LocationToOffset (code, caret), caret, out _u);
+
+			var main2 = m ["main"].First () as DMethod;
+			Assert.That (main, Is.Not.SameAs (main2));
+			Assert.That (main2.Parameters.Count, Is.EqualTo (1));
+			Assert.That (main2.Parameters [0].Type, Is.Not.Null);
+			Assert.That (main2.Parameters [0].NameHash, Is.EqualTo(DTokens.IncompleteIdHash));
+
+			var foo2 = m ["foo"].First () as DVariable;
+			Assert.That (foo2, Is.SameAs(foo));
+		}
+
+		[Test]
 		public void CompletionTrigger()
 		{
 			Assert.That (@"module ", Does.Trigger);
