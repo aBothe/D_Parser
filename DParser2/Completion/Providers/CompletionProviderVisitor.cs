@@ -377,7 +377,9 @@ namespace D_Parser.Completion
 		public override void Visit (IsExpression x)
 		{
 			// is(Type |
-			if (x.TypeAliasIdentifierHash == DTokens.IncompleteIdHash) {
+			if (x.TypeAliasIdentifierHash == DTokens.IncompleteIdHash && 
+				x.TestedType != null && 
+				!IsIncompleteDeclaration(x.TestedType)) {
 				halt = true;
 				explicitlyNoCompletion = true;
 			}
