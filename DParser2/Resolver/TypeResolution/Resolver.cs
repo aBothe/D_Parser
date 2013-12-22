@@ -18,129 +18,88 @@ namespace D_Parser.Resolver.TypeResolution
 	/// </summary>
 	public partial class DResolver
 	{
-		[Flags]
-		public enum AstReparseOptions
+		class ScopedObjectVisitor : DefaultDepthFirstVisitor
 		{
-			AlsoParseBeyondCaret=1,
-			OnlyAssumeIdentifierList=2,
+			public ISyntaxRegion IdNearCaret;
+			readonly CodeLocation caret;
 
-			/// <summary>
-			/// Returns the expression without scanning it down depending on the caret location
-			/// </summary>
-			ReturnRawParsedExpression=4,
-
-			DontCheckForCommentsOrStringSurrounding = 16,
-		}
-
-		/// <summary>
-		/// Reparses the code of the current scope and returns the object (either IExpression or ITypeDeclaration derivative)
-		/// that is beneath the caret location.
-		/// 
-		/// Used for code completion/symbol resolution.
-		/// Mind the extra options that might be passed via the Options parameter.
-		/// </summary>
-		/// <param name="ctxt">Can be null</param>
-		public static ISyntaxRegion GetScopedCodeObject(IEditorData editor,
-			AstReparseOptions Options = AstReparseOptions.AlsoParseBeyondCaret,
-			ResolutionContext ctxt=null)
-		{
-			if (ctxt == null)
-				ctxt = ResolutionContext.Create(editor);
-
-			var code = editor.ModuleCode;
-
-			int start = 0;
-			var startLocation = CodeLocation.Empty;
-			bool IsExpression = false;
-
-			if (ctxt.CurrentContext.ScopedStatement is IExpressionContainingStatement)
+			public ScopedObjectVisitor(CodeLocation caret)
 			{
-				var exprs = ((IExpressionContainingStatement)ctxt.CurrentContext.ScopedStatement).SubExpressions;
-				IExpression targetExpr = null;
-
-				if (exprs != null)
-					foreach (var ex in exprs)
-						if ((targetExpr = ExpressionHelper.SearchExpressionDeeply(ex, editor.CaretLocation))
-							!= ex)
-							break;
-
-				if (targetExpr != null && editor.CaretLocation >= targetExpr.Location && editor.CaretLocation <= targetExpr.EndLocation)
-				{
-					startLocation = targetExpr.Location;
-					start = DocumentHelper.GetOffsetByRelativeLocation(editor.ModuleCode, editor.CaretLocation, editor.CaretOffset, startLocation);
-					IsExpression = true;
-				}
+				this.caret = caret;
 			}
 
-			if (!IsExpression)
+			public override void Visit(PostfixExpression_MethodCall x)
 			{
-				// First check if caret is inside a comment/string etc.
-				int lastStart = 0;
-				int lastEnd = 0;
-				if ((Options & AstReparseOptions.DontCheckForCommentsOrStringSurrounding) == 0)
-				{
-					var caretContext = CaretContextAnalyzer.GetTokenContext(code, editor.CaretOffset, out lastStart, out lastEnd);
-
-					// Return if comment etc. found
-					if (caretContext != TokenContext.None)
-						return null;
-				}
-
-				// Could be somewhere in an ITypeDeclaration..
-
-				if (editor.CaretOffset < 0 || editor.CaretOffset >= code.Length)
-					return null;
-				
-				if(Lexer.IsIdentifierPart(code[editor.CaretOffset]))
-					start = editor.CaretOffset;
-				else if (editor.CaretOffset > 0 && Lexer.IsIdentifierPart(code[editor.CaretOffset - 1]))
-					start = editor.CaretOffset - 1;
-
-				
-				start = CaretContextAnalyzer.SearchExpressionStart(code, start,
-					(lastEnd > 0 && lastEnd < editor.CaretOffset) ? lastEnd : 0);
-				startLocation = DocumentHelper.OffsetToLocation(editor.ModuleCode, start);
+				base.Visit(x);
+				if (IdNearCaret == x.PostfixForeExpression)
+					IdNearCaret = x;
 			}
 
-			if (start < 0 || editor.CaretOffset < start)
-				return null;
-
-			var sv = new StringView(code, start, Options.HasFlag(AstReparseOptions.AlsoParseBeyondCaret) ? code.Length - start : editor.CaretOffset - start);
-			var parser = DParser.Create(sv);
-			parser.Lexer.SetInitialLocation(startLocation);
-			parser.Step();
-
-			ITypeDeclaration td;
-
-			if (!IsExpression && Options.HasFlag(AstReparseOptions.OnlyAssumeIdentifierList) && parser.Lexer.LookAhead.Kind == DTokens.Identifier)
+			public override void Visit(PostfixExpression_Access x)
 			{
-				td = parser.IdentifierList();
-			}
-			else if (IsExpression || parser.IsAssignExpression())
-			{
-				if (Options.HasFlag(AstReparseOptions.ReturnRawParsedExpression))
-					return parser.AssignExpression();
+				if (x.AccessExpression != null && 
+					x.AccessExpression.Location <= caret && 
+					x.AccessExpression.EndLocation >= caret)
+					IdNearCaret = x;
 				else
-					return ExpressionHelper.SearchExpressionDeeply(parser.AssignExpression(), editor.CaretLocation);
+					base.Visit(x);
 			}
-			else
-				td = parser.Type();
 
-			if (Options.HasFlag(AstReparseOptions.ReturnRawParsedExpression))
-				return td;
+			public override void Visit(IdentifierExpression x)
+			{
+				if (x.Location <= caret && x.EndLocation >= caret)
+					IdNearCaret = x;
+				else
+					base.Visit(x);
+			}
 
-			while (td != null && td.InnerDeclaration != null && editor.CaretLocation <= td.InnerDeclaration.EndLocation)
-				td = td.InnerDeclaration;
+			public override void Visit(IdentifierDeclaration x)
+			{
+				if (x.Location <= caret && x.EndLocation >= caret)
+					IdNearCaret = x;
+				else
+					base.Visit(x);
+			}
 
-			return td;
+			public override void VisitDNode(DNode n)
+			{
+				var nl = n.NameLocation;
+				string name;	
+				if (n.NameHash != 0 &&
+					caret.Line == nl.Line &&
+					caret.Column >= nl.Column &&
+					(name = n.Name) != null &&
+					caret.Column <= nl.Column + name.Length)
+					IdNearCaret = n;
+				else
+					base.VisitDNode(n);
+			}
+
+			// Template parameters
 		}
 
-		public static AbstractType[] ResolveType(IEditorData editor, AstReparseOptions Options = AstReparseOptions.AlsoParseBeyondCaret, ResolutionContext ctxt = null)
+		/// <summary>Used for code completion/symbol resolution.</summary>
+		/// <param name="ctxt">Can be null</param>
+		public static ISyntaxRegion GetScopedCodeObject(IEditorData editor)
+		{
+			IStatement stmt;
+			var block = SearchBlockAt(editor.SyntaxTree, editor.CaretLocation, out stmt);
+
+			var vis = new ScopedObjectVisitor(editor.CaretLocation);
+			if (stmt != null)
+				stmt.Accept(vis);
+			else
+				block.Accept(vis);
+
+			return vis.IdNearCaret;
+		}
+
+		public static AbstractType[] ResolveType(IEditorData editor, ResolutionContext ctxt = null)
 		{
 			if (ctxt == null)
 				ctxt = ResolutionContext.Create(editor);
 
-			var o = GetScopedCodeObject(editor, Options, ctxt);
+			var o = GetScopedCodeObject(editor);
 
 			var optionBackup = ctxt.CurrentContext.ContextDependentOptions;
 			ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
@@ -149,8 +108,10 @@ namespace D_Parser.Resolver.TypeResolution
 
 			if (o is IExpression)
 				ret = Evaluation.EvaluateTypes((IExpression)o, ctxt);
-			else if(o is ITypeDeclaration)
+			else if (o is ITypeDeclaration)
 				ret = TypeDeclarationResolver.Resolve((ITypeDeclaration)o, ctxt);
+			else if (o is INode)
+				ret = new[] { TypeDeclarationResolver.HandleNodeMatch(o as INode, ctxt) };
 			else
 				ret = null;
 
@@ -171,7 +132,7 @@ namespace D_Parser.Resolver.TypeResolution
 			if (ctxt == null)
 				ctxt = ResolutionContext.Create(editor);
 
-			var o = GetScopedCodeObject(editor, ctxt:ctxt);
+			var o = GetScopedCodeObject(editor);
 
 			var optionBackup = ctxt.CurrentContext.ContextDependentOptions;
 			ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
@@ -183,6 +144,8 @@ namespace D_Parser.Resolver.TypeResolution
 				ret = Evaluation.EvaluateTypes((IExpression)o, ctxt);
 			else if(o is ITypeDeclaration)
 				ret = TypeDeclarationResolver.Resolve((ITypeDeclaration)o, ctxt);
+			else if (o is INode)
+				ret = new[] { TypeDeclarationResolver.HandleNodeMatch(o as INode, ctxt) };
 			else
 				ret = null;
 
