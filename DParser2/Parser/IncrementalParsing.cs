@@ -85,6 +85,8 @@ namespace D_Parser.Parser
 						tempBlockStmt.Add(p.Statement (true, false, tempParentBlock, tempBlockStmt));
 					}
 
+					tempBlockStmt.EndLocation = new CodeLocation(p.la.Column+1,p.la.Line);
+
 					if(isInsideNonCodeSegment = p.Lexer.endedWhileBeingInNonCodeSequence)
 						return;
 				}
@@ -101,6 +103,8 @@ namespace D_Parser.Parser
 			}
 
 			// Insert new statements
+			if (tempBlockStmt.EndLocation > bs.EndLocation)
+				bs.EndLocation = tempBlockStmt.EndLocation;
 			foreach (var stmt in tempBlockStmt._Statements)
 				stmt.Parent = bs;
 			finalStmtsList.InsertRange(startStmtIndex+1, tempBlockStmt._Statements);
@@ -127,6 +131,8 @@ namespace D_Parser.Parser
 				finalParentChildren.InsertRange(startDeclIndex+1, tempParentBlock);
 
 				finalParentMethod.UpdateChildrenArray ();
+				if (bs.EndLocation > finalParentMethod.EndLocation)
+					finalParentMethod.EndLocation = bs.EndLocation;
 			}
 
 			//TODO: Handle DBlockNode parents?
@@ -202,6 +208,8 @@ namespace D_Parser.Parser
 						}
 					}
 
+					tempBlock.EndLocation = new CodeLocation(p.la.Column+1,p.la.Line);
+
 					if(isInsideNonCodeSegment = p.Lexer.endedWhileBeingInNonCodeSequence)
 						return;
 				}
@@ -228,6 +236,8 @@ namespace D_Parser.Parser
 			}
 
 			// Insert new static stmts, declarations and meta blocks(?) into bn
+			if (tempBlock.EndLocation > bn.EndLocation)
+				bn.EndLocation = tempBlock.EndLocation;
 			foreach (var n in tempBlock.Children) {
 				if(n != null)
 					bn.Children.Insert (n, ++startDeclIndex);
