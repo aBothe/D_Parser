@@ -209,6 +209,8 @@ int a;
 			Assert.That (@"alias ", Does.Trigger);
 			Assert.That (@"alias string ", Does.Not.Trigger);
 			Assert.That (@"int ", Does.Not.Trigger);
+			Assert.That (@"auto ", Does.Not.Trigger);
+			//Assert.That (@"const ", Does.Trigger);
 
 			Assert.That (@"class ", Does.Not.Trigger);
 			Assert.That (@"class A : ", Does.Trigger);

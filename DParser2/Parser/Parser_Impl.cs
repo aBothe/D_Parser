@@ -3260,7 +3260,7 @@ namespace D_Parser.Parser
 					next = next.next;
 
 				k = next.Kind;
-				return k == Comma || k == Identifier || k == CloseSquareBracket || k == CloseParenthesis || BasicTypes[k] || StorageClass [k];
+				return k == Comma || k == Identifier || k == CloseSquareBracket || BasicTypes[k] || StorageClass [k];
 			}
 
 			// (...) => |
