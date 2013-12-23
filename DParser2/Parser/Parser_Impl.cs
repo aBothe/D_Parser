@@ -4964,8 +4964,8 @@ namespace D_Parser.Parser
 			var dv = Declarator(bt,false, null);
 
 			if (dv == null) {
-				SynErr (t.Kind, "Declarator expected for parsing template value parameter");
-				return null;
+				SynErr (t.Kind, "Declarator expected for parsing template parameter");
+				return new TemplateTypeParameter (DTokens.IncompleteIdHash, t.Location, parent) { Location = t.Location };
 			}
 
 			var tv = new TemplateValueParameter(dv.NameHash, dv.NameLocation, parent) { 
