@@ -13,32 +13,6 @@ namespace D_Parser.Completion.Providers
 		}
 
 		#region Helper Methods
-		public static IExpression TryConvertTypeDeclaration(ITypeDeclaration td, bool ignoreInnerDeclaration = false)
-		{
-			if (td.InnerDeclaration == null || ignoreInnerDeclaration)
-			{
-				if (td is IdentifierDeclaration)
-				{
-					var id = td as IdentifierDeclaration;
-					if (id.Id == null)
-						return null;
-					return new IdentifierExpression(id.Id) { Location = id.Location, EndLocation = id.EndLocation };
-				}
-				if (td is TemplateInstanceExpression)
-					return td as IExpression;
-				
-				return null;
-			}
-
-			var pfa = new PostfixExpression_Access{
-				PostfixForeExpression = TryConvertTypeDeclaration(td.InnerDeclaration),
-				AccessExpression  = TryConvertTypeDeclaration(td, true)
-			};
-			if (pfa.PostfixForeExpression == null)
-				return null;
-			return pfa;
-		}
-
 		public static bool CanItemBeShownGenerally(INode dn)
 		{
 			if (dn == null || dn.NameHash == 0)
