@@ -118,6 +118,7 @@
     <Compile Include="Completion\Providers\MemberCompletionProvider.cs" />
     <Compile Include="Completion\Providers\ModuleStatementCompletionProvider.cs" />
     <Compile Include="Completion\Providers\PropertyAttributeCompletionProvider.cs" />
+    <Compile Include="Completion\Providers\SelectiveImportCompletionProvider.cs" />
     <Compile Include="Dom\AbstractTypeDeclaration.cs" />
     <Compile Include="Dom\IDeclarationCondition.cs" />
     <Compile Include="Dom\ParserError.cs" />

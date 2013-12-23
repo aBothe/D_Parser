@@ -243,6 +243,7 @@ int a;
 		{
 			Assert.That (@"module ", Does.Trigger);
 			Assert.That (@"import ", Does.Trigger);
+			Assert.That (@"import std.stdio : ", Does.Trigger);
 
 			Assert.That (@"alias ", Does.Trigger);
 			Assert.That (@"alias string ", Does.Not.Trigger);

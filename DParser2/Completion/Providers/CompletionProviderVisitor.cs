@@ -273,33 +273,30 @@ namespace D_Parser.Completion
 				base.Visit (s);
 		}
 
+		ImportStatement.Import curImport;
 		public override void VisitImport (ImportStatement.Import i)
 		{
-			if (IsIncompleteDeclaration (i.ModuleIdentifier)) {
-				prv = new ImportStatementCompletionProvider (cdgen, i);
+			if (IsIncompleteDeclaration(i.ModuleIdentifier))
+			{
+				prv = new ImportStatementCompletionProvider(cdgen, i);
 				halt = true;
 			}
 			else
-				base.VisitImport (i);
+			{
+				curImport = i;
+				base.VisitImport(i);
+			}
 		}
 
-		ImportStatement.ImportBindings curBindings;
 		public override void VisitImport (ImportStatement.ImportBinding i)
 		{
 			if (!halt) {
 				if (IsIncompleteDeclaration (i.Symbol)) {
-					prv = new ImportStatementCompletionProvider (cdgen, curBindings);
+					prv = new SelectiveImportCompletionProvider (cdgen, curImport);
 					halt = true;
 				} else
 					base.VisitImport (i);
 			}
-		}
-
-		public override void VisitImport (ImportStatement.ImportBindings i)
-		{
-			curBindings = i;
-			base.VisitImport (i);
-			curBindings = null;
 		}
 
 		public override void Visit (ForeachStatement s)

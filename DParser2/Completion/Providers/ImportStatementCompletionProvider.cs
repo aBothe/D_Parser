@@ -9,11 +9,13 @@ using D_Parser.Resolver.ASTScanner;
 
 namespace D_Parser.Completion.Providers
 {
+	/// <summary>
+	/// import io = |;
+	/// import |;
+	/// </summary>
 	class ImportStatementCompletionProvider : AbstractCompletionProvider
 	{
 		readonly ImportStatement.Import imp;
-		readonly ImportStatement.ImportBinding impBind;
-		readonly ImportStatement.ImportBindings impBinds;
 
 		public ImportStatementCompletionProvider(
 			ICompletionDataGenerator gen, 
@@ -23,45 +25,10 @@ namespace D_Parser.Completion.Providers
 			this.imp = imp;
 		}
 
-		public ImportStatementCompletionProvider(
-			ICompletionDataGenerator gen, 
-			ImportStatement.ImportBindings imbBinds)
-			: base(gen)
-		{
-			this.impBinds = imbBinds;
-			imp = impBinds.Module;
-		}
-
 		protected override void BuildCompletionDataInternal(IEditorData Editor, char enteredChar)
 		{
 			if(Editor.ParseCache == null)
 				return;
-
-			if (impBinds != null)
-			{
-				DModule mod = null;
-
-				var modName = imp.ModuleIdentifier.ToString (true);
-				foreach (var pc in Editor.ParseCache)
-					if ((mod = pc.GetModule (modName)) != null)
-						break;
-
-				if (mod == null)
-					return;
-
-				var ctxt = ResolutionContext.Create (Editor);
-
-				/*
-				 * Show all members of the imported module
-				 * + public imports 
-				 * + items of anonymous enums
-				 */
-
-				MemberCompletionEnumeration.EnumChildren(CompletionDataGenerator, ctxt, mod, true, MemberFilter.All);
-
-				return;
-			}
-
 
 			string pack = null;
 
