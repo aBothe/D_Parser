@@ -612,7 +612,7 @@ namespace D_Parser.Dom
 		public virtual void Visit(Expressions.NewExpression x)
 		{
 			VisitChildren(x);
-			if (!(x.Type is IExpression))
+			if (x != null && !(x.Type is IExpression))
 				x.Type.Accept (this);
 		}
 
