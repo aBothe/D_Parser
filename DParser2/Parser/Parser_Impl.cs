@@ -4902,7 +4902,7 @@ namespace D_Parser.Parser
 				if(Expect(Identifier))
 					al = new TemplateAliasParameter(t.Value, t.Location, parent);
 				else
-					al = new TemplateAliasParameter(0, CodeLocation.Empty, parent);
+					al = new TemplateAliasParameter(IsEOF ? DTokens.IncompleteIdHash : 0 , CodeLocation.Empty, parent);
 				al.Location = startLoc;
 
 				// TODO?:

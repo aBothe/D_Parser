@@ -135,6 +135,27 @@ namespace D_Parser.Completion
 				explicitlyNoCompletion = true;
 			}
 		}
+
+		public override void Visit (TemplateAliasParameter p)
+		{
+			if (p.NameHash == DTokens.IncompleteIdHash) {
+				halt = true;
+				explicitlyNoCompletion = true;
+			}
+			else
+				base.Visit (p);
+		}
+
+		public override void Visit (TemplateValueParameter p)
+		{
+			if (p.Type != null && !IsIncompleteDeclaration(p.Type) && 
+				p.NameHash == DTokens.IncompleteIdHash) {
+				halt = true;
+				explicitlyNoCompletion = true;
+			}
+			else
+				base.Visit (p);
+		}
 		#endregion
 
 		#region TypeDeclarations

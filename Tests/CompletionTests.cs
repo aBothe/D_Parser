@@ -255,6 +255,9 @@ int a;
 			Assert.That (@"class A : ", Does.Trigger);
 			Assert.That (@"class A(T) if(is( ", Does.Trigger);
 			Assert.That (@"class A(T) if(is(int  ", Does.Not.Trigger);
+			//Assert.That (@"class A(", Does.Not.Trigger);
+			Assert.That (@"class A(string ", Does.Not.Trigger);
+			Assert.That (@"class A(alias ", Does.Not.Trigger);
 		}
 
 		[Test]
