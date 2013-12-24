@@ -323,14 +323,16 @@ namespace D_Parser.Completion
 		public override void Visit (ForeachStatement s)
 		{
 			var decls = s.Declarations;
-			var lastDecl = decls [decls.Length - 1];
-			if (lastDecl.NameHash == DTokens.IncompleteIdHash) {
-				scopedStatement = s;
-				halt = true;
-				explicitlyNoCompletion = lastDecl.Type != null;
+			if (decls != null && decls.Length > 0) {
+				var lastDecl = decls [decls.Length - 1];
+				if (lastDecl.NameHash == DTokens.IncompleteIdHash) {
+					scopedStatement = s;
+					halt = true;
+					explicitlyNoCompletion = lastDecl.Type != null;
+					return;
+				}
 			}
-			else
-				base.Visit (s);
+			base.Visit (s);
 		}
 		#endregion
 
