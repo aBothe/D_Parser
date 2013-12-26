@@ -179,6 +179,9 @@ namespace D_Parser.Parser
 					p.Lexer.SetInitialLocation (startLoc);
 					p.Step ();
 
+					if(p.laKind == DTokens.OpenCurlyBrace)
+						p.Step();
+
 					// Enum bodies
 					if(bn is DEnum)
 					{
@@ -186,8 +189,10 @@ namespace D_Parser.Parser
 						{
 							if(p.laKind == DTokens.Comma)
 								p.Step();
-
+							var laBackup = p.la;
 							p.EnumValue(tempBlock as DEnum);
+							if(p.la == laBackup)
+								break;
 						}
 					}
 					else // Normal class/module bodies
