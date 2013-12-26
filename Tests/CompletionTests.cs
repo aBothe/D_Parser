@@ -258,6 +258,9 @@ int a;
 			//Assert.That (@"class A(", Does.Not.Trigger);
 			Assert.That (@"class A(string ", Does.Not.Trigger);
 			Assert.That (@"class A(alias ", Does.Not.Trigger);
+
+			Assert.That (@"enum ", Does.Not.Trigger);
+			Assert.That (@"enum { ", Does.Not.Trigger);
 		}
 
 		[Test]
