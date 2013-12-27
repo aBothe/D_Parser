@@ -185,7 +185,7 @@ namespace D_Parser.Parser
 					// Enum bodies
 					if(bn is DEnum)
 					{
-						while(!p.IsEOF)
+						do
 						{
 							if(p.laKind == DTokens.Comma)
 								p.Step();
@@ -194,6 +194,7 @@ namespace D_Parser.Parser
 							if(p.la == laBackup)
 								break;
 						}
+						while(!p.IsEOF);
 					}
 					else // Normal class/module bodies
 					{
