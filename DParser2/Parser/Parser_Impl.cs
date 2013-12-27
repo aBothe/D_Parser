@@ -141,8 +141,15 @@ namespace D_Parser.Parser
 
 		public void DeclDef(DBlockNode module)
 		{
-			while (IsAttributeSpecifier())
-				AttributeSpecifier(module);
+			if (IsAttributeSpecifier ()) {
+				do
+					AttributeSpecifier (module);
+				while(IsAttributeSpecifier ());
+
+				var tkind = t.Kind;
+				if(tkind == Semicolon || tkind == CloseCurlyBrace || tkind == Colon)
+					return;
+			}
 
 			if (laKind == Semicolon)
 			{

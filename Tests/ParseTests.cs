@@ -61,6 +61,18 @@ namespace Tests
 		}
 
 		[Test]
+		public void TestSyntaxError4()
+		{
+			var mod = DParser.ParseString (@"module A;
+class A {
+    private {
+        int a;
+    }
+}");
+			Assert.That (mod.ParseErrors.Count, Is.EqualTo (0));
+		}
+
+		[Test]
 		public void TestSyntaxError3()
 		{
 			DModule mod;
