@@ -91,7 +91,7 @@ namespace D_Parser.Refactoring
 		protected override void OnScopedBlockChanged (IBlockNode bn)
 		{
 			HashSet<int> dd = null;
-			foreach (var n in ItemEnumeration.EnumScopedBlockChildren(ctxt, MemberFilter.Types))
+			foreach (var n in ItemEnumeration.EnumScopedBlockChildren(ctxt, MemberFilter.Types | MemberFilter.Enums))
 			{
 				if (n.NameHash != 0) {
 					if (dd == null && !TypeCache.TryGetValue (bn, out dd))
