@@ -597,8 +597,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					{
 						var impStmt = dstmt as ImportStatement;
 						if ((takePublicImportsOnly && impStmt!=null && !impStmt.IsPublic) || 
-						    !MatchesCompilationEnv(stmt) ||
-						    impStmt.IsStatic)
+						    !MatchesCompilationEnv(stmt))
 							continue;
 
 						/*
@@ -608,7 +607,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 							foreach (var d in dstmt.Declarations)
 								foundItems |= HandleItem(d); //TODO: Handle visibility?
 
-						if (impStmt!=null)
+						if (impStmt!=null && !impStmt.IsStatic)
 						{
 							foreach (var imp in impStmt.Imports)
 								if (imp.ModuleAlias == null)

@@ -567,6 +567,27 @@ auto o = new Obj();
 			t = TypeDeclarationResolver.ResolveIdentifier("foo",ctxt,null);
 			Assert.That(t.Length, Is.EqualTo(1));
 		}
+
+		[Test]
+		public void ImportAliases()
+		{
+			var ctxt = CreateCtxt ("A", @"module A;
+class Class{
+	static import b = B;
+}", "module B;");
+
+			var A = ctxt.ParseCache [0] ["A"];
+			var Class = A ["Class"].First () as DClassLike;
+			var B = ctxt.ParseCache [0] ["B"];
+
+			ctxt.CurrentContext.Set (Class);
+
+			var t = TypeDeclarationResolver.ResolveSingle ("b", ctxt, null);
+			Assert.That (t, Is.TypeOf (typeof(AliasedType)));
+			t = DResolver.StripAliasSymbol (t);
+			Assert.That (t, Is.TypeOf (typeof(ModuleSymbol)));
+			Assert.That ((t as ModuleSymbol).Definition, Is.SameAs (B));
+		}
 		
 		[Test]
 		public void ExplicitModuleNames()
