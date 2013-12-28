@@ -168,7 +168,8 @@ namespace D_Parser.Dom
 			var ss = stmtContainer.SubStatements;
 			if (ss != null)
 				foreach (IStatement substatement in ss)
-					substatement.Accept(this);
+					if(substatement != null)
+						substatement.Accept(this);
 		}
 
 		/// <summary>
@@ -183,18 +184,21 @@ namespace D_Parser.Dom
 		public virtual void Visit(ModuleStatement s)
 		{
 			VisitAbstractStmt(s);
-			s.ModuleName.Accept(this);
+			if(s.ModuleName != null)
+				s.ModuleName.Accept(this);
 		}
 
 		public virtual void Visit(ImportStatement s)
 		{
 			if (s.Attributes != null)
 				foreach (var attr in s.Attributes)
-					attr.Accept (this);
+					if(attr != null)
+						attr.Accept (this);
 
 			if (s.Imports != null)
 				foreach (var imp in s.Imports)
-					imp.Accept (this);
+					if(imp != null)
+						imp.Accept (this);
 
 			if (s.ImportBindList != null)
 				s.ImportBindList.Accept (this);
@@ -225,7 +229,8 @@ namespace D_Parser.Dom
 
 			if(i.SelectedSymbols != null)
 				foreach (var imp in i.SelectedSymbols)
-					imp.Accept (this);
+					if(imp != null)
+						imp.Accept (this);
 		}
 
 		public virtual void Visit(BlockStatement s)
@@ -275,7 +280,8 @@ namespace D_Parser.Dom
 
 			if (s.ForeachTypeList != null)
 				foreach (var t in s.ForeachTypeList)
-					t.Accept(this);
+					if(t != null)
+						t.Accept(this);
 		}
 
 		public virtual void Visit(SwitchStatement s)
@@ -398,7 +404,8 @@ namespace D_Parser.Dom
 		{
 			if(s!=null)
 			{
-				s.Condition.Accept (this);
+				if(s.Condition != null)
+					s.Condition.Accept (this);
 				VisitChildren(s);
 			}
 		}
@@ -421,7 +428,8 @@ namespace D_Parser.Dom
 
 			if (s.Declarations != null)
 				foreach (var decl in s.Declarations)
-					decl.Accept(this);
+					if(decl != null)
+						decl.Accept(this);
 		}
 
 		public virtual void Visit(Statements.TemplateMixin s)
@@ -452,7 +460,8 @@ namespace D_Parser.Dom
 			VisitAbstractStmt (s);
 			if(s.Attributes!=null && s.Attributes.Length != 0)
 				foreach(var attr in s.Attributes)
-					attr.Accept(this);
+					if(attr != null)
+						attr.Accept(this);
 			
 			if(s.MixinExpression != null)
 				s.MixinExpression.Accept(this);
@@ -697,7 +706,8 @@ namespace D_Parser.Dom
 
 			if (x.Arguments != null)
 				foreach (var arg in x.Arguments)
-					arg.Accept(this);
+					if(arg != null)
+						arg.Accept(this);
 		}
 
 		public virtual void Visit(Expressions.IdentifierExpression x)
@@ -712,23 +722,27 @@ namespace D_Parser.Dom
 
 		public virtual void Visit(Expressions.TypeDeclarationExpression x)
 		{
-			x.Declaration.Accept(this);
+			if(x.Declaration != null)
+				x.Declaration.Accept(this);
 		}
 
 		public virtual void Visit(Expressions.ArrayLiteralExpression x)
 		{
-			foreach (var e in x.Elements)
-				if(e!=null)
-					e.Accept(this);
+			if(x.Elements != null)
+				foreach (var e in x.Elements)
+					if(e!=null)
+						e.Accept(this);
 		}
 
 		public virtual void Visit(Expressions.AssocArrayExpression x)
 		{
-			foreach (var kv in x.Elements)
-			{
-				kv.Key.Accept(this);
-				kv.Value.Accept(this);
-			}
+			if(x.Elements != null)
+				foreach (var kv in x.Elements)
+				{
+					kv.Key.Accept(this);
+						if(kv.Value!=null)
+							kv.Value.Accept(this);
+				}
 		}
 
 		public virtual void Visit(Expressions.FunctionLiteral x)
@@ -773,14 +787,16 @@ namespace D_Parser.Dom
 
 			if (x.TemplateParameterList != null)
 				foreach (var p in x.TemplateParameterList)
-					p.Accept(this);
+					if(p !=null)
+						p.Accept(this);
 		}
 
 		public virtual void Visit(Expressions.TraitsExpression x)
 		{
 			if (x.Arguments != null)
 				foreach (var arg in x.Arguments)
-					arg.Accept(this);
+					if(arg != null)
+						arg.Accept(this);
 		}
 
 		public virtual void Visit(TraitsArgument arg)
@@ -811,7 +827,8 @@ namespace D_Parser.Dom
 		{
 			if (x.MemberInitializers != null)
 				foreach (var i in x.MemberInitializers)
-					i.Accept(this);
+					if(i != null)
+						i.Accept(this);
 		}
 
 		public virtual void Visit(StructMemberInitializer init)
@@ -858,10 +875,12 @@ namespace D_Parser.Dom
 
 			if (td.Modifiers != null && td.Modifiers.Length != 0)
 				foreach (var attr in td.Modifiers)
-					attr.Accept(this);
+					if(attr != null)
+						attr.Accept(this);
 
 			foreach (var p in td.Parameters)
-				p.Accept(this);
+				if(p != null)
+					p.Accept(this);
 		}
 
 		public virtual void Visit(PointerDecl td)
@@ -940,7 +959,8 @@ namespace D_Parser.Dom
 		{
 			if (md.AttributeOrCondition != null)
 				foreach (var attr in md.AttributeOrCondition)
-					attr.Accept(this);
+					if(attr != null)
+						attr.Accept(this);
 
 			if (md.OptionalElseBlock != null)
 				md.OptionalElseBlock.Accept(this);
