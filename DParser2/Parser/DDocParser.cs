@@ -87,7 +87,7 @@ namespace D_Parser.Parser
 				Step();
 
 			sb.Clear ();
-			while (char.IsLetterOrDigit (Peek()))
+			while (char.IsLetterOrDigit (Peek()) || Peek() == '_')
 				sb.Append(Read());
 
 			while (char.IsWhiteSpace (Peek()))
