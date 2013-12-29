@@ -229,6 +229,7 @@
     <Compile Include="Completion\Providers\AbstractCompletionProvider.cs" />
     <Compile Include="Completion\Providers\CompletionProviderVisitor.cs" />
     <Compile Include="Parser\IncrementalParsing.cs" />
+    <Compile Include="Parser\DDocParser.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="readme.txt" />

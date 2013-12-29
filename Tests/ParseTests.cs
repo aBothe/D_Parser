@@ -623,5 +623,41 @@ int dbg;
 			Assert.That (aa.Attributes.Count, Is.EqualTo(1));
 			Assert.That (aa.Attributes[0], Is.SameAs(attr));
 		}
+
+		#region DDoc
+
+		public void DDocMacros()
+		{
+			var frstParam = "a\"s\"";
+			var scndParam = " ((d)('\\'')) ";
+			var thirdParam = " hehe";
+
+			var ddoc = "asdf $(NAME) yeah $(D "+frstParam+","+scndParam+","+thirdParam+")";
+
+			int macroStart;
+			int macroLength;
+			string macroName;
+			Dictionary<string,string> parameters;
+
+			DDocParser.FindNextMacro(ddoc, 0, out macroStart, out macroLength, out macroName, out parameters);
+
+			Assert.That (macroStart, Is.EqualTo(5));
+			Assert.That (macroLength, Is.EqualTo(7));
+			Assert.That (macroName, Is.EqualTo("NAME"));
+			Assert.That (parameters, Is.Null);
+
+			DDocParser.FindNextMacro(ddoc, macroStart + macroLength, out macroStart, out macroLength, out macroName, out parameters);
+
+			Assert.That (macroName, Is.EqualTo("D"));
+			Assert.That (parameters, Is.Not.Null);
+
+			Assert.That (parameters["$0"], Is.EqualTo(frstParam+","+scndParam+","+thirdParam));
+			Assert.That (parameters["$1"], Is.EqualTo(frstParam));
+			Assert.That (parameters["$2"], Is.EqualTo(scndParam));
+			Assert.That (parameters["$3"], Is.EqualTo(thirdParam));
+			Assert.That (parameters["$+"], Is.EqualTo(scndParam+","+thirdParam));
+		}
+
+		#endregion
 	}
 }
