@@ -75,7 +75,7 @@ namespace D_Parser.Parser
 
 			ddoc.Step ();
 
-			length = Math.Min(ddoc.nextOffset,text.Length-1) - macroStart;
+			length = Math.Min(ddoc.nextOffset,text.Length) - macroStart;
 		}
 
 		private DDocParser() {}
