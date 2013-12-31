@@ -368,12 +368,12 @@ namespace D_Parser.Resolver
 
 		public override string ToString()
 		{
-			return "(alias) " + base.ToString();
+			return base.ToString();
 		}
 
 		public override string ToCode()
 		{
-			return Definition.ToString(false, true);
+			return Base != null ? Base.ToCode() : Definition.ToString(false,false);
 		}
 
 		public override ITypeDeclaration TypeDeclarationOf
