@@ -49,7 +49,7 @@ namespace D_Parser.Parser
 			int startStmtIndex;
 			for(startStmtIndex = finalStmtsList.Count-1; startStmtIndex >= 0; startStmtIndex--) {
 				var n = finalStmtsList [startStmtIndex];
-				if (n.EndLocation.Line > 0 && n.EndLocation < caretLocation) {
+				if (n.EndLocation.Line > 0 && n.EndLocation.Line < caretLocation.Line) {
 					startLoc = --startStmtIndex == -1 ? 
 						bs.Location : finalStmtsList [startStmtIndex].EndLocation;
 					break;
@@ -82,7 +82,9 @@ namespace D_Parser.Parser
 							continue;
 						}
 
-						tempBlockStmt.Add(p.Statement (true, false, tempParentBlock, tempBlockStmt));
+						var stmt = p.Statement (true, true, tempParentBlock, tempBlockStmt);
+						if(stmt != null)
+							tempBlockStmt.Add(stmt);
 					}
 
 					tempBlockStmt.EndLocation = new CodeLocation(p.la.Column+1,p.la.Line);
@@ -96,10 +98,9 @@ namespace D_Parser.Parser
 
 			// Remove old statements from startLoc until caretLocation
 			for (int i = startStmtIndex + 1; i < finalStmtsList.Count; i++) {
-				var d = finalStmtsList [i];
-				if (d.Location >= caretLocation)
+				if (finalStmtsList [i].Location >= caretLocation)
 					break;
-				finalStmtsList.Remove (d);
+				finalStmtsList.RemoveAt (i--);
 			}
 
 			// Insert new statements
