@@ -16,6 +16,7 @@ using D_Parser.Resolver.ASTScanner;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
 using NUnit.Framework;
+using D_Parser;
 
 namespace Tests
 {
@@ -622,6 +623,20 @@ int dbg;
 			aa = dn["dbg"].First() as DNode;
 			Assert.That (aa.Attributes.Count, Is.EqualTo(1));
 			Assert.That (aa.Attributes[0], Is.SameAs(attr));
+		}
+
+		[Test]
+		public void RelativeOffsetCalculation()
+		{
+			var code = @"asdfghij";
+
+			Assert.That (DocumentHelper.GetOffsetByRelativeLocation (code, new CodeLocation (4, 1), 3, new CodeLocation (8, 1)), Is.EqualTo (7));
+			Assert.That (DocumentHelper.GetOffsetByRelativeLocation (code, new CodeLocation (4, 1), 3, new CodeLocation (2, 1)), Is.EqualTo (1));
+
+			code = @"a\nb\nc";
+
+			Assert.That (DocumentHelper.GetOffsetByRelativeLocation (code, new CodeLocation (1, 1), 0, new CodeLocation (2, 3)), Is.EqualTo (code.Length));
+			Assert.That (DocumentHelper.GetOffsetByRelativeLocation (code, new CodeLocation (2, 3), code.Length, new CodeLocation (1, 1)), Is.EqualTo (0));
 		}
 
 		#region DDoc
