@@ -62,6 +62,16 @@ namespace Tests
 		}
 
 		[Test]
+		public void Unicode1()
+		{
+			var lex = new Lexer (new StringReader ("'ߞ'"));
+
+			lex.NextToken ();
+
+			Assert.That (lex.LexerErrors.Count, Is.EqualTo(0));
+		}
+
+		[Test]
 		public void TestSyntaxError4()
 		{
 			var mod = DParser.ParseString (@"module A;

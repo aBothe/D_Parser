@@ -1807,6 +1807,7 @@ namespace D_Parser.Parser
 				}
 				if (l.Count > 0)
 					s.Arguments = l.ToArray();
+				Expect (CloseParenthesis);
 			}
 			s.EndLocation = t.EndLocation;
 			return s;
