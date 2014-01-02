@@ -36,15 +36,16 @@ using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
 using System.Threading;
 using D_Parser.Resolver.ASTScanner;
+using D_Parser.Parser;
 
 namespace D_Parser.Refactoring
 {
 	public class TypeReferenceFinder : AbstractResolutionVisitor
 	{
 		#region Properties
-		readonly Dictionary<IBlockNode, HashSet<int>> TypeCache = new Dictionary<IBlockNode, HashSet<int>>();
+		readonly Dictionary<IBlockNode, Dictionary<int,byte>> TypeCache = new Dictionary<IBlockNode, Dictionary<int,byte>>();
 		//DModule ast;
-		Dictionary<int, List<ISyntaxRegion>> Matches = new Dictionary<int, List<ISyntaxRegion>>();
+		Dictionary<int, Dictionary<ISyntaxRegion,byte>> Matches = new Dictionary<int, Dictionary<ISyntaxRegion,byte>>();
 		#endregion
 
 		#region Constructor / IO
@@ -52,10 +53,10 @@ namespace D_Parser.Refactoring
 		{
 		}
 
-		public static Dictionary<int, List<ISyntaxRegion>> Scan(DModule ast, ResolutionContext ctxt)
+		public static Dictionary<int, Dictionary<ISyntaxRegion,byte>> Scan(DModule ast, ResolutionContext ctxt)
 		{
 			if (ast == null)
-				return new Dictionary<int, List<ISyntaxRegion>>();
+				return new Dictionary<int, Dictionary<ISyntaxRegion,byte>>();
 
 			var typeRefFinder = new TypeReferenceFinder(ctxt);
 
@@ -90,37 +91,50 @@ namespace D_Parser.Refactoring
 		/// </summary>
 		protected override void OnScopedBlockChanged (IBlockNode bn)
 		{
-			HashSet<int> dd = null;
+			Dictionary<int,byte> dd = null;
 			foreach (var n in ItemEnumeration.EnumScopedBlockChildren(ctxt, MemberFilter.Types | MemberFilter.Enums))
 			{
 				if (n.NameHash != 0) {
 					if (dd == null && !TypeCache.TryGetValue (bn, out dd))
-						TypeCache [bn] = dd = new HashSet<int> ();
-					dd.Add (n.NameHash);
+						TypeCache [bn] = dd = new Dictionary<int,byte> ();
+
+					byte type = 0;
+
+					if (n is DClassLike)
+						type = (n as DClassLike).ClassType;
+					else if (n is DEnum)
+						type = DTokens.Enum;
+					else if (n is TemplateParameter.Node)
+						type = DTokens.Not; // Only needed for highlighting and thus just a convention question
+
+					dd[n.NameHash] = type;
 				}
 			}
 		}
 
 		public override void Visit (DClassLike n)
 		{
-			if (DoPrimaryIdCheck (n.NameHash))
-				AddResult (n);
+			byte type;
+			if (DoPrimaryIdCheck (n.NameHash, out type))
+				AddResult (n, type);
 
 			base.Visit (n);
 		}
 
 		public override void Visit (TemplateInstanceExpression x)
 		{
-			if (DoPrimaryIdCheck(x.TemplateIdHash))
-				AddResult(x);
+			byte type;
+			if (DoPrimaryIdCheck(x.TemplateIdHash, out type))
+				AddResult(x, type);
 
 			base.Visit (x);
 		}
 
 		public override void Visit (IdentifierDeclaration td)
 		{
-			if (DoPrimaryIdCheck(td.IdHash))
-				AddResult(td);
+			byte type;
+			if (DoPrimaryIdCheck(td.IdHash, out type))
+				AddResult(td, type);
 
 			base.Visit (td);
 		}
@@ -140,40 +154,41 @@ namespace D_Parser.Refactoring
 			base.Visit (x);
 		}
 		
-		void AddResult(INode n)
+		void AddResult(INode n, byte type)
 		{
-			List<ISyntaxRegion> l;
+			Dictionary<ISyntaxRegion,byte> l;
 			if(!Matches.TryGetValue(n.NameLocation.Line, out l))
-				Matches[n.NameLocation.Line] = l = new List<ISyntaxRegion>();
+				Matches[n.NameLocation.Line] = l = new Dictionary<ISyntaxRegion,byte>();
 
-			l.Add(n);
+			l.Add(n, type);
 		}
 
-		void AddResult(ISyntaxRegion sr)
+		void AddResult(ISyntaxRegion sr, byte type)
 		{
-			List<ISyntaxRegion> l;
+			Dictionary<ISyntaxRegion,byte> l;
 			if(!Matches.TryGetValue(sr.Location.Line, out l))
-				Matches[sr.Location.Line] = l = new List<ISyntaxRegion>();
+				Matches[sr.Location.Line] = l = new Dictionary<ISyntaxRegion,byte>();
 
-			l.Add(sr);
+			l.Add(sr, type);
 		}
 
 		/// <summary>
 		/// Returns true if a type called 'id' exists in the current scope
 		/// </summary>
-		bool DoPrimaryIdCheck(int id)
+		bool DoPrimaryIdCheck(int id, out byte type)
 		{
 			if (id != 0) {
-				HashSet<int> tc;
+				Dictionary<int,byte> tc;
 				var bn = ctxt.ScopedBlock;
 
 				while (bn != null) {
-					if (TypeCache.TryGetValue (bn, out tc) && tc.Contains (id))
+					if (TypeCache.TryGetValue (bn, out tc) && tc.TryGetValue (id, out type))
 						return true;
 					else
 						bn = bn.Parent as IBlockNode;
 				}
 			}
+			type = 0;
 			return false;
 		}
 		/*
