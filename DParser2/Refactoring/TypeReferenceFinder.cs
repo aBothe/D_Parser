@@ -121,6 +121,11 @@ namespace D_Parser.Refactoring
 			base.Visit (n);
 		}
 
+		public override void VisitTemplateParameter (TemplateParameter tp)
+		{
+			AddResult (tp, DTokens.Not);
+		}
+
 		public override void Visit (TemplateInstanceExpression x)
 		{
 			byte type;
