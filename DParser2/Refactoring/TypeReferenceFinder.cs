@@ -191,41 +191,6 @@ namespace D_Parser.Refactoring
 			type = 0;
 			return false;
 		}
-		/*
-		List<IExpression> DoPrimaryIdCheck(PostfixExpression_Access acc)
-		{
-			var r = new List<IExpression>();
-			while(acc != null){
-				if (DoPrimaryIdCheck(ExtractId(acc)))
-					r.Add(acc);
-
-				// Scan down the access expression for other, deeper expressions
-				if (acc.PostfixForeExpression is PostfixExpression_Access)
-					acc = (PostfixExpression_Access)acc.PostfixForeExpression;
-				else
-				{
-					if (DoPrimaryIdCheck(ExtractId(acc.PostfixForeExpression)))
-						r.Add(acc.PostfixForeExpression);
-					break;
-				}
-			}
-			return r;
-		}
-
-		public static int ExtractId(ISyntaxRegion o)
-		{
-			if (o is IdentifierDeclaration)
-				return ((IdentifierDeclaration)o).IdHash;
-			else if (o is IdentifierExpression && ((IdentifierExpression)o).IsIdentifier)
-				return ((IdentifierExpression)o).ValueStringHash;
-			else if (o is PostfixExpression_Access)
-				return ExtractId(((PostfixExpression_Access)o).AccessExpression);
-			else if (o is TemplateInstanceExpression)
-				return ((TemplateInstanceExpression)o).TemplateIdHash;
-			else if (o is NewExpression)
-				return ExtractId(((NewExpression)o).Type);
-			return 0;
-		}*/
 	}
 }
 
