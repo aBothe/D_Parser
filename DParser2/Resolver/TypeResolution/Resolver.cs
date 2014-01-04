@@ -155,12 +155,14 @@ namespace D_Parser.Resolver.TypeResolution
 				if (o is PostfixExpression_MethodCall)
 					o = (o as PostfixExpression_MethodCall).PostfixForeExpression;
 
+				ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.NoTemplateParameterDeduction;
+
 				if (o is IdentifierExpression)
-					ret = Evaluation.GetOverloads (o as IdentifierExpression, ctxt, deduceParameters:false);
-				else if (o is ITypeDeclaration) {
-					ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.NoTemplateParameterDeduction;
+					ret = Evaluation.GetOverloads (o as IdentifierExpression, ctxt, deduceParameters: false);
+				else if (o is ITypeDeclaration)
 					ret = TypeDeclarationResolver.Resolve (o as ITypeDeclaration, ctxt);
-				}
+				else if (o is IExpression)
+					ret = Evaluation.EvaluateTypes (o as IExpression, ctxt);
 			}
 
 			if (ret == null) {
