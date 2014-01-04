@@ -230,6 +230,7 @@
     <Compile Include="Completion\Providers\CompletionProviderVisitor.cs" />
     <Compile Include="Parser\IncrementalParsing.cs" />
     <Compile Include="Parser\DDocParser.cs" />
+    <Compile Include="Refactoring\ImportStmtCreation.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="readme.txt" />

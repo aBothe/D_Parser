@@ -91,39 +91,6 @@ namespace D_Parser.Parser
 		}
 
 		#region External interface
-		/// <summary>
-		/// Finds the last import statement and returns its end location (the position after the semicolon).
-		/// If no import but module statement was found, the end location of this module statement will be returned.
-		/// </summary>
-		public static CodeLocation FindLastImportStatementEndLocation(DModule m, string moduleCode = null)
-		{
-			IStatement lastStmt = null;
-
-			foreach (var s in m.StaticStatements)
-				if (s is ImportStatement)
-					lastStmt = s;
-				else if (lastStmt != null)
-					break;
-
-			if (lastStmt != null)
-				return lastStmt.EndLocation;
-
-			if (m.OptionalModuleStatement != null)
-				return m.OptionalModuleStatement.EndLocation;
-
-			if (moduleCode != null)
-				using(var sr = new StringReader(moduleCode))
-				using (var lx = new Lexer(sr) { OnlyEnlistDDocComments = false })
-				{
-					lx.NextToken();
-
-					if (lx.Comments.Count != 0)
-						return lx.Comments[lx.Comments.Count - 1].EndPosition;
-				}
-
-			return new CodeLocation(1, 1);
-		}
-
 		public static BlockStatement ParseBlockStatement(string Code, INode ParentNode = null)
 		{
 			return ParseBlockStatement(Code, CodeLocation.Empty, ParentNode);
