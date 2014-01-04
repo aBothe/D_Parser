@@ -70,7 +70,7 @@ namespace D_Parser.Refactoring
 		public static void GenerateImportStatementForNode(INode n, IEditorData ed, Action<CodeLocation, string> ci)
 		{
 			var loc = new CodeLocation(0, FindLastImportStatementEndLocation(ed.SyntaxTree, ed.ModuleCode).Line+1);
-			ci(loc, Environment.NewLine + "import " + (n.NodeRoot as DModule).ModuleName + ";" + Environment.NewLine);
+			ci(loc, "import " + (n.NodeRoot as DModule).ModuleName + ";" + Environment.NewLine);
 		}
 	}
 }
