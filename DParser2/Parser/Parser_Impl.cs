@@ -441,6 +441,8 @@ namespace D_Parser.Parser
 						c = new DebugCondition (DTokens.IncompleteId);
 						parent.Add (new DVariable{ Attributes = new List<DAttribute>{ c } });
 					}
+
+					Expect (CloseParenthesis);
 				}
 
 				if(c == null)
