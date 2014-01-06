@@ -588,11 +588,6 @@ namespace D_Parser.Resolver.TypeResolution
 				//var templateParameterType = TemplateInstanceHandler.ResolveTypeSpecialization(tmp, ctxt);
 				ret = new TemplateParameterSymbol((m as TemplateParameter.Node).TemplateParameter, null, typeBase as ISyntaxRegion);
 			}
-			else if(m is NamedTemplateMixinNode)
-			{
-				var tmxNode = m as NamedTemplateMixinNode;
-				ret = new MemberSymbol(tmxNode, canResolveBase ? ResolveSingle(tmxNode.Type, ctxt) : null, typeBase as ISyntaxRegion);
-			}
 
 			if (popAfterwards)
 				ctxt.Pop();

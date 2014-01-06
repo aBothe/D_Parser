@@ -385,7 +385,7 @@ namespace D_Parser.Dom
 		}
 	}
 	
-	public class NamedTemplateMixinNode : DNode
+	public class NamedTemplateMixinNode : DVariable
 	{
 		public TemplateMixin _mixin;
 		public TemplateMixin Mixin

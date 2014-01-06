@@ -864,6 +864,8 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			if (n is DMethod)
 				return n.NameHash != 0 && ((vis & MemberFilter.Methods) == MemberFilter.Methods);
 
+			else if (n is NamedTemplateMixinNode)
+				return (vis & (MemberFilter.Variables | MemberFilter.Types)) != 0;
 			else if (n is DVariable)
 			{
 				var d = n as DVariable;
@@ -907,8 +909,6 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					(vis & MemberFilter.Variables) != 0 :
 					(vis & MemberFilter.Enums) != 0;
 			}
-			else if (n is NamedTemplateMixinNode)
-				return (vis & (MemberFilter.Variables | MemberFilter.Types)) == (MemberFilter.Variables | MemberFilter.Types);
 
 			return false;
 		}
