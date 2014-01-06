@@ -156,7 +156,7 @@ namespace D_Parser.Parser
 			int startDeclIndex;
 			for(startDeclIndex = bn.Children.Count-1; startDeclIndex >= 0; startDeclIndex--) {
 				var n = bn.Children [startDeclIndex];
-				if (n.EndLocation.Line > 0 && n.EndLocation < caretLocation) {
+				if (n.EndLocation.Line > 0 && n.EndLocation.Line < caretLocation.Line) {
 					startLoc = --startDeclIndex == -1 ? 
 						bn.BlockStartLocation : bn.Children [startDeclIndex].EndLocation;
 					break;
