@@ -91,7 +91,7 @@ namespace D_Parser.Dom
 		
 		public virtual void Visit(NamedTemplateMixinNode n)
 		{
-			VisitDNode(n);
+			//VisitDNode(n);
 			
 			if(n.Mixin != null)
 				n.Mixin.Accept(this);
