@@ -334,6 +334,17 @@ namespace D_Parser.Completion
 			}
 			base.Visit (s);
 		}
+
+		public override void Visit (TemplateMixin s)
+		{
+			if (s.MixinId == DTokens.IncompleteId) {
+				scopedStatement = s;
+				explicitlyNoCompletion = true;
+				halt = true;
+			}
+			else
+				base.Visit (s);
+		}
 		#endregion
 
 		#region Expressions

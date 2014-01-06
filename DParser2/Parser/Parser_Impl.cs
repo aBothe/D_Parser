@@ -4805,12 +4805,12 @@ namespace D_Parser.Parser
 			}
 
 			// MixinIdentifier
-			if (laKind == Identifier)
-			{
-				Step();
+			if (laKind == Identifier) {
+				Step ();
 				r.IdLocation = t.Location;
 				r.MixinId = t.Value;
-			}
+			} else if (r.Qualifier != null && IsEOF)
+				r.MixinId = DTokens.IncompleteId;
 
 			Expect(Semicolon);
 			r.EndLocation = t.EndLocation;

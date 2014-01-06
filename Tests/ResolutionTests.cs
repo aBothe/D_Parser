@@ -2643,6 +2643,38 @@ void CFoo() {}");
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That((t as MemberSymbol).Definition, Is.TypeOf(typeof(DMethod)));
 		}
+
+		[Test]
+		public void StdSignals()
+		{
+			var ctxt = CreateCtxt ("A", @"module A;
+mixin template Signal(T1 ...)
+{
+	final int emit( T1 i ) {}
+}
+
+class D
+{
+	mixin Signal!int sig;
+	mixin Signal!int;
+}
+
+D d;
+");
+
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression ("d.emit(123)");
+			t = Evaluation.EvaluateType (x, ctxt);
+
+			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
+
+			x = DParser.ParseExpression ("d.sig.emit(123)");
+			t = Evaluation.EvaluateType (x, ctxt);
+
+			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
+		}
 		#endregion
 	}
 }
