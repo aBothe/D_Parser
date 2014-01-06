@@ -22,8 +22,7 @@ namespace TestTool
 			var ast = DParser.ParseString(code, true);
 			sw2.Stop();*/
 			//(new ResolutionTests ()).EmptyTypeTuple ();
-			(new UFCSTests()).BasicResolution();
-			return;
+			(new ParseTests()).TestSyntaxError4();			return;
 
 			// Indent testing
 			/*var code = @"
@@ -80,7 +79,7 @@ namespace TestTool
 
 			Console.WriteLine();
 			Console.Write("Press any key to continue . . . ");
-			//Console.ReadKey(true);
+			Console.ReadKey(true);
 		}
 		
 		static void formattingTests()
