@@ -61,11 +61,11 @@ namespace D_Parser.Completion.Providers
 			if(rr.DeclarationOrExpressionBase is ITypeDeclaration)
 				isVariableInstance |= (rr.DeclarationOrExpressionBase as ITypeDeclaration).ExpressesVariableAccess;
 
-			if (rr is ArrayAccessSymbol || rr is DelegateCallSymbol)
-			{
+			if (rr is ArrayAccessSymbol || rr is DelegateCallSymbol) {
 				isVariableInstance = true;
 				rr = (rr as DerivedDataType).Base;
-			}
+			} else if (rr is AssocArrayType)
+				isVariableInstance = true;
 
 			if (rr is TemplateParameterSymbol) {
 				var tps = rr as TemplateParameterSymbol;
