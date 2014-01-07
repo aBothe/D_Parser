@@ -1702,11 +1702,24 @@ namespace D_Parser.Parser
 			#endregion
 
 			#region ArrayLiteral | AssocArrayLiteral
-			if (laKind == OpenSquareBracket)
+			if (laKind == OpenSquareBracket && IsArrayInitializer)
 				return ArrayLiteral(Scope, false);
 			#endregion
 
 			return AssignExpression(Scope);
+		}
+
+		/// <summary>
+		/// Scan ahead to see if it is an array initializer or an expression.
+		/// If it ends with a ';' ',' or '}', it is an array initializer.
+		/// </summary>
+		bool IsArrayInitializer
+		{
+			get{
+				OverPeekBrackets (DTokens.OpenSquareBracket, laKind == OpenSquareBracket);
+				var k = Lexer.CurrentPeekToken.Kind;
+				return k == Comma || k == Semicolon || k == CloseCurlyBrace;
+			}
 		}
 
 		/// <summary>
