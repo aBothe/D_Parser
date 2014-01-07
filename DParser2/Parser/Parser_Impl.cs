@@ -3651,6 +3651,9 @@ namespace D_Parser.Parser
 					Step();
 					s.Identifier = t.Value;
 				}
+				else if(IsEOF)
+					s.IdentifierHash = DTokens.IncompleteIdHash;
+
 				Expect(Semicolon);
 				s.EndLocation = t.EndLocation;
 
@@ -3667,6 +3670,9 @@ namespace D_Parser.Parser
 					Step();
 					s.Identifier = t.Value;
 				}
+				else if(IsEOF)
+					s.IdentifierHash = DTokens.IncompleteIdHash;
+
 				Expect(Semicolon);
 
 				s.EndLocation = t.EndLocation;
@@ -3716,6 +3722,8 @@ namespace D_Parser.Parser
 					if (laKind != (Semicolon))
 						s.CaseExpression = Expression(Scope);
 				}
+				else if(IsEOF)
+					s.LabelIdentifierHash = DTokens.IncompleteIdHash;
 
 				Expect(Semicolon);
 				s.EndLocation = t.EndLocation;

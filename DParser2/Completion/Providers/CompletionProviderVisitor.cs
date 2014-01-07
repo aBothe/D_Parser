@@ -345,6 +345,46 @@ namespace D_Parser.Completion
 			else
 				base.Visit (s);
 		}
+
+		public override void Visit (BreakStatement s)
+		{
+			if(s.IdentifierHash == DTokens.IncompleteIdHash) {
+
+				prv = new GotoLabelCompletionProvider (s, cdgen);
+
+				scopedStatement = s;
+				halt = true;
+			}
+			else
+				base.Visit (s);
+		}
+
+		public override void Visit (ContinueStatement s)
+		{
+			if(s.IdentifierHash == DTokens.IncompleteIdHash) {
+
+				prv = new GotoLabelCompletionProvider (s, cdgen);
+
+				scopedStatement = s;
+				halt = true;
+			}
+			else
+				base.Visit (s);
+		}
+
+		public override void Visit (GotoStatement s)
+		{
+			if(s.StmtType == GotoStatement.GotoStmtType.Identifier &&
+				s.LabelIdentifierHash == DTokens.IncompleteIdHash) {
+
+				prv = new GotoLabelCompletionProvider (s, cdgen);
+
+				scopedStatement = s;
+				halt = true;
+			}
+			else
+				base.Visit (s);
+		}
 		#endregion
 
 		#region Expressions

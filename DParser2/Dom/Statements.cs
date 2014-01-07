@@ -204,7 +204,11 @@ namespace D_Parser.Dom.Statements
 
 	public class LabeledStatement : AbstractStatement
 	{
-		public string Identifier;
+		public int IdentifierHash;
+		public string Identifier {
+			get{ return Strings.TryGet (IdentifierHash); } 
+			set{ Strings.Add (value); IdentifierHash = value != null ? value.GetHashCode () : 0; }
+		}
 
 		public override string ToCode()
 		{
@@ -633,7 +637,11 @@ namespace D_Parser.Dom.Statements
 
 	public class ContinueStatement : AbstractStatement, IExpressionContainingStatement
 	{
-		public string Identifier;
+		public int IdentifierHash;
+		public string Identifier {
+			get{ return Strings.TryGet (IdentifierHash); } 
+			set{ Strings.Add (value); IdentifierHash = value != null ? value.GetHashCode () : 0; }
+		}
 
 		public override string ToCode()
 		{
@@ -642,7 +650,7 @@ namespace D_Parser.Dom.Statements
 
 		public IExpression[] SubExpressions
 		{
-			get { return string.IsNullOrEmpty(Identifier)?null:new[]{new IdentifierExpression(Identifier)}; }
+			get { return IdentifierHash == 0 ? null : new[]{new IdentifierExpression(Identifier)}; }
 		}
 
 		public override void Accept(StatementVisitor vis)
@@ -658,7 +666,11 @@ namespace D_Parser.Dom.Statements
 
 	public class BreakStatement : AbstractStatement,IExpressionContainingStatement
 	{
-		public string Identifier;
+		public int IdentifierHash;
+		public string Identifier {
+			get{ return Strings.TryGet (IdentifierHash); } 
+			set{ Strings.Add (value); IdentifierHash = value != null ? value.GetHashCode () : 0; }
+		}
 
 		public override string ToCode()
 		{
@@ -708,14 +720,18 @@ namespace D_Parser.Dom.Statements
 
 	public class GotoStatement : AbstractStatement, IExpressionContainingStatement
 	{
-		public enum GotoStmtType
+		public enum GotoStmtType : byte
 		{
 			Identifier=DTokens.Identifier,
 			Case=DTokens.Case,
 			Default=DTokens.Default
 		}
 
-		public string LabelIdentifier;
+		public int LabelIdentifierHash;
+		public string LabelIdentifier {
+			get{ return Strings.TryGet (LabelIdentifierHash); } 
+			set{ Strings.Add (value); LabelIdentifierHash = value != null ? value.GetHashCode () : 0; }
+		}
 		public IExpression CaseExpression;
 		public GotoStmtType StmtType = GotoStmtType.Identifier;
 
