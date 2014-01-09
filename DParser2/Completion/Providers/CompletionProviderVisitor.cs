@@ -277,6 +277,26 @@ namespace D_Parser.Completion
 		#endregion
 
 		#region Statements
+		public override void VisitSubStatements(StatementContainingStatement stmtContainer)
+		{
+			var ss = stmtContainer.SubStatements;
+			if (ss != null)
+				foreach (IStatement substatement in ss)
+					if (substatement != null)
+					{
+						substatement.Accept(this);
+						if (halt)
+							return;
+					}
+		}
+
+		public override void VisitChildren(StatementContainingStatement stmtContainer)
+		{
+			VisitSubStatements(stmtContainer);
+			if(!halt)
+				VisitAbstractStmt(stmtContainer);
+		}
+
 		public override void VisitAbstractStmt (AbstractStatement stmt)
 		{
 			scopedStatement = stmt;
@@ -317,6 +337,15 @@ namespace D_Parser.Completion
 					halt = true;
 				} else
 					base.VisitImport (i);
+			}
+		}
+
+		public override void Visit(ForStatement s)
+		{
+			if (!halt)
+			{
+				scopedStatement = s;
+				base.Visit(s);
 			}
 		}
 
