@@ -4042,7 +4042,7 @@ namespace D_Parser.Parser
 				dbs.Initialize = Statement(false, Scope: Scope, Parent: dbs); // Against the spec, blocks aren't allowed here!
 
 			// Test
-			if (laKind != (Semicolon) && !IsEOF)
+			if (laKind != Semicolon)
 				dbs.Test = Expression(Scope);
 
 			if(Expect(Semicolon))
