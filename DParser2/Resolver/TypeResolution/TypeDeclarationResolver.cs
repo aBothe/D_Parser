@@ -79,7 +79,18 @@ namespace D_Parser.Resolver.TypeResolution
 			if (ModuleScope)
 				ctxt.Pop();
 
-			return /*res.Count == 0 ? null :*/ res.ToArray();
+			if (res.Count != 0)
+				return /*res.Count == 0 ? null :*/ res.ToArray();
+
+			// Support some very basic static typing if no phobos is given atm
+			if (idHash == Evaluation.stringTypeHash)
+				res.Add(Evaluation.GetStringType (ctxt));
+			else if(idHash == Evaluation.wstringTypeHash)
+				res.Add(Evaluation.GetStringType (ctxt, LiteralSubformat.Utf16));
+			else if(idHash == Evaluation.dstringTypeHash)
+				res.Add(Evaluation.GetStringType (ctxt, LiteralSubformat.Utf32));
+
+			return res.ToArray();
 		}
 
 		/// <summary>

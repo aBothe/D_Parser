@@ -11,6 +11,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public partial class Evaluation
 	{
+		public static int stringTypeHash = "string".GetHashCode();
+		public static int wstringTypeHash = "wstring".GetHashCode();
+		public static int dstringTypeHash = "dstring".GetHashCode();
+
 		public static ArrayType GetStringType(ResolutionContext ctxt, LiteralSubformat fmt = LiteralSubformat.Utf8)
 		{
 			ArrayType _t = null;
