@@ -9,7 +9,7 @@ namespace D_Parser.Misc
 		public bool LimitResolutionErrors = System.Diagnostics.Debugger.IsAttached;
 		public bool DumpResolutionErrors = System.Diagnostics.Debugger.IsAttached;
 
-		public bool EnableSuggestionMode = false;
+		public bool EnableSuggestionMode = true;
 
 		public bool ShowUFCSItems = true;
 		/// <summary>
