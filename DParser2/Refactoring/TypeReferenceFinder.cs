@@ -165,7 +165,7 @@ namespace D_Parser.Refactoring
 			if(!Matches.TryGetValue(n.NameLocation.Line, out l))
 				Matches[n.NameLocation.Line] = l = new Dictionary<ISyntaxRegion,byte>();
 
-			l.Add(n, type);
+			l[n] = type;
 		}
 
 		void AddResult(ISyntaxRegion sr, byte type)
@@ -174,7 +174,7 @@ namespace D_Parser.Refactoring
 			if(!Matches.TryGetValue(sr.Location.Line, out l))
 				Matches[sr.Location.Line] = l = new Dictionary<ISyntaxRegion,byte>();
 
-			l.Add(sr, type);
+			l[sr] = type;
 		}
 
 		/// <summary>
