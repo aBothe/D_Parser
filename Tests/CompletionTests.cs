@@ -85,11 +85,14 @@ new K().
 }";
 			ed.CaretOffset = DocumentHelper.LocationToOffset(ed.ModuleCode, ed.CaretLocation);
 
-			var foo = ed.SyntaxTree["foo"].First() as DVariable;
-			var K = (DClassLike)ed.SyntaxTree["K"].First();
-			var member = (DVariable)K["member"].First();
+			var gen = TestCompletionListContents(ed, null, null);
 
-			TestCompletionListContents(ed, new[] { member }, new INode[] { foo, K, ed.SyntaxTree });
+			var foo = ed.SyntaxTree["foo"].First() as DVariable;
+			Assert.That (gen.addedItems, Has.No.Member (foo));
+			var K = (DClassLike)ed.SyntaxTree["K"].First();
+			Assert.That (gen.addedItems, Has.No.Member (K));
+			var member = (DVariable)K["member"].First();
+			Assert.That (gen.addedItems, Has.Member (member));
 		}
 
 		[Test]
@@ -439,12 +442,13 @@ void main() { Class. }";
 			ed.CaretOffset = DocumentHelper.LocationToOffset (focusedModuleCode, caretLine, caretPos);
 		}
 
-		public static void TestCompletionListContents(IEditorData ed, INode[] itemWhiteList, INode[] itemBlackList = null, char trigger = '\0')
+		public static TestCompletionDataGen TestCompletionListContents(IEditorData ed, INode[] itemWhiteList, INode[] itemBlackList = null, char trigger = '\0')
 		{
 			var gen = new TestCompletionDataGen (itemWhiteList, itemBlackList);
 			Assert.That (CodeCompletion.GenerateCompletionData (ed, gen, trigger), Is.True);
 
 			Assert.That (gen.HasRemainingItems, Is.False, "Some items were not enlisted!");
+			return gen;
 		}
 		#endregion
 	}

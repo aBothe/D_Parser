@@ -133,7 +133,7 @@ namespace D_Parser.Completion
 					return null;
 
 				(currentScope as DBlockNode).UpdateBlockPartly (editor, out isInsideNonCodeSegment);
-				currentStatement = DResolver.GetStatementAt (currentScope as DBlockNode, editor.CaretLocation);
+				currentScope = DResolver.SearchBlockAt (currentScope, editor.CaretLocation, out currentStatement);
 			}
 			return currentScope;
 		}

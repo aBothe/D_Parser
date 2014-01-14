@@ -97,11 +97,9 @@ namespace D_Parser.Parser
 			}
 
 			// Remove old statements from startLoc until caretLocation
-			for (int i = startStmtIndex + 1; i < finalStmtsList.Count; i++) {
-				if (finalStmtsList [i].Location >= caretLocation)
-					break;
-				finalStmtsList.RemoveAt (i--);
-			}
+			int i = startStmtIndex + 1;
+			while (i < finalStmtsList.Count && finalStmtsList [i].Location < caretLocation)
+				finalStmtsList.RemoveAt (i);
 
 			// Insert new statements
 			if (tempBlockStmt.EndLocation > bs.EndLocation)
@@ -215,7 +213,16 @@ namespace D_Parser.Parser
 						}
 					}
 
-					tempBlock.EndLocation = new CodeLocation(p.la.Column+1,p.la.Line);
+					// Update the actual tempBlock as well as methods/other blocks' end location that just appeared while parsing the code incrementally,
+					// so they are transparent to SearchBlockAt
+					var block = tempBlock as IBlockNode;
+					while(block != null && 
+						(block.EndLocation.Line < 1 || block.EndLocation == p.la.Location)){
+						block.EndLocation = new CodeLocation(p.la.Column+1,p.la.Line);
+						if(block.Children.Count == 0)
+							break;
+						block = block.Children[block.Count-1] as IBlockNode;
+					}
 
 					if(isInsideNonCodeSegment = p.Lexer.endedWhileBeingInNonCodeSequence)
 						return;
@@ -235,19 +242,19 @@ namespace D_Parser.Parser
 					break;
 			}
 
-			for (int i = startDeclIndex + 1; i < bn.Count; i++) {
-				var d = bn.Children [i];
-				if (d.Location >= caretLocation)
-					break;
-				bn.Children.Remove (d);
-			}
+			INode ch_;
+			int i = startDeclIndex + 1;
+			while (i < bn.Count && (ch_ = bn.Children [i]).Location < caretLocation)
+				bn.Children.Remove (ch_);
 
 			// Insert new static stmts, declarations and meta blocks(?) into bn
 			if (tempBlock.EndLocation > bn.EndLocation)
 				bn.EndLocation = tempBlock.EndLocation;
 			foreach (var n in tempBlock.Children) {
-				if(n != null)
+				if (n != null) {
+					n.Parent = bn;
 					bn.Children.Insert (n, ++startDeclIndex);
+				}
 			}
 
 			bn.StaticStatements.InsertRange(startStatStmtIndex+1, tempBlock.StaticStatements);
