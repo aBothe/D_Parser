@@ -5119,10 +5119,29 @@ namespace D_Parser.Parser
 						Location = t.Location,
 						EndLocation = t.EndLocation
 					}));
-				} else if (laKind == Literal || laKind == Identifier ||
+				} else if (laKind == Literal ||
 				           laKind == True || laKind == False || laKind == Null ||
 				           laKind == __FILE__ || laKind == __LINE__ || IsEOF)
 					args.Add (PrimaryExpression (Scope));
+				else if(laKind == Identifier) {
+					Lexer.PushLookAheadBackup();
+
+					bool wp = AllowWeakTypeParsing;
+					AllowWeakTypeParsing = true;
+
+					var typeArg = Type();
+
+					AllowWeakTypeParsing = wp;
+
+					if (typeArg != null){
+						Lexer.PopLookAheadBackup();
+						args.Add(new TypeDeclarationExpression(typeArg));
+					}else
+					{
+						Lexer.RestoreLookAheadBackup();
+						args.Add(AssignExpression(Scope));
+					}
+				}
 				else {
 					SynErr (laKind, "Illegal token found on template instance expression argument");
 					Step ();
