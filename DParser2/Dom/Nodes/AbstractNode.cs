@@ -37,8 +37,8 @@ namespace D_Parser.Dom
 
 		public string Name
 		{
-			get { return Strings.TryGet(nameHash); }
-			set { nameHash = value != null ? value.GetHashCode() : 0; Strings.Add (value); }
+			get { return Strings.TryGet(NameHash); }
+			set { NameHash = value != null ? value.GetHashCode() : 0; Strings.Add (value); }
 		}
 
 		public int NameHash {
@@ -52,7 +52,7 @@ namespace D_Parser.Dom
 			set;
 		}
 
-		public bool IsAnonymous { get { return nameHash == 0; } }
+		public bool IsAnonymous { get { return NameHash == 0; } }
 
 		public INode Parent
 		{
