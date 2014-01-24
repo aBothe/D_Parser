@@ -31,7 +31,7 @@ namespace D_Parser.Completion
 		public readonly Dictionary<IExpression, AbstractType> Arguments = new Dictionary<IExpression, AbstractType>();
 
 		/// <summary>
-		///	Identifies the currently called method overload. Is an index related to <see cref="ResolvedTypesOrMethods"/>
+		///	Identifies the currently called method overload. Is an index related to <see cref="ArgumentsResolutionResult.ResolvedTypesOrMethods"/>
 		/// </summary>
 		public int CurrentlyCalledMethod;
 		public IExpression CurrentlyTypedArgument

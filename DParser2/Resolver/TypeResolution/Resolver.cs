@@ -11,7 +11,7 @@ namespace D_Parser.Resolver.TypeResolution
 	/// <summary>
 	/// Generic class for resolve module relations and/or declarations
 	/// </summary>
-	public partial class DResolver
+	public class DResolver
 	{
 		class ScopedObjectVisitor : DefaultDepthFirstVisitor
 		{
@@ -74,7 +74,7 @@ namespace D_Parser.Resolver.TypeResolution
 		}
 
 		/// <summary>Used for code completion/symbol resolution.</summary>
-		/// <param name="ctxt">Can be null</param>
+		/// <param name="editor">Can be null</param>
 		public static ISyntaxRegion GetScopedCodeObject(IEditorData editor)
 		{
 			IStatement stmt;
@@ -535,7 +535,7 @@ namespace D_Parser.Resolver.TypeResolution
 		public static IStatement GetStatementAt(DBlockNode db, CodeLocation Where)
 		{
 			if (db.StaticStatements.Count != 0)
-				return SearchRegionAt<IStatement> ((i) => db.StaticStatements [i], db.StaticStatements.Count, Where);
+				return SearchRegionAt<IStatement> (i => db.StaticStatements [i], db.StaticStatements.Count, Where);
 			return null;
 		}
 
@@ -641,7 +641,6 @@ namespace D_Parser.Resolver.TypeResolution
 		/// <summary>
 		/// Removes all kinds of members from the given results.
 		/// </summary>
-		/// <param name="resolvedMember">True if a member (not an alias!) had to be bypassed</param>
 		public static AbstractType StripMemberSymbols(AbstractType r)
 		{
 			r = StripAliasSymbol(r);

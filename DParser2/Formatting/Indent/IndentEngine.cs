@@ -970,7 +970,7 @@ namespace D_Parser.Formatting.Indent
 		}
 		#endregion
 		
-		static string[] preProcessorIndents = new string[] {
+		static string[] preProcessorIndents = {
 			"line"
 		};
 

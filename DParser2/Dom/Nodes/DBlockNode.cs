@@ -36,35 +36,22 @@ namespace D_Parser.Dom
 			var l = new List<IMetaDeclaration>();
 
 			IMetaDeclaration lastSr = null;
-			for (int i=0; i < MetaBlocks.Count; i++)
-			{
-				var mb = MetaBlocks[i];
-
-				if (mb is AttributeMetaDeclarationSection)
-				{
-					if (mindAttributeSections && Where >= mb.EndLocation)
-					{
+			foreach (var mb in MetaBlocks) {
+				if (mb is AttributeMetaDeclarationSection) {
+					if (mindAttributeSections && Where >= mb.EndLocation) {
 						// Don't let multiple section attributes like 'private:' nest within each other
 						if (lastSr is AttributeMetaDeclarationSection)
-							l.Remove(lastSr);
-						l.Add(lastSr = mb);
+							l.Remove (lastSr);
+						l.Add (lastSr = mb);
 					}
-
 					continue;
 				}
-
-				if (lastSr != null && 
-					!(mindAttributeSections && lastSr is AttributeMetaDeclarationSection) && 
-					mb.Location < lastSr.Location &&
-					mb.EndLocation > lastSr.EndLocation)
+				if (lastSr != null && !(mindAttributeSections && lastSr is AttributeMetaDeclarationSection) && mb.Location < lastSr.Location && mb.EndLocation > lastSr.EndLocation)
 					continue;
-
 				// Check if 1) block is inside last inner-most meta block
-				if (((takeBlockStartLocations && mb is IMetaDeclarationBlock) ? ((IMetaDeclarationBlock)mb).BlockStartLocation : mb.Location) <= Where && 
-					mb.EndLocation >= Where)
-				{
+				if (((takeBlockStartLocations && mb is IMetaDeclarationBlock) ? ((IMetaDeclarationBlock)mb).BlockStartLocation : mb.Location) <= Where && mb.EndLocation >= Where) {
 					// and 2) if Where is completely inside the currently handled block.
-					l.Add(lastSr = mb);
+					l.Add (lastSr = mb);
 				}
 			}
 

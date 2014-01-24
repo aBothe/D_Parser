@@ -82,7 +82,7 @@ namespace D_Parser.Resolver.ExpressionSemantics.Caching
 		
 		#region Basic I/O
 		static ExpressionCache _inst;
-		public ExpressionCache Instance
+		public static ExpressionCache Instance
 		{
 			get{
 				return _inst ?? (_inst = new ExpressionCache());

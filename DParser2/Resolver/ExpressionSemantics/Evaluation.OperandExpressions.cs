@@ -89,13 +89,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					switch(x.OperatorToken)
 					{
 						case DTokens.GreaterThan: // greater, >
-							relationIsTrue = a.Value > b.Value && (cmpIm ? a.ImaginaryPart > b.ImaginaryPart : true);
+							relationIsTrue = a.Value > b.Value && (!cmpIm || a.ImaginaryPart > b.ImaginaryPart);
 							break;
 						case DTokens.GreaterEqual: // greater or equal, >=
 							relationIsTrue = a.Value >= b.Value && a.ImaginaryPart >= b.ImaginaryPart;
 							break;
 						case DTokens.LessThan: // less, <
-							relationIsTrue = a.Value < b.Value && (cmpIm ? a.ImaginaryPart < b.ImaginaryPart : true);
+							relationIsTrue = a.Value < b.Value && (!cmpIm || a.ImaginaryPart < b.ImaginaryPart);
 							break;
 						case DTokens.LessEqual: // less or equal, <=
 							relationIsTrue = a.Value <= b.Value && a.ImaginaryPart <= b.ImaginaryPart;
@@ -104,21 +104,19 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							relationIsTrue = unordered;
 							break;
 						case DTokens.LessOrGreater: // less or greater, <>
-							relationIsTrue = (a.Value < b.Value || a.Value > b.Value) && (cmpIm ? 
-								(a.ImaginaryPart < b.ImaginaryPart || a.ImaginaryPart > b.ImaginaryPart) : true);
+							relationIsTrue = (a.Value < b.Value || a.Value > b.Value) && (!cmpIm || (a.ImaginaryPart < b.ImaginaryPart || a.ImaginaryPart > b.ImaginaryPart));
 							break;
 						case DTokens.LessEqualOrGreater: // less, equal, or greater, <>=
-							relationIsTrue = (a.Value < b.Value || a.Value >= b.Value) && (cmpIm ?
-								(a.ImaginaryPart < b.ImaginaryPart || a.ImaginaryPart >= b.ImaginaryPart) : true);
+							relationIsTrue = (a.Value < b.Value || a.Value >= b.Value) && (!cmpIm || (a.ImaginaryPart < b.ImaginaryPart || a.ImaginaryPart >= b.ImaginaryPart));
 							break;
 						case DTokens.UnorderedOrGreater: // unordered or greater, !<=
-							relationIsTrue = unordered || (a.Value > b.Value && (cmpIm ? a.ImaginaryPart > b.ImaginaryPart : true));
+							relationIsTrue = unordered || (a.Value > b.Value && (!cmpIm || a.ImaginaryPart > b.ImaginaryPart));
 							break;
 						case DTokens.UnorderedGreaterOrEqual: // unordered, greater, or equal, !<
 							relationIsTrue = unordered || (a.Value >= b.Value && a.ImaginaryPart >= b.ImaginaryPart);
 							break;
 						case DTokens.UnorderedOrLess: // unordered or less, !>=
-							relationIsTrue = unordered || (a.Value < b.Value && (cmpIm ? a.ImaginaryPart < b.ImaginaryPart : true));
+							relationIsTrue = unordered || (a.Value < b.Value && (!cmpIm || a.ImaginaryPart < b.ImaginaryPart));
 							break;
 						case DTokens.UnorderedLessOrEqual: // unordered, less, or equal, !>
 							relationIsTrue = unordered || (a.Value <= b.Value && a.ImaginaryPart <= b.ImaginaryPart);

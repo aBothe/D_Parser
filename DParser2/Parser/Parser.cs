@@ -332,7 +332,7 @@ namespace D_Parser.Parser
 			Lexer.NextToken();
 		}
 
-        [DebuggerStepThrough()]
+        [DebuggerStepThrough]
         public DModule Parse()
         {
             return Parse(false);
@@ -341,7 +341,6 @@ namespace D_Parser.Parser
         /// <summary>
         /// Initializes and proceed parse procedure
         /// </summary>
-        /// <param name="imports">List of imports in the module</param>
         /// <param name="ParseStructureOnly">If true, all statements and non-declarations are ignored - useful for analysing libraries</param>
         /// <returns>Completely parsed module structure</returns>
         public DModule Parse(bool ParseStructureOnly, bool KeepComments = true)

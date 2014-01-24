@@ -1,7 +1,7 @@
 ﻿using System;
 namespace D_Parser.Resolver.ExpressionSemantics
 {
-	public class MathOperationEvaluation
+	public static class MathOperationEvaluation
 	{
 		public enum MathOp
 		{
