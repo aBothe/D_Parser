@@ -216,7 +216,7 @@ namespace D_Parser.Dom
 	{
 		public readonly ImportStatement ImportStatement;
 
-		public ImportSymbolNode(ImportStatement impStmt,IBlockNode parentNode)
+		protected ImportSymbolNode(ImportStatement impStmt,IBlockNode parentNode)
 		{
 			IsAlias = true;
 			this.ImportStatement = impStmt;

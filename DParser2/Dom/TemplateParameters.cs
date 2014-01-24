@@ -33,12 +33,12 @@ namespace D_Parser.Dom
 			}
 		}
 
-		public TemplateParameter(string name, CodeLocation nameLoc, DNode par) : this(name != null ? name.GetHashCode() : 0, nameLoc, par)
+		protected TemplateParameter(string name, CodeLocation nameLoc, DNode par) : this(name != null ? name.GetHashCode() : 0, nameLoc, par)
 		{
 			Strings.Add (name);
 		}
 
-		public TemplateParameter(int nameHash, CodeLocation nameLoc, DNode par)
+		protected TemplateParameter(int nameHash, CodeLocation nameLoc, DNode par)
 		{
 			NameHash = nameHash;
 			NameLocation = nameLoc;
@@ -62,7 +62,7 @@ namespace D_Parser.Dom
 			{
 				TemplateParameter = param;
 
-				nameHash = param.NameHash;
+				NameHash = param.NameHash;
 				NameLocation = param.NameLocation;
 				_Parent = param.parent;
 

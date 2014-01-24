@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -463,12 +463,17 @@ namespace D_Parser.Misc.Mangling
 			var par = new DVariable{ Attributes = new List<DAttribute>() };
 			if(c == 'J' || c == 'K' ||c == 'L')
 			{
-				if(c == 'J')
-					par.Attributes.Add(new Modifier(DTokens.Out));
-				else if(c == 'K')
-					par.Attributes.Add(new Modifier(DTokens.Ref));
-				else if(c == 'L')
-					par.Attributes.Add(new Modifier(DTokens.Lazy));
+				switch (c) {
+				case 'J':
+					par.Attributes.Add (new Modifier (DTokens.Out));
+					break;
+				case 'K':
+					par.Attributes.Add (new Modifier (DTokens.Ref));
+					break;
+				case 'L':
+					par.Attributes.Add (new Modifier (DTokens.Lazy));
+					break;
+				}
 				c = (char)r.Read();
 			}
 			

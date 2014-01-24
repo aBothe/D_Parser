@@ -6,7 +6,6 @@ using D_Parser.Dom.Statements;
 using D_Parser.Misc;
 using System.Diagnostics;
 using D_Parser.Resolver.TypeResolution;
-using D_Parser.Parser;
 
 namespace D_Parser.Resolver
 {

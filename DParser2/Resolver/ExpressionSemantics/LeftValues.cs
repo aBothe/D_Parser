@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using D_Parser.Dom.Expressions;
+﻿using System.Collections.Generic;
 using D_Parser.Dom;
 
 namespace D_Parser.Resolver.ExpressionSemantics
@@ -12,7 +8,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	/// </summary>
 	public abstract class LValue : ExpressionValue
 	{
-		public LValue(AbstractType nodeType) : base(nodeType) { }
+		protected LValue(AbstractType nodeType) : base(nodeType) { }
 
 		public abstract void Set(AbstractSymbolValueProvider vp, ISymbolValue value);
 	}

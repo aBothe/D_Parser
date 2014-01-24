@@ -5,7 +5,6 @@ using System.Linq;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
-using D_Parser.Resolver.Templates;
 using D_Parser.Resolver.ExpressionSemantics;
 using System.Text;
 using D_Parser.Resolver.TypeResolution;
@@ -50,8 +49,8 @@ namespace D_Parser.Resolver
 		#endregion
 
 		#region Constructor/Init
-		public AbstractType() { }
-		public AbstractType(ISyntaxRegion DeclarationOrExpressionBase)
+		protected AbstractType() { }
+		protected AbstractType(ISyntaxRegion DeclarationOrExpressionBase)
 		{
 			this.DeclarationOrExpressionBase = DeclarationOrExpressionBase;
 		}
@@ -120,7 +119,7 @@ namespace D_Parser.Resolver
 	{
 		public readonly AbstractType Base;
 
-		public DerivedDataType(AbstractType Base, ISyntaxRegion td) : base(td)
+		protected DerivedDataType(AbstractType Base, ISyntaxRegion td) : base(td)
 		{
 			this.Base = Base;
 		}
@@ -321,7 +320,7 @@ namespace D_Parser.Resolver
 		public readonly int NameHash;
 		public string Name {get{return Strings.TryGet (NameHash);}}
 
-		public DSymbol(DNode Node, AbstractType BaseType, ReadOnlyCollection<TemplateParameterSymbol> deducedTypes, ISyntaxRegion td)
+		protected DSymbol(DNode Node, AbstractType BaseType, ReadOnlyCollection<TemplateParameterSymbol> deducedTypes, ISyntaxRegion td)
 			: base(BaseType, td)
 		{
 			this.DeducedTypes = deducedTypes;
@@ -333,7 +332,7 @@ namespace D_Parser.Resolver
 			NameHash = Node.NameHash;
 		}
 
-		public DSymbol(DNode Node, AbstractType BaseType, IEnumerable<TemplateParameterSymbol> deducedTypes, ISyntaxRegion td)
+		protected DSymbol(DNode Node, AbstractType BaseType, IEnumerable<TemplateParameterSymbol> deducedTypes, ISyntaxRegion td)
 			: base(BaseType, td)
 		{
 			if(deducedTypes!=null)
@@ -356,7 +355,7 @@ namespace D_Parser.Resolver
 	#region User-defined types
 	public abstract class UserDefinedType : DSymbol
 	{
-		public UserDefinedType(DNode Node, AbstractType baseType, ReadOnlyCollection<TemplateParameterSymbol> deducedTypes, ISyntaxRegion td) : base(Node, baseType, deducedTypes, td) { }
+		protected UserDefinedType(DNode Node, AbstractType baseType, ReadOnlyCollection<TemplateParameterSymbol> deducedTypes, ISyntaxRegion td) : base(Node, baseType, deducedTypes, td) { }
 	}
 
 	public class AliasedType : MemberSymbol

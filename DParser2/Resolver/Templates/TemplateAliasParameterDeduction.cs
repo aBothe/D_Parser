@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using D_Parser.Dom;
+﻿using D_Parser.Dom;
 using D_Parser.Resolver.TypeResolution;
 using D_Parser.Resolver.ExpressionSemantics;
 

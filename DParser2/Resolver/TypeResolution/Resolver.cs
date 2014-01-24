@@ -1,16 +1,11 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using D_Parser.Completion;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
 using D_Parser.Parser;
-using System.Linq;
 using D_Parser.Resolver.ExpressionSemantics;
-using D_Parser.Misc;
-
 namespace D_Parser.Resolver.TypeResolution
 {
 	/// <summary>

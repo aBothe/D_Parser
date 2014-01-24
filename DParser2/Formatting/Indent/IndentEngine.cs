@@ -1,4 +1,4 @@
-﻿// 
+// 
 // AstFormattingVisitor.cs
 //
 // Author:
@@ -417,31 +417,35 @@ namespace D_Parser.Formatting.Indent
 			// ignore these
 			if ((inside & (Inside.PreProcessor | Inside.StringOrChar )) != 0)
 				return;
-			if (inside == Inside.LineComment) {
+			switch (inside) {
+			case Inside.LineComment:
 				stack.Pop (); // pop line comment
 				stack.Push (Inside.DocComment, keyword, curLineNr, 0);
-			} else if (inside == Inside.BlockComment) {
+				break;
+			case Inside.BlockComment:
 				// check for end of multi-line comment block
 				if (pc == '*') {
 					// restore the keyword and pop the multiline comment
 					keyword = stack.PeekKeyword;
 					stack.Pop ();
 				}
-			}else if (inside == Inside.NestedComment) {
+				break;
+			case Inside.NestedComment:
 				if (pc == '+') {
 					keyword = stack.PeekKeyword;
 					stack.Pop ();
 				}
-			} else {
-				
+				break;
+			default:
 				// FoldedStatement, Block, Attribute or ParenList
 				// check for the start of a single-line comment
 				if (pc == '/') {
 					stack.Push (Inside.LineComment, keyword, curLineNr, 0);
-					
+
 					// drop the previous '/': it belongs to this comment
 					rc = prc;
 				}
+				break;
 			}
 		}
 		

@@ -1,13 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
 using System;
-using D_Parser.Misc;
-
 namespace D_Parser.Parser
 {
     /// <summary>

@@ -1,11 +1,10 @@
-﻿using System;
-using System.Text;
+﻿using System.Text;
 using D_Parser.Dom;
 using D_Parser.Parser;
 
 namespace D_Parser.Formatting
 {
-	public class Formatter
+	public static class Formatter
 	{
 		public static string FormatCode(string code, DModule ast = null, IDocumentAdapter document = null, DFormattingOptions options = null, ITextEditorOptions textStyle = null)
 		{

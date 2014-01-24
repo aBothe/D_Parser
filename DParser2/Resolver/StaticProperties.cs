@@ -6,9 +6,6 @@ using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
 namespace D_Parser.Resolver
 {
 	public static class StaticProperties

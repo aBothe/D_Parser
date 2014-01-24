@@ -1,12 +1,6 @@
-﻿using System.Collections.Generic;
-using D_Parser.Dom.Expressions;
-using D_Parser.Dom.Statements;
-using D_Parser.Parser;
+﻿using D_Parser.Parser;
 using System;
 using System.IO;
-using System.Collections.ObjectModel;
-using D_Parser.Misc;
-
 namespace D_Parser.Dom
 {
     /// <summary>
@@ -28,7 +22,6 @@ namespace D_Parser.Dom
 			base.AssignFrom(Other);
         }
 
-		string _FileName;
 
 		/// <summary>
 		/// Name alias
@@ -39,16 +32,9 @@ namespace D_Parser.Dom
 			set { Name = value; }
 		}
 
-		public string FileName
-		{
-			get
-			{
-				return _FileName;
-			}
-			set
-			{
-				_FileName = value;
-			}
+		public string FileName {
+			get;
+			set;
 		}
 
 		/// <summary>

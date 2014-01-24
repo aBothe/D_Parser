@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using D_Parser.Dom.Statements;
 
 namespace D_Parser.Dom

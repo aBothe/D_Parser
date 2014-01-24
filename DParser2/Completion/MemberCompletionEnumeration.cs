@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-using D_Parser.Completion;
+﻿using D_Parser.Completion;
 using D_Parser.Dom;
 using D_Parser.Dom.Statements;
 using D_Parser.Misc;

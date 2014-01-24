@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using D_Parser.Dom.Expressions;
-using D_Parser.Parser;
-
 namespace D_Parser.Dom
 {
 	public interface ITypeDeclaration : ISyntaxRegion, IVisitable<TypeDeclarationVisitor>

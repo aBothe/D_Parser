@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using D_Parser.Dom;
+﻿using D_Parser.Dom;
 using D_Parser.Parser;
 using D_Parser.Resolver.Templates;
 using D_Parser.Resolver.TypeResolution;
@@ -11,7 +10,7 @@ namespace D_Parser.Resolver
 	/// Provides methods to check if resolved types are matching each other and/or can be converted into each other.
 	/// Used for UFCS completion, argument-parameter matching, template parameter deduction
 	/// </summary>
-	public class ResultComparer
+	public static class ResultComparer
 	{
 		/// <summary>
 		/// Checks given results for type equality

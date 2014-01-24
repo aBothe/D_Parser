@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using D_Parser.Misc;
 using D_Parser.Resolver;
 using D_Parser.Resolver.TypeResolution;
-using D_Parser.Parser;
 using System.Collections.Concurrent;
 
 namespace D_Parser.Dom

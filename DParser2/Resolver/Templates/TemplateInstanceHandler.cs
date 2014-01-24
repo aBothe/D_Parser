@@ -3,12 +3,11 @@ using System.Linq;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Resolver.Templates;
-using System.Collections.ObjectModel;
 using D_Parser.Resolver.ExpressionSemantics;
 
 namespace D_Parser.Resolver.TypeResolution
 {
-	public class TemplateInstanceHandler
+	public static class TemplateInstanceHandler
 	{
 		public static List<ISemantic> PreResolveTemplateArgs(TemplateInstanceExpression tix, ResolutionContext ctxt, out bool hasNonFinalArgument)
 		{

@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
-using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
@@ -55,7 +54,7 @@ namespace D_Parser.Completion
 		public int CurrentlyTypedArgumentIndex;
 	}
 
-	public class ParameterInsightResolution
+	public static class ParameterInsightResolution
 	{
 		
 		/// <summary>

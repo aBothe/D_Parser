@@ -8,7 +8,7 @@ namespace D_Parser.Misc
 	/// the currently used OS, CPU-specific properties and further flags.
 	/// For details, see http://dlang.org/version.html, "Predefined Versions"
 	/// </summary>
-	public class VersionIdEvaluation
+	public static class VersionIdEvaluation
 	{
 		static string[] minimalConfiguration;
 
@@ -46,12 +46,17 @@ namespace D_Parser.Misc
 			
 			// CPU information
 			var cpuArch = Environment.GetEnvironmentVariable("PROCESSOR_ARCHITECTURE");
-			if(cpuArch=="X86")
-				l.Add("X86");
-			else if(cpuArch=="AMD64")
-				l.Add("X86_64");
-			else if(cpuArch=="IA64")
-				l.Add("IA64");
+			switch (cpuArch) {
+			case "X86":
+				l.Add ("X86");
+				break;
+			case "AMD64":
+				l.Add ("X86_64");
+				break;
+			case "IA64":
+				l.Add ("IA64");
+				break;
+			}
 			//TODO: Other architectures...
 			
 			if(BitConverter.IsLittleEndian)

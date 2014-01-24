@@ -11,7 +11,7 @@ using D_Parser.Resolver.Templates;
 
 namespace D_Parser.Resolver.TypeResolution
 {
-	public class TypeDeclarationResolver
+	public static class TypeDeclarationResolver
 	{
 		public static PrimitiveType Resolve(DTokenDeclaration token)
 		{

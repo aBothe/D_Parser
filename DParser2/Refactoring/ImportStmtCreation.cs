@@ -32,7 +32,7 @@ using D_Parser.Completion;
 
 namespace D_Parser.Refactoring
 {
-	public class ImportStmtCreation
+	public static class ImportStmtCreation
 	{
 		/// <summary>
 		/// Finds the last import statement and returns its end location (the position after the semicolon).
