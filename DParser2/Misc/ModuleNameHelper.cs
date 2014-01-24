@@ -1,7 +1,7 @@
 ﻿
 namespace D_Parser.Misc
 {
-	public class ModuleNameHelper
+	public static class ModuleNameHelper
 	{
 		/// <summary>
 		/// a.b.c.d => a.b.c

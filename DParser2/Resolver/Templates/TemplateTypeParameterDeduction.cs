@@ -5,7 +5,6 @@ using D_Parser.Dom.Statements;
 using D_Parser.Resolver.TypeResolution;
 using D_Parser.Resolver.ExpressionSemantics;
 using System.Collections.Generic;
-using D_Parser.Resolver.ASTScanner;
 
 namespace D_Parser.Resolver.Templates
 {
@@ -43,7 +42,7 @@ namespace D_Parser.Resolver.Templates
 			ctxt.PushNewScope(DResolver.SearchBlockAt(ctxt.ScopedBlock.NodeRoot as IBlockNode, p.Default.Location, out stmt), stmt);
 
 			var defaultTypeRes = TypeDeclarationResolver.Resolve(p.Default, ctxt);
-			var b = defaultTypeRes != null && Set(p, defaultTypeRes.First(), 0);
+			var b = defaultTypeRes != null && Set (p, defaultTypeRes [0], 0);
 
 			ctxt.Pop();
 

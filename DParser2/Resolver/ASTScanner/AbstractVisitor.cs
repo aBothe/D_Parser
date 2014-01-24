@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
@@ -29,7 +28,7 @@ namespace D_Parser.Resolver.ASTScanner
 		#endregion
 
 		#region Constructor
-		public AbstractVisitor(ResolutionContext context)
+		protected AbstractVisitor(ResolutionContext context)
 		{
 			ctxt = context;
 		}

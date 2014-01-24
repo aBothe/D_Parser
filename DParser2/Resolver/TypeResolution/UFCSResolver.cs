@@ -3,7 +3,6 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Dom;
 using D_Parser.Resolver.ASTScanner;
 using D_Parser.Parser;
-using D_Parser.Resolver.Templates;
 
 namespace D_Parser.Resolver.TypeResolution
 {

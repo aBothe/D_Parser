@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -377,57 +377,61 @@ namespace D_Parser.Parser
 		{
 			DeclarationCondition c = null;
 
-			/* 
-			 * http://www.dlang.org/version.html#VersionSpecification
-			 * VersionCondition: 
-			 *		version ( IntegerLiteral ) 
-			 *		version ( Identifier ) 
-			 *		version ( unittest )
-			 *		version ( assert )
-			 */
-			if (laKind == Version)
-			{
-				Step();
-				if (Expect(OpenParenthesis))
-				{
-					if (laKind == Unittest) {
+			switch (laKind) {
+			case Version:
+				/*				 
+				 * http://www.dlang.org/version.html#VersionSpecification
+				 * VersionCondition: 
+				 *		version ( IntegerLiteral ) 
+				 *		version ( Identifier ) 
+				 *		version ( unittest )
+				 *		version ( assert )
+				 */
+				Step ();
+				if (Expect (OpenParenthesis)) {
+					switch (laKind) {
+					case Unittest:
 						Step ();
 						c = new VersionCondition ("unittest") { IdLocation = t.Location };
-					} else if (laKind == Assert) {
+						break;
+					case Assert:
 						Step ();
 						c = new VersionCondition ("assert") { IdLocation = t.Location };
-					} else if (laKind == Literal) {
+						break;
+					case Literal:
 						Step ();
 						if (t.LiteralFormat != LiteralFormat.Scalar)
 							SynErr (t.Kind, "Version number must be an integer");
 						else
 							c = new VersionCondition (Convert.ToInt32 (t.LiteralValue)) { IdLocation = t.Location };
-					} else if (Expect (Identifier))
-						c = new VersionCondition (t.Value) { IdLocation = t.Location };
-					else if (IsEOF) {
-						c = new VersionCondition (DTokens.IncompleteId);
-						parent.Add (new DVariable{ Attributes = new List<DAttribute>{ c } });
+						break;
+					default:
+						if (Expect (Identifier))
+							c = new VersionCondition (t.Value) { IdLocation = t.Location };
+						else if (IsEOF) {
+							c = new VersionCondition (DTokens.IncompleteId);
+							parent.Add (new DVariable{ Attributes = new List<DAttribute>{ c } });
+						}
+						break;
 					}
 
 					Expect (CloseParenthesis);
 				}
-				
-				if(c==null)
-					c = new VersionCondition("");
-			}
 
-			/*
-			 * DebugCondition:
-			 *		debug 
-			 *		debug ( IntegerLiteral )
-			 *		debug ( Identifier )
-			 */
-			else if (laKind == Debug)
-			{
-				Step();
-				if (laKind == OpenParenthesis)
-				{
-					Step();
+				if (c == null)
+					c = new VersionCondition ("");
+				break;
+
+			case Debug:
+				/*				
+				 * DebugCondition:
+				 *		debug 
+				 *		debug ( IntegerLiteral )
+				 *		debug ( Identifier )
+				 */
+				Step ();
+				if (laKind == OpenParenthesis) {
+					Step ();
 
 					if (laKind == Literal) {
 						Step ();
@@ -445,30 +449,29 @@ namespace D_Parser.Parser
 					Expect (CloseParenthesis);
 				}
 
-				if(c == null)
-					c = new DebugCondition();
-			}
+				if (c == null)
+					c = new DebugCondition ();
+				break;
 
-			/*
-			 * StaticIfCondition: 
-			 *		static if ( AssignExpression )
-			 */
-			else if (laKind == Static)
-			{
+			case Static:
+				/*				
+				 * StaticIfCondition: 
+				 *		static if ( AssignExpression )
+				 */
 				Step ();
-				if (Expect (If) && Expect(OpenParenthesis))
-				{
-					var x = AssignExpression(parent);
-					c = new StaticIfCondition(x);
+				if (Expect (If) && Expect (OpenParenthesis)) {
+					var x = AssignExpression (parent);
+					c = new StaticIfCondition (x);
 
-					if(!Expect(CloseParenthesis) && IsEOF)
+					if (!Expect (CloseParenthesis) && IsEOF)
 						parent.Add (new DVariable{ Attributes = new List<DAttribute>{ c } });
-				}
-				else
-					c = new StaticIfCondition(null);
-			}
-			else
+				} else
+					c = new StaticIfCondition (null);
+				break;
+
+			default:
 				throw new Exception("Condition() should only be called if Version/Debug/If is the next token!");
+			}
 
 			return c;
 		}

@@ -241,7 +241,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public Dictionary<DVariable, ISymbolValue> Members = new Dictionary<DVariable, ISymbolValue>();
 		public Dictionary<DVariable, AbstractType> MemberTypes = new Dictionary<DVariable, AbstractType>();
 
-		public InstanceValue(DClassLike Class, AbstractType ClassType)
+		protected InstanceValue(DClassLike Class, AbstractType ClassType)
 			: base(Class, ClassType)
 		{
 
@@ -273,7 +273,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	{
 		INode referencedNode;
 
-		public ReferenceValue(INode Node, AbstractType type) : base(type)
+		protected ReferenceValue(INode Node, AbstractType type) : base(type)
 		{
 		}
 	}

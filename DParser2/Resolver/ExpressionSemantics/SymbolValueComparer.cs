@@ -1,13 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using D_Parser.Dom.Expressions;
-using D_Parser.Resolver;
-
+﻿using D_Parser.Dom.Expressions;
 namespace D_Parser.Resolver.ExpressionSemantics
 {
-	public class SymbolValueComparer
+	public static class SymbolValueComparer
 	{
 		public static bool IsEqual(IExpression ex, IExpression ex2, AbstractSymbolValueProvider vp)
 		{

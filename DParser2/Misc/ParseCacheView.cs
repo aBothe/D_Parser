@@ -28,9 +28,6 @@ using System.Collections.Generic;
 using D_Parser.Dom;
 using D_Parser.Resolver;
 using D_Parser.Parser;
-using System.Collections.Concurrent;
-using System.Threading;
-
 namespace D_Parser.Misc
 {
 	public class ParseCacheView : IEnumerable<RootPackage>

@@ -1,11 +1,7 @@
 ﻿using System.Collections.Generic;
-using D_Parser.Dom.Statements;
 using D_Parser.Resolver;
 using D_Parser.Resolver.TypeResolution;
-using D_Parser.Dom.Expressions;
 using D_Parser.Resolver.ExpressionSemantics;
-using D_Parser.Dom;
-
 namespace D_Parser.Completion
 {
 	/// <summary>
@@ -19,7 +15,7 @@ namespace D_Parser.Completion
 		public string Description;
 	}
 
-	public class AbstractTooltipProvider
+	public static class AbstractTooltipProvider
 	{
 		public static List<AbstractTooltipContent> BuildToolTip(IEditorData Editor)
 		{

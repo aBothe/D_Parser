@@ -1,5 +1,4 @@
-﻿using D_Parser.Dom.Expressions;
-using D_Parser.Dom;
+﻿using D_Parser.Dom;
 
 namespace D_Parser.Completion.Providers
 {
@@ -7,7 +6,7 @@ namespace D_Parser.Completion.Providers
 	{
 		public readonly ICompletionDataGenerator CompletionDataGenerator;
 		
-		public AbstractCompletionProvider(ICompletionDataGenerator CompletionDataGenerator)
+		protected AbstractCompletionProvider(ICompletionDataGenerator CompletionDataGenerator)
 		{
 			this.CompletionDataGenerator = CompletionDataGenerator;
 		}

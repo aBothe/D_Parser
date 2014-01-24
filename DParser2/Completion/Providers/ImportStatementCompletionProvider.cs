@@ -1,12 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using D_Parser.Dom;
-using D_Parser.Misc;
-using D_Parser.Resolver;
-using D_Parser.Resolver.ASTScanner;
-
 namespace D_Parser.Completion.Providers
 {
 	/// <summary>

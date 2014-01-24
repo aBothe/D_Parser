@@ -1,17 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-
-using D_Parser.Dom;
-using D_Parser.Dom.Expressions;
-using D_Parser.Dom.Statements;
-using D_Parser.Resolver.TypeResolution;
-
 namespace D_Parser.Formatting.Indent
 {
-	public class IndentEngineWrapper
+	public static class IndentEngineWrapper
 	{
 		public static string CalculateIndent(string code, int line, bool tabsToSpaces = false, int indentWidth = 4)
 		{

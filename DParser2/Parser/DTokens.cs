@@ -5,7 +5,7 @@ using System;
 
 namespace D_Parser.Parser
 {
-    public class DTokens
+    public static class DTokens
     {
         // ----- terminal classes -----
         public const byte EOF = 0;

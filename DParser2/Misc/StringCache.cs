@@ -24,19 +24,18 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace D_Parser
 {
-	public class Strings
+	public static class Strings
 	{
 		static System.Threading.AutoResetEvent access = new System.Threading.AutoResetEvent(true);
 		static readonly Dictionary<int,string> Table = new Dictionary<int, string>();
 
 		public static void Add(string s)
 		{
-			if (s != null && s.Length != 0) {
+			if (!string.IsNullOrEmpty (s)) {
 				var hash = s.GetHashCode ();
 				access.WaitOne ();
 				Table [hash] = s;

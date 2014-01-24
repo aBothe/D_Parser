@@ -10,7 +10,7 @@ namespace D_Parser.Resolver
 	/// <summary>
 	/// Description of MixinAnalysis.
 	/// </summary>
-	public class MixinAnalysis
+	public static class MixinAnalysis
 	{
 		static ResolutionCache<DModule> mixinDeclCache = new ResolutionCache<DModule>();
 		static ResolutionCache<BlockStatement> mixinStmtCache = new ResolutionCache<BlockStatement>();

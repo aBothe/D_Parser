@@ -5,7 +5,6 @@ namespace D_Parser.Dom
 	public abstract class AbstractNode : INode
 	{
 		protected WeakReference _Parent;
-		protected int nameHash;
 
 		protected AbstractNode()
 		{
@@ -42,10 +41,9 @@ namespace D_Parser.Dom
 			set { nameHash = value != null ? value.GetHashCode() : 0; Strings.Add (value); }
 		}
 
-		public int NameHash
-		{
-			get{ return nameHash; }
-			set{ nameHash = value; }
+		public int NameHash {
+			get;
+			set;
 		}
 
 		public CodeLocation NameLocation

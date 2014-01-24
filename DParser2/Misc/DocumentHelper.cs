@@ -2,7 +2,7 @@
 
 namespace D_Parser
 {
-	public class DocumentHelper
+	public static class DocumentHelper
 	{
 		public static CodeLocation OffsetToLocation(string Text, int Offset)
 		{

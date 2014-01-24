@@ -1,5 +1,4 @@
 ﻿using System;
-using D_Parser.Dom.Expressions;
 using D_Parser.Resolver;
 
 namespace D_Parser.Resolver.ExpressionSemantics
@@ -11,7 +10,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 	public abstract class ExpressionValue : ISymbolValue
 	{
-		public ExpressionValue(AbstractType RepresentedType)
+		protected ExpressionValue(AbstractType RepresentedType)
 		{
 			this.RepresentedType = RepresentedType;
 		}
