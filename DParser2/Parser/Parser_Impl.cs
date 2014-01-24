@@ -163,7 +163,7 @@ namespace D_Parser.Parser
 
 			//Constructor
 			else if (laKind == (This))
-				module.Add(Constructor(module, module is DClassLike ? ((DClassLike)module).ClassType == DTokens.Struct : false));
+				module.Add(Constructor(module, module is DClassLike && ((DClassLike)module).ClassType == DTokens.Struct));
 
 			//Destructor
 			else if (laKind == (Tilde) && Lexer.CurrentPeekToken.Kind == (This))
@@ -937,7 +937,7 @@ namespace D_Parser.Parser
 					if (IsEOF || Expect (Identifier)) {
 						var otherNode = new DVariable ();
 
-						/// Note: In DDoc, all declarations that are made at once (e.g. int a,b,c;) get the same pre-declaration-description!
+						// Note: In DDoc, all declarations that are made at once (e.g. int a,b,c;) get the same pre-declaration-description!
 						otherNode.Description = initialComment;
 
 						otherNode.AssignFrom (firstNode);
@@ -2028,8 +2028,7 @@ namespace D_Parser.Parser
 		void FunctionAttributes(ref List<DAttribute> attributes)
 		{
 			DAttribute attr=null;
-			if (attributes == null)
-				attributes = new List<DAttribute>();
+			attributes = attributes ?? new List<DAttribute> ();
 			while (IsFunctionAttribute)
 			{
                 if(IsAtAttribute)

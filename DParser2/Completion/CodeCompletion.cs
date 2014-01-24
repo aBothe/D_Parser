@@ -37,7 +37,7 @@ namespace D_Parser.Completion
 		/// <summary>
 		/// Generates the completion data.
 		/// </summary>
-		/// <param name="checkForCompletionAllowed">Set to <c>false</c> if you already ensured that completion can occur in the current editing context.</param>
+		/// <param name="alreadyCheckedCompletionContext">Set to <c>false</c> if you already ensured that completion can occur in the current editing context.</param>
 		public static bool GenerateCompletionData(IEditorData editor, 
 			ICompletionDataGenerator completionDataGen, char triggerChar, bool alreadyCheckedCompletionContext = false)
 		{

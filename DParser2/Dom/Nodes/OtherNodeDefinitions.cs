@@ -29,7 +29,7 @@ namespace D_Parser.Dom
 			return ToString(Attributes, IncludePath, true);
 		}
 
-		public string ToString(bool Attributes, bool IncludePath, bool initializer = true)
+		public string ToString(bool Attributes, bool IncludePath, bool initializer)
 		{
 			return (IsAlias ? "alias " : "") + base.ToString(Attributes, IncludePath) + (initializer && Initializer != null ? (" = " + Initializer.ToString()) : "");
 		}

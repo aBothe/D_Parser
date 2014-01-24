@@ -389,7 +389,7 @@ namespace D_Parser.Parser
         public static BitArray ParamModifiers = NewSet(In, Out, InOut, Ref, Lazy, Scope);
         public static BitArray ClassLike = NewSet(Class, Template, Interface, Struct, Union);
 
-		public static byte[] BasicTypes_Array = new[] { Bool, Byte, Ubyte, Short, Ushort, Int, Uint, Long, Ulong, Cent, Ucent, Char, Wchar, Dchar, Float, Double, Real, Ifloat, Idouble, Ireal, Cfloat, Cdouble, Creal, Void };
+		public static byte[] BasicTypes_Array = { Bool, Byte, Ubyte, Short, Ushort, Int, Uint, Long, Ulong, Cent, Ucent, Char, Wchar, Dchar, Float, Double, Real, Ifloat, Idouble, Ireal, Cfloat, Cdouble, Creal, Void };
 
         public static BitArray BasicTypes = NewSet(Bool, Byte, Ubyte, Short, Ushort, Int, Uint, Long, Ulong, Cent, Ucent, Char, Wchar, Dchar, Float, Double, Real, Ifloat, Idouble, Ireal, Cfloat, Cdouble, Creal, Void);
 

@@ -198,7 +198,7 @@ namespace D_Parser.Dom.Expressions
 	}
 
 	/// <summary>
-	/// a && b;
+	/// a &amp;&amp; b;
 	/// </summary>
 	public class AndAndExpression : OperatorBasedExpression
 	{
@@ -231,7 +231,7 @@ namespace D_Parser.Dom.Expressions
 	}
 
 	/// <summary>
-	/// a & b;
+	/// a &amp; b;
 	/// </summary>
 	public class AndExpression : OperatorBasedExpression
 	{

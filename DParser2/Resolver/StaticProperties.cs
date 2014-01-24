@@ -128,10 +128,10 @@ namespace D_Parser.Resolver
 				}});
 
 			props.AddProp(new StaticPropertyInfo("dup", "Create a dynamic array of the same size and copy the contents of the array into it.") { TypeGetter = help_ReflectType, RequireThis = true });
-			props.AddProp(new StaticPropertyInfo("idup", "D2.0 only! Creates immutable copy of the array") { TypeGetter = (t) => new MemberFunctionAttributeDecl(DTokens.Immutable) { InnerType = help_ReflectType(t) }, RequireThis = true });
+			props.AddProp(new StaticPropertyInfo("idup", "D2.0 only! Creates immutable copy of the array") { TypeGetter = t => new MemberFunctionAttributeDecl (DTokens.Immutable) { InnerType = help_ReflectType (t) }, RequireThis = true });
 			props.AddProp(new StaticPropertyInfo("reverse", "Reverses in place the order of the elements in the array. Returns the array.") { TypeGetter = help_ReflectType, RequireThis = true });
 			props.AddProp(new StaticPropertyInfo("sort", "Sorts in place the order of the elements in the array. Returns the array.") { TypeGetter = help_ReflectType, RequireThis = true });
-			props.AddProp(new StaticPropertyInfo("ptr", "Returns pointer to the array") { TypeGetter = (t) => new PointerDecl(t.TypeDeclarationOf), RequireThis = true });
+			props.AddProp(new StaticPropertyInfo("ptr", "Returns pointer to the array") { TypeGetter = t => new PointerDecl (t.TypeDeclarationOf), RequireThis = true });
 
 
 
@@ -139,31 +139,30 @@ namespace D_Parser.Resolver
 			Properties[PropOwnerType.AssocArray] = props;
 			
 			props.AddProp(new StaticPropertyInfo("length", "Returns number of values in the associative array. Unlike for dynamic arrays, it is read-only.", "size_t") { RequireThis = true });
-			props.AddProp(new StaticPropertyInfo("keys", "Returns dynamic array, the elements of which are the keys in the associative array.") { TypeGetter = (t) => new ArrayDecl { ValueType = (t as AssocArrayType).KeyType.TypeDeclarationOf }, RequireThis = true });
-			props.AddProp(new StaticPropertyInfo("values", "Returns dynamic array, the elements of which are the values in the associative array.") { TypeGetter = (t) => new ArrayDecl { ValueType = (t as AssocArrayType).ValueType.TypeDeclarationOf }, RequireThis = true });
+			props.AddProp(new StaticPropertyInfo("keys", "Returns dynamic array, the elements of which are the keys in the associative array.") { TypeGetter = t => new ArrayDecl { ValueType = (t as AssocArrayType).KeyType.TypeDeclarationOf }, RequireThis = true });
+			props.AddProp(new StaticPropertyInfo("values", "Returns dynamic array, the elements of which are the values in the associative array.") { TypeGetter = t => new ArrayDecl { ValueType = (t as AssocArrayType).ValueType.TypeDeclarationOf }, RequireThis = true });
 			props.AddProp(new StaticPropertyInfo("rehash", "Reorganizes the associative array in place so that lookups are more efficient. rehash is effective when, for example, the program is done loading up a symbol table and now needs fast lookups in it. Returns a reference to the reorganized array.") { TypeGetter = help_ReflectType, RequireThis = true });
-			props.AddProp(new StaticPropertyInfo("byKey", "Returns a delegate suitable for use as an Aggregate to a ForeachStatement which will iterate over the keys of the associative array.") { TypeGetter = (t) => new DelegateDeclaration() { ReturnType = new ArrayDecl() { ValueType = (t as AssocArrayType).KeyType.TypeDeclarationOf } }, RequireThis = true });
-			props.AddProp(new StaticPropertyInfo("byValue", "Returns a delegate suitable for use as an Aggregate to a ForeachStatement which will iterate over the values of the associative array.") { TypeGetter = (t) => new DelegateDeclaration() { ReturnType = new ArrayDecl() { ValueType = (t as AssocArrayType).ValueType.TypeDeclarationOf } }, RequireThis = true });
+			props.AddProp(new StaticPropertyInfo("byKey", "Returns a delegate suitable for use as an Aggregate to a ForeachStatement which will iterate over the keys of the associative array.") { TypeGetter = t => new DelegateDeclaration () { ReturnType = new ArrayDecl () { ValueType = (t as AssocArrayType).KeyType.TypeDeclarationOf } }, RequireThis = true });
+			props.AddProp(new StaticPropertyInfo("byValue", "Returns a delegate suitable for use as an Aggregate to a ForeachStatement which will iterate over the values of the associative array.") { TypeGetter = t => new DelegateDeclaration () { ReturnType = new ArrayDecl () { ValueType = (t as AssocArrayType).ValueType.TypeDeclarationOf } }, RequireThis = true });
 			props.AddProp(new StaticPropertyInfo("get", null)
 			{
 				RequireThis = true,
-				NodeGetter = (t) =>{
+				NodeGetter = t => {
 					var ad = t as AssocArrayType;
 					var valueType = ad.ValueType.TypeDeclarationOf;
-					return new DMethod()
-					{
+					return new DMethod () {
 						Name = "get",
 						Description = "Looks up key; if it exists returns corresponding value else evaluates and returns defaultValue.",
 						Type = valueType,
 						Parameters = new List<INode> {
-							new DVariable(){
-								Name="key",
-								Type=ad.KeyType.TypeDeclarationOf
+							new DVariable () {
+								Name = "key",
+								Type = ad.KeyType.TypeDeclarationOf
 							},
-							new DVariable(){
-								Name="defaultValue",
-								Type=valueType,
-								Attributes=new List<DAttribute>{ new Modifier(DTokens.Lazy)}
+							new DVariable () {
+								Name = "defaultValue",
+								Type = valueType,
+								Attributes = new List<DAttribute>{ new Modifier (DTokens.Lazy) }
 							}
 						}
 					};
@@ -171,13 +170,15 @@ namespace D_Parser.Resolver
 			});
 			props.AddProp(new StaticPropertyInfo("remove", null) {
 				RequireThis = true,
-				NodeGetter = (t) => new DMethod
-				{
+				NodeGetter = t => new DMethod {
 					Name = "remove",
 					Description = "remove(key) does nothing if the given key does not exist and returns false. If the given key does exist, it removes it from the AA and returns true.",
-					Type = new DTokenDeclaration(DTokens.Bool),
+					Type = new DTokenDeclaration (DTokens.Bool),
 					Parameters = new List<INode> { 
-						new DVariable{ Name = "key", Type = (t as AssocArrayType).KeyType.TypeDeclarationOf }
+						new DVariable {
+							Name = "key",
+							Type = (t as AssocArrayType).KeyType.TypeDeclarationOf
+						}
 					}
 				}
 			});

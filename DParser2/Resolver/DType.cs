@@ -646,7 +646,7 @@ namespace D_Parser.Resolver
 		public bool IsExpressionTuple
 		{
 			get {
-				return Items != null && Items.All((i) => i is ISymbolValue);
+				return Items != null && Items.All(i => i is ISymbolValue);
 			}
 		}
 
@@ -654,7 +654,7 @@ namespace D_Parser.Resolver
 		{
 			get
 			{
-				return Items != null && Items.All((i) => i is AbstractType);
+				return Items != null && Items.All(i => i is AbstractType);
 			}
 		}
 	}

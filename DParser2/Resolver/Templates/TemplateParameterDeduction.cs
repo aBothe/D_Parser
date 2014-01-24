@@ -107,7 +107,7 @@ namespace D_Parser.Resolver.Templates
 		}
 
 		/// <summary>
-		/// Returns true if <param name="parameterName">parameterName</param> is expected somewhere in the template parameter list.
+		/// Returns true if <param name="parameterNameHash">parameterNameHash</param> is expected somewhere in the template parameter list.
 		/// </summary>
 		bool Contains(int parameterNameHash)
 		{

@@ -13,7 +13,7 @@ namespace D_Parser.Misc
 
 		public bool ShowUFCSItems = true;
 		/// <summary>
-		/// If true, type & expression resolution will happen including checking of existing declaration constraints.
+		/// If true, type &amp; expression resolution will happen including checking of existing declaration constraints.
 		/// It might be disabled because of huge performance tear-downs.
 		/// </summary>
 		public bool EnableDeclarationConstraints = true;

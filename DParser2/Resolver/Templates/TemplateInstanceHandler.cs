@@ -48,7 +48,7 @@ namespace D_Parser.Resolver.TypeResolution
 									ctxt.LogError(dv.Initializer, ee.Message);
 								}
 
-								templateArguments.Add(eval==null ? (ISemantic)mr : eval);
+								templateArguments.Add(eval ?? (ISemantic)mr);
 							}
 							else{
 								if(!hasNonFinalArgument)

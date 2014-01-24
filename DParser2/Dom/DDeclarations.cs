@@ -229,7 +229,7 @@ namespace D_Parser.Dom
     public class MemberFunctionAttributeDecl : AbstractTypeDeclaration
     {
         /// <summary>
-        /// Equals <see cref="Token"/>
+		/// Equals <see cref="DTokens.Const"/>
         /// </summary>
 		public byte Modifier=DTokens.Const;
 

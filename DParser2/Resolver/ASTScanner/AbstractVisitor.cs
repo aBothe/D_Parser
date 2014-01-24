@@ -379,7 +379,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 							return true;
 					}
 			}
-			/// http://dlang.org/statement.html#WithStatement
+			// http://dlang.org/statement.html#WithStatement
 			else if (Statement is WithStatement)
 			{
 				var ws = (WithStatement)Statement;

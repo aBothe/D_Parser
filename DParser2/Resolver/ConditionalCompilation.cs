@@ -5,7 +5,7 @@ using D_Parser.Dom.Statements;
 
 namespace D_Parser.Resolver
 {
-	public class ConditionalCompilation
+	public static class ConditionalCompilation
 	{
 		public class ConditionSet
 		{
