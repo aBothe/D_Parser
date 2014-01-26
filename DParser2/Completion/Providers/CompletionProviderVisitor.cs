@@ -352,11 +352,12 @@ namespace D_Parser.Completion
 		{
 			var decls = s.Declarations;
 			if (decls != null && decls.Length > 0) {
-				var lastDecl = decls [decls.Length - 1];
-				if (lastDecl.NameHash == DTokens.IncompleteIdHash) {
+				var lastDecl = decls [decls.Length - 1] as DNode; 
+				if (lastDecl != null && lastDecl.NameHash == DTokens.IncompleteIdHash) {
 					scopedStatement = s;
 					halt = true;
-					explicitlyNoCompletion = lastDecl.Type != null;
+					// Probably a more common case to have 'auto |' not completed
+					explicitlyNoCompletion = lastDecl.Type != null || (lastDecl.Attributes != null && lastDecl.Attributes.Count != 0);
 					return;
 				}
 			}
