@@ -39,11 +39,11 @@ namespace D_Parser.Completion
 		}
 		
 		public static void EnumChildren(ICompletionDataGenerator cdgen,ResolutionContext ctxt, IBlockNode block, bool isVarInstance,
-			MemberFilter vis = MemberFilter.Methods | MemberFilter.Types | MemberFilter.Variables | MemberFilter.Enums)
+			MemberFilter vis = MemberFilter.Methods | MemberFilter.Types | MemberFilter.Variables | MemberFilter.Enums, bool publicImports = false)
 		{
 			var scan = new MemberCompletionEnumeration(ctxt, cdgen) { isVarInst = isVarInstance };
 
-			scan.ScanBlock(block, CodeLocation.Empty, vis);
+			scan.ScanBlock(block, CodeLocation.Empty, vis, publicImports);
 		}
 		
 		protected override bool HandleItem(INode n)

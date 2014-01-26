@@ -146,7 +146,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			return false;
 		}
 
-		protected bool ScanBlock(IBlockNode curScope, CodeLocation Caret, MemberFilter VisibleMembers)
+		protected bool ScanBlock(IBlockNode curScope, CodeLocation Caret, MemberFilter VisibleMembers, bool publicImportsOnly = false)
 		{
 			if (curScope is DClassLike)
 			{
@@ -196,7 +196,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				return breakOnNextScope;
 			}
 			else
-				return scanChildren(curScope as DBlockNode, VisibleMembers);
+				return scanChildren(curScope as DBlockNode, VisibleMembers, publicImportsOnly);
 		}
 		
 		protected bool DeepScanClass(UserDefinedType udt, MemberFilter vis, bool resolveBaseClassIfRequired = true)
