@@ -568,7 +568,11 @@ namespace D_Parser.Formatting.Indent
 			// can't be a case/label if there's no preceeding text
 			if (wordStart == -1)
 				return;
-			
+
+            // >enum< : uint { a,b,c }
+            if (keyword == DTokens.Enum)
+                return;
+
 			// goto-label or case statement
 			if (keyword == DTokens.Case || keyword == DTokens.Default) {
 				// case (or default) statement
