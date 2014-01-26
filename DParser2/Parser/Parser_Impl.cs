@@ -4455,8 +4455,14 @@ namespace D_Parser.Parser
 
 			dm.Parameters = Parameters(dm);
 
-			if (laKind == (If))
+			// handle post argument attributes
+			FunctionAttributes(dm);
+
+			if (laKind == If)
 				Constraint(dm);
+
+			// handle post argument attributes
+			FunctionAttributes(dm);
 
 			FunctionBody(dm);
 			return dm;
