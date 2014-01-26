@@ -674,10 +674,10 @@ namespace D_Parser.Parser
 		#region Declarations
 		// http://www.digitalmars.com/d/2.0/declaration.html
 
-		bool CheckForStorageClasses(DBlockNode scope)
+		bool CheckForStorageClasses(IBlockNode scope)
 		{
 			bool ret = false;
-			while (IsStorageClass )
+			while (IsStorageClass)
 			{
 				if (IsAttributeSpecifier()) // extern, align
 					AttributeSpecifier(scope);
@@ -1864,7 +1864,7 @@ namespace D_Parser.Parser
 			return laKind == (Public) || laKind == (Private) || laKind == (Protected) || laKind == (Extern) || laKind == (Package);
 		}
 
-		private void AttributeSpecifier(DBlockNode scope)
+		private void AttributeSpecifier(IBlockNode scope)
 		{
 			DAttribute attr;
 			if(IsAtAttribute)
@@ -1928,7 +1928,7 @@ namespace D_Parser.Parser
 
 			//TODO: What about these semicolons after e.g. a pragma? Enlist these attributes anyway in the meta decl list?
 			if (laKind != Semicolon)
-				AttributeTrail (scope, attr);
+				AttributeTrail (scope as DBlockNode, attr);
 		}
 		
 		/// <summary>
@@ -4094,6 +4094,9 @@ namespace D_Parser.Parser
 						forEachVar.Attributes = new List<DAttribute>();
 					forEachVar.Attributes.Add(new Modifier(t.Kind));
 				}
+
+				CheckForStorageClasses(Scope);
+				ApplyAttributes(forEachVar);
 				
 				if(IsEOF){
 					SynErr (Identifier, "Element variable name or type expected");
