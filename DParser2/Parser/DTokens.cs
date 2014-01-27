@@ -384,23 +384,23 @@ namespace D_Parser.Parser
 				Keywords_Lookup[kv.Value] = kv.Key;
 		}
 
-        public static BitArray FunctionAttribute = NewSet(Pure, Nothrow);
-        public static BitArray MemberFunctionAttribute = NewSet(Const, Immutable, Shared, InOut, Pure, Nothrow);
-        public static BitArray ParamModifiers = NewSet(In, Out, InOut, Ref, Lazy, Scope);
-        public static BitArray ClassLike = NewSet(Class, Template, Interface, Struct, Union);
+		public static readonly BitArray FunctionAttribute = NewSet(Pure, Nothrow);
+		public static readonly BitArray MemberFunctionAttribute = NewSet(Const, Immutable, Shared, InOut, Pure, Nothrow);
+		public static readonly BitArray ParamModifiers = NewSet(In, Out, InOut, Ref, Lazy, Scope);
+		public static readonly BitArray ClassLike = NewSet(Class, Template, Interface, Struct, Union);
 
-		public static byte[] BasicTypes_Array = { Bool, Byte, Ubyte, Short, Ushort, Int, Uint, Long, Ulong, Cent, Ucent, Char, Wchar, Dchar, Float, Double, Real, Ifloat, Idouble, Ireal, Cfloat, Cdouble, Creal, Void };
+		public static readonly byte[] BasicTypes_Array = { Bool, Byte, Ubyte, Short, Ushort, Int, Uint, Long, Ulong, Cent, Ucent, Char, Wchar, Dchar, Float, Double, Real, Ifloat, Idouble, Ireal, Cfloat, Cdouble, Creal, Void };
 
-        public static BitArray BasicTypes = NewSet(Bool, Byte, Ubyte, Short, Ushort, Int, Uint, Long, Ulong, Cent, Ucent, Char, Wchar, Dchar, Float, Double, Real, Ifloat, Idouble, Ireal, Cfloat, Cdouble, Creal, Void);
+		public static readonly BitArray BasicTypes = NewSet(Bool, Byte, Ubyte, Short, Ushort, Int, Uint, Long, Ulong, Cent, Ucent, Char, Wchar, Dchar, Float, Double, Real, Ifloat, Idouble, Ireal, Cfloat, Cdouble, Creal, Void);
 
-		public static BitArray BasicTypes_Integral = NewSet(Bool, Byte,Ubyte,Short,Ushort,Int,Uint,Long,Ulong,Cent, Ucent, Char,Wchar, Dchar);
-		public static BitArray BasicTypes_FloatingPoint = NewSet(Float,Double,Real,Ifloat,Idouble,Ireal,Cfloat,Cdouble,Creal);
-		public static BitArray BasicTypes_Unsigned = NewSet(Ubyte, Ushort, Uint, Ulong, Ucent);
+		public static readonly BitArray BasicTypes_Integral = NewSet(Bool, Byte,Ubyte,Short,Ushort,Int,Uint,Long,Ulong,Cent, Ucent, Char,Wchar, Dchar);
+		public static readonly BitArray BasicTypes_FloatingPoint = NewSet(Float,Double,Real,Ifloat,Idouble,Ireal,Cfloat,Cdouble,Creal);
+		public static readonly BitArray BasicTypes_Unsigned = NewSet(Ubyte, Ushort, Uint, Ulong, Ucent);
 
-		public static BitArray CharTypes = NewSet (Char, Wchar, Dchar);
+		public static readonly BitArray CharTypes = NewSet (Char, Wchar, Dchar);
 		
-		public static BitArray AssnStartOp = NewSet(Plus, Minus, Not, Tilde, Times);
-        public static BitArray AssignOps = NewSet(
+		public static readonly BitArray AssnStartOp = NewSet(Plus, Minus, Not, Tilde, Times);
+		public static readonly BitArray AssignOps = NewSet(
             Assign, // =
             PlusAssign, // +=
             MinusAssign, // -=
@@ -416,8 +416,8 @@ namespace D_Parser.Parser
             TripleRightShiftAssign,// >>>=
             PowAssign // ^^=
             );
-        public static BitArray TypeDeclarationKW = NewSet(Class, Interface, Struct, Template, Enum, Delegate, Function);
-        public static BitArray RelationalOperators = NewSet(
+		public static readonly BitArray TypeDeclarationKW = NewSet(Class, Interface, Struct, Template, Enum, Delegate, Function);
+		public static readonly BitArray RelationalOperators = NewSet(
             LessThan,
             LessEqual,
             GreaterThan,
@@ -432,8 +432,8 @@ namespace D_Parser.Parser
 			UnorderedLessOrEqual,
 			UnorderedOrEqual
             );
-        public static BitArray VisModifiers = NewSet(Public, Protected, Private, Package);
-        public static BitArray Modifiers = NewSet(
+		public static readonly BitArray VisModifiers = NewSet(Public, Protected, Private, Package);
+		public static readonly BitArray Modifiers = NewSet(
             In,
             Out,
             InOut,
@@ -458,7 +458,7 @@ namespace D_Parser.Parser
             Lazy,
             Nothrow
             );
-        public static BitArray StorageClass = NewSet(
+		public static readonly BitArray StorageClass = NewSet(
             Abstract
             ,Auto
             ,Const
@@ -477,7 +477,7 @@ namespace D_Parser.Parser
 			,__gshared
             );
 
-		public static BitArray MetaIdentifiers = NewSet(__DATE__,__FILE__,__FUNCTION__,__LINE__,__MODULE__,__PRETTY_FUNCTION__,__TIMESTAMP__,__TIME__,__VENDOR__,__VERSION__);
+		public static readonly BitArray MetaIdentifiers = NewSet(__DATE__,__FILE__,__FUNCTION__,__LINE__,__MODULE__,__PRETTY_FUNCTION__,__TIMESTAMP__,__TIME__,__VENDOR__,__VERSION__);
 
         /// <summary>
         /// Checks if modifier array contains member attributes. If so, it returns the last found attribute. Otherwise 0.
@@ -517,7 +517,7 @@ namespace D_Parser.Parser
                 mods.Remove(Package);
         }
 
-		static Dictionary<byte, string> NonKeywords = new Dictionary<byte, string> {
+		static readonly Dictionary<byte, string> NonKeywords = new Dictionary<byte, string> {
 			// Meta
 			{INVALID,"<Invalid Token>"},
 			{EOF,"<EOF>"},
