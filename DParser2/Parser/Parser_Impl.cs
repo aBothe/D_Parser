@@ -157,187 +157,184 @@ namespace D_Parser.Parser
 				return;
 			}
 
-			//ImportDeclaration
-			if (laKind == Import)
-				module.Add(ImportDeclaration(module));
-
-			//Constructor
-			else if (laKind == (This))
-				module.Add(Constructor(module, module is DClassLike && ((DClassLike)module).ClassType == DTokens.Struct));
-
-			//Destructor
-			else if (laKind == (Tilde) && Lexer.CurrentPeekToken.Kind == (This))
-				module.Add(Destructor());
-
-			//Invariant
-			else if (laKind == (Invariant))
-				module.Add(_Invariant());
-
-			//UnitTest
-			else if (laKind == (Unittest))
+			switch (laKind)
 			{
-				Step();
-				var dbs = new DMethod(DMethod.MethodType.Unittest);
-				ApplyAttributes(dbs);
-				dbs.Location = t.Location;
-				FunctionBody(dbs);
-				dbs.EndLocation = t.EndLocation;
-				module.Add(dbs);
-			}
-
-			/*
-			 * VersionSpecification: 
-			 *		version = Identifier ; 
-			 *		version = IntegerLiteral ;
-			 * 
-			 * DebugSpecification: 
-			 *		debug = Identifier ; 
-			 *		debug = IntegerLiteral ;
-			 */
-			else if ((laKind == Version || laKind == Debug) && Peek(1).Kind == Assign)
-			{
-				DebugSpecification ds = null;
-				VersionSpecification vs = null;
-
-				if (laKind == Version)
-					vs = new VersionSpecification { Location = la.Location, Attributes = GetCurrentAttributeSet_Array() };
-				else
-					ds = new DebugSpecification { Location = la.Location, Attributes = GetCurrentAttributeSet_Array() };
-				
-				Step();
-				Step();
-
-				if (laKind == Literal)
-				{
+				case Import:
+					module.Add(ImportDeclaration(module));
+					break;
+				case This:
+					module.Add(Constructor(module, module is DClassLike && ((DClassLike)module).ClassType == DTokens.Struct));
+					break;
+				case Tilde:
+					if (Lexer.CurrentPeekToken.Kind != This)
+						goto default;
+					module.Add(Destructor());
+					break;
+				case Invariant:
+					module.Add(_Invariant());
+					break;
+				case Unittest:
 					Step();
-					if (t.LiteralFormat != LiteralFormat.Scalar)
-						SynErr(t.Kind, "Integer literal expected!");
-					try
+					var dbs = new DMethod(DMethod.MethodType.Unittest);
+					ApplyAttributes(dbs);
+					dbs.Location = t.Location;
+					FunctionBody(dbs);
+					dbs.EndLocation = t.EndLocation;
+					module.Add(dbs);
+					break;
+				/*
+				 * VersionSpecification: 
+				 *		version = Identifier ; 
+				 *		version = IntegerLiteral ;
+				 * 
+				 * DebugSpecification: 
+				 *		debug = Identifier ; 
+				 *		debug = IntegerLiteral ;
+				 */
+				case Version:
+				case Debug:
+					if (Peek(1).Kind == Assign)
 					{
-						if (vs != null)
-							vs.SpecifiedNumber = Convert.ToInt32(t.LiteralValue);
+						DebugSpecification ds = null;
+						VersionSpecification vs = null;
+
+						if (laKind == Version)
+							vs = new VersionSpecification {
+								Location = la.Location,
+								Attributes = GetCurrentAttributeSet_Array()
+							};
 						else
-							ds.SpecifiedDebugLevel = Convert.ToInt32(t.LiteralValue);
+							ds = new DebugSpecification {
+								Location = la.Location,
+								Attributes = GetCurrentAttributeSet_Array()
+							};
+
+						Step();
+						Step();
+
+						if (laKind == Literal)
+						{
+							Step();
+							if (t.LiteralFormat != LiteralFormat.Scalar)
+								SynErr(t.Kind, "Integer literal expected!");
+							try
+							{
+								if (vs != null)
+									vs.SpecifiedNumber = Convert.ToInt32(t.LiteralValue);
+								else
+									ds.SpecifiedDebugLevel = Convert.ToInt32(t.LiteralValue);
+							}
+							catch
+							{
+							}
+						}
+						else if (laKind == Identifier)
+						{
+							Step();
+							if (vs != null)
+								vs.SpecifiedId = t.Value;
+							else
+								ds.SpecifiedId = t.Value;
+						}
+						else if (ds == null)
+							Expect(Identifier);
+
+						Expect(Semicolon);
+
+						((AbstractStatement)ds ?? vs).EndLocation = t.EndLocation;
+
+						module.Add(vs as StaticStatement ?? ds);
 					}
-					catch { }
-				}
-				else if (laKind == Identifier)
-				{
-					Step();
-					if (vs != null)
-						vs.SpecifiedId = t.Value;
 					else
-						ds.SpecifiedId = t.Value;
-				}
-				else if (ds == null)
-					Expect(Identifier);
+						DeclarationCondition(module);
+					break;
+				case Static:
+					if (Lexer.CurrentPeekToken.Kind == If)
+						goto case Version;
+					goto default;
+				case Assert:
+					Step();
 
-				Expect(Semicolon);
+					if (!Modifier.ContainsAttribute(DeclarationAttributes, Static))
+						SynErr(Static, "Static assert statements must be explicitly marked as static");
 
-				if (vs == null)
-					ds.EndLocation = t.EndLocation;
-				else
-					vs.EndLocation = t.EndLocation;
+					var ass = new StaticAssertStatement {
+						Attributes = GetCurrentAttributeSet_Array(),
+						Location = t.Location
+					};
 
-				module.Add(vs as StaticStatement ?? ds);
-			}
+					if (Expect(OpenParenthesis))
+					{
+						ass.AssertedExpression = AssignExpression();
+						if (laKind == (Comma))
+						{
+							Step();
+							ass.Message = AssignExpression();
+						}
+						if (Expect(CloseParenthesis))
+							Expect(Semicolon);
+					}
 
-			else if (laKind == Version || laKind == Debug || (laKind == Static && Lexer.CurrentPeekToken.Kind == If))
-				DeclarationCondition(module);
+					ass.EndLocation = t.EndLocation;
 
-			//StaticAssert
-			else if (laKind == (Assert))
-			{
-				Step();
+					module.Add(ass);
+					break;
+				case Mixin:
+					if (Peek(1).Kind == Template)
+						module.Add(TemplateDeclaration(module));
 
-				if (!Modifier.ContainsAttribute(DeclarationAttributes, Static))
-					SynErr(Static, "Static assert statements must be explicitly marked as static");
+					//TemplateMixin
+					else if (Lexer.CurrentPeekToken.Kind == Identifier)
+					{
+						var tmx = TemplateMixin(module);
+						if (tmx.MixinId == null)
+							module.Add(tmx);
+						else
+							module.Add(new NamedTemplateMixinNode(tmx));
+					}
 
-				var ass = new StaticAssertStatement { Attributes = GetCurrentAttributeSet_Array(), Location = t.Location };
-
-				if (Expect(OpenParenthesis))
-				{
-					ass.AssertedExpression = AssignExpression();
-					if (laKind == (Comma))
+					//MixinDeclaration
+					else if (Lexer.CurrentPeekToken.Kind == OpenParenthesis)
+						module.Add(MixinDeclaration(module, null));
+					else
 					{
 						Step();
-						ass.Message = AssignExpression();
+						SynErr(Identifier);
 					}
-					if(Expect(CloseParenthesis))
-						Expect(Semicolon);
-				}
-
-				ass.EndLocation = t.EndLocation;
-
-				module.Add(ass);
-			}
-
-			//TemplateMixinDeclaration
-			else if (laKind == Mixin)
-			{
-				if (Peek(1).Kind == Template)
-					module.Add(TemplateDeclaration(module));
-
-				//TemplateMixin
-				else if (Lexer.CurrentPeekToken.Kind == Identifier)
-				{
-					var tmx = TemplateMixin(module);
-					if(tmx.MixinId==null)
-						module.Add(tmx);
-					else
-						module.Add(new NamedTemplateMixinNode(tmx));
-				}
-
-				//MixinDeclaration
-				else if (Lexer.CurrentPeekToken.Kind == OpenParenthesis)
-					module.Add(MixinDeclaration(module,null));
-				else
-				{
+					break;
+				case OpenCurlyBrace:
+					AttributeBlock(module);
+					break;
+				// Class Allocators
+				// Note: Although occuring in global scope, parse it anyway but declare it as semantic nonsense;)
+				case New:
 					Step();
-					SynErr(Identifier);
-				}
-			}
 
-			// {
-			else if (laKind == (OpenCurlyBrace))
-				AttributeBlock(module);
+					var dm = new DMethod(DMethod.MethodType.Allocator) { Location = t.Location };
+					ApplyAttributes(dm);
 
-			// Class Allocators
-			// Note: Although occuring in global scope, parse it anyway but declare it as semantic nonsense;)
-			else if (laKind == (New))
-			{
-				Step();
+					dm.Parameters = Parameters(dm);
+					FunctionBody(dm);
+					dm.EndLocation = t.EndLocation;
+					module.Add(dm);
+					break;
+				case Delete:
+					Step();
 
-				var dm = new DMethod(DMethod.MethodType.Allocator) { Location = t.Location };
-				ApplyAttributes(dm);
+					var ddm = new DMethod(DMethod.MethodType.Deallocator) { Location = t.Location };
+					ddm.Name = "delete";
+					ApplyAttributes(ddm);
 
-				dm.Parameters = Parameters(dm);
-				FunctionBody(dm);
-				dm.EndLocation = t.EndLocation;
-				module.Add(dm);
-			}
-
-			// Class Deallocators
-			else if (laKind == Delete)
-			{
-				Step();
-
-				var dm = new DMethod(DMethod.MethodType.Deallocator) { Location = t.Location };
-				dm.Name = "delete";
-				ApplyAttributes(dm);
-
-				dm.Parameters = Parameters(dm);
-				FunctionBody(dm);
-				dm.EndLocation = t.EndLocation;
-				module.Add(dm);
-			}
-
-			// else:
-			else
-			{
-				var decls = Declaration(module);
-				if(module != null && decls!=null)
-					module.AddRange(decls);
+					ddm.Parameters = Parameters(ddm);
+					FunctionBody(ddm);
+					ddm.EndLocation = t.EndLocation;
+					module.Add(ddm);
+					break;
+				default:
+					var decls = Declaration(module);
+					if(module != null && decls!=null)
+						module.AddRange(decls);
+					break;
 			}
 		}
 
