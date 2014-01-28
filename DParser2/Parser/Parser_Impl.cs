@@ -1431,19 +1431,23 @@ namespace D_Parser.Parser
 		{
 			get
 			{
-				return laKind == (Abstract) ||
-			laKind == (Auto) ||
-			((MemberFunctionAttribute[laKind]) && Lexer.CurrentPeekToken.Kind != (OpenParenthesis)) ||
-			laKind == (Deprecated) ||
-			laKind == (Extern) ||
-			laKind == (Final) ||
-			laKind == (Override) ||
-			laKind == (Scope) ||
-			laKind == (Static) ||
-			laKind == (Synchronized) ||
-			laKind == __gshared ||
-					laKind == Ref ||
-			IsAtAttribute;
+				switch (laKind)
+				{
+					case Abstract:
+					case Auto:
+					case Deprecated:
+					case Extern:
+					case Final:
+					case Override:
+					case Scope:
+					case Static:
+					case Synchronized:
+					case __gshared:
+					case Ref:
+						return true;
+					default:
+						return IsAtAttribute || (MemberFunctionAttribute[laKind] && Lexer.CurrentPeekToken.Kind != OpenParenthesis);
+				}
 			}
 		}
 
@@ -1781,7 +1785,10 @@ namespace D_Parser.Parser
 			var md = new VectorDeclaration { Location = startLoc };
 
 			if (Expect(OpenParenthesis))
+			{
 				md.Id = Expression();
+				Expect(CloseParenthesis);
+			}
 
 			md.EndLocation = t.EndLocation;
 			return md;
@@ -1833,15 +1840,34 @@ namespace D_Parser.Parser
 
 		bool IsAttributeSpecifier()
 		{
-			return IsAttributeSpecifier(laKind, Lexer.CurrentPeekToken.Kind);
-		}
-
-		public static bool IsAttributeSpecifier(int laKind, int peekTokenKind=0)
-		{
-			return (laKind == (Extern) || laKind == (Export) || laKind == (Align) || laKind == Pragma || laKind == (Deprecated) || IsProtectionAttribute(laKind)
-				|| (laKind == (Static) && peekTokenKind != If) || laKind == (Final) || laKind == (Override) || laKind == (Abstract) || laKind == (Scope) || laKind == (__gshared) || laKind==Synchronized
-				|| ((laKind == (Auto) || MemberFunctionAttribute[laKind]) && (peekTokenKind != OpenParenthesis && peekTokenKind != Identifier))
-				|| laKind == At);
+			switch (laKind)
+			{
+				case Extern:
+				case Export:
+				case Align:
+				case Pragma:
+				case Deprecated:
+				case Final:
+				case Override:
+				case Abstract:
+				case Scope:
+				case __gshared:
+				case Synchronized:
+				case At:
+					return true;
+				case Static:
+					if (Lexer.CurrentPeekToken.Kind != If)
+						return true;
+					return false;
+				case Auto:
+					if (Lexer.CurrentPeekToken.Kind != OpenParenthesis && Lexer.CurrentPeekToken.Kind != Identifier)
+						return true;
+					return false;
+				default:
+					if (MemberFunctionAttribute[laKind])
+						goto case Auto;
+					return IsProtectionAttribute();
+			}
 		}
 		
 		/// <summary>
@@ -1856,12 +1882,17 @@ namespace D_Parser.Parser
 
 		bool IsProtectionAttribute()
 		{
-			return IsProtectionAttribute(laKind);
-		}
-
-		public static bool IsProtectionAttribute(int laKind)
-		{
-			return laKind == (Public) || laKind == (Private) || laKind == (Protected) || laKind == (Extern) || laKind == (Package);
+			switch (laKind)
+			{
+				case Public:
+				case Private:
+				case Protected:
+				case Extern:
+				case Package:
+					return true;
+				default:
+					return false;
+			}
 		}
 
 		private void AttributeSpecifier(IBlockNode scope)
@@ -2384,94 +2415,87 @@ namespace D_Parser.Parser
 
 		IExpression UnaryExpression(IBlockNode Scope = null)
 		{
-			// Note: PowExpressions are handled in PowExpression()
-
-			if (laKind == (BitwiseAnd) || laKind == (Increment) ||
-				laKind == (Decrement) || laKind == (Times) ||
-				laKind == (Minus) || laKind == (Plus) ||
-				laKind == (Not) || laKind == (Tilde))
+			switch (laKind)
 			{
-				Step();
+				// Note: PowExpressions are handled in PowExpression()
+				case BitwiseAnd:
+				case Increment:
+				case Decrement:
+				case Times:
+				case Minus:
+				case Plus:
+				case Not:
+				case Tilde:
+					Step();
+					SimpleUnaryExpression sue;
+					switch (t.Kind)
+					{
+						case BitwiseAnd:
+							sue = new UnaryExpression_And();
+							break;
+						case Increment:
+							sue = new UnaryExpression_Increment();
+							break;
+						case Decrement:
+							sue = new UnaryExpression_Decrement();
+							break;
+						case Times:
+							sue = new UnaryExpression_Mul();
+							break;
+						case Minus:
+							sue = new UnaryExpression_Sub();
+							break;
+						case Plus:
+							sue = new UnaryExpression_Add();
+							break;
+						case Tilde:
+							sue = new UnaryExpression_Cat();
+							break;
+						case Not:
+							sue = new UnaryExpression_Not();
+							break;
+						default:
+							SynErr(t.Kind, "Illegal token for unary expressions");
+							return null;
+					}
+					sue.Location = t.Location;
+					sue.UnaryExpression = UnaryExpression(Scope);
+					return sue;
 
-				SimpleUnaryExpression ae;
+				// CastExpression
+				case Cast:
+					Step();
+					var ce = new CastExpression { Location= t.Location };
 
-				switch (t.Kind)
-				{
-					case BitwiseAnd:
-						ae = new UnaryExpression_And();
-						break;
-					case Increment:
-						ae = new UnaryExpression_Increment();
-						break;
-					case Decrement:
-						ae = new UnaryExpression_Decrement();
-						break;
-					case Times:
-						ae = new UnaryExpression_Mul();
-						break;
-					case Minus:
-						ae = new UnaryExpression_Sub();
-						break;
-					case Plus:
-						ae = new UnaryExpression_Add();
-						break;
-					case Tilde:
-						ae = new UnaryExpression_Cat();
-						break;
-					case Not:
-						ae = new UnaryExpression_Not();
-						break;
-					default:
-						SynErr(t.Kind, "Illegal token for unary expressions");
-						return null;
-				}
+					if (Expect(OpenParenthesis))
+					{
+						if (laKind != CloseParenthesis) // Yes, it is possible that a cast() can contain an empty type!
+							ce.Type = Type();
+						Expect(CloseParenthesis);
+					}
+					ce.UnaryExpression = UnaryExpression(Scope);
+					ce.EndLocation = t.EndLocation;
+					return ce;
 
-				ae.Location = t.Location;
+				// DeleteExpression
+				case Delete:
+					Step();
+					return new DeleteExpression() { UnaryExpression = UnaryExpression(Scope) };
 
-				ae.UnaryExpression = UnaryExpression(Scope);
+				// PowExpression
+				default:
+					var left = PostfixExpression(Scope);
 
-				return ae;
+					if (laKind != Pow)
+						return left;
+
+					Step();
+					var pe = new PowExpression();
+					pe.LeftOperand = left;
+					pe.RightOperand = UnaryExpression(Scope);
+
+					return pe;
 			}
-
-			// CastExpression
-			if (laKind == (Cast))
-			{
-				Step();
-				var ae = new CastExpression { Location= t.Location };
-
-				if (Expect(OpenParenthesis))
-				{
-					if (laKind != CloseParenthesis) // Yes, it is possible that a cast() can contain an empty type!
-						ae.Type = Type();
-					Expect(CloseParenthesis);
-				}
-
-				ae.UnaryExpression = UnaryExpression(Scope);
-
-				ae.EndLocation = t.EndLocation;
-
-				return ae;
-			}
-
-			// DeleteExpression
-			if (laKind == (Delete))
-			{
-				Step();
-				return new DeleteExpression() { UnaryExpression = UnaryExpression(Scope) };
-			}
-
-			// PowExpression
-			var left = PostfixExpression(Scope);
-
-			if (laKind != Pow)
-				return left;
-
-			Step();
-			var pe = new PowExpression();
-			pe.LeftOperand = left;
-			pe.RightOperand = UnaryExpression(Scope);
-
-			return pe;
 		}
 
 		IExpression NewExpression(IBlockNode Scope = null)
@@ -2711,112 +2735,111 @@ namespace D_Parser.Parser
 
 			while (!IsEOF)
 			{
-				if (laKind == Dot)
+				switch (laKind)
 				{
-					Step();
-
-					var e = new PostfixExpression_Access { 
-						PostfixForeExpression=leftExpr
-					};
-
-					leftExpr = e;
-
-					if (laKind == New)
-						e.AccessExpression = PostfixExpression (Scope);
-					else if (IsTemplateInstance)
-						e.AccessExpression = TemplateInstance (Scope);
-					else if (Expect (Identifier))
-						e.AccessExpression = new IdentifierExpression (t.Value) {
-							Location = t.Location,
-							EndLocation = t.EndLocation
-						};
-					else if (IsEOF)
-						e.AccessExpression = new TokenExpression (DTokens.Incomplete);
-
-					e.EndLocation = t.EndLocation;
-				}
-				else if (laKind == Increment || laKind == Decrement)
-				{
-					Step();
-					var e = t.Kind == Increment ? (PostfixExpression)new PostfixExpression_Increment() : new PostfixExpression_Decrement();
-					e.EndLocation = t.EndLocation;					
-					e.PostfixForeExpression = leftExpr;
-					leftExpr = e;
-				}
-
-				// Function call
-				else if (laKind == OpenParenthesis)
-				{
-					Step();
-					var ae = new PostfixExpression_MethodCall();
-					ae.PostfixForeExpression = leftExpr;
-					leftExpr = ae;
-					
-					if (laKind == CloseParenthesis)
+					case Dot:
 						Step();
-					else
-					{
-						ae.Arguments = ArgumentList(Scope).ToArray();
-						Expect(CloseParenthesis);
-					}
-					
-					if(IsEOF)
-						ae.EndLocation = CodeLocation.Empty;
-					else
-						ae.EndLocation = t.EndLocation;
-				}
 
-				// IndexExpression | SliceExpression
-				else if (laKind == OpenSquareBracket)
-				{
-					Step();
+						var pea = new PostfixExpression_Access { 
+							PostfixForeExpression = leftExpr
+						};
 
-					if (laKind != CloseSquareBracket)
-					{
-						var firstEx = AssignExpression(Scope);
-						// [ AssignExpression .. AssignExpression ]
-						if (laKind == DoubleDot)
-						{
-							Step();
+						leftExpr = pea;
 
-							leftExpr = new PostfixExpression_Slice()
-							{
-								FromExpression = firstEx,
-								PostfixForeExpression = leftExpr,
-								ToExpression = AssignExpression(Scope)
+						if (laKind == New)
+							pea.AccessExpression = PostfixExpression(Scope);
+						else if (IsTemplateInstance)
+							pea.AccessExpression = TemplateInstance(Scope);
+						else if (Expect(Identifier))
+							pea.AccessExpression = new IdentifierExpression(t.Value) {
+								Location = t.Location,
+								EndLocation = t.EndLocation
 							};
-						}
-						// [ ArgumentList ]
-						else if (laKind == CloseSquareBracket || laKind == (Comma))
+						else if (IsEOF)
+							pea.AccessExpression = new TokenExpression(DTokens.Incomplete);
+
+						pea.EndLocation = t.EndLocation;
+						break;
+					case Increment:
+					case Decrement:
+						Step();
+						var peid = t.Kind == Increment ? (PostfixExpression)new PostfixExpression_Increment() : new PostfixExpression_Decrement();
+						peid.EndLocation = t.EndLocation;					
+						peid.PostfixForeExpression = leftExpr;
+						leftExpr = peid;
+						break;
+					// Function call
+					case OpenParenthesis:
+						Step();
+						var pemc = new PostfixExpression_MethodCall();
+						pemc.PostfixForeExpression = leftExpr;
+						leftExpr = pemc;
+
+						if (laKind == CloseParenthesis)
+							Step();
+						else
 						{
-							var args = new List<IExpression>();
-							args.Add(firstEx);
-							if (laKind == Comma)
+							pemc.Arguments = ArgumentList(Scope).ToArray();
+							Expect(CloseParenthesis);
+						}
+
+						if(IsEOF)
+							pemc.EndLocation = CodeLocation.Empty;
+						else
+							pemc.EndLocation = t.EndLocation;
+						break;
+					// IndexExpression | SliceExpression
+					case OpenSquareBracket:
+						Step();
+
+						if (laKind != CloseSquareBracket)
+						{
+							var firstEx = AssignExpression(Scope);
+							// [ AssignExpression .. AssignExpression ]
+							if (laKind == DoubleDot)
 							{
 								Step();
-								args.AddRange(ArgumentList(Scope));
-							}
 
-							leftExpr = new PostfixExpression_Index()
+								leftExpr = new PostfixExpression_Slice()
+								{
+									FromExpression = firstEx,
+									PostfixForeExpression = leftExpr,
+									ToExpression = AssignExpression(Scope)
+								};
+							}
+							// [ ArgumentList ]
+							else if (laKind == CloseSquareBracket || laKind == (Comma))
 							{
-								PostfixForeExpression = leftExpr,
-								Arguments = args.ToArray()
+								var args = new List<IExpression>();
+								args.Add(firstEx);
+								if (laKind == Comma)
+								{
+									Step();
+									args.AddRange(ArgumentList(Scope));
+								}
+
+								leftExpr = new PostfixExpression_Index()
+								{
+									PostfixForeExpression = leftExpr,
+									Arguments = args.ToArray()
+								};
+							}
+						}
+						else // Empty array literal = SliceExpression
+						{
+							leftExpr = new PostfixExpression_Slice()
+							{
+								PostfixForeExpression=leftExpr
 							};
 						}
-					}
-					else // Empty array literal = SliceExpression
-					{
-						leftExpr = new PostfixExpression_Slice()
-						{
-							PostfixForeExpression=leftExpr
-						};
-					}
 
-					Expect(CloseSquareBracket);
-					if(leftExpr is PostfixExpression)
-						((PostfixExpression)leftExpr).EndLocation = t.EndLocation;
+						Expect(CloseSquareBracket);
+						if(leftExpr is PostfixExpression)
+							((PostfixExpression)leftExpr).EndLocation = t.EndLocation;
+						break;
+					default:
+						return leftExpr;
 				}
-				else break;
 			}
 
 			return leftExpr;
@@ -2835,17 +2858,6 @@ namespace D_Parser.Parser
 				}
 			}
 
-			// Dollar (== Array length expression)
-			if (laKind == Dollar || DTokens.MetaIdentifiers[laKind])
-			{
-				Step();
-				return new TokenExpression(t.Kind)
-				{
-					Location = t.Location,
-					EndLocation = t.EndLocation
-				};
-			}
-
 			// TemplateInstance
 			if (IsTemplateInstance)
 			{
@@ -2858,339 +2870,329 @@ namespace D_Parser.Parser
 			if (IsLambaExpression())
 				return LambaExpression(Scope);
 
-			// Identifier
-			if (laKind == Identifier)
+			CodeLocation startLoc;
+			switch (laKind)
 			{
-				Step();
-
-				return new IdentifierExpression(t.Value)
+				// ArrayLiteral | AssocArrayLiteral
+				case OpenSquareBracket:
+					return ArrayLiteral(Scope);
+				case New:
+					return NewExpression(Scope);
+				case Typeof:
+					return new TypeDeclarationExpression(TypeOf());
+				case __traits:
+					return TraitsExpression();
+				// Dollar (== Array length expression)
+				case Dollar:
+					Step();
+					return new TokenExpression(t.Kind)
+					{
+						Location = t.Location,
+						EndLocation = t.EndLocation
+					};
+				case Identifier:
+					Step();
+					return new IdentifierExpression(t.Value)
 					{
 						Location = t.Location,
 						EndLocation = t.EndLocation,
 						ModuleScoped = isModuleScoped
 					};
-			}
+				// SpecialTokens (this,super,null,true,false,$) // $ has been handled before
+				case This:
+				case Super:
+				case Null:
+				case True:
+				case False:
+					Step();
+					return new TokenExpression(t.Kind)
+					{
+						Location = t.Location,
+						EndLocation = t.EndLocation
+					};
+				case OpenParenthesis:
+					if (IsFunctionLiteral())
+						goto case Function;
+					// ( Expression )
+					Step();
+					var ret = new SurroundingParenthesesExpression() {Location=t.Location };
 
-			// SpecialTokens (this,super,null,true,false,$) // $ has been handled before
-			if (laKind == (This) || laKind == (Super) || laKind == (Null) || laKind == (True) || laKind == (False))
-			{
-				Step();
-				return new TokenExpression(t.Kind)
-				{
-					Location = t.Location,
-					EndLocation = t.EndLocation
-				};
-			}
+					ret.Expression = Expression();
 
-			#region Literal
-			if (laKind == Literal)
-			{
-				Step();
-				var startLoc = t.Location;
+					Expect(CloseParenthesis);
+					ret.EndLocation = t.EndLocation;
+					return ret;
+				case Literal:
+					Step();
+					startLoc = t.Location;
 
-				// Concatenate multiple string literals here
-				if (t.LiteralFormat == LiteralFormat.StringLiteral || t.LiteralFormat == LiteralFormat.VerbatimStringLiteral)
-				{
-					var sb = new StringBuilder(t.RawCodeRepresentation ?? t.Value);
-					while (la.LiteralFormat == LiteralFormat.StringLiteral || la.LiteralFormat == LiteralFormat.VerbatimStringLiteral)
+					// Concatenate multiple string literals here
+					if (t.LiteralFormat == LiteralFormat.StringLiteral || t.LiteralFormat == LiteralFormat.VerbatimStringLiteral)
+					{
+						var sb = new StringBuilder(t.RawCodeRepresentation ?? t.Value);
+						while (la.LiteralFormat == LiteralFormat.StringLiteral || la.LiteralFormat == LiteralFormat.VerbatimStringLiteral)
+						{
+							Step();
+							sb.Append(t.RawCodeRepresentation ?? t.Value);
+						}
+						return new IdentifierExpression(sb.ToString(), t.LiteralFormat, t.Subformat) { Location = startLoc, EndLocation = t.EndLocation };
+					}
+					//else if (t.LiteralFormat == LiteralFormat.CharLiteral)return new IdentifierExpression(t.LiteralValue) { LiteralFormat=t.LiteralFormat,Location = startLoc, EndLocation = t.EndLocation };
+					return new IdentifierExpression(t.LiteralValue, t.LiteralFormat, t.Subformat) { Location = startLoc, EndLocation = t.EndLocation };
+				// FunctionLiteral
+				case Delegate:
+				case Function:
+				case OpenCurlyBrace:
+					var fl = new FunctionLiteral() { Location=la.Location};
+					fl.AnonymousMethod.Location = la.Location;
+
+					if (laKind == Delegate || laKind == Function)
 					{
 						Step();
-						sb.Append(t.RawCodeRepresentation ?? t.Value);
+						fl.LiteralToken = t.Kind;
 					}
-					return new IdentifierExpression(sb.ToString(), t.LiteralFormat, t.Subformat) { Location = startLoc, EndLocation = t.EndLocation };
-				}
-				//else if (t.LiteralFormat == LiteralFormat.CharLiteral)return new IdentifierExpression(t.LiteralValue) { LiteralFormat=t.LiteralFormat,Location = startLoc, EndLocation = t.EndLocation };
-				return new IdentifierExpression(t.LiteralValue, t.LiteralFormat, t.Subformat) { Location = startLoc, EndLocation = t.EndLocation };
-			}
-			#endregion
 
-			#region ArrayLiteral | AssocArrayLiteral
-			if (laKind == (OpenSquareBracket))
-				return ArrayLiteral(Scope);
-			#endregion
-
-			#region FunctionLiteral
-			if (laKind == Delegate || laKind == Function || laKind == OpenCurlyBrace || (laKind == OpenParenthesis && IsFunctionLiteral()))
-			{
-				var fl = new FunctionLiteral() { Location=la.Location};
-				fl.AnonymousMethod.Location = la.Location;
-
-				if (laKind == Delegate || laKind == Function)
-				{
-					Step();
-					fl.LiteralToken = t.Kind;
-				}
-
-				// file.d:1248
-				/*
-					listdir (".", delegate bool (DirEntry * de)
+					// file.d:1248
+					/*
+						listdir (".", delegate bool (DirEntry * de)
+						{
+							auto s = std.string.format("%s : c %s, w %s, a %s", de.name,
+									toUTCString (de.creationTime),
+									toUTCString (de.lastWriteTime),
+									toUTCString (de.lastAccessTime));
+							return true;
+						}
+						);
+					*/
+					if (laKind != OpenCurlyBrace) // foo( 1, {bar();} ); -> is a legal delegate
 					{
-						auto s = std.string.format("%s : c %s, w %s, a %s", de.name,
-								toUTCString (de.creationTime),
-								toUTCString (de.lastWriteTime),
-								toUTCString (de.lastAccessTime));
-						return true;
+						if (!IsFunctionAttribute && Lexer.CurrentPeekToken.Kind == OpenParenthesis)
+							fl.AnonymousMethod.Type = BasicType();
+						else if (laKind != OpenParenthesis && laKind != OpenCurlyBrace)
+							fl.AnonymousMethod.Type = Type();
+
+						if (laKind == OpenParenthesis)
+							fl.AnonymousMethod.Parameters = Parameters(fl.AnonymousMethod);
+
+						FunctionAttributes(fl.AnonymousMethod);
 					}
-					);
-				*/
-				if (laKind != OpenCurlyBrace) // foo( 1, {bar();} ); -> is a legal delegate
-				{
-					if (!IsFunctionAttribute && Lexer.CurrentPeekToken.Kind == OpenParenthesis)
-						fl.AnonymousMethod.Type = BasicType();
-					else if (laKind != OpenParenthesis && laKind != OpenCurlyBrace)
-						fl.AnonymousMethod.Type = Type();
 
-					if (laKind == OpenParenthesis)
-						fl.AnonymousMethod.Parameters = Parameters(fl.AnonymousMethod);
+					if(!IsEOF)
+						FunctionBody(fl.AnonymousMethod);
 
-					FunctionAttributes(fl.AnonymousMethod);
-				}
-				
-				if(!IsEOF)
-					FunctionBody(fl.AnonymousMethod);
+					fl.EndLocation = t.EndLocation;
 
-				fl.EndLocation = t.EndLocation;
+					if (Scope != null)
+						Scope.Add(fl.AnonymousMethod);
 
-				if (Scope != null)
-					Scope.Add(fl.AnonymousMethod);
-
-				return fl;
-			}
-			#endregion
-
-			#region AssertExpression
-			if (laKind == (Assert))
-			{
-				Step();
-				var startLoc = t.Location;
-				Expect(OpenParenthesis);
-				var ce = new AssertExpression() { Location=startLoc};
-
-				var exprs = new List<IExpression>();
-				exprs.Add(AssignExpression());
-
-				if (laKind == (Comma))
-				{
+					return fl;
+				// AssertExpression
+				case Assert:
 					Step();
+					startLoc = t.Location;
+					Expect(OpenParenthesis);
+					var ce = new AssertExpression() { Location=startLoc};
+
+					var exprs = new List<IExpression>();
 					exprs.Add(AssignExpression());
-				}
-				ce.AssignExpressions = exprs.ToArray();
-				Expect(CloseParenthesis);
-				ce.EndLocation = t.EndLocation;
-				return ce;
-			}
-			#endregion
 
-			#region MixinExpression | ImportExpression
-			if (laKind == Mixin)
-			{
-				Step();
-				var e = new MixinExpression() { Location=t.Location};
-				if (Expect(OpenParenthesis))
-				{
-					e.AssignExpression = AssignExpression();
-					Expect(CloseParenthesis);
-				}
-				e.EndLocation = t.EndLocation;
-				return e;
-			}
-
-			if (laKind == Import)
-			{
-				Step();
-				var e = new ImportExpression() { Location=t.Location};
-				Expect(OpenParenthesis);
-
-				e.AssignExpression = AssignExpression();
-
-				Expect(CloseParenthesis);
-				e.EndLocation = t.EndLocation;
-				return e;
-			}
-			#endregion
-
-			if (laKind == (Typeof))
-			{
-				return new TypeDeclarationExpression(TypeOf());
-			}
-
-			// TypeidExpression
-			if (laKind == (Typeid))
-			{
-				Step();
-				var ce = new TypeidExpression() { Location=t.Location};
-				Expect(OpenParenthesis);
-
-				if (IsAssignExpression())
-					ce.Expression = AssignExpression(Scope);
-				else
-				{
-					Lexer.PushLookAheadBackup();
-					AllowWeakTypeParsing = true;
-					ce.Type = Type();
-					AllowWeakTypeParsing = false;
-
-					if (ce.Type == null || laKind != CloseParenthesis)
+					if (laKind == (Comma))
 					{
-						Lexer.RestoreLookAheadBackup();
-						ce.Expression = AssignExpression();
+						Step();
+						exprs.Add(AssignExpression());
+					}
+					ce.AssignExpressions = exprs.ToArray();
+					Expect(CloseParenthesis);
+					ce.EndLocation = t.EndLocation;
+					return ce;
+				// MixinExpression
+				case Mixin:
+					Step();
+					var me = new MixinExpression() { Location=t.Location};
+					if (Expect(OpenParenthesis))
+					{
+						me.AssignExpression = AssignExpression();
+						Expect(CloseParenthesis);
+					}
+					me.EndLocation = t.EndLocation;
+					return me;
+				// ImportExpression
+				case Import:
+					Step();
+					var ie = new ImportExpression() { Location=t.Location};
+					Expect(OpenParenthesis);
+
+					ie.AssignExpression = AssignExpression();
+
+					Expect(CloseParenthesis);
+					ie.EndLocation = t.EndLocation;
+					return ie;
+				// TypeidExpression
+				case Typeid:
+					Step();
+					var tide = new TypeidExpression() { Location=t.Location};
+					Expect(OpenParenthesis);
+
+					if (IsAssignExpression())
+						tide.Expression = AssignExpression(Scope);
+					else
+					{
+						Lexer.PushLookAheadBackup();
+						AllowWeakTypeParsing = true;
+						tide.Type = Type();
+						AllowWeakTypeParsing = false;
+
+						if (tide.Type == null || laKind != CloseParenthesis)
+						{
+							Lexer.RestoreLookAheadBackup();
+							tide.Expression = AssignExpression();
+						}
+						else
+							Lexer.PopLookAheadBackup();
+					}
+
+					Expect (CloseParenthesis);
+
+					tide.EndLocation = t.EndLocation;
+					return tide;
+				// IsExpression
+				case Is:
+					Step();
+					var ise = new IsExpression() { Location = t.Location };
+					Expect(OpenParenthesis);
+
+					if ((ise.TestedType = Type()) == null)
+						SynErr(laKind, "In an IsExpression, either a type or an expression is required!");
+
+					if (ise.TestedType != null)
+					{
+						if (laKind == Identifier && (Lexer.CurrentPeekToken.Kind == CloseParenthesis || Lexer.CurrentPeekToken.Kind == Equal
+						    || Lexer.CurrentPeekToken.Kind == Colon))
+						{
+							Step();
+							Strings.Add(strVal);
+							ise.TypeAliasIdentifierHash = strVal.GetHashCode();
+							ise.TypeAliasIdLocation = t.Location;
+						}
+						else if (IsEOF)
+							ise.TypeAliasIdentifierHash = DTokens.IncompleteIdHash;
+					}
+
+					if (laKind == Colon || laKind == Equal)
+					{
+						Step();
+						ise.EqualityTest = t.Kind == Equal;
+					}
+					else if (laKind == CloseParenthesis)
+					{
+						Step();
+						ise.EndLocation = t.EndLocation;
+						return ise;
+					}
+
+					/*
+					TypeSpecialization:
+						Type
+							struct
+							union
+							class
+							interface
+							enum
+							function
+							delegate
+							super
+						const
+						immutable
+						inout
+						shared
+							return
+					*/
+
+					bool specialTest = false;
+					if (ise.EqualityTest)
+					{
+						switch (laKind)
+						{
+							case Typedef: // typedef is possible although it's not yet documented in the syntax docs
+							case Enum:
+							case Delegate:
+							case Function:
+							case Super:
+							case Return:
+								specialTest = true;
+								break;
+							case Const:
+							case Immutable:
+							case InOut:
+							case Shared:
+								specialTest = Peek(1).Kind == CloseParenthesis || Lexer.CurrentPeekToken.Kind == Comma;
+								break;
+							default:
+								specialTest = ClassLike[laKind];
+								break;
+						}
+					}
+					if (specialTest)
+					{
+						Step();
+						ise.TypeSpecializationToken = t.Kind;
 					}
 					else
-						Lexer.PopLookAheadBackup();
-				}
+						ise.TypeSpecialization = Type();
 
-				Expect (CloseParenthesis);
-
-				ce.EndLocation = t.EndLocation;
-				return ce;
-			}
-
-			#region IsExpression
-			if (laKind == Is)
-			{
-				Step();
-				var ce = new IsExpression() { Location=t.Location};
-				Expect(OpenParenthesis);
-
-				if((ce.TestedType = Type())==null)
-					SynErr(laKind, "In an IsExpression, either a type or an expression is required!");
-
-				if(ce.TestedType!=null)
-				{
-					if (laKind == Identifier && (Lexer.CurrentPeekToken.Kind == CloseParenthesis || Lexer.CurrentPeekToken.Kind == Equal
-						|| Lexer.CurrentPeekToken.Kind == Colon))
+					// TemplateParameterList
+					if (laKind == Comma)
 					{
-						Step();
-						Strings.Add(strVal);
-						ce.TypeAliasIdentifierHash = strVal.GetHashCode();
-						ce.TypeAliasIdLocation = t.Location;
+						var tempParam = new List<TemplateParameter>();
+						do
+						{
+							Step();
+							tempParam.Add(TemplateParameter(null));
+						}
+						while (laKind == Comma);
+						ise.TemplateParameterList = tempParam.ToArray();
 					}
-					else if(IsEOF)
-						ce.TypeAliasIdentifierHash = DTokens.IncompleteIdHash;
-				}
 
-				if (laKind == CloseParenthesis)
-				{
-					Step();
-					ce.EndLocation = t.EndLocation;
-					return ce;
-				}
-
-				if (laKind == Colon || laKind == Equal)
-				{
-					Step();
-					ce.EqualityTest = t.Kind == Equal;
-				}
-				else if (laKind == CloseParenthesis)
-				{
-					Step();
-					ce.EndLocation = t.EndLocation;
-					return ce;
-				}
-
-				/*
-				TypeSpecialization:
-					Type
-						struct
-						union
-						class
-						interface
-						enum
-						function
-						delegate
-						super
-					const
-					immutable
-					inout
-					shared
-						return
-				*/
-
-				if (ce.EqualityTest && (ClassLike[laKind] || laKind==Typedef || // typedef is possible although it's not yet documented in the syntax docs
-					laKind==Enum || laKind==Delegate || laKind==Function || laKind==Super || laKind==Return ||
-					((laKind==Const || laKind == Immutable || laKind == InOut || laKind == Shared) && 
-					(Peek(1).Kind==CloseParenthesis || Lexer.CurrentPeekToken.Kind==Comma))))
-				{
-					Step();
-					ce.TypeSpecializationToken = t.Kind;
-				}
-				else
-					ce.TypeSpecialization = Type();
-
-				// TemplateParameterList
-				if (laKind == Comma)
-				{
-					var ret = new List<TemplateParameter>();
-					do
+					Expect(CloseParenthesis);
+					ise.EndLocation = t.EndLocation;
+					return ise;
+				default:
+					if (DTokens.MetaIdentifiers[laKind])
+						goto case Dollar;
+					else if (IsBasicType())
 					{
-						Step();
-						ret.Add(TemplateParameter(null));
+						// BasicType . Identifier
+						startLoc = la.Location;
+
+						var bt=BasicType();
+
+						if ((bt is TypeOfDeclaration || bt is MemberFunctionAttributeDecl) && laKind!=Dot)
+							return new TypeDeclarationExpression(bt);
+
+						// Things like incomplete 'float.' expressions shall be parseable, too
+						if (Expect(Dot) && (Expect(Identifier) || IsEOF))
+							return new PostfixExpression_Access()
+							{
+								PostfixForeExpression = new TypeDeclarationExpression(bt),
+								AccessExpression = string.IsNullOrEmpty(t.Value) ? null : new IdentifierExpression(t.Value) { Location=t.Location, EndLocation=t.EndLocation },
+								EndLocation = t.EndLocation
+							};
+
+						return null;
 					}
-					while (laKind == Comma);
-					ce.TemplateParameterList = ret.ToArray();
-				}
 
-				Expect(CloseParenthesis);
-				ce.EndLocation = t.EndLocation;
-				return ce;
+					SynErr(Identifier);
+					if(laKind != CloseCurlyBrace)
+						Step();
+
+					if (IsEOF)
+						return new TokenExpression (DTokens.Incomplete) { Location = t.Location, EndLocation = t.Location };
+
+					// Don't know why, in rare situations, t tends to be null..
+					if (t == null)
+						return null;
+					return new TokenExpression() { Location = t.Location, EndLocation = t.EndLocation };
 			}
-			#endregion
-
-			// NewExpression
-			if (laKind == (New))
-				return NewExpression(Scope);
-
-			// ( Expression )
-			if (laKind == OpenParenthesis)
-			{
-				Step();
-				var ret = new SurroundingParenthesesExpression() {Location=t.Location };
-
-				ret.Expression = Expression();
-
-				Expect(CloseParenthesis);
-				ret.EndLocation = t.EndLocation;
-				return ret;
-			}
-
-			// TraitsExpression
-			if (laKind == (__traits))
-				return TraitsExpression();
-
-			#region BasicType . Identifier
-			if (IsBasicType())
-			{
-				var startLoc = la.Location;
-
-				var bt=BasicType();
-
-				if ((bt is TypeOfDeclaration || bt is MemberFunctionAttributeDecl) && laKind!=Dot)
-					return new TypeDeclarationExpression(bt);
-				
-				// Things like incomplete 'float.' expressions shall be parseable, too
-				if (Expect(Dot) && (Expect(Identifier) || IsEOF))
-                    return new PostfixExpression_Access()
-                    {
-                        PostfixForeExpression = new TypeDeclarationExpression(bt),
-                        AccessExpression = string.IsNullOrEmpty(t.Value) ? null : new IdentifierExpression(t.Value) { Location=t.Location, EndLocation=t.EndLocation },
-                        EndLocation = t.EndLocation
-                    };
-
-				return null;
-			}
-			#endregion
-
-			SynErr(Identifier);
-			if(laKind != CloseCurlyBrace)
-				Step();
-
-			if (IsEOF)
-				return new TokenExpression (DTokens.Incomplete) { Location = t.Location, EndLocation = t.Location };
-
-			// Don't know why, in rare situations, t tends to be null..
-			if (t == null)
-				return null;
-			return new TokenExpression() { Location = t.Location, EndLocation = t.EndLocation };
 		}
 
 		IExpression ArrayLiteral(IBlockNode scope, bool nonInitializer = true)
@@ -3420,600 +3422,534 @@ namespace D_Parser.Parser
 
 		public bool IsStatement
 		{
-			get {
-				return laKind == OpenCurlyBrace ||
-					(laKind == Identifier && Peek(1).Kind == Colon) ||
-					laKind == If || (laKind == Static && 
-						(Lexer.CurrentPeekToken.Kind == If || 
-						Lexer.CurrentPeekToken.Kind==Assert)) ||
-					laKind == While || laKind == Do ||
-					laKind == For ||
-					laKind == Foreach || laKind == Foreach_Reverse ||
-					(laKind == Final && Lexer.CurrentPeekToken.Kind == Switch) || laKind == Switch ||
-					laKind == Case || laKind == Default ||
-					laKind == Continue || laKind == Break||
-					laKind==Return ||
-					laKind==Goto ||
-					laKind==With||
-					laKind==Synchronized||
-					laKind==Try||
-					laKind==Throw||
-					laKind==Scope||
-					laKind==Asm||
-					laKind==Pragma||
-					laKind==Mixin||
-					laKind==Version||
-					laKind==Debug||
-					laKind==Assert||
-					laKind==Volatile
-					;
+			get
+			{
+				switch (laKind)
+				{
+					case OpenCurlyBrace:
+					case If:
+					case While:
+					case Do:
+					case For:
+					case Foreach:
+					case Foreach_Reverse:
+					case Switch:
+					case Case:
+					case Default:
+					case Continue:
+					case Break:
+					case Return:
+					case Goto:
+					case With:
+					case Synchronized:
+					case Try:
+					case Throw:
+					case Scope:
+					case Asm:
+					case Pragma:
+					case Mixin:
+					case Version:
+					case Debug:
+					case Assert:
+					case Volatile:
+						return true;
+					case Static:
+						return Lexer.CurrentPeekToken.Kind == If || Lexer.CurrentPeekToken.Kind == Assert;
+					case Final:
+						return Lexer.CurrentPeekToken.Kind == Switch;
+					case Identifier:
+						return Peek(1).Kind == Colon;
+					default:
+						return false;
+				}
 			}
 		}
 
 		public IStatement Statement(bool BlocksAllowed = true, bool EmptyAllowed = true, IBlockNode Scope = null, IStatement Parent=null)
 		{
-			if (EmptyAllowed && laKind == Semicolon)
+			bool declaration = false;
+			switch (laKind)
 			{
-				Step();
-				return null;
-			}
-
-			if (BlocksAllowed && laKind == OpenCurlyBrace)
-				return BlockStatement(Scope,Parent);
-
-			#region LabeledStatement (loc:... goto loc;)
-			if (laKind == Identifier && Lexer.CurrentPeekToken.Kind == Colon)
-			{
-				Step();
-
-				var ret = new LabeledStatement() { Location = t.Location, Identifier = t.Value, Parent = Parent };
-				Step();
-				ret.EndLocation = t.EndLocation;
-
-				return ret;
-			}
-			#endregion
-
-			#region IfStatement
-			else if (laKind == (If))
-			{
-				Step();
-
-				var dbs = new IfStatement{	Location = t.Location, Parent = Parent	};
-
-				Expect(OpenParenthesis);
-
-				// IfCondition
-				IfCondition(dbs);
-
-				// ThenStatement
-				if(Expect(CloseParenthesis))
-					dbs.ThenStatement = Statement(Scope: Scope, Parent: dbs);
-
-				// ElseStatement
-				if (laKind == (Else))
-				{
+				case Semicolon:
+					if (!EmptyAllowed)
+						goto default;
 					Step();
-					dbs.ElseStatement = Statement(Scope: Scope, Parent: dbs);
-				}
+					return null;
+				case OpenCurlyBrace:
+					if (!BlocksAllowed)
+						goto default;
+					return BlockStatement(Scope,Parent);
+				// LabeledStatement (loc:... goto loc;)
+				case Identifier:
+					if (Lexer.CurrentPeekToken.Kind != Colon)
+						goto default;
+					Step();
 
-				if(t != null)
-					dbs.EndLocation = t.EndLocation;
+					var ls = new LabeledStatement() { Location = t.Location, Identifier = t.Value, Parent = Parent };
+					Step();
+					ls.EndLocation = t.EndLocation;
 
-				return dbs;
-			}
-			#endregion
+					return ls;
+				// IfStatement
+				case If:
+					Step();
 
-			#region Conditions
-			else if ((laKind == Static && Lexer.CurrentPeekToken.Kind == If) || laKind == Version || laKind == Debug)
-				return StmtCondition(Parent, Scope);
-			#endregion
+					var iS = new IfStatement{	Location = t.Location, Parent = Parent	};
 
-			#region WhileStatement
-			else if (laKind == While)
-			{
-				Step();
+					Expect(OpenParenthesis);
+					// IfCondition
+					IfCondition(iS);
 
-				var dbs = new WhileStatement() { Location = t.Location, Parent = Parent };
+					// ThenStatement
+					if(Expect(CloseParenthesis))
+						iS.ThenStatement = Statement(Scope: Scope, Parent: iS);
 
-				Expect(OpenParenthesis);
-				dbs.Condition = Expression(Scope);
-				Expect(CloseParenthesis);
+					// ElseStatement
+					if (laKind == (Else))
+					{
+						Step();
+						iS.ElseStatement = Statement(Scope: Scope, Parent: iS);
+					}
 
-				if(!IsEOF)
-				{
-					dbs.ScopedStatement = Statement(Scope: Scope, Parent: dbs);
-					dbs.EndLocation = t.EndLocation;
-				}
+					if(t != null)
+						iS.EndLocation = t.EndLocation;
 
-				return dbs;
-			}
-			#endregion
+					return iS;
+				// Conditions
+				case Version:
+				case Debug:
+					return StmtCondition(Parent, Scope);
+				case Static:
+					if (Lexer.CurrentPeekToken.Kind == If)
+						return StmtCondition(Parent, Scope);
+					else if (Lexer.CurrentPeekToken.Kind == Assert)
+						goto case Assert;
+					else if (Lexer.CurrentPeekToken.Kind == Import)
+						goto case Import;
+					goto default;
+				case For:
+					return ForStatement(Scope, Parent);
+				case Foreach:
+				case Foreach_Reverse:
+					return ForeachStatement(Scope, Parent);
+				case While:
+					Step();
 
-			#region DoStatement
-			else if (laKind == (Do))
-			{
-				Step();
+					var ws = new WhileStatement() { Location = t.Location, Parent = Parent };
 
-				var dbs = new WhileStatement() { Location = t.Location, Parent = Parent };
-				if(!IsEOF)
-					dbs.ScopedStatement = Statement(true, false, Scope, dbs);
-
-				if(Expect(While) && Expect(OpenParenthesis))
-				{
-					dbs.Condition = Expression(Scope);
+					Expect(OpenParenthesis);
+					ws.Condition = Expression(Scope);
 					Expect(CloseParenthesis);
-					Expect(Semicolon);
-	
-					dbs.EndLocation = t.EndLocation;
-				}
 
-				return dbs;
-			}
-			#endregion
+					if(!IsEOF)
+					{
+						ws.ScopedStatement = Statement(Scope: Scope, Parent: ws);
+						ws.EndLocation = t.EndLocation;
+					}
 
-			#region ForStatement
-			else if (laKind == (For))
-				return ForStatement(Scope, Parent);
-			#endregion
-
-			#region ForeachStatement
-			else if (laKind == Foreach || laKind == Foreach_Reverse)
-				return ForeachStatement(Scope, Parent);
-			#endregion
-
-			#region [Final] SwitchStatement
-			else if ((laKind == (Final) && Lexer.CurrentPeekToken.Kind == (Switch)) || laKind == (Switch))
-			{
-				var dbs = new SwitchStatement { Location = la.Location, Parent = Parent };
-				if (laKind == (Final))
-				{
-					dbs.IsFinal = true;
+					return ws;
+				case Do:
 					Step();
-				}
-				Step();
-				Expect(OpenParenthesis);
-				dbs.SwitchExpression = Expression(Scope);
-				Expect(CloseParenthesis);
 
-				if(!IsEOF)
-					dbs.ScopedStatement = Statement(Scope: Scope, Parent: dbs);
-				dbs.EndLocation = t.EndLocation;
+					var dws = new WhileStatement() { Location = t.Location, Parent = Parent };
+					if(!IsEOF)
+						dws.ScopedStatement = Statement(true, false, Scope, dws);
 
-				return dbs;
-			}
-			#endregion
+					if(Expect(While) && Expect(OpenParenthesis))
+					{
+						dws.Condition = Expression(Scope);
+						Expect(CloseParenthesis);
+						Expect(Semicolon);
 
-			#region CaseStatement
-			else if (laKind == (Case))
-			{
-				Step();
+						dws.EndLocation = t.EndLocation;
+					}
 
-				var dbs = new SwitchStatement.CaseStatement() { Location = la.Location, Parent = Parent };
-				dbs.ArgumentList = Expression(Scope);
-
-				Expect(Colon);
-
-				// CaseRangeStatement
-				if (laKind == DoubleDot)
-				{
+					return dws;
+				// [Final] SwitchStatement
+				case Final:
+					if (Lexer.CurrentPeekToken.Kind != Switch)
+						goto default;
+					goto case Switch;
+				case Switch:
+					var ss = new SwitchStatement { Location = la.Location, Parent = Parent };
+					if (laKind == (Final))
+					{
+						ss.IsFinal = true;
+						Step();
+					}
 					Step();
-					Expect(Case);
-					dbs.LastExpression = AssignExpression();
+					Expect(OpenParenthesis);
+					ss.SwitchExpression = Expression(Scope);
+					Expect(CloseParenthesis);
+
+					if(!IsEOF)
+						ss.ScopedStatement = Statement(Scope: Scope, Parent: ss);
+					ss.EndLocation = t.EndLocation;
+
+					return ss;
+				case Case:
+					Step();
+
+					var sscs = new SwitchStatement.CaseStatement() { Location = la.Location, Parent = Parent };
+					sscs.ArgumentList = Expression(Scope);
+
 					Expect(Colon);
-				}
 
-				var sl = new List<IStatement>();
-
-				while (laKind != Case && laKind != Default && laKind != CloseCurlyBrace && !IsEOF)
-				{
-					var stmt = Statement(Scope: Scope, Parent: dbs);
-
-					if (stmt != null)
+					// CaseRangeStatement
+					if (laKind == DoubleDot)
 					{
-						stmt.Parent = dbs;
-						sl.Add(stmt);
+						Step();
+						Expect(Case);
+						sscs.LastExpression = AssignExpression();
+						Expect(Colon);
 					}
-				}
 
-				dbs.ScopeStatementList = sl.ToArray();
-				dbs.EndLocation = t.EndLocation;
+					var sscssl = new List<IStatement>();
 
-				return dbs;
-			}
-			#endregion
-
-			#region Default
-			else if (laKind == (Default))
-			{
-				Step();
-
-				var dbs = new SwitchStatement.DefaultStatement()
-				{
-					Location = la.Location,
-					Parent = Parent
-				};
-
-				Expect(Colon);
-
-				var sl = new List<IStatement>();
-
-				while (laKind != Case && laKind != Default && laKind != CloseCurlyBrace && !IsEOF)
-				{
-					var stmt = Statement(Scope: Scope, Parent: dbs);
-
-					if (stmt != null)
+					while (laKind != Case && laKind != Default && laKind != CloseCurlyBrace && !IsEOF)
 					{
-						stmt.Parent = dbs;
-						sl.Add(stmt);
+						var stmt = Statement(Scope: Scope, Parent: sscs);
+
+						if (stmt != null)
+						{
+							stmt.Parent = sscs;
+							sscssl.Add(stmt);
+						}
 					}
-				}
 
-				dbs.ScopeStatementList = sl.ToArray();
-				dbs.EndLocation = t.EndLocation;
+					sscs.ScopeStatementList = sscssl.ToArray();
+					sscs.EndLocation = t.EndLocation;
 
-				return dbs;
-			}
-			#endregion
-
-			#region Continue | Break
-			else if (laKind == (Continue))
-			{
-				Step();
-				var s = new ContinueStatement() { Location = t.Location, Parent = Parent };
-				if (laKind == (Identifier))
-				{
+					return sscs;
+				case Default:
 					Step();
-					s.Identifier = t.Value;
-				}
-				else if(IsEOF)
-					s.IdentifierHash = DTokens.IncompleteIdHash;
 
-				Expect(Semicolon);
-				s.EndLocation = t.EndLocation;
+					var ssds = new SwitchStatement.DefaultStatement()
+					{
+						Location = la.Location,
+						Parent = Parent
+					};
 
-				return s;
-			}
+					Expect(Colon);
 
-			else if (laKind == (Break))
-			{
-				Step();
-				var s = new BreakStatement() { Location = t.Location, Parent = Parent };
+					var ssdssl = new List<IStatement>();
 
-				if (laKind == (Identifier))
-				{
+					while (laKind != Case && laKind != Default && laKind != CloseCurlyBrace && !IsEOF)
+					{
+						var stmt = Statement(Scope: Scope, Parent: ssds);
+
+						if (stmt != null)
+						{
+							stmt.Parent = ssds;
+							ssdssl.Add(stmt);
+						}
+					}
+
+					ssds.ScopeStatementList = ssdssl.ToArray();
+					ssds.EndLocation = t.EndLocation;
+
+					return ssds;
+				case Continue:
 					Step();
-					s.Identifier = t.Value;
-				}
-				else if(IsEOF)
-					s.IdentifierHash = DTokens.IncompleteIdHash;
+					var cs = new ContinueStatement() { Location = t.Location, Parent = Parent };
+					if (laKind == (Identifier))
+					{
+						Step();
+						cs.Identifier = t.Value;
+					}
+					else if(IsEOF)
+						cs.IdentifierHash = DTokens.IncompleteIdHash;
 
-				Expect(Semicolon);
+					Expect(Semicolon);
+					cs.EndLocation = t.EndLocation;
 
-				s.EndLocation = t.EndLocation;
-
-				return s;
-			}
-			#endregion
-
-			#region Return
-			else if (laKind == (Return))
-			{
-				Step();
-				var s = new ReturnStatement() { Location = t.Location, Parent = Parent };
-
-				if (laKind != (Semicolon))
-					s.ReturnExpression = Expression(Scope);
-
-				Expect(Semicolon);
-				s.EndLocation = t.EndLocation;
-
-				return s;
-			}
-			#endregion
-
-			#region Goto
-			else if (laKind == (Goto))
-			{
-				Step();
-				var s = new GotoStatement() { Location = t.Location, Parent = Parent };
-
-				if (laKind == (Identifier))
-				{
+					return cs;
+				case Break:
 					Step();
-					s.StmtType = GotoStatement.GotoStmtType.Identifier;
-					s.LabelIdentifier = t.Value;
-				}
-				else if (laKind == Default)
-				{
+					var bs = new BreakStatement() { Location = t.Location, Parent = Parent };
+
+					if (laKind == (Identifier))
+					{
+						Step();
+						bs.Identifier = t.Value;
+					}
+					else if(IsEOF)
+						bs.IdentifierHash = DTokens.IncompleteIdHash;
+
+					Expect(Semicolon);
+
+					bs.EndLocation = t.EndLocation;
+
+					return bs;
+				case Return:
 					Step();
-					s.StmtType = GotoStatement.GotoStmtType.Default;
-				}
-				else if (laKind == (Case))
-				{
-					Step();
-					s.StmtType = GotoStatement.GotoStmtType.Case;
+					var rs = new ReturnStatement() { Location = t.Location, Parent = Parent };
 
 					if (laKind != (Semicolon))
-						s.CaseExpression = Expression(Scope);
-				}
-				else if(IsEOF)
-					s.LabelIdentifierHash = DTokens.IncompleteIdHash;
+						rs.ReturnExpression = Expression(Scope);
 
-				Expect(Semicolon);
-				s.EndLocation = t.EndLocation;
+					Expect(Semicolon);
+					rs.EndLocation = t.EndLocation;
 
-				return s;
-			}
-			#endregion
-
-			#region WithStatement
-			else if (laKind == (With))
-			{
-				Step();
-
-				var dbs = new WithStatement() { Location = t.Location, Parent = Parent };
-
-				if(Expect(OpenParenthesis))
-				{
-					// Symbol
-					dbs.WithExpression = Expression(Scope);
-	
-					Expect(CloseParenthesis);
-	
-					if(!IsEOF)
-						dbs.ScopedStatement = Statement(Scope: Scope, Parent: dbs);
-				}
-				dbs.EndLocation = t.EndLocation;
-				return dbs;
-			}
-			#endregion
-
-			#region SynchronizedStatement
-			else if (laKind == (Synchronized))
-			{
-				Step();
-				var dbs = new SynchronizedStatement() { Location = t.Location, Parent = Parent };
-
-				if (laKind == (OpenParenthesis))
-				{
+					return rs;
+				case Goto:
 					Step();
-					dbs.SyncExpression = Expression(Scope);
-					Expect(CloseParenthesis);
-				}
+					var gs = new GotoStatement() { Location = t.Location, Parent = Parent };
 
-				if(!IsEOF)
-					dbs.ScopedStatement = Statement(Scope: Scope, Parent: dbs);
-				dbs.EndLocation = t.EndLocation;
-				
-				return dbs;
-			}
-			#endregion
+					switch(laKind)
+					{
+						case Identifier:
+							Step();
+							gs.StmtType = GotoStatement.GotoStmtType.Identifier;
+							gs.LabelIdentifier = t.Value;
+							break;
+						case Default:
+							Step();
+							gs.StmtType = GotoStatement.GotoStmtType.Default;
+							break;
+						case Case:
+							Step();
+							gs.StmtType = GotoStatement.GotoStmtType.Case;
 
-			#region TryStatement
-			else if (laKind == (Try))
-			{
-				Step();
+							if (laKind != (Semicolon))
+								gs.CaseExpression = Expression(Scope);
+							break;
+						default:
+							if (IsEOF)
+								gs.LabelIdentifierHash = DTokens.IncompleteIdHash;
+							break;
+					}
+					Expect(Semicolon);
+					gs.EndLocation = t.EndLocation;
 
-				var s = new TryStatement() { Location = t.Location, Parent = Parent };
-
-				s.ScopedStatement = Statement(Scope: Scope, Parent: s);
-
-				if (!(laKind == (Catch) || laKind == (Finally)))
-					SemErr(Catch, "At least one catch or a finally block expected!");
-
-				var catches = new List<TryStatement.CatchStatement>();
-				// Catches
-				while (laKind == (Catch))
-				{
+					return gs;
+				case With:
 					Step();
 
-					var c = new TryStatement.CatchStatement() { Location = t.Location, Parent = s };
+					var wS = new WithStatement() { Location = t.Location, Parent = Parent };
 
-					// CatchParameter
+					if(Expect(OpenParenthesis))
+					{
+						// Symbol
+						wS.WithExpression = Expression(Scope);
+
+						Expect(CloseParenthesis);
+
+						if(!IsEOF)
+							wS.ScopedStatement = Statement(Scope: Scope, Parent: wS);
+					}
+					wS.EndLocation = t.EndLocation;
+					return wS;
+				case Synchronized:
+					Step();
+					var syncS = new SynchronizedStatement() { Location = t.Location, Parent = Parent };
+
 					if (laKind == (OpenParenthesis))
 					{
 						Step();
-
-						if (laKind == CloseParenthesis || IsEOF)
-						{
-							SemErr(CloseParenthesis, "Catch parameter expected, not ')'");
-							Step();
-						}
-						else
-						{
-							var catchVar = new DVariable { Parent = Scope, Location = t.Location };
-
-							Lexer.PushLookAheadBackup();
-							catchVar.Type = BasicType();
-							if (laKind == CloseParenthesis)
-							{
-								Lexer.RestoreLookAheadBackup();
-								catchVar.Type = new IdentifierDeclaration("Exception");
-							}
-							else
-								Lexer.PopLookAheadBackup();
-
-							if (Expect(Identifier))
-							{
-								catchVar.Name = t.Value;
-								catchVar.NameLocation = t.Location;
-								Expect(CloseParenthesis);
-							}
-							else if(IsEOF)
-								catchVar.NameHash = DTokens.IncompleteIdHash;
-
-							catchVar.EndLocation = t.EndLocation;
-							c.CatchParameter = catchVar;
-						}
+						syncS.SyncExpression = Expression(Scope);
+						Expect(CloseParenthesis);
 					}
 
 					if(!IsEOF)
-						c.ScopedStatement = Statement(Scope: Scope, Parent: c);
-					c.EndLocation = t.EndLocation;
+						syncS.ScopedStatement = Statement(Scope: Scope, Parent: syncS);
+					syncS.EndLocation = t.EndLocation;
 
-					catches.Add(c);
-				}
-
-				if (catches.Count > 0)
-					s.Catches = catches.ToArray();
-
-				if (laKind == (Finally))
-				{
+					return syncS;
+				case Try:
 					Step();
 
-					var f = new TryStatement.FinallyStatement() { Location = t.Location, Parent = Parent };
+					var ts = new TryStatement() { Location = t.Location, Parent = Parent };
 
-					f.ScopedStatement = Statement();
-					f.EndLocation = t.EndLocation;
+					ts.ScopedStatement = Statement(Scope: Scope, Parent: ts);
 
-					s.FinallyStmt = f;
-				}
+					if (!(laKind == (Catch) || laKind == (Finally)))
+						SemErr(Catch, "At least one catch or a finally block expected!");
 
-				s.EndLocation = t.EndLocation;
-				return s;
-			}
-			#endregion
+					var catches = new List<TryStatement.CatchStatement>();
+					// Catches
+					while (laKind == (Catch))
+					{
+						Step();
 
-			#region ThrowStatement
-			else if (laKind == (Throw))
-			{
-				Step();
-				var s = new ThrowStatement() { Location = t.Location, Parent = Parent };
+						var c = new TryStatement.CatchStatement() { Location = t.Location, Parent = ts };
 
-				s.ThrowExpression = Expression(Scope);
-				Expect(Semicolon);
-				s.EndLocation = t.EndLocation;
+						// CatchParameter
+						if (laKind == (OpenParenthesis))
+						{
+							Step();
 
-				return s;
-			}
-			#endregion
+							if (laKind == CloseParenthesis || IsEOF)
+							{
+								SemErr(CloseParenthesis, "Catch parameter expected, not ')'");
+								Step();
+							}
+							else
+							{
+								var catchVar = new DVariable { Parent = Scope, Location = t.Location };
 
-			#region ScopeGuardStatement
-			else if (laKind == DTokens.Scope)
-			{
-				Step();
+								Lexer.PushLookAheadBackup();
+								catchVar.Type = BasicType();
+								if (laKind == CloseParenthesis)
+								{
+									Lexer.RestoreLookAheadBackup();
+									catchVar.Type = new IdentifierDeclaration("Exception");
+								}
+								else
+									Lexer.PopLookAheadBackup();
 
-				if (laKind == OpenParenthesis)
-				{
-					var s = new ScopeGuardStatement() { Location = t.Location, Parent = Parent };
+								if (Expect(Identifier))
+								{
+									catchVar.Name = t.Value;
+									catchVar.NameLocation = t.Location;
+									Expect(CloseParenthesis);
+								}
+								else if(IsEOF)
+									catchVar.NameHash = DTokens.IncompleteIdHash;
 
+								catchVar.EndLocation = t.EndLocation;
+								c.CatchParameter = catchVar;
+							}
+						}
+
+						if(!IsEOF)
+							c.ScopedStatement = Statement(Scope: Scope, Parent: c);
+						c.EndLocation = t.EndLocation;
+
+						catches.Add(c);
+					}
+
+					if (catches.Count > 0)
+						ts.Catches = catches.ToArray();
+
+					if (laKind == (Finally))
+					{
+						Step();
+
+						var f = new TryStatement.FinallyStatement() { Location = t.Location, Parent = Parent };
+
+						f.ScopedStatement = Statement();
+						f.EndLocation = t.EndLocation;
+
+						ts.FinallyStmt = f;
+					}
+
+					ts.EndLocation = t.EndLocation;
+					return ts;
+				case Throw:
 					Step();
+					var ths = new ThrowStatement() { Location = t.Location, Parent = Parent };
 
-					if (Expect(Identifier) && t.Value != null) // exit, failure, success
-						s.GuardedScope = t.Value.ToLower();
-					else if(IsEOF)
-						s.GuardedScope = DTokens.IncompleteId;
-
-					Expect(CloseParenthesis);
-
-					s.ScopedStatement = Statement(Scope: Scope, Parent: s);
-
-					s.EndLocation = t.EndLocation;
-					return s;
-				}
-				else
-					PushAttribute(new Modifier(DTokens.Scope), false);
-			}
-			#endregion
-
-			#region AsmStmt
-			else if (laKind == Asm)
-				return AsmStatement(Parent);
-			#endregion
-
-			#region PragmaStatement
-			else if (laKind == (Pragma))
-			{
-				var s = new PragmaStatement { Location = la.Location };
-
-				s.Pragma = _Pragma();
-				s.Parent = Parent;
-
-				s.ScopedStatement = Statement(Scope: Scope, Parent: s);
-				s.EndLocation = t.EndLocation;
-				return s;
-			}
-			#endregion
-
-			#region MixinStatement
-			else if (laKind == (Mixin))
-			{
-				if (Peek(1).Kind == OpenParenthesis)
-				{
-					OverPeekBrackets(OpenParenthesis);
-					if (Lexer.CurrentPeekToken.Kind != Semicolon)
-						return ExpressionStatement(Scope, Parent);
-					return MixinDeclaration(Scope, Parent);
-				}
-				else
-				{
-					var tmx = TemplateMixin(Scope, Parent);
-					if (tmx.MixinId == null)
-						return tmx;
-					else
-						return new DeclarationStatement { Declarations = new[] { new NamedTemplateMixinNode(tmx) }, Parent = Parent };
-				}
-			}
-			#endregion
-
-			#region (Static) AssertExpression
-			else if (laKind == Assert || (laKind == Static && Lexer.CurrentPeekToken.Kind == Assert))
-			{
-				var isStatic = laKind == Static;
-				AssertStatement s;
-				if (isStatic)
-				{
-					Step();
-					s = new StaticAssertStatement { Location = la.Location, Parent = Parent };
-				}
-				else
-					s = new AssertStatement() { Location = la.Location, Parent = Parent };
-
-				Step();
-
-				if (Expect(OpenParenthesis))
-				{
-					s.AssertedExpression = Expression(Scope);
-					Expect(CloseParenthesis);
+					ths.ThrowExpression = Expression(Scope);
 					Expect(Semicolon);
-				}
-				s.EndLocation = t.EndLocation;
+					ths.EndLocation = t.EndLocation;
 
-				return s;
+					return ths;
+				case DTokens.Scope:
+					Step();
+
+					if (laKind == OpenParenthesis)
+					{
+						var s = new ScopeGuardStatement() {
+							Location = t.Location,
+							Parent = Parent
+						};
+
+						Step();
+
+						if (Expect(Identifier) && t.Value != null) // exit, failure, success
+							s.GuardedScope = t.Value.ToLower();
+						else if (IsEOF)
+							s.GuardedScope = DTokens.IncompleteId;
+
+						Expect(CloseParenthesis);
+
+						s.ScopedStatement = Statement(Scope: Scope, Parent: s);
+
+						s.EndLocation = t.EndLocation;
+						return s;
+					}
+					else
+						PushAttribute(new Modifier(DTokens.Scope), false);
+					goto default;
+				case Asm:
+					return AsmStatement(Parent);
+				case Pragma:
+					var ps = new PragmaStatement { Location = la.Location };
+
+					ps.Pragma = _Pragma();
+					ps.Parent = Parent;
+
+					ps.ScopedStatement = Statement(Scope: Scope, Parent: ps);
+					ps.EndLocation = t.EndLocation;
+					return ps;
+				case Mixin:
+					if (Peek(1).Kind == OpenParenthesis)
+					{
+						OverPeekBrackets(OpenParenthesis);
+						if (Lexer.CurrentPeekToken.Kind != Semicolon)
+							return ExpressionStatement(Scope, Parent);
+						return MixinDeclaration(Scope, Parent);
+					}
+					else
+					{
+						var tmx = TemplateMixin(Scope, Parent);
+						if (tmx.MixinId == null)
+							return tmx;
+						else
+							return new DeclarationStatement { Declarations = new[] { new NamedTemplateMixinNode(tmx) }, Parent = Parent };
+					}
+				case Assert:
+					var isStatic = laKind == Static;
+					AssertStatement asS;
+					if (isStatic)
+					{
+						Step();
+						asS = new StaticAssertStatement { Location = la.Location, Parent = Parent };
+					}
+					else
+						asS = new AssertStatement() { Location = la.Location, Parent = Parent };
+
+					Step();
+
+					if (Expect(OpenParenthesis))
+					{
+						asS.AssertedExpression = Expression(Scope);
+						Expect(CloseParenthesis);
+						Expect(Semicolon);
+					}
+					asS.EndLocation = t.EndLocation;
+
+					return asS;
+				case Volatile:
+					Step();
+					var vs = new VolatileStatement() { Location = t.Location, Parent = Parent };
+
+					vs.ScopedStatement = Statement(Scope: Scope, Parent: vs);
+					vs.EndLocation = t.EndLocation;
+
+					return vs;
+				case Import:
+					if(laKind == Static)
+						Step(); // Will be handled in ImportDeclaration
+
+					return ImportDeclaration(Scope);
+				case Enum:
+				case Alias:
+				case Typedef:
+					var ds = new DeclarationStatement() { Location = la.Location, Parent = Parent, ParentNode = Scope };
+					ds.Declarations = Declaration(Scope);
+
+					ds.EndLocation = t.EndLocation;
+					return ds;
+				default:
+					if (ClassLike[laKind] || BasicTypes[laKind] || Modifiers[laKind] || IsAtAttribute)
+						goto case Typedef;
+					if (IsAssignExpression())
+						return ExpressionStatement(Scope, Parent);
+					goto case Typedef;
+
 			}
-			#endregion
-
-			#region D1: VolatileStatement
-			else if (laKind == Volatile)
-			{
-				Step();
-				var s = new VolatileStatement() { Location = t.Location, Parent = Parent };
-
-				s.ScopedStatement = Statement(Scope: Scope, Parent: s);
-				s.EndLocation = t.EndLocation;
-
-				return s;
-			}
-			#endregion
-
-			// ImportDeclaration
-			else if (laKind == Import || (laKind == Static && Lexer.CurrentPeekToken.Kind == Import))
-			{
-				if(laKind == Static)
-					Step(); // Will be handled in ImportDeclaration
-
-				return ImportDeclaration(Scope);
-			}
-
-			else if (!(ClassLike[laKind] || BasicTypes[laKind] || laKind == Enum || Modifiers[laKind] || IsAtAttribute || laKind == Alias || laKind == Typedef) && IsAssignExpression())
-				return ExpressionStatement(Scope, Parent);
-
-			var ds = new DeclarationStatement() { Location = la.Location, Parent = Parent, ParentNode = Scope };
-			ds.Declarations = Declaration(Scope);
-
-			ds.EndLocation = t.EndLocation;
-			return ds;
 		}
 
 		private IStatement ExpressionStatement(IBlockNode Scope, IStatement Parent)

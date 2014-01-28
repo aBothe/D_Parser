@@ -33,7 +33,7 @@ namespace D_Parser.Parser
 		Utf32=130,
 	}
 
-	public class DToken
+	public sealed class DToken
 	{
 		#region Properties
 		public int Line;
@@ -76,7 +76,7 @@ namespace D_Parser.Parser
         }
     }
 
-    public class Comment
+	public sealed class Comment
     {
 		[Flags]
 		public enum Type : byte

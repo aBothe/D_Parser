@@ -807,7 +807,7 @@ namespace D_Parser.Parser
 
 		DToken ReadDigit(char ch, int x)
 		{
-			if (!Char.IsDigit(ch) && ch != '.')
+			if (!IsDigit(ch) && ch != '.')
 			{
 				OnError(Line, x, "Digit literals can only start with a digit (0-9) or a dot ('.')!");
 				return null;
@@ -890,7 +890,7 @@ namespace D_Parser.Parser
 				if (NumBase == 10 || (ch != '.' && NumBase == 0)) // Only allow further digits for 10-based integers, not for binary or hex values
 				{
 					NumBase = 10;
-					while (Char.IsDigit(peek) || peek == '_')
+					while (IsDigit(peek) || peek == '_')
 					{
 						if (peek != '_')
 							sb.Append((char)ReaderRead());
@@ -1319,7 +1319,7 @@ namespace D_Parser.Parser
 						if (c == ';')
 							break;
 
-						if (char.IsLetter(c))
+						if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
 							charEntity += c;
 						else
 						{
@@ -1852,14 +1852,72 @@ namespace D_Parser.Parser
 		#region Helpers
 		public static bool IsIdentifierPart(int ch)
 		{
-			if((ch >= 'a' && ch<='z') || 
-			   (ch >= 'A' && ch<='Z') ||
-			   (ch >= '0' && ch<='9') ||
-			  	ch == '_')
-				return true;
-			
 			switch(ch)
 			{
+				case 'a':
+				case 'A':
+				case 'b':
+				case 'B':
+				case 'c':
+				case 'C':
+				case 'd':
+				case 'D':
+				case 'e':
+				case 'E':
+				case 'f':
+				case 'F':
+				case 'g':
+				case 'G':
+				case 'h':
+				case 'H':
+				case 'i':
+				case 'I':
+				case 'j':
+				case 'J':
+				case 'k':
+				case 'K':
+				case 'l':
+				case 'L':
+				case 'm':
+				case 'M':
+				case 'n':
+				case 'N':
+				case 'o':
+				case 'O':
+				case 'p':
+				case 'P':
+				case 'q':
+				case 'Q':
+				case 'r':
+				case 'R':
+				case 's':
+				case 'S':
+				case 't':
+				case 'T':
+				case 'u':
+				case 'U':
+				case 'v':
+				case 'V':
+				case 'w':
+				case 'W':
+				case 'x':
+				case 'X':
+				case 'y':
+				case 'Y':
+				case 'z':
+				case 'Z':
+				case '_':
+				case '0':
+				case '1':
+				case '2':
+				case '3':
+				case '4':
+				case '5':
+				case '6':
+				case '7':
+				case '8':
+				case '9':
+					return true;
 				case ' ':
 				case '@':
 				case '/':
@@ -1879,14 +1937,61 @@ namespace D_Parser.Parser
 			}
 		}
 
+		public static bool IsDigit(char digit)
+		{
+			switch (digit)
+			{
+				case '0':
+				case '1':
+				case '2':
+				case '3':
+				case '4':
+				case '5':
+				case '6':
+				case '7':
+				case '8':
+				case '9':
+					return true;
+				default:
+					return false;
+			}
+		}
+
 		public static bool IsOct(char digit)
 		{
-			return Char.IsDigit(digit) && digit != '9' && digit != '8';
+			return IsDigit(digit) && digit != '9' && digit != '8';
 		}
 
 		public static bool IsHex(char digit)
 		{
-			return (digit >= '0' && digit<='9') || ('A' <= digit && digit <= 'F') || ('a' <= digit && digit <= 'f');
+			switch (digit)
+			{
+				case '0':
+				case '1':
+				case '2':
+				case '3':
+				case '4':
+				case '5':
+				case '6':
+				case '7':
+				case '8':
+				case '9':
+				case 'a':
+				case 'A':
+				case 'b':
+				case 'B':
+				case 'c':
+				case 'C':
+				case 'd':
+				case 'D':
+				case 'e':
+				case 'E':
+				case 'f':
+				case 'F':
+					return true;
+				default:
+					return false;
+			}
 		}
 
 		public static bool IsBin(char digit)
@@ -1907,25 +2012,67 @@ namespace D_Parser.Parser
 		/// <returns></returns>
 		public static bool IsLegalDigit(char d, int NumBase)
 		{
-			return (NumBase == 10 && (d >= '0' && d<='9')) || (NumBase == 2 && IsBin(d)) /* (NumBase == 8 && IsOct(d)) || */|| (NumBase == 16 && IsHex(d)) || d == '_';
+			if (d == '_')
+				return true;
+			switch (NumBase)
+			{
+				case 2:
+					return IsBin(d);
+				case 10:
+					return IsDigit(d);
+				case 16:
+					return IsHex(d);
+				default:
+					return false;
+			}
 		}
 
 		public static int GetHexNumber(char digit)
 		{
-			if (digit >= '0' && digit <= '9')
+			switch (digit)
 			{
-				return digit - '0';
+				case '0':
+					return 0;
+				case '1':
+					return 1;
+				case '2':
+					return 2;
+				case '3':
+					return 3;
+				case '4':
+					return 4;
+				case '5':
+					return 5;
+				case '6':
+					return 6;
+				case '7':
+					return 7;
+				case '8':
+					return 8;
+				case '9':
+					return 9;
+				case 'a':
+				case 'A':
+					return 10;
+				case 'b':
+				case 'B':
+					return 11;
+				case 'c':
+				case 'C':
+					return 12;
+				case 'd':
+				case 'D':
+					return 13;
+				case 'e':
+				case 'E':
+					return 14;
+				case 'f':
+				case 'F':
+					return 15;
+				default:
+					//errors.Error(line, col, String.Format("Invalid hex number '" + digit + "'"));
+					return 0;
 			}
-			if ('A' <= digit && digit <= 'F')
-			{
-				return digit - 'A' + 0xA;
-			}
-			if ('a' <= digit && digit <= 'f')
-			{
-				return digit - 'a' + 0xA;
-			}
-			//errors.Error(line, col, String.Format("Invalid hex number '" + digit + "'"));
-			return 0;
 		}
 
 		public static decimal ParseFloatValue(StringBuilder digit, int NumBase)
