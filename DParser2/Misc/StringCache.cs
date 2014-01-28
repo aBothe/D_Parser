@@ -30,16 +30,17 @@ namespace D_Parser
 {
 	public static class Strings
 	{
-		static System.Threading.AutoResetEvent access = new System.Threading.AutoResetEvent(true);
-		static readonly Dictionary<int,string> Table = new Dictionary<int, string>();
+		static readonly Object TableLock = new Object();
+		static readonly Dictionary<int, string> Table = new Dictionary<int, string>();
 
 		public static void Add(string s)
 		{
 			if (!string.IsNullOrEmpty (s)) {
 				var hash = s.GetHashCode ();
-				access.WaitOne ();
-				Table [hash] = s;
-				access.Set ();
+				lock (TableLock)
+				{
+					Table [hash] = s;
+				}
 			}
 		}
 
