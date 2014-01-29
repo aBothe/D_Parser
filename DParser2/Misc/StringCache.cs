@@ -30,14 +30,13 @@ namespace D_Parser
 {
 	public static class Strings
 	{
-		static readonly Object TableLock = new Object();
 		static readonly Dictionary<int, string> Table = new Dictionary<int, string>();
 
 		public static void Add(string s)
 		{
 			if (!string.IsNullOrEmpty (s)) {
 				var hash = s.GetHashCode ();
-				lock (TableLock)
+				lock (Table)
 				{
 					Table [hash] = s;
 				}
