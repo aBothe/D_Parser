@@ -2077,6 +2077,8 @@ namespace D_Parser.Parser
 
 		public static decimal ParseFloatValue(StringBuilder digit, int NumBase)
 		{
+			// When parsing phobos, this takes roughly 200ms, so may be worth optimizing.
+			//return 0M;
 			decimal ret = 0M;
 
 			int commaPos = -1;

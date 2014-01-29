@@ -84,7 +84,7 @@ namespace D_Parser.Misc
 	{
 		#region Properties
 
-		public static int NumThreads = Environment.ProcessorCount;
+		public static readonly int NumThreads = Environment.ProcessorCount - 1 > 0 ? (Environment.ProcessorCount - 1 <= 3 ? Environment.ProcessorCount - 1 : 3) : 1;
 		static Thread preparationThread;
 		static AutoResetEvent preparationThreadStartEvent = new AutoResetEvent (false);
 		static AutoResetEvent criticalPreparationSection = new AutoResetEvent(true);
@@ -105,8 +105,8 @@ namespace D_Parser.Misc
 			}
 		}
 
-		static ConcurrentStack<PathQueueArgs> basePathQueue = new ConcurrentStack<PathQueueArgs> ();
-		static ConcurrentStack<ParseIntermediate> queue = new ConcurrentStack<ParseIntermediate> ();
+		static readonly ConcurrentStack<PathQueueArgs> basePathQueue = new ConcurrentStack<PathQueueArgs> ();
+		static readonly ConcurrentStack<ParseIntermediate> queue = new ConcurrentStack<ParseIntermediate> ();
 		static int parsingThreads = 0;
 		static ManualResetEvent parseCompletedEvent = new ManualResetEvent (true);
 		static bool stopParsing;
@@ -118,10 +118,8 @@ namespace D_Parser.Misc
 		/// <summary>
 		/// Contains phys path -> RootPackage relationships.
 		/// </summary>
-		static readonly ConcurrentDictionary<string, RootPackage> ParsedDirectories
-			= new ConcurrentDictionary<string, RootPackage> ();
-		static readonly Dictionary<string, StatIntermediate> ParseStatistics
-			= new Dictionary<string, StatIntermediate> ();
+		static readonly ConcurrentDictionary<string, RootPackage> ParsedDirectories = new ConcurrentDictionary<string, RootPackage> ();
+		static readonly Dictionary<string, StatIntermediate> ParseStatistics = new Dictionary<string, StatIntermediate> ();
 		/// <summary>
 		/// Lookup that is used for fast filename-AST lookup. Do NOT modify, it'll be done inside the ModulePackage instances.
 		/// </summary>
