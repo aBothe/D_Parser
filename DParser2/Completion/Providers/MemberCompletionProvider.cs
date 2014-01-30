@@ -107,6 +107,14 @@ namespace D_Parser.Completion.Providers
 
 					isVariableInstance = token == DTokens.This || token == DTokens.Super;
 				}
+				else if (tr is TemplateType && tr.Base == null)
+				{
+					/*
+					 * template t(){ void foo() { } }
+					 * t!().foo must be offered for completion
+					 */
+					isVariableInstance = true;
+				}
 
 				// Cases:
 
