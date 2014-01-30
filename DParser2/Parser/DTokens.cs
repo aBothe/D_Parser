@@ -380,10 +380,10 @@ namespace D_Parser.Parser
 
 		public static readonly byte[] BasicTypes_Array = { Bool, Byte, Ubyte, Short, Ushort, Int, Uint, Long, Ulong, Cent, Ucent, Char, Wchar, Dchar, Float, Double, Real, Ifloat, Idouble, Ireal, Cfloat, Cdouble, Creal, Void };
 
-		public static readonly BitArray BasicTypes = NewSet(Bool, Byte, Ubyte, Short, Ushort, Int, Uint, Long, Ulong, Cent, Ucent, Char, Wchar, Dchar, Float, Double, Real, Ifloat, Idouble, Ireal, Cfloat, Cdouble, Creal, Void);
+		public static readonly BitArray BasicTypes = NewSet(BasicTypes_Array);
 
 		public static readonly BitArray BasicTypes_Integral = NewSet(Bool, Byte,Ubyte,Short,Ushort,Int,Uint,Long,Ulong,Cent, Ucent, Char,Wchar, Dchar);
-		public static readonly BitArray BasicTypes_FloatingPoint = NewSet(Float,Double,Real,Ifloat,Idouble,Ireal,Cfloat,Cdouble,Creal);
+		public static readonly BitArray BasicTypes_FloatingPoint = NewSet(Float, Double, Real, Ifloat, Idouble, Ireal, Cfloat, Cdouble, Creal);
 		public static readonly BitArray BasicTypes_Unsigned = NewSet(Ubyte, Ushort, Uint, Ulong, Ucent);
 
 		public static readonly BitArray CharTypes = NewSet (Char, Wchar, Dchar);
@@ -404,7 +404,7 @@ namespace D_Parser.Parser
             ShiftRightAssign, // >>=
             TripleRightShiftAssign,// >>>=
             PowAssign // ^^=
-            );
+		);
 		public static readonly BitArray TypeDeclarationKW = NewSet(Class, Interface, Struct, Template, Enum, Delegate, Function);
 		public static readonly BitArray RelationalOperators = NewSet(
             LessThan,
@@ -420,7 +420,7 @@ namespace D_Parser.Parser
 			UnorderedOrLess,
 			UnorderedLessOrEqual,
 			UnorderedOrEqual
-            );
+		);
 		public static readonly BitArray VisModifiers = NewSet(Public, Protected, Private, Package);
 		public static readonly BitArray Modifiers = NewSet(
             In,
@@ -446,27 +446,28 @@ namespace D_Parser.Parser
             //__thread,
             Lazy,
             Nothrow
-            );
+		);
 		public static readonly BitArray StorageClass = NewSet(
-            Abstract
-            ,Auto
-            ,Const
-            ,Deprecated
-            ,Extern
-            ,Final
-            ,Immutable
-            ,InOut
-            ,Shared
-	        ,Nothrow
-            ,Override
-	        ,Pure
-            ,Scope
-            ,Static
-			,Synchronized, Ref
-			,__gshared
-            );
+			Abstract,
+			Auto,
+			Const,
+			Deprecated,
+			Extern,
+			Final,
+			Immutable,
+			InOut,
+			Shared,
+			Nothrow,
+			Override,
+			Pure,
+			Scope,
+			Static,
+			Synchronized,
+			Ref,
+			__gshared
+		);
 
-		public static readonly BitArray MetaIdentifiers = NewSet(__DATE__,__FILE__,__FUNCTION__,__LINE__,__MODULE__,__PRETTY_FUNCTION__,__TIMESTAMP__,__TIME__,__VENDOR__,__VERSION__);
+		public static readonly BitArray MetaIdentifiers = NewSet(__DATE__, __FILE__, __FUNCTION__, __LINE__, __MODULE__, __PRETTY_FUNCTION__, __TIMESTAMP__, __TIME__, __VENDOR__, __VERSION__);
 
         /// <summary>
         /// Checks if modifier array contains member attributes. If so, it returns the last found attribute. Otherwise 0.
