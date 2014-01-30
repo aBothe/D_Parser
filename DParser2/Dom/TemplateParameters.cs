@@ -7,17 +7,10 @@ namespace D_Parser.Dom
 	{
 		public readonly int NameHash;
 		public readonly CodeLocation NameLocation;
-		public string Name {get{return Strings.TryGet (NameHash);}}
+		public string Name { get { return Strings.TryGet (NameHash); } }
 
-		public CodeLocation Location {
-			get;
-			set;
-		}
-
-		public CodeLocation EndLocation {
-			get;
-			set;
-		}
+		public CodeLocation Location { get; set; }
+		public CodeLocation EndLocation { get; set; }
 
 		readonly WeakReference parent;
 		public DNode Parent {get{ return parent.Target as DNode; }}
@@ -25,11 +18,9 @@ namespace D_Parser.Dom
 		Node representation;
 		public Node Representation
 		{
-			get{
-				if (representation == null)
-					representation = new Node (this);
-
-				return representation;
+			get
+			{
+				return representation ?? (representation = new Node(this));
 			}
 		}
 
@@ -54,7 +45,7 @@ namespace D_Parser.Dom
 		public abstract R Accept<R>(TemplateParameterVisitor<R> vis);
 
 
-		public class Node : DNode
+		public sealed class Node : DNode
 		{
 			public readonly TemplateParameter TemplateParameter;
 
@@ -97,7 +88,7 @@ namespace D_Parser.Dom
 	///		u. -- now the type of u is needed. A ITemplateParameterDeclaration will be returned which holds U.
 	/// }
 	/// </summary>
-	public class ITemplateParameterDeclaration : AbstractTypeDeclaration
+	public sealed class ITemplateParameterDeclaration : AbstractTypeDeclaration
 	{
 		public TemplateParameter TemplateParameter;
 
@@ -117,7 +108,7 @@ namespace D_Parser.Dom
 		}
 	}
 
-	public class TemplateTypeParameter : TemplateParameter
+	public sealed class TemplateTypeParameter : TemplateParameter
 	{
 		public ITypeDeclaration Specialization;
 		public ITypeDeclaration Default;
@@ -142,7 +133,7 @@ namespace D_Parser.Dom
 		public override R Accept<R>(TemplateParameterVisitor<R> vis) { return vis.Visit(this); }
 	}
 
-	public class TemplateThisParameter : TemplateParameter
+	public sealed class TemplateThisParameter : TemplateParameter
 	{
 		public readonly TemplateParameter FollowParameter;
 
@@ -181,7 +172,7 @@ namespace D_Parser.Dom
 		public override R Accept<R>(TemplateParameterVisitor<R> vis) { return vis.Visit(this); }
 	}
 
-	public class TemplateAliasParameter : TemplateValueParameter
+	public sealed class TemplateAliasParameter : TemplateValueParameter
 	{
 		public ITypeDeclaration SpecializationType;
 		public ITypeDeclaration DefaultType;
@@ -198,7 +189,7 @@ namespace D_Parser.Dom
 		public override R Accept<R>(TemplateParameterVisitor<R> vis) { return vis.Visit(this); }
 	}
 
-	public class TemplateTupleParameter : TemplateParameter
+	public sealed class TemplateTupleParameter : TemplateParameter
 	{
 		public sealed override string ToString()
 		{

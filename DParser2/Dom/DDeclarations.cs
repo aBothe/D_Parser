@@ -5,27 +5,41 @@ using D_Parser.Parser;
 
 namespace D_Parser.Dom
 {
-    /// <summary>
-    /// Identifier, e.g. "foo"
-    /// </summary>
-    public class IdentifierDeclaration : AbstractTypeDeclaration
-    {
+	/// <summary>
+	/// Identifier, e.g. "foo"
+	/// </summary>
+	public class IdentifierDeclaration : AbstractTypeDeclaration
+	{
 		public bool ModuleScoped;
 		public int IdHash;
+
 		public string Id
 		{
-			get{ return Strings.TryGet (IdHash); }
-			set{ IdHash = value != null ? value.GetHashCode () : 0; Strings.Add (value); }
+			get{ return Strings.TryGet(IdHash); }
+			set
+			{
+				IdHash = value != null ? value.GetHashCode() : 0;
+				Strings.Add(value);
+			}
 		}
 
-        public IdentifierDeclaration() { }
-		public IdentifierDeclaration(int IdHash) { this.IdHash = IdHash; }
-        public IdentifierDeclaration(string Value)
-        { this.Id = Value; }
+		public IdentifierDeclaration()
+		{
+		}
+
+		public IdentifierDeclaration(int IdHash)
+		{
+			this.IdHash = IdHash;
+		}
+
+		public IdentifierDeclaration(string Value)
+		{
+			this.Id = Value;
+		}
 
 		public override string ToString(bool IncludesBase)
 		{
-			return (ModuleScoped?".":"")+ (IncludesBase&& InnerDeclaration != null ? (InnerDeclaration.ToString() + ".") : "") + Id;
+			return (ModuleScoped ? "." : "") + (IncludesBase && InnerDeclaration != null ? (InnerDeclaration.ToString() + ".") : "") + Id;
 		}
 
 		public override void Accept(TypeDeclarationVisitor vis)
@@ -42,28 +56,33 @@ namespace D_Parser.Dom
 	/// <summary>
 	/// int, void, float
 	/// </summary>
-    public class DTokenDeclaration : AbstractTypeDeclaration
-    {
-        public byte Token;
+	public class DTokenDeclaration : AbstractTypeDeclaration
+	{
+		public byte Token;
 
-        public DTokenDeclaration() { }
-        public DTokenDeclaration(byte Token)
-        { this.Token = Token; }
+		public DTokenDeclaration()
+		{
+		}
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="p">The token</param>
-        /// <param name="td">Its base token</param>
-        public DTokenDeclaration(byte p, ITypeDeclaration td)
-        {
-            Token = p;
-            InnerDeclaration = td;
-        }
+		public DTokenDeclaration(byte Token)
+		{
+			this.Token = Token;
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="p">The token</param>
+		/// <param name="td">Its base token</param>
+		public DTokenDeclaration(byte p, ITypeDeclaration td)
+		{
+			Token = p;
+			InnerDeclaration = td;
+		}
 
 		public override string ToString(bool IncludesBase)
 		{
-			return (IncludesBase && InnerDeclaration!=null?(InnerDeclaration.ToString() + '.'):"") + DTokens.GetTokenString(Token);
+			return (IncludesBase && InnerDeclaration != null ? (InnerDeclaration.ToString() + '.') : "") + DTokens.GetTokenString(Token);
 		}
 
 		public override void Accept(TypeDeclarationVisitor vis)
@@ -77,33 +96,33 @@ namespace D_Parser.Dom
 		}
 	}
 
-    /// <summary>
-    /// Extends an identifier by an array literal.
-    /// </summary>
-    public class ArrayDecl : AbstractTypeDeclaration
-    {
+	/// <summary>
+	/// Extends an identifier by an array literal.
+	/// </summary>
+	public class ArrayDecl : AbstractTypeDeclaration
+	{
 		/// <summary>
 		/// Used for associative arrays; Contains all declaration parts that are located inside the square brackets.
 		/// Integer by default.
 		/// </summary>
-        public ITypeDeclaration KeyType=new DTokenDeclaration(DTokens.Int);
-
+		public ITypeDeclaration KeyType = new DTokenDeclaration(DTokens.Int);
 		public bool ClampsEmpty = true;
-
 		public IExpression KeyExpression;
 
 		public bool IsRanged
 		{
-			get {
+			get
+			{
 				return KeyExpression is PostfixExpression_Slice;
 			}
 		}
+
 		public bool IsAssociative
 		{
 			get
 			{
-				return KeyType!=null && (!(KeyType is DTokenDeclaration) ||
-					!DTokens.BasicTypes_Integral[(KeyType as DTokenDeclaration).Token]);
+				return KeyType != null && (!(KeyType is DTokenDeclaration) ||
+				!DTokens.BasicTypes_Integral[(KeyType as DTokenDeclaration).Token]);
 			}
 		}
 
@@ -117,7 +136,7 @@ namespace D_Parser.Dom
 		}
 
 		public override string ToString(bool IncludesBase)
-        {
+		{
 			var ret = "";
 
 			if (IncludesBase && ValueType != null)
@@ -125,7 +144,7 @@ namespace D_Parser.Dom
 
 			ret += "[";
 			
-			if(!ClampsEmpty)
+			if (!ClampsEmpty)
 			{
 				if (KeyExpression != null)
 					ret += KeyExpression.ToString();
@@ -145,47 +164,47 @@ namespace D_Parser.Dom
 		{
 			return vis.Visit(this);
 		}
-    }
+	}
 
-    public class DelegateDeclaration : AbstractTypeDeclaration
-    {
+	public class DelegateDeclaration : AbstractTypeDeclaration
+	{
 		/// <summary>
 		/// Alias for InnerDeclaration.
 		/// Contains 'int' in
 		/// int delegate() foo;
 		/// </summary>
-        public ITypeDeclaration ReturnType
-        {
-            get { return InnerDeclaration; }
-            set { InnerDeclaration = value; }
-        }
-        /// <summary>
-        /// Is it a function(), not a delegate() ?
-        /// </summary>
-        public bool IsFunction = false;
+		public ITypeDeclaration ReturnType
+		{
+			get { return InnerDeclaration; }
+			set { InnerDeclaration = value; }
+		}
 
-        public List<INode> Parameters = new List<INode>();
+		/// <summary>
+		/// Is it a function(), not a delegate() ?
+		/// </summary>
+		public bool IsFunction = false;
+		public List<INode> Parameters = new List<INode>();
 		public DAttribute[] Modifiers;
 
 		public override string ToString(bool IncludesBase)
-        {
-            string ret = (IncludesBase && ReturnType!=null? ReturnType.ToString():"") + (IsFunction ? " function" : " delegate") + "(";
+		{
+			string ret = (IncludesBase && ReturnType != null ? ReturnType.ToString() : "") + (IsFunction ? " function" : " delegate") + "(";
 
-            foreach (DVariable n in Parameters)
-            {
-                if (n.Type != null)
-                    ret += n.Type.ToString();
+			foreach (DVariable n in Parameters)
+			{
+				if (n.Type != null)
+					ret += n.Type.ToString();
 
 				if (n.NameHash != 0)
-                    ret += (" " + n.Name);
+					ret += (" " + n.Name);
 
-                if (n.Initializer != null)
-                    ret += "= " + n.Initializer.ToString();
+				if (n.Initializer != null)
+					ret += "= " + n.Initializer.ToString();
 
-                ret += ", ";
-            }
-            ret = ret.TrimEnd(',', ' ') + ")";
-            return ret;
+				ret += ", ";
+			}
+			ret = ret.TrimEnd(',', ' ') + ")";
+			return ret;
 		}
 
 		public override void Accept(TypeDeclarationVisitor vis)
@@ -197,19 +216,25 @@ namespace D_Parser.Dom
 		{
 			return vis.Visit(this);
 		}
-    }
+	}
 
-    /// <summary>
-    /// int* ptr;
-    /// </summary>
-    public class PointerDecl : AbstractTypeDeclaration
-    {
-        public PointerDecl() { }
-        public PointerDecl(ITypeDeclaration BaseType) { InnerDeclaration = BaseType; }
+	/// <summary>
+	/// int* ptr;
+	/// </summary>
+	public class PointerDecl : AbstractTypeDeclaration
+	{
+		public PointerDecl()
+		{
+		}
+
+		public PointerDecl(ITypeDeclaration BaseType)
+		{
+			InnerDeclaration = BaseType;
+		}
 
 		public override string ToString(bool IncludesBase)
-        {
-            return (IncludesBase&& InnerDeclaration != null ? InnerDeclaration.ToString() : "") + "*";
+		{
+			return (IncludesBase && InnerDeclaration != null ? InnerDeclaration.ToString() : "") + "*";
 		}
 
 		public override void Accept(TypeDeclarationVisitor vis)
@@ -221,26 +246,31 @@ namespace D_Parser.Dom
 		{
 			return vis.Visit(this);
 		}
-    }
+	}
 
-    /// <summary>
-    /// const(char)
-    /// </summary>
-    public class MemberFunctionAttributeDecl : AbstractTypeDeclaration
-    {
-        /// <summary>
+	/// <summary>
+	/// const(char)
+	/// </summary>
+	public class MemberFunctionAttributeDecl : AbstractTypeDeclaration
+	{
+		/// <summary>
 		/// Equals <see cref="DTokens.Const"/>
-        /// </summary>
-		public byte Modifier=DTokens.Const;
+		/// </summary>
+		public byte Modifier = DTokens.Const;
+		public ITypeDeclaration InnerType;
 
-        public ITypeDeclaration InnerType;
+		public MemberFunctionAttributeDecl()
+		{
+		}
 
-        public MemberFunctionAttributeDecl() { }
-        public MemberFunctionAttributeDecl(byte ModifierToken) { this.Modifier = ModifierToken; }
+		public MemberFunctionAttributeDecl(byte ModifierToken)
+		{
+			this.Modifier = ModifierToken;
+		}
 
 		public override string ToString(bool IncludesBase)
-        {
-            return (IncludesBase&& InnerDeclaration != null ? (InnerDeclaration.ToString()+" ") : "") + DTokens.GetTokenString(Modifier) + "(" + (InnerType != null ? InnerType.ToString() : "") + ")";
+		{
+			return (IncludesBase && InnerDeclaration != null ? (InnerDeclaration.ToString() + " ") : "") + DTokens.GetTokenString(Modifier) + "(" + (InnerType != null ? InnerType.ToString() : "") + ")";
 		}
 
 		public override void Accept(TypeDeclarationVisitor vis)
@@ -252,18 +282,18 @@ namespace D_Parser.Dom
 		{
 			return vis.Visit(this);
 		}
-    }
-    
-    /// <summary>
-    /// typeof(...)
-    /// </summary>
-    public class TypeOfDeclaration : AbstractTypeDeclaration
-    {
-    	public IExpression Expression;
-    	
+	}
+
+	/// <summary>
+	/// typeof(...)
+	/// </summary>
+	public class TypeOfDeclaration : AbstractTypeDeclaration
+	{
+		public IExpression Expression;
+
 		public override string ToString(bool IncludesBase)
 		{
-			return (IncludesBase&& InnerDeclaration != null ? (InnerDeclaration.ToString()+" ") : "") + "typeof(" + (Expression != null ? Expression.ToString() : "") + ")";
+			return (IncludesBase && InnerDeclaration != null ? (InnerDeclaration.ToString() + " ") : "") + "typeof(" + (Expression != null ? Expression.ToString() : "") + ")";
 		}
 
 		public override void Accept(TypeDeclarationVisitor vis)
@@ -275,7 +305,7 @@ namespace D_Parser.Dom
 		{
 			return vis.Visit(this);
 		}
-    }
+	}
 
 	/// <summary>
 	/// __vector(...)
@@ -303,14 +333,20 @@ namespace D_Parser.Dom
 	/// <summary>
 	/// void foo(int i,...) {} -> foo(1,2,3,4); = legal
 	/// </summary>
-    public class VarArgDecl : AbstractTypeDeclaration
-    {
-        public VarArgDecl() { }
-        public VarArgDecl(ITypeDeclaration BaseIdentifier) { InnerDeclaration = BaseIdentifier; }
+	public class VarArgDecl : AbstractTypeDeclaration
+	{
+		public VarArgDecl()
+		{
+		}
+
+		public VarArgDecl(ITypeDeclaration BaseIdentifier)
+		{
+			InnerDeclaration = BaseIdentifier;
+		}
 
 		public override string ToString(bool IncludesBase)
-        {
-            return (IncludesBase&& InnerDeclaration != null ? InnerDeclaration.ToString() : "") + "...";
+		{
+			return (IncludesBase && InnerDeclaration != null ? InnerDeclaration.ToString() : "") + "...";
 		}
 
 		public override void Accept(TypeDeclarationVisitor vis)
@@ -322,5 +358,5 @@ namespace D_Parser.Dom
 		{
 			return vis.Visit(this);
 		}
-    }
+	}
 }

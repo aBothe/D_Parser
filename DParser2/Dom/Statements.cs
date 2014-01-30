@@ -10,8 +10,11 @@ namespace D_Parser.Dom.Statements
 	public interface IStatement : ISyntaxRegion, IVisitable<StatementVisitor>
 	{
 		new CodeLocation Location { get; set; }
+
 		new CodeLocation EndLocation { get; set; }
+
 		IStatement Parent { get; set; }
+
 		INode ParentNode { get; set; }
 
 		string ToCode();
@@ -32,30 +35,41 @@ namespace D_Parser.Dom.Statements
 	public abstract class AbstractStatement:IStatement
 	{
 		public virtual CodeLocation Location { get; set; }
+
 		public virtual CodeLocation EndLocation { get; set; }
-		
+
 		readonly WeakReference parentStmt = new WeakReference(null);
 		readonly WeakReference parentNode = new WeakReference(null);
-		
-		public IStatement Parent { get
+
+		public IStatement Parent
+		{
+			get
 			{
-				return parentStmt.IsAlive ? parentStmt.Target as IStatement : null;
+				return parentStmt.Target as IStatement;
 			}
-			set{
+			set
+			{
 				parentStmt.Target = value;
 			}
 		}
 
-		public INode ParentNode {
+		public INode ParentNode
+		{
 			get
 			{
-				return parentNode.IsAlive ? parentNode.Target as INode : 
-					(parentStmt.IsAlive ? (parentStmt.Target as IStatement).ParentNode : null);
+				var n = parentNode.Target as INode;
+				if (n != null)
+					return n;
+				var t = parentStmt.Target as IStatement;
+				if (t != null)
+					return t.ParentNode;
+				return null;
 			}
 			set
 			{
-				if (parentStmt.IsAlive)
-					(parentStmt.Target as IStatement).ParentNode = value;
+				var ps = parentStmt.Target as IStatement;
+				if (ps != null)
+					ps.ParentNode = value;
 				else
 					parentNode.Target = value;
 			}
@@ -69,6 +83,7 @@ namespace D_Parser.Dom.Statements
 		}
 
 		public abstract void Accept(StatementVisitor vis);
+
 		public abstract R Accept<R>(StatementVisitor<R> vis);
 	}
 
@@ -86,7 +101,7 @@ namespace D_Parser.Dom.Statements
 			// First check if one sub-statement is located at the code location
 			var ss = SubStatements;
 
-			if(ss!=null)
+			if (ss != null)
 				foreach (var s in ss)
 					if (s != null && Where >= s.Location && Where <= s.EndLocation)
 						return s;
@@ -108,34 +123,33 @@ namespace D_Parser.Dom.Statements
 			var lastS = this;
 			IStatement ret = null;
 
-			while (lastS != null && (ret = lastS.SearchStatement (Where)) != lastS)
+			while (lastS != null && (ret = lastS.SearchStatement(Where)) != lastS)
 				lastS = ret as StatementContainingStatement;
 
 			return ret;
 		}
 	}
 	#endregion
-
 	public class BlockStatement : StatementContainingStatement, IEnumerable<IStatement>, IDeclarationContainingStatement
 	{
 		internal readonly List<IStatement> _Statements = new List<IStatement>();
 
 		public IEnumerator<IStatement>  GetEnumerator()
 		{
- 			return _Statements.GetEnumerator();
+			return _Statements.GetEnumerator();
 		}
 
 		System.Collections.IEnumerator  System.Collections.IEnumerable.GetEnumerator()
 		{
- 			return _Statements.GetEnumerator();
+			return _Statements.GetEnumerator();
 		}
 
 		public override string ToCode()
 		{
-			var ret = "{"+Environment.NewLine;
+			var ret = "{" + Environment.NewLine;
 
 			foreach (var s in _Statements)
-				ret += s.ToCode()+Environment.NewLine;
+				ret += s.ToCode() + Environment.NewLine;
 
 			return ret + "}";
 		}
@@ -155,15 +169,15 @@ namespace D_Parser.Dom.Statements
 				return _Statements;
 			}
 		}
-		
+
 		public static List<INode> GetDeclarations(IEnumerable<IStatement> stmts)
 		{
 			var l = new List<INode>();
 
 			foreach (var s in stmts)
 				if (s is BlockStatement ||
-					s is DeclarationStatement ||
-					s is ImportStatement)
+				    s is DeclarationStatement ||
+				    s is ImportStatement)
 				{
 					var decls = (s as IDeclarationContainingStatement).Declarations;
 					if (decls != null && decls.Length > 0)
@@ -198,16 +212,22 @@ namespace D_Parser.Dom.Statements
 
 		public override string ToString()
 		{
-			return "<block> "+base.ToString();
+			return "<block> " + base.ToString();
 		}
 	}
 
 	public class LabeledStatement : AbstractStatement
 	{
 		public int IdentifierHash;
-		public string Identifier {
-			get{ return Strings.TryGet (IdentifierHash); } 
-			set{ Strings.Add (value); IdentifierHash = value != null ? value.GetHashCode () : 0; }
+
+		public string Identifier
+		{
+			get{ return Strings.TryGet(IdentifierHash); } 
+			set
+			{
+				Strings.Add(value);
+				IdentifierHash = value != null ? value.GetHashCode() : 0;
+			}
 		}
 
 		public override string ToCode()
@@ -236,6 +256,7 @@ namespace D_Parser.Dom.Statements
 			get { return ScopedStatement; }
 			set { ScopedStatement = value; }
 		}
+
 		public IStatement ElseStatement;
 
 		public override IEnumerable<IStatement> SubStatements
@@ -244,7 +265,7 @@ namespace D_Parser.Dom.Statements
 			{
 				if (ThenStatement != null)
 					yield return ThenStatement;
-				if(ElseStatement != null)
+				if (ElseStatement != null)
 					yield return ElseStatement;
 			}
 		}
@@ -255,7 +276,7 @@ namespace D_Parser.Dom.Statements
 			{
 				if (ScopedStatement == null)
 					return base.EndLocation;
-				return ElseStatement!=null?ElseStatement.EndLocation:ScopedStatement. EndLocation;
+				return ElseStatement != null ? ElseStatement.EndLocation : ScopedStatement.EndLocation;
 			}
 			set
 			{
@@ -286,15 +307,17 @@ namespace D_Parser.Dom.Statements
 
 		public IExpression[] SubExpressions
 		{
-			get {
+			get
+			{
 				return new[] { IfCondition };
 			}
 		}
 
 		public INode[] Declarations
 		{
-			get { 
-				return IfVariable == null ? null : new[]{IfVariable};
+			get
+			{ 
+				return IfVariable == null ? null : new[]{ IfVariable };
 			}
 		}
 
@@ -330,12 +353,12 @@ namespace D_Parser.Dom.Statements
 
 		public override string ToCode()
 		{
-			var ret= "while(";
+			var ret = "while(";
 
 			if (Condition != null)
 				ret += Condition.ToString();
 
-			ret += ") "+Environment.NewLine;
+			ret += ") " + Environment.NewLine;
 
 			if (ScopedStatement != null)
 				ret += ScopedStatement.ToCode();
@@ -345,7 +368,7 @@ namespace D_Parser.Dom.Statements
 
 		public IExpression[] SubExpressions
 		{
-			get { return new[]{Condition}; }
+			get { return new[]{ Condition }; }
 		}
 
 		public override void Accept(StatementVisitor vis)
@@ -367,16 +390,16 @@ namespace D_Parser.Dom.Statements
 
 		public IExpression[] SubExpressions
 		{
-			get { return new[] { Test,Increment }; }
+			get { return new[] { Test, Increment }; }
 		}
 
 		public override IEnumerable<IStatement> SubStatements
 		{
 			get
 			{
-				if(Initialize != null)
+				if (Initialize != null)
 					yield return Initialize;
-				if(ScopedStatement != null)
+				if (ScopedStatement != null)
 					yield return ScopedStatement;
 			}
 		}
@@ -388,7 +411,7 @@ namespace D_Parser.Dom.Statements
 			if (Initialize != null)
 				ret += Initialize.ToCode();
 
-			ret+=';';
+			ret += ';';
 
 			if (Test != null)
 				ret += Test.ToString();
@@ -401,14 +424,15 @@ namespace D_Parser.Dom.Statements
 			ret += ')';
 
 			if (ScopedStatement != null)
-				ret += ' '+ScopedStatement.ToCode();
+				ret += ' ' + ScopedStatement.ToCode();
 
 			return ret;
 		}
 
 		public INode[] Declarations
 		{
-			get {
+			get
+			{
 				if (Initialize is DeclarationStatement)
 					return (Initialize as DeclarationStatement).Declarations;
 
@@ -435,6 +459,7 @@ namespace D_Parser.Dom.Statements
 		{
 			get { return UpperAggregate != null; }
 		}
+
 		public bool IsReverse = false;
 		public DVariable[] ForeachTypeList;
 
@@ -444,7 +469,6 @@ namespace D_Parser.Dom.Statements
 		}
 
 		public IExpression Aggregate;
-
 		/// <summary>
 		/// Used in ForeachRangeStatements. The Aggregate field will be the lower expression then.
 		/// </summary>
@@ -452,11 +476,13 @@ namespace D_Parser.Dom.Statements
 
 		public IExpression[] SubExpressions
 		{
-			get {
-				if (Aggregate != null) {
+			get
+			{
+				if (Aggregate != null)
+				{
 					if (UpperAggregate == null)
 						return new[]{ Aggregate };
-					return new[]{ Aggregate,UpperAggregate };
+					return new[]{ Aggregate, UpperAggregate };
 				}
 				if (UpperAggregate != null)
 					return new[]{ UpperAggregate };
@@ -466,19 +492,20 @@ namespace D_Parser.Dom.Statements
 
 		public override string ToCode()
 		{
-			var ret=(IsReverse?"foreach_reverse":"foreach")+'(';
+			var ret = (IsReverse ? "foreach_reverse" : "foreach") + '(';
 
-			if(ForeachTypeList != null){
+			if (ForeachTypeList != null)
+			{
 				foreach (var v in ForeachTypeList)
 					ret += v.ToString() + ',';
 
-				ret=ret.TrimEnd(',')+';';
+				ret = ret.TrimEnd(',') + ';';
 			}
 
 			if (Aggregate != null)
 				ret += Aggregate.ToString();
 
-			if (UpperAggregate!=null)
+			if (UpperAggregate != null)
 				ret += ".." + UpperAggregate.ToString();
 
 			ret += ')';
@@ -517,10 +544,10 @@ namespace D_Parser.Dom.Statements
 			if (SwitchExpression != null)
 				ret += SwitchExpression.ToString();
 
-			ret+=')';
+			ret += ')';
 
 			if (ScopedStatement != null)
-				ret += ' '+ScopedStatement.ToCode();
+				ret += ' ' + ScopedStatement.ToCode();
 
 			return ret;
 		}
@@ -543,27 +570,25 @@ namespace D_Parser.Dom.Statements
 			}
 
 			public IExpression ArgumentList;
-
 			/// <summary>
 			/// Used for CaseRangeStatements
 			/// </summary>
 			public IExpression LastExpression;
-
 			public IStatement[] ScopeStatementList;
 
 			public override string ToCode()
 			{
-				var ret= "case "+ArgumentList.ToString()+':' + (IsCaseRange?(" .. case "+LastExpression.ToString()+':'):"")+Environment.NewLine;
+				var ret = "case " + ArgumentList.ToString() + ':' + (IsCaseRange ? (" .. case " + LastExpression.ToString() + ':') : "") + Environment.NewLine;
 
 				foreach (var s in ScopeStatementList)
-					ret += s.ToCode()+Environment.NewLine;
+					ret += s.ToCode() + Environment.NewLine;
 
 				return ret;
 			}
 
 			public IExpression[] SubExpressions
 			{
-				get { return new[]{ArgumentList,LastExpression}; }
+				get { return new[]{ ArgumentList, LastExpression }; }
 			}
 
 			public override IEnumerable<IStatement> SubStatements
@@ -583,7 +608,7 @@ namespace D_Parser.Dom.Statements
 			{
 				return vis.Visit(this);
 			}
-			
+
 			public INode[] Declarations
 			{
 				get
@@ -607,7 +632,7 @@ namespace D_Parser.Dom.Statements
 
 			public override string ToCode()
 			{
-				var ret = "default:"+Environment.NewLine;
+				var ret = "default:" + Environment.NewLine;
 
 				foreach (var s in ScopeStatementList)
 					ret += s.ToCode() + Environment.NewLine;
@@ -624,7 +649,7 @@ namespace D_Parser.Dom.Statements
 			{
 				return vis.Visit(this);
 			}
-			
+
 			public INode[] Declarations
 			{
 				get
@@ -638,19 +663,25 @@ namespace D_Parser.Dom.Statements
 	public class ContinueStatement : AbstractStatement, IExpressionContainingStatement
 	{
 		public int IdentifierHash;
-		public string Identifier {
-			get{ return Strings.TryGet (IdentifierHash); } 
-			set{ Strings.Add (value); IdentifierHash = value != null ? value.GetHashCode () : 0; }
+
+		public string Identifier
+		{
+			get{ return Strings.TryGet(IdentifierHash); } 
+			set
+			{
+				Strings.Add(value);
+				IdentifierHash = value != null ? value.GetHashCode() : 0;
+			}
 		}
 
 		public override string ToCode()
 		{
-			return "continue"+(string.IsNullOrEmpty(Identifier)?"":(' '+Identifier))+';';
+			return "continue" + (string.IsNullOrEmpty(Identifier) ? "" : (' ' + Identifier)) + ';';
 		}
 
 		public IExpression[] SubExpressions
 		{
-			get { return IdentifierHash == 0 ? null : new[]{new IdentifierExpression(Identifier)}; }
+			get { return IdentifierHash == 0 ? null : new[]{ new IdentifierExpression(Identifier) }; }
 		}
 
 		public override void Accept(StatementVisitor vis)
@@ -667,9 +698,15 @@ namespace D_Parser.Dom.Statements
 	public class BreakStatement : AbstractStatement,IExpressionContainingStatement
 	{
 		public int IdentifierHash;
-		public string Identifier {
-			get{ return Strings.TryGet (IdentifierHash); } 
-			set{ Strings.Add (value); IdentifierHash = value != null ? value.GetHashCode () : 0; }
+
+		public string Identifier
+		{
+			get{ return Strings.TryGet(IdentifierHash); } 
+			set
+			{
+				Strings.Add(value);
+				IdentifierHash = value != null ? value.GetHashCode() : 0;
+			}
 		}
 
 		public override string ToCode()
@@ -699,12 +736,12 @@ namespace D_Parser.Dom.Statements
 
 		public override string ToCode()
 		{
-			return "return" + (ReturnExpression==null ? "" : (' ' + ReturnExpression.ToString())) + ';';
+			return "return" + (ReturnExpression == null ? "" : (' ' + ReturnExpression.ToString())) + ';';
 		}
 
 		public IExpression[] SubExpressions
 		{
-			get { return new[]{ReturnExpression}; }
+			get { return new[]{ ReturnExpression }; }
 		}
 
 		public override void Accept(StatementVisitor vis)
@@ -722,16 +759,23 @@ namespace D_Parser.Dom.Statements
 	{
 		public enum GotoStmtType : byte
 		{
-			Identifier=DTokens.Identifier,
-			Case=DTokens.Case,
-			Default=DTokens.Default
+			Identifier = DTokens.Identifier,
+			Case = DTokens.Case,
+			Default = DTokens.Default
 		}
 
 		public int LabelIdentifierHash;
-		public string LabelIdentifier {
-			get{ return Strings.TryGet (LabelIdentifierHash); } 
-			set{ Strings.Add (value); LabelIdentifierHash = value != null ? value.GetHashCode () : 0; }
+
+		public string LabelIdentifier
+		{
+			get{ return Strings.TryGet(LabelIdentifierHash); } 
+			set
+			{
+				Strings.Add(value);
+				LabelIdentifierHash = value != null ? value.GetHashCode() : 0;
+			}
 		}
+
 		public IExpression CaseExpression;
 		public GotoStmtType StmtType = GotoStmtType.Identifier;
 
@@ -740,11 +784,11 @@ namespace D_Parser.Dom.Statements
 			switch (StmtType)
 			{
 				case GotoStmtType.Identifier:
-					return "goto " + LabelIdentifier+';';
+					return "goto " + LabelIdentifier + ';';
 				case GotoStmtType.Default:
 					return "goto default;";
 				case GotoStmtType.Case:
-					return "goto"+(CaseExpression==null?"":(' '+CaseExpression.ToString()))+';';
+					return "goto" + (CaseExpression == null ? "" : (' ' + CaseExpression.ToString())) + ';';
 			}
 
 			return null;
@@ -790,9 +834,10 @@ namespace D_Parser.Dom.Statements
 
 		public IExpression[] SubExpressions
 		{
-			get {
+			get
+			{
 				if (WithExpression != null)
-					return new[] { WithExpression};
+					return new[] { WithExpression };
 				if (WithSymbol != null)
 					return new[] { new TypeDeclarationExpression(WithSymbol) };
 				return null;
@@ -816,7 +861,7 @@ namespace D_Parser.Dom.Statements
 
 		public override string ToCode()
 		{
-			var ret="synchronized";
+			var ret = "synchronized";
 
 			if (SyncExpression != null)
 				ret += '(' + SyncExpression.ToString() + ')';
@@ -829,7 +874,7 @@ namespace D_Parser.Dom.Statements
 
 		public IExpression[] SubExpressions
 		{
-			get { return new[]{SyncExpression}; }
+			get { return new[]{ SyncExpression }; }
 		}
 
 		public override void Accept(StatementVisitor vis)
@@ -866,7 +911,7 @@ namespace D_Parser.Dom.Statements
 
 		public override string ToCode()
 		{
-			var ret= "try " + (ScopedStatement!=null? (' '+ScopedStatement.ToCode()):"");
+			var ret = "try " + (ScopedStatement != null ? (' ' + ScopedStatement.ToCode()) : "");
 
 			if (Catches != null && Catches.Length > 0)
 				foreach (var c in Catches)
@@ -895,15 +940,16 @@ namespace D_Parser.Dom.Statements
 			public override string ToCode()
 			{
 				return "catch" + (CatchParameter != null ? ('(' + CatchParameter.ToString() + ')') : "")
-					+ (ScopedStatement != null ? (' ' + ScopedStatement.ToCode()) : "");
+				+ (ScopedStatement != null ? (' ' + ScopedStatement.ToCode()) : "");
 			}
 
 			public INode[] Declarations
 			{
-				get {
+				get
+				{
 					if (CatchParameter == null)
 						return null;
-					return new[]{CatchParameter}; 
+					return new[]{ CatchParameter }; 
 				}
 			}
 
@@ -943,12 +989,12 @@ namespace D_Parser.Dom.Statements
 
 		public override string ToCode()
 		{
-			return "throw" + (ThrowExpression==null ? "" : (' ' + ThrowExpression.ToString())) + ';';
+			return "throw" + (ThrowExpression == null ? "" : (' ' + ThrowExpression.ToString())) + ';';
 		}
 
 		public IExpression[] SubExpressions
 		{
-			get { return new[]{ThrowExpression}; }
+			get { return new[]{ ThrowExpression }; }
 		}
 
 		public override void Accept(StatementVisitor vis)
@@ -967,12 +1013,11 @@ namespace D_Parser.Dom.Statements
 		public const string ExitScope = "exit";
 		public const string SuccessScope = "success";
 		public const string FailureScope = "failure";
-
-		public string GuardedScope=ExitScope;
+		public string GuardedScope = ExitScope;
 
 		public override string ToCode()
 		{
-			return "scope("+GuardedScope+')'+ (ScopedStatement==null?"":ScopedStatement.ToCode());
+			return "scope(" + GuardedScope + ')' + (ScopedStatement == null ? "" : ScopedStatement.ToCode());
 		}
 
 		public override void Accept(StatementVisitor vis)
@@ -1004,7 +1049,7 @@ namespace D_Parser.Dom.Statements
 				ret += Environment.NewLine;
 			}
 
-			return ret+'}';
+			return ret + '}';
 		}
 
 		public override void Accept(StatementVisitor vis)
@@ -1024,14 +1069,14 @@ namespace D_Parser.Dom.Statements
 
 		public IExpression[] SubExpressions
 		{
-			get { return Pragma==null ? null: Pragma.Arguments; }
+			get { return Pragma == null ? null : Pragma.Arguments; }
 		}
 
 		public override string ToCode()
 		{
-			var r = Pragma==null? "" : Pragma.ToString();
+			var r = Pragma == null ? "" : Pragma.ToString();
 
-			r += ScopedStatement==null? "" : (" " + ScopedStatement.ToCode());
+			r += ScopedStatement == null ? "" : (" " + ScopedStatement.ToCode());
 
 			return r;
 		}
@@ -1053,12 +1098,12 @@ namespace D_Parser.Dom.Statements
 
 		public override string ToCode()
 		{
-			return "mixin("+(MixinExpression==null?"":MixinExpression.ToString())+");";
+			return "mixin(" + (MixinExpression == null ? "" : MixinExpression.ToString()) + ");";
 		}
 
 		public IExpression[] SubExpressions
 		{
-			get { return new[]{MixinExpression}; }
+			get { return new[]{ MixinExpression }; }
 		}
 
 		public override void Accept(StatementVisitor vis)
@@ -1070,8 +1115,8 @@ namespace D_Parser.Dom.Statements
 		{
 			return vis.VisitMixinStatement(this);
 		}
-		
-		public DAttribute[] Attributes{get;set;}
+
+		public DAttribute[] Attributes{ get; set; }
 	}
 
 	public class StatementCondition : StatementContainingStatement, IExpressionContainingStatement
@@ -1079,18 +1124,18 @@ namespace D_Parser.Dom.Statements
 		public IStatement ElseStatement;
 		public DeclarationCondition Condition;
 
-		public override string ToCode ()
+		public override string ToCode()
 		{
-			var sb = new StringBuilder ("if(");
+			var sb = new StringBuilder("if(");
 
 			if (Condition != null)
-				sb.Append (Condition.ToString ());
-			sb.AppendLine (")");
+				sb.Append(Condition.ToString());
+			sb.AppendLine(")");
 
 			if (ElseStatement != null)
-				sb.Append (ElseStatement);
+				sb.Append(ElseStatement);
 
-			return sb.ToString ();
+			return sb.ToString();
 		}
 
 		public override IEnumerable<IStatement> SubStatements
@@ -1099,7 +1144,7 @@ namespace D_Parser.Dom.Statements
 			{
 				if (ElseStatement != null)
 					yield return ElseStatement;
-				if(ScopedStatement != null)
+				if (ScopedStatement != null)
 					yield return ScopedStatement;
 			}
 		}
@@ -1116,9 +1161,9 @@ namespace D_Parser.Dom.Statements
 
 		public IExpression[] SubExpressions
 		{
-			get 
+			get
 			{ 
-				if(Condition is StaticIfCondition)
+				if (Condition is StaticIfCondition)
 				{
 					var sic = (StaticIfCondition)Condition;
 					if (sic.Expression != null)
@@ -1136,8 +1181,8 @@ namespace D_Parser.Dom.Statements
 
 		public override string ToCode()
 		{
-			return "assert("+(AssertedExpression!=null?AssertedExpression.ToString():"")+
-				(Message == null?"":(","+Message))+");";
+			return "assert(" + (AssertedExpression != null ? AssertedExpression.ToString() : "") +
+			(Message == null ? "" : ("," + Message)) + ");";
 		}
 
 		public IExpression[] SubExpressions
@@ -1160,7 +1205,7 @@ namespace D_Parser.Dom.Statements
 	{
 		public override string ToCode()
 		{
-			return "static "+base.ToCode();
+			return "static " + base.ToCode();
 		}
 
 		public DAttribute[] Attributes
@@ -1168,7 +1213,7 @@ namespace D_Parser.Dom.Statements
 			get;
 			set;
 		}
-		
+
 		public override void Accept(StatementVisitor vis)
 		{
 			vis.Visit(this);
@@ -1184,7 +1229,7 @@ namespace D_Parser.Dom.Statements
 	{
 		public override string ToCode()
 		{
-			return "volatile " + (ScopedStatement==null?"":ScopedStatement.ToCode());
+			return "volatile " + (ScopedStatement == null ? "" : ScopedStatement.ToCode());
 		}
 
 		public override void Accept(StatementVisitor vis)
@@ -1204,12 +1249,12 @@ namespace D_Parser.Dom.Statements
 
 		public override string ToCode()
 		{
-			return Expression.ToString()+';';
+			return Expression.ToString() + ';';
 		}
 
 		public IExpression[] SubExpressions
 		{
-			get { return new[]{Expression}; }
+			get { return new[]{ Expression }; }
 		}
 
 		public override void Accept(StatementVisitor vis)
@@ -1242,12 +1287,12 @@ namespace D_Parser.Dom.Statements
 				var d = Declarations[i];
 				r += ',' + d.Name;
 
-				var dv=d as DVariable;
+				var dv = d as DVariable;
 				if (dv != null && dv.Initializer != null)
 					r += '=' + dv.Initializer.ToString();
 			}
 
-			return r+';';
+			return r + ';';
 		}
 
 		public INode[] Declarations
@@ -1258,13 +1303,13 @@ namespace D_Parser.Dom.Statements
 
 		public IExpression[] SubExpressions
 		{
-			get 
+			get
 			{
 				var l = new List<IExpression>();
 
-				if(Declarations!=null)
+				if (Declarations != null)
 					foreach (var decl in Declarations)
-						if (decl is DVariable && (decl as DVariable).Initializer!=null)
+						if (decl is DVariable && (decl as DVariable).Initializer != null)
 							l.Add((decl as DVariable).Initializer);
 
 				return l.ToArray();
@@ -1295,16 +1340,17 @@ namespace D_Parser.Dom.Statements
 			if (Qualifier != null)
 				r += " " + Qualifier.ToString();
 
-			if(!string.IsNullOrEmpty(MixinId))
-				r+=' '+MixinId;
+			if (!string.IsNullOrEmpty(MixinId))
+				r += ' ' + MixinId;
 
-			return r+';';
+			return r + ';';
 		}
 
 		public IExpression[] SubExpressions
 		{
-			get {
-				var l=new List<IExpression>();
+			get
+			{
+				var l = new List<IExpression>();
 				var c = Qualifier;
 
 				while (c != null)
@@ -1343,7 +1389,7 @@ namespace D_Parser.Dom.Statements
 
 		public override string ToCode()
 		{
-			return "debug = "+(SpecifiedId??SpecifiedDebugLevel.ToString())+";";
+			return "debug = " + (SpecifiedId ?? SpecifiedDebugLevel.ToString()) + ";";
 		}
 
 		public override void Accept(StatementVisitor vis)
