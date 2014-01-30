@@ -1,30 +1,35 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-
 using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
 
 namespace D_Parser.Dom
 {
 	public abstract class DAttribute : ISyntaxRegion, IVisitable<NodeVisitor>
-	{ 
+	{
 		public CodeLocation Location
 		{
-			get; set;
+			get;
+			set;
 		}
 
 		public CodeLocation EndLocation
 		{
-			get; set;
+			get;
+			set;
 		}
-	
+
 		public abstract void Accept(NodeVisitor vis);
+
 		public abstract R Accept<R>(NodeVisitor<R> vis);
 	}
-	
-	public abstract class AtAttribute : DAttribute {}
-	
+
+	public abstract class AtAttribute : DAttribute
+	{
+
+	}
+
 	public class BuiltInAtAttribute : AtAttribute
 	{
 		public enum BuiltInAttributes
@@ -35,17 +40,17 @@ namespace D_Parser.Dom
 			Property,
 			Trusted
 		}
-		
+
 		public readonly BuiltInAttributes Kind;
-		
+
 		public BuiltInAtAttribute(BuiltInAttributes kind)
 		{
 			this.Kind = kind;
 		}
-		
+
 		public override string ToString()
 		{
-			switch(Kind)
+			switch (Kind)
 			{
 				case BuiltInAttributes.Disable:
 					return "@disable";
@@ -53,7 +58,7 @@ namespace D_Parser.Dom
 					return "@property";
 				case BuiltInAttributes.Safe:
 					return "@safe";
-					case BuiltInAttributes.System:
+				case BuiltInAttributes.System:
 					return "@system";
 				case BuiltInAttributes.Trusted:
 					return "@trusted";
@@ -61,96 +66,103 @@ namespace D_Parser.Dom
 			return "@<invalid>";
 		}
 
-		
 		public override R Accept<R>(NodeVisitor<R> vis)
 		{
 			return vis.VisitAttribute(this);
 		}
-		
+
 		public override void Accept(NodeVisitor vis)
 		{
 			vis.VisitAttribute(this);
 		}
 	}
-	
+
 	public class UserDeclarationAttribute : AtAttribute
 	{
 		public readonly IExpression[] AttributeExpression;
-		
+
 		public UserDeclarationAttribute(IExpression[] x)
 		{
 			AttributeExpression = x;
 		}
-		
+
 		public override string ToString()
 		{
-			if(AttributeExpression == null)
+			if (AttributeExpression == null)
 				return "@()";
-			if(AttributeExpression.Length == 1)
-				return "@"+AttributeExpression[0];
+			if (AttributeExpression.Length == 1)
+				return "@" + AttributeExpression[0];
 			var sb = new StringBuilder();
 			sb.Append("@(");
-			for(int i = 0; i<AttributeExpression.Length;i++){
+			for (int i = 0; i < AttributeExpression.Length; i++)
+			{
 				sb.Append(AttributeExpression[i]);
 				sb.Append(',');
 			}
-			sb.Remove(sb.Length-1,1);
+			sb.Remove(sb.Length - 1, 1);
 			sb.Append(")");
 			return sb.ToString();
 		}
-		
+
 		public override R Accept<R>(NodeVisitor<R> vis)
 		{
 			return vis.VisitAttribute(this);
 		}
-		
+
 		public override void Accept(NodeVisitor vis)
 		{
 			vis.VisitAttribute(this);
 		}
 	}
 
-    /// <summary>
-    /// Represents an attribute a declaration may have or consists of.
+	/// <summary>
+	/// Represents an attribute a declaration may have or consists of.
 	/// A modifier or storage class.
-    /// </summary>
-    public class Modifier : DAttribute
-    {
-        public readonly byte Token;
+	/// </summary>
+	public class Modifier : DAttribute
+	{
+		public readonly byte Token;
 		public int ContentHash;
 		object content;
-		public object LiteralContent { 
-			get{
-				return content ?? Strings.TryGet (ContentHash); 
+
+		public object LiteralContent
+		{ 
+			get
+			{
+				return content ?? Strings.TryGet(ContentHash); 
 			} 
-			set{ 
-				if (value is string) {
-					ContentHash = value.GetHashCode ();
-					Strings.Add (value as string);
+			set
+			{ 
+				if (value is string)
+				{
+					ContentHash = value.GetHashCode();
+					Strings.Add(value as string);
 					content = null;
-				} else
+				}
+				else
 					content = value;
-			 }
+			}
 		}
-        public static readonly Modifier Empty = new Modifier(0xff);
 
-        public Modifier(byte Token)
-        {
-            this.Token = Token;
-        }
+		public static readonly Modifier Empty = new Modifier(0xff);
 
-        public Modifier(byte Token, string Content)
-        {
-            this.Token = Token;
+		public Modifier(byte Token)
+		{
+			this.Token = Token;
+		}
+
+		public Modifier(byte Token, string Content)
+		{
+			this.Token = Token;
 			LiteralContent = Content;
-        }
+		}
 
-        public override string ToString()
-        {
+		public override string ToString()
+		{
 			if (ContentHash != 0 || content != null)
-                return DTokens.GetTokenString(Token) + "(" + LiteralContent.ToString() + ")";
+				return DTokens.GetTokenString(Token) + "(" + LiteralContent.ToString() + ")";
 			return DTokens.GetTokenString(Token);
-        }
+		}
 
 		/// <summary>
 		/// Removes all public,private,protected or package attributes from the list
@@ -169,13 +181,13 @@ namespace D_Parser.Dom
 		/// </summary>
 		public static void CleanupAccessorAttributes(Stack<DAttribute> HayStack, byte furtherAttrToRemove = 0)
 		{
-			var l=new List<DAttribute>();
+			var l = new List<DAttribute>();
 
-			while(HayStack.Count>0)
+			while (HayStack.Count > 0)
 			{
-				var attr=HayStack.Pop();
+				var attr = HayStack.Pop();
 				var m = attr as Modifier;
-				if (m==null || (!DTokens.VisModifiers[m.Token] && m.Token != furtherAttrToRemove))
+				if (m == null || (!DTokens.VisModifiers[m.Token] && m.Token != furtherAttrToRemove))
 					l.Add(attr);
 			}
 
@@ -190,7 +202,7 @@ namespace D_Parser.Dom
 			while (HayStack.Count > 0)
 			{
 				var attr = HayStack.Pop();
-				if (!(attr is Modifier) || ((Modifier)attr).Token!=Token)
+				if (!(attr is Modifier) || ((Modifier)attr).Token != Token)
 					l.Add(attr);
 			}
 
@@ -206,27 +218,29 @@ namespace D_Parser.Dom
 			return false;
 		}
 
-        public static bool ContainsAttribute(DAttribute[] HayStack,params byte[] NeedleToken)
-        {
+		public static bool ContainsAttribute(DAttribute[] HayStack, params byte[] NeedleToken)
+		{
 			if (HayStack == null || HayStack.Length == 0)
 				return false;
 
-            var l = new List<byte>(NeedleToken);
+			var l = new List<byte>(NeedleToken);
 			foreach (var attr in HayStack)
 				if (attr is Modifier && l.Contains(((Modifier)attr).Token))
 					return true;
             
 			return false;
-        }
-        public static bool ContainsAttribute(List<DAttribute> HayStack,params byte[] NeedleToken)
-        {
-            var l = new List<byte>(NeedleToken);
-            if(HayStack!=null)
-	            foreach (var attr in HayStack)
+		}
+
+		public static bool ContainsAttribute(List<DAttribute> HayStack, params byte[] NeedleToken)
+		{
+			var l = new List<byte>(NeedleToken);
+			if (HayStack != null)
+				foreach (var attr in HayStack)
 					if (attr is Modifier && l.Contains(((Modifier)attr).Token))
-	                    return true;
-            return false;
-        }
+						return true;
+			return false;
+		}
+
 		public static bool ContainsAttribute(Stack<DAttribute> HayStack, params byte[] NeedleToken)
 		{
 			var l = new List<byte>(NeedleToken);
@@ -236,15 +250,14 @@ namespace D_Parser.Dom
 			return false;
 		}
 
+		public bool IsStorageClass
+		{
+			get
+			{
+				return DTokens.StorageClass[Token];
+			}
+		}
 
-        public bool IsStorageClass
-        {
-            get
-            {
-                return DTokens.StorageClass[Token];
-            }
-        }
-	
 		public override void Accept(NodeVisitor vis)
 		{
 			vis.VisitAttribute(this);
@@ -255,20 +268,20 @@ namespace D_Parser.Dom
 			return vis.VisitAttribute(this);
 		}
 	}
-    
-    public class DeprecatedAttribute : Modifier
-    {
-		public IExpression DeprecationMessage {get{ return LiteralContent as IExpression; }}
+
+	public class DeprecatedAttribute : Modifier
+	{
+		public IExpression DeprecationMessage { get { return LiteralContent as IExpression; } }
 
 		public DeprecatedAttribute(CodeLocation loc, CodeLocation endLoc, IExpression msg = null)
     		: base(DTokens.Deprecated)
-    	{
-    		this.Location = loc;
-    		EndLocation =endLoc;
-    		LiteralContent = msg;
-    	}
-    	
-    	public override void Accept(NodeVisitor vis)
+		{
+			this.Location = loc;
+			EndLocation = endLoc;
+			LiteralContent = msg;
+		}
+
+		public override void Accept(NodeVisitor vis)
 		{
 			vis.VisitAttribute(this);
 		}
@@ -277,7 +290,7 @@ namespace D_Parser.Dom
 		{
 			return vis.VisitAttribute(this);
 		}
-    }
+	}
 
 	public class PragmaAttribute : Modifier
 	{
@@ -292,7 +305,9 @@ namespace D_Parser.Dom
 
 		public IExpression[] Arguments;
 
-		public PragmaAttribute() : base(DTokens.Pragma) { }
+		public PragmaAttribute() : base(DTokens.Pragma)
+		{
+		}
 
 		public override string ToString()
 		{
@@ -324,15 +339,22 @@ namespace D_Parser.Dom
 	public class VersionCondition : DeclarationCondition
 	{
 		public readonly int VersionIdHash;
-		public string VersionId {get{ return Strings.TryGet(VersionIdHash); }}
+
+		public string VersionId { get { return Strings.TryGet(VersionIdHash); } }
+
 		public readonly int VersionNumber;
 		public CodeLocation IdLocation;
 
-		public VersionCondition(string versionIdentifier) { 
+		public VersionCondition(string versionIdentifier)
+		{ 
 			VersionIdHash = versionIdentifier.GetHashCode();
-			Strings.Add (versionIdentifier); 
+			Strings.Add(versionIdentifier); 
 		}
-		public VersionCondition(int versionNumber) { VersionNumber = versionNumber; }
+
+		public VersionCondition(int versionNumber)
+		{
+			VersionNumber = versionNumber;
+		}
 
 		public override void Accept(NodeVisitor vis)
 		{
@@ -346,7 +368,7 @@ namespace D_Parser.Dom
 
 		public override string ToString()
 		{
-			return "version("+(VersionId ?? VersionNumber.ToString())+")";
+			return "version(" + (VersionId ?? VersionNumber.ToString()) + ")";
 		}
 
 		public override bool Equals(IDeclarationCondition other)
@@ -359,16 +381,26 @@ namespace D_Parser.Dom
 	public class DebugCondition : DeclarationCondition
 	{
 		public readonly int DebugIdHash;
-		public string DebugId {get{ return Strings.TryGet(DebugIdHash); }}
+
+		public string DebugId { get { return Strings.TryGet(DebugIdHash); } }
+
 		public readonly int DebugLevel;
 		public CodeLocation IdLocation;
 
-		public DebugCondition() { }
-		public DebugCondition(string debugIdentifier) { 
-			DebugIdHash = debugIdentifier.GetHashCode ();
+		public DebugCondition()
+		{
+		}
+
+		public DebugCondition(string debugIdentifier)
+		{ 
+			DebugIdHash = debugIdentifier.GetHashCode();
 			Strings.Add(debugIdentifier); 
 		}
-		public DebugCondition(int debugLevel) { DebugLevel = debugLevel; }
+
+		public DebugCondition(int debugLevel)
+		{
+			DebugLevel = debugLevel;
+		}
 
 		public override void Accept(NodeVisitor vis)
 		{
@@ -382,7 +414,8 @@ namespace D_Parser.Dom
 
 		public bool HasNoExplicitSpecification
 		{
-			get {
+			get
+			{
 				return DebugIdHash == 0 && DebugLevel == 0;
 			}
 		}
@@ -403,7 +436,10 @@ namespace D_Parser.Dom
 	{
 		public readonly IExpression Expression;
 
-		public StaticIfCondition(IExpression x) { Expression = x; }
+		public StaticIfCondition(IExpression x)
+		{
+			Expression = x;
+		}
 
 		public override bool Equals(IDeclarationCondition other)
 		{
@@ -415,7 +451,7 @@ namespace D_Parser.Dom
 		{
 			return "static if(" + (Expression == null ? "" : Expression.ToString()) + ")";
 		}
-		
+
 		public override void Accept(NodeVisitor vis)
 		{
 			vis.VisitAttribute(this);
@@ -444,9 +480,9 @@ namespace D_Parser.Dom
 
 		public override string ToString()
 		{
-			return "<not>"+FirstCondition.ToString();
+			return "<not>" + FirstCondition.ToString();
 		}
-		
+
 		public override void Accept(NodeVisitor vis)
 		{
 			vis.VisitAttribute(this);
