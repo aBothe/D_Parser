@@ -22,7 +22,7 @@ namespace D_Parser.Dom
 		{
 			get
 			{
-				return Column < 1 && Line < 1;
+				return Line + Column < 1;
 			}
 		}
 
