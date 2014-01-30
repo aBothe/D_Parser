@@ -37,25 +37,35 @@ namespace D_Parser.Dom.Statements
 		readonly WeakReference parentStmt = new WeakReference(null);
 		readonly WeakReference parentNode = new WeakReference(null);
 		
-		public IStatement Parent { get
+		public IStatement Parent 
+		{
+			get
 			{
-				return parentStmt.IsAlive ? parentStmt.Target as IStatement : null;
+				return parentStmt.Target as IStatement;
 			}
-			set{
+			set
+			{
 				parentStmt.Target = value;
 			}
 		}
 
-		public INode ParentNode {
+		public INode ParentNode
+		{
 			get
 			{
-				return parentNode.IsAlive ? parentNode.Target as INode : 
-					(parentStmt.IsAlive ? (parentStmt.Target as IStatement).ParentNode : null);
+				var n = parentNode.Target as INode;
+				if (n != null)
+					return n;
+				var t = parentStmt.Target as IStatement;
+				if (t != null)
+					return t.ParentNode;
+				return null;
 			}
 			set
 			{
-				if (parentStmt.IsAlive)
-					(parentStmt.Target as IStatement).ParentNode = value;
+				var ps = parentStmt.Target as IStatement;
+				if (ps != null)
+					ps.ParentNode = value;
 				else
 					parentNode.Target = value;
 			}
