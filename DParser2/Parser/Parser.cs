@@ -209,7 +209,7 @@ namespace D_Parser.Parser
 			var m = attr as Modifier;
 			if(m!=null)
 			// If attr would change the accessability of an item, remove all previously found (so the most near attribute that's next to the item is significant)
-			if (DTokens.VisModifiers[m.Token])
+			if (DTokens.IsVisibilityModifier(m.Token))
 				Modifier.CleanupAccessorAttributes(stk, m.Token);
 			else
 				Modifier.RemoveFromStack(stk, m.Token);
@@ -242,7 +242,7 @@ namespace D_Parser.Parser
 				if (m != null)
 				{
 					// If accessor already in attribute array, remove it
-					if (DTokens.VisModifiers[m.Token])
+					if (DTokens.IsVisibilityModifier(m.Token))
 						Modifier.CleanupAccessorAttributes(attrs);
 
 					if (!Modifier.ContainsAttribute(attrs, m.Token))

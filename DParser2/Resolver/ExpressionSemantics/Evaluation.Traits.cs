@@ -249,24 +249,24 @@ namespace D_Parser.Resolver.ExpressionSemantics
 								case "isArithmetic":
 									var pt = t as PrimitiveType;
 									ret = pt != null && (
-										DTokens.BasicTypes_Integral[pt.TypeToken] || 
-										DTokens.BasicTypes_FloatingPoint[pt.TypeToken]);
+										DTokens.IsBasicType_Integral(pt.TypeToken) || 
+										DTokens.IsBasicType_FloatingPoint(pt.TypeToken));
 									break;
 								case "isFloating":
 									pt = t as PrimitiveType;
-									ret = pt != null && DTokens.BasicTypes_FloatingPoint[pt.TypeToken];
+									ret = pt != null && DTokens.IsBasicType_FloatingPoint(pt.TypeToken);
 									break;
 								case "isIntegral":
 									pt = t as PrimitiveType;
-									ret = pt != null && DTokens.BasicTypes_Integral[pt.TypeToken];
+									ret = pt != null && DTokens.IsBasicType_Integral(pt.TypeToken);
 									break;
 								case "isScalar":
 									pt = t as PrimitiveType;
-									ret = pt != null && DTokens.BasicTypes[pt.TypeToken];
+									ret = pt != null && DTokens.IsBasicType(pt.TypeToken);
 									break;
 								case "isUnsigned":
 									pt = t as PrimitiveType;
-									ret = pt != null && DTokens.BasicTypes_Unsigned[pt.TypeToken];
+									ret = pt != null && DTokens.IsBasicType_Unsigned(pt.TypeToken);
 									break;
 									
 								case "isAbstractClass":

@@ -747,7 +747,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					{
 						var idx = EvaluateValue(x.Arguments[0], ctxt) as PrimitiveValue;
 
-						if (idx == null || !DTokens.BasicTypes_Integral[idx.BaseTypeToken])
+				if (idx == null || !DTokens.IsBasicType_Integral(idx.BaseTypeToken))
 						{
 							ctxt.LogError(x.Arguments[0], "Index expression must evaluate to integer value");
 						}
