@@ -618,85 +618,21 @@ namespace D_Parser.Parser
 
         public static string GetDescription(string token)
         {
-			if (token.StartsWith("@"))
+			switch (token)
 			{
-				if (token == "@disable")
-					return @"Disables a declaration
-A ref­er­ence to a de­c­la­ra­tion marked with the @dis­able at­tribute causes a com­pile time error. 
-
-This can be used to ex­plic­itly dis­al­low cer­tain op­er­a­tions 
-or over­loads at com­pile time 
-rather than re­ly­ing on gen­er­at­ing a run­time error.";
-
-				if (token == "@property")
-					return 
-@"Prop­erty func­tions 
-can be called with­out paren­the­ses (hence act­ing like prop­er­ties).
-
-struct S {
-  int m_x;
-  @property {
-    int x() { return m_x; }
-    int x(int newx) { return m_x = newx; }
-  }
-}
-
-void foo() {
-  S s;
-  s.x = 3;   // calls s.x(int)
-  bar(s.x);  // calls bar(s.x())
-}";
-
-				if (token == "@safe")
-					return @"Safe func­tions
-
-The fol­low­ing op­er­a­tions are not al­lowed in safe func­tions:
-
-- No cast­ing from a pointer type 
-  to any type other than void*.
-- No cast­ing from any non-pointer 
-  type to a pointer type.
-- No mod­i­fi­ca­tion of pointer val­ues.
-- Can­not ac­cess unions that have point­ers or 
-  ref­er­ences over­lap­ping with other types.
-- Call­ing any sys­tem func­tions.
-- No catch­ing of ex­cep­tions that 
-  are not de­rived from class Ex­cep­tion.
-- No in­line as­sem­bler.
-- No ex­plicit cast­ing of mu­ta­ble ob­jects to im­mutable.
-- No ex­plicit cast­ing of im­mutable ob­jects to mu­ta­ble.
-- No ex­plicit cast­ing of thread local ob­jects to shared.
-- No ex­plicit cast­ing of shared ob­jects to thread local.
-- No tak­ing the ad­dress of a local 
-  vari­able or func­tion pa­ra­me­ter.
-- Can­not ac­cess __gshared vari­ables.
-- Func­tions nested in­side safe 
-  func­tions de­fault to being safe func­tions.
-
-Safe func­tions are co­vari­ant with trusted or sys­tem func­tions.";
-
-
-				if (token == "@system")
-					return @"Sys­tem func­tions 
-are func­tions not marked with @safe or @trusted and are not nested in­side @safe func­tions. 
-
-Sys­tem func­tions may be marked with the @sys­tem at­tribute.
- 
-A func­tion being sys­tem does not mean it ac­tu­ally is un­safe, it just means that the com­piler is un­able to ver­ify that it can­not ex­hibit un­de­fined be­hav­ior.
-
-Sys­tem func­tions are not co­vari­ant with trusted or safe func­tions.";
-
-
-				if (token == "@trusted")
-					return string.Join(Environment.NewLine, "Trusted func­tions","",
-"- Are marked with the @trusted at­tribute,",
-@"- Are guar­an­teed by the pro­gram­mer to not ex­hibit 
-  any un­de­fined be­hav­ior if called by a safe func­tion,",
-"- May call safe, trusted, or sys­tem func­tions,",
-"- Are co­vari­ant with safe or sys­tem func­tions");
+				case "@disable":
+					return "Disables a declaration\nA reference to a declaration marked with the @disable attribute causes a compile time error\n\nThis can be used to explicitly disallow certain operations \nor overloads at compile time \nrather than relying on generating a runtime error.";
+				case "@property":
+					return "Property functions \ncan be called without parentheses (hence acting like properties).\n\nstruct S {\n  int m_x;\n  @property {\n    int x() { return m_x; }\n    int x(int newx) { return m_x = newx; }\n  }\n}\n\nvoid foo() {\n  S s;\n  s.x = 3;   // calls s.x(int)\n  bar(s.x);  // calls bar(s.x())\n}";
+				case "@safe":
+					return "Safe functions\n\nThe following operations are not allowed in safe functions:\n\n- No casting from a pointer type to any type other than void*.\n- No casting from any non-pointer type to a pointer type.\n- No modification of pointer values.\n- Cannot access unions that have pointers or references overlapping with other types.\n- Calling any system functions.\n- No catching of exceptions that are not derived from class Exception.\n- No inline assembler.\n- No explicit casting of mutable objects to immutable.\n- No explicit casting of immutable objects to mutable.\n- No explicit casting of thread local objects to shared.\n- No explicit casting of shared objects to thread local.\n- No taking the address of a local variable or function parameter.\n- Cannot access __gshared variables.\n- Functions nested inside safe functions default to being safe functions.\n\nSafe functions are covariant with trusted or system functions.";
+				case "@system":
+					return "System functions \nare functions not marked with @safe or @trusted and are not nested inside @safe functions\n\nSystem functions may be marked with the @system attribute.\n \nA function being system does not mean it actually is unsafe, it just means that the compiler is unable to verify that it cannot exhibit undefined behavior.\n\nSystem functions are not covariant with trusted or safe functions.";
+				case "@trusted":
+					return "Trusted functions\n\n- Are marked with the @trusted attribute,\n- Are guaranteed by the programmer to not exhibit \n  any undefined behavior if called by a safe function,\n- May call safe, trusted, or system functions,\n- Are covariant with safe or system functions";
+				default:
+					return GetDescription(GetTokenID(token));
 			}
-
-            return GetDescription(GetTokenID(token));
         }
 
         public static string GetDescription(byte token)
@@ -709,7 +645,8 @@ Sys­tem func­tions are not co­vari­ant with trusted or safe func­tions.";
                 case For:
                     return "for(int i; i<500; i++)\n{\n   foo();\n}";
                 case Foreach_Reverse:
-                case Foreach: return
+                case Foreach:
+					return
                     "foreach"+(token==Foreach_Reverse?"_reverse":"")+
 					"(element; array)\n{\n   foo(element);\n}\n\nOr:\nforeach" + (token == Foreach_Reverse ? "_reverse" : "") + 
 					"(element, index; array)\n{\n   foo(element);\n}";
@@ -719,7 +656,8 @@ Sys­tem func­tions are not co­vari­ant with trusted or safe func­tions.";
                     return "do\n{\n   foo();\na++;\n}\nwhile(a < b);";
                 case Switch:
                     return "switch(a)\n{\n   case 1:\n      foo();\n      break;\n   case 2:\n      bar();\n      break;\n   default:\n      break;\n}";
-                default: return "D Keyword";
+                default:
+					return "D Keyword";
             }
         }
 
