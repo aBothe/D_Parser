@@ -660,10 +660,5 @@ namespace D_Parser.Parser
 					return "D Keyword";
             }
         }
-
-		public static bool IsIdentifierChar(char key)
-		{
-			return char.IsLetterOrDigit(key) || key == '_';
-		}
     }
 }
