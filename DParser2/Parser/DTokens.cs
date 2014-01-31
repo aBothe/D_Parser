@@ -382,7 +382,7 @@ namespace D_Parser.Parser
 
 		public static readonly BitArray BasicTypes = NewSet(BasicTypes_Array);
 
-		public static readonly BitArray BasicTypes_Integral = NewSet(Bool, Byte,Ubyte,Short,Ushort,Int,Uint,Long,Ulong,Cent, Ucent, Char,Wchar, Dchar);
+		public static readonly BitArray BasicTypes_Integral = NewSet(Bool, Byte, Ubyte, Short, Ushort, Int, Uint, Long, Ulong, Cent, Ucent, Char, Wchar, Dchar);
 		public static readonly BitArray BasicTypes_FloatingPoint = NewSet(Float, Double, Real, Ifloat, Idouble, Ireal, Cfloat, Cdouble, Creal);
 		public static readonly BitArray BasicTypes_Unsigned = NewSet(Ubyte, Ushort, Uint, Ulong, Ucent);
 
