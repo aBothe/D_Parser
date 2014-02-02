@@ -8,7 +8,7 @@ namespace D_Parser.Resolver.ASTScanner
 	public class NameScan : AbstractVisitor
 	{
 		protected readonly int filterHash;
-		protected readonly object idObject;
+		protected readonly ISyntaxRegion idObject;
 		protected readonly List<AbstractType> matches_types = new List<AbstractType>();
 		/*
 		protected NameScan(ResolutionContext ctxt, string filterId, object idObject) : base(ctxt)
@@ -18,7 +18,7 @@ namespace D_Parser.Resolver.ASTScanner
 			this.idObject = idObject;
 		}
 		*/
-		protected NameScan(ResolutionContext ctxt, int filterHash, object idObject) : base(ctxt)
+		protected NameScan(ResolutionContext ctxt, int filterHash, ISyntaxRegion idObject) : base(ctxt)
 		{
 			this.filterHash = filterHash;
 			this.idObject = idObject;
@@ -33,7 +33,7 @@ namespace D_Parser.Resolver.ASTScanner
 			return scan.matches_types;
 		}*/
 
-		public static List<AbstractType> SearchAndResolve(ResolutionContext ctxt, CodeLocation caret, int nameHash, object idObject=null)
+		public static List<AbstractType> SearchAndResolve(ResolutionContext ctxt, CodeLocation caret, int nameHash, ISyntaxRegion idObject=null)
 		{
 			var scan = new NameScan(ctxt, nameHash, idObject);
 
@@ -106,9 +106,9 @@ namespace D_Parser.Resolver.ASTScanner
 	
 	public class SingleNodeNameScan : NameScan
 	{
-		protected SingleNodeNameScan(ResolutionContext ctxt, int filterHash, object idObject) : base(ctxt, filterHash, idObject) {}
+		protected SingleNodeNameScan(ResolutionContext ctxt, int filterHash, ISyntaxRegion idObject) : base(ctxt, filterHash, idObject) {}
 
-		public static List<AbstractType> SearchChildrenAndResolve(ResolutionContext ctxt, IBlockNode block, string name, object idObject = null)
+		public static List<AbstractType> SearchChildrenAndResolve(ResolutionContext ctxt, IBlockNode block, string name, ISyntaxRegion idObject = null)
 		{
 			return SearchChildrenAndResolve (ctxt, block, name.GetHashCode(), idObject);
 		}
@@ -117,7 +117,7 @@ namespace D_Parser.Resolver.ASTScanner
 		/// Scans a block node. Not working with DMethods.
 		/// Automatically resolves node matches so base types etc. will be specified directly after the search operation.
 		/// </summary>
-		public static List<AbstractType> SearchChildrenAndResolve(ResolutionContext ctxt, IBlockNode block, int nameHash, object idObject = null)
+		public static List<AbstractType> SearchChildrenAndResolve(ResolutionContext ctxt, IBlockNode block, int nameHash, ISyntaxRegion idObject = null)
 		{
 			var scan = new SingleNodeNameScan(ctxt, nameHash, idObject);
 

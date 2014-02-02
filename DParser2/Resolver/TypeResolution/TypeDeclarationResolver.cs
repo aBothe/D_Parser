@@ -50,7 +50,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return l.ToArray();
 		}
 
-		public static AbstractType[] ResolveIdentifier(string id, ResolutionContext ctxt, object idObject, bool ModuleScope = false)
+		public static AbstractType[] ResolveIdentifier(string id, ResolutionContext ctxt, ISyntaxRegion idObject, bool ModuleScope = false)
 		{
 			return ResolveIdentifier (id.GetHashCode (), ctxt, idObject, ModuleScope);
 		}
@@ -59,7 +59,7 @@ namespace D_Parser.Resolver.TypeResolution
 		/// Resolves an identifier and returns the definition + its base type.
 		/// Does not deduce any template parameters or nor filters out unfitting template specifications!
 		/// </summary>
-		public static AbstractType[] ResolveIdentifier(int idHash, ResolutionContext ctxt, object idObject, bool ModuleScope = false)
+		public static AbstractType[] ResolveIdentifier(int idHash, ResolutionContext ctxt, ISyntaxRegion idObject, bool ModuleScope = false)
 		{
 			var loc = idObject is ISyntaxRegion ? ((ISyntaxRegion)idObject).Location : CodeLocation.Empty;
 
@@ -96,7 +96,7 @@ namespace D_Parser.Resolver.TypeResolution
 		/// <summary>
 		/// See <see cref="ResolveIdentifier"/>
 		/// </summary>
-		public static AbstractType ResolveSingle(string id, ResolutionContext ctxt, object idObject, bool ModuleScope = false)
+		public static AbstractType ResolveSingle(string id, ResolutionContext ctxt, ISyntaxRegion idObject, bool ModuleScope = false)
 		{
 			var r = ResolveIdentifier(id, ctxt, idObject, ModuleScope);
 
@@ -495,7 +495,7 @@ namespace D_Parser.Resolver.TypeResolution
 			INode m,
 			ResolutionContext ctxt,
 			AbstractType resultBase = null,
-			object typeBase = null)
+			ISyntaxRegion typeBase = null)
 		{
 			AbstractType ret = null;
 
@@ -552,6 +552,7 @@ namespace D_Parser.Resolver.TypeResolution
 				}
 				else if (!(variable is EponymousTemplate)) {
 					if (canResolveBase) {
+						
 						var bts = TypeDeclarationResolver.Resolve (variable.Type, ctxt);
 						ctxt.CheckForSingleResult (bts, variable.Type);
 
@@ -570,14 +571,14 @@ namespace D_Parser.Resolver.TypeResolution
 
 					// Note: Also works for aliases! In this case, we simply try to resolve the aliased type, otherwise the variable's base type
 					ret = variable.IsAlias ?
-					new AliasedType (variable, bt, typeBase as ISyntaxRegion) as MemberSymbol :
-					new MemberSymbol (variable, bt, typeBase as ISyntaxRegion);
+					new AliasedType (variable, bt, typeBase) as MemberSymbol :
+					new MemberSymbol (variable, bt, typeBase);
 				} else
-					ret = new EponymousTemplateType (variable as EponymousTemplate, GetInvisibleTypeParameters(variable, ctxt).AsReadOnly(), typeBase as ISyntaxRegion);
+					ret = new EponymousTemplateType (variable as EponymousTemplate, GetInvisibleTypeParameters(variable, ctxt).AsReadOnly(), typeBase);
 			}
 			else if (m is DMethod)
 			{
-				ret = new MemberSymbol(m as DNode,canResolveBase ? GetMethodReturnType(m as DMethod, ctxt) : null, typeBase as ISyntaxRegion);
+				ret = new MemberSymbol(m as DNode,canResolveBase ? GetMethodReturnType(m as DMethod, ctxt) : null, typeBase);
 			}
 			else if (m is DClassLike)
 				ret = HandleClassLikeMatch (m as DClassLike, ctxt, typeBase, canResolveBase);
@@ -588,20 +589,20 @@ namespace D_Parser.Resolver.TypeResolution
 				{
 					var pack = ctxt.ParseCache.LookupPackage(typeBase.ToString()).FirstOrDefault();
 					if (pack != null)
-						ret = new PackageSymbol(pack, typeBase as ISyntaxRegion);
+						ret = new PackageSymbol(pack, typeBase);
 				}
 				else
-					ret = new ModuleSymbol(m as DModule, typeBase as ISyntaxRegion);
+					ret = new ModuleSymbol(m as DModule, typeBase);
 			}
 			else if (m is DEnum)
-				ret = new EnumType((DEnum)m, typeBase as ISyntaxRegion);
+				ret = new EnumType((DEnum)m, typeBase);
 			else if (m is TemplateParameter.Node)
 			{
 				//ResolveResult[] templateParameterType = null;
 
 				//TODO: Resolve the specialization type
 				//var templateParameterType = TemplateInstanceHandler.ResolveTypeSpecialization(tmp, ctxt);
-				ret = new TemplateParameterSymbol((m as TemplateParameter.Node).TemplateParameter, null, typeBase as ISyntaxRegion);
+				ret = new TemplateParameterSymbol((m as TemplateParameter.Node).TemplateParameter, null, typeBase);
 			}
 
 			if (popAfterwards)
@@ -717,7 +718,7 @@ namespace D_Parser.Resolver.TypeResolution
 			IEnumerable<INode> matches,
 			ResolutionContext ctxt,
 			AbstractType resultBase = null,
-			object typeDeclaration = null)
+			ISyntaxRegion typeDeclaration = null)
 		{
 			// Abbreviate a foreach-loop + List alloc
 			var ll = matches as IList<INode>;

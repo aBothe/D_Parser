@@ -140,13 +140,13 @@ namespace D_Parser.Resolver
 				var ar2 = (ArrayType)targetType;
 
 				// Key as well as value types must be matching!
-				var ar1_n= ar1.KeyType==null;
-				var ar2_n=ar2.KeyType==null;
+				var ar1_n = ar1.KeyType == null;
+				var ar2_n = ar2.KeyType == null;
 
 				if (ar1_n != ar2_n)
 					return false;
 
-				if(ar1_n || IsImplicitlyConvertible(ar1.KeyType, ar2.KeyType, ctxt))
+				if (ar1_n || IsImplicitlyConvertible(ar1.KeyType, ar2.KeyType, ctxt))
 					return IsImplicitlyConvertible(ar1.Base, ar2.Base, ctxt);
 			}
 			else if (resToCheck is DSymbol && targetType is DSymbol)
@@ -175,8 +175,8 @@ namespace D_Parser.Resolver
 
 			// http://dlang.org/type.html
 			//TODO: Pointer to non-pointer / vice-versa checkability? -- Can it really be done implicitly?
-			else if(!isVariable && 
-				resToCheck is ArrayType && 
+			else if (!isVariable &&
+				resToCheck is ArrayType &&
 				targetType is PointerType && ((targetType = (targetType as PointerType).Base) is PrimitiveType) &&
 				DTokens.CharTypes[(targetType as PrimitiveType).TypeToken])
 				return (resultToCheck as ArrayType).IsString;
