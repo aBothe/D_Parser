@@ -546,7 +546,11 @@ namespace D_Parser.Resolver.TypeResolution
 			{
 				AbstractType bt = null;
 
-				if (!(variable is EponymousTemplate)) {
+				if (variable is DEnumValue)
+				{
+					ret = new MemberSymbol(variable, HandleNodeMatch(variable.Parent, ctxt), typeBase);
+				}
+				else if (!(variable is EponymousTemplate)) {
 					if (canResolveBase) {
 						var bts = TypeDeclarationResolver.Resolve (variable.Type, ctxt);
 						ctxt.CheckForSingleResult (bts, variable.Type);

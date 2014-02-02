@@ -149,7 +149,17 @@ namespace D_Parser.Resolver
 				if(ar1_n || IsImplicitlyConvertible(ar1.KeyType, ar2.KeyType, ctxt))
 					return IsImplicitlyConvertible(ar1.Base, ar2.Base, ctxt);
 			}
+			else if (resToCheck is DSymbol && targetType is DSymbol)
+			{
+				var r1 = resToCheck as DSymbol;
+				var r2 = targetType as DSymbol;
 
+				if (r1.Definition == r2.Definition)
+				{
+					//TODO: Compare template param deductions
+					return true;
+				}
+			}
 			else if (resToCheck is DTuple && targetType is DTuple)
 			{
 				var tup1 = resToCheck as DTuple;
