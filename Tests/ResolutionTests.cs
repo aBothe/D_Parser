@@ -453,6 +453,35 @@ int a;
 			Assert.That (t, Is.TypeOf (typeof(TemplateParameterSymbol)));
 			Assert.That ((t as TemplateParameterSymbol).Base, Is.TypeOf (typeof(ArrayType)));
 		}
+
+		[Test]
+		public void ParamArgMatching1()
+		{
+			var ctxt = CreateCtxt ("A", @"module A;
+enum mye
+{
+	a,b,c
+}
+
+int foo(string s, mye en);
+double* foo(string s, string ss);
+");
+
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression ("foo(\"derp\",mye.a)");
+			t = Evaluation.EvaluateType (x, ctxt);
+			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
+
+			x = DParser.ParseExpression ("foo(\"derp\",\"yeah\")");
+			t = Evaluation.EvaluateType (x, ctxt);
+			Assert.That (t, Is.TypeOf (typeof(PointerType)));
+
+			x = DParser.ParseExpression ("foo(\"derp\",1.2)");
+			t = Evaluation.EvaluateType (x, ctxt);
+			Assert.That (t, Is.Null);
+		}
 		
 		[Test]
 		public void ArrayIndexer()
