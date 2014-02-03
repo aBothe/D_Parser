@@ -20,7 +20,7 @@ The completion flow:
 
 In actual code, you would
 1) parse some code or an expression via DParser.ParseExpression("1 + 2") or DParser.ParseFile("myFile.d");
-2) evaluate the value/type of the expression via Evaluation.EvaluateValue(expression); or Evaluation.EvaluateType(expression);
+2) evaluate the value/type of the expression via Evaluation.EvaluateValue(expression); or ExpressionTypeEvaluation.EvaluateType(expression);
 	(Optionally passing a resolution context that provides e.g. variables, classes or methods)
 	TypeDeclarationResolver.Resolve(myTypeDeclaration); can be used for handling things like int[] or MyType**
 	-- to build up a sophisticated syntax hierarchy that points e.g. to MyType inside.

@@ -254,7 +254,6 @@ namespace D_Parser.Dom
 		void Visit(TypeidExpression x);
 		void Visit(IsExpression x);
 		void Visit(TraitsExpression x);
-		void Visit(TraitsArgument arg);
 		void Visit(SurroundingParenthesesExpression x);
 
 		void Visit(VoidInitializer x);
@@ -318,7 +317,6 @@ namespace D_Parser.Dom
 		R Visit(TypeidExpression x);
 		R Visit(IsExpression x);
 		R Visit(TraitsExpression x);
-		R Visit(TraitsArgument arg);
 		R Visit(SurroundingParenthesesExpression x);
 
 		R Visit(VoidInitializer x);

@@ -794,7 +794,7 @@ namespace D_Parser.Dom
 			if (x.Arguments != null)
 				foreach (var arg in x.Arguments)
 					if(arg != null)
-						arg.Accept(this);
+						Visit(arg);
 		}
 
 		public virtual void Visit(TraitsArgument arg)

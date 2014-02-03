@@ -32,15 +32,15 @@ int globI;
 			AbstractType t;
 
 			x = DParser.ParseExpression ("globStr.foo()");
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 			Assert.That (t, Is.TypeOf (typeof(ArrayType)));
 
 			x = DParser.ParseExpression ("globI.foo()");
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
 
 			x = DParser.ParseExpression ("globStr.writeln()");
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
 			Assert.That ((t as PrimitiveType).TypeToken, Is.EqualTo(DTokens.Void));
 		}

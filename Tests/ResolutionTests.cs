@@ -212,82 +212,82 @@ void foo()
 			var ctxt = CreateDefCtxt(pcl, foo, foo.Body);
 			var subSt = foo.Body.SubStatements as List<IStatement>;
 			
-			var t = Evaluation.EvaluateType((subSt[1] as ExpressionStatement).Expression, ctxt);
+			var t = ExpressionTypeEvaluation.EvaluateType((subSt[1] as ExpressionStatement).Expression, ctxt);
 			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
 			Assert.That((t as MemberSymbol).Base, Is.InstanceOf(typeof(PointerType)));
 			
-			t = Evaluation.EvaluateType((subSt[2] as ExpressionStatement).Expression, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType((subSt[2] as ExpressionStatement).Expression, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			
-			t = Evaluation.EvaluateType((subSt[3] as ExpressionStatement).Expression, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType((subSt[3] as ExpressionStatement).Expression, ctxt);
 			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
 			Assert.That((t as MemberSymbol).Base, Is.InstanceOf(typeof(PrimitiveType)));
 			
-			t = Evaluation.EvaluateType((subSt[4] as ExpressionStatement).Expression, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType((subSt[4] as ExpressionStatement).Expression, ctxt);
 			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
 			
-			t = Evaluation.EvaluateType((subSt[5] as ExpressionStatement).Expression, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType((subSt[5] as ExpressionStatement).Expression, ctxt);
 			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
 			
-			t = Evaluation.EvaluateType((subSt[6] as ExpressionStatement).Expression, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType((subSt[6] as ExpressionStatement).Expression, ctxt);
 			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
 			
-			t = Evaluation.EvaluateType((subSt[7] as ExpressionStatement).Expression, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType((subSt[7] as ExpressionStatement).Expression, ctxt);
 			Assert.That(t, Is.Not.Null);
 			
 			ctxt.CurrentContext.Set(pcl[0]["B"]);
 
 			// test protected across modules
-			t = Evaluation.EvaluateType((foo.Body.SubStatements.ElementAt(2) as ExpressionStatement).Expression, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType((foo.Body.SubStatements.ElementAt(2) as ExpressionStatement).Expression, ctxt);
 			Assert.That(t, Is.Null);
 
-			t = Evaluation.EvaluateType((foo.Body.SubStatements.ElementAt(7) as ExpressionStatement).Expression, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType((foo.Body.SubStatements.ElementAt(7) as ExpressionStatement).Expression, ctxt);
 			Assert.That(t, Is.Null);
 			
 			var ex = DParser.ParseExpression("inst.b");
-			t = Evaluation.EvaluateType(ex, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.Null);
 			
 			ex = DParser.ParseExpression("inst.c");
-			t = Evaluation.EvaluateType(ex, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.Null);
 			
 			ctxt.CurrentContext.Set((pcl[0]["A"]["cl"].First() as DClassLike)["bar"].First() as DMethod);
 			
 			ex = DParser.ParseExpression("statVar");
-			t = Evaluation.EvaluateType(ex, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
 			
 			ex = DParser.ParseExpression("a");
-			t = Evaluation.EvaluateType(ex, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.Null);
 			
 			ex = DParser.ParseExpression("b");
-			t = Evaluation.EvaluateType(ex, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.Null);
 			
 			ex = DParser.ParseExpression("c");
-			t = Evaluation.EvaluateType(ex, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.Null);
 			
 			ex = DParser.ParseExpression("statBase");
-			t = Evaluation.EvaluateType(ex, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
 			
 			ex = DParser.ParseExpression("baseA");
-			t = Evaluation.EvaluateType(ex, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.Null);
 			
 			ex = DParser.ParseExpression("otherClass");
-			t = Evaluation.EvaluateType(ex, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.InstanceOf(typeof(ClassType)));
 			
 			ex = DParser.ParseExpression("globalVar");
-			t = Evaluation.EvaluateType(ex, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
 
 			ex = DParser.ParseExpression("enumSym");
-			t = Evaluation.EvaluateType(ex, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
 		}
 		
@@ -305,22 +305,22 @@ alias Thing!(int) IntThing;");
 			var ctxt = CreateDefCtxt(pcl, pcl[0]["A"]);
 			
 			var ex = DParser.ParseExpression("Thing!int");
-			var t = Evaluation.EvaluateType(ex, ctxt);
+			var t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(StructType)));
 			
 			ex = DParser.ParseExpression("IntThing");
-			t = Evaluation.EvaluateType(ex, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(AliasedType)));
 			t = DResolver.StripAliasSymbol(t);
 			Assert.That(t, Is.TypeOf(typeof(StructType)));
 			
 			ex = DParser.ParseExpression("new Thing!int");
-			t = Evaluation.EvaluateType(ex, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol))); // Returns the ctor
 			Assert.That(((DSymbol)t).Name, Is.EqualTo(DMethod.ConstructorIdentifier));
 			
 			ex = DParser.ParseExpression("new IntThing");
-			t = Evaluation.EvaluateType(ex, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That(((DSymbol)t).Name, Is.EqualTo(DMethod.ConstructorIdentifier));
 		}
@@ -335,7 +335,7 @@ class Blah(T){ T b; }");
 			var ctxt = CreateDefCtxt(pcl, pcl[0]["A"]);
 			
 			var ex = DParser.ParseExpression("Blah!Blupp");
-			var t = Evaluation.EvaluateType(ex, ctxt);
+			var t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(ClassType)));
 		}
 
@@ -350,7 +350,7 @@ class Blah(T){ T b; }");
 			Assert.That(ts.Length, Is.EqualTo(1));
 
 			var x = DParser.ParseExpression(@"(new Object).toString()");
-			var t = Evaluation.EvaluateType(x, ctxt);
+			var t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(AliasedType)));
 			t = DResolver.StripAliasSymbol(t);
 			Assert.That(t, Is.TypeOf(typeof(ArrayType)));
@@ -383,22 +383,22 @@ struct Foo
 			AbstractType t;
 
 			x = DParser.ParseExpression ("S.field.max"); // ok, statically known
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 
 			Assert.That (t, Is.TypeOf(typeof(StaticProperty)));
 			Assert.That((t as StaticProperty).Base,Is.TypeOf(typeof(PrimitiveType)));
 
 			x = DParser.ParseExpression ("S.field"); // disallowed, no `this` reference
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 			Assert.That (t, Is.Null);
 
 			x = DParser.ParseExpression ("Foo.bar.get()"); // ok, equivalent to `typeof(Foo.bar).get()'
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 
 			Assert.That (t, Is.TypeOf(typeof(PrimitiveType)));
 
 			x = DParser.ParseExpression ("Foo.get()"); // ok, equivalent to 'typeof(Foo.bar).get()'
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 
 			Assert.That (t, Is.TypeOf(typeof(PrimitiveType)));
 		}
@@ -427,7 +427,7 @@ void foo()
 			
 			var ctxt = CreateDefCtxt(pcl, foo, colStmt);
 			
-			var t = Evaluation.EvaluateType(colStmt.Expression, ctxt);
+			var t = ExpressionTypeEvaluation.EvaluateType(colStmt.Expression, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 		}
@@ -449,7 +449,7 @@ int a;
 			AbstractType t;
 
 			x = DParser.ParseExpression ("a.to!string()");
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 			Assert.That (t, Is.TypeOf (typeof(TemplateParameterSymbol)));
 			Assert.That ((t as TemplateParameterSymbol).Base, Is.TypeOf (typeof(ArrayType)));
 		}
@@ -471,15 +471,15 @@ double* foo(string s, string ss);
 			AbstractType t;
 
 			x = DParser.ParseExpression ("foo(\"derp\",mye.a)");
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
 
 			x = DParser.ParseExpression ("foo(\"derp\",\"yeah\")");
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 			Assert.That (t, Is.TypeOf (typeof(PointerType)));
 
 			x = DParser.ParseExpression ("foo(\"derp\",1.2)");
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 			Assert.That (t, Is.Null);
 		}
 		
@@ -499,18 +499,18 @@ auto o = new Obj();
 			var ctxt = CreateDefCtxt(pcl, pcl[0]["A"]);
 			
 			var ex = DParser.ParseExpression("arr[0]");
-			var t = Evaluation.EvaluateType(ex, ctxt);
+			var t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			
 			Assert.That(t, Is.TypeOf(typeof(ArrayAccessSymbol)));
 			
 			ex = DParser.ParseExpression("arr[0].myProp");
-			t = Evaluation.EvaluateType(ex, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 			
 			ex = DParser.ParseExpression("o.myProp");
-			t = Evaluation.EvaluateType(ex, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
@@ -570,7 +570,7 @@ auto o = new Obj();
 			var call = ((ExpressionStatement)call_fooC).Expression;
 			var methodName = ((PostfixExpression_MethodCall)call).PostfixForeExpression;
 
-			var res=Evaluation.EvaluateType(methodName,ctxt);
+			var res=ExpressionTypeEvaluation.EvaluateType(methodName,ctxt);
 
 			Assert.IsTrue(res!=null , "Resolve() returned no result!");
 			Assert.IsInstanceOfType(typeof(MemberSymbol),res);
@@ -664,7 +664,7 @@ int b=4;
 
 			Assert.IsInstanceOfType(typeof(PostfixExpression_Access),instanceExpr);
 
-			var res = Evaluation.EvaluateType(instanceExpr, ctxt);
+			var res = ExpressionTypeEvaluation.EvaluateType(instanceExpr, ctxt);
 
 			Assert.IsInstanceOfType(typeof(MemberSymbol),res);
 			var mr = (MemberSymbol)res;
@@ -688,7 +688,7 @@ T foo(T)() {}
 			var ctxt = CreateDefCtxt(pcl, pcl[0]["modA"]);
 
 			var call = DParser.ParseExpression("foo!int()");
-			var bt = Evaluation.EvaluateType(call, ctxt);
+			var bt = ExpressionTypeEvaluation.EvaluateType(call, ctxt);
 			
 			Assert.IsInstanceOfType(typeof(TemplateParameterSymbol),bt);
 			var tps = (TemplateParameterSymbol)bt;
@@ -739,7 +739,7 @@ class A
 
 			var e = DParser.ParseExpression("123.foo");
 
-			var t = Evaluation.EvaluateType(e, ctxt);
+			var t = ExpressionTypeEvaluation.EvaluateType(e, ctxt);
 
 			Assert.IsInstanceOfType(typeof(MemberSymbol),t);
 			Assert.AreEqual(pcl[0]["modA"]["foo"].First(), ((MemberSymbol)t).Definition);
@@ -760,26 +760,26 @@ long longVar = 10L;");
 			AbstractType t;
 
 			x = DParser.ParseExpression ("foo(100)");
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 
 			Assert.That (t, Is.TypeOf(typeof(PrimitiveType)));
 
 			x = DParser.ParseExpression ("foo(\"asdf\")");
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 
 			Assert.That (t, Is.TypeOf(typeof(PointerType)));
 
 			// Integer literal 10L can be converted to int without loss of precisions.
 			// Then the call matches to foo(int n).
 			x = DParser.ParseExpression ("foo(10L)");
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 
 			Assert.That (t, Is.TypeOf(typeof(PrimitiveType)));
 
 			// A runtime variable 'num' typed long is not implicitly convertible to int.
 			// Then the call matches to foo(T)(T t).
 			x = DParser.ParseExpression ("foo(longVar)");
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 
 			Assert.That (t, Is.TypeOf(typeof(PointerType)));
 		}
@@ -804,44 +804,44 @@ int[] arr2 = arr[1 .. 2];");
 
 			// error, cannot pass r-value by reference
 			x = DParser.ParseExpression("takeRef(arr[1 .. 2])");
-			t = Evaluation.EvaluateType(x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			//Assert.That(t, Is.Null);
 
 			// ok
 			x = DParser.ParseExpression ("take(arr)");
-			t = Evaluation.EvaluateType (x,ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x,ctxt);
 			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
 
 			x = DParser.ParseExpression ("takeRef(arr)");
-			t = Evaluation.EvaluateType (x,ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x,ctxt);
 			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
 
 			x = DParser.ParseExpression ("takeAutoRef(arr)");
-			t = Evaluation.EvaluateType (x,ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x,ctxt);
 			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
 
 			// ok, arr2 is a variable
 			x = DParser.ParseExpression ("take(arr2)");
-			t = Evaluation.EvaluateType (x,ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x,ctxt);
 			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
 
 			x = DParser.ParseExpression ("takeRef(arr2)");
-			t = Evaluation.EvaluateType (x,ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x,ctxt);
 			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
 
 			x = DParser.ParseExpression ("takeAutoRef(arr2)");
-			t = Evaluation.EvaluateType (x,ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x,ctxt);
 			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
 
 
 			x = DParser.ParseExpression ("take(arr[1 .. 2])");
-			t = Evaluation.EvaluateType (x,ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x,ctxt);
 			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
 
 			
 
 			x = DParser.ParseExpression ("takeAutoRef(arr[1 .. 2])");
-			t = Evaluation.EvaluateType (x,ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x,ctxt);
 			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
 		}
 
@@ -863,7 +863,7 @@ int delegate(int b) myDeleg;
 			ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
 
 			var x = DParser.ParseExpression("f!(char[5])");
-			var r=Evaluation.EvaluateType(x, ctxt);
+			var r=ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			var mr = r as MemberSymbol;
 			Assert.IsNotNull(mr);
 
@@ -872,28 +872,28 @@ int delegate(int b) myDeleg;
 			Assert.AreEqual(5M, ((PrimitiveValue)v).Value);
 
 			x = DParser.ParseExpression("fo!(char[5])");
-			r = Evaluation.EvaluateType(x, ctxt);
+			r = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			mr = r as MemberSymbol;
 			Assert.IsNotNull(mr);
 
 			x = DParser.ParseExpression("fo!(immutable(char)[])");
-			r = Evaluation.EvaluateType(x, ctxt);
+			r = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			mr = r as MemberSymbol;
 			Assert.IsNotNull(mr);
 
 			x = DParser.ParseExpression("myDeleg");
-			r = Evaluation.EvaluateType(x, ctxt);
+			r = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			mr = r as MemberSymbol;
 			Assert.IsNotNull(mr);
 			Assert.IsInstanceOfType(typeof(DelegateType), mr.Base);
 
 			x=DParser.ParseExpression("myDeleg(123)");
-			r = Evaluation.EvaluateType(x, ctxt);
+			r = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			Assert.That (r, Is.TypeOf(typeof(DelegateCallSymbol)));
 			Assert.That((r as DerivedDataType).Base, Is.TypeOf(typeof(PrimitiveType)));
 
 			x = DParser.ParseExpression("foo(myDeleg(123))");
-			r = Evaluation.EvaluateType(x, ctxt);
+			r = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			mr = r as MemberSymbol;
 			Assert.IsNotNull(mr);
 			Assert.That(mr.Base, Is.TypeOf(typeof(PrimitiveType)));
@@ -973,14 +973,14 @@ T delegate(T dgParam) genDelegate(T)();");
 			var ctxt = CreateDefCtxt(pcl, A);
 			
 			var ex = DParser.ParseExpression("genDelegate!int()");
-			var t = Evaluation.EvaluateType(ex,ctxt);
+			var t = ExpressionTypeEvaluation.EvaluateType(ex,ctxt);
 			Assert.That(t, Is.TypeOf(typeof(DelegateType)));
 			var dt = (DelegateType)t;
 			Assert.That(dt.Base, Is.Not.Null);
 			Assert.That(dt.Parameters, Is.Not.Null);
 			
 			ex = DParser.ParseExpression("genA!int()");
-			t = Evaluation.EvaluateType(ex, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 		}
 		
@@ -999,12 +999,12 @@ Appender!(E[]) appender(A : E[], E)(A array = null)
 			var ctxt = CreateDefCtxt(pcl, A);
 			
 			var ex = DParser.ParseExpression("new Appender!(double[])()");
-			var t = Evaluation.EvaluateType(ex,ctxt);
+			var t = ExpressionTypeEvaluation.EvaluateType(ex,ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol))); // ctor
 			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(StructType)));
 			
 			ex = DParser.ParseExpression("appender!(double[])()");
-			t = Evaluation.EvaluateType(ex,ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(ex,ctxt);
 			Assert.That(t, Is.TypeOf(typeof(StructType)));
 			var ss = t as StructType;
 			Assert.That(ss.DeducedTypes.Count, Is.GreaterThan(0));
@@ -1087,7 +1087,7 @@ mixin(def!(-1,""bar""));
 			Assert.That((val as ArrayValue).StringValue, Is.EqualTo("bool foolish;"));
 			
 			ex=DParser.ParseExpression("bar");
-			var t = Evaluation.EvaluateType(ex, ctxt);
+			var t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That((t as MemberSymbol).Base,Is.TypeOf(typeof(PrimitiveType)));
 			Assert.That(((t as MemberSymbol).Base as PrimitiveType).TypeToken,Is.EqualTo(DTokens.Bool));
@@ -1109,7 +1109,7 @@ V foo3(V)(V v) {}");
 			MemberSymbol ms;
 
 			x = DParser.ParseExpression("foo3(\"asdf\")");
-			t = Evaluation.EvaluateType(x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			ms = t as MemberSymbol;
 			var tps = ms.Base as TemplateParameterSymbol;
@@ -1117,11 +1117,11 @@ V foo3(V)(V v) {}");
 			Assert.That(tps.Base, Is.TypeOf(typeof(ArrayType)));
 
 			x = DParser.ParseExpression("foo(123)");
-			t = Evaluation.EvaluateType(x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			Assert.That(t, Is.Null);
 
 			x = DParser.ParseExpression("foo2(true)");
-			t = Evaluation.EvaluateType(x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			ms = t as MemberSymbol;
 			Assert.That(ms.DeducedTypes, Is.Not.Null);
@@ -1140,11 +1140,11 @@ struct Appender(A : T[], T) {
 			var ctxt = CreateDefCtxt(pcl, pcl[0]["modA"]);
 
 			var ex = DParser.ParseExpression("appender!(int[])()");
-			var t = Evaluation.EvaluateType(ex, ctxt);
+			var t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.InstanceOfType(typeof(StructType)));
 
 			ex = DParser.ParseExpression("appender!string()");
-			t = Evaluation.EvaluateType(ex, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.InstanceOfType(typeof(StructType)));
 		}
 
@@ -1216,7 +1216,7 @@ void main() {
 			var ctxt = CreateDefCtxt(pcl, modA);
 
 			var x = DParser.ParseExpression("Print!(1,'a',6.8)");
-			var t = Evaluation.EvaluateType(x,ctxt);
+			var t = ExpressionTypeEvaluation.EvaluateType(x,ctxt);
 			Assert.That(t, Is.TypeOf(typeof(TemplateType)));
 			var tps = (t as TemplateType).DeducedTypes[0] as TemplateParameterSymbol;
 			Assert.That(tps, Is.Not.Null);
@@ -1228,15 +1228,15 @@ void main() {
 			ctxt.ContextIndependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
 
 			x = DParser.ParseExpression("Write!(int, char, double).write(1, 'a', 6.8)");
-			t = Evaluation.EvaluateType(x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 
 			x = DParser.ParseExpression("tplWrite!(int, char, double)(1, 'a', 6.8)");
-			t = Evaluation.EvaluateType(x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 
 			x = DParser.ParseExpression("tplWrite(1, 'a', 6.8)");
-			t = Evaluation.EvaluateType(x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			tps = (t as MemberSymbol).DeducedTypes[0] as TemplateParameterSymbol;
 			Assert.That(tps, Is.Not.Null);
@@ -1246,7 +1246,7 @@ void main() {
 			Assert.That(tt.IsTypeTuple);
 
 			x = DParser.ParseExpression("tplWrite2(\"asdf\", 'a', 6.8)");
-			t = Evaluation.EvaluateType(x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			tps = (t as MemberSymbol).DeducedTypes[0] as TemplateParameterSymbol;
 			Assert.That(tps, Is.Not.Null);
@@ -1268,11 +1268,11 @@ class Too(T:float)
 			var ctxt = CreateDefCtxt(pcl, pcl[0]["A"]);
 			
 			var ex = DParser.ParseExpression("Too");
-			var t = Evaluation.EvaluateType(ex, ctxt);
+			var t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.Null);
 			
 			ex = DParser.ParseExpression("Too!int");
-			t = Evaluation.EvaluateType(ex, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(ClassType)));
 			
 			DToken tk;
@@ -1307,38 +1307,38 @@ void foo(U)(U u)
 			var subSt = foo.Body.SubStatements as List<IStatement>;
 
 			var ex = (subSt[0] as ExpressionStatement).Expression;
-			var t = Evaluation.GetOverloads(ex  as TemplateInstanceExpression, ctxt, null, true);
+			var t = ExpressionTypeEvaluation.GetOverloads(ex  as TemplateInstanceExpression, ctxt, null, true);
 			Assert.That(t, Is.Not.Null);
 			Assert.That(t.Length, Is.EqualTo(1));
 			
-			var t_ = Evaluation.EvaluateType(ex, ctxt);
+			var t_ = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t_ , Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That((t_ as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 			
 			ex = (subSt[1] as ExpressionStatement).Expression;
-			t = Evaluation.GetOverloads(ex  as TemplateInstanceExpression, ctxt, null, true);
+			t = ExpressionTypeEvaluation.GetOverloads(ex  as TemplateInstanceExpression, ctxt, null, true);
 			Assert.That(t, Is.Not.Null);
 			Assert.That(t.Length, Is.EqualTo(1));
 			
-			t_ = Evaluation.EvaluateType(ex, ctxt);
+			t_ = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t_ , Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That((t_ as MemberSymbol).Base, Is.TypeOf(typeof(ArrayType)));
 			
 			ex = (subSt[2] as ExpressionStatement).Expression;
-			t = Evaluation.GetOverloads((ex as PostfixExpression_MethodCall).PostfixForeExpression as TemplateInstanceExpression, ctxt, null, true);
+			t = ExpressionTypeEvaluation.GetOverloads((ex as PostfixExpression_MethodCall).PostfixForeExpression as TemplateInstanceExpression, ctxt, null, true);
 			Assert.That(t, Is.Not.Null);
 			Assert.That(t.Length, Is.EqualTo(1));
 			Assert.That(t[0], Is.TypeOf(typeof(MemberSymbol)));
 			
-			t_ = Evaluation.EvaluateType(ex, ctxt);
+			t_ = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t_, Is.TypeOf(typeof(PointerType)));
 			
 			ex = (subSt[3] as ExpressionStatement).Expression;
-			t_ = Evaluation.EvaluateType(ex, ctxt);
+			t_ = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t_, Is.TypeOf(typeof(ArrayType)));
 
 			ex = (subSt[4] as ExpressionStatement).Expression;
-			t_ = Evaluation.EvaluateType(ex, ctxt);
+			t_ = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t_, Is.TypeOf(typeof(ArrayType)));
 		}
 		
@@ -1357,15 +1357,15 @@ int writeln(T...)(T t)
 			AbstractType x;
 
 			ex = DParser.ParseExpression("\"asdf\".writeln()");
-			x = Evaluation.EvaluateType(ex, ctxt);
+			x = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(x, Is.TypeOf(typeof(PrimitiveType)));
 
 			ex = DParser.ParseExpression("writeln()");
-			x = Evaluation.EvaluateType(ex, ctxt);
+			x = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(x, Is.TypeOf(typeof(PrimitiveType)));
 
 			ex = DParser.ParseExpression("writeln(E.A)");
-			x = Evaluation.EvaluateType(ex, ctxt);
+			x = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(x, Is.TypeOf(typeof(PrimitiveType)));
 
 
@@ -1390,13 +1390,13 @@ auto foo() {
 			var ctxt = CreateDefCtxt(pcl, foo, foo.Body);
 			
 			var ex = DParser.ParseExpression("bar!int");
-			var t = Evaluation.EvaluateType(ex, ctxt);
+			var t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			var ms = t as MemberSymbol;
 			Assert.That(ms.Base, Is.TypeOf(typeof(ArrayType)));
 			
 			ex = DParser.ParseExpression("bar");
-			t = Evaluation.EvaluateType(ex, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			ms = t as MemberSymbol;
 			Assert.That(ms.Base, Is.TypeOf(typeof(PrimitiveType)));
 			Assert.That((ms.Base as PrimitiveType).TypeToken, Is.EqualTo(DTokens.Uint));
@@ -1420,10 +1420,10 @@ class B : A{
 
 			var super = (this_.Body.SubStatements.First() as IExpressionContainingStatement).SubExpressions[0] as PostfixExpression_MethodCall;
 
-			var t = Evaluation.EvaluateType(super.PostfixForeExpression, ctxt);
+			var t = ExpressionTypeEvaluation.EvaluateType(super.PostfixForeExpression, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(ClassType)));
 			
-			t = Evaluation.EvaluateType(super, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(super, ctxt);
 			Assert.IsNull(t);
 		}
 
@@ -1459,7 +1459,7 @@ class P
 			ClassType ct;
 
 			x = DParser.ParseExpression ("new C");
-			ctor = Evaluation.EvaluateType (x, ctxt) as MemberSymbol;
+			ctor = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as MemberSymbol;
 
 			Assert.That (ctor, Is.Not.Null);
 			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
@@ -1467,7 +1467,7 @@ class P
 			Assert.That (ct.Modifier, Is.EqualTo(0));
 
 			x = DParser.ParseExpression ("new const C");
-			ctor = Evaluation.EvaluateType (x, ctxt) as MemberSymbol;
+			ctor = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as MemberSymbol;
 
 			Assert.That (ctor, Is.Not.Null);
 			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
@@ -1475,7 +1475,7 @@ class P
 			Assert.That (ct.Modifier, Is.EqualTo(DTokens.Const));
 
 			x = DParser.ParseExpression ("new immutable C");
-			ctor = Evaluation.EvaluateType (x, ctxt) as MemberSymbol;
+			ctor = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as MemberSymbol;
 
 			Assert.That (ctor, Is.Not.Null);
 			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
@@ -1483,7 +1483,7 @@ class P
 			Assert.That (ct.Modifier, Is.EqualTo(DTokens.Immutable));
 
 			x = DParser.ParseExpression ("new shared C");
-			ctor = Evaluation.EvaluateType (x, ctxt) as MemberSymbol;
+			ctor = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as MemberSymbol;
 
 			Assert.That (ctor, Is.Not.Null);
 			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
@@ -1493,7 +1493,7 @@ class P
 
 
 			x = DParser.ParseExpression ("new P");
-			ctor = Evaluation.EvaluateType (x, ctxt) as MemberSymbol;
+			ctor = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as MemberSymbol;
 
 			Assert.That (ctor, Is.Not.Null);
 			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
@@ -1501,7 +1501,7 @@ class P
 			Assert.That (ct.Modifier, Is.EqualTo(0));
 
 			x = DParser.ParseExpression ("new const P");
-			ctor = Evaluation.EvaluateType (x, ctxt) as MemberSymbol;
+			ctor = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as MemberSymbol;
 
 			Assert.That (ctor, Is.Not.Null);
 			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
@@ -1509,7 +1509,7 @@ class P
 			Assert.That (ct.Modifier, Is.EqualTo(DTokens.Const));
 
 			x = DParser.ParseExpression ("new immutable P");
-			ctor = Evaluation.EvaluateType (x, ctxt) as MemberSymbol;
+			ctor = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as MemberSymbol;
 
 			Assert.That (ctor, Is.Not.Null);
 			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
@@ -1519,7 +1519,7 @@ class P
 
 
 			x = DParser.ParseExpression ("new const D");
-			ctor = Evaluation.EvaluateType (x, ctxt) as MemberSymbol;
+			ctor = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as MemberSymbol;
 
 			Assert.That (ctor, Is.Not.Null);
 			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
@@ -1527,7 +1527,7 @@ class P
 			Assert.That (ct.Modifier, Is.EqualTo(DTokens.Const));
 
 			x = DParser.ParseExpression ("new D");
-			ctor = Evaluation.EvaluateType (x, ctxt) as MemberSymbol;
+			ctor = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as MemberSymbol;
 
 			Assert.That (ctor, Is.Null);
 		}
@@ -1554,22 +1554,22 @@ auto b_f = B.Foo();
 			AbstractType t;
 
 			x = DParser.ParseExpression ("call(a, a_f)");
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 
 			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
 
 			x = DParser.ParseExpression ("call(b, b_f)");
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 
 			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
 
 			x = DParser.ParseExpression ("call(a, b_f)");
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 
 			Assert.That (t, Is.Null);
 
 			x = DParser.ParseExpression ("call(b, a_f)");
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 
 			Assert.That (t, Is.Null);
 		}
@@ -1651,34 +1651,34 @@ import a, b;
 			AbstractType t;
 
 			x = DParser.ParseExpression ("Traits!string");
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 
 			Assert.That (t, Is.TypeOf(typeof(MemberSymbol)));
 			t = (t as MemberSymbol).Base;
 			Assert.That (t, Is.TypeOf (typeof(ArrayType)));
 
 			x = DParser.ParseExpression ("Traits!double");
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 
 			Assert.That (t, Is.TypeOf(typeof(MemberSymbol)));
 			t = (t as MemberSymbol).Base;
 			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
 
 			x = DParser.ParseExpression ("Traits!int");
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 
 			Assert.That (t, Is.Null);
 
 			x = DParser.ParseExpression ("func!string(1)");
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 			Assert.That (t, Is.TypeOf (typeof(ArrayType)));
 
 			x = DParser.ParseExpression ("func!double(1)");
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
 
 			x = DParser.ParseExpression ("func!int(1)");
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 			Assert.That (t, Is.Null);
 
 		}
@@ -1734,28 +1734,28 @@ void main() {
 			};
 			ctxt.PushNewScope (main, stmt_x);
 
-			ds = Evaluation.EvaluateType (x, ctxt) as DSymbol;
+			ds = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as DSymbol;
 			Assert.That (ds, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			Assert.That (ds.Base, Is.TypeOf(typeof(PrimitiveType)));
 
 			ctxt.Pop ();
 
 			x = DParser.ParseExpression ("s2.bar(s)");
-			ds = Evaluation.EvaluateType (x, ctxt) as DSymbol;
+			ds = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as DSymbol;
 			Assert.That (ds, Is.TypeOf (typeof(TemplateParameterSymbol)));
 			Assert.That (ds.Base, Is.TypeOf(typeof(ClassType)));
 
 			x = DParser.ParseExpression ("s.foo(123)");
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 			Assert.That (t, Is.TypeOf(typeof(PointerType)));
 
 			x = DParser.ParseExpression ("s.foo");
-			ds = Evaluation.EvaluateType (x, ctxt) as DSymbol;
+			ds = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as DSymbol;
 			Assert.That (ds, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That (ds.Base, Is.TypeOf(typeof(PrimitiveType)));
 
 			x = DParser.ParseExpression ("D.foo");
-			ds = Evaluation.EvaluateType (x, ctxt) as DSymbol;
+			ds = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as DSymbol;
 			Assert.That (ds, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That (ds.Base, Is.TypeOf(typeof(PrimitiveType)));
 
@@ -1853,7 +1853,7 @@ cl clInst;
 ");
 
 			var x = DParser.ParseExpression ("clInst.inst.b");
-			var v = Evaluation.EvaluateType (x, ctxt);
+			var v = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 			Assert.That (v, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That ((v as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 		}
@@ -1886,27 +1886,27 @@ notherClass ncl;
 			var ctxt = ResolutionContext.Create (pcl, null, mod);
 
 			var x = DParser.ParseExpression ("clInst.a");
-			var v = Evaluation.EvaluateType (x, ctxt);
+			var v = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 			Assert.That ((v as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 
 			x = DParser.ParseExpression ("clInst.inst.b");
-			v = Evaluation.EvaluateType (x, ctxt);
+			v = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 			Assert.That (v, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That ((v as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 
 			x = DParser.ParseExpression ("clInst.b");
-			v = Evaluation.EvaluateType (x, ctxt);
+			v = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 			Assert.That (v, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That ((v as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 
 			x = DParser.ParseExpression ("ncl.arr");
-			v = Evaluation.EvaluateType (x, ctxt);
+			v = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 			Assert.That (v, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That ((v as MemberSymbol).Base, Is.TypeOf(typeof(ArrayType)));
 
 			// Test for static properties
 			x = DParser.ParseExpression ("ncl.length");
-			v = Evaluation.EvaluateType (x, ctxt);
+			v = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 			Assert.That (v, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That (DResolver.StripAliasSymbol((v as MemberSymbol).Base), Is.TypeOf(typeof(PrimitiveType)));
 		}
@@ -2009,19 +2009,19 @@ debug(4)
 			IStatement ss;
 			ctxt.CurrentContext.Set(ss=((subst[2] as StatementCondition).ScopedStatement as BlockStatement).SubStatements.First());
 
-			var x2 = Evaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
+			var x2 = ExpressionTypeEvaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
 			Assert.That(x2, Is.TypeOf(typeof(MemberSymbol)));
 
 			ctxt.CurrentContext.Set(ss = subst[4]);
-			x2 = Evaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
+			x2 = ExpressionTypeEvaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
 			Assert.IsNull(x2);
 
 			ctxt.CurrentContext.Set(ss =  subst[5]);
-			x2 = Evaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
+			x2 = ExpressionTypeEvaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
 			Assert.IsNull(x2);
 
 			ctxt.CurrentContext.Set(ss = subst[6]);
-			x2 = Evaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
+			x2 = ExpressionTypeEvaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
 			Assert.IsNotNull(x2);
 
 			x = TypeDeclarationResolver.ResolveIdentifier("dbg_a", ctxt, null);
@@ -2133,19 +2133,19 @@ void main()
 			ctxt.PushNewScope(main, main.Body);
 
 			var ss = subSt[0] as ExpressionStatement;
-			t = Evaluation.EvaluateType(ss.Expression, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(ss.Expression, ctxt);
 			Assert.IsNotNull(t);
 
 			ss = subSt[1] as ExpressionStatement;
-			t = Evaluation.EvaluateType(ss.Expression, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(ss.Expression, ctxt);
 			Assert.IsNull(t);
 
 			ss = subSt[2] as ExpressionStatement;
-			t = Evaluation.EvaluateType(ss.Expression, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(ss.Expression, ctxt);
 			Assert.IsNotNull(t);
 
 			ss = subSt[3] as ExpressionStatement;
-			t = Evaluation.EvaluateType(ss.Expression, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(ss.Expression, ctxt);
 			Assert.IsNull(t);
 		}
 		
@@ -2249,29 +2249,29 @@ class aa(T) if(is(T==int)) {}");
 			Assert.That(x, Is.Null);
 			
 			var ex = DParser.ParseAssignExpression("cl!int");
-			x = Evaluation.EvaluateTypes(ex, ctxt);
+			x = ExpressionTypeEvaluation.EvaluateTypes(ex, ctxt);
 			Assert.That(x.Length, Is.EqualTo(1));
 			
 			ex = DParser.ParseAssignExpression("cl!float");
-			x = Evaluation.EvaluateTypes(ex, ctxt);
+			x = ExpressionTypeEvaluation.EvaluateTypes(ex, ctxt);
 			Assert.That(x, Is.Null);
 			
 			ex = DParser.ParseAssignExpression("aa!float");
-			x = Evaluation.EvaluateTypes(ex, ctxt);
+			x = ExpressionTypeEvaluation.EvaluateTypes(ex, ctxt);
 			Assert.That(x.Length, Is.EqualTo(1));
 			var t = x[0] as ClassType;
 			Assert.That(t, Is.Not.Null);
 			Assert.That(t.Definition, Is.EqualTo(A["aa"].First()));
 			
 			ex = DParser.ParseAssignExpression("aa!int");
-			x = Evaluation.EvaluateTypes(ex, ctxt);
+			x = ExpressionTypeEvaluation.EvaluateTypes(ex, ctxt);
 			Assert.That(x.Length, Is.EqualTo(1));
 			t = x[0] as ClassType;
 			Assert.That(t, Is.Not.Null);
 			Assert.That(t.Definition, Is.EqualTo((A["aa"] as List<INode>)[1]));
 			
 			ex = DParser.ParseAssignExpression("aa!string");
-			x = Evaluation.EvaluateTypes(ex, ctxt);
+			x = ExpressionTypeEvaluation.EvaluateTypes(ex, ctxt);
 			Assert.That(x, Is.Null);
 		}
 
@@ -2293,12 +2293,12 @@ class aa(T) if(is(T==int)) {}");
 			AbstractType t;
 
 			x = DParser.ParseExpression ("\"abc\"");
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 
 			Assert.That (ResultComparer.IsImplicitlyConvertible (t, constChar, ctxt));
 
 			x = DParser.ParseExpression ("\"abc\"[0..2]");
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 
 			Assert.That (ResultComparer.IsImplicitlyConvertible (t, constChar, ctxt));
 		}
@@ -2417,11 +2417,11 @@ class cl
 			AbstractType t;
 
 			ex = DParser.ParseExpression("(new cl()).someInt");
-			t = Evaluation.EvaluateType(ex, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
 
 			ex = DParser.ParseExpression("Temp!\"int Temp;\"");
-			t = Evaluation.EvaluateType(ex,ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(ex,ctxt);
 			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
 		}
 		
@@ -2523,24 +2523,24 @@ mixin Mx!float myTempMx;");
 			var ctxt = ResolutionTests.CreateDefCtxt(pcl, A);
 			
 			var ex = DParser.ParseExpression("someProp");
-			var x = Evaluation.EvaluateType(ex, ctxt);
+			var x = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(x, Is.InstanceOf(typeof(MemberSymbol)));
 			Assert.That((x as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 			
 			ex = DParser.ParseExpression("myFoo");
-			x = Evaluation.EvaluateType(ex,ctxt);
+			x = ExpressionTypeEvaluation.EvaluateType(ex,ctxt);
 			Assert.That(x, Is.InstanceOf(typeof(MemberSymbol)));
 			var ms = x as MemberSymbol;
 			Assert.That(ms.Base, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			Assert.That((ms.Base as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 			
 			ex = DParser.ParseExpression("myMx.someProp;");
-			x = Evaluation.EvaluateType(ex, ctxt);
+			x = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(x, Is.InstanceOf(typeof(MemberSymbol)));
 			Assert.That((x as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 			
 			ex = DParser.ParseExpression("myTempMx.myFoo");
-			x = Evaluation.EvaluateType(ex,ctxt);
+			x = ExpressionTypeEvaluation.EvaluateType(ex,ctxt);
 			Assert.That(x, Is.InstanceOf(typeof(MemberSymbol)));
 			ms = x as MemberSymbol;
 			Assert.That(ms.Base, Is.TypeOf(typeof(TemplateParameterSymbol)));
@@ -2575,12 +2575,12 @@ void test() {
 			var ctxt = ResolutionTests.CreateDefCtxt(pcl, A);
 			
 			var ex = DParser.ParseExpression("(new Code()).func");
-			var x = Evaluation.EvaluateType(ex, ctxt);
+			var x = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(x, Is.InstanceOf(typeof(MemberSymbol)));
 			Assert.That((x as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 			
 			ex = DParser.ParseExpression("(new Bar()).func");
-			x = Evaluation.EvaluateType(ex, ctxt);
+			x = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(x, Is.InstanceOf(typeof(MemberSymbol)));
 			Assert.That((x as MemberSymbol).Base, Is.TypeOf(typeof(ArrayType)));
 		}
@@ -2618,22 +2618,22 @@ void foo() {
 			var ctxt = ResolutionTests.CreateDefCtxt(pcl, foo, foo.Body);
 			var subSt = foo.Body.SubStatements as List<IStatement>;
 			
-			var t = Evaluation.EvaluateType((subSt[0] as ExpressionStatement).Expression,ctxt);
+			var t = ExpressionTypeEvaluation.EvaluateType((subSt[0] as ExpressionStatement).Expression,ctxt);
 			Assert.That(t, Is.Null);
 			
-			t = Evaluation.EvaluateType((subSt[2] as ExpressionStatement).Expression,ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType((subSt[2] as ExpressionStatement).Expression,ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			var ms = t as MemberSymbol;
 			Assert.That(ms.Base, Is.TypeOf(typeof(PrimitiveType)));
 			
-			t = Evaluation.EvaluateType((subSt[3] as ExpressionStatement).Expression,ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType((subSt[3] as ExpressionStatement).Expression,ctxt);
 			Assert.That(t, Is.TypeOf(typeof(ArrayAccessSymbol)));
 			t = (t as ArrayAccessSymbol).Base;
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 			
 			var ex = DParser.ParseExpression("clA.getInstance");
-			t = Evaluation.EvaluateType(ex, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			
 			foo = (A["Singleton"].First() as DClassLike)["singletonBar"].First() as DMethod;
@@ -2695,12 +2695,12 @@ D d;
 			AbstractType t;
 
 			x = DParser.ParseExpression ("d.emit(123)");
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 
 			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
 
 			x = DParser.ParseExpression ("d.sig.emit(123)");
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 
 			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
 		}

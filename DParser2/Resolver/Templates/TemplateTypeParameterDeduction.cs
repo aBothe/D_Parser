@@ -168,7 +168,7 @@ namespace D_Parser.Resolver.Templates
 					if (param_Expected == null)
 						return false;
 
-					var result_Given = Evaluation.EvaluateType(argEnum_given.Current as IExpression, ctxt);
+					var result_Given = ExpressionTypeEvaluation.EvaluateType(argEnum_given.Current as IExpression, ctxt);
 
 					if (result_Given == null || !HandleDecl(parameter, param_Expected, result_Given))
 						return false;
@@ -455,8 +455,8 @@ namespace D_Parser.Resolver.Templates
 		{
 			if (r.DeclarationOrExpressionBase is VectorDeclaration)
 			{
-				var v_res = Evaluation.EvaluateType(v.Id,ctxt);
-				var r_res = Evaluation.EvaluateType(((VectorDeclaration)r.DeclarationOrExpressionBase).Id,ctxt);
+				var v_res = ExpressionTypeEvaluation.EvaluateType(v.Id, ctxt);
+				var r_res = ExpressionTypeEvaluation.EvaluateType(((VectorDeclaration)r.DeclarationOrExpressionBase).Id, ctxt);
 
 				if (v_res == null || r_res == null)
 					return false;

@@ -36,7 +36,7 @@ namespace D_Parser.Completion.Providers
 			AbstractType t;
 
 			if (AccessExpression is IExpression)
-				t = Evaluation.EvaluateType (AccessExpression as IExpression, ctxt);
+				t = ExpressionTypeEvaluation.EvaluateType(AccessExpression as IExpression, ctxt);
 			else if (AccessExpression is ITypeDeclaration)
 				t = TypeDeclarationResolver.ResolveSingle (AccessExpression as ITypeDeclaration, ctxt);
 			else

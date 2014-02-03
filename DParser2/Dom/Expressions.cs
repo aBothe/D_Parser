@@ -2420,7 +2420,7 @@ namespace D_Parser.Dom.Expressions
 		}
 	}
 
-	public class TraitsArgument : ISyntaxRegion, IVisitable<ExpressionVisitor>
+	public class TraitsArgument : ISyntaxRegion
 	{
 		public readonly ITypeDeclaration Type;
 		public readonly IExpression AssignExpression;
@@ -2450,16 +2450,6 @@ namespace D_Parser.Dom.Expressions
 		{
 			get;
 			set;
-		}
-
-		public void Accept(ExpressionVisitor vis)
-		{
-			vis.Visit(this);
-		}
-
-		public R Accept<R>(ExpressionVisitor<R> vis)
-		{
-			return vis.Visit(this);
 		}
 
 		public ulong GetHash()

@@ -10,195 +10,61 @@ namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public partial class Evaluation
 	{
-		public ISemantic Visit(NewExpression nex)
+		public ISymbolValue Visit(NewExpression nex)
 		{
-			// http://www.d-programming-language.org/expression.html#NewExpression
-			ISemantic[] possibleTypes = null;
-
-			if (nex.Type is IdentifierDeclaration)
-				possibleTypes = TypeDeclarationResolver.Resolve((IdentifierDeclaration)nex.Type, ctxt, filterForTemplateArgs: false);
-			else
-				possibleTypes = TypeDeclarationResolver.Resolve(nex.Type, ctxt);
-			
-			var ctors = new Dictionary<DMethod, TemplateIntermediateType>();
-
-			if (possibleTypes == null)
-				return null;
-
-			foreach (var t in possibleTypes)
-			{
-				var ct = DResolver.StripAliasSymbol(t as AbstractType) as TemplateIntermediateType;
-				if (ct!=null && 
-					!ct.Definition.ContainsAttribute(DTokens.Abstract))
-					foreach (var ctor in GetConstructors(ct))
-						ctors.Add(ctor, ct);
-			}
-
-			MemberSymbol finalCtor = null;
-
-			var kvArray = ctors.ToArray();
-
-			/*
-			 * TODO: Determine argument types and filter out ctor overloads.
-			 */
-
-			if (kvArray.Length != 0)
-				finalCtor = new MemberSymbol(kvArray[0].Key, kvArray[0].Value, nex);
-			else if (possibleTypes.Length != 0)
-				return AbstractType.Get(possibleTypes[0]);
-
-			return finalCtor;
+			//TODO: Create virtual object and call the appropriate ctor, then return the object
+			return TryDoCTFEOrGetValueRefs(ExpressionTypeEvaluation.EvaluateTypes(nex, ctxt), nex);
 		}
 
-		/// <summary>
-		/// Returns all constructors from the given class or struct.
-		/// If no explicit constructor given, an artificial implicit constructor method stub will be created.
-		/// </summary>
-		public static IEnumerable<DMethod> GetConstructors(TemplateIntermediateType ct, bool canCreateExplicitStructCtor = true)
+		public ISymbolValue Visit(CastExpression ce)
 		{
-			bool foundExplicitCtor = false;
-
-			// Simply get all constructors that have the ctor id assigned. Makin' it faster ;)
-			var ch = ct.Definition[DMethod.ConstructorIdentifier];
-			if(ch!=null)
-				foreach (var m in ch)
-				{
-					// Not to forget: 'this' aliases are also possible - so keep checking for m being a genuine ctor
-					var dm = m as DMethod;
-					if (dm!=null && dm.SpecialType == DMethod.MethodType.Constructor)
-					{
-						yield return dm;
-						foundExplicitCtor = true;
-					}
-				}
-
-			var isStruct = ct is StructType;
-			if (!foundExplicitCtor || isStruct)
-			{
-				// Check if there is an opCall that has no parameters.
-				// Only if no exists, it's allowed to make a default parameter.
-				bool canMakeDefaultCtor = true;
-				foreach(var opCall in GetOpCalls(ct, true))
-					if(opCall.Parameters == null || opCall.Parameters.Count == 0)
-					{
-						canMakeDefaultCtor = false;
-						break;
-					}
-
-				if(canMakeDefaultCtor)
-					yield return new DMethod(DMethod.MethodType.Constructor) { Name = DMethod.ConstructorIdentifier, Parent = ct.Definition, Description = "Default constructor for " + ct.Name };
-				
-				// If struct, there's also a ctor that has all struct members as parameters.
-				// Only, if there are no explicit ctors nor opCalls
-				if (isStruct && !foundExplicitCtor && canCreateExplicitStructCtor)
-				{
-					var l = new List<INode>();
-
-					foreach (var member in ct.Definition)
-					{
-						var dv = member as DVariable;
-						if (dv!=null && 
-							!dv.IsStatic && 
-							!dv.IsAlias && 
-							!dv.IsConst) //TODO dunno if public-ness of items is required..
-							l.Add(dv);
-					}
-
-					yield return new DMethod(DMethod.MethodType.Constructor) { 
-						Name = DMethod.ConstructorIdentifier,
-						Parent = ct.Definition,
-						Description = "Default constructor for struct "+ct.Name,
-						Parameters = l
-					};
-				}
-			}
+			// TODO: Convert actual object
+			return null;
 		}
 
-		public static IEnumerable<DMethod> GetOpCalls(TemplateIntermediateType t, bool staticOnly)
+		public ISymbolValue Visit(UnaryExpression_Cat x) // ~b;
 		{
-			var opCall = t.Definition["opCall"];
-			if(opCall!=null)
-				foreach(var call in opCall)
-				{
-					var dm = call as DMethod;
-					if(dm != null && (!staticOnly || dm.IsStatic))
-						yield return dm;
-				}
-		}
-
-		public ISemantic Visit(CastExpression ce)
-		{
-			AbstractType castedType = null;
-
-			if (ce.Type != null)
-			{
-				var castedTypes = TypeDeclarationResolver.Resolve(ce.Type, ctxt);
-
-				ctxt.CheckForSingleResult(castedTypes, ce.Type);
-
-				if (castedTypes != null && castedTypes.Length != 0)
-					castedType = castedTypes[0];
-			}
-			else if(ce.UnaryExpression != null)
-			{
-				castedType = AbstractType.Get(ce.UnaryExpression.Accept(this));
-
-				if (castedType != null && ce.CastParamTokens != null && ce.CastParamTokens.Length > 0)
-				{
-					//TODO: Wrap resolved type with member function attributes
-				}
-			}
-
-			return castedType;
-		}
-
-		public ISemantic Visit(UnaryExpression_Cat x) // a = ~b;
-		{
+			//TODO
 			return x.UnaryExpression.Accept(this);
 		}
 
-		public ISemantic Visit(UnaryExpression_Increment x)
-		{
+		public ISymbolValue Visit(UnaryExpression_Increment x)
+		{//TODO
 			return x.UnaryExpression.Accept(this);
 		}
 
-		public ISemantic Visit(UnaryExpression_Decrement x)
-		{
+		public ISymbolValue Visit(UnaryExpression_Decrement x)
+		{//TODO
 			return x.UnaryExpression.Accept(this);
 		}
 
-		public ISemantic Visit(UnaryExpression_Add x)
-		{
+		public ISymbolValue Visit(UnaryExpression_Add x)
+		{//TODO
 			return x.UnaryExpression.Accept(this);
 		}
 
-		public ISemantic Visit(UnaryExpression_Sub x)
+		public ISymbolValue Visit(UnaryExpression_Sub x)
 		{
 			var v = x.UnaryExpression.Accept(this);
 
-			if (eval)
+			if(v is VariableValue)
+				v = EvaluateValue(v as VariableValue, ValueProvider);
+
+			if (v is PrimitiveValue)
 			{
-				if(v is VariableValue)
-					v = EvaluateValue(v as VariableValue, ValueProvider);
+				var pv = (PrimitiveValue)v;
 
-				if (v is PrimitiveValue)
-				{
-					var pv = (PrimitiveValue)v;
-
-					return new PrimitiveValue(pv.BaseTypeToken, -pv.Value, x, -pv.ImaginaryPart);
-				}
+				return new PrimitiveValue(pv.BaseTypeToken, -pv.Value, x, -pv.ImaginaryPart);
 			}
 
 			return v;
 		}
 
-		public ISemantic Visit(UnaryExpression_Not x)
+		public ISymbolValue Visit(UnaryExpression_Not x)
 		{
 			var v = x.UnaryExpression.Accept(this);
 			
-			if(eval)
-			{
-				if(v is VariableValue)
+			if(v is VariableValue)
 					v = EvaluateValue(v as VariableValue, ValueProvider);
 				var pv = v as PrimitiveValue;
 				if(pv == null){
@@ -206,41 +72,30 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					return null;
 				}
 				
-				return new PrimitiveValue(!IsFalseZeroOrNull(pv),x);
-			}
-			return v;			
+				return new PrimitiveValue(!IsFalseZeroOrNull(pv),x);		
 		}
 
-		public ISemantic Visit(UnaryExpression_Mul x)
+		public ISymbolValue Visit(UnaryExpression_Mul x)
 		{
 			return x.UnaryExpression.Accept(this);
 		}
 
-		public ISemantic Visit(UnaryExpression_And x)
+		public ISymbolValue Visit(UnaryExpression_And x)
 		{
 			var ptrBase=x.UnaryExpression.Accept(this);
 
-			if (eval)
-			{
-				// Create a new pointer
-				// 
-			}
-
-			// &i -- makes an int* out of an int
-			return new PointerType(AbstractType.Get(ptrBase), x);
-		}
-
-		public ISemantic Visit(DeleteExpression x)
-		{
-			if (eval)
-			{
-				// Reset the content of the variable
-			}
-
+			// Create a new pointer
+			// 
 			return null;
 		}
 
-		public ISemantic Visit(UnaryExpression_Type x)
+		public ISymbolValue Visit(DeleteExpression x)
+		{
+			// Reset the content of the variable
+			return null;
+		}
+
+		public ISymbolValue Visit(UnaryExpression_Type x)
 		{
 			var uat = x as UnaryExpression_Type;
 
@@ -253,20 +108,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (types != null && types.Length != 0)
 			{
 				// First off, try to resolve static properties
-				if(eval)  {
-					var statProp = StaticProperties.TryEvalPropertyValue(ValueProvider, types[0], uat.AccessIdentifierHash);
+				var statProp = StaticProperties.TryEvalPropertyValue(ValueProvider, types[0], uat.AccessIdentifierHash);
 
-					if (statProp != null)
-						return statProp;
-				}
+				if (statProp != null)
+					return statProp;
 
-				// If it's not the case, try the conservative way
-				var res = TypeDeclarationResolver.Resolve(new IdentifierDeclaration(uat.AccessIdentifierHash) { EndLocation = uat.EndLocation }, ctxt, types);
-
-				ctxt.CheckForSingleResult(res, x);
-
-				if (res != null && res.Length != 0)
-					return res[0];
+				//TODO
 			}
 
 			return null;

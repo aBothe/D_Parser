@@ -84,6 +84,15 @@ class A {
 		}
 
 		[Test]
+		public void TestSyntaxError5()
+		{
+			var mod = DParser.ParseString (@"module A;
+static if (extra * extra * 2 < y.length*y.length)
+int derp;");
+			Assert.That (mod.ParseErrors.Count, Is.EqualTo (0));
+		}
+
+		[Test]
 		public void TestSyntaxError3()
 		{
 			DModule mod;
@@ -434,7 +443,7 @@ void main()
 			//pc.UfcsCache.Update(pcl);
 			sw.Restart();
 
-			var t = Evaluation.EvaluateType(x, ctxt);
+			var t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
 			sw.Stop();
 			Trace.WriteLine("Took " + sw.Elapsed.TotalMilliseconds + "ms to resolve " + x);

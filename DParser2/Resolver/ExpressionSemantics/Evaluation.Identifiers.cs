@@ -17,7 +17,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// If ImplicitlyExecute is false but value evaluation is switched on, an InternalOverloadValue-object will be returned
 		/// that keeps all overloads passed via 'overloads'
 		/// </summary>
-		ISemantic TryDoCTFEOrGetValueRefs(AbstractType[] overloads, IExpression idOrTemplateInstance, bool ImplicitlyExecute = true, ISymbolValue[] executionArguments=null)
+		ISymbolValue TryDoCTFEOrGetValueRefs(AbstractType[] overloads, IExpression idOrTemplateInstance, bool ImplicitlyExecute = true, ISymbolValue[] executionArguments=null)
 		{
 			if (overloads == null || overloads.Length == 0){
 				EvalError(idOrTemplateInstance, "No symbols found");
@@ -84,56 +84,32 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		bool ImplicitlyExecute = true;
 
-		public ISemantic Visit(TemplateInstanceExpression tix)
+		public ISymbolValue Visit(TemplateInstanceExpression tix)
 		{
 			var ImplicitlyExecute = this.ImplicitlyExecute;
 			this.ImplicitlyExecute = true;
 
-			var o = DResolver.StripAliasSymbols(GetOverloads(tix, ctxt));
+			var o = DResolver.StripAliasSymbols(ExpressionTypeEvaluation.GetOverloads(tix, ctxt));
 			
-			if (eval)
-				return TryDoCTFEOrGetValueRefs(o, tix, ImplicitlyExecute);
-			else
-			{
-				ctxt.CheckForSingleResult(o, tix);
-				if (o != null)
-					if (o.Length == 1)
-						return o[0];
-					else if (o.Length > 1)
-						return new InternalOverloadValue(o);
-				return null;
-			}
+			return TryDoCTFEOrGetValueRefs(o, tix, ImplicitlyExecute);
 		}
 
-		public ISemantic Visit(IdentifierExpression id)
+		public ISymbolValue Visit(IdentifierExpression id)
 		{
 			var ImplicitlyExecute = this.ImplicitlyExecute;
 			this.ImplicitlyExecute = true;
 
 			if (id.IsIdentifier)
 			{
-				var o = GetOverloads(id, ctxt);
+				var o = ExpressionTypeEvaluation.GetOverloads(id, ctxt);
 
-				if (eval)
+				if (o == null || o.Length == 0)
 				{
-					if (o == null || o.Length == 0)
-					{
-						EvalError(id, "Symbol could not be found");
-						return null;
-					}
-
-					return TryDoCTFEOrGetValueRefs(o, id, ImplicitlyExecute);
-				}
-				else
-				{
-					ctxt.CheckForSingleResult(o, id);
-					if (o != null)
-						if (o.Length == 1)
-							return o[0];
-						else if (o.Length > 1)
-							return new InternalOverloadValue(o);
+					EvalError(id, "Symbol could not be found");
 					return null;
 				}
+
+				return TryDoCTFEOrGetValueRefs(o, id, ImplicitlyExecute);
 			}
 
 			byte tt;
@@ -144,10 +120,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						id.Subformat == LiteralSubformat.Utf16 ? DTokens.Wchar :
 						DTokens.Char;
 
-					if (eval)
-						return new PrimitiveValue(tk, Convert.ToDecimal((int)(char)id.Value), id);
-					else
-						return new PrimitiveType(tk, 0, id);
+					return new PrimitiveValue(tk, Convert.ToDecimal((int)(char)id.Value), id);
 
 				case LiteralFormat.FloatingPoint | LiteralFormat.Scalar:
 					var im = id.Subformat.HasFlag(LiteralSubformat.Imaginary);
@@ -161,10 +134,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 					var v = Convert.ToDecimal(id.Value);
 
-					if (eval)
-						return new PrimitiveValue(tt, im ? 0 : v, id, im ? v : 0);
-					else
-						return new PrimitiveType(tt, 0, id);
+					return new PrimitiveValue(tt, im ? 0 : v, id, im ? v : 0);
 
 				case LiteralFormat.Scalar:
 					var unsigned = id.Subformat.HasFlag(LiteralSubformat.Unsigned);
@@ -174,65 +144,14 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					else
 						tt = unsigned ? DTokens.Uint : DTokens.Int;
 
-					return eval ? (ISemantic)new PrimitiveValue(tt, Convert.ToDecimal(id.Value), id) : new PrimitiveType(tt, 0, id);
+					return new PrimitiveValue(tt, Convert.ToDecimal(id.Value), id);
 
 				case Parser.LiteralFormat.StringLiteral:
 				case Parser.LiteralFormat.VerbatimStringLiteral:
-
-					var _t = GetStringType(id.Subformat);
-					return eval ? (ISemantic)new ArrayValue(_t, id) : _t;
+					return new ArrayValue(GetStringType(id.Subformat), id);
 				default:
 					return null;
 			}
-		}
-
-
-
-
-		public AbstractType[] GetOverloads(TemplateInstanceExpression tix, IEnumerable<AbstractType> resultBases = null, bool deduceParameters = true)
-		{
-			return GetOverloads(tix, ctxt, resultBases, deduceParameters);
-		}
-
-		public static AbstractType[] GetOverloads(TemplateInstanceExpression tix, ResolutionContext ctxt, IEnumerable<AbstractType> resultBases = null, bool deduceParameters = true)
-		{
-			if(resultBases == null && tix.InnerDeclaration != null)
-				resultBases = TypeDeclarationResolver.Resolve(tix.InnerDeclaration, ctxt);
-			
-			AbstractType[] res;
-			if (resultBases == null)
-				res = TypeDeclarationResolver.ResolveIdentifier(tix.TemplateIdHash, ctxt, tix, tix.ModuleScopedIdentifier);
-			else
-				res = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(tix.TemplateIdHash, resultBases, ctxt, tix);
-
-			return (ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) == 0 && deduceParameters ?
-				TemplateInstanceHandler.DeduceParamsAndFilterOverloads(res, tix, ctxt) : res;
-		}
-
-		public AbstractType[] GetOverloads(IdentifierExpression id, IEnumerable<AbstractType> resultBases = null, bool deduceParameters = true)
-		{
-			return GetOverloads(id, ctxt, resultBases, deduceParameters);
-		}
-
-		public static AbstractType[] GetOverloads(IdentifierExpression id, ResolutionContext ctxt, IEnumerable<AbstractType> resultBases = null, bool deduceParameters = true)
-		{
-			AbstractType[] res;
-			if (resultBases == null)
-				res = TypeDeclarationResolver.ResolveIdentifier(id.ValueStringHash, ctxt, id, id.ModuleScoped);
-			else
-				res = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(id.ValueStringHash, resultBases, ctxt, id);
-
-			if (res == null)
-				return null;
-
-			var f = DResolver.FilterOutByResultPriority(ctxt, res);
-
-			if(f.Count == 0)
-				return null;
-
-			return (ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) == 0 && deduceParameters ?
-				TemplateInstanceHandler.DeduceParamsAndFilterOverloads(f, null, false, ctxt) : 
-				f.ToArray();
 		}
 	}
 }

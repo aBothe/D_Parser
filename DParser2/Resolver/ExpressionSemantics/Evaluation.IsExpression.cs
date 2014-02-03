@@ -14,11 +14,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// <summary>
 		/// http://dlang.org/expression.html#IsExpression
 		/// </summary>
-		public ISemantic Visit(IsExpression isExpression)
+		public ISymbolValue Visit(IsExpression isExpression)
 		{
-			if(!eval)
-				return new PrimitiveType(DTokens.Bool);
-
 			bool retTrue = false;
 
 			if (isExpression.TestedType != null)

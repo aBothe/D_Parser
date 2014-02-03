@@ -106,7 +106,7 @@ namespace D_Parser.Completion
 				var call = (PostfixExpression_MethodCall)lastParamExpression;
 
 				res.MethodIdentifier = call.PostfixForeExpression;
-				res.ResolvedTypesOrMethods = Evaluation.GetUnfilteredMethodOverloads (call.PostfixForeExpression, ctxt, call);
+				res.ResolvedTypesOrMethods = ExpressionTypeEvaluation.GetUnfilteredMethodOverloads(call.PostfixForeExpression, ctxt, call);
 
 				if (call.Arguments != null)
 					res.CurrentlyTypedArgumentIndex = call.ArgumentCount;
@@ -145,7 +145,7 @@ namespace D_Parser.Completion
 			res.IsTemplateInstanceArguments = true;
 
 			res.MethodIdentifier = tix;
-			res.ResolvedTypesOrMethods = Evaluation.GetOverloads(tix, ctxt, resultBases, false);
+			res.ResolvedTypesOrMethods = ExpressionTypeEvaluation.GetOverloads(tix, ctxt, resultBases, false);
 
 			if (tix.Arguments != null)
 				res.CurrentlyTypedArgumentIndex = tix.Arguments.Length;

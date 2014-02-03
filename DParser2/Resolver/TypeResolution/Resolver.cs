@@ -102,7 +102,7 @@ namespace D_Parser.Resolver.TypeResolution
 			AbstractType[] ret;
 
 			if (o is IExpression)
-				ret = Evaluation.EvaluateTypes((IExpression)o, ctxt);
+				ret = ExpressionTypeEvaluation.EvaluateTypes((IExpression)o, ctxt);
 			else if (o is ITypeDeclaration)
 				ret = TypeDeclarationResolver.Resolve((ITypeDeclaration)o, ctxt);
 			else if (o is INode)
@@ -136,7 +136,7 @@ namespace D_Parser.Resolver.TypeResolution
 			AbstractType[] ret;
 
 			if (o is IExpression)
-				ret = Evaluation.EvaluateTypes((IExpression)o, ctxt);
+				ret = ExpressionTypeEvaluation.EvaluateTypes((IExpression)o, ctxt);
 			else if(o is ITypeDeclaration)
 				ret = TypeDeclarationResolver.Resolve((ITypeDeclaration)o, ctxt);
 			else if (o is INode)
@@ -153,11 +153,11 @@ namespace D_Parser.Resolver.TypeResolution
 				ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.NoTemplateParameterDeduction;
 
 				if (o is IdentifierExpression)
-					ret = Evaluation.GetOverloads (o as IdentifierExpression, ctxt, deduceParameters: false);
+					ret = ExpressionTypeEvaluation.GetOverloads(o as IdentifierExpression, ctxt, deduceParameters: false);
 				else if (o is ITypeDeclaration)
 					ret = TypeDeclarationResolver.Resolve (o as ITypeDeclaration, ctxt);
 				else if (o is IExpression)
-					ret = Evaluation.EvaluateTypes (o as IExpression, ctxt);
+					ret = ExpressionTypeEvaluation.EvaluateTypes(o as IExpression, ctxt);
 			}
 
 			if (ret == null) {

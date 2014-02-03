@@ -11,19 +11,47 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	public partial class Evaluation
 	{
 		bool? returnBaseTypeOnly;
-		public ISemantic Visit(PostfixExpression_MethodCall call)
+		public ISymbolValue Visit(PostfixExpression_MethodCall call)
 		{
 			var returnBaseTypeOnly = !this.returnBaseTypeOnly.HasValue ? 
 				!ctxt.Options.HasFlag(ResolutionOptions.ReturnMethodReferencesOnly) : 
 				this.returnBaseTypeOnly.Value;
 			this.returnBaseTypeOnly = null;
 
+			List<ISemantic> callArguments;
+			ISymbolValue delegValue;
+
 			// Deduce template parameters later on
 			AbstractType[] baseExpression;
 			ISymbolValue baseValue;
 			TemplateInstanceExpression tix;
 
-			GetRawCallOverloads(call, out baseExpression, out baseValue, out tix);
+			GetRawCallOverloads(ctxt, call, out baseExpression, out baseValue, out tix);
+
+			var argTypeFilteredOverloads = EvalMethodCall(baseExpression, baseValue, tix, ctxt, call, out callArguments, out delegValue, returnBaseTypeOnly, ValueProvider);
+
+			if (delegValue != null)
+				return delegValue;
+
+			// Convert ISemantic[] to ISymbolValue[]
+			var args = new List<ISymbolValue>(callArguments.Count);
+
+			foreach (var a in callArguments)
+				args.Add(a as ISymbolValue);
+
+			// Execute/Evaluate the variable contents etc.
+			return TryDoCTFEOrGetValueRefs(argTypeFilteredOverloads.ToArray(), call.PostfixForeExpression, true, args.ToArray());
+		}
+
+		public static List<AbstractType> EvalMethodCall(AbstractType[] baseExpression, ISymbolValue baseValue, TemplateInstanceExpression tix,
+			ResolutionContext ctxt, 
+			PostfixExpression_MethodCall call, out List<ISemantic> callArguments, out ISymbolValue delegateValue,
+			bool returnBaseTypeOnly, AbstractSymbolValueProvider ValueProvider = null)
+		{
+			//TODO: Refactor this crap!
+
+			delegateValue = null;
+			callArguments = null;
 
 			var methodOverloads = new List<AbstractType>();
 
@@ -48,7 +76,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						else if (mr.Definition is DVariable)
 						{
 							// If we've got a variable here, get its base type/value reference
-							if (eval)
+							if (ValueProvider != null)
 							{
 								var dgVal = ValueProvider[(DVariable)mr.Definition] as DelegateValue;
 
@@ -59,7 +87,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 								}
 								else
 								{
-									EvalError(call, "Variable must be a delegate, not anything else", mr);
+									ValueProvider.LogError(call, "Variable must be a delegate, not anything else");
 									return null;
 								}
 							}
@@ -70,9 +98,14 @@ namespace D_Parser.Resolver.ExpressionSemantics
 								// Must be of type delegate
 								if (bt is DelegateType)
 								{
-									var ret = HandleCallDelegateType(bt as DelegateType, methodOverloads, returnBaseTypeOnly);
-									if (ret != null)
-										return ret;
+									var ret = HandleCallDelegateType(ValueProvider,bt as DelegateType, methodOverloads, returnBaseTypeOnly);
+									if (ret is ISymbolValue)
+									{
+										delegateValue = ret as ISymbolValue;
+										return null;
+									}
+									else if (ret is AbstractType)
+										return new List<AbstractType> { ret as AbstractType };
 								}
 								else
 								{
@@ -97,9 +130,14 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					}
 					else if (b is DelegateType)
 					{
-						var ret = HandleCallDelegateType(b as DelegateType, methodOverloads, returnBaseTypeOnly);
-						if (ret != null)
-							return ret;
+						var ret = HandleCallDelegateType(ValueProvider,b as DelegateType, methodOverloads, returnBaseTypeOnly);
+						if (ret is ISymbolValue)
+						{
+							delegateValue = ret as ISymbolValue;
+							return null;
+						}
+						else if (ret is AbstractType)
+							return new List<AbstractType> { ret as AbstractType };
 					}
 					else if (b is ClassType || b is StructType)
 					{
@@ -112,7 +150,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						if (classDef == null)
 							continue;
 
-						foreach (var i in GetOpCalls(tit, requireStaticItems))
+						foreach (var i in ExpressionTypeEvaluation.GetOpCalls(tit, requireStaticItems))
 							methodOverloads.Add(TypeDeclarationResolver.HandleNodeMatch(i, ctxt, b, call) as MemberSymbol);
 
 						/*
@@ -126,7 +164,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						if (b is StructType && methodOverloads.Count == 0)
 						{
 							//TODO: Deduce parameters
-							return b;
+							return new List<AbstractType> { b };
 						}
 					}
 
@@ -147,12 +185,20 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return null;
 
 			// Get all arguments' types
-			var callArguments = new List<ISemantic>();
+			callArguments = new List<ISemantic>();
 			bool hasNonFinalArgs = false;
 
 			if (call.Arguments != null)
-				foreach (var arg in call.Arguments)
-					callArguments.Add(arg != null ? arg.Accept(this) : null);
+			{
+				if (ValueProvider != null)
+				{
+					foreach (var arg in call.Arguments)
+						callArguments.Add(arg != null ? Evaluation.EvaluateValue(arg, ValueProvider) : null);
+				}
+				else
+					foreach (var arg in call.Arguments)
+						callArguments.Add(arg != null ? ExpressionTypeEvaluation.EvaluateType(arg, ctxt) : null);
+			}
 
 			#region If explicit template type args were given, try to associate them with each overload
 			if (tix != null)
@@ -183,7 +229,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						// In the case of an ufcs, insert the first argument into the CallArguments list
 						if (isUfcs && !hasHandledUfcsResultBefore)
 						{
-							callArguments.Insert(0, eval ? baseValue as ISemantic : firstUfcsArg);
+							callArguments.Insert(0, ValueProvider != null ? baseValue as ISemantic : firstUfcsArg);
 							hasHandledUfcsResultBefore = true;
 						}
 						else if (!isUfcs && hasHandledUfcsResultBefore) // In the rare case of having a ufcs result occuring _after_ a normal member result, remove the initial arg again
@@ -208,7 +254,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 								// Handle the usage of tuples: Tuples may only be used as as-is, so not as an array, pointer or in a modified way..
 								if (paramType is IdentifierDeclaration &&
-									TryHandleMethodArgumentTuple(ref add, callArguments, dm, deducedTypeDict, i, ref currentArg))
+									TryHandleMethodArgumentTuple(ctxt,ref add, callArguments, dm, deducedTypeDict, i, ref currentArg))
 									continue;
 								else if (currentArg < callArguments.Count)
 								{
@@ -268,7 +314,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							else
 								ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(ms);
 
-							if (eval || !returnBaseTypeOnly)
+							if (ValueProvider != null || !returnBaseTypeOnly)
 								argTypeFilteredOverloads.Add(new MemberSymbol(dm, bt, ms.DeclarationOrExpressionBase, ms.DeducedTypes) { Tag = ms.Tag });
 							else
 								argTypeFilteredOverloads.Add(bt);
@@ -299,29 +345,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 			#endregion
 
-			if (eval)
-			{
-				// Convert ISemantic[] to ISymbolValue[]
-				var args = new List<ISymbolValue>(callArguments.Count);
-
-				foreach (var a in callArguments)
-					args.Add(a as ISymbolValue);
-
-				// Execute/Evaluate the variable contents etc.
-				return TryDoCTFEOrGetValueRefs(argTypeFilteredOverloads.ToArray(), call.PostfixForeExpression, true, args.ToArray());
-			}
-			else
-			{
-				// Check if one overload remains and return that one.
-				ctxt.CheckForSingleResult(argTypeFilteredOverloads, call);
-				return argTypeFilteredOverloads.Count != 0 ? argTypeFilteredOverloads[0] : null;
-			}
+			return argTypeFilteredOverloads;
 		}
 
-		ISemantic HandleCallDelegateType(DelegateType dg, List<AbstractType> methodOverloads, bool returnBaseTypeOnly)
+		static ISemantic HandleCallDelegateType(AbstractSymbolValueProvider ValueProvider,DelegateType dg, List<AbstractType> methodOverloads, bool returnBaseTypeOnly)
 		{
 			if(returnBaseTypeOnly)
-				return eval ? new TypeValue(dg.Base) as ISemantic : dg.Base;
+				return ValueProvider != null ? new TypeValue(dg.Base) as ISemantic : dg.Base;
 
 			/*
 			 * int a = delegate(x) { return x*2; } (12); // a is 24 after execution
@@ -329,19 +359,20 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			 * int b = dg(4);
 			 */
 
-			if (!eval) {
+			if (ValueProvider == null) {
 				methodOverloads.Add (dg);
 				return null;
 			}
 			else
 			{
 				// If it's just wanted to pass back the delegate's return type, skip the remaining parts of this method.
-				EvalError(dg.DeclarationOrExpressionBase as IExpression, "TODO", dg);
+				//EvalError(dg.DeclarationOrExpressionBase as IExpression, "TODO", dg);
+				ValueProvider.LogError(dg.DeclarationOrExpressionBase, "Ctfe not implemented yet");
 				return null;
 			}
 		}
 
-		private bool TryHandleMethodArgumentTuple(ref bool add,
+		internal static bool TryHandleMethodArgumentTuple(ResolutionContext ctxt,ref bool add,
 			List<ISemantic> callArguments, 
 			DMethod dm, 
 			DeducedTypeDictionary deducedTypeDict, int currentParameter,ref int currentArg)
@@ -437,7 +468,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return true;
 		}
 
-		void GetRawCallOverloads(PostfixExpression_MethodCall call, 
+		void GetRawCallOverloads(ResolutionContext ctxt,PostfixExpression_MethodCall call, 
 			out AbstractType[] baseExpression, 
 			out ISymbolValue baseValue, 
 			out TemplateInstanceExpression tix)
@@ -451,20 +482,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				var pac = (PostfixExpression_Access)call.PostfixForeExpression;
 				tix = pac.AccessExpression as TemplateInstanceExpression;
 
-				var vs = EvalPostfixAccessExpression(pac, null, false, false);
+				var vs = EvalPostfixAccessExpression(this, ctxt, pac, null, false, false);
 
-				if (vs != null && vs.Length != 0)
-				{
-					if (vs[0] is ISymbolValue)
-					{
-						baseValue = (ISymbolValue)vs[0];
-						baseExpression = new[] { baseValue.RepresentedType };
-					}
-					else if (vs[0] is InternalOverloadValue)
-						baseExpression = ((InternalOverloadValue)vs[0]).Overloads;
-					else
-						baseExpression = TypeDeclarationResolver.Convert(vs);
-				}
+				baseExpression = TypeDeclarationResolver.Convert(vs);
 			}
 			else
 			{
@@ -473,8 +493,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.DontResolveBaseTypes;
 
 				if (call.PostfixForeExpression is TokenExpression)
-					baseExpression = GetResolvedConstructorOverloads((TokenExpression)call.PostfixForeExpression, ctxt);
-				else if (eval)
+					baseExpression = ExpressionTypeEvaluation.GetResolvedConstructorOverloads((TokenExpression)call.PostfixForeExpression, ctxt);
+				else
 				{
 					var fore = call.PostfixForeExpression;
 					if (fore is TemplateInstanceExpression)
@@ -492,26 +512,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						baseExpression = ((InternalOverloadValue)baseValue).Overloads;
 					else if (baseValue != null)
 						baseExpression = new[] { baseValue.RepresentedType };
-					else baseExpression = null;
-				}
-				else
-				{
-					if (call.PostfixForeExpression is TemplateInstanceExpression)
-						baseExpression = GetOverloads(tix = (TemplateInstanceExpression)call.PostfixForeExpression, null, false);
-					else if (call.PostfixForeExpression is IdentifierExpression)
-						baseExpression = GetOverloads(call.PostfixForeExpression as IdentifierExpression, deduceParameters:false);
-					else
-						baseExpression = new[] { call.PostfixForeExpression != null ? AbstractType.Get(call.PostfixForeExpression.Accept(this)) : null };
+					else 
+						baseExpression = null;
 				}
 
 				ctxt.CurrentContext.ContextDependentOptions = optBackup;
 			}
-		}
-
-		public static AbstractType[] GetAccessedOverloads(PostfixExpression_Access acc, ResolutionContext ctxt,
-			ISemantic resultBase = null, bool DeducePostfixTemplateParams = true)
-		{
-			return TypeDeclarationResolver.Convert(new Evaluation(ctxt).EvalPostfixAccessExpression(acc, resultBase, DeducePostfixTemplateParams));
 		}
 
 		/// <summary>
@@ -521,13 +527,14 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// which stores the return value of the property function b that is executed without arguments.
 		/// Also handles UFCS - so if filtering is wanted, the function becom
 		/// </summary>
-		ISemantic[] EvalPostfixAccessExpression(PostfixExpression_Access acc,
-			ISemantic resultBase = null, bool EvalAndFilterOverloads = true, bool ResolveImmediateBaseType = true)
+		public static R[] EvalPostfixAccessExpression<R>(ExpressionVisitor<R> vis, ResolutionContext ctxt,PostfixExpression_Access acc,
+			ISemantic resultBase = null, bool EvalAndFilterOverloads = true, bool ResolveImmediateBaseType = true, AbstractSymbolValueProvider ValueProvider = null)
+			where R : class,ISemantic
 		{
 			if (acc == null)
 				return null;
 
-			var baseExpression = resultBase ?? (acc.PostfixForeExpression != null ? acc.PostfixForeExpression.Accept(this) : null);
+			var baseExpression = resultBase ?? (acc.PostfixForeExpression != null ? acc.PostfixForeExpression.Accept(vis) as ISemantic : null);
 
 			if (acc.AccessExpression is NewExpression)
 			{
@@ -549,7 +556,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 				var tix = (TemplateInstanceExpression)acc.AccessExpression;
 				// Do not deduce and filter if superior expression is a method call since call arguments' types also count as template arguments!
-				overloads = GetOverloads(tix, new[] { AbstractType.Get(baseExpression) }, EvalAndFilterOverloads);
+				overloads = ExpressionTypeEvaluation.GetOverloads(tix, ctxt, new[] { AbstractType.Get(baseExpression) }, EvalAndFilterOverloads);
 
 				if (!ResolveImmediateBaseType)
 					ctxt.CurrentContext.ContextDependentOptions = optBackup;
@@ -559,27 +566,27 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			{
 				var id = acc.AccessExpression as IdentifierExpression;
 
-				if (eval && EvalAndFilterOverloads && resultBase != null)
+				if (ValueProvider != null && EvalAndFilterOverloads && resultBase != null)
 				{
 					var staticPropResult = StaticProperties.TryEvalPropertyValue(ValueProvider, resultBase, id.ValueStringHash);
 					if (staticPropResult != null)
-						return new[]{staticPropResult};
+						return new[]{(R)staticPropResult};
 				}
 
 				if (!ResolveImmediateBaseType)
 					ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.DontResolveBaseTypes;
 
-				overloads = GetOverloads(id, new[] { AbstractType.Get(baseExpression) }, EvalAndFilterOverloads);
+				overloads = ExpressionTypeEvaluation.GetOverloads(id, ctxt, new[] { AbstractType.Get(baseExpression) }, EvalAndFilterOverloads);
 
 				if (!ResolveImmediateBaseType)
 					ctxt.CurrentContext.ContextDependentOptions = optBackup;
 			}
 			else
-			{
+			{/*
 				if (eval){
 					EvalError(acc, "Invalid access expression");
 					return null;
-				}
+				}*/
 				ctxt.LogError(acc, "Invalid post-dot expression");
 				return null;
 			}
@@ -608,54 +615,34 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	
 				if (oo.Count > 0) {
 					if (overloads != null && overloads.Length != 0)
-						oo.AddRange (overloads);
+						oo.AddRange(overloads);
 					overloads = oo.ToArray();
 				}
 			}
 
 			// If evaluation active and the access expression is stand-alone, return a single item only.
-			if (EvalAndFilterOverloads && eval)
-				return new[] { TryDoCTFEOrGetValueRefs(overloads, acc.AccessExpression) };
+			if (EvalAndFilterOverloads && ValueProvider != null)
+				return new[] { (R)new Evaluation(ValueProvider).TryDoCTFEOrGetValueRefs(overloads, acc.AccessExpression) };
 
-			return overloads;
+			return overloads as R[];
 		}
 
-		ISemantic EvalForeExpression(PostfixExpression ex)
+		ISymbolValue EvalForeExpression(PostfixExpression ex)
 		{
-			var foreExpr = ex.PostfixForeExpression != null ? ex.PostfixForeExpression.Accept(this) : null;
-
-			if (foreExpr is AliasedType)
-				foreExpr = DResolver.StripAliasSymbol((AbstractType)foreExpr);
-
-			if (foreExpr == null)
-			{
-				if (eval)
-					return null;
-				else
-				{
-					ctxt.LogError(new NothingFoundError(ex.PostfixForeExpression));
-					return null;
-				}
-			}
-
-			return foreExpr;
+			return ex.PostfixForeExpression != null ? ex.PostfixForeExpression.Accept(this) : null;
 		}
 
-		public ISemantic Visit(PostfixExpression_Access ex)
+		public ISymbolValue Visit(PostfixExpression_Access ex)
 		{
-			//var foreExpr = EvalForeExpression(ex);
-
-			var r = EvalPostfixAccessExpression(ex, null/*foreExpr*/, true);
+			var r = EvalPostfixAccessExpression(this, ctxt, ex, null, true, ValueProvider:ValueProvider);
 			ctxt.CheckForSingleResult(r, ex);
 
 			return r != null && r.Length != 0 ? r[0] : null;
 		}
 
-		public ISemantic Visit(PostfixExpression_Increment x)
+		public ISymbolValue Visit(PostfixExpression_Increment x)
 		{
 			var foreExpr = EvalForeExpression(x);
-			if (!eval)
-				return foreExpr;
 
 			if (resolveConstOnly)
 				EvalError(new NoConstException(x));
@@ -663,11 +650,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return null;
 		}
 
-		public ISemantic Visit(PostfixExpression_Decrement x)
+		public ISymbolValue Visit(PostfixExpression_Decrement x)
 		{
 			var foreExpr = EvalForeExpression(x);
-			if (!eval)
-				return foreExpr;
 
 			if (resolveConstOnly)
 				EvalError(new NoConstException(x));
@@ -675,148 +660,78 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return null;
 		}
 
-		public ISemantic Visit(PostfixExpression_Index x)
+		public ISymbolValue Visit(PostfixExpression_Index x)
 		{
 			var foreExpression = EvalForeExpression(x);
 
-			// myArray[0]; myArray[0..5];
-			// opIndex/opSlice ?
-			if (foreExpression is MemberSymbol)
-				foreExpression = DResolver.StripMemberSymbols(foreExpression as AbstractType);
+			//TODO: Access pointer arrays(?)
 
-			if (eval)
+			if (foreExpression is ArrayValue) // ArrayValue must be checked first due to inheritance!
 			{
-				//TODO: Access pointer arrays(?)
+				var av = foreExpression as ArrayValue;
 
-				if (foreExpression is ArrayValue) // ArrayValue must be checked first due to inheritance!
+				// Make $ operand available
+				var arrLen_Backup = ValueProvider.CurrentArrayLength;
+				ValueProvider.CurrentArrayLength = av.Elements.Length;
+
+				var n = x.Arguments.Length > 0 && x.Arguments[0] != null ? x.Arguments[0].Accept(this) as PrimitiveValue : null;
+
+				ValueProvider.CurrentArrayLength = arrLen_Backup;
+
+				if (n == null)
 				{
-					var av = foreExpression as ArrayValue;
-
-					// Make $ operand available
-					var arrLen_Backup = ValueProvider.CurrentArrayLength;
-					ValueProvider.CurrentArrayLength = av.Elements.Length;
-
-					var n = x.Arguments.Length > 0 && x.Arguments[0] != null ? x.Arguments[0].Accept(this) as PrimitiveValue : null;
-
-					ValueProvider.CurrentArrayLength = arrLen_Backup;
-
-					if (n == null)
-					{
-						EvalError(x.Arguments[0], "Returned no value");
-						return null;
-					}
-
-					int i = 0;
-					try
-					{
-						i = Convert.ToInt32(n.Value);
-					}
-					catch
-					{
-						EvalError(x.Arguments[0], "Index expression must be of type int");
-						return null;
-					}
-
-					if (i < 0 || i > av.Elements.Length)
-					{
-						EvalError(x.Arguments[0], "Index out of range - it must be between 0 and " + av.Elements.Length);
-						return null;
-					}
-
-					return av.Elements[i];
-				}
-				else if (foreExpression is AssociativeArrayValue)
-				{
-					var aa = (AssociativeArrayValue)foreExpression;
-
-					var key = x.Arguments.Length > 0 && x.Arguments[0] != null ? x.Arguments[0].Accept(this) as PrimitiveValue : null;
-
-					if (key == null)
-					{
-						EvalError(x.Arguments[0], "Returned no value");
-						return null;
-					}
-
-					ISymbolValue val = null;
-
-					foreach (var kv in aa.Elements)
-						if (kv.Key.Equals(key))
-							return kv.Value;
-
-					EvalError(x, "Could not find key '" + val + "'");
+					EvalError(x.Arguments[0], "Returned no value");
 					return null;
 				}
 
-				EvalError(x.PostfixForeExpression, "Invalid index expression base value type", foreExpression);
+				int i = 0;
+				try
+				{
+					i = Convert.ToInt32(n.Value);
+				}
+				catch
+				{
+					EvalError(x.Arguments[0], "Index expression must be of type int");
+					return null;
+				}
+
+				if (i < 0 || i > av.Elements.Length)
+				{
+					EvalError(x.Arguments[0], "Index out of range - it must be between 0 and " + av.Elements.Length);
+					return null;
+				}
+
+				return av.Elements[i];
+			}
+			else if (foreExpression is AssociativeArrayValue)
+			{
+				var aa = (AssociativeArrayValue)foreExpression;
+
+				var key = x.Arguments.Length > 0 && x.Arguments[0] != null ? x.Arguments[0].Accept(this) as PrimitiveValue : null;
+
+				if (key == null)
+				{
+					EvalError(x.Arguments[0], "Returned no value");
+					return null;
+				}
+
+				ISymbolValue val = null;
+
+				foreach (var kv in aa.Elements)
+					if (kv.Key.Equals(key))
+						return kv.Value;
+
+				EvalError(x, "Could not find key '" + val + "'");
 				return null;
 			}
-			else
-			{
-				foreExpression = DResolver.StripMemberSymbols(AbstractType.Get(foreExpression));
 
-				if (foreExpression is AssocArrayType)
-				{
-					var ar = foreExpression as AssocArrayType;
-					/*
-					 * myType_Array[0] -- returns TypeResult myType
-					 * return the value type of a given array result
-					 */
-					//TODO: Handle opIndex overloads
-
-					return new ArrayAccessSymbol(x, ar.ValueType);
-				}
-				/*
-				 * int* a = new int[10];
-				 * 
-				 * a[0] = 12;
-				 */
-				else if (foreExpression is PointerType)
-					return (foreExpression as PointerType).Base;
-				//return new ArrayAccessSymbol(x,((PointerType)foreExpression).Base);
-
-				else if (foreExpression is DTuple)
-				{
-					var tt = foreExpression as DTuple;
-
-					if (x.Arguments != null && x.Arguments.Length != 0)
-					{
-						var idx = EvaluateValue(x.Arguments[0], ctxt) as PrimitiveValue;
-
-				if (idx == null || !DTokens.IsBasicType_Integral(idx.BaseTypeToken))
-						{
-							ctxt.LogError(x.Arguments[0], "Index expression must evaluate to integer value");
-						}
-						else if (idx.Value > (decimal)Int32.MaxValue ||
-								 (int)idx.Value >= tt.Items.Length ||
-								 (int)idx.Value < 0)
-						{
-							ctxt.LogError(x.Arguments[0], "Index number must be a value between 0 and " + tt.Items.Length);
-						}
-						else
-						{
-							return tt.Items[(int)idx.Value];
-						}
-					}
-				}
-
-				ctxt.LogError(new ResolutionError(x, "Invalid base type for index expression"));
-			}
-
+			EvalError(x.PostfixForeExpression, "Invalid index expression base value type", foreExpression);
 			return null;
 		}
 
-		public ISemantic Visit(PostfixExpression_Slice x)
+		public ISymbolValue Visit(PostfixExpression_Slice x)
 		{
 			var foreExpression = EvalForeExpression(x);
-
-			// myArray[0]; myArray[0..5];
-			// opIndex/opSlice ?
-			if (foreExpression is MemberSymbol)
-				foreExpression = DResolver.StripMemberSymbols(foreExpression as AbstractType);
-
-			if (!eval)
-				return foreExpression; // Still of the array's type.
-
 
 			if (!(foreExpression is ArrayValue))
 			{

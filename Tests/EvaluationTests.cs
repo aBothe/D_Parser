@@ -390,7 +390,7 @@ template isIntOrFloat(T)
 			AbstractType t;
 
 			x = DParser.ParseExpression ("Tup[2]");
-			t = DResolver.StripAliasSymbol(Evaluation.EvaluateType (x, ctxt));
+			t = DResolver.StripAliasSymbol(ExpressionTypeEvaluation.EvaluateType (x, ctxt));
 			Assert.That (t, Is.TypeOf(typeof(ArrayType)));
 
 			x = DParser.ParseExpression ("isIntOrFloat!(Tup[2])");
@@ -399,11 +399,11 @@ template isIntOrFloat(T)
 			Assert.That ((v as PrimitiveValue).Value, Is.EqualTo (0m));
 
 			x = DParser.ParseExpression ("Tup[0]");
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 			Assert.That (t, Is.TypeOf(typeof(PrimitiveType)));
 
 			x = DParser.ParseExpression ("Tup[1]");
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 			Assert.That (t, Is.TypeOf(typeof(PrimitiveType)));
 
 			x = DParser.ParseExpression ("isIntOrFloat!(Tup[0])");
@@ -437,15 +437,15 @@ enum isIntOrFloat(F) = is(F == int) || is(F == float);
 			//Assert.That ((t as MemberSymbol).Base, Is.TypeOf(typeof(DTuple)));
 
 			x = DParser.ParseExpression ("Tup[0]");
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 			Assert.That (t, Is.TypeOf(typeof(PrimitiveType)));
 
 			x = DParser.ParseExpression ("Tup[1]");
-			t = Evaluation.EvaluateType (x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 			Assert.That (t, Is.TypeOf(typeof(PrimitiveType)));
 
 			x = DParser.ParseExpression ("Tup[2]");
-			t = DResolver.StripAliasSymbol(Evaluation.EvaluateType (x, ctxt));
+			t = DResolver.StripAliasSymbol(ExpressionTypeEvaluation.EvaluateType (x, ctxt));
 			Assert.That (t, Is.TypeOf(typeof(ArrayType)));
 
 
@@ -568,7 +568,7 @@ template Tmpl(){
 			Assert.That(av.StringValue, Is.EqualTo("C.aso.derp"));
 			
 			x = DParser.ParseExpression("__traits(getMember, c, \"foo\")");
-			var t = Evaluation.EvaluateType(x, ctxt);
+			var t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			
@@ -579,7 +579,7 @@ template Tmpl(){
 			Assert.That(v, Is.TypeOf(typeof(TypeValue)));
 			Assert.That((v as TypeValue).RepresentedType, Is.TypeOf(typeof(DTuple)));
 			
-			t = Evaluation.EvaluateType(x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(DTuple)));
 			
 			

@@ -7,13 +7,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public partial class Evaluation
 	{
-		public ISemantic Visit(TypeidExpression tid)
+		public ISymbolValue Visit(TypeidExpression tid)
 		{
-			//TODO: Split up into more detailed typeinfo objects (e.g. for arrays, pointers, classes etc.)
-
-			if(!eval)
-				return TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration("TypeInfo") { InnerDeclaration = new IdentifierDeclaration("object") }, ctxt);
-
 			/*
 			 * Depending on what's given as argument, it's needed to find out what kind of TypeInfo_ class to return
 			 * AND to fill it with all required information.

@@ -9,14 +9,9 @@ using D_Parser.Dom;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
-	public partial class Evaluation : ExpressionVisitor<ISemantic>
+	public partial class Evaluation : ExpressionVisitor<ISymbolValue>
 	{
 		#region Properties / Ctor
-		/// <summary>
-		/// True, if the expression's value shall be evaluated.
-		/// False, if the expression's type is wanted only.
-		/// </summary>
-		private bool eval;
 		private readonly ResolutionContext ctxt;
 		public List<EvaluationException> Errors = new List<EvaluationException>();
 
@@ -29,14 +24,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		[DebuggerStepThrough]
 		Evaluation(AbstractSymbolValueProvider vp) { 
 			this.ValueProvider = vp; 
-			if(vp!=null)
-				vp.ev = this;
-			this.eval = true;
+			vp.ev = this;
 			this.ctxt = vp.ResolutionContext;
-		}
-		[DebuggerStepThrough]
-		Evaluation(ResolutionContext ctxt) {
-			this.ctxt = ctxt;
 		}
 		#endregion
 		
@@ -90,7 +79,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			var ev = new Evaluation(vp);
 
-			var v = x.Accept(ev) as ISymbolValue;
+			var v = x.Accept(ev);
 
 			if(v == null && ev.Errors.Count != 0)
 				return new ErrorValue(ev.Errors.ToArray());
@@ -125,40 +114,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return val ?? v;
 		}
 
-		/// <summary>
-		/// Since most expressions should return a single type only, it's not needed to use this function unless you might
-		/// want to pay attention on (illegal) multiple overloads.
-		/// </summary>
-		public static AbstractType[] EvaluateTypes(IExpression x, ResolutionContext ctxt)
-		{
-			var ev = new Evaluation(ctxt);
-			ISemantic t = null;
-			if(!Debugger.IsAttached)
-				try { t = x.Accept(ev); }
-				catch { }
-			else
-				t = x.Accept(ev);
-
-			if (t is InternalOverloadValue)
-				return ((InternalOverloadValue)t).Overloads;
-
-			return t == null ? null : new[]{ AbstractType.Get(t) };
-		}
-
-		public static AbstractType EvaluateType(IExpression x, ResolutionContext ctxt)
-		{
-			var ev = new Evaluation(ctxt);
-			ISemantic t = null;
-			if(!Debugger.IsAttached)
-				try { t = x.Accept(ev); }
-				catch { }
-			else
-				t = x.Accept(ev);
-
-			return AbstractType.Get(t);
-		}
-
-		public ISemantic Visit(Expression ex)
+		public ISymbolValue Visit(Expression ex)
 		{
 			/*
 			 * The left operand of the ',' is evaluated, then the right operand is evaluated. 
@@ -166,29 +122,24 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			 * and the result is the result of the right operand.
 			 */
 
-			if (eval)
+			ISymbolValue ret = null;
+			for (int i = 0; i < ex.Expressions.Count; i++)
 			{
-				ISemantic ret = null;
-				for (int i = 0; i < ex.Expressions.Count; i++)
+				var v = ex.Expressions[i].Accept(this);
+
+				if (i == ex.Expressions.Count - 1)
 				{
-					var v = ex.Expressions[i].Accept(this);
-
-					if (i == ex.Expressions.Count - 1)
-					{
-						ret = v;
-						break;
-					}
+					ret = v;
+					break;
 				}
-
-				if (ret == null)
-					EvalError(ex, "There must be at least one expression in the expression chain");
-				return ret;
 			}
-			else
-				return ex.Expressions.Count == 0 ? null : ex.Expressions[ex.Expressions.Count - 1].Accept(this);
+
+			if (ret == null)
+				EvalError(ex, "There must be at least one expression in the expression chain");
+			return ret;
 		}
 
-		public ISemantic Visit(SurroundingParenthesesExpression x)
+		public ISymbolValue Visit(SurroundingParenthesesExpression x)
 		{
 			return x.Expression.Accept(this);
 		}
@@ -218,89 +169,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				v = vp[(v as VariableValue).Variable];
 
 			return v;
-		}
-
-		public static AbstractType[] GetUnfilteredMethodOverloads(IExpression foreExpression, ResolutionContext ctxt, IExpression supExpression = null)
-		{
-			AbstractType[] overloads = null;
-
-			if (foreExpression is TemplateInstanceExpression)
-				overloads = Evaluation.GetOverloads(foreExpression as TemplateInstanceExpression, ctxt, null);
-			else if (foreExpression is IdentifierExpression)
-				overloads = Evaluation.GetOverloads(foreExpression as IdentifierExpression, ctxt, deduceParameters:false);
-			else if (foreExpression is PostfixExpression_Access)
-			{
-				overloads = Evaluation.GetAccessedOverloads((PostfixExpression_Access)foreExpression, ctxt, null, false);
-			}
-			else if (foreExpression is TokenExpression)
-				overloads = GetResolvedConstructorOverloads((TokenExpression)foreExpression, ctxt);
-			else
-				overloads = new[] { Evaluation.EvaluateType(foreExpression, ctxt) };
-
-			var l = new List<AbstractType>();
-			bool staticOnly = true;
-
-			foreach (var ov in DResolver.StripAliasSymbols(overloads))
-			{
-				var t = ov;
-				if (ov is MemberSymbol)
-				{
-					var ms = ov as MemberSymbol;
-					if (ms.Definition is Dom.DMethod)
-					{
-						l.Add(ms);
-						continue;
-					}
-
-					staticOnly = false;
-					t = DResolver.StripAliasSymbol(ms.Base);
-				}
-
-				if (t is TemplateIntermediateType)
-				{
-					var tit = t as TemplateIntermediateType;
-
-					var m = TypeDeclarationResolver.HandleNodeMatches(
-						GetOpCalls(tit, staticOnly), ctxt,
-						null, supExpression ?? foreExpression);
-
-					/*
-					 * On structs, there must be a default () constructor all the time.
-					 * If there are (other) constructors in structs, the explicit member initializer constructor is not
-					 * provided anymore. This will be handled in the GetConstructors() method.
-					 * If there are opCall overloads, canCreateeExplicitStructCtor overrides the ctor existence check in GetConstructors()
-					 * and enforces that the explicit ctor will not be generated.
-					 * An opCall overload with no parameters supersedes the default ctor.
-					 */
-					var canCreateExplicitStructCtor = m == null || m.Length == 0;
-
-					if (!canCreateExplicitStructCtor)
-						l.AddRange(m);
-
-					m = TypeDeclarationResolver.HandleNodeMatches(
-						GetConstructors(tit, canCreateExplicitStructCtor), ctxt,
-						null, supExpression ?? foreExpression);
-
-					if (m != null && m.Length != 0)
-						l.AddRange(m);
-				}
-				else
-					l.Add(ov);
-			}
-
-			return l.ToArray();
-		}
-
-		public static AbstractType[] GetResolvedConstructorOverloads(TokenExpression tk, ResolutionContext ctxt)
-		{
-			if (tk.Token == DTokens.This || tk.Token == DTokens.Super)
-			{
-				var classRef = EvaluateType(tk, ctxt) as TemplateIntermediateType;
-
-				if (classRef != null)
-					return D_Parser.Resolver.TypeResolution.TypeDeclarationResolver.HandleNodeMatches(GetConstructors(classRef), ctxt, classRef, tk);
-			}
-			return null;
 		}
 	}
 }

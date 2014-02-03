@@ -34,7 +34,8 @@ namespace D_Parser.Resolver.TypeResolution
 			return l.ToArray();
 		}
 
-		public static AbstractType[] Convert(IEnumerable<ISemantic> at)
+		public static AbstractType[] Convert<R>(IEnumerable<R> at)
+			where R : class,ISemantic
 		{
 			var l = new List<AbstractType>();
 
@@ -42,7 +43,7 @@ namespace D_Parser.Resolver.TypeResolution
 				foreach (var t in at)
 				{
 					if (t is AbstractType)
-						l.Add((AbstractType)t);
+						l.Add(t as AbstractType);
 					else if (t is ISymbolValue)
 						l.Add(((ISymbolValue)t).RepresentedType);
 				}
@@ -253,7 +254,7 @@ namespace D_Parser.Resolver.TypeResolution
 			// typeOf(myInt)  =>  int
 			else if (typeOf.Expression != null)
 			{
-				var wantedTypes = Evaluation.EvaluateType(typeOf.Expression, ctxt);
+				var wantedTypes = ExpressionTypeEvaluation.EvaluateType(typeOf.Expression, ctxt);
 				return DResolver.StripMemberSymbols(wantedTypes);
 			}
 
@@ -420,7 +421,7 @@ namespace D_Parser.Resolver.TypeResolution
 				return ResolveSingle(declaration as IdentifierDeclaration, ctxt);
 			else if (declaration is TemplateInstanceExpression)
 			{
-				var a = Evaluation.GetOverloads(declaration as TemplateInstanceExpression, ctxt);
+				var a = ExpressionTypeEvaluation.GetOverloads(declaration as TemplateInstanceExpression, ctxt);
 				ctxt.CheckForSingleResult(a, declaration);
 				return a != null && a.Length != 0 ? a[0] : null;
 			}
@@ -469,7 +470,7 @@ namespace D_Parser.Resolver.TypeResolution
 			if (declaration is IdentifierDeclaration)
 				return Resolve((IdentifierDeclaration)declaration, ctxt);
 			else if (declaration is TemplateInstanceExpression)
-				return Evaluation.GetOverloads((TemplateInstanceExpression)declaration, ctxt);
+				return ExpressionTypeEvaluation.GetOverloads((TemplateInstanceExpression)declaration, ctxt);
 
 			var t = ResolveSingle(declaration, ctxt);
 
@@ -561,7 +562,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 					// For auto variables, use the initializer to get its type
 					else if (variable.Initializer != null) {
-							bt = DResolver.StripMemberSymbols (Evaluation.EvaluateType (variable.Initializer, ctxt));
+						bt = DResolver.StripMemberSymbols(ExpressionTypeEvaluation.EvaluateType(variable.Initializer, ctxt));
 						}
 
 						// Check if inside an foreach statement header
@@ -831,7 +832,7 @@ namespace D_Parser.Resolver.TypeResolution
 								ctxt.CurrentContext.DeducedTemplateParameters[kv.Key] = kv.Value;
 					}
 
-					var t =DResolver.StripMemberSymbols(Evaluation.EvaluateType(returnStmt.ReturnExpression, ctxt));
+					var t = DResolver.StripMemberSymbols(ExpressionTypeEvaluation.EvaluateType(returnStmt.ReturnExpression, ctxt));
 
 					if (pushMethodScope)
 						ctxt.Pop();
@@ -898,7 +899,7 @@ namespace D_Parser.Resolver.TypeResolution
 						return new PrimitiveType(DTokens.Int);
 					}
 
-					var aggregateType = Evaluation.EvaluateType(fe.Aggregate, ctxt);
+					var aggregateType = ExpressionTypeEvaluation.EvaluateType(fe.Aggregate, ctxt);
 
 					aggregateType = DResolver.StripMemberSymbols(aggregateType);
 

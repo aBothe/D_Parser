@@ -207,7 +207,7 @@ namespace D_Parser.Resolver.TypeResolution
 			// Get actual overloads
 			AbstractType deducedType = null;
 
-			deducedType = new MemberSymbol (ept.Definition, Evaluation.EvaluateType (ept.Definition.Initializer, ctxt), null, ept.DeducedTypes); //ept; //Evaluation.EvaluateType (ept.Definition.Initializer, ctxt);
+			deducedType = new MemberSymbol(ept.Definition, ExpressionTypeEvaluation.EvaluateType(ept.Definition.Initializer, ctxt), null, ept.DeducedTypes); //ept; //ExpressionTypeEvaluation.EvaluateType (ept.Definition.Initializer, ctxt);
 
 			deducedType.Tag = ept.Tag; // Currently requried for proper UFCS resolution - sustain ept's Tag
 

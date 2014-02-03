@@ -7,8 +7,10 @@ using D_Parser.Resolver.TypeResolution;
 namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public partial class Evaluation
-	{		
-		public ISemantic Visit(TraitsExpression te)
+	{
+
+
+		public ISymbolValue Visit(TraitsExpression te)
 		{
 			switch(te.Keyword)
 			{
@@ -17,22 +19,17 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					return null;
 					
 				case "hasMember":
-					if(!eval)
-						return new PrimitiveType(DTokens.Bool, 0);
-					
 					bool ret = false;
 					var optionsBackup = ctxt.ContextIndependentOptions;
 					ctxt.ContextIndependentOptions = ResolutionOptions.IgnoreAllProtectionAttributes;
 					
 					AbstractType t;
-					var pfa = prepareMemberTraitExpression(te, out t);
+					var pfa = ExpressionTypeEvaluation.prepareMemberTraitExpression(ctxt, te, out t, ValueProvider);
 					
 					if(pfa != null && t != null)
 					{
 						ignoreErrors = true;
-						eval = false;
-						ret = EvalPostfixAccessExpression(pfa, t, false) != null;
-						eval = true;
+						ret = EvalPostfixAccessExpression(this, ctxt, pfa, t, false) != null;
 						ignoreErrors = false;
 					}
 					ctxt.ContextIndependentOptions = optionsBackup;
@@ -40,21 +37,18 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					
 					
 				case "identifier":
-					if(!eval)
-						return GetStringType();
-					
 					if(te.Arguments!=null && te.Arguments.Length == 1)
 						return new ArrayValue(GetStringType(), te.Arguments[0].ToString());
 					break;
 					
 					
 				case "getMember":
-					pfa = prepareMemberTraitExpression(te, out t);
+					pfa = ExpressionTypeEvaluation.prepareMemberTraitExpression(ctxt, te, out t, ValueProvider);
 					
 					if(pfa == null ||t == null)
 						break;
 					
-					var vs = EvalPostfixAccessExpression(pfa,t);
+					var vs = EvalPostfixAccessExpression(this, ctxt, pfa,t, ValueProvider:ValueProvider);
 					if(vs == null || vs.Length == 0)
 						return null;
 					return vs[0];
@@ -63,28 +57,20 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				case "getOverloads":
 					optionsBackup = ctxt.ContextIndependentOptions;
 					ctxt.ContextIndependentOptions = ResolutionOptions.IgnoreAllProtectionAttributes;
-					
-					pfa = prepareMemberTraitExpression(te, out t);
-					
-					if(pfa != null  && t != null)
-					{
-						var evalBak = eval;
-						eval = false;
-						vs = EvalPostfixAccessExpression(pfa,t);
-						eval = evalBak;
-					}
+
+					pfa = ExpressionTypeEvaluation.prepareMemberTraitExpression(ctxt, te, out t, ValueProvider);
+
+					if (pfa != null && t != null)
+						vs = EvalPostfixAccessExpression(this, ctxt, pfa, t);
 					else
 						vs = null;
 					
 					ctxt.ContextIndependentOptions = optionsBackup;
 					
-					return eval ? new TypeValue(new DTuple(te, vs)) as ISemantic : new DTuple(te, vs);
+					return new TypeValue(new DTuple(te, vs));
 					
 					
 				case "getProtection":
-					if(!eval)
-						return GetStringType();
-					
 					optionsBackup = ctxt.ContextIndependentOptions;
 					ctxt.ContextIndependentOptions = ResolutionOptions.IgnoreAllProtectionAttributes;
 					
@@ -94,8 +80,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						EvalError(te, "First trait argument must be a symbol identifier");
 					else
 					{
-						currentTraitsExpression = te;
-						t = te.Arguments[0].Accept(this)  as AbstractType;
+						t = ExpressionTypeEvaluation.ResolveTraitArgument(ctxt,te.Arguments[0]);
 						
 						if(t is DSymbol)
 						{
@@ -131,9 +116,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					break;
 					
 				case "isSame":
-					if(!eval)
-						return new PrimitiveType(DTokens.Bool);
-					
 					ret = false;
 					
 					if(te.Arguments == null || te.Arguments.Length < 2)
@@ -142,12 +124,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					}
 					else
 					{
-						currentTraitsExpression = te;
-						t = te.Arguments[0].Accept(this) as AbstractType;
+						t = ExpressionTypeEvaluation.ResolveTraitArgument(ctxt, te.Arguments[0]);
 						
 						if(t != null)
 						{
-							var t2 = te.Arguments[1].Accept(this);
+							var t2 = ExpressionTypeEvaluation.ResolveTraitArgument(ctxt, te.Arguments[1]);
 							
 							if(t2 != null)
 								ret = Resolver.ResultComparer.IsEqual(t,t2);
@@ -157,15 +138,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					return new PrimitiveValue(ret, te);
 					
 				case "compiles":
-					if(!eval)
-						return new PrimitiveType(DTokens.Bool);
-					
 					ret = false;
 					
 					if(te.Arguments != null){
 						foreach(var arg in te.Arguments)
 						{
-							ret = arg == null || arg.Accept(this) != null;
+							ret = arg == null || ExpressionTypeEvaluation.ResolveTraitArgument(ctxt, arg) != null;
 							
 							if(!ret)
 								break;
@@ -178,199 +156,125 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			#region isXYZ-traits
 			if(te.Keyword.StartsWith("is"))
 			{
-				if(eval)
-				{
-					var optionsBackup = ctxt.ContextIndependentOptions;
-					ctxt.ContextIndependentOptions = ResolutionOptions.IgnoreAllProtectionAttributes;
-					bool ret = false;
+				var optionsBackup = ctxt.ContextIndependentOptions;
+				ctxt.ContextIndependentOptions = ResolutionOptions.IgnoreAllProtectionAttributes;
+				bool ret = false;
 					
-					if(te.Arguments != null)
-					foreach(var arg in te.Arguments)
+				if(te.Arguments != null)
+				foreach(var arg in te.Arguments)
+				{
+					var t = ExpressionTypeEvaluation.ResolveTraitArgument(ctxt,arg);
+						
+					bool tested = true;
+						
+					switch(te.Keyword)
 					{
-						var t = arg.Accept(this) as AbstractType;
+						case "isVirtualFunction":
+						case "isVirtualMethod":
+							var ms = t as MemberSymbol;
+							if(ms==null || !(ms.Definition is DMethod))
+								break;
+								
+							var dm = ms.Definition as DMethod;
+							var dc = dm.Parent as DClassLike;
+							if(dc != null && dc.ClassType != DTokens.Struct)
+							{
+								bool includeFinalNonOverridingMethods = te.Keyword == "isVirtualFunction";
+								ret = !dm.ContainsAttribute(includeFinalNonOverridingMethods ? (byte)0 : DTokens.Final, DTokens.Static);
+							}
+							break;
+						case "isAbstractFunction":
+							ms = t as MemberSymbol;
+
+							ret = ms!=null && 
+								ms.Definition is DMethod &&
+								ms.Definition.ContainsAttribute(DTokens.Abstract);
+							break;
+						case "isFinalFunction":
+							ms = t as MemberSymbol;
+								
+							if( ms!=null && ms.Definition is DMethod)
+							{
+								ret = ms.Definition.ContainsAttribute(DTokens.Abstract) ||
+									(ms.Definition.Parent is DClassLike && (ms.Definition.Parent as DClassLike).ContainsAttribute(DTokens.Final));
+							}
+							break;
+						case "isStaticFunction":
+							ms = t as MemberSymbol;
+
+							ret = ms!=null && ms.Definition is DMethod && ms.Definition.IsStatic;
+							break;
+								
+						case "isRef":
+							ret = t is MemberSymbol && (t as MemberSymbol).Definition.ContainsAttribute(DTokens.Ref);
+							break;
+						case "isOut":
+							ret = t is MemberSymbol && (t as MemberSymbol).Definition.ContainsAttribute(DTokens.Out);
+							break;
+						case "isLazy":
+							ret = t is MemberSymbol && (t as MemberSymbol).Definition.ContainsAttribute(DTokens.Lazy);
+							break;
+						default:
+							tested = false;
+							break;
+					}
 						
-						bool tested = true;
+					t = DResolver.StripMemberSymbols(t);
 						
+					if(!tested)
 						switch(te.Keyword)
 						{
-							case "isVirtualFunction":
-							case "isVirtualMethod":
-								var ms = t as MemberSymbol;
-								if(ms==null || !(ms.Definition is DMethod))
-									break;
-								
-								var dm = ms.Definition as DMethod;
-								var dc = dm.Parent as DClassLike;
-								if(dc != null && dc.ClassType != DTokens.Struct)
-								{
-									bool includeFinalNonOverridingMethods = te.Keyword == "isVirtualFunction";
-									ret = !dm.ContainsAttribute(includeFinalNonOverridingMethods ? (byte)0 : DTokens.Final, DTokens.Static);
-								}
+							case "isArithmetic":
+								var pt = t as PrimitiveType;
+								ret = pt != null && (
+									DTokens.IsBasicType_Integral(pt.TypeToken) || 
+									DTokens.IsBasicType_FloatingPoint(pt.TypeToken));
 								break;
-							case "isAbstractFunction":
-								ms = t as MemberSymbol;
-
-								ret = ms!=null && 
-									ms.Definition is DMethod &&
-									ms.Definition.ContainsAttribute(DTokens.Abstract);
+							case "isFloating":
+								pt = t as PrimitiveType;
+								ret = pt != null && DTokens.IsBasicType_FloatingPoint(pt.TypeToken);
 								break;
-							case "isFinalFunction":
-								ms = t as MemberSymbol;
-								
-								if( ms!=null && ms.Definition is DMethod)
-								{
-									ret = ms.Definition.ContainsAttribute(DTokens.Abstract) ||
-										(ms.Definition.Parent is DClassLike && (ms.Definition.Parent as DClassLike).ContainsAttribute(DTokens.Final));
-								}
+							case "isIntegral":
+								pt = t as PrimitiveType;
+								ret = pt != null && DTokens.IsBasicType_Integral(pt.TypeToken);
 								break;
-							case "isStaticFunction":
-								ms = t as MemberSymbol;
-
-								ret = ms!=null && ms.Definition is DMethod && ms.Definition.IsStatic;
+							case "isScalar":
+								pt = t as PrimitiveType;
+								ret = pt != null && DTokens.IsBasicType(pt.TypeToken);
+								break;
+							case "isUnsigned":
+								pt = t as PrimitiveType;
+								ret = pt != null && DTokens.IsBasicType_Unsigned(pt.TypeToken);
+								break;
+									
+							case "isAbstractClass":
+								ret = t is ClassType && (t as ClassType).Definition.ContainsAttribute(DTokens.Abstract);
+								break;
+							case "isFinalClass":
+								ret = t is ClassType && (t as ClassType).Definition.ContainsAttribute(DTokens.Final);
 								break;
 								
-							case "isRef":
-								ret = t is MemberSymbol && (t as MemberSymbol).Definition.ContainsAttribute(DTokens.Ref);
+							case "isAssociativeArray":
+								ret = t is AssocArrayType && !(t is ArrayType);
 								break;
-							case "isOut":
-								ret = t is MemberSymbol && (t as MemberSymbol).Definition.ContainsAttribute(DTokens.Out);
-								break;
-							case "isLazy":
-								ret = t is MemberSymbol && (t as MemberSymbol).Definition.ContainsAttribute(DTokens.Lazy);
-								break;
-							default:
-								tested = false;
+							case "isStaticArray":
+								ret = t is ArrayType && (t as ArrayType).IsStaticArray;
 								break;
 						}
 						
-						t = DResolver.StripMemberSymbols(t);
-						
-						if(!tested)
-							switch(te.Keyword)
-							{
-								case "isArithmetic":
-									var pt = t as PrimitiveType;
-									ret = pt != null && (
-										DTokens.IsBasicType_Integral(pt.TypeToken) || 
-										DTokens.IsBasicType_FloatingPoint(pt.TypeToken));
-									break;
-								case "isFloating":
-									pt = t as PrimitiveType;
-									ret = pt != null && DTokens.IsBasicType_FloatingPoint(pt.TypeToken);
-									break;
-								case "isIntegral":
-									pt = t as PrimitiveType;
-									ret = pt != null && DTokens.IsBasicType_Integral(pt.TypeToken);
-									break;
-								case "isScalar":
-									pt = t as PrimitiveType;
-									ret = pt != null && DTokens.IsBasicType(pt.TypeToken);
-									break;
-								case "isUnsigned":
-									pt = t as PrimitiveType;
-									ret = pt != null && DTokens.IsBasicType_Unsigned(pt.TypeToken);
-									break;
-									
-								case "isAbstractClass":
-									ret = t is ClassType && (t as ClassType).Definition.ContainsAttribute(DTokens.Abstract);
-									break;
-								case "isFinalClass":
-									ret = t is ClassType && (t as ClassType).Definition.ContainsAttribute(DTokens.Final);
-									break;
-								
-								case "isAssociativeArray":
-									ret = t is AssocArrayType && !(t is ArrayType);
-									break;
-								case "isStaticArray":
-									ret = t is ArrayType && (t as ArrayType).IsStaticArray;
-									break;
-							}
-						
-						if(!ret)
-							break;
-					}
-					
-					ctxt.ContextIndependentOptions = optionsBackup;
-					return new PrimitiveValue(ret, te);
+					if(!ret)
+						break;
 				}
-				else
-					return new PrimitiveType(DTokens.Bool, 0, te);
+					
+				ctxt.ContextIndependentOptions = optionsBackup;
+				return new PrimitiveValue(ret, te);
 			}
 			else
 			{
-				if(eval)
-					EvalError(te, "Illegal trait token");
+				EvalError(te, "Illegal trait token");
 				return null;
 			}
 			#endregion
-		}
-		
-		/// <summary>
-		/// Used when evaluating traits.
-		/// Evaluates the first argument to <param name="t">t</param>, 
-		/// takes the second traits argument, tries to evaluate it to a string, and puts it + the first arg into an postfix_access expression
-		/// </summary>
-		PostfixExpression_Access prepareMemberTraitExpression(TraitsExpression te,out AbstractType t)
-		{
-			if(te.Arguments != null && te.Arguments.Length == 2)
-			{
-				var tEx = te.Arguments[0];
-				currentTraitsExpression = te;
-				t = DResolver.StripMemberSymbols(tEx.Accept(this) as AbstractType);
-				
-				if(t == null)
-					EvalError(te, "First argument didn't resolve to a type");
-				else if(te.Arguments[1].AssignExpression != null)
-				{
-					var litEx = te.Arguments[1].AssignExpression;
-					var eval_Backup = eval;
-					eval = true;
-					currentTraitsExpression = te;
-					var v = litEx.Accept(this);
-					eval = eval_Backup;
-					
-					if(v is ArrayValue && (v as ArrayValue).IsString)
-					{
-						var av = v as ArrayValue;
-						
-						// Mock up a postfix_access expression to ensure static properties & ufcs methods are checked either
-						return new PostfixExpression_Access{ 
-							PostfixForeExpression = tEx.AssignExpression ?? new TypeDeclarationExpression(tEx.Type),
-							AccessExpression = new IdentifierExpression(av.StringValue) {
-								Location = litEx.Location, 
-								EndLocation = litEx.EndLocation},
-							EndLocation = litEx.EndLocation
-						};
-					}
-					else
-						EvalError(te.Arguments[1].AssignExpression, "Second traits argument must evaluate to a string literal", v);
-				}
-				else
-					EvalError(te, "Second traits argument must be an expression");
-			}
-			
-			t = null;
-			return null;
-		}
-
-
-		TraitsExpression currentTraitsExpression;
-
-		public ISemantic Visit(TraitsArgument arg)
-		{
-			if(arg.Type != null)
-			{
-				return TypeDeclarationResolver.ResolveSingle(arg.Type, ctxt);
-			}
-			else if(arg.AssignExpression != null)
-			{
-				return DResolver.StripAliasSymbol(EvaluateType(arg.AssignExpression, ctxt));
-			}
-			else
-			{
-				EvalError(currentTraitsExpression, "Argument must be a type or an expression!");
-				return null;
-			}
 		}
 	}
 }
