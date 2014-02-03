@@ -5069,27 +5069,18 @@ namespace D_Parser.Parser
 				           laKind == __FILE__ || laKind == __LINE__ || IsEOF)
 					args.Add (PrimaryExpression (Scope));
 				else if(laKind == Identifier) {
-					Lexer.PushLookAheadBackup();
-
-					bool wp = AllowWeakTypeParsing;
-					AllowWeakTypeParsing = true;
-
-					var typeArg = Type();
-
-					AllowWeakTypeParsing = wp;
-
-					if (typeArg != null){
-						Lexer.PopLookAheadBackup();
-						args.Add(new TypeDeclarationExpression(typeArg));
-					}else
-					{
-						Lexer.RestoreLookAheadBackup();
-						args.Add(AssignExpression(Scope));
-					}
+					Step();
+					args.Add(new IdentifierExpression(t.Value) { Location=t.Location, EndLocation = t.EndLocation });
 				}
 				else {
 					SynErr (laKind, "Illegal token found on template instance expression argument");
 					Step ();
+				}
+
+				if (laKind == Not)
+				{
+					SynErr(laKind, "multiple ! arguments are not allowed");
+					Step();
 				}
 			}
 			(td as TemplateInstanceExpression).Arguments = args.ToArray();

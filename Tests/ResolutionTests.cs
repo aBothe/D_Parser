@@ -449,6 +449,7 @@ int a;
 			AbstractType t;
 
 			x = DParser.ParseExpression ("a.to!string()");
+			Assert.That(x, Is.TypeOf(typeof(PostfixExpression_MethodCall)));
 			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 			Assert.That (t, Is.TypeOf (typeof(TemplateParameterSymbol)));
 			Assert.That ((t as TemplateParameterSymbol).Base, Is.TypeOf (typeof(ArrayType)));
