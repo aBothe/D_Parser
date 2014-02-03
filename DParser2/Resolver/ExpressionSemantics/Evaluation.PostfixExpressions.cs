@@ -10,58 +10,19 @@ namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public partial class Evaluation
 	{
-		ISemantic E(PostfixExpression ex)
+		bool? returnBaseTypeOnly;
+		public ISemantic Visit(PostfixExpression_MethodCall call)
 		{
-			if (ex is PostfixExpression_MethodCall)
-				return E((PostfixExpression_MethodCall)ex, !ctxt.Options.HasFlag(ResolutionOptions.ReturnMethodReferencesOnly));
+			var returnBaseTypeOnly = !this.returnBaseTypeOnly.HasValue ? 
+				!ctxt.Options.HasFlag(ResolutionOptions.ReturnMethodReferencesOnly) : 
+				this.returnBaseTypeOnly.Value;
+			this.returnBaseTypeOnly = null;
 
-			var foreExpr=E(ex.PostfixForeExpression);
-
-			if(foreExpr is AliasedType)
-				foreExpr = DResolver.StripAliasSymbol((AbstractType)foreExpr);
-
-			if (foreExpr == null)
-			{
-				if (eval)
-					return null;
-				else
-				{
-					ctxt.LogError(new NothingFoundError(ex.PostfixForeExpression));
-					return null;
-				}
-			}
-
-			if (ex is PostfixExpression_Access)
-			{
-				var r = E((PostfixExpression_Access)ex, foreExpr, true);
-				ctxt.CheckForSingleResult(r, ex);
-				return r != null && r.Length != 0 ? r[0] : null;
-			}
-			else if (ex is PostfixExpression_Increment)
-				return E((PostfixExpression_Increment)ex, foreExpr);
-			else if (ex is PostfixExpression_Decrement)
-				return E((PostfixExpression_Decrement)foreExpr);
-
-			// myArray[0]; myArray[0..5];
-			// opIndex/opSlice ?
-			if(foreExpr is MemberSymbol)
-				foreExpr = DResolver.StripMemberSymbols((AbstractType)foreExpr);
-
-			if (ex is PostfixExpression_Slice) 
-				return E((PostfixExpression_Slice)ex, foreExpr);
-			else if(ex is PostfixExpression_Index)
-				return E((PostfixExpression_Index)ex, foreExpr);
-
-			return null;
-		}
-
-		ISemantic E(PostfixExpression_MethodCall call, bool returnBaseTypeOnly=true)
-		{
 			// Deduce template parameters later on
 			AbstractType[] baseExpression;
 			ISymbolValue baseValue;
 			TemplateInstanceExpression tix;
-			
+
 			GetRawCallOverloads(call, out baseExpression, out baseValue, out tix);
 
 			var methodOverloads = new List<AbstractType>();
@@ -96,7 +57,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 									nextResults.Add(dgVal.Definition);
 									continue;
 								}
-								else{
+								else
+								{
 									EvalError(call, "Variable must be a delegate, not anything else", mr);
 									return null;
 								}
@@ -109,7 +71,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 								if (bt is DelegateType)
 								{
 									var ret = HandleCallDelegateType(bt as DelegateType, methodOverloads, returnBaseTypeOnly);
-									if(ret != null)
+									if (ret != null)
 										return ret;
 								}
 								else
@@ -136,7 +98,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					else if (b is DelegateType)
 					{
 						var ret = HandleCallDelegateType(b as DelegateType, methodOverloads, returnBaseTypeOnly);
-						if(ret != null)
+						if (ret != null)
 							return ret;
 					}
 					else if (b is ClassType || b is StructType)
@@ -151,7 +113,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							continue;
 
 						foreach (var i in GetOpCalls(tit, requireStaticItems))
-								methodOverloads.Add(TypeDeclarationResolver.HandleNodeMatch(i, ctxt, b, call) as MemberSymbol);
+							methodOverloads.Add(TypeDeclarationResolver.HandleNodeMatch(i, ctxt, b, call) as MemberSymbol);
 
 						/*
 						 * Every struct can contain a default ctor:
@@ -190,7 +152,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			if (call.Arguments != null)
 				foreach (var arg in call.Arguments)
-					callArguments.Add(E(arg));
+					callArguments.Add(arg != null ? arg.Accept(this) : null);
 
 			#region If explicit template type args were given, try to associate them with each overload
 			if (tix != null)
@@ -198,7 +160,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				var args = TemplateInstanceHandler.PreResolveTemplateArgs(tix, ctxt, out hasNonFinalArgs);
 				var deducedOverloads = TemplateInstanceHandler.DeduceParamsAndFilterOverloads(methodOverloads, args, true, ctxt, hasNonFinalArgs);
 				methodOverloads.Clear();
-				if(deducedOverloads != null)
+				if (deducedOverloads != null)
 					methodOverloads.AddRange(deducedOverloads);
 			}
 			#endregion
@@ -206,7 +168,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			#region Filter by parameter-argument comparison
 			var argTypeFilteredOverloads = new List<AbstractType>();
 			bool hasHandledUfcsResultBefore = false;
-			
+
 			foreach (var ov in methodOverloads)
 			{
 				if (ov is MemberSymbol)
@@ -229,18 +191,18 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							callArguments.RemoveAt(0);
 							hasHandledUfcsResultBefore = false;
 						}
-						
+
 						var deducedTypeDict = new DeducedTypeDictionary(ms);
 						var templateParamDeduction = new TemplateParameterDeduction(deducedTypeDict, ctxt);
 
 
-						if(dm.Parameters.Count == 0 && callArguments.Count > 0)
+						if (dm.Parameters.Count == 0 && callArguments.Count > 0)
 							continue;
 
 						int currentArg = 0;
 						bool add = true;
 						if (dm.Parameters.Count > 0 || callArguments.Count > 0)
-							for (int i=0; i< dm.Parameters.Count; i++)
+							for (int i = 0; i < dm.Parameters.Count; i++)
 							{
 								var paramType = dm.Parameters[i].Type;
 
@@ -295,37 +257,38 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						{
 							ms.DeducedTypes = deducedTypeDict.ToReadonly();
 							var pop = ctxt.ScopedBlock != dm;
-							if(pop)
+							if (pop)
 								ctxt.PushNewScope(dm);
 							ctxt.CurrentContext.IntroduceTemplateParameterTypes(ms);
 
 							var bt = TypeDeclarationResolver.GetMethodReturnType(dm, ctxt) ?? ms.Base;
 
-							if(pop)
+							if (pop)
 								ctxt.Pop();
 							else
 								ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(ms);
 
-							if(eval || !returnBaseTypeOnly)
-								argTypeFilteredOverloads.Add(new MemberSymbol(dm, bt, ms.DeclarationOrExpressionBase, ms.DeducedTypes){ Tag = ms.Tag });
+							if (eval || !returnBaseTypeOnly)
+								argTypeFilteredOverloads.Add(new MemberSymbol(dm, bt, ms.DeclarationOrExpressionBase, ms.DeducedTypes) { Tag = ms.Tag });
 							else
 								argTypeFilteredOverloads.Add(bt);
 						}
 					}
 				}
-				else if(ov is DelegateType)
+				else if (ov is DelegateType)
 				{
 					var dg = ov as DelegateType;
 					var bt = dg.Base ?? TypeDeclarationResolver.GetMethodReturnType(dg, ctxt);
 
 					//TODO: Param-Arg check
-						
+
 					if (returnBaseTypeOnly)
 						argTypeFilteredOverloads.Add(bt);
 					else
 					{
-						if(dg.Base == null){
-							if(dg.IsFunctionLiteral) 
+						if (dg.Base == null)
+						{
+							if (dg.IsFunctionLiteral)
 								dg = new DelegateType(bt, dg.DeclarationOrExpressionBase as FunctionLiteral, dg.Parameters);
 							else
 								dg = new DelegateType(bt, dg.DeclarationOrExpressionBase as DelegateDeclaration, dg.Parameters);
@@ -488,7 +451,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				var pac = (PostfixExpression_Access)call.PostfixForeExpression;
 				tix = pac.AccessExpression as TemplateInstanceExpression;
 
-				var vs = E(pac, null, false, false);
+				var vs = EvalPostfixAccessExpression(pac, null, false, false);
 
 				if (vs != null && vs.Length != 0)
 				{
@@ -513,12 +476,17 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					baseExpression = GetResolvedConstructorOverloads((TokenExpression)call.PostfixForeExpression, ctxt);
 				else if (eval)
 				{
-					if (call.PostfixForeExpression is TemplateInstanceExpression)
-						baseValue = E(tix = call.PostfixForeExpression as TemplateInstanceExpression, false) as ISymbolValue;
-					else if (call.PostfixForeExpression is IdentifierExpression)
-						baseValue = E((IdentifierExpression)call.PostfixForeExpression, false) as ISymbolValue;
-					else
-						baseValue = E(call.PostfixForeExpression) as ISymbolValue;
+					var fore = call.PostfixForeExpression;
+					if (fore is TemplateInstanceExpression)
+					{
+						ImplicitlyExecute = false;
+						tix = call.PostfixForeExpression as TemplateInstanceExpression;
+					}
+					else if (fore is IdentifierExpression)
+						ImplicitlyExecute = false;
+
+					if(call.PostfixForeExpression != null)
+						baseValue = call.PostfixForeExpression.Accept(this) as ISymbolValue;
 
 					if (baseValue is InternalOverloadValue)
 						baseExpression = ((InternalOverloadValue)baseValue).Overloads;
@@ -533,7 +501,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					else if (call.PostfixForeExpression is IdentifierExpression)
 						baseExpression = GetOverloads(call.PostfixForeExpression as IdentifierExpression, deduceParameters:false);
 					else
-						baseExpression = new[] { AbstractType.Get(E(call.PostfixForeExpression)) };
+						baseExpression = new[] { call.PostfixForeExpression != null ? AbstractType.Get(call.PostfixForeExpression.Accept(this)) : null };
 				}
 
 				ctxt.CurrentContext.ContextDependentOptions = optBackup;
@@ -543,7 +511,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public static AbstractType[] GetAccessedOverloads(PostfixExpression_Access acc, ResolutionContext ctxt,
 			ISemantic resultBase = null, bool DeducePostfixTemplateParams = true)
 		{
-			return TypeDeclarationResolver.Convert(new Evaluation(ctxt).E(acc, resultBase, DeducePostfixTemplateParams));
+			return TypeDeclarationResolver.Convert(new Evaluation(ctxt).EvalPostfixAccessExpression(acc, resultBase, DeducePostfixTemplateParams));
 		}
 
 		/// <summary>
@@ -553,13 +521,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// which stores the return value of the property function b that is executed without arguments.
 		/// Also handles UFCS - so if filtering is wanted, the function becom
 		/// </summary>
-		ISemantic[] E(PostfixExpression_Access acc,
+		ISemantic[] EvalPostfixAccessExpression(PostfixExpression_Access acc,
 			ISemantic resultBase = null, bool EvalAndFilterOverloads = true, bool ResolveImmediateBaseType = true)
 		{
 			if (acc == null)
 				return null;
 
-			var baseExpression = resultBase ?? E(acc.PostfixForeExpression);
+			var baseExpression = resultBase ?? (acc.PostfixForeExpression != null ? acc.PostfixForeExpression.Accept(this) : null);
 
 			if (acc.AccessExpression is NewExpression)
 			{
@@ -652,8 +620,70 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return overloads;
 		}
 
-		ISemantic E(PostfixExpression_Index x, ISemantic foreExpression)
+		ISemantic EvalForeExpression(PostfixExpression ex)
 		{
+			var foreExpr = ex.PostfixForeExpression != null ? ex.PostfixForeExpression.Accept(this) : null;
+
+			if (foreExpr is AliasedType)
+				foreExpr = DResolver.StripAliasSymbol((AbstractType)foreExpr);
+
+			if (foreExpr == null)
+			{
+				if (eval)
+					return null;
+				else
+				{
+					ctxt.LogError(new NothingFoundError(ex.PostfixForeExpression));
+					return null;
+				}
+			}
+
+			return foreExpr;
+		}
+
+		public ISemantic Visit(PostfixExpression_Access ex)
+		{
+			//var foreExpr = EvalForeExpression(ex);
+
+			var r = EvalPostfixAccessExpression(ex, null/*foreExpr*/, true);
+			ctxt.CheckForSingleResult(r, ex);
+
+			return r != null && r.Length != 0 ? r[0] : null;
+		}
+
+		public ISemantic Visit(PostfixExpression_Increment x)
+		{
+			var foreExpr = EvalForeExpression(x);
+			if (!eval)
+				return foreExpr;
+
+			if (resolveConstOnly)
+				EvalError(new NoConstException(x));
+			// Must be implemented anyway regarding ctfe/ Op overloading
+			return null;
+		}
+
+		public ISemantic Visit(PostfixExpression_Decrement x)
+		{
+			var foreExpr = EvalForeExpression(x);
+			if (!eval)
+				return foreExpr;
+
+			if (resolveConstOnly)
+				EvalError(new NoConstException(x));
+			// Must be implemented anyway regarding ctfe
+			return null;
+		}
+
+		public ISemantic Visit(PostfixExpression_Index x)
+		{
+			var foreExpression = EvalForeExpression(x);
+
+			// myArray[0]; myArray[0..5];
+			// opIndex/opSlice ?
+			if (foreExpression is MemberSymbol)
+				foreExpression = DResolver.StripMemberSymbols(foreExpression as AbstractType);
+
 			if (eval)
 			{
 				//TODO: Access pointer arrays(?)
@@ -666,18 +696,20 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					var arrLen_Backup = ValueProvider.CurrentArrayLength;
 					ValueProvider.CurrentArrayLength = av.Elements.Length;
 
-					var n = E(x.Arguments[0]) as PrimitiveValue;
+					var n = x.Arguments.Length > 0 && x.Arguments[0] != null ? x.Arguments[0].Accept(this) as PrimitiveValue : null;
 
 					ValueProvider.CurrentArrayLength = arrLen_Backup;
 
-					if (n == null){
+					if (n == null)
+					{
 						EvalError(x.Arguments[0], "Returned no value");
 						return null;
 					}
 
 					int i = 0;
-					try{
-						i = Convert.ToInt32(n.Value);						
+					try
+					{
+						i = Convert.ToInt32(n.Value);
 					}
 					catch
 					{
@@ -685,7 +717,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						return null;
 					}
 
-					if (i < 0 || i > av.Elements.Length){
+					if (i < 0 || i > av.Elements.Length)
+					{
 						EvalError(x.Arguments[0], "Index out of range - it must be between 0 and " + av.Elements.Length);
 						return null;
 					}
@@ -696,9 +729,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				{
 					var aa = (AssociativeArrayValue)foreExpression;
 
-					var key = E(x.Arguments[0]);
+					var key = x.Arguments.Length > 0 && x.Arguments[0] != null ? x.Arguments[0].Accept(this) as PrimitiveValue : null;
 
-					if (key == null){
+					if (key == null)
+					{
 						EvalError(x.Arguments[0], "Returned no value");
 						return null;
 					}
@@ -719,8 +753,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			else
 			{
 				foreExpression = DResolver.StripMemberSymbols(AbstractType.Get(foreExpression));
-				
-				if (foreExpression is AssocArrayType) {
+
+				if (foreExpression is AssocArrayType)
+				{
 					var ar = foreExpression as AssocArrayType;
 					/*
 					 * myType_Array[0] -- returns TypeResult myType
@@ -728,7 +763,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					 */
 					//TODO: Handle opIndex overloads
 
-					return new ArrayAccessSymbol(x,ar.ValueType);
+					return new ArrayAccessSymbol(x, ar.ValueType);
 				}
 				/*
 				 * int* a = new int[10];
@@ -737,7 +772,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				 */
 				else if (foreExpression is PointerType)
 					return (foreExpression as PointerType).Base;
-					//return new ArrayAccessSymbol(x,((PointerType)foreExpression).Base);
+				//return new ArrayAccessSymbol(x,((PointerType)foreExpression).Base);
 
 				else if (foreExpression is DTuple)
 				{
@@ -751,8 +786,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						{
 							ctxt.LogError(x.Arguments[0], "Index expression must evaluate to integer value");
 						}
-						else if (idx.Value > (decimal)Int32.MaxValue || 
-								 (int)idx.Value >= tt.Items.Length || 
+						else if (idx.Value > (decimal)Int32.MaxValue ||
+								 (int)idx.Value >= tt.Items.Length ||
 								 (int)idx.Value < 0)
 						{
 							ctxt.LogError(x.Arguments[0], "Index number must be a value between 0 and " + tt.Items.Length);
@@ -770,13 +805,21 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return null;
 		}
 
-		ISemantic E(PostfixExpression_Slice x, ISemantic foreExpression)
+		public ISemantic Visit(PostfixExpression_Slice x)
 		{
+			var foreExpression = EvalForeExpression(x);
+
+			// myArray[0]; myArray[0..5];
+			// opIndex/opSlice ?
+			if (foreExpression is MemberSymbol)
+				foreExpression = DResolver.StripMemberSymbols(foreExpression as AbstractType);
+
 			if (!eval)
 				return foreExpression; // Still of the array's type.
-			
 
-			if (!(foreExpression is ArrayValue)){
+
+			if (!(foreExpression is ArrayValue))
+			{
 				EvalError(x.PostfixForeExpression, "Must be an array");
 				return null;
 			}
@@ -792,12 +835,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var arrLen_Backup = ValueProvider.CurrentArrayLength;
 			ValueProvider.CurrentArrayLength = ar.Elements.Length;
 
-			var bound_lower = E(sl.FromExpression) as PrimitiveValue;
-			var bound_upper = E(sl.ToExpression) as PrimitiveValue;
+			var bound_lower = sl.FromExpression != null ? sl.FromExpression.Accept(this) as PrimitiveValue : null;
+			var bound_upper = sl.ToExpression != null ? sl.ToExpression.Accept(this) as PrimitiveValue : null;
 
 			ValueProvider.CurrentArrayLength = arrLen_Backup;
 
-			if (bound_lower == null || bound_upper == null){
+			if (bound_lower == null || bound_upper == null)
+			{
 				EvalError(bound_lower == null ? sl.FromExpression : sl.ToExpression, "Must be of an integral type");
 				return null;
 			}
@@ -808,18 +852,28 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				lower = Convert.ToInt32(bound_lower.Value);
 				upper = Convert.ToInt32(bound_upper.Value);
 			}
-			catch { EvalError(lower != -1 ? sl.FromExpression : sl.ToExpression, "Boundary expression must base an integral type"); 
+			catch
+			{
+				EvalError(lower != -1 ? sl.FromExpression : sl.ToExpression, "Boundary expression must base an integral type");
 				return null;
 			}
 
-			if (lower < 0){
-				EvalError(sl.FromExpression, "Lower boundary must be greater than 0");return null;}
-			if (lower >= ar.Elements.Length){
-				EvalError(sl.FromExpression, "Lower boundary must be smaller than " + ar.Elements.Length);return null;}
-			if (upper < lower){
-				EvalError(sl.ToExpression, "Upper boundary must be greater than " + lower);return null;}
-			if (upper >= ar.Elements.Length){
-				EvalError(sl.ToExpression, "Upper boundary must be smaller than " + ar.Elements.Length);return null;}
+			if (lower < 0)
+			{
+				EvalError(sl.FromExpression, "Lower boundary must be greater than 0"); return null;
+			}
+			if (lower >= ar.Elements.Length)
+			{
+				EvalError(sl.FromExpression, "Lower boundary must be smaller than " + ar.Elements.Length); return null;
+			}
+			if (upper < lower)
+			{
+				EvalError(sl.ToExpression, "Upper boundary must be greater than " + lower); return null;
+			}
+			if (upper >= ar.Elements.Length)
+			{
+				EvalError(sl.ToExpression, "Upper boundary must be smaller than " + ar.Elements.Length); return null;
+			}
 
 
 			var rawArraySlice = new ISymbolValue[upper - lower];
@@ -828,29 +882,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				rawArraySlice[j++] = ar.Elements[i];
 
 			return new ArrayValue(ar.RepresentedType as ArrayType, rawArraySlice);
-		}
-
-		ISemantic E(PostfixExpression_Increment x, ISemantic foreExpression)
-		{
-			// myInt++ is still of type 'int'
-			if (!eval)
-				return foreExpression;
-
-			if (resolveConstOnly)
-				EvalError(new NoConstException(x));
-			// Must be implemented anyway regarding ctfe
-			return null;
-		}
-
-		ISemantic E(PostfixExpression_Decrement x, ISemantic foreExpression)
-		{
-			if (!eval)
-				return foreExpression;
-
-			if (resolveConstOnly)
-				EvalError(new NoConstException(x));
-			// Must be implemented anyway regarding ctfe
-			return null;
 		}
 	}
 }

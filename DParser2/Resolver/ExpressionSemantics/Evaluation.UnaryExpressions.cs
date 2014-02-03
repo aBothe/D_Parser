@@ -10,37 +10,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public partial class Evaluation
 	{
-		ISemantic E(UnaryExpression x)
-		{
-			if (x is NewExpression)
-				return E((NewExpression)x);
-			else if (x is CastExpression)
-				return E((CastExpression)x);
-			else if (x is UnaryExpression_Cat)
-				return E((UnaryExpression_Cat)x);
-			else if (x is UnaryExpression_Increment)
-				return E((UnaryExpression_Increment)x);
-			else if (x is UnaryExpression_Decrement)
-				return E((UnaryExpression_Decrement)x);
-			else if (x is UnaryExpression_Add)
-				return E((UnaryExpression_Add)x);
-			else if (x is UnaryExpression_Sub)
-				return E((UnaryExpression_Sub)x);
-			else if (x is UnaryExpression_Not)
-				return E((UnaryExpression_Not)x);
-			else if (x is UnaryExpression_Mul)
-				return E((UnaryExpression_Mul)x);
-			else if (x is UnaryExpression_And)
-				return E((UnaryExpression_And)x);
-			else if (x is DeleteExpression)
-				return E((DeleteExpression)x);
-			else if (x is UnaryExpression_Type)
-				return E((UnaryExpression_Type)x);
-
-			return null;
-		}
-
-		ISemantic E(NewExpression nex)
+		public ISemantic Visit(NewExpression nex)
 		{
 			// http://www.d-programming-language.org/expression.html#NewExpression
 			ISemantic[] possibleTypes = null;
@@ -156,7 +126,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				}
 		}
 
-		ISemantic E(CastExpression ce)
+		public ISemantic Visit(CastExpression ce)
 		{
 			AbstractType castedType = null;
 
@@ -169,9 +139,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				if (castedTypes != null && castedTypes.Length != 0)
 					castedType = castedTypes[0];
 			}
-			else
+			else if(ce.UnaryExpression != null)
 			{
-				castedType = AbstractType.Get(E(ce.UnaryExpression));
+				castedType = AbstractType.Get(ce.UnaryExpression.Accept(this));
 
 				if (castedType != null && ce.CastParamTokens != null && ce.CastParamTokens.Length > 0)
 				{
@@ -182,29 +152,29 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return castedType;
 		}
 
-		ISemantic E(UnaryExpression_Cat x) // a = ~b;
+		public ISemantic Visit(UnaryExpression_Cat x) // a = ~b;
 		{
-			return E(x.UnaryExpression);
+			return x.UnaryExpression.Accept(this);
 		}
 
-		ISemantic E(UnaryExpression_Increment x)
+		public ISemantic Visit(UnaryExpression_Increment x)
 		{
-			return E(x.UnaryExpression);
+			return x.UnaryExpression.Accept(this);
 		}
 
-		ISemantic E(UnaryExpression_Decrement x)
+		public ISemantic Visit(UnaryExpression_Decrement x)
 		{
-			return E(x.UnaryExpression);
+			return x.UnaryExpression.Accept(this);
 		}
 
-		ISemantic E(UnaryExpression_Add x)
+		public ISemantic Visit(UnaryExpression_Add x)
 		{
-			return E(x.UnaryExpression);
+			return x.UnaryExpression.Accept(this);
 		}
 
-		ISemantic E(UnaryExpression_Sub x)
+		public ISemantic Visit(UnaryExpression_Sub x)
 		{
-			var v = E(x.UnaryExpression);
+			var v = x.UnaryExpression.Accept(this);
 
 			if (eval)
 			{
@@ -222,9 +192,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return v;
 		}
 
-		ISemantic E(UnaryExpression_Not x)
+		public ISemantic Visit(UnaryExpression_Not x)
 		{
-			var v = E(x.UnaryExpression);
+			var v = x.UnaryExpression.Accept(this);
 			
 			if(eval)
 			{
@@ -241,14 +211,14 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return v;			
 		}
 
-		ISemantic E(UnaryExpression_Mul x)
+		public ISemantic Visit(UnaryExpression_Mul x)
 		{
-			return E(x.UnaryExpression);
+			return x.UnaryExpression.Accept(this);
 		}
 
-		ISemantic E(UnaryExpression_And x)
+		public ISemantic Visit(UnaryExpression_And x)
 		{
-			var ptrBase=E(x.UnaryExpression);
+			var ptrBase=x.UnaryExpression.Accept(this);
 
 			if (eval)
 			{
@@ -260,7 +230,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return new PointerType(AbstractType.Get(ptrBase), x);
 		}
 
-		ISemantic E(DeleteExpression x)
+		public ISemantic Visit(DeleteExpression x)
 		{
 			if (eval)
 			{
@@ -270,7 +240,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return null;
 		}
 
-		ISemantic E(UnaryExpression_Type x)
+		public ISemantic Visit(UnaryExpression_Type x)
 		{
 			var uat = x as UnaryExpression_Type;
 

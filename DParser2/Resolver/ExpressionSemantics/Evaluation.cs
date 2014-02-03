@@ -5,10 +5,11 @@ using System.Diagnostics;
 using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
 using D_Parser.Resolver.TypeResolution;
+using D_Parser.Dom;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
-	public partial class Evaluation
+	public partial class Evaluation : ExpressionVisitor<ISemantic>
 	{
 		#region Properties / Ctor
 		/// <summary>
@@ -89,7 +90,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			var ev = new Evaluation(vp);
 
-			var v = ev.E(x) as ISymbolValue;
+			var v = x.Accept(ev) as ISymbolValue;
 
 			if(v == null && ev.Errors.Count != 0)
 				return new ErrorValue(ev.Errors.ToArray());
@@ -133,10 +134,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var ev = new Evaluation(ctxt);
 			ISemantic t = null;
 			if(!Debugger.IsAttached)
-				try { t = ev.E(x); }
+				try { t = x.Accept(ev); }
 				catch { }
 			else
-				t = ev.E(x);
+				t = x.Accept(ev);
 
 			if (t is InternalOverloadValue)
 				return ((InternalOverloadValue)t).Overloads;
@@ -149,82 +150,47 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var ev = new Evaluation(ctxt);
 			ISemantic t = null;
 			if(!Debugger.IsAttached)
-				try { t = ev.E(x); }
+				try { t = x.Accept(ev); }
 				catch { }
 			else
-				t = ev.E(x);
+				t = x.Accept(ev);
 
 			return AbstractType.Get(t);
 		}
 
-		/// <summary>
-		/// HACK: SO prevention
-		/// </summary>
-		[ThreadStatic]
-		static uint evaluationDepth = 0;
-		
-		ISemantic E(IExpression x)
+		public ISemantic Visit(Expression ex)
 		{
-			if (evaluationDepth > 10)
-				return null;
-			evaluationDepth++;
+			/*
+			 * The left operand of the ',' is evaluated, then the right operand is evaluated. 
+			 * The type of the expression is the type of the right operand, 
+			 * and the result is the result of the right operand.
+			 */
 
-			ISemantic ret = null;
-
-			try{
-			if (x is Expression) // a,b,c;
+			if (eval)
+			{
+				ISemantic ret = null;
+				for (int i = 0; i < ex.Expressions.Count; i++)
 				{
-					var ex = (Expression)x;
-					/*
-					 * The left operand of the ',' is evaluated, then the right operand is evaluated. 
-					 * The type of the expression is the type of the right operand, 
-					 * and the result is the result of the right operand.
-					 */
+					var v = ex.Expressions[i].Accept(this);
 
-					if (eval)
+					if (i == ex.Expressions.Count - 1)
 					{
-						for (int i = 0; i < ex.Expressions.Count; i++)
-						{
-							var v = E(ex.Expressions[i]);
-
-							if (i == ex.Expressions.Count - 1)
-							{
-								ret = v;
-								break;
-							}
-						}
-
-						if (ret == null)
-							EvalError(x, "There must be at least one expression in the expression chain");
+						ret = v;
+						break;
 					}
-					else
-						ret = ex.Expressions.Count == 0 ? null : E(ex.Expressions[ex.Expressions.Count - 1]);
 				}
 
-				else if (x is SurroundingParenthesesExpression)
-					ret = E((x as SurroundingParenthesesExpression).Expression);
-
-				else if (x is ConditionalExpression) // a ? b : c
-					ret = E((ConditionalExpression)x);
-
-				else if (x is OperatorBasedExpression)
-					ret = E(x as OperatorBasedExpression);
-
-				else if (x is UnaryExpression)
-					ret = E(x as UnaryExpression);
-
-				else if (x is PostfixExpression)
-					ret = E(x as PostfixExpression);
-
-				else if (x is PrimaryExpression)
-					ret = E(x as PrimaryExpression);
+				if (ret == null)
+					EvalError(ex, "There must be at least one expression in the expression chain");
+				return ret;
 			}
-			finally
-			{
-				if(evaluationDepth>0)
-					evaluationDepth--;
-			}
-			return ret;
+			else
+				return ex.Expressions.Count == 0 ? null : ex.Expressions[ex.Expressions.Count - 1].Accept(this);
+		}
+
+		public ISemantic Visit(SurroundingParenthesesExpression x)
+		{
+			return x.Expression.Accept(this);
 		}
 
 		public static bool IsFalseZeroOrNull(ISymbolValue v)

@@ -8,7 +8,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public partial class Evaluation
 	{		
-		ISemantic E(TraitsExpression te)
+		public ISemantic Visit(TraitsExpression te)
 		{
 			switch(te.Keyword)
 			{
@@ -31,7 +31,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					{
 						ignoreErrors = true;
 						eval = false;
-						ret = E(pfa, t, false) != null;
+						ret = EvalPostfixAccessExpression(pfa, t, false) != null;
 						eval = true;
 						ignoreErrors = false;
 					}
@@ -54,7 +54,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					if(pfa == null ||t == null)
 						break;
 					
-					var vs = E(pfa,t);
+					var vs = EvalPostfixAccessExpression(pfa,t);
 					if(vs == null || vs.Length == 0)
 						return null;
 					return vs[0];
@@ -70,7 +70,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					{
 						var evalBak = eval;
 						eval = false;
-						vs = E(pfa,t);
+						vs = EvalPostfixAccessExpression(pfa,t);
 						eval = evalBak;
 					}
 					else
@@ -94,7 +94,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						EvalError(te, "First trait argument must be a symbol identifier");
 					else
 					{
-						t = E(te.Arguments[0], te);
+						currentTraitsExpression = te;
+						t = te.Arguments[0].Accept(this)  as AbstractType;
 						
 						if(t is DSymbol)
 						{
@@ -141,11 +142,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					}
 					else
 					{
-						t = E(te.Arguments[0], te);
+						currentTraitsExpression = te;
+						t = te.Arguments[0].Accept(this) as AbstractType;
 						
 						if(t != null)
 						{
-							var t2 = E(te.Arguments[1], te);
+							var t2 = te.Arguments[1].Accept(this);
 							
 							if(t2 != null)
 								ret = Resolver.ResultComparer.IsEqual(t,t2);
@@ -163,7 +165,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					if(te.Arguments != null){
 						foreach(var arg in te.Arguments)
 						{
-							ret = E(arg, te) != null;
+							ret = arg == null || arg.Accept(this) != null;
 							
 							if(!ret)
 								break;
@@ -185,7 +187,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					if(te.Arguments != null)
 					foreach(var arg in te.Arguments)
 					{
-						var t = E(arg,te);
+						var t = arg.Accept(this) as AbstractType;
 						
 						bool tested = true;
 						
@@ -313,7 +315,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if(te.Arguments != null && te.Arguments.Length == 2)
 			{
 				var tEx = te.Arguments[0];
-				t = DResolver.StripMemberSymbols(E(tEx,te));
+				currentTraitsExpression = te;
+				t = DResolver.StripMemberSymbols(tEx.Accept(this) as AbstractType);
 				
 				if(t == null)
 					EvalError(te, "First argument didn't resolve to a type");
@@ -322,7 +325,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					var litEx = te.Arguments[1].AssignExpression;
 					var eval_Backup = eval;
 					eval = true;
-					var v = E(litEx);
+					currentTraitsExpression = te;
+					var v = litEx.Accept(this);
 					eval = eval_Backup;
 					
 					if(v is ArrayValue && (v as ArrayValue).IsString)
@@ -348,8 +352,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			t = null;
 			return null;
 		}
-		
-		AbstractType E(TraitsArgument arg, TraitsExpression te)
+
+
+		TraitsExpression currentTraitsExpression;
+
+		public ISemantic Visit(TraitsArgument arg)
 		{
 			if(arg.Type != null)
 			{
@@ -361,7 +368,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 			else
 			{
-				EvalError(te, "Argument must be a type or an expression!");
+				EvalError(currentTraitsExpression, "Argument must be a type or an expression!");
 				return null;
 			}
 		}

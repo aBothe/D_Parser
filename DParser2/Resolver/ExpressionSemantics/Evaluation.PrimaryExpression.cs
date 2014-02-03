@@ -63,60 +63,16 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return GetStringType(ctxt, fmt);
 		}
 
-		ISemantic E(PrimaryExpression x)
-		{
-			if (x is IdentifierExpression)
-				return E((IdentifierExpression)x);
-
-			else if (x is TemplateInstanceExpression)
-				return E((TemplateInstanceExpression)x);
-
-			else if (x is TokenExpression)
-				return E((TokenExpression)x);
-
-			else if (x is ArrayLiteralExpression)
-				return E((ArrayLiteralExpression)x);
-
-			else if (x is AssocArrayExpression)
-				return E((AssocArrayExpression)x);
-
-			else if (x is FunctionLiteral)
-				return E((FunctionLiteral)x);
-
-			else if (x is AssertExpression)
-				return E((AssertExpression)x);
-
-			else if (x is MixinExpression)
-				return E((MixinExpression)x);
-
-			else if (x is ImportExpression)
-				return E((ImportExpression)x);
-
-			else if (x is TypeDeclarationExpression) // should be containing a typeof() only; static properties etc. are parsed as access expressions
-				return E((TypeDeclarationExpression)x);
-
-			else if (x is TypeidExpression)
-				return E((TypeidExpression)x);
-
-			else if (x is IsExpression)
-				return E((IsExpression)x);
-
-			else if (x is TraitsExpression)
-				return E((TraitsExpression)x);
-
-			return null;
-		}
-
-		ISemantic E(TokenExpression x)
+		public ISemantic Visit(TokenExpression x)
 		{
 			switch (x.Token)
 			{
 				// References current class scope
 				case DTokens.This:
-					if (eval && resolveConstOnly) 
+					if (eval && resolveConstOnly)
 					{
 						EvalError(new NoConstException(x));
-							return null;
+						return null;
 					}
 
 					var classDef = ctxt.ScopedBlock;
@@ -136,7 +92,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				case DTokens.Super:
 					// References super type of currently scoped class declaration
 
-					if (eval && resolveConstOnly) 
+					if (eval && resolveConstOnly)
 					{
 						EvalError(new NoConstException(x));
 						return null;
@@ -181,7 +137,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 				case DTokens.Dollar:
 					if (!eval)
-						return new PrimitiveType (DTokens.Int);
+						return new PrimitiveType(DTokens.Int);
 					// It's only allowed if the evaluation stack contains an array value
 					if (ValueProvider.CurrentArrayLength != -1)
 						return new PrimitiveValue(DTokens.Int, ValueProvider.CurrentArrayLength, x);
@@ -193,11 +149,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 				case DTokens.True:
 					if (!eval)
-						return new PrimitiveType (DTokens.Bool);
+						return new PrimitiveType(DTokens.Bool);
 					return new PrimitiveValue(DTokens.Bool, 1, x);
 				case DTokens.False:
 					if (!eval)
-						return new PrimitiveType (DTokens.Bool);
+						return new PrimitiveType(DTokens.Bool);
 					return new PrimitiveValue(DTokens.Bool, 0, x);
 				case DTokens.__FILE__:
 					if (!eval)
@@ -205,31 +161,31 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					return new ArrayValue(GetStringType(), (ctxt.ScopedBlock.NodeRoot as DModule).FileName);
 				case DTokens.__LINE__:
 					if (!eval)
-						return new PrimitiveType (DTokens.Int);
+						return new PrimitiveType(DTokens.Int);
 					return new PrimitiveValue(DTokens.Int, x.Location.Line, x);
 				case DTokens.__MODULE__:
 					if (!eval)
 						return GetStringType();
 					return new ArrayValue(GetStringType(), (ctxt.ScopedBlock.NodeRoot as DModule).ModuleName);
 				case DTokens.__FUNCTION__:
-					//TODO
+				//TODO
 				case DTokens.__PRETTY_FUNCTION__:
 					if (!eval)
 						return GetStringType();
 					var dm = ctxt.ScopedStatement.ParentNode as DMethod;
-					return new ArrayValue(GetStringType(), dm == null ? "<not inside function>" : dm.ToString(false,true));
+					return new ArrayValue(GetStringType(), dm == null ? "<not inside function>" : dm.ToString(false, true));
 			}
 
 
 			return null;
 		}
 
-		ISemantic E(AssertExpression x)
+		public ISemantic Visit(AssertExpression x)
 		{
 			if (!eval)
 				return new PrimitiveType(DTokens.Void, 0, x);
 
-			var assertVal = E(x.AssignExpressions[0]) as ISymbolValue;
+			var assertVal = x.AssignExpressions.Length > 0 && x.AssignExpressions[0] != null ? x.AssignExpressions[0].Accept(this) as ISymbolValue : null;
 			/*TODO
 			// If it evaluates to a non-null class reference, the class invariant is run. 
 			if(assertVal is ClassInstanceValue)
@@ -244,9 +200,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			{
 				string assertMsg = "";
 
-				if (x.AssignExpressions.Length > 1)
+				if (x.AssignExpressions.Length > 1 && x.AssignExpressions[1] != null)
 				{
-					var assertMsg_v = E(x.AssignExpressions[1]) as ArrayValue;
+					var assertMsg_v = x.AssignExpressions[1].Accept(this) as ArrayValue;
 
 					if (assertMsg_v == null || !assertMsg_v.IsString)
 					{
@@ -264,12 +220,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return null;
 		}
 
-		ISemantic E(MixinExpression x)
+		public ISemantic Visit(MixinExpression x)
 		{
 			// 1) Evaluate the mixin expression
 			var cnst = resolveConstOnly;
 			resolveConstOnly = true;
-			var v = E(((MixinExpression)x).AssignExpression) as ArrayValue;
+			var v = x.AssignExpression != null ? x.AssignExpression.Accept(this) as ArrayValue : null;
 			resolveConstOnly = cnst;
 
 			if (v == null || !v.IsString){
@@ -286,10 +242,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 			//TODO: Excessive caching
 			// 3) Evaluate the expression's type/value
-			return E(ex);
+			return ex.Accept(this);
 		}
 
-		ISemantic E(ImportExpression x)
+		public ISemantic Visit(ImportExpression x)
 		{
 			var strType = GetStringType();
 
@@ -297,7 +253,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			{
 				var cnst = resolveConstOnly;
 				resolveConstOnly = true;
-				var v = E(((ImportExpression)x).AssignExpression) as ArrayValue;
+				var v = x.AssignExpression != null ? x.AssignExpression.Accept(this) as ArrayValue : null;
 				resolveConstOnly = cnst;
 
 				if (v == null || !v.IsString){
@@ -322,7 +278,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return strType;
 		}
 
-		ISemantic E(ArrayLiteralExpression arr)
+		public ISemantic Visit(ArrayLiteralExpression arr)
 		{
 			if (eval)
 			{
@@ -330,20 +286,25 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 				//ISSUE: Type-check each item to distinguish not matching items
 				foreach (var e in arr.Elements)
-					elements.Add(E(e) as ISymbolValue);
+					elements.Add(e != null ? e.Accept(this) as ISymbolValue : null);
 
 				if(elements.Count == 0){
 					EvalError(arr, "Array literal must contain at least one element.");
 					return null;
 				}
 
-				return new ArrayValue(new ArrayType(elements[0].RepresentedType, arr), elements.ToArray());
+				AbstractType baseType = null;
+				foreach (var ev in elements)
+					if (ev != null && (baseType = ev.RepresentedType) != null)
+						break;
+
+				return new ArrayValue(new ArrayType(baseType, arr), elements.ToArray());
 			}
 
 			if (arr.Elements != null && arr.Elements.Count > 0)
 			{
 				// Simply resolve the first element's type and take it as the array's value type
-				var valueType = AbstractType.Get(E(arr.Elements[0]));
+				var valueType = arr.Elements[0] != null ?  AbstractType.Get(arr.Elements[0].Accept(this)) : null;
 
 				return new ArrayType(valueType, arr);
 			}
@@ -352,7 +313,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return null;
 		}
 
-		ISemantic E(AssocArrayExpression aa)
+		public ISemantic Visit(AssocArrayExpression aa)
 		{
 			if (eval)
 			{
@@ -360,8 +321,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 				foreach (var e in aa.Elements)
 				{
-					var keyVal = E(e.Key) as ISymbolValue;
-					var valVal = E(e.Value) as ISymbolValue;
+					var keyVal = e.Key != null ? e.Key.Accept(this) as ISymbolValue : null;
+					var valVal = e.Value != null ? e.Value.Accept(this) as ISymbolValue : null;
 
 					elements.Add(new KeyValuePair<ISymbolValue, ISymbolValue>(keyVal, valVal));
 				}
@@ -374,8 +335,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				var firstElement = aa.Elements[0].Key;
 				var firstElementValue = aa.Elements[0].Value;
 
-				var keyType = AbstractType.Get(E(firstElement));
-				var valueType = AbstractType.Get(E(firstElementValue));
+				var keyType = firstElement != null ? AbstractType.Get(firstElement.Accept(this)) : null;
+				var valueType = firstElementValue != null ? AbstractType.Get(firstElementValue.Accept(this)) : null;
 
 				return new AssocArrayType(valueType, keyType, aa);
 			}
@@ -383,7 +344,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return null;
 		}
 
-		ISemantic E(FunctionLiteral x)
+		public ISemantic Visit(FunctionLiteral x)
 		{
 			var dg = new DelegateType(
 				(ctxt.Options & ResolutionOptions.DontResolveBaseTypes | ResolutionOptions.ReturnMethodReferencesOnly) != 0 ? null : TypeDeclarationResolver.GetMethodReturnType (x.AnonymousMethod, ctxt),
@@ -396,13 +357,48 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return dg;
 		}
 
-		ISemantic E(TypeDeclarationExpression x)
+		public ISemantic Visit(TypeDeclarationExpression x)
 		{
+			// should be containing a typeof() only; static properties etc. are parsed as access expressions
 			var t = TypeDeclarationResolver.ResolveSingle(x.Declaration, ctxt);
 			
 			if (eval)
 				return new TypeValue(t);
 			return t;
+		}
+
+
+		public ISemantic Visit(AnonymousClassExpression x)
+		{
+			//TODO
+			return null;
+		}
+
+		public ISemantic Visit(VoidInitializer x)
+		{
+			if (eval)
+				return new PrimitiveValue(DTokens.Void, decimal.Zero, x);
+			return new PrimitiveType(DTokens.Void);
+		}
+
+		public ISemantic Visit(ArrayInitializer x)
+		{
+			return Visit((AssocArrayExpression)x);
+		}
+
+		public ISemantic Visit(StructInitializer x)
+		{
+			if (!eval) {
+				// Create struct node with initialized members etc.
+			}
+			//TODO
+			return null;
+		}
+
+		public ISemantic Visit(StructMemberInitializer structMemberInitializer)
+		{
+			//TODO
+			return null;
 		}
 	}
 }

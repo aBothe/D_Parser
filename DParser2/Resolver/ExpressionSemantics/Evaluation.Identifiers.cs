@@ -82,10 +82,15 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return null;
 		}
 
-		ISemantic E(TemplateInstanceExpression tix, bool ImplicitlyExecute = true)
-		{
-			var o = DResolver.StripAliasSymbols(GetOverloads(tix, ctxt));
+		bool ImplicitlyExecute = true;
 
+		public ISemantic Visit(TemplateInstanceExpression tix)
+		{
+			var ImplicitlyExecute = this.ImplicitlyExecute;
+			this.ImplicitlyExecute = true;
+
+			var o = DResolver.StripAliasSymbols(GetOverloads(tix, ctxt));
+			
 			if (eval)
 				return TryDoCTFEOrGetValueRefs(o, tix, ImplicitlyExecute);
 			else
@@ -100,8 +105,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 		}
 
-		ISemantic E(IdentifierExpression id, bool ImplicitlyExecute = true)
+		public ISemantic Visit(IdentifierExpression id)
 		{
+			var ImplicitlyExecute = this.ImplicitlyExecute;
+			this.ImplicitlyExecute = true;
+
 			if (id.IsIdentifier)
 			{
 				var o = GetOverloads(id, ctxt);
@@ -127,14 +135,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					return null;
 				}
 			}
-			else
-				return EvaluateLiteral(id);
-		}
 
-		ISemantic EvaluateLiteral(IdentifierExpression id)
-		{
-			byte tt = 0;
-
+			byte tt;
 			switch (id.Format)
 			{
 				case Parser.LiteralFormat.CharLiteral:
@@ -160,7 +162,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					var v = Convert.ToDecimal(id.Value);
 
 					if (eval)
-						return new PrimitiveValue(tt, im ? 0 : v, id, im? v : 0);
+						return new PrimitiveValue(tt, im ? 0 : v, id, im ? v : 0);
 					else
 						return new PrimitiveType(tt, 0, id);
 
@@ -179,8 +181,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 					var _t = GetStringType(id.Subformat);
 					return eval ? (ISemantic)new ArrayValue(_t, id) : _t;
+				default:
+					return null;
 			}
-			return null;
 		}
 
 

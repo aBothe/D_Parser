@@ -7,7 +7,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public partial class Evaluation
 	{
-		public ISemantic E(TypeidExpression tid)
+		public ISemantic Visit(TypeidExpression tid)
 		{
 			//TODO: Split up into more detailed typeinfo objects (e.g. for arrays, pointers, classes etc.)
 
