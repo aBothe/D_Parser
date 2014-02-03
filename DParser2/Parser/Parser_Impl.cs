@@ -988,7 +988,7 @@ namespace D_Parser.Parser
 		bool IsBasicType()
 		{
 			return 
-				BasicTypes[laKind] || 
+				IsBasicType(laKind) || 
 				laKind == (Typeof) || 
 				IsFunctionAttribute ||
 				(laKind == (Dot) && Lexer.CurrentPeekToken.Kind == (Identifier)) || 
@@ -1008,13 +1008,13 @@ namespace D_Parser.Parser
 				Step();
 
 			ITypeDeclaration td = null;
-			if (BasicTypes[laKind])
+			if (IsBasicType(laKind))
 			{
 				Step();
 				return new DTokenDeclaration(t.Kind) { Location=t.Location, EndLocation=t.EndLocation };
 			}
 
-			if (MemberFunctionAttribute[laKind])
+			if (IsMemberFunctionAttribute(laKind))
 			{
 				Step();
 				var md = new MemberFunctionAttributeDecl(t.Kind) { Location=t.Location };
@@ -1424,7 +1424,7 @@ namespace D_Parser.Parser
 			return td;
 		}
 
-		bool IsStorageClass
+		new bool IsStorageClass
 		{
 			get
 			{
@@ -1443,7 +1443,7 @@ namespace D_Parser.Parser
 					case Ref:
 						return true;
 					default:
-						return IsAtAttribute || (MemberFunctionAttribute[laKind] && Lexer.CurrentPeekToken.Kind != OpenParenthesis);
+						return IsAtAttribute || (IsMemberFunctionAttribute(laKind) && Lexer.CurrentPeekToken.Kind != OpenParenthesis);
 				}
 			}
 		}
@@ -1599,7 +1599,7 @@ namespace D_Parser.Parser
 
 			CheckForStorageClasses (Scope as DBlockNode);
 
-			while ((ParamModifiers[laKind] && laKind != InOut) || (MemberFunctionAttribute[laKind] && Lexer.CurrentPeekToken.Kind != OpenParenthesis))
+			while ((IsParamModifier(laKind) && laKind != InOut) || (IsMemberFunctionAttribute(laKind) && Lexer.CurrentPeekToken.Kind != OpenParenthesis))
 			{
 				Step();
 				attr.Add(new Modifier(t.Kind));
@@ -1861,7 +1861,7 @@ namespace D_Parser.Parser
 						return true;
 					return false;
 				default:
-					if (MemberFunctionAttribute[laKind])
+					if (IsMemberFunctionAttribute(laKind))
 						goto case Auto;
 					return IsProtectionAttribute();
 			}
@@ -2045,7 +2045,7 @@ namespace D_Parser.Parser
 		
 		bool IsFunctionAttribute
 		{
-			get{return MemberFunctionAttribute[laKind] || IsAtAttribute;}
+			get { return IsMemberFunctionAttribute(laKind) || IsAtAttribute; }
 		}
 
 		void FunctionAttributes(DNode n)
@@ -2102,7 +2102,7 @@ namespace D_Parser.Parser
 				bool HadPointerDeclaration = false;
 
 				// uint[]** MyArray;
-				if (!BasicTypes[laKind])
+				if (!IsBasicType(laKind))
 				{
 					// Skip initial dot
 					if (Peek(laKind == Dot ? 2 :1).Kind != Identifier)
@@ -2234,7 +2234,7 @@ namespace D_Parser.Parser
 		public IExpression AssignExpression(IBlockNode Scope = null)
 		{
 			var left = ConditionalExpression(Scope);
-			if (!AssignOps[laKind])
+			if (!IsAssignOperator(laKind))
 				return left;
 
 			Step();
@@ -2329,6 +2329,7 @@ namespace D_Parser.Parser
 
 		IExpression CmpExpression(IBlockNode Scope = null)
 		{
+			// TODO: Make this into a switch.
 			var left = ShiftExpression(Scope);
 
 			OperatorBasedExpression ae = null;
@@ -2338,7 +2339,7 @@ namespace D_Parser.Parser
 				ae = new EqualExpression(laKind == NotEqual);
 
 			// Relational Expressions
-			else if (RelationalOperators[laKind])
+			else if (IsRelationalOperator(laKind))
 				ae = new RelExpression(laKind);
 
 			// Identity Expressions
@@ -3125,7 +3126,7 @@ namespace D_Parser.Parser
 								specialTest = Peek(1).Kind == CloseParenthesis || Lexer.CurrentPeekToken.Kind == Comma;
 								break;
 							default:
-								specialTest = ClassLike[laKind];
+								specialTest = IsClassLike(laKind);
 								break;
 						}
 					}
@@ -3154,7 +3155,7 @@ namespace D_Parser.Parser
 					ise.EndLocation = t.EndLocation;
 					return ise;
 				default:
-					if (DTokens.MetaIdentifiers[laKind])
+					if (DTokens.IsMetaIdentifier(laKind))
 						goto case Dollar;
 					else if (IsBasicType())
 					{
@@ -3284,7 +3285,7 @@ namespace D_Parser.Parser
 					next = next.next;
 
 				k = next.Kind;
-				return k == Comma || k == Identifier || k == CloseSquareBracket || BasicTypes[k] || StorageClass [k];
+				return k == Comma || k == Identifier || k == CloseSquareBracket || IsBasicType(k) || IsStorageClass(k);
 			}
 
 			// (...) => |
@@ -3301,7 +3302,7 @@ namespace D_Parser.Parser
 			OverPeekBrackets(OpenParenthesis, false);
 
 			bool at = false;
-			while (DTokens.StorageClass [Lexer.CurrentPeekToken.Kind] || (at = Lexer.CurrentPeekToken.Kind == At)) {
+			while (DTokens.IsStorageClass(Lexer.CurrentPeekToken.Kind) || (at = Lexer.CurrentPeekToken.Kind == At)) {
 				Lexer.Peek ();
 				if (at)
 					Lexer.Peek ();
@@ -3940,7 +3941,7 @@ namespace D_Parser.Parser
 					ds.EndLocation = t.EndLocation;
 					return ds;
 				default:
-					if (ClassLike[laKind] || BasicTypes[laKind] || Modifiers[laKind] || IsAtAttribute)
+					if (IsClassLike(laKind) || IsBasicType(laKind) || IsModifier(laKind) || IsAtAttribute)
 						goto case Typedef;
 					if (IsAssignExpression())
 						return ExpressionStatement(Scope, Parent);
@@ -4967,7 +4968,7 @@ namespace D_Parser.Parser
 		{
 			get {
 				Lexer.StartPeek ();
-				if (laKind != Identifier && (!DTokens.StorageClass [laKind] || Peek ().Kind != Identifier))
+				if (laKind != Identifier && (!DTokens.IsStorageClass(laKind) || Peek ().Kind != Identifier))
 					return false;
 				
 				var r = Peek ().Kind == Not && !(Peek().Kind == Is || Lexer.CurrentPeekToken.Kind == In);
@@ -4982,7 +4983,7 @@ namespace D_Parser.Parser
 
 			var mod = INVALID;
 
-			if (DTokens.StorageClass [laKind]) {
+			if (DTokens.IsStorageClass(laKind)) {
 				mod = laKind;
 				Step ();
 			}
@@ -5057,7 +5058,7 @@ namespace D_Parser.Parser
 				 *		__LINE__
 				 */
 
-				if (BasicTypes [laKind]) {
+				if (IsBasicType(laKind)) {
 					Step ();
 					args.Add (new TypeDeclarationExpression (new DTokenDeclaration (t.Kind) {
 						Location = t.Location,

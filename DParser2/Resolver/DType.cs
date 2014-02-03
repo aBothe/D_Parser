@@ -175,7 +175,7 @@ namespace D_Parser.Resolver
 				return (kt == null || (kt is PrimitiveType &&
 					((kt as PrimitiveType).TypeToken == DTokens.Int))) &&
 					(kt = DResolver.StripMemberSymbols (ValueType)) is PrimitiveType &&
-					DTokens.CharTypes[(kt as PrimitiveType).TypeToken];
+					DTokens.IsBasicType_Character((kt as PrimitiveType).TypeToken);
 			}
 		}
 

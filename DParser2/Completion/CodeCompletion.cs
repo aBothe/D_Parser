@@ -93,8 +93,8 @@ namespace D_Parser.Completion
 						return false;
 				}
 				// If typing a begun identifier, return immediately
-				else if ((DTokens.IsIdentifierChar(enteredChar) || enteredChar == '\0') &&
-					DTokens.IsIdentifierChar(Editor.ModuleCode[Editor.CaretOffset - 1]))
+				else if ((Lexer.IsIdentifierPart(enteredChar) || enteredChar == '\0') &&
+					Lexer.IsIdentifierPart(Editor.ModuleCode[Editor.CaretOffset - 1]))
 					return false;
 			}
 

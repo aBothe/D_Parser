@@ -239,9 +239,9 @@ namespace D_Parser.Resolver
 				return PropOwnerType.Delegate;
 			else if (t is PrimitiveValue || t is PrimitiveType) {
 				var tk = t is PrimitiveType ? (t as PrimitiveType).TypeToken : (t as PrimitiveValue).BaseTypeToken;
-				if (DTokens.BasicTypes_Integral [tk])
+				if (DTokens.IsBasicType_Integral(tk))
 					return PropOwnerType.Integral;
-				if (DTokens.BasicTypes_FloatingPoint [tk])
+				if (DTokens.IsBasicType_FloatingPoint(tk))
 					return PropOwnerType.FloatingPoint;
 			} else if (t is InstanceValue || t is ClassType || t is InterfaceType || t is TemplateType || t is StructType)
 				return PropOwnerType.ClassLike;

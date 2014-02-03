@@ -178,7 +178,7 @@ namespace D_Parser.Resolver
 			else if (!isVariable &&
 				resToCheck is ArrayType &&
 				targetType is PointerType && ((targetType = (targetType as PointerType).Base) is PrimitiveType) &&
-				DTokens.CharTypes[(targetType as PrimitiveType).TypeToken])
+				DTokens.IsBasicType_Character((targetType as PrimitiveType).TypeToken))
 				return (resultToCheck as ArrayType).IsString;
 
 

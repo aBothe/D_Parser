@@ -8,7 +8,7 @@ namespace D_Parser.Dom
 	public interface IMetaDeclarationBlock : IMetaDeclaration
 	{
 		CodeLocation BlockStartLocation { get; set; }
-		CodeLocation EndLocation {get;set;}
+		new CodeLocation EndLocation {get;set;}
 	}
 
 	public class AttributeMetaDeclaration : IMetaDeclaration
