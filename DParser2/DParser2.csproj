@@ -191,7 +191,6 @@
     <Compile Include="Dom\CodeLocation.cs" />
     <Compile Include="Dom\ImportStatement.cs" />
     <Compile Include="Dom\Nodes\NodeInterfaces.cs" />
-    <Compile Include="Dom\Statements.cs" />
     <Compile Include="Misc\DocumentHelper.cs" />
     <Compile Include="Resolver\TypeResolution\Resolver.cs" />
     <Compile Include="Dom\Attribute.cs" />
@@ -233,6 +232,39 @@
     <Compile Include="Parser\DDocParser.cs" />
     <Compile Include="Refactoring\ImportStmtCreation.cs" />
     <Compile Include="Completion\Providers\GotoLabelCompletionProvider.cs" />
+    <Compile Include="Dom\Statements\IStatement.cs" />
+    <Compile Include="Dom\Statements\IExpressionContainingStatement.cs" />
+    <Compile Include="Dom\Statements\IDeclarationContainingStatement.cs" />
+    <Compile Include="Dom\Statements\AbstractStatement.cs" />
+    <Compile Include="Dom\Statements\StatementContainingStatement.cs" />
+    <Compile Include="Dom\Statements\BlockStatement.cs" />
+    <Compile Include="Dom\Statements\LabeledStatement.cs" />
+    <Compile Include="Dom\Statements\IfStatement.cs" />
+    <Compile Include="Dom\Statements\WhileStatement.cs" />
+    <Compile Include="Dom\Statements\ForStatement.cs" />
+    <Compile Include="Dom\Statements\ForeachStatement.cs" />
+    <Compile Include="Dom\Statements\SwitchStatement.cs" />
+    <Compile Include="Dom\Statements\ContinueStatement.cs" />
+    <Compile Include="Dom\Statements\BreakStatement.cs" />
+    <Compile Include="Dom\Statements\ReturnStatement.cs" />
+    <Compile Include="Dom\Statements\GotoStatement.cs" />
+    <Compile Include="Dom\Statements\WithStatement.cs" />
+    <Compile Include="Dom\Statements\SynchronizedStatement.cs" />
+    <Compile Include="Dom\Statements\TryStatement.cs" />
+    <Compile Include="Dom\Statements\ThrowStatement.cs" />
+    <Compile Include="Dom\Statements\ScopeGuardStatement.cs" />
+    <Compile Include="Dom\Statements\AsmStatement.cs" />
+    <Compile Include="Dom\Statements\PragmaStatement.cs" />
+    <Compile Include="Dom\Statements\MixinStatement.cs" />
+    <Compile Include="Dom\Statements\StatementCondition.cs" />
+    <Compile Include="Dom\Statements\AssertStatement.cs" />
+    <Compile Include="Dom\Statements\StaticAsserStatement.cs" />
+    <Compile Include="Dom\Statements\VolatileStatement.cs" />
+    <Compile Include="Dom\Statements\ExpressionStatement.cs" />
+    <Compile Include="Dom\Statements\DeclarationStatement.cs" />
+    <Compile Include="Dom\Statements\TemplateMixin.cs" />
+    <Compile Include="Dom\Statements\DebugSpecificiation.cs" />
+    <Compile Include="Dom\Statements\VersionSpecification.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="readme.txt" />
@@ -251,4 +283,7 @@
   </Target>
   -->
   <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Dom\Statements\" />
+  </ItemGroup>
 </Project>
