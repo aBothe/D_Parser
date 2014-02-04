@@ -10,28 +10,12 @@ namespace D_Parser.Resolver.ASTScanner
 		protected readonly int filterHash;
 		protected readonly ISyntaxRegion idObject;
 		protected readonly List<AbstractType> matches_types = new List<AbstractType>();
-		/*
-		protected NameScan(ResolutionContext ctxt, string filterId, object idObject) : base(ctxt)
-		{
-			this.filterId = filterId;
-			this.filterHash = filterId.GetHashCode ();
-			this.idObject = idObject;
-		}
-		*/
+		
 		protected NameScan(ResolutionContext ctxt, int filterHash, ISyntaxRegion idObject) : base(ctxt)
 		{
 			this.filterHash = filterHash;
 			this.idObject = idObject;
 		}
-		/*
-		public static List<AbstractType> SearchAndResolve(ResolutionContext ctxt, CodeLocation caret, string name, object idObject=null)
-		{
-			var scan = new NameScan(ctxt, name, idObject);
-
-			scan.IterateThroughScopeLayers(caret);
-
-			return scan.matches_types;
-		}*/
 
 		public static List<AbstractType> SearchAndResolve(ResolutionContext ctxt, CodeLocation caret, int nameHash, ISyntaxRegion idObject=null)
 		{
@@ -107,7 +91,7 @@ namespace D_Parser.Resolver.ASTScanner
 	public class SingleNodeNameScan : NameScan
 	{
 		protected SingleNodeNameScan(ResolutionContext ctxt, int filterHash, ISyntaxRegion idObject) : base(ctxt, filterHash, idObject) {}
-
+		/*
 		public static List<AbstractType> SearchChildrenAndResolve(ResolutionContext ctxt, IBlockNode block, string name, ISyntaxRegion idObject = null)
 		{
 			return SearchChildrenAndResolve (ctxt, block, name.GetHashCode(), idObject);
@@ -122,6 +106,27 @@ namespace D_Parser.Resolver.ASTScanner
 			var scan = new SingleNodeNameScan(ctxt, nameHash, idObject);
 
 			scan.ScanBlock(block, CodeLocation.Empty, MemberFilter.All);
+
+			return scan.matches_types;
+		}*/
+
+		public static List<AbstractType> SearchChildrenAndResolve(ResolutionContext ctxt, DSymbol t, string name, ISyntaxRegion idObject = null)
+		{
+			return SearchChildrenAndResolve(ctxt, t, name.GetHashCode(), idObject);
+		}
+
+		/// <summary>
+		/// Scans a block node. Not working with DMethods.
+		/// Automatically resolves node matches so base types etc. will be specified directly after the search operation.
+		/// </summary>
+		public static List<AbstractType> SearchChildrenAndResolve(ResolutionContext ctxt, DSymbol t, int nameHash, ISyntaxRegion idObject = null)
+		{
+			var scan = new SingleNodeNameScan(ctxt, nameHash, idObject);
+
+			if (t is TemplateIntermediateType)
+				scan.DeepScanClass(t as UserDefinedType, MemberFilter.All);
+			else if (t.Definition is IBlockNode)
+				scan.ScanBlock(t.Definition as IBlockNode, CodeLocation.Empty, MemberFilter.All);
 
 			return scan.matches_types;
 		}

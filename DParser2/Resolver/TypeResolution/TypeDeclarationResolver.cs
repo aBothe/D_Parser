@@ -184,7 +184,7 @@ namespace D_Parser.Resolver.TypeResolution
 						ctxt.PushNewScope(bn);
 					ctxt.CurrentContext.IntroduceTemplateParameterTypes(udt);
 
-					r.AddRange(SingleNodeNameScan.SearchChildrenAndResolve(ctxt, bn, nextIdentifierHash, typeIdObject));
+					r.AddRange(SingleNodeNameScan.SearchChildrenAndResolve(ctxt, udt, nextIdentifierHash, typeIdObject));
 
 					List<TemplateParameterSymbol> dedTypes = null;
 					foreach (var t in r)
@@ -226,7 +226,7 @@ namespace D_Parser.Resolver.TypeResolution
 						r.Add(new PackageSymbol(pack, typeIdObject as ISyntaxRegion));
 				}
 				else if (b is ModuleSymbol)
-					r.AddRange(SingleNodeNameScan.SearchChildrenAndResolve(ctxt, (b as ModuleSymbol).Definition, nextIdentifierHash, typeIdObject));
+					r.AddRange(SingleNodeNameScan.SearchChildrenAndResolve(ctxt, b as ModuleSymbol, nextIdentifierHash, typeIdObject));
 				else
 				{
 					statProp = StaticProperties.TryEvalPropertyType(ctxt, b, nextIdentifierHash);
