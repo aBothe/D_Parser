@@ -2675,6 +2675,54 @@ void CFoo() {}");
 		}
 
 		[Test]
+		public void TemplateAliasParams()
+		{
+			var ctxt = CreateCtxt("A", @"module A;
+class Mixery(U)
+{
+	int a;
+	U u;
+}
+
+struct TestField(T)
+{
+        T t;
+        alias t this; // doesn't matter
+}
+ 
+mixin template MyTemplate(alias T)
+{
+        auto Field1 = T!(ulong)();
+        auto Field2 = T!(string)();
+}
+ 
+class TestClass
+{
+        mixin MyTemplate!(TestField);
+}
+
+TestClass c;
+void main(string[] args) { }
+");
+			var A = ctxt.ParseCache[0]["A"];
+			var main = A["main"].First() as DMethod;
+			ctxt.CurrentContext.Set(main);
+
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression("MyTemplate!(TestField)");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(TemplateType)));
+
+			x = DParser.ParseExpression("c.Field1");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+		}
+
+		[Test]
 		public void StdSignals()
 		{
 			var ctxt = CreateCtxt ("A", @"module A;
