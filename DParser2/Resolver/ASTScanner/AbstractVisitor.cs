@@ -221,7 +221,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				}
 			}
 
-			List<InterfaceType> interfaces = null;
+			List<TemplateIntermediateType> interfaces = null;
 
 			while(udt!= null)
 			{
@@ -238,10 +238,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 					if (tit.BaseInterfaces != null) {
 						if (interfaces == null)
-							interfaces = new List<InterfaceType> ();
+							interfaces = new List<TemplateIntermediateType> ();
 						foreach (var I in tit.BaseInterfaces)
-							if (!interfaces.Contains (I))
-								interfaces.Add (I);
+							EnlistInterfaceHierarchy(interfaces, I);
 					}
 
 					if(resolveBaseClassIfRequired && udt.Base == null && type == DTokens.Class)
@@ -261,6 +260,19 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 						return true;
 
 			return false;
+		}
+
+		static void EnlistInterfaceHierarchy(List<TemplateIntermediateType> l, InterfaceType t)
+		{
+			if (l.Contains(t))
+				return;
+
+			l.Add(t);
+			if(t.Base is TemplateIntermediateType)
+				l.Add(t.Base as TemplateIntermediateType);
+			if(t.BaseInterfaces != null && t.BaseInterfaces.Length != 0)
+				foreach (var nested in t.BaseInterfaces)
+					EnlistInterfaceHierarchy(l, nested);
 		}
 		
 		protected bool scanChildren(DBlockNode curScope, 
