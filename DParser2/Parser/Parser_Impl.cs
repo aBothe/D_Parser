@@ -2344,7 +2344,7 @@ namespace D_Parser.Parser
 
 			// Identity Expressions
 			else if (laKind == Is || (laKind == Not && Peek(1).Kind == Is))
-				ae = new IdendityExpression(laKind == Not);
+				ae = new IdentityExpression(laKind == Not);
 
 			// In Expressions
 			else if (laKind == In || (laKind == Not && Peek(1).Kind == In))
