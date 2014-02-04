@@ -210,7 +210,7 @@ namespace D_Parser.Dom
 		void Visit(OrExpression x);
 		void Visit(AndExpression x);
 		void Visit(EqualExpression x);
-		void Visit(IdendityExpression x);
+		void Visit(IdentityExpression x);
 		void Visit(RelExpression x);
 		void Visit(InExpression x);
 		void Visit(ShiftExpression x);
@@ -273,7 +273,7 @@ namespace D_Parser.Dom
 		R Visit(OrExpression x);
 		R Visit(AndExpression x);
 		R Visit(EqualExpression x);
-		R Visit(IdendityExpression x);
+		R Visit(IdentityExpression x);
 		R Visit(RelExpression x);
 		R Visit(InExpression x);
 		R Visit(ShiftExpression x);

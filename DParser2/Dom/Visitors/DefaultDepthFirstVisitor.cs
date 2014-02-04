@@ -529,7 +529,7 @@ namespace D_Parser.Dom
 			VisitOpBasedExpression(x);
 		}
 
-		public virtual void Visit(Expressions.IdendityExpression x)
+		public virtual void Visit(Expressions.IdentityExpression x)
 		{
 			VisitOpBasedExpression(x);
 		}

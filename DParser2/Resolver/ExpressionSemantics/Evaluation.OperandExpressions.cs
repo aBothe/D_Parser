@@ -43,7 +43,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return E_MathOp(x);
 		}
 
-		public ISymbolValue Visit(IdendityExpression x)
+		public ISymbolValue Visit(IdentityExpression x)
 		{
 			return E_BoolOp(x);
 		}
@@ -117,7 +117,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 			else if (x is AndAndExpression)
 				return new PrimitiveValue(!IsFalseZeroOrNull(l) && !IsFalseZeroOrNull(r), x);
-			else if (x is IdendityExpression)
+			else if (x is IdentityExpression)
 			{
 				// http://dlang.org/expression.html#IdentityExpression
 			}

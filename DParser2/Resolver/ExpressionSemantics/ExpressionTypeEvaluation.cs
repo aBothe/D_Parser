@@ -371,7 +371,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return new PrimitiveType(DTokens.Bool);
 		}
 
-		public AbstractType Visit(IdendityExpression x)
+		public AbstractType Visit(IdentityExpression x)
 		{
 			return new PrimitiveType(DTokens.Bool);
 		}

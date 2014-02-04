@@ -3,8 +3,6 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.30729</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{0290A229-9AA1-41C3-B525-CAFB86D8BC42}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -200,7 +198,6 @@
     <Compile Include="Parser\Parser.cs" />
     <Compile Include="Parser\Parser_Impl.cs" />
     <Compile Include="Parser\DTokens.cs" />
-    <Compile Include="Dom\Expressions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Parser\DToken.cs" />
     <Compile Include="Dom\DDeclarations.cs" />
@@ -265,6 +262,70 @@
     <Compile Include="Dom\Statements\TemplateMixin.cs" />
     <Compile Include="Dom\Statements\DebugSpecificiation.cs" />
     <Compile Include="Dom\Statements\VersionSpecification.cs" />
+    <Compile Include="Dom\Expressions\IExpression.cs" />
+    <Compile Include="Dom\Expressions\ContainerExpression.cs" />
+    <Compile Include="Dom\Expressions\OperatorBasedExpression.cs" />
+    <Compile Include="Dom\Expressions\Expression.cs" />
+    <Compile Include="Dom\Expressions\AssignExpression.cs" />
+    <Compile Include="Dom\Expressions\ConditionalExpression.cs" />
+    <Compile Include="Dom\Expressions\OrOrExpression.cs" />
+    <Compile Include="Dom\Expressions\AndAndExpression.cs" />
+    <Compile Include="Dom\Expressions\XorExpression.cs" />
+    <Compile Include="Dom\Expressions\OrExpression.cs" />
+    <Compile Include="Dom\Expressions\AndExpression.cs" />
+    <Compile Include="Dom\Expressions\EqualExpression.cs" />
+    <Compile Include="Dom\Expressions\IdentityExpression.cs" />
+    <Compile Include="Dom\Expressions\RelExpression.cs" />
+    <Compile Include="Dom\Expressions\InExpression.cs" />
+    <Compile Include="Dom\Expressions\ShiftExpression.cs" />
+    <Compile Include="Dom\Expressions\AddExpression.cs" />
+    <Compile Include="Dom\Expressions\MulExpression.cs" />
+    <Compile Include="Dom\Expressions\CatExpression.cs" />
+    <Compile Include="Dom\Expressions\UnaryExpression.cs" />
+    <Compile Include="Dom\Expressions\PowExpression.cs" />
+    <Compile Include="Dom\Expressions\SimpleUnaryExpression.cs" />
+    <Compile Include="Dom\Expressions\UnaryExpression_And.cs" />
+    <Compile Include="Dom\Expressions\UnaryExpression_Increment.cs" />
+    <Compile Include="Dom\Expressions\UnaryExpression_Decrement.cs" />
+    <Compile Include="Dom\Expressions\UnaryExpression_Mul.cs" />
+    <Compile Include="Dom\Expressions\UnaryExpression_Add.cs" />
+    <Compile Include="Dom\Expressions\UnaryExpression_Sub.cs" />
+    <Compile Include="Dom\Expressions\UnaryExpression_Not.cs" />
+    <Compile Include="Dom\Expressions\UnaryExpression_Cat.cs" />
+    <Compile Include="Dom\Expressions\UnaryExpression_Type.cs" />
+    <Compile Include="Dom\Expressions\NewExpression.cs" />
+    <Compile Include="Dom\Expressions\AnonymousClassExpression.cs" />
+    <Compile Include="Dom\Expressions\DeleteExpression.cs" />
+    <Compile Include="Dom\Expressions\CastExpression.cs" />
+    <Compile Include="Dom\Expressions\PostfixExpression.cs" />
+    <Compile Include="Dom\Expressions\PostfixExpression_Access.cs" />
+    <Compile Include="Dom\Expressions\PostfixExpression_Increment.cs" />
+    <Compile Include="Dom\Expressions\PostfixExpression_Decrement.cs" />
+    <Compile Include="Dom\Expressions\PostfixExpression_MethodCall.cs" />
+    <Compile Include="Dom\Expressions\PostfixExpression_Index.cs" />
+    <Compile Include="Dom\Expressions\PostfixExpression_Slice.cs" />
+    <Compile Include="Dom\Expressions\PrimaryExpression.cs" />
+    <Compile Include="Dom\Expressions\TemplateInstanceExpression.cs" />
+    <Compile Include="Dom\Expressions\IdentifierExpression.cs" />
+    <Compile Include="Dom\Expressions\TokenExpression.cs" />
+    <Compile Include="Dom\Expressions\TypeDeclarationExpression.cs" />
+    <Compile Include="Dom\Expressions\ArrayLiteralExpression.cs" />
+    <Compile Include="Dom\Expressions\AssocArrayExpression.cs" />
+    <Compile Include="Dom\Expressions\FunctionLiteral.cs" />
+    <Compile Include="Dom\Expressions\AssertExpression.cs" />
+    <Compile Include="Dom\Expressions\MixinExpression.cs" />
+    <Compile Include="Dom\Expressions\ImportExpression.cs" />
+    <Compile Include="Dom\Expressions\TypeidExpression.cs" />
+    <Compile Include="Dom\Expressions\IsExpression.cs" />
+    <Compile Include="Dom\Expressions\TraitsExpression.cs" />
+    <Compile Include="Dom\Expressions\TraitsArgument.cs" />
+    <Compile Include="Dom\Expressions\SurroundingParenthesesExpression.cs" />
+    <Compile Include="Dom\Expressions\IVariableInitializer.cs" />
+    <Compile Include="Dom\Expressions\AbstractVariableInitializer.cs" />
+    <Compile Include="Dom\Expressions\VoidInitializer.cs" />
+    <Compile Include="Dom\Expressions\ArrayInitializer.cs" />
+    <Compile Include="Dom\Expressions\StructInitializer.cs" />
+    <Compile Include="Dom\Expressions\StructMemberInitializer.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="readme.txt" />
@@ -285,5 +346,6 @@
   <ItemGroup />
   <ItemGroup>
     <Folder Include="Dom\Statements\" />
+    <Folder Include="Dom\Expressions\" />
   </ItemGroup>
 </Project>
