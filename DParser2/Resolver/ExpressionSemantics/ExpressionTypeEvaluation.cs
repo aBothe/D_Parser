@@ -116,7 +116,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			// Check if one overload remains and return that one.
 			ctxt.CheckForSingleResult(argTypeFilteredOverloads, call);
-			return argTypeFilteredOverloads.Count != 0 ? argTypeFilteredOverloads[0] : null;
+			return argTypeFilteredOverloads != null && argTypeFilteredOverloads.Count != 0 ? argTypeFilteredOverloads[0] : null;
 		}
 
 		void GetRawCallOverloads(ResolutionContext ctxt, PostfixExpression_MethodCall call,
