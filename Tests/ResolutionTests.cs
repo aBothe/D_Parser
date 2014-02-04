@@ -2706,6 +2706,7 @@ void main(string[] args) { }
 ");
 			var A = ctxt.ParseCache[0]["A"];
 			var main = A["main"].First() as DMethod;
+			var TestField = A["TestField"].First() as DClassLike;
 			ctxt.CurrentContext.Set(main);
 
 			IExpression x;
@@ -2714,12 +2715,14 @@ void main(string[] args) { }
 			x = DParser.ParseExpression("MyTemplate!(TestField)");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.That(t, Is.TypeOf(typeof(TemplateType)));
+			Assert.That(t, Is.TypeOf(typeof(MixinTemplateType)));
 
 			x = DParser.ParseExpression("c.Field1");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			var @base = (t as MemberSymbol).Base;
+			Assert.That(@base, Is.TypeOf(typeof(StructType)));
 		}
 
 		[Test]

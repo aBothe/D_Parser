@@ -24,6 +24,10 @@ namespace D_Parser.Resolver.TypeResolution
 
 						var res = TypeDeclarationResolver.Resolve(tde.Declaration, ctxt);
 
+						// Might be a simple symbol without any applied template arguments that is then passed to an template alias parameter
+						if (res == null && tde.Declaration is IdentifierDeclaration)
+							res = TypeDeclarationResolver.Resolve(tde.Declaration as IdentifierDeclaration, ctxt, null, false);
+
 						if (ctxt.CheckForSingleResult(res, tde.Declaration) || res != null)
 						{
 							var mr = res[0] as MemberSymbol;
