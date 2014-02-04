@@ -668,6 +668,15 @@ namespace D_Parser.Resolver.TypeResolution
 			return StripAliasSymbol(r);
 		}
 
+		public static ISemantic StripValueTypeWrappers(ISemantic s)
+		{
+			while(true)
+				if (s is TypeValue)
+					s = (s as TypeValue).RepresentedType;
+				else
+					return s;
+		}
+
 		public static AbstractType[] StripMemberSymbols(IEnumerable<AbstractType> symbols)
 		{
 			var l = new List<AbstractType>();

@@ -59,7 +59,7 @@ namespace D_Parser.Resolver.TypeResolution
 					}
 					else
 					{
-						var v = Evaluation.EvaluateValue(arg, ctxt, true);
+						ISemantic v = Evaluation.EvaluateValue(arg, ctxt, true);
 						if (v is VariableValue)
 						{
 							var vv = v as VariableValue;
@@ -68,6 +68,7 @@ namespace D_Parser.Resolver.TypeResolution
 						}
 						if(!hasNonFinalArgument)
 							hasNonFinalArgument = IsNonFinalArgument(v);
+						v = DResolver.StripValueTypeWrappers(v);
 						templateArguments.Add(v);
 					}
 				}
