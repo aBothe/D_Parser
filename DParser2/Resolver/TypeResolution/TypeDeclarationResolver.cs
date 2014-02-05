@@ -555,19 +555,22 @@ namespace D_Parser.Resolver.TypeResolution
 					if (canResolveBase) {
 						
 						var bts = TypeDeclarationResolver.Resolve (variable.Type, ctxt);
-						ctxt.CheckForSingleResult (bts, variable.Type);
 
 						if (bts != null && bts.Length != 0)
-							bt = bts [0];
+							bt = bts[0];
 
 					// For auto variables, use the initializer to get its type
-					else if (variable.Initializer != null) {
-						bt = DResolver.StripMemberSymbols(ExpressionTypeEvaluation.EvaluateType(variable.Initializer, ctxt));
+						else if (variable.Initializer != null)
+						{
+							bt = DResolver.StripMemberSymbols(ExpressionTypeEvaluation.EvaluateType(variable.Initializer, ctxt));
 						}
 
 						// Check if inside an foreach statement header
 						if (bt == null && ctxt.ScopedStatement != null)
 							bt = GetForeachIteratorType (variable, ctxt);
+
+						if (bt == null)
+							ctxt.CheckForSingleResult(bts, variable.Type);
 					}
 
 					// Note: Also works for aliases! In this case, we simply try to resolve the aliased type, otherwise the variable's base type
