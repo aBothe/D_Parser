@@ -16,6 +16,12 @@ namespace D_Parser.Resolver.ASTScanner
 		#region Properties
 		public static DVariable __ctfe;
 		Dictionary<string, List<string>> scannedModules = new Dictionary<string, List<string>>();
+		WeakReference tempResolvedNodeParent = new WeakReference(null);
+		protected DSymbol TemporaryResolvedNodeParent
+		{
+			get { return tempResolvedNodeParent.Target as DSymbol; }
+			set { tempResolvedNodeParent.Target = value; }
+		}
 
 		static ImportStatement.Import _objectImport = new ImportStatement.Import
 		{
@@ -225,7 +231,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 			while(udt!= null)
 			{
-				if(scanChildren(udt.Definition as DBlockNode, vis, false, isBase, false, takeStaticChildrenOnly, scopeIsInInheritanceHierarchy))
+				if(scanChildren(udt.Definition as DBlockNode, vis, false, isBase, false, takeStaticChildrenOnly, scopeIsInInheritanceHierarchy, udt))
 					return true;
 
 				if(udt is TemplateIntermediateType){
@@ -281,9 +287,11 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 									bool isBaseClass = false,
 									bool isMixinAst = false,
 									bool takeStaticChildrenOnly = false,
-		                            bool scopeIsInInheritanceHierarchy =false)
+		                            bool scopeIsInInheritanceHierarchy =false, 
+									UserDefinedType resolvedCurScope = null)
 		{
 			bool foundItems = false;
+			TemporaryResolvedNodeParent = resolvedCurScope;
 
 			//ConditionsStack.Push (new ConditionsFrame (curScope.StaticStatements, curScope.MetaBlocks));
 

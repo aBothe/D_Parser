@@ -64,7 +64,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			{
 				foreach (var b in scanResults)
 				{
-					if (b is MemberSymbol)
+					if (b is TemplateParameterSymbol)
+						nextResults.Add((b as TemplateParameterSymbol).Base);
+					else if (b is MemberSymbol)
 					{
 						var mr = (MemberSymbol)b;
 

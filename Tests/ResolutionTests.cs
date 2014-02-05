@@ -2716,7 +2716,23 @@ void main(string[] args) { }
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
 			Assert.That(t, Is.TypeOf(typeof(MixinTemplateType)));
+			var MyTemplate = t as MixinTemplateType;
+			var MyTemplateDef = MyTemplate.Definition as DClassLike;
+			var firstDeducedParam = MyTemplate.DeducedTypes[0];
+			Assert.That((firstDeducedParam.Definition as TemplateParameter.Node).TemplateParameter, Is.SameAs(MyTemplateDef.TemplateParameters[0]));
+			Assert.That(firstDeducedParam.Base, Is.TypeOf(typeof(StructType)));
+		
+			ctxt.CurrentContext.Set(MyTemplateDef);
+			ctxt.CurrentContext.IntroduceTemplateParameterTypes(MyTemplate);
 
+			x = DParser.ParseExpression("T!ulong");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
+			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(StructType)));
+
+			ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(MyTemplate);
+
+			ctxt.CurrentContext.Set(main);
 			x = DParser.ParseExpression("c.Field1");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 

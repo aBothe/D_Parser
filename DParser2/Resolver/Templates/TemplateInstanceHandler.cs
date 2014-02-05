@@ -238,6 +238,8 @@ namespace D_Parser.Resolver.TypeResolution
 			foreach (var o in rawOverloadList)
 			{
 				var overload = o as DSymbol;
+				while (overload is TemplateParameterSymbol)
+					overload = overload.Base as DSymbol;
 				if (overload == null)
 				{
 					if(!hasTemplateArgsPassed)
@@ -250,7 +252,7 @@ namespace D_Parser.Resolver.TypeResolution
 				// Generically, the node should never be null -- except for TemplateParameterNodes that encapsule such params
 				if (tplNode == null)
 				{
-					filteredOverloads.Add(overload);
+					filteredOverloads.Add(o);
 					continue;
 				}
 
@@ -258,7 +260,7 @@ namespace D_Parser.Resolver.TypeResolution
 				if (tplNode.TemplateParameters == null)
 				{
 					if (!hasTemplateArgsPassed || isMethodCall)
-						filteredOverloads.Add(overload);
+						filteredOverloads.Add(o);
 					continue;
 				}
 
@@ -267,7 +269,7 @@ namespace D_Parser.Resolver.TypeResolution
 				if (DeduceParams(givenTemplateArguments, isMethodCall, ctxt, overload, tplNode, deducedTypes))
 				{
 					overload.DeducedTypes = deducedTypes.ToReadonly(); // Assign calculated types to final result
-					filteredOverloads.Add(overload);
+					filteredOverloads.Add(o);
 				}
 				else
 					overload.DeducedTypes = null;
