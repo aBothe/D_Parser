@@ -51,6 +51,7 @@ namespace D_Parser.Resolver.TypeResolution
 			if ((nameFilterHash != 0 && n.NameHash != nameFilterHash) || !(n.Parent is DModule))
 				return false;
 
+			DVariable dv;
 			var dc = n as DClassLike;
 			if (dc != null && dc.ClassType == DTokens.Template) {
 				if (sr is TemplateInstanceExpression || nameFilterHash == 0) {
@@ -59,8 +60,24 @@ namespace D_Parser.Resolver.TypeResolution
 					matches.Add (templ);
 				}
 			}
-			else
+			else if(n is DMethod)
 				HandleMethod (n as DMethod);
+			else if ((dv = n as DVariable) != null && dv.IsAlias)
+			{
+				var t = TypeDeclarationResolver.HandleNodeMatch(n, ctxt, null, sr);
+
+				var t_ = DResolver.StripAliasSymbol(t) as DSymbol;
+				if(t_ != null){
+					if (t_ is MemberSymbol && t_.Definition is DMethod)
+						HandleMethod(t_.Definition as DMethod, t_ as MemberSymbol);
+					else if (t_.Definition is DClassLike)
+					{
+						t_.Tag = new UfcsTag { firstArgument = firstArgument };
+						matches.Add(t_);
+					}
+					// Perhaps other types may occur here as well - but which remain then to be added?
+				}
+			}
 
 			return false;
 		}

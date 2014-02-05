@@ -3,6 +3,7 @@ using D_Parser.Parser;
 using D_Parser.Resolver.Templates;
 using D_Parser.Resolver.TypeResolution;
 using D_Parser.Resolver.ExpressionSemantics;
+using System.Collections.Generic;
 
 namespace D_Parser.Resolver
 {
@@ -75,6 +76,11 @@ namespace D_Parser.Resolver
 			return false;
 		}
 
+		static List<int> ImplicitConvertabilityTable = new List<int> { 
+			{(DTokens.Long << 8) + DTokens.Int},
+			{(DTokens.Ulong << 8) + DTokens.Uint},
+		};
+
 		/// <summary>
 		/// Checks results for implicit type convertability 
 		/// </summary>
@@ -121,14 +127,7 @@ namespace D_Parser.Resolver
 				if (sr1.TypeToken == sr2.TypeToken /*&& sr1.Modifier == sr2.Modifier*/)
 					return true;
 
-				switch (sr2.TypeToken)
-				{
-					case DTokens.Int:
-						return sr1.TypeToken == DTokens.Uint;
-					case DTokens.Uint:
-						return sr1.TypeToken == DTokens.Int;
-					//TODO: Further types that can be converted into each other implicitly
-				}
+				return ImplicitConvertabilityTable.Contains((sr2.TypeToken << 8) + sr1.TypeToken);
 			}
 			else if (resToCheck is UserDefinedType && targetType is UserDefinedType)
 				return IsImplicitlyConvertible((UserDefinedType)resToCheck, (UserDefinedType)targetType);

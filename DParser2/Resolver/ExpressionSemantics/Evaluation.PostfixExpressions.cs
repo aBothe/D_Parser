@@ -593,35 +593,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return null;
 			}
 
-			/*
-			 * Try to get ufcs functions at first!
-			 * 
-			 * void foo(int i) {}
-			 * 
-			 * class A
-			 * {
-			 *	void foo(int i, int a) {}
-			 * 
-			 *	void bar(){
-			 *		123.foo(23); // Not allowed! 
-			 *		// Anyway, if we tried to search ufcs functions AFTER searching from child to parent scope levels,
-			 *		// it would return the local foo() only, not the global one..which would be an error then!
-			 *  }
-			 *  
-			 * Probably also worth to notice is the property syntax..are property functions rather preferred than ufcs ones?
-			 * }
-			 */
-			if(overloads == null || EvalAndFilterOverloads)
-			{
-				var	oo = UFCSResolver.TryResolveUFCS(baseExpression, acc, ctxt);
-	
-				if (oo.Count > 0) {
-					if (overloads != null && overloads.Length != 0)
-						oo.AddRange(overloads);
-					overloads = oo.ToArray();
-				}
-			}
-
 			// If evaluation active and the access expression is stand-alone, return a single item only.
 			if (EvalAndFilterOverloads && ValueProvider != null)
 				return new[] { (R)new Evaluation(ValueProvider).TryDoCTFEOrGetValueRefs(overloads, acc.AccessExpression) };
