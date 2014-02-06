@@ -12,6 +12,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		internal Evaluation ev;
 		
 		public ResolutionContext ResolutionContext { get; protected set; }
+		public AbstractSymbolValueProvider(ResolutionContext ctxt)
+		{
+			this.ResolutionContext = ctxt;
+		}
 
 		public ISymbolValue this[IdentifierExpression id]
 		{
@@ -75,10 +79,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	/// </summary>
 	public class StandardValueProvider : AbstractSymbolValueProvider
 	{
-		public StandardValueProvider(ResolutionContext ctxt)
-		{
-			ResolutionContext = ctxt;
-		}
+		public StandardValueProvider(ResolutionContext ctxt) : base(ctxt)	{	}
 
 		public override bool ConstantOnly
 		{

@@ -58,11 +58,29 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				{
 					if (ImplicitlyExecute)
 					{
-						if (overloads.Length > 1){
-							EvalError(idOrTemplateInstance, ambigousExprMsg, overloads);
+						Dictionary<DVariable, ISymbolValue> targetArgs = null, newArgs;
+
+						foreach(var overload in overloads)
+							if ((mr = overload as MemberSymbol) != null &&
+								mr.Definition is DMethod &&
+								FunctionEvaluation.AssignCallArgumentsToIC((overload as MemberSymbol).Definition as DMethod, executionArguments, ValueProvider, out newArgs))
+							{
+								if (targetArgs == null)
+									targetArgs = newArgs;
+								else
+								{
+									EvalError(idOrTemplateInstance, ambigousExprMsg, overloads);
+									return null;
+								}
+							}
+
+						if (targetArgs == null)
+						{
+							EvalError(idOrTemplateInstance, "No matching overload found", overloads);
 							return null;
 						}
-						return FunctionEvaluation.Execute(mr, executionArguments, ValueProvider);
+
+						return FunctionEvaluation.Execute(mr, targetArgs, ValueProvider);
 					}
 					
 					return new InternalOverloadValue(overloads);
@@ -101,7 +119,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			if (id.IsIdentifier)
 			{
-				var o = ExpressionTypeEvaluation.GetOverloads(id, ctxt);
+				var o = ExpressionTypeEvaluation.EvaluateTypes(id, ctxt);
 
 				if (o == null || o.Length == 0)
 				{

@@ -77,6 +77,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CompletionTests.cs" />
+    <Compile Include="CtfeTests.cs" />
     <Compile Include="EvaluationTests.cs" />
     <Compile Include="FormatterTests.cs" />
     <Compile Include="IndentationTests.cs" />

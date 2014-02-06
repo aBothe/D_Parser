@@ -144,6 +144,7 @@
     <Compile Include="Resolver\ConditionalCompilation.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Caching\ExpressionCache.cs" />
     <Compile Include="Resolver\ExpressionSemantics\CTFE\FunctionEvaluation.cs" />
+    <Compile Include="Resolver\ExpressionSemantics\CTFE\InterpretationContext.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.Identifiers.cs" />
     <Compile Include="Resolver\ExpressionSemantics\EvaluationException.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.TypeidExpression.cs" />
