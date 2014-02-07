@@ -369,10 +369,10 @@ namespace D_Parser.Resolver.TypeResolution
 					if (dtup == null)
 						return new ArrayType (valueType, fixedArrayLength, ad);
 
-					if (fixedArrayLength < dtup.Items.Length)
+					if (dtup.Items != null && fixedArrayLength < dtup.Items.Length)
 						return AbstractType.Get(dtup.Items [fixedArrayLength]);
 					else {
-						ctxt.LogError (ad, "TypeTuple only consists of " + dtup.Items.Length + " items. Can't access item at index " + fixedArrayLength);
+						ctxt.LogError (ad, "TypeTuple only consists of " + (dtup.Items != null ? dtup.Items.Length : 0) + " items. Can't access item at index " + fixedArrayLength);
 						return null;
 					}
 				}

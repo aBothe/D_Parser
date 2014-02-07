@@ -2279,8 +2279,7 @@ class aa(T) if(is(T==int)) {}");
 		[Test]
 		public void Unqual()
 		{
-			var ctxt = CreateCtxt("A", @"module A;
-
+			var ctxt = CreateCtxt("A", @"module std.typecons;
 template Unqual(T)
 {
     version (none) // Error: recursive alias declaration @@@BUG1308@@@
@@ -2301,6 +2300,13 @@ template Unqual(T)
         else static if (is(T U ==       shared U )) alias U Unqual;
         else                                        alias T Unqual;
     }
+}", @"module A;
+
+import std.typecons;
+
+class Tmpl(M)
+{
+	Unqual!M inst;
 }
 
 alias immutable(int[]) ImmIntArr;
@@ -2315,6 +2321,18 @@ unittest
 			AbstractType t;
 			PrimitiveType pt;
 			ArrayType at;
+
+			var A = ctxt.ParseCache[0]["A"];
+			var Tmpl = A["Tmpl"].First() as DClassLike;
+			ctxt.CurrentContext.Set(Tmpl);
+
+			td = DParser.ParseBasicType("inst");
+			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			t = (t as MemberSymbol).Base;
+			Assert.That(t, Is.TypeOf(typeof(TemplateType)));
+
+			ctxt.CurrentContext.Set(A);
 
 			td = DParser.ParseBasicType("Unqual!ImmIntArr");
 			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);

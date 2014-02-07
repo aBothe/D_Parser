@@ -128,6 +128,9 @@ namespace D_Parser.Resolver.TypeResolution
 			ISemantic firstArgument,int nameHash,CodeLocation nameLoc,
 			ResolutionContext ctxt, ISyntaxRegion nameSr = null)
 		{
+			if (firstArgument == null || ctxt == null)
+				return new List<AbstractType>();
+
 			var us = new UFCSResolver (ctxt, firstArgument, nameHash, nameSr);
 			us.IterateThroughScopeLayers (nameLoc, MemberFilter.Methods | MemberFilter.Templates);
 			return us.matches;
@@ -138,6 +141,9 @@ namespace D_Parser.Resolver.TypeResolution
 			PostfixExpression_Access acc, 
 			ResolutionContext ctxt)
 		{
+			if (firstArgument == null || acc == null || ctxt == null)
+				return new List<AbstractType>();
+
 			int name;
 
 			if (acc.AccessExpression is IdentifierExpression)

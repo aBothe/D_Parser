@@ -80,7 +80,14 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 			var ctxt = vp.ResolutionContext;
 			ctxt.PushNewScope(dm, dm.Body);
 
-			dm.Body.Accept(eval);
+			try
+			{
+				dm.Body.Accept(eval);
+			}
+			catch (CtfeException ex)
+			{
+				vp.LogError(dm, "Can't execute function at precompile time: " + ex.Message);
+			}
 
 			var ret = Evaluation.GetVariableContents(eval.returnedValue, eval.vp);
 

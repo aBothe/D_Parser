@@ -81,7 +81,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					if (!tpd.Handle(p, tpl_params[p] != null ? tpl_params[p].Base : null))
 						return false;
 
-			//TODO: Put all tpl_params results into the resolver context or make a new scope or something! 
 			if (retTrue)
 			{
 				foreach (var kv in tpl_params)

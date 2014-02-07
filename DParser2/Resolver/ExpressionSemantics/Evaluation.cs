@@ -55,21 +55,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// </summary>
 		public static ISymbolValue EvaluateValue (IExpression x, ResolutionContext ctxt, bool lazyVariableValueEvaluation = false)
 		{
-			try 
-			{
-				var vp = new StandardValueProvider (ctxt);
-				var v = EvaluateValue (x, vp);
+			var vp = new StandardValueProvider (ctxt);
+			var v = EvaluateValue (x, vp);
 				
-				if (v is VariableValue && !lazyVariableValueEvaluation) {
-					return EvaluateValue (v as VariableValue, vp);
-				}
+			if (v is VariableValue && !lazyVariableValueEvaluation)
+				return EvaluateValue (v as VariableValue, vp);
 
-				return v;
-			} 
-			catch (Exception ex) 
-			{
-				return new ErrorValue(new EvaluationException(x, ex.Message + "\n\n" + ex.StackTrace));
-			}
+			return v;
 		}
 
 		public static ISymbolValue EvaluateValue(IExpression x, AbstractSymbolValueProvider vp)
