@@ -75,6 +75,8 @@ namespace D_Parser.Resolver
 			
 			return s as AbstractType;
 		}
+
+		public abstract AbstractType Clone(bool cloneBase);
 	}
 
 	public class PrimitiveType : AbstractType
@@ -112,6 +114,11 @@ namespace D_Parser.Resolver
 				                                  	InnerType = new DTokenDeclaration(TypeToken)});
 			}
 		}
+
+		public override AbstractType Clone(bool cloneBase)
+		{
+			return new PrimitiveType(TypeToken, modifier);
+		}
 	}
 
 	#region Derived data types
@@ -141,6 +148,11 @@ namespace D_Parser.Resolver
 				return base.TypeDeclarationOf ?? new PointerDecl(Base==null ? null : Base.TypeDeclarationOf);
 			}
 		}
+
+		public override AbstractType Clone(bool cloneBase)
+		{
+			return new PointerType(cloneBase && Base != null ? Base.Clone(true) : Base, base.DeclarationOrExpressionBase);
+		}
 	}
 
 	public class ArrayType : AssocArrayType
@@ -155,12 +167,19 @@ namespace D_Parser.Resolver
 			: this(ValueType, td)
 		{
 			FixedLength = ArrayLength;
-			IsStaticArray = true;
+			IsStaticArray = ArrayLength >= 0;
 		}
 
 		public override string ToCode()
 		{
 			return (Base != null ? Base.ToCode() : "") + (IsStaticArray && FixedLength >= 0 ? string.Format("[{0}]",FixedLength) : "[]");
+		}
+
+		public override AbstractType Clone(bool cloneBase)
+		{
+			if(IsStaticArray)
+				return new ArrayType(cloneBase && Base != null ? Base.Clone(true) : Base, base.DeclarationOrExpressionBase);
+			return new ArrayType(cloneBase && Base != null ? Base.Clone(true) : Base, FixedLength, base.DeclarationOrExpressionBase);
 		}
 	}
 
@@ -205,6 +224,11 @@ namespace D_Parser.Resolver
 				};
 			}
 		}
+
+		public override AbstractType Clone(bool cloneBase)
+		{
+			return new AssocArrayType(cloneBase && Base != null ? Base.Clone(true) : Base, cloneBase && KeyType != null ? KeyType.Clone(true) : KeyType, base.DeclarationOrExpressionBase);
+		}
 	}
 
 	/// <summary>
@@ -229,6 +253,11 @@ namespace D_Parser.Resolver
 			get {
 				return Delegate.TypeDeclarationOf;
 			}
+		}
+
+		public override AbstractType Clone(bool cloneBase)
+		{
+			return new DelegateCallSymbol(cloneBase && Delegate != null ? Delegate.Clone(true) as DelegateType : Delegate, base.DeclarationOrExpressionBase);
 		}
 	}
 
@@ -292,6 +321,12 @@ namespace D_Parser.Resolver
 
 				return dd;
 			}
+		}
+
+		public override AbstractType Clone(bool cloneBase)
+		{
+			//TODO: Clone parameters
+			return new DelegateType(cloneBase && Base != null ? Base.Clone(true) : Base, base.DeclarationOrExpressionBase as DelegateDeclaration, Parameters);
 		}
 	}
 	#endregion
@@ -364,6 +399,8 @@ namespace D_Parser.Resolver
 
 		public AliasedType(DVariable AliasDefinition, AbstractType Type, ISyntaxRegion td, ReadOnlyCollection<TemplateParameterSymbol> deducedTypes=null)
 			: base(AliasDefinition,Type, td, deducedTypes) {}
+		public AliasedType(DVariable AliasDefinition, AbstractType Type, ISyntaxRegion td, IEnumerable<TemplateParameterSymbol> deducedTypes)
+			: base(AliasDefinition, Type, td, deducedTypes) { }
 
 		public override string ToString()
 		{
@@ -382,6 +419,11 @@ namespace D_Parser.Resolver
 				return Base != null ? Base.TypeDeclarationOf : DeclarationOrExpressionBase as ITypeDeclaration;
 			}
 		}
+
+		public override AbstractType Clone(bool cloneBase)
+		{
+			return new AliasedType(Definition, cloneBase && Base != null ? Base.Clone(true) : Base, DeclarationOrExpressionBase, DeducedTypes);
+		}
 	}
 
 	public class EnumType : UserDefinedType
@@ -395,6 +437,11 @@ namespace D_Parser.Resolver
 		{
 			return "(enum) " + base.ToString();
 		}
+
+		public override AbstractType Clone(bool cloneBase)
+		{
+			return new EnumType(Definition, cloneBase && Base != null ? Base.Clone(true) : Base, DeclarationOrExpressionBase);
+		}
 	}
 
 	public class StructType : TemplateIntermediateType
@@ -405,6 +452,11 @@ namespace D_Parser.Resolver
 		{
 			return "(struct) " + base.ToString();
 		}
+
+		public override AbstractType Clone(bool cloneBase)
+		{
+			return new StructType(Definition, DeclarationOrExpressionBase, DeducedTypes);
+		}
 	}
 
 	public class UnionType : TemplateIntermediateType
@@ -414,6 +466,11 @@ namespace D_Parser.Resolver
 		public override string ToString()
 		{
 			return "(union) " + base.ToString();
+		}
+
+		public override AbstractType Clone(bool cloneBase)
+		{
+			return new UnionType(Definition, DeclarationOrExpressionBase, DeducedTypes);
 		}
 	}
 
@@ -435,6 +492,11 @@ namespace D_Parser.Resolver
 		{
 			return "(class) "+base.ToString();
 		}
+
+		public override AbstractType Clone(bool cloneBase)
+		{
+			return new ClassType(Definition, DeclarationOrExpressionBase, cloneBase && Base != null ? Base.Clone(true) as TemplateIntermediateType : Base as TemplateIntermediateType, BaseInterfaces, DeducedTypes);
+		}
 	}
 
 	public class InterfaceType : TemplateIntermediateType
@@ -448,21 +510,36 @@ namespace D_Parser.Resolver
 			InterfaceType[] baseInterfaces,
 			ReadOnlyCollection<TemplateParameterSymbol> deducedTypes)
 			: base(dc, td, null, baseInterfaces, deducedTypes) { }
+
+		public override AbstractType Clone(bool cloneBase)
+		{
+			return new InterfaceType(Definition, DeclarationOrExpressionBase, BaseInterfaces, DeducedTypes);
+		}
 	}
 
 	public class TemplateType : TemplateIntermediateType
 	{
 		public TemplateType(DClassLike dc, ISyntaxRegion td, IEnumerable<TemplateParameterSymbol> inheritedTypeParams = null) : base(dc, td, null, null, inheritedTypeParams) { }
 		public TemplateType(DClassLike dc, ISyntaxRegion td, ReadOnlyCollection<TemplateParameterSymbol> inheritedTypeParams = null) : base(dc, td, null, null, inheritedTypeParams) { }
+
+		public override AbstractType Clone(bool cloneBase)
+		{
+			return new TemplateType(Definition, DeclarationOrExpressionBase, DeducedTypes);
+		}
 	}
 	
 	public class MixinTemplateType : TemplateType
 	{
 		public MixinTemplateType(DClassLike dc, ISyntaxRegion td, IEnumerable<TemplateParameterSymbol> inheritedTypeParams = null) : base(dc, td, inheritedTypeParams) { }
 		public MixinTemplateType(DClassLike dc, ISyntaxRegion td, ReadOnlyCollection<TemplateParameterSymbol> inheritedTypeParams = null) : base(dc, td, inheritedTypeParams) { }
+
+		public override AbstractType Clone(bool cloneBase)
+		{
+			return new MixinTemplateType(Definition, DeclarationOrExpressionBase, DeducedTypes);
+		}
 	}
 
-	public class TemplateIntermediateType : UserDefinedType
+	public abstract class TemplateIntermediateType : UserDefinedType
 	{
 		public new DClassLike Definition { get { return base.Definition as DClassLike; } }
 
@@ -489,14 +566,16 @@ namespace D_Parser.Resolver
 		public new EponymousTemplate Definition { get { return base.Definition as EponymousTemplate; } }
 
 		public EponymousTemplateType(EponymousTemplate ep,
-			ReadOnlyCollection<TemplateParameterSymbol> deducedTypes = null, ISyntaxRegion td = null) : base(ep, null, deducedTypes, td)
-		{
-
-		}
+			ReadOnlyCollection<TemplateParameterSymbol> deducedTypes = null, ISyntaxRegion td = null) : base(ep, null, deducedTypes, td) { }
 
 		public override string ToString ()
 		{
 			return "(Eponymous Template Type) "+ Definition;
+		}
+
+		public override AbstractType Clone(bool cloneBase)
+		{
+			return new EponymousTemplateType(Definition, DeducedTypes, DeclarationOrExpressionBase);
 		}
 	}
 
@@ -513,6 +592,11 @@ namespace D_Parser.Resolver
 			this.n = n;
 			this.ValueGetter = valueGetter;
 		}
+
+		public override AbstractType Clone(bool cloneBase)
+		{
+			return new StaticProperty(Definition, cloneBase && Base != null ? Base.Clone(true) : Base, ValueGetter);
+		}
 	}
 
 	public class MemberSymbol : DSymbol
@@ -524,6 +608,11 @@ namespace D_Parser.Resolver
 		public MemberSymbol(DNode member, AbstractType memberType, ISyntaxRegion td,
 			IEnumerable<TemplateParameterSymbol> deducedTypes)
 			: base(member, memberType, deducedTypes, td) { }
+
+		public override AbstractType Clone(bool cloneBase)
+		{
+			return new MemberSymbol(Definition, cloneBase && Base != null ? Base.Clone(true) : Base, DeclarationOrExpressionBase , DeducedTypes);
+		}
 	}
 	
 	public class TemplateParameterSymbol : MemberSymbol
@@ -563,6 +652,11 @@ namespace D_Parser.Resolver
 		{
 			return "<"+(Parameter == null ? "(unknown)" : Parameter.Name)+">"+(ParameterValue!=null ? ParameterValue.ToString() : (Base==null ? "" : Base.ToString()));
 		}
+
+		public override AbstractType Clone(bool cloneBase)
+		{
+			return new TemplateParameterSymbol(Parameter, ParameterValue ?? (cloneBase && Base != null ? Base.Clone(true) : Base) as ISemantic, DeclarationOrExpressionBase);
+		}
 	}
 	
 	/// <summary>
@@ -579,6 +673,11 @@ namespace D_Parser.Resolver
 			return (Base != null ? Base.ToCode () : string.Empty) + "[" + 
 				base.DeclarationOrExpressionBase.ToString() + "]";
 		}
+
+		public override AbstractType Clone(bool cloneBase)
+		{
+			return new ArrayAccessSymbol(DeclarationOrExpressionBase as PostfixExpression_Index, cloneBase && Base != null ? Base.Clone(true) : Base);
+		}
 	}
 
 	public class ModuleSymbol : DSymbol
@@ -590,6 +689,11 @@ namespace D_Parser.Resolver
 		public override string ToString()
 		{
 			return "(module) "+base.ToString();
+		}
+
+		public override AbstractType Clone(bool cloneBase)
+		{
+			return new ModuleSymbol(Definition, DeclarationOrExpressionBase, cloneBase && Base != null ? Base.Clone(true) as PackageSymbol : Base as PackageSymbol);
 		}
 	}
 
@@ -609,6 +713,11 @@ namespace D_Parser.Resolver
 		public override string ToString()
 		{
 			return "(package) "+base.ToString();
+		}
+
+		public override AbstractType Clone(bool cloneBase)
+		{
+			return new PackageSymbol(Package, DeclarationOrExpressionBase);
 		}
 	}
 	#endregion
@@ -656,6 +765,11 @@ namespace D_Parser.Resolver
 			{
 				return Items != null && Items.All(i => i is AbstractType);
 			}
+		}
+
+		public override AbstractType Clone(bool cloneBase)
+		{
+			return new DTuple(DeclarationOrExpressionBase, Items);
 		}
 	}
 }

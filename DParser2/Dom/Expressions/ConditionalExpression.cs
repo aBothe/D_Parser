@@ -15,7 +15,9 @@ namespace D_Parser.Dom.Expressions
 
 		public override string ToString()
 		{
-			return this.OrOrExpression.ToString() + "?" + TrueCaseExpression.ToString() + ':' + FalseCaseExpression.ToString();
+			return (OrOrExpression != null ? OrOrExpression.ToString() : "") + "?" + 
+				(TrueCaseExpression != null ? TrueCaseExpression.ToString() : "") + ':' + 
+				(FalseCaseExpression != null ? FalseCaseExpression.ToString() : "");
 		}
 
 		public CodeLocation Location

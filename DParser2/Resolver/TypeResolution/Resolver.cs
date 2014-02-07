@@ -404,7 +404,7 @@ namespace D_Parser.Resolver.TypeResolution
 					break;
 
 				// If 'Where' is beyond its start location
-				if (Where > midElement.Location)
+				if (Where >= midElement.Location)
 				{
 					start += midIndex;
 

@@ -345,8 +345,5 @@
   </Target>
   -->
   <ItemGroup />
-  <ItemGroup>
-    <Folder Include="Dom\Statements\" />
-    <Folder Include="Dom\Expressions\" />
-  </ItemGroup>
+  <ItemGroup />
 </Project>

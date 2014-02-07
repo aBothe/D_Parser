@@ -28,7 +28,7 @@ namespace D_Parser.Resolver.TypeResolution
 						if (res == null && tde.Declaration is IdentifierDeclaration)
 							res = TypeDeclarationResolver.Resolve(tde.Declaration as IdentifierDeclaration, ctxt, null, false);
 
-						if (ctxt.CheckForSingleResult(res, tde.Declaration) || res != null)
+						if (ctxt.CheckForSingleResult(res, tde.Declaration) || (res != null && res.Length > 0))
 						{
 							var mr = res[0] as MemberSymbol;
 							if (mr != null && mr.Definition is DVariable)

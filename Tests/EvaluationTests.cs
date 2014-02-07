@@ -352,6 +352,31 @@ template isDynArg(T) {
 			Assert.IsTrue(EvalIsExpression("typeof(A)", vp));
 			Assert.IsFalse(EvalIsExpression("typeof(D)", vp));
 		}
+
+		[Test]
+		public void IsExpressionAlias()
+		{
+			var ctxt = ResolutionTests.CreateCtxt("A", @"module A;
+static if(is(const(int)* U == const(U)*))
+U var;
+");
+
+			IExpression x;
+			AbstractType t;
+			DSymbol ds;
+
+			x = DParser.ParseExpression("var");
+			(x as IdentifierExpression).Location = new CodeLocation(2, 3);
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+			ds = t as DSymbol;
+
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That(ds.Base, Is.TypeOf(typeof(TemplateParameterSymbol)));
+			ds = ds.Base as DSymbol;
+			Assert.That(ds.Base, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.That((ds.Base as PrimitiveType).Modifier, Is.EqualTo(0));
+			
+		}
 		
 		[Test]
 		public void HashingTests()

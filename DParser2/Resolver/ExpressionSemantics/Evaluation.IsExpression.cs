@@ -46,7 +46,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			 * in order to find aliases and/or specified template parameters!
 			 */
 
-			var expectedTemplateParams = new TemplateParameter[isExpression.TemplateParameterList.Length + 1];
+			var expectedTemplateParams = new TemplateParameter[isExpression.TemplateParameterList == null  ? 1 : (isExpression.TemplateParameterList.Length + 1)];
 			expectedTemplateParams [0] = isExpression.ArtificialFirstSpecParam;
 			if(expectedTemplateParams.Length > 1)
 				isExpression.TemplateParameterList.CopyTo (expectedTemplateParams, 1);
@@ -82,6 +82,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						return false;
 
 			//TODO: Put all tpl_params results into the resolver context or make a new scope or something! 
+			if (retTrue)
+			{
+				foreach (var kv in tpl_params)
+					ctxt.CurrentContext.DeducedTemplateParameters[kv.Key] = kv.Value;
+			}
 
 			return retTrue;
 		}

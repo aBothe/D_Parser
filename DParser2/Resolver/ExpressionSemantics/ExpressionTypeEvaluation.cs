@@ -28,6 +28,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			return "<Overloads>";
 		}
+
+		public override AbstractType Clone(bool cloneBase)
+		{
+			return new AmbiguousType(Overloads);
+		}
 	}
 
 	public class ExpressionTypeEvaluation : ExpressionVisitor<AbstractType>

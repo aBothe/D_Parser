@@ -154,6 +154,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 		protected bool ScanBlock(IBlockNode curScope, CodeLocation Caret, MemberFilter VisibleMembers, bool publicImportsOnly = false)
 		{
+			if (SearchAttributesForIsExprDecls(curScope, Caret, VisibleMembers))
+				return true;
+
 			if (curScope is DClassLike)
 			{
 				return DeepScanClass(new ClassType(curScope as DClassLike, null,null), VisibleMembers);
@@ -392,7 +395,11 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 								dv.Initializer != null &&
 								!(Caret < dv.Initializer.Location ||
 								Caret > dv.Initializer.EndLocation))
+							{
+								if (HandleExpression(dv.Initializer, VisibleMembers))
+									return true;
 								continue;
+							}
 						}
 
 						if (HandleItem(decl))
@@ -421,14 +428,23 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				ctxt.CurrentContext.Set(back);
 
 				if ((r = DResolver.StripMemberSymbols(r)) != null)
-					if (r is TemplateIntermediateType && 
+					if (r is TemplateIntermediateType &&
 					DeepScanClass(r as TemplateIntermediateType, VisibleMembers))
-							return true;
+						return true;
 			}
+			else if (Statement is IExpressionContainingStatement)
+				foreach (var x in (Statement as IExpressionContainingStatement).SubExpressions)
+					if (x.Location >= Caret && x.EndLocation <= Caret && HandleExpression(x, VisibleMembers))
+						return true;
 
 			if (Statement is StatementContainingStatement)
 				foreach (var s in (Statement as StatementContainingStatement).SubStatements)
 				{
+					if (s is IExpressionContainingStatement)
+						foreach (var x in (s as IExpressionContainingStatement).SubExpressions)
+							if (x.Location >= Caret && x.EndLocation <= Caret && HandleExpression(x, VisibleMembers))
+								return true;
+
 					/*
 					 * void foo()
 					 * {
@@ -597,6 +613,75 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		{
 
 		}
+		#endregion
+
+		#region Is-Expression/in-expression declarations
+
+		bool SearchAttributesForIsExprDecls(IBlockNode block, CodeLocation caret, MemberFilter vis)
+		{
+			var dblock = block as DBlockNode;
+			if (dblock != null)
+			{
+				foreach(var mbl in dblock.GetMetaBlockStack(caret, false, true))
+					if(mbl is AttributeMetaDeclaration)
+						foreach(var attr in (mbl as AttributeMetaDeclaration).AttributeOrCondition)
+							if (attr is StaticIfCondition)
+								if (HandleExpression((attr as StaticIfCondition).Expression, vis))
+									return true;
+			}
+
+			var n = DResolver.SearchRegionAt<INode>(block.Children.ItemAt, block.Count, caret) as DNode;
+
+			if (n != null && n.Attributes != null && n.Attributes.Count != 0)
+				foreach (var attr in n.Attributes)
+					if (attr is StaticIfCondition)
+						if (HandleExpression((attr as StaticIfCondition).Expression, vis))
+							return true;
+
+			return false;
+		}
+
+		class IsExprVisitor : DefaultDepthFirstVisitor
+		{
+			AbstractVisitor v;
+			public bool ret;
+
+			public IsExprVisitor(AbstractVisitor v)
+			{
+				this.v = v;
+			}
+
+			public override void Visit(IsExpression x)
+			{
+				if (x.TypeAliasIdentifierHash != 0)
+					ret |= v.HandleItem(x.ArtificialFirstSpecParam.Representation);
+			}
+		}
+
+		IsExprVisitor isExprVisitor;
+
+		/// <summary>
+		/// Scans an expression for aliases inside Is-Expressions or other implicit declarations
+		/// </summary>
+		/// <param name="x"></param>
+		/// <param name="vis"></param>
+		/// <returns></returns>
+		bool HandleExpression(IExpression x, MemberFilter vis)
+		{
+			if (isExprVisitor == null)
+				isExprVisitor = new IsExprVisitor(this);
+
+			x.Accept(isExprVisitor);
+
+			if (isExprVisitor.ret)
+			{
+				isExprVisitor.ret = false;
+				return true;
+			}
+
+			return false;
+		}
+
 		#endregion
 
 		#region Imports

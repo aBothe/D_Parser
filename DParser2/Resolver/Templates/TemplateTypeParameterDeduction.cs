@@ -434,9 +434,29 @@ namespace D_Parser.Resolver.Templates
 			// Modifiers must be equal on both sides
 			if (m.Modifier != r.Modifier)
 				return false;
-				
+
+			// Strip modifier, but: immutable(int[]) becomes immutable(int)[] ?!
+			AbstractType newR;
+			if (r is AssocArrayType)
+			{
+				var aa = r as AssocArrayType;
+				var clonedValueType = aa.Modifier != r.Modifier ? aa.ValueType.Clone(false) : aa.ValueType;
+				clonedValueType.Modifier = r.Modifier;
+
+				var at = aa as ArrayType;
+				if (at != null)
+					newR = at.IsStaticArray ? new ArrayType(clonedValueType, at.FixedLength, r.DeclarationOrExpressionBase) : new ArrayType(clonedValueType, r.DeclarationOrExpressionBase);
+				else
+					newR = new AssocArrayType(clonedValueType, aa.KeyType, r.DeclarationOrExpressionBase);
+			}
+			else
+			{
+				newR = r.Clone(false);
+				newR.Modifier = 0;
+			}
+
 			// Now compare the type inside the parentheses with the given type 'r'
-			return m.InnerType != null && HandleDecl(p, m.InnerType, r);
+			return m.InnerType != null && HandleDecl(p, m.InnerType, newR);
 		}
 
 		bool HandleDecl(TypeOfDeclaration t, AbstractType r)

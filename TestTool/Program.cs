@@ -23,8 +23,9 @@ namespace TestTool
 			sw2.Stop();
 			Console.WriteLine (sw2.ElapsedMilliseconds);
 			return;*/
-			//(new ResolutionTests ()).EmptyTypeTuple ();
-			(new CtfeTests()).ReturnStmt();			return;
+			(new ResolutionTests ()).Unqual ();
+			(new EvaluationTests()).IsExpressionAlias();			
+			return;
 
 			// Indent testing
 			/*var code = @"

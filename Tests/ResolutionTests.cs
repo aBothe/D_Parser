@@ -2276,6 +2276,142 @@ class aa(T) if(is(T==int)) {}");
 			Assert.That(x, Is.Null);
 		}
 
+		[Test]
+		public void Unqual()
+		{
+			var ctxt = CreateCtxt("A", @"module A;
+
+template Unqual(T)
+{
+    version (none) // Error: recursive alias declaration @@@BUG1308@@@
+    {
+             static if (is(T U ==     const U)) alias Unqual!U Unqual;
+        else static if (is(T U == immutable U)) alias Unqual!U Unqual;
+        else static if (is(T U ==     inout U)) alias Unqual!U Unqual;
+        else static if (is(T U ==    shared U)) alias Unqual!U Unqual;
+        else                                    alias        T Unqual;
+    }
+    else // workaround
+    {
+             static if (is(T U == shared(inout U))) alias U Unqual;
+        else static if (is(T U == shared(const U))) alias U Unqual;
+        else static if (is(T U ==        inout U )) alias U Unqual;
+        else static if (is(T U ==        const U )) alias U Unqual;
+        else static if (is(T U ==    immutable U )) alias U Unqual;
+        else static if (is(T U ==       shared U )) alias U Unqual;
+        else                                        alias T Unqual;
+    }
+}
+
+alias immutable(int[]) ImmIntArr;
+
+unittest
+{
+    static assert(is(A == immutable(int)[]));
+}
+");
+
+			ITypeDeclaration td;
+			AbstractType t;
+			PrimitiveType pt;
+			ArrayType at;
+
+			td = DParser.ParseBasicType("Unqual!ImmIntArr");
+			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(AliasedType)));
+			t = DResolver.StripAliasSymbol(t);
+			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
+			at = (t as TemplateParameterSymbol).Base as ArrayType;
+			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(ArrayType)));
+			pt = at.ValueType as PrimitiveType;
+			Assert.That(at.ValueType, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.That(pt.Modifier, Is.EqualTo(DTokens.Immutable));
+			// immutable(int[]) becomes immutable(int)[] ?!
+
+			ctxt.CurrentContext.DeducedTemplateParameters.Clear();
+
+			td = DParser.ParseBasicType("Unqual!int");
+			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(AliasedType)));
+			t = DResolver.StripAliasSymbol(t);
+			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
+			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+
+			ctxt.CurrentContext.DeducedTemplateParameters.Clear();
+
+			td = DParser.ParseBasicType("Unqual!(const(int))");
+			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(AliasedType)));
+			t = DResolver.StripAliasSymbol(t);
+			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
+			pt = (t as TemplateParameterSymbol).Base as PrimitiveType;
+			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.That(pt.Modifier, Is.EqualTo(0));
+
+			ctxt.CurrentContext.DeducedTemplateParameters.Clear();
+
+			td = DParser.ParseBasicType("Unqual!(inout(int))");
+			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(AliasedType)));
+			t = DResolver.StripAliasSymbol(t);
+			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
+			pt = (t as TemplateParameterSymbol).Base as PrimitiveType;
+			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.That(pt.Modifier, Is.EqualTo(0));
+
+			ctxt.CurrentContext.DeducedTemplateParameters.Clear();
+
+			td = DParser.ParseBasicType("Unqual!(immutable(int))");
+			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(AliasedType)));
+			t = DResolver.StripAliasSymbol(t);
+			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
+			pt = (t as TemplateParameterSymbol).Base as PrimitiveType;
+			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.That(pt.Modifier, Is.EqualTo(0));
+
+			ctxt.CurrentContext.DeducedTemplateParameters.Clear();
+
+			td = DParser.ParseBasicType("Unqual!(shared(int))");
+			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(AliasedType)));
+			t = DResolver.StripAliasSymbol(t);
+			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
+			pt = (t as TemplateParameterSymbol).Base as PrimitiveType;
+			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.That(pt.Modifier, Is.EqualTo(0));
+
+			ctxt.CurrentContext.DeducedTemplateParameters.Clear();
+
+			td = DParser.ParseBasicType("Unqual!(const(shared(int)))");
+			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(AliasedType)));
+			t = DResolver.StripAliasSymbol(t);
+			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
+			pt = (t as TemplateParameterSymbol).Base as PrimitiveType;
+			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.That(pt.Modifier, Is.EqualTo(0));
+
+			ctxt.CurrentContext.DeducedTemplateParameters.Clear();
+
+			td = DParser.ParseBasicType("Unqual!(shared const int)");
+			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(AliasedType)));
+			t = DResolver.StripAliasSymbol(t);
+			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
+			pt = (t as TemplateParameterSymbol).Base as PrimitiveType;
+			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.That(pt.Modifier, Is.EqualTo(0));
+		}
+
 		/// <summary>
 		/// Strings literals which are sliced are now implicitly convertible to a char pointer:
 		/// 
