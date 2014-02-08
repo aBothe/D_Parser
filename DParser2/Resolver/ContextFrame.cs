@@ -23,7 +23,9 @@ namespace D_Parser.Resolver
 		{
 			this.ctxt = ctxt;
 			declarationCondititons = new ConditionalCompilation.ConditionSet(ctxt.CompilationEnvironment);
-			
+
+			ctxt.Push(this);
+
 			Set(b,stmt);
 		}
 		

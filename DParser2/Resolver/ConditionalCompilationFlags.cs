@@ -101,19 +101,32 @@ namespace D_Parser.Resolver
 			// True on default -- static if's etc. will be filtered later on
 			return true;
 		}
-		
+
+		List<StaticIfCondition> conditionsBeingChecked = new List<StaticIfCondition>();
+
 		public bool IsMatching(StaticIfCondition sc, ResolutionContext ctxt)
 		{
-			ISymbolValue v;
-			try{
+			if (conditionsBeingChecked.Contains(sc))
+				return false;
+
+			conditionsBeingChecked.Add(sc);
+			ISymbolValue v = null;
+
+			/*if (System.Threading.Interlocked.Increment(ref stk) > 5)
+			{
+			}*/
+			try
+			{
 				v = Evaluation.EvaluateValue(sc.Expression, ctxt);
-				if(v is VariableValue)
+
+				if (v is VariableValue)
 					v = Evaluation.EvaluateValue(((VariableValue)v).Variable.Initializer, ctxt);
 			}
-			catch
+			finally
 			{
-				return false; //TODO: Remove the try / Notify the user on an exception case -- when the evaluation is considered stable only!!
+				conditionsBeingChecked.Remove(sc);
 			}
+			//System.Threading.Interlocked.Decrement(ref stk);
 			return !Evaluation.IsFalseZeroOrNull(v); //TODO: Just because the expression evaluation isn't working properly currently, let it return true to have it e.g. in the completion list
 		}
 	}

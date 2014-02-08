@@ -86,9 +86,7 @@ namespace D_Parser.Resolver
 			this.CompilationEnvironment = gFlags;
 			this.ParseCache = parseCache;
 			
-			var initCtxt = new ContextFrame(this, bn, stmt);
-			
-			stack.Push(initCtxt);
+			new ContextFrame(this, bn, stmt);
 		}
 		#endregion
 
@@ -96,12 +94,15 @@ namespace D_Parser.Resolver
 		{
 			if (Debugger.IsLogging ()) {
 				var c = CurrentContext;
-				if(c != null && c.ScopedBlock != null)
-					Debugger.Log (0, "Resolution Error", c.ToString());
-				foreach (var err in ResolutionErrors) {
-					if(err.SyntacticalContext != null)
-						Debugger.Log (0, "Resolution Error", err.SyntacticalContext.ToString ());
-					Debugger.Log (0, "Resolution Error", err.Message);
+				if (c != null && c.ScopedBlock != null && ResolutionErrors.Count > 0)
+				{
+					Debugger.Log(0, "Resolution Error", c.ToString() + "\n");
+					foreach (var err in ResolutionErrors)
+					{
+						if (err.SyntacticalContext != null)
+							Debugger.Log(0, "Resolution Error", err.SyntacticalContext.ToString() + "\n");
+						Debugger.Log(0, "Resolution Error", err.Message + "\n");
+					}
 				}
 			}
 		}
@@ -121,7 +122,7 @@ namespace D_Parser.Resolver
 
 		public void PushNewScope(IBlockNode scope, IStatement stmt = null)
 		{
-			stack.Push(new ContextFrame(this, scope, stmt));
+			new ContextFrame(this, scope, stmt);
 		}
 		
 		/// <summary>

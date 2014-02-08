@@ -2467,7 +2467,7 @@ unittest
 			AbstractType t;
 			DToken tk;
 
-			td = DParser.ParseBasicType ("typeof(double.sizeof)", out tk);
+			td = DParser.ParseBasicType ("typeof(int.sizeof)", out tk);
 			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
 
 			Assert.That (t, Is.TypeOf(typeof(PrimitiveType)));

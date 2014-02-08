@@ -83,7 +83,7 @@ namespace D_Parser.Resolver
 			Properties[PropOwnerType.Generic] = props;
 
 			props.AddProp(new StaticPropertyInfo("init", "A type's or variable's static initializer expression") { TypeGetter = help_ReflectType });
-			props.AddProp(new StaticPropertyInfo("sizeof", "Size of a type or variable in bytes", "size_t"));
+			props.AddProp(new StaticPropertyInfo("sizeof", "Size of a type or variable in bytes", DTokens.Int)); // Do not define it as size_t due to unnecessary recursive definition as typeof(int.sizeof)
 			props.AddProp(new StaticPropertyInfo("alignof", "Variable offset", DTokens.Int) { RequireThis = true });
 			props.AddProp(new StaticPropertyInfo("mangleof", "String representing the ‘mangled’ representation of the type", "string"));
 			props.AddProp(new StaticPropertyInfo("stringof", "String representing the source representation of the type", "string"));
@@ -119,7 +119,7 @@ namespace D_Parser.Resolver
 			props = new Dictionary<int, StaticPropertyInfo>();
 			Properties[PropOwnerType.Array] = props;
 
-			props.AddProp(new StaticPropertyInfo("length", "Array length", "size_t") { 
+			props.AddProp(new StaticPropertyInfo("length", "Array length", DTokens.Int) { 
 				RequireThis = true,
 			ValueGetter = 
 				(vp, v) => {
