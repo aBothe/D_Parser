@@ -512,13 +512,15 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			var ch = tit.Definition [DVariable.AliasThisIdentifierHash];
 			if(ch != null){
 				foreach (DVariable aliasDef in ch) {
-					if (MatchesCompilationConditions(aliasDef) || 
-						aliasDef.Type == null)
+					if (aliasDef.Type == null || !MatchesCompilationConditions(aliasDef))
 						continue;
 
 					pop = ctxt.ScopedBlock != tit.Definition;
 					if (pop)
-						ctxt.PushNewScope (tit.Definition);
+					{
+						ctxt.PushNewScope(tit.Definition);
+						ctxt.CurrentContext.IntroduceTemplateParameterTypes(tit);
+					}
 
 					// Resolve the aliased symbol and expect it to be a member symbol(?).
 					//TODO: Check if other cases are allowed as well!
@@ -538,7 +540,10 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					/*
 					 * The aliased member's type can be everything!
 					 */
-					aliasedSymbol = aliasedMember.Base;
+					aliasedSymbol = DResolver.StripAliasSymbol(aliasedMember.Base);
+
+					if (aliasedSymbol is TemplateParameterSymbol)
+						aliasedSymbol = DResolver.StripAliasSymbol((aliasedSymbol as TemplateParameterSymbol).Base);
 
 					foreach (var statProp in StaticProperties.ListProperties (aliasedSymbol))
 						if (HandleItem (statProp))

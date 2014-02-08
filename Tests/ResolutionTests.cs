@@ -2459,6 +2459,53 @@ unittest
 		}
 
 		[Test]
+		public void AliasThis2()
+		{
+			var ctxt = CreateCtxt("A", @"module B;
+struct LockedConnection(Connection) {
+	private {
+		Connection m_conn;
+	}
+	
+	@property inout(Connection) __conn() inout { return m_conn; }
+	
+	alias __conn this;
+}
+
+", @"module A;
+
+import B;
+
+class ConnectionPool(Connection)
+{
+	private {
+		Connection[] m_connections;
+	}
+	
+	LockedConnection!Connection lockConnection(){}
+}
+
+final class RedisConnection
+{
+	int[] bar;
+	int request(string command, in ubyte[][] args...) {}
+}
+
+ConnectionPool!RedisConnection m_connections;
+");
+
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression("m_connections.lockConnection().bar");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			t = (t as DerivedDataType).Base;
+			Assert.That(t, Is.TypeOf(typeof(ArrayType)));
+		}
+
+		[Test]
 		public void TypeofIntSize()
 		{
 			var ctxt = CreateDefCtxt();
