@@ -4081,6 +4081,8 @@ namespace D_Parser.Parser
 			return dbs;
 		}
 
+		#region Asm Statement
+
 		AsmStatement ParseAsmStatement(IBlockNode Scope, IStatement Parent)
 		{
 			Step();
@@ -4510,6 +4512,8 @@ namespace D_Parser.Parser
 					return null;
 			}
 		}
+
+		#endregion
 
 		StatementCondition StmtCondition(IStatement Parent, IBlockNode Scope)
 		{
