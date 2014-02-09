@@ -718,7 +718,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				return false;
 			}
 
-			static MixinTemplateType GetTemplateMixinContent(ResolutionContext ctxt, TemplateMixin tmx, bool pushOnAnalysisStack = true)
+			public static MixinTemplateType GetTemplateMixinContent(ResolutionContext ctxt, TemplateMixin tmx, bool pushOnAnalysisStack = true)
 			{
 				if (pushOnAnalysisStack)
 				{
@@ -970,6 +970,11 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				return VisitExpressionStmt(s);
 			}
 			#endregion
+		}
+
+		public static MixinTemplateType GetTemplateMixinContent(ResolutionContext ctxt, TemplateMixin tmx, bool pushOnAnalysisStack = true)
+		{
+			return StatementHandler.GetTemplateMixinContent(ctxt, tmx, pushOnAnalysisStack);
 		}
 
 
