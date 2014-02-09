@@ -327,6 +327,8 @@
     <Compile Include="Dom\Expressions\ArrayInitializer.cs" />
     <Compile Include="Dom\Expressions\StructInitializer.cs" />
     <Compile Include="Dom\Expressions\StructMemberInitializer.cs" />
+    <Compile Include="Dom\Expressions\AsmRegisterExpression.cs" />
+    <Compile Include="Dom\Expressions\UnaryExpression_SegmentBase.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="readme.txt" />

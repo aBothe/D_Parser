@@ -1,14 +1,13 @@
 ﻿using System;
+using D_Parser.Dom.Expressions;
+using System.Text;
 
 namespace D_Parser.Dom.Statements
 {
 	public class AsmStatement : StatementContainingStatement
 	{
 		public bool Naked { get; set; }
-		/// <summary>
-		/// TODO: Put the instructions into extra ISyntaxRegions
-		/// </summary>
-		public string[] Instructions;
+		public AbstractStatement[] Instructions;
 
 		public override string ToCode()
 		{
@@ -17,26 +16,22 @@ namespace D_Parser.Dom.Statements
 			if (Instructions != null && Instructions.Length > 0)
 			{
 				foreach (var i in Instructions)
-					ret += Environment.NewLine + i + ';';
+					ret += Environment.NewLine + i.ToCode() + ';';
 				ret += Environment.NewLine;
 			}
 
 			return ret + '}';
 		}
 
-		public override void Accept(StatementVisitor vis)
-		{
-			vis.Visit(this);
-		}
-
-		public override R Accept<R>(StatementVisitor<R> vis)
-		{
-			return vis.Visit(this);
-		}
+		public override void Accept(StatementVisitor vis) { vis.Visit(this); }
+		public override R Accept<R>(StatementVisitor<R> vis) { return vis.Visit(this); }
 
 		public sealed class InstructionStatement : AbstractStatement
 		{
-			enum OpCode
+			public OpCode Operation { get; set; }
+			public IExpression[] Arguments { get; set; }
+
+			public enum OpCode
 			{
 				// Analysis disable InconsistentNaming
 				__UNKNOWN__,
@@ -112,7 +107,7 @@ namespace D_Parser.Dom.Statements
 				cmpsd,
 				cmpss,
 				cmpsw,
-				cmpxch8b,
+				cmpxchg8b, // NOTE: This is mispelled in the spec, which has "cmpxch8b"
 				cmpxchg,
 				comisd,
 				comiss,
@@ -266,6 +261,7 @@ namespace D_Parser.Dom.Statements
 				invlpg,
 				iret,
 				iretd,
+				#region Jump Instructions (short modifier valid)
 				ja,
 				jae,
 				jb,
@@ -299,6 +295,7 @@ namespace D_Parser.Dom.Statements
 				jpo,
 				js,
 				jz,
+				#endregion
 				lahf,
 				lar,
 				ldmxcsr,
@@ -421,7 +418,7 @@ namespace D_Parser.Dom.Statements
 				popa,
 				popad,
 				popf,
-				popfd,
+				popfd, // 32-bit ONLY
 				por,
 				prefetchnta,
 				prefetcht0,
@@ -462,7 +459,7 @@ namespace D_Parser.Dom.Statements
 				pusha,
 				pushad,
 				pushf,
-				pushfd,
+				pushfd, // 32-bit ONLY
 				pxor,
 				rcl,
 				rcpps,
@@ -573,6 +570,7 @@ namespace D_Parser.Dom.Statements
 				xorpd,
 				xorps,
 
+				// Pentium 4
 				addsubpd,
 				addsubps,
 				fisttp,
@@ -587,6 +585,7 @@ namespace D_Parser.Dom.Statements
 				movsldup,
 				mwait,
 
+				// AMD
 				pavgusb,
 				pf2id,
 				pfacc,
@@ -608,34 +607,195 @@ namespace D_Parser.Dom.Statements
 				pi2fd,
 				pmulhrw,
 				pswapd,
+
+				#region Not Listed in Spec
+
+				// AVX
+				xsave,
+				xrstor,
+				xsetbv,
+				xgetbv,
+
+				// 64-bit ONLY
+				movsq,
+				popfq,
+				pushfq,
+
+				// SSE 4.1
+				mpsadbw,
+				phminposuw,
+				pmuldq,
+				pmulld,
+				dpps,
+				dppd,
+				blendps,
+				blendpd,
+				blendvps,
+				blendvpd,
+				pblendvb,
+				pblendw,
+				pminsb,
+				pmaxsb,
+				pminuw,
+				pmaxuw,
+				pminud,
+				pmaxud,
+				pminsd,
+				pmaxsd,
+				roundps,
+				roundss,
+				roundpd,
+				roundsd,
+				insertps,
+				pinsrb,
+				pinsrd,
+				pinsrq, // 64-bit ONLY
+				extractps,
+				pextrb,
+				pextrd,
+				pextrq, // 64-bit ONLY
+				pmovsxbw,
+				pmovzxbw,
+				pmovsxbd,
+				pmovzxbd,
+				pmovsxwd,
+				pmovzxwd,
+				pmovsxbq,
+				pmovzxbq,
+				pmovsxwq,
+				pmovzxwq,
+				pmovsxdq,
+				pmovzxdq,
+				ptest,
+				pcmpeqq,
+				packusdw,
+				movntdqa,
+
+				// SSE 4.2
+				crc32,
+				pcmpestri,
+				pcmpestrm,
+				pcmpistri,
+				pcmpistrm,
+				pcmpgtq,
+
+				#endregion
+
 				// Analysis restore InconsistentNaming
 			}
 
-			public static OpCode ParseOpCode(string str)
+			public static bool TryParseOpCode(string str, out OpCode dst)
 			{
 				switch (str.ToLower())
 				{
 					case "in":
-						return OpCode.in_;
+						dst = OpCode.in_;
+						return true;
 					case "int":
-						return OpCode.int_;
+						dst = OpCode.int_;
+						return true;
 					case "lock":
-						return OpCode.lock_;
+						dst = OpCode.lock_;
+						return true;
 					case "out":
-						return OpCode.out_;
+						dst = OpCode.out_;
+						return true;
 					default:
-						OpCode tmp;
-						if (!OpCode.TryParse(str, true, out tmp))
-							return OpCode.__UNKNOWN__;
-						return tmp;
+						return Enum.TryParse(str, true, out dst);
+				}
+			}
+
+			public static string StringForOpCode(OpCode val)
+			{
+				switch (val)
+				{
+					case OpCode.in_:
+						return "in";
+					case OpCode.int_:
+						return "int";
+					case OpCode.lock_:
+						return "lock";
+					case OpCode.out_:
+						return "out";
+					default:
+						return val.ToString();
+				}
+			}
+
+			public override string ToCode()
+			{
+				var ret = StringForOpCode(Operation);
+				if (Arguments != null)
+				{
+					for (int i = 0; i < Arguments.Length; i++)
+					{
+						if (i != 0)
+							ret += ",";
+						ret += " " + Arguments[i].ToString();
+					}
+				}
+				return ret;
+			}
+
+			public override void Accept(StatementVisitor vis) { vis.Visit(this); }
+			public override R Accept<R>(StatementVisitor<R> vis) { return vis.Visit(this); }
+
+			public bool IsJmpFamily
+			{
+				get
+				{
+					switch (Operation)
+					{
+						case OpCode.ja:
+						case OpCode.jae:
+						case OpCode.jb:
+						case OpCode.jbe:
+						case OpCode.jc:
+						case OpCode.jcxz:
+						case OpCode.je:
+						case OpCode.jecxz:
+						case OpCode.jg:
+						case OpCode.jge:
+						case OpCode.jl:
+						case OpCode.jle:
+						case OpCode.jmp:
+						case OpCode.jna:
+						case OpCode.jnae:
+						case OpCode.jnb:
+						case OpCode.jnbe:
+						case OpCode.jnc:
+						case OpCode.jne:
+						case OpCode.jng:
+						case OpCode.jnge:
+						case OpCode.jnl:
+						case OpCode.jnle:
+						case OpCode.jno:
+						case OpCode.jnp:
+						case OpCode.jns:
+						case OpCode.jnz:
+						case OpCode.jo:
+						case OpCode.jp:
+						case OpCode.jpe:
+						case OpCode.jpo:
+						case OpCode.js:
+						case OpCode.jz:
+							return true;
+						default:
+							return false;
+					}
 				}
 			}
 		}
 
 		public sealed class RawDataStatement : AbstractStatement
 		{
+			public DataType TypeOfData { get; set; }
+			public IExpression[] Data { get; set; }
+
 			public enum DataType
 			{
+				__UNKNOWN__,
+
 				Byte,
 				Word,
 				DWord,
@@ -645,11 +805,101 @@ namespace D_Parser.Dom.Statements
 				Real,
 			}
 
+			public static bool TryParseDataType(string str, out DataType tp)
+			{
+				switch (str.ToLower())
+				{
+					case "db":
+						tp = DataType.Byte;
+						return true;
+					case "ds":
+						tp = DataType.Word;
+						return true;
+					case "di":
+						tp = DataType.DWord;
+						return true;
+					case "dl":
+						tp = DataType.QWord;
+						return true;
+					case "df":
+						tp = DataType.Single;
+						return true;
+					case "dd":
+						tp = DataType.Double;
+						return true;
+					case "de":
+						tp = DataType.Real;
+						return true;
+					default:
+						tp = DataType.__UNKNOWN__;
+						return false;
+				}
+			}
+
+			public override string ToCode()
+			{
+				var sb = new StringBuilder(Data.Length * 4);
+				switch (TypeOfData)
+				{
+					case DataType.Byte:
+						sb.Append("db");
+						break;
+					case DataType.Word:
+						sb.Append("ds");
+						break;
+					case DataType.DWord:
+						sb.Append("di");
+						break;
+					case DataType.QWord:
+						sb.Append("dl");
+						break;
+					case DataType.Single:
+						sb.Append("df");
+						break;
+					case DataType.Double:
+						sb.Append("dd");
+						break;
+					case DataType.Real:
+						sb.Append("de");
+						break;
+					case DataType.__UNKNOWN__:
+						sb.Append("<UNKNOWN>");
+						break;
+					default:
+						throw new NotSupportedException();
+				}
+
+				for (int i = 0; i < Data.Length; i++)
+				{
+					if (i > 0)
+						sb.Append(',');
+					sb.Append(' ');
+					sb.Append(Data[i].ToString());
+				}
+				return sb.ToString();
+			}
+
+			public override void Accept(StatementVisitor vis) { vis.Visit(this); }
+			public override R Accept<R>(StatementVisitor<R> vis) { return vis.Visit(this); }
 		}
 
 		public sealed class AlignStatement : AbstractStatement
 		{
+			public IExpression ValueExpression { get; set; }
 
+			public override string ToCode()
+			{
+				if (ValueExpression == null)
+					return "align <NULL>";
+				var ie = ValueExpression as IdentifierExpression;
+				if (ie != null && ie.Value.Equals(2))
+					return "even";
+				else
+					return "align " + ValueExpression.ToString();
+			}
+
+			public override void Accept(StatementVisitor vis) { vis.Visit(this); }
+			public override R Accept<R>(StatementVisitor<R> vis) { return vis.Visit(this); }
 		}
 	}
 }
