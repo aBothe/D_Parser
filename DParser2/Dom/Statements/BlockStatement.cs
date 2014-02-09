@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace D_Parser.Dom.Statements
 {
-	public class BlockStatement : StatementContainingStatement, IEnumerable<IStatement>, IDeclarationContainingStatement
+	public class BlockStatement : StatementContainingStatement, IEnumerable<IStatement>
 	{
 		internal readonly List<IStatement> _Statements = new List<IStatement>();
 
@@ -40,36 +40,6 @@ namespace D_Parser.Dom.Statements
 			get
 			{
 				return _Statements;
-			}
-		}
-
-		public static List<INode> GetDeclarations(IEnumerable<IStatement> stmts)
-		{
-			var l = new List<INode>();
-
-			foreach (var s in stmts)
-				if (s is BlockStatement ||
-					s is DeclarationStatement ||
-					s is ImportStatement)
-				{
-					var decls = (s as IDeclarationContainingStatement).Declarations;
-					if (decls != null && decls.Length > 0)
-						l.AddRange(decls);
-				}
-
-			return l;
-		}
-
-		/// <summary>
-		/// Returns all child nodes inside the current scope.
-		/// Includes nodes from direct block statement substatements and alias nodes from import statements.
-		/// Condition
-		/// </summary>
-		public INode[] Declarations
-		{
-			get
-			{
-				return GetDeclarations(_Statements).ToArray();
 			}
 		}
 

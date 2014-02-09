@@ -262,7 +262,7 @@ int ii;
 			Assert.That (dn.Attributes.Count, Is.EqualTo(1));
 			Assert.That(dn.ContainsAttribute(DTokens.Ref));
 
-			dn = dm.Body.Declarations [0] as DNode;
+			dn = (dm.Body.SubStatements.First() as IDeclarationContainingStatement).Declarations[0] as DNode;
 			Assert.That (dn.Attributes.Count, Is.EqualTo (0));
 
 
@@ -282,7 +282,7 @@ int ii;
 			Assert.That (dn.Attributes.Count, Is.EqualTo(1));
 			Assert.That(dn.ContainsAttribute(DTokens.Ref));
 
-			dn = dm.Body.Declarations [0] as DNode;
+			dn = (dm.Body.SubStatements.First() as IDeclarationContainingStatement).Declarations[0] as DNode;
 			Assert.That (dn.Attributes.Count, Is.EqualTo (0));
 
 
@@ -519,7 +519,7 @@ class C
 			n = DResolver.SearchBlockAt(m, new CodeLocation(1, 10), out s);
 			Assert.AreEqual(m,n);
 
-			loc = ((IBlockNode)m["main"].First())["a"].First().EndLocation;
+			loc = (((DMethod)m["main"].First()).Body.First() as IDeclarationContainingStatement).Declarations[0].EndLocation;
 			n = DResolver.SearchBlockAt(m, loc, out s);
 			Assert.AreEqual("main", n.Name);
 		}

@@ -28,7 +28,7 @@ using D_Parser.Dom;
 
 namespace D_Parser.Resolver.ASTScanner
 {
-	public class ItemEnumeration : AbstractVisitor
+	class ItemEnumeration : AbstractVisitor
 	{
 		protected ItemEnumeration (ResolutionContext ctxt) : base (ctxt)
 		{

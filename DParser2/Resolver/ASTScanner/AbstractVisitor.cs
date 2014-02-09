@@ -239,7 +239,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 				if(udt is TemplateIntermediateType){
 					var tit = udt as TemplateIntermediateType;
-					var type = (tit.Definition as DClassLike).ClassType;
+					var type = tit.Definition.ClassType;
 
 					if ((type == DTokens.Struct || type == DTokens.Class || type == DTokens.Template) &&
 						HandleAliasThisDeclarations (tit, vis))
@@ -283,8 +283,14 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				foreach (var nested in t.BaseInterfaces)
 					EnlistInterfaceHierarchy(l, nested);
 		}
-		
-		protected bool scanChildren(DBlockNode curScope, 
+
+		/// <summary>
+		/// Temporary flag that is used for telling scanChildren() not to handle template parameters.
+		/// Used to prevent the insertion of a template mixin's parameter set into the completion list etc.
+		/// </summary>
+		bool dontHandleTemplateParamsInNodeScan = false;
+
+		bool scanChildren(DBlockNode curScope, 
 									MemberFilter VisibleMembers,
 									bool publicImports = false,
 									bool isBaseClass = false,
@@ -347,7 +353,15 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				dontHandleTemplateParamsInNodeScan = false;
 
 			//ContinueHandleStaticStatements (curScope.EndLocation);	ConditionsStack.Pop ();
-			return HandleDBlockNode(curScope, VisibleMembers, publicImports);
+
+			var ss = new StatementHandler(this)
+			{
+				handlePublicImportsOnly = publicImports,
+				caretInsensitive = true,
+				VisibleMembers = VisibleMembers
+			};
+
+			return curScope.Accept(ss);
 		}
 
 		/// <summary>
@@ -361,9 +375,11 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			if (Statement is DeclarationStatement)
 				Statement = Statement.Parent;
 
+			var ss = new StatementHandler(this) { Caret=Caret, caretInsensitive = Caret.IsEmpty, VisibleMembers = VisibleMembers };
+
 			while (Statement != null)
 			{
-				if (ScanSingleStatement(Statement, Caret, VisibleMembers))
+				if (Statement.Accept(ss))
 					return true;
 
 				Statement = Statement.Parent;
@@ -372,139 +388,590 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			return false;
 		}
 
-		bool ScanSingleStatement(IStatement Statement, CodeLocation Caret, MemberFilter VisibleMembers)
+		class StatementHandler : StatementVisitor<bool>, NodeVisitor<bool>
 		{
-			if (Statement is ImportStatement)
+			#region Properties
+			public bool handlePublicImportsOnly;
+			public bool caretInsensitive;
+			public CodeLocation Caret;
+			public MemberFilter VisibleMembers;
+			ResolutionContext ctxt { get { return v.ctxt; } }
+
+			readonly AbstractVisitor v;
+			#endregion
+
+			#region Constuctor/IO
+			public StatementHandler(AbstractVisitor v)
 			{
-				// Handled in DBlockNode
+				this.v = v;
 			}
-			else if (Statement is IDeclarationContainingStatement)
+
+			#endregion
+
+			#region Nodes
+			public bool Visit(DEnumValue dEnumValue)
 			{
-				var decls = ((IDeclarationContainingStatement)Statement).Declarations;
+				throw new NotImplementedException();
+			}
 
-				if (decls != null)
-					foreach (var decl in decls)
+			public bool Visit(DMethod dMethod)
+			{
+				return false;
+			}
+
+			public bool Visit(DClassLike dc)
+			{
+				return Visit(dc as DBlockNode);
+			}
+
+			public bool Visit(DEnum de)
+			{
+				return Visit(de as DBlockNode);
+			}
+
+			public bool Visit(DModule dbn)
+			{
+				// Every module imports 'object' implicitly
+				var ret = !handlePublicImportsOnly && HandleNonAliasedImport(_objectImport, VisibleMembers);
+				
+				ret |= Visit(dbn as DBlockNode);
+
+				return ret;
+			}
+
+			public bool Visit(TemplateParameter.Node templateParameterNode)
+			{
+				throw new NotImplementedException();
+			}
+
+			public bool Visit(NamedTemplateMixinNode n)
+			{
+				throw new NotImplementedException();
+			}
+
+			public bool Visit(DBlockNode dbn)
+			{
+				bool ret = false;
+				if (dbn != null && dbn.StaticStatements != null)
+				{
+					foreach (var ss in dbn.StaticStatements)
+						ret |= ss != null && ss.Accept(this);
+				}
+
+				return ret;
+			}
+
+
+			public bool Visit(DVariable dv)
+			{
+				if (dv.Initializer != null &&
+					(caretInsensitive || (dv.Initializer.Location > Caret && dv.Initializer.EndLocation < Caret)))
+				{
+					if (v.HandleExpression(dv.Initializer, VisibleMembers))
+						return true;
+				}
+
+				return VisitDNode(dv);
+			}
+
+			public bool VisitDNode(DNode decl)
+			{
+				return (caretInsensitive || Caret >= decl.Location) && v.HandleItem(decl);
+			}
+			#endregion
+
+			#region Attributes
+			public bool VisitAttribute(Modifier attr)
+			{
+				throw new NotImplementedException();
+			}
+
+			public bool VisitAttribute(DeprecatedAttribute a)
+			{
+				throw new NotImplementedException();
+			}
+
+			public bool VisitAttribute(PragmaAttribute attr)
+			{
+				throw new NotImplementedException();
+			}
+
+			public bool VisitAttribute(BuiltInAtAttribute a)
+			{
+				throw new NotImplementedException();
+			}
+
+			public bool VisitAttribute(UserDeclarationAttribute a)
+			{
+				throw new NotImplementedException();
+			}
+
+			public bool VisitAttribute(VersionCondition a)
+			{
+				throw new NotImplementedException();
+			}
+
+			public bool VisitAttribute(DebugCondition a)
+			{
+				throw new NotImplementedException();
+			}
+
+			public bool VisitAttribute(StaticIfCondition a)
+			{
+				throw new NotImplementedException();
+			}
+
+			public bool VisitAttribute(NegatedDeclarationCondition a)
+			{
+				throw new NotImplementedException();
+			}
+			#endregion
+
+			#region Static Statements
+			public bool VisitExpressionStmt(IExpressionContainingStatement Statement)
+			{
+				if (Statement.Location < Caret && Statement.EndLocation >= Caret)
+					foreach (var x in Statement.SubExpressions)
+						if (x != null && x.Location < Caret && x.EndLocation >= Caret && v.HandleExpression(x, VisibleMembers))
+							return true;
+				return false;
+			}
+
+			public bool VisitSubStatements(StatementContainingStatement stmtContainer)
+			{
+				var ss = stmtContainer.SubStatements;
+				if (ss != null)
+				{
+					foreach (var s in ss)
 					{
-						if (Caret != CodeLocation.Empty)
-						{
-							if (Caret < decl.Location)
-								continue;
+						if (s == null)
+							continue;
 
-							var dv = decl as DVariable;
-							if (dv != null &&
-								dv.Initializer != null &&
-								!(Caret < dv.Initializer.Location ||
-								Caret > dv.Initializer.EndLocation))
-							{
-								if (HandleExpression(dv.Initializer, VisibleMembers))
-									return true;
-								continue;
-							}
-						}
+						if (!caretInsensitive && s.Location >= Caret)
+							break;
 
-						if (HandleItem(decl))
+						if (s.Accept(this))
 							return true;
 					}
-			}
-			// http://dlang.org/statement.html#WithStatement
-			else if (Statement is WithStatement)
-			{
-				var ws = (WithStatement)Statement;
+				}
 
-				if (ws.ScopedStatement == null || Caret < ws.ScopedStatement.Location)
+				return false;
+			}
+
+			public bool Visit(ImportStatement impStmt)
+			{
+				if ((handlePublicImportsOnly && impStmt != null && !impStmt.IsPublic) ||
+					!ctxt.CurrentContext.MatchesDeclarationEnvironment(impStmt.Attributes))
 					return false;
 
-				AbstractType r = null;
+				/*
+				 * Mainly used for selective imports/import module aliases
+				 */
+				foreach (var decl in impStmt.PseudoAliases)
+					if (v.HandleItem(decl)) //TODO: Handle visibility?
+						return true;
+
+				var ret = false;
+
+				if (!impStmt.IsStatic)
+					foreach (var imp in impStmt.Imports)
+						ret |= imp.ModuleAlias == null && HandleNonAliasedImport(imp, VisibleMembers);
+
+				return ret;
+			}
+
+			bool HandleNonAliasedImport(ImportStatement.Import imp, MemberFilter VisibleMembers)
+			{
+				if (imp == null || imp.ModuleIdentifier == null)
+					return false;
+
+				DModule mod;
+				var thisModuleName = (ctxt.ScopedBlock != null && (mod = ctxt.ScopedBlock.NodeRoot as DModule) != null) ? mod.ModuleName : string.Empty;
+
+				if (string.IsNullOrEmpty(thisModuleName))
+					return false;
+
+				var moduleName = imp.ModuleIdentifier.ToString();
+
+				List<string> seenModules = null;
+
+				if (!v.scannedModules.TryGetValue(thisModuleName, out seenModules))
+					seenModules = v.scannedModules[thisModuleName] = new List<string>();
+				else if (seenModules.Contains(moduleName))
+					return false;
+				seenModules.Add(moduleName);
+
+				var scAst = ctxt.ScopedBlock == null ? null : ctxt.ScopedBlock.NodeRoot as DModule;
+				if (ctxt.ParseCache != null)
+					foreach (var module in ctxt.ParseCache.LookupModuleName(moduleName)) //TODO: Only take the first module? Notify the user about ambigous module names?
+					{
+						if (module == null || (scAst != null && module.FileName == scAst.FileName && module.FileName != null))
+							continue;
+
+						//ctxt.PushNewScope(module);
+
+						if (v.scanChildren(module as DModule, VisibleMembers, true))
+						{
+							//ctxt.Pop();
+							return true;
+						}
+
+						//ctxt.Pop();
+					}
+				return false;
+			}
+			#endregion
+
+			#region Template Mixins
+			public bool Visit(TemplateMixin s)
+			{
+				return ctxt.CurrentContext.MatchesDeclarationEnvironment(s.Attributes) &&
+					HandleUnnamedTemplateMixin(s, caretInsensitive, VisibleMembers);
+			}
+			
+			static ResolutionCache<AbstractType> templateMixinCache = new ResolutionCache<AbstractType>();
+			[ThreadStatic]
+			static List<TemplateMixin> templateMixinsBeingAnalyzed;
+			
+			// http://dlang.org/template-mixin.html#TemplateMixin
+			bool HandleUnnamedTemplateMixin(TemplateMixin tmx, bool treatAsDeclBlock, MemberFilter vis)
+			{
+				if (CompletionOptions.Instance.DisableMixinAnalysis)
+					return false;
+
+				if (templateMixinsBeingAnalyzed == null)
+					templateMixinsBeingAnalyzed = new List<TemplateMixin>();
+
+				if (templateMixinsBeingAnalyzed.Contains(tmx))
+					return false;
+				templateMixinsBeingAnalyzed.Add(tmx);
+
+				var tmxTemplate = GetTemplateMixinContent(ctxt, tmx, false);
+
+				bool res = false;
+				if (tmxTemplate == null)
+					ctxt.LogError(tmx.Qualifier, "Mixin qualifier must resolve to a mixin template declaration.");
+				else
+				{
+					bool pop = !ctxt.ScopedBlockIsInNodeHierarchy(tmxTemplate.Definition);
+					if (pop)
+						ctxt.PushNewScope(tmxTemplate.Definition);
+					ctxt.CurrentContext.IntroduceTemplateParameterTypes(tmxTemplate);
+					v.dontHandleTemplateParamsInNodeScan = true;
+					res |= v.DeepScanClass(tmxTemplate, vis);
+					if (pop)
+						ctxt.Pop();
+					else
+						ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(tmxTemplate);
+				}
+
+				templateMixinsBeingAnalyzed.Remove(tmx);
+				return res;
+			}
+			#endregion
+
+			#region Mixin
+			public bool VisitMixinStatement(MixinStatement s)
+			{
+				return ctxt.CurrentContext.MatchesDeclarationEnvironment(s.Attributes) &&
+					HandleMixin(s, caretInsensitive, VisibleMembers);
+			}
+
+			/// <summary>
+			/// Evaluates the literal given as expression and tries to parse it as a string.
+			/// Important: Assumes all its compilation conditions to be checked already!
+			/// </summary>
+			bool HandleMixin(MixinStatement mx, bool parseDeclDefs, MemberFilter vis)
+			{
+				if (CompletionOptions.Instance.DisableMixinAnalysis)
+					return false;
+
+				// If in a class/module block => MixinDeclaration
+				if (parseDeclDefs)
+				{
+					var ast = MixinAnalysis.ParseMixinDeclaration(mx, ctxt);
+
+					if (ast == null)
+						return false;
+
+					// take ast.Endlocation because the cursor must be beyond the actual mixin expression 
+					// - and therewith _after_ each declaration
+					if (ctxt.ScopedBlock == mx.ParentNode.NodeRoot)
+						return v.ScanBlockUpward(ast, ast.EndLocation, vis);
+					else
+					{
+						return v.scanChildren(ast, vis, isMixinAst: true);
+					}
+				}
+				else // => MixinStatement
+				{
+					var bs = MixinAnalysis.ParseMixinStatement(mx, ctxt);
+
+					// As above, disregard the caret position because 1) caret and parsed code do not match 
+					// and 2) the caret must be located somewhere after the mixin statement's end
+					if (bs != null)
+					{
+						return v.ScanStatementHierarchy(bs, CodeLocation.Empty, vis);
+					}
+				}
+
+				return false;
+			}
+
+			static MixinTemplateType GetTemplateMixinContent(ResolutionContext ctxt, TemplateMixin tmx, bool pushOnAnalysisStack = true)
+			{
+				if (pushOnAnalysisStack)
+				{
+					if (templateMixinsBeingAnalyzed == null)
+						templateMixinsBeingAnalyzed = new List<TemplateMixin>();
+
+					if (templateMixinsBeingAnalyzed.Contains(tmx))
+						return null;
+					templateMixinsBeingAnalyzed.Add(tmx);
+				}
+
+				AbstractType t;
+				if (!templateMixinCache.TryGet(ctxt, tmx, out t))
+				{
+					t = TypeDeclarationResolver.ResolveSingle(tmx.Qualifier, ctxt);
+					// Deadly important: To prevent mem leaks, all references from the result to the TemplateMixin must be erased!
+					// Elsewise there remains one reference from the dict value to the key - and won't get free'd THOUGH we can't access it anymore
+					if (t != null)
+						t.DeclarationOrExpressionBase = null;
+					templateMixinCache.Add(ctxt, tmx, t);
+				}
+
+				if (pushOnAnalysisStack)
+					templateMixinsBeingAnalyzed.Remove(tmx);
+
+				return t as MixinTemplateType;
+			}
+			#endregion
+
+			#region In-Method statements
+			public bool Visit(ModuleStatement moduleStatement)
+			{
+				return false;
+			}
+
+			public bool VisitImport(ImportStatement.Import import)
+			{
+				return false;
+			}
+
+			public bool VisitImport(ImportStatement.ImportBinding importBinding)
+			{
+				return false;
+			}
+
+			public bool VisitImport(ImportStatement.ImportBindings bindings)
+			{
+				return false;
+			}
+
+			public bool Visit(BlockStatement s)
+			{
+				return VisitSubStatements(s);
+			}
+
+			public bool Visit(LabeledStatement s)
+			{
+				return false;
+			}
+
+			public bool Visit(IfStatement s)
+			{
+				if (s.IfVariable != null && Visit(s.IfVariable))
+					return true;
+
+				return VisitExpressionStmt(s);
+			}
+
+			public bool Visit(WhileStatement s)
+			{
+				return VisitExpressionStmt(s) || VisitSubStatements(s);
+			}
+
+			public bool Visit(ForStatement s)
+			{
+				return VisitExpressionStmt(s) || VisitSubStatements(s);
+			}
+
+			public bool Visit(ForeachStatement s)
+			{
+				return VisitExpressionStmt(s) || VisitSubStatements(s);
+			}
+
+			public bool Visit(SwitchStatement s)
+			{
+				return VisitExpressionStmt(s) || VisitSubStatements(s);
+			}
+
+			public bool Visit(SwitchStatement.CaseStatement s)
+			{
+				return VisitExpressionStmt(s) || VisitSubStatements(s);
+			}
+
+			public bool Visit(SwitchStatement.DefaultStatement s)
+			{
+				return VisitSubStatements(s);
+			}
+
+			public bool Visit(ContinueStatement s)
+			{
+				return VisitExpressionStmt(s);
+			}
+
+			public bool Visit(BreakStatement s)
+			{
+				return VisitExpressionStmt(s);
+			}
+
+			public bool Visit(ReturnStatement s)
+			{
+				return VisitExpressionStmt(s);
+			}
+
+			public bool Visit(GotoStatement s)
+			{
+				return VisitExpressionStmt(s);
+			}
+
+			/// <summary>
+			/// http://dlang.org/statement.html#WithStatement
+			/// </summary>
+			public bool Visit(WithStatement ws)
+			{
+				if (ws.ScopedStatement == null ||
+					(!caretInsensitive && Caret < ws.ScopedStatement.Location))
+					return false;
 
 				var back = ctxt.ScopedStatement;
 				ctxt.CurrentContext.Set(ws.Parent);
 
+				AbstractType r;
 				// Must be an expression that returns an object reference
 				if (ws.WithExpression != null)
 					r = ExpressionTypeEvaluation.EvaluateType(ws.WithExpression, ctxt);
 				else if (ws.WithSymbol != null) // This symbol will be used as default
 					r = TypeDeclarationResolver.ResolveSingle(ws.WithSymbol, ctxt);
+				else
+					r = null;
 
 				ctxt.CurrentContext.Set(back);
 
-				if ((r = DResolver.StripMemberSymbols(r)) != null)
-					if (r is TemplateIntermediateType &&
-					DeepScanClass(r as TemplateIntermediateType, VisibleMembers))
-						return true;
+				if ((r = DResolver.StripMemberSymbols(r)) is TemplateIntermediateType &&
+					v.DeepScanClass(r as TemplateIntermediateType, VisibleMembers))
+					return true;
+
+				return VisitSubStatements(ws);
 			}
-			else if (Statement is IExpressionContainingStatement)
-				foreach (var x in (Statement as IExpressionContainingStatement).SubExpressions)
-					if (x.Location >= Caret && x.EndLocation <= Caret && HandleExpression(x, VisibleMembers))
-						return true;
 
-			if (Statement is StatementContainingStatement)
-				foreach (var s in (Statement as StatementContainingStatement).SubStatements)
+			public bool Visit(SynchronizedStatement s)
+			{
+				return VisitExpressionStmt(s) || VisitSubStatements(s);
+			}
+
+			public bool Visit(TryStatement s)
+			{
+				return VisitSubStatements(s);
+			}
+
+			public bool Visit(TryStatement.CatchStatement s)
+			{
+				return (s.CatchParameter != null && Visit(s.CatchParameter)) || VisitSubStatements(s);
+			}
+
+			public bool Visit(TryStatement.FinallyStatement s)
+			{
+				return VisitSubStatements(s);
+			}
+
+			public bool Visit(ThrowStatement s)
+			{
+				return VisitExpressionStmt(s);
+			}
+
+			public bool Visit(ScopeGuardStatement s)
+			{
+				return VisitSubStatements(s);
+			}
+
+			public bool Visit(AsmStatement s)
+			{
+				return false;
+			}
+
+			public bool Visit(PragmaStatement s)
+			{
+				return VisitSubStatements(s);
+			}
+
+			public bool Visit(AssertStatement s)
+			{
+				return VisitExpressionStmt(s);
+			}
+
+			public bool Visit(StatementCondition sc)
+			{
+				if ((ctxt.Options & ResolutionOptions.IgnoreDeclarationConditions) != 0)
 				{
-					if (s is IExpressionContainingStatement)
-						foreach (var x in (s as IExpressionContainingStatement).SubExpressions)
-							if (x.Location >= Caret && x.EndLocation <= Caret && HandleExpression(x, VisibleMembers))
-								return true;
+					if (sc.ScopedStatement != null && sc.ScopedStatement.Accept(this))
+							return false;
 
-					/*
-					 * void foo()
-					 * {
-					 * 
-					 *	writeln(); -- error, writeln undefined
-					 *	
-					 *  import std.stdio;
-					 *  
-					 *  writeln(); -- ok
-					 * 
-					 * }
-					 */
-					if (s == null || 
-					    Caret < s.Location && Caret != CodeLocation.Empty ||
-					    s is ModuleStatement)
-						continue;
-					
-					if (s is StatementCondition)
-					{
-						var sc = (StatementCondition)s;
-
-						if ((ctxt.Options & ResolutionOptions.IgnoreDeclarationConditions) != 0) {
-							return ScanSingleStatement (sc.ScopedStatement, Caret, VisibleMembers) ||
-								(sc.ElseStatement != null && ScanSingleStatement (sc.ElseStatement, Caret, VisibleMembers));
-						}
-						else if (ctxt.CurrentContext.MatchesDeclarationEnvironment(sc.Condition))
-							return ScanSingleStatement(sc.ScopedStatement, Caret, VisibleMembers);
-						else if (sc.ElseStatement != null)
-							return ScanSingleStatement(sc.ElseStatement, Caret, VisibleMembers);
-					}
-					
-					var ss = s as StaticStatement;
-					if(ss==null || !ctxt.CurrentContext.MatchesDeclarationEnvironment(ss.Attributes))
-						continue;
-					
-					if (s is ImportStatement)
-					{
-						// Selective imports were handled in the upper section already!
-
-						var impStmt = (ImportStatement)s;
-
-						foreach (var imp in impStmt.Imports)
-							if (imp.ModuleAlias == null)
-								if (HandleNonAliasedImport(imp, VisibleMembers))
-									return true;
-					}
-					else if (s is MixinStatement)
-					{
-						if(HandleMixin(s as MixinStatement, false, VisibleMembers))
-							return true;
-					}
-					else if (s is TemplateMixin)
-					{
-						if(HandleUnnamedTemplateMixin(s as TemplateMixin, false, VisibleMembers))
-							return true;
-					}
+					return sc.ElseStatement != null && sc.ElseStatement.Accept(this);
 				}
 
-			return false;
+				if (!ctxt.CurrentContext.MatchesDeclarationEnvironment(sc.Condition))
+					return false;
+
+				if(sc.Condition is StaticIfCondition && sc.Location < Caret && sc.EndLocation >= Caret &&
+					v.HandleExpression((sc.Condition as StaticIfCondition).Expression, VisibleMembers))
+					return true;
+
+				if (sc.ScopedStatement != null)
+					return sc.ScopedStatement.Accept(this);
+				
+				return sc.ElseStatement != null && sc.ElseStatement.Accept(this);
+			}
+
+			public bool Visit(VolatileStatement s)
+			{
+				return VisitSubStatements(s);
+			}
+
+			public bool Visit(ExpressionStatement s)
+			{
+				return VisitExpressionStmt(s);
+			}
+
+			public bool Visit(DeclarationStatement s)
+			{
+				if (s.Declarations != null)
+					foreach (DNode decl in s.Declarations)
+						if (decl is DVariable ? Visit(decl as DVariable) : VisitDNode(decl))
+							return true;
+
+				return false;
+			}
+
+			public bool Visit(DebugSpecification s)
+			{
+				return false;
+			}
+
+			public bool Visit(VersionSpecification s)
+			{
+				return false;
+			}
+
+			public bool Visit(StaticAssertStatement s)
+			{
+				return VisitExpressionStmt(s);
+			}
+			#endregion
 		}
+
 
 		bool HandleAliasThisDeclarations(TemplateIntermediateType tit, MemberFilter vis)
 		{
@@ -582,8 +1049,6 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				return true;
 
 			return ctxt.CurrentContext.MatchesDeclarationEnvironment (n.Attributes);
-
-			return false;
 		}
 
 		// Following methods aren't used atm!
@@ -687,226 +1152,6 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			return false;
 		}
 
-		#endregion
-
-		#region Imports
-		/// <summary>
-		/// Handle the node's static statements (but not the node itself)
-		/// </summary>
-		bool HandleDBlockNode(DBlockNode dbn, MemberFilter VisibleMembers, bool takePublicImportsOnly = false)
-		{
-			bool foundItems = false;
-
-			if (dbn != null && dbn.StaticStatements != null)
-			{
-				foreach (var stmt in dbn.StaticStatements)
-				{
-					var dstmt = stmt as IDeclarationContainingStatement;
-					if (dstmt != null)
-					{
-						var impStmt = dstmt as ImportStatement;
-						if ((takePublicImportsOnly && impStmt!=null && !impStmt.IsPublic) || 
-						    !MatchesCompilationEnv(stmt))
-							continue;
-
-						/*
-						 * Mainly used for selective imports/import module aliases
-						 */
-						if (dstmt.Declarations != null)
-							foreach (var d in dstmt.Declarations)
-								foundItems |= HandleItem(d); //TODO: Handle visibility?
-
-						if (impStmt!=null && !impStmt.IsStatic)
-						{
-							foreach (var imp in impStmt.Imports)
-								if (imp.ModuleAlias == null)
-									foundItems |= HandleNonAliasedImport(imp, VisibleMembers);
-						}
-					}
-					else if(stmt is MixinStatement)
-					{
-						if(MatchesCompilationEnv(stmt))
-							foundItems |= HandleMixin(stmt as MixinStatement,true,VisibleMembers);
-					}
-					else if(stmt is TemplateMixin)
-					{
-						if (MatchesCompilationEnv(stmt))
-							foundItems |= HandleUnnamedTemplateMixin(stmt as TemplateMixin, true, VisibleMembers);
-					}
-				}
-			}
-
-			// Every module imports 'object' implicitly
-			if (dbn is DModule && !takePublicImportsOnly)
-				foundItems |= HandleNonAliasedImport(_objectImport, VisibleMembers);
-
-			return foundItems;
-		}
-		
-		bool MatchesCompilationEnv(StaticStatement ss)
-		{
-			return ss.Attributes == null || ctxt.CurrentContext.MatchesDeclarationEnvironment(ss.Attributes);
-		}
-
-		bool HandleNonAliasedImport(ImportStatement.Import imp, MemberFilter VisibleMembers)
-		{
-			if (imp == null || imp.ModuleIdentifier == null)
-				return false;
-
-			DModule mod;
-			var thisModuleName = (ctxt.ScopedBlock != null && (mod=ctxt.ScopedBlock.NodeRoot as DModule)!=null) ? mod.ModuleName : string.Empty;
-			
-			if(string.IsNullOrEmpty(thisModuleName))
-				return false;
-			
-			var moduleName = imp.ModuleIdentifier.ToString();
-			
-			List<string> seenModules = null;
-
-			if (!scannedModules.TryGetValue(thisModuleName, out seenModules))
-				seenModules = scannedModules[thisModuleName] = new List<string>();
-			else if (seenModules.Contains(moduleName))
-				return false;
-			seenModules.Add(moduleName);
-
-			var scAst = ctxt.ScopedBlock == null ? null : ctxt.ScopedBlock.NodeRoot as DModule;
-			if (ctxt.ParseCache != null)
-				foreach (var module in ctxt.ParseCache.LookupModuleName(moduleName)) //TODO: Only take the first module? Notify the user about ambigous module names?
-				{
-					if (module == null || (scAst != null && module.FileName == scAst.FileName && module.FileName != null))
-						continue;
-
-					//ctxt.PushNewScope(module);
-
-					if(ScanImportedModule(module as DModule,VisibleMembers))
-					{
-						//ctxt.Pop();
-						return true;
-					}
-					
-					//ctxt.Pop();
-				}
-			return false;
-		}
-		
-		bool ScanImportedModule(DModule module, MemberFilter VisibleMembers)
-		{
-			return scanChildren(module, VisibleMembers, true);
-		}
-		#endregion
-		
-		#region Mixins
-		/// <summary>
-		/// Evaluates the literal given as expression and tries to parse it as a string.
-		/// Important: Assumes all its compilation conditions to be checked already!
-		/// </summary>
-		bool HandleMixin(MixinStatement mx, bool parseDeclDefs, MemberFilter vis)
-		{
-			if (CompletionOptions.Instance.DisableMixinAnalysis)
-				return false;
-
-			// If in a class/module block => MixinDeclaration
-			if(parseDeclDefs)
-			{
-				var ast = MixinAnalysis.ParseMixinDeclaration(mx, ctxt);
-				
-				if(ast ==null)
-					return false;
-				
-				// take ast.Endlocation because the cursor must be beyond the actual mixin expression 
-				// - and therewith _after_ each declaration
-				if(ctxt.ScopedBlock == mx.ParentNode.NodeRoot)
-					return ScanBlockUpward(ast, ast.EndLocation, vis);
-				else
-				{
-					return scanChildren(ast, vis, isMixinAst:true);
-				}
-			}
-			else // => MixinStatement
-			{
-				var bs = MixinAnalysis.ParseMixinStatement(mx, ctxt);
-				
-				// As above, disregard the caret position because 1) caret and parsed code do not match 
-				// and 2) the caret must be located somewhere after the mixin statement's end
-				if(bs!=null){
-					return ScanStatementHierarchy(bs, CodeLocation.Empty, vis);
-				}
-			}
-			
-			return false;
-		}
-
-		public static MixinTemplateType GetTemplateMixinContent (ResolutionContext ctxt, TemplateMixin tmx, bool pushOnAnalysisStack = true)
-		{
-			if (pushOnAnalysisStack) {
-				if(templateMixinsBeingAnalyzed == null)
-					templateMixinsBeingAnalyzed = new List<TemplateMixin>();
-				
-				if(templateMixinsBeingAnalyzed.Contains(tmx))
-					return null;
-				templateMixinsBeingAnalyzed.Add(tmx);
-			}
-
-			AbstractType t;
-			if(!templateMixinCache.TryGet(ctxt, tmx, out t))
-			{
-				t = TypeDeclarationResolver.ResolveSingle(tmx.Qualifier, ctxt);
-				// Deadly important: To prevent mem leaks, all references from the result to the TemplateMixin must be erased!
-				// Elsewise there remains one reference from the dict value to the key - and won't get free'd THOUGH we can't access it anymore
-				if(t != null)
-					t.DeclarationOrExpressionBase = null;
-				templateMixinCache.Add(ctxt, tmx, t);
-			}
-
-			if(pushOnAnalysisStack)
-				templateMixinsBeingAnalyzed.Remove(tmx);
-
-			return t as MixinTemplateType;
-		}
-
-		static ResolutionCache<AbstractType> templateMixinCache = new ResolutionCache<AbstractType>();
-		[ThreadStatic]
-		static List<TemplateMixin> templateMixinsBeingAnalyzed;
-		/// <summary>
-		/// Temporary flag that is used for telling scanChildren() not to handle template parameters.
-		/// Used to prevent the insertion of a template mixin's parameter set into the completion list etc.
-		/// </summary>
-		bool dontHandleTemplateParamsInNodeScan = false;
-		// http://dlang.org/template-mixin.html#TemplateMixin
-		bool HandleUnnamedTemplateMixin(TemplateMixin tmx, bool treatAsDeclBlock, MemberFilter vis)
-		{
-			if (CompletionOptions.Instance.DisableMixinAnalysis)
-				return false;
-
-			if(templateMixinsBeingAnalyzed == null)
-				templateMixinsBeingAnalyzed = new List<TemplateMixin>();
-			
-			if(templateMixinsBeingAnalyzed.Contains(tmx))
-				return false;
-			templateMixinsBeingAnalyzed.Add(tmx);
-
-			var tmxTemplate = GetTemplateMixinContent(ctxt, tmx, false);
-			
-			bool res = false;
-			if(tmxTemplate == null)
-				ctxt.LogError(tmx.Qualifier, "Mixin qualifier must resolve to a mixin template declaration.");
-			else
-			{
-				bool pop = !ctxt.ScopedBlockIsInNodeHierarchy(tmxTemplate.Definition);
-				if(pop)
-					ctxt.PushNewScope(tmxTemplate.Definition);
-				ctxt.CurrentContext.IntroduceTemplateParameterTypes(tmxTemplate);
-				dontHandleTemplateParamsInNodeScan = true;
-				res |= DeepScanClass(tmxTemplate, vis);
-				if(pop)
-					ctxt.Pop();
-				else
-					ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(tmxTemplate);
-			}
-			
-			templateMixinsBeingAnalyzed.Remove(tmx);
-			return res;
-		}
 		#endregion
 
 		#region Handle-ability checks for Nodes
@@ -1022,5 +1267,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			return false;
 		}
 		#endregion
+
+		
 	}
 }

@@ -602,11 +602,16 @@ namespace D_Parser.Resolver.TypeResolution
 				ret = new EnumType((DEnum)m, typeBase);
 			else if (m is TemplateParameter.Node)
 			{
-				//ResolveResult[] templateParameterType = null;
+				var tpn = m as TemplateParameter.Node;
+				TemplateParameterSymbol tpnBase;
 
 				//TODO: Resolve the specialization type
 				//var templateParameterType = TemplateInstanceHandler.ResolveTypeSpecialization(tmp, ctxt);
-				ret = new TemplateParameterSymbol((m as TemplateParameter.Node).TemplateParameter, null, typeBase);
+
+				if (ctxt.GetTemplateParam(m.NameHash, out tpnBase) && tpnBase.Parameter == tpn.TemplateParameter)
+					return tpnBase;
+
+				ret = new TemplateParameterSymbol(tpn, null, typeBase);
 			}
 
 			if (popAfterwards)

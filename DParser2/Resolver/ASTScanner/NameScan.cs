@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace D_Parser.Resolver.ASTScanner
 {
-	public class NameScan : AbstractVisitor
+	class NameScan : AbstractVisitor
 	{
 		protected readonly int filterHash;
 		protected readonly ISyntaxRegion idObject;
@@ -88,7 +88,7 @@ namespace D_Parser.Resolver.ASTScanner
 		}
 	}
 	
-	public class SingleNodeNameScan : NameScan
+	class SingleNodeNameScan : NameScan
 	{
 		protected SingleNodeNameScan(ResolutionContext ctxt, int filterHash, ISyntaxRegion idObject) : base(ctxt, filterHash, idObject) {}
 		/*

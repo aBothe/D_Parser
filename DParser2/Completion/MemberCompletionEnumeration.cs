@@ -7,7 +7,7 @@ using D_Parser.Resolver;
 
 namespace D_Parser.Completion
 {
-	public class MemberCompletionEnumeration : AbstractVisitor
+	class MemberCompletionEnumeration : AbstractVisitor
 	{
 		bool isVarInst;
 		readonly ICompletionDataGenerator gen;

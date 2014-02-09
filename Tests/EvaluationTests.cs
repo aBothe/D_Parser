@@ -11,6 +11,7 @@ using D_Parser.Resolver.TypeResolution;
 using NUnit.Framework;
 using D_Parser.Dom;
 using D_Parser.Misc;
+using D_Parser.Dom.Statements;
 
 namespace Tests
 {
@@ -359,6 +360,8 @@ template isDynArg(T) {
 			var ctxt = ResolutionTests.CreateCtxt("A", @"module A;
 static if(is(const(int)* U == const(U)*))
 U var;
+
+U derp;
 ");
 
 			IExpression x;
@@ -375,7 +378,63 @@ U var;
 			ds = ds.Base as DSymbol;
 			Assert.That(ds.Base, Is.TypeOf(typeof(PrimitiveType)));
 			Assert.That((ds.Base as PrimitiveType).Modifier, Is.EqualTo(0));
-			
+
+			ctxt.CurrentContext.DeducedTemplateParameters.Clear();
+
+			var dv = ctxt.ParseCache[0]["A"]["derp"].First() as DVariable;
+			t = TypeDeclarationResolver.HandleNodeMatch(dv, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That((t as MemberSymbol).Base, Is.Null);
+		}
+
+		[Test]
+		public void IsExpressionAlias_InMethod()
+		{
+			var ctxt = ResolutionTests.CreateCtxt("A", @"module A;
+void main(){
+pre;
+
+static if(is(const(int)* U == const(U)*))
+{
+U var;
+}
+
+post;
+}
+");
+			IExpression x;
+			AbstractType t;
+			DSymbol ds;
+
+			var main = ctxt.ParseCache[0]["A"]["main"].First() as DMethod;
+
+			ctxt.PushNewScope(main, main.Body.SubStatements.First());
+			t = TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration("U") { Location = main.Body.SubStatements.First().Location }, ctxt);
+
+			Assert.That(t, Is.Null);
+
+			ctxt.Pop();
+			ctxt.PushNewScope(main, main.Body.SubStatements.ElementAt(2));
+			t = TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration("U") { Location = main.Body.SubStatements.ElementAt(2).Location }, ctxt);
+
+			Assert.That(t, Is.Null);
+			ctxt.Pop();
+
+			x = DParser.ParseExpression("var");
+
+			IStatement stmt;
+			DResolver.SearchBlockAt(main, (x as IdentifierExpression).Location = new CodeLocation(3, 7), out stmt);
+
+			ctxt.PushNewScope(main, stmt);
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+			ds = t as DSymbol;
+
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That(ds.Base, Is.TypeOf(typeof(TemplateParameterSymbol)));
+			ds = ds.Base as DSymbol;
+			Assert.That(ds.Base, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.That((ds.Base as PrimitiveType).Modifier, Is.EqualTo(0));
+
 		}
 		
 		[Test]

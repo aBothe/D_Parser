@@ -29,11 +29,7 @@ namespace D_Parser.Dom.Statements
 		{
 			get
 			{
-				if (WithExpression != null)
-					return new[] { WithExpression };
-				if (WithSymbol != null)
-					return new[] { new TypeDeclarationExpression(WithSymbol) };
-				return null;
+				return new[] { WithExpression };
 			}
 		}
 

@@ -207,7 +207,7 @@ namespace D_Parser.Dom
 		/// </summary>
 		public INode[] Declarations
 		{
-			get { return PseudoAliases.Count == 0 ? null : PseudoAliases.ToArray(); }
+			get { return PseudoAliases.ToArray(); }
 		}
 		#endregion
 	}

@@ -5,7 +5,7 @@ using D_Parser.Dom.Expressions;
 
 namespace D_Parser.Dom.Statements
 {
-	public class StatementCondition : StatementContainingStatement, IExpressionContainingStatement
+	public class StatementCondition : StatementContainingStatement
 	{
 		public IStatement ElseStatement;
 		public DeclarationCondition Condition;
@@ -43,20 +43,6 @@ namespace D_Parser.Dom.Statements
 		public override R Accept<R>(StatementVisitor<R> vis)
 		{
 			return vis.Visit(this);
-		}
-
-		public IExpression[] SubExpressions
-		{
-			get
-			{ 
-				if (Condition is StaticIfCondition)
-				{
-					var sic = (StaticIfCondition)Condition;
-					if (sic.Expression != null)
-						return new[] { sic.Expression };
-				}
-				return null;
-			}
 		}
 	}
 }

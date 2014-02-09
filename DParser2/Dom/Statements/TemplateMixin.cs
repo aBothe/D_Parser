@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace D_Parser.Dom.Statements
 {
-	public class TemplateMixin : AbstractStatement,IExpressionContainingStatement, StaticStatement
+	public class TemplateMixin : AbstractStatement, StaticStatement
 	{
 		public ITypeDeclaration Qualifier;
 		public string MixinId;
@@ -21,25 +21,6 @@ namespace D_Parser.Dom.Statements
 				r += ' ' + MixinId;
 
 			return r + ';';
-		}
-
-		public IExpression[] SubExpressions
-		{
-			get
-			{
-				var l = new List<IExpression>();
-				var c = Qualifier;
-
-				while (c != null)
-				{
-					if (c is TemplateInstanceExpression)
-						l.Add(c as IExpression);
-
-					c = c.InnerDeclaration;
-				}
-
-				return l.ToArray();
-			}
 		}
 
 		public override void Accept(StatementVisitor vis)

@@ -151,15 +151,6 @@ namespace D_Parser.Dom
 				if (additionalChildren.Count != 0)
 					children.AddRange(additionalChildren);
 
-				if (_In != null)
-					children.AddRange(_In.Declarations);
-
-				if (_Body != null)
-					children.AddRange(_Body.Declarations);
-
-				if (_Out != null)
-					children.AddRange(_Out.Declarations);
-
 				children.Sort ();
 			}
 		}

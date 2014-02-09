@@ -39,7 +39,7 @@ namespace D_Parser.Dom.Statements
 			return vis.Visit(this);
 		}
 
-		public class CaseStatement : StatementContainingStatement, IExpressionContainingStatement, IDeclarationContainingStatement
+		public class CaseStatement : StatementContainingStatement, IExpressionContainingStatement
 		{
 			public bool IsCaseRange
 			{
@@ -85,17 +85,9 @@ namespace D_Parser.Dom.Statements
 			{
 				return vis.Visit(this);
 			}
-
-			public INode[] Declarations
-			{
-				get
-				{
-					return BlockStatement.GetDeclarations(ScopeStatementList).ToArray();
-				}
-			}
 		}
 
-		public class DefaultStatement : StatementContainingStatement, IDeclarationContainingStatement
+		public class DefaultStatement : StatementContainingStatement
 		{
 			public IStatement[] ScopeStatementList;
 
@@ -125,14 +117,6 @@ namespace D_Parser.Dom.Statements
 			public override R Accept<R>(StatementVisitor<R> vis)
 			{
 				return vis.Visit(this);
-			}
-
-			public INode[] Declarations
-			{
-				get
-				{
-					return BlockStatement.GetDeclarations(ScopeStatementList).ToArray();
-				}
 			}
 		}
 	}

@@ -3,14 +3,9 @@ using D_Parser.Dom.Expressions;
 
 namespace D_Parser.Dom.Statements
 {
-	public class PragmaStatement : StatementContainingStatement,IExpressionContainingStatement
+	public class PragmaStatement : StatementContainingStatement
 	{
 		public PragmaAttribute Pragma;
-
-		public IExpression[] SubExpressions
-		{
-			get { return Pragma == null ? null : Pragma.Arguments; }
-		}
 
 		public override string ToCode()
 		{

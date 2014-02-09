@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace D_Parser.Dom.Statements
 {
-	public class DeclarationStatement : AbstractStatement,IDeclarationContainingStatement, IExpressionContainingStatement
+	public class DeclarationStatement : AbstractStatement,IDeclarationContainingStatement
 	{
 		/// <summary>
 		/// Declarations done by this statement. Contains more than one item e.g. on int a,b,c;
@@ -35,21 +35,6 @@ namespace D_Parser.Dom.Statements
 		{
 			get;
 			set;
-		}
-
-		public IExpression[] SubExpressions
-		{
-			get
-			{
-				var l = new List<IExpression>();
-
-				if (Declarations != null)
-					foreach (var decl in Declarations)
-						if (decl is DVariable && (decl as DVariable).Initializer != null)
-							l.Add((decl as DVariable).Initializer);
-
-				return l.ToArray();
-			}
 		}
 
 		public override void Accept(StatementVisitor vis)

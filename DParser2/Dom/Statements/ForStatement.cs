@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace D_Parser.Dom.Statements
 {
-	public class ForStatement : StatementContainingStatement, IDeclarationContainingStatement, IExpressionContainingStatement
+	public class ForStatement : StatementContainingStatement, IExpressionContainingStatement
 	{
 		public IStatement Initialize;
 		public IExpression Test;
@@ -49,17 +49,6 @@ namespace D_Parser.Dom.Statements
 				ret += ' ' + ScopedStatement.ToCode();
 
 			return ret;
-		}
-
-		public INode[] Declarations
-		{
-			get
-			{
-				if (Initialize is DeclarationStatement)
-					return (Initialize as DeclarationStatement).Declarations;
-
-				return null;
-			}
 		}
 
 		public override void Accept(StatementVisitor vis)

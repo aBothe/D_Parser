@@ -623,6 +623,13 @@ namespace D_Parser.Resolver
 		/// </summary>
 		public readonly ISymbolValue ParameterValue;
 
+		public TemplateParameterSymbol(TemplateParameter.Node tpn, ISemantic typeOrValue, ISyntaxRegion paramIdentifier = null)
+			: base(tpn, AbstractType.Get(typeOrValue), paramIdentifier)
+		{
+			this.Parameter = tpn.TemplateParameter;
+			this.ParameterValue = typeOrValue as ISymbolValue;
+		}
+
 		public TemplateParameterSymbol(TemplateParameter tpn, ISemantic typeOrValue, ISyntaxRegion paramIdentifier = null)
 			: base(tpn != null ? tpn.Representation : null, AbstractType.Get(typeOrValue), paramIdentifier)
 		{
