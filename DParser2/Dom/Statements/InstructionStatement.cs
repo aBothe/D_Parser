@@ -1,5 +1,7 @@
 ﻿using System;
 using D_Parser.Dom.Expressions;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace D_Parser.Dom.Statements
 {
@@ -10,14 +12,90 @@ namespace D_Parser.Dom.Statements
 			public OpCode Operation { get; set; }
 			public IExpression[] Arguments { get; set; }
 
+			#region Instruction Annotations
+			[Flags]
+			public enum Register
+			{
+				__UNKNOWN__ = 0,
+
+				AX,
+				CX,
+				DX,
+				SI,
+				DI,
+				ES,
+				R11,
+				XMM0,
+
+				NotArg1,
+				Arg2,
+
+				All,
+			}
+			/// <summary>
+			/// Indicates that the op-code is invalid in
+			/// 64-bit mode.
+			/// </summary>
+			[AttributeUsage(AttributeTargets.Field)]
+			public sealed class Invalid64BitAttribute : Attribute { }
+			/// <summary>
+			/// Indicates that the name of the enum value is
+			/// not the actual name of the op-code.
+			/// </summary>
+			[AttributeUsage(AttributeTargets.Field)]
+			public sealed class NameAttribute : Attribute
+			{
+				public string Name { get; private set; }
+
+				public NameAttribute(string name)
+				{
+					this.Name = name;
+				}
+			}
+			/// <summary>
+			/// Indicates which registers the op-code modifies.
+			/// The absence of this attribute indicates that no
+			/// registers are modified.
+			/// </summary>
+			[AttributeUsage(AttributeTargets.Field)]
+			public sealed class ModifiesAttribute : Attribute
+			{
+				public Register ModifiedRegisters { get; private set; }
+
+				public ModifiesAttribute(params Register[] modifiedRegs)
+				{
+					Register reg = Register.__UNKNOWN__;
+					foreach (var r in modifiedRegs)
+						reg |= r;
+					this.ModifiedRegisters = reg;
+				}
+			}
+			#endregion
+
 			public enum OpCode
 			{
 				// Analysis disable InconsistentNaming
 				__UNKNOWN__,
 
+				[Invalid64Bit]
+				[Modifies(Register.AX)]
+				[Description("ASCII adjust AL after addition.")]
 				aaa,
+				[Form(imm8)]
+				[Invalid64Bit]
+				[Arg1Default(10)]
+				[Modifies(Register.AX)]
+				[Description("ASCII adjust AX after division.")]
 				aad,
+				[Form(imm8)]
+				[Invalid64Bit]
+				[Arg1Default(10)]
+				[Modifies(Register.AX)]
+				[Description("ASCII adjust AX after multiplication.")]
 				aam,
+				[Invalid64Bit]
+				[Modifies(Register.AX)]
+				[Description("ASCII adjust AL after subtraction.")]
 				aas,
 				adc,
 				add,
@@ -228,13 +306,15 @@ namespace D_Parser.Dom.Statements
 				hlt,
 				idiv,
 				imul,
-				in_, // NOTE: Keyword.
+				[Name("in")]
+				in_,
 				inc,
 				ins,
 				insb,
 				insd,
 				insw,
-				int_, // NOTE: Keyword.
+				[Name("int")]
+				int_,
 				into,
 				invd,
 				invlpg,
@@ -289,7 +369,8 @@ namespace D_Parser.Dom.Statements
 				lidt,
 				lldt,
 				lmsw,
-				lock_, // NOTE: Keyword
+				[Name("lock")]
+				lock_,
 				lods,
 				lodsb,
 				lodsd,
@@ -355,7 +436,8 @@ namespace D_Parser.Dom.Statements
 				or,
 				orpd,
 				orps,
-				out_, // NOTE: Keyword
+				[Name("out")]
+				out_,
 				outs,
 				outsb,
 				outsd,
