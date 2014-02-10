@@ -145,7 +145,7 @@ namespace D_Parser.Resolver
 		{
 			get
 			{
-				return base.TypeDeclarationOf ?? new PointerDecl(Base==null ? null : Base.TypeDeclarationOf);
+				return new PointerDecl(Base==null ? null : Base.TypeDeclarationOf);
 			}
 		}
 
@@ -180,6 +180,16 @@ namespace D_Parser.Resolver
 			if(IsStaticArray)
 				return new ArrayType(cloneBase && Base != null ? Base.Clone(true) : Base, base.DeclarationOrExpressionBase);
 			return new ArrayType(cloneBase && Base != null ? Base.Clone(true) : Base, FixedLength, base.DeclarationOrExpressionBase);
+		}
+
+		public override ITypeDeclaration TypeDeclarationOf
+		{
+			get
+			{
+				return new ArrayDecl { 
+					ValueType = (Base != null ? Base.TypeDeclarationOf : null), 
+					KeyExpression = IsStaticArray ? new IdentifierExpression(FixedLength, LiteralFormat.Scalar) : null };
+			}
 		}
 	}
 
@@ -218,7 +228,7 @@ namespace D_Parser.Resolver
 		{
 			get
 			{
-				return base.TypeDeclarationOf ?? new ArrayDecl { 
+				return new ArrayDecl { 
 					ValueType = ValueType==null ? null : ValueType.TypeDeclarationOf,
 					KeyType = KeyType == null ? null : KeyType.TypeDeclarationOf
 				};
@@ -384,6 +394,48 @@ namespace D_Parser.Resolver
 		{
 			var def = Definition;
 			return def != null ? def.ToString(false, true) : "<Node object no longer exists>";
+		}
+
+		public override ITypeDeclaration TypeDeclarationOf
+		{
+			get
+			{
+				var def = Definition;
+				ITypeDeclaration td = new IdentifierDeclaration(def != null ? def.NameHash : 0);
+
+				if (def != null && DeducedTypes != null && def.TemplateParameters != null)
+				{
+					var args = new List<IExpression>();
+					foreach (var tp in def.TemplateParameters)
+					{
+						IExpression argEx = null;
+						foreach(var tps in DeducedTypes)
+							if (tps.Parameter == tp)
+							{
+								if (tps.ParameterValue != null){
+									//TODO: Convert ISymbolValues back to IExpression
+								}
+								else
+									argEx = new TypeDeclarationExpression(tps.TypeDeclarationOf);
+								break;
+							}
+
+						args.Add(argEx ?? new IdentifierExpression(tp.NameHash));
+					}
+
+					td = new TemplateInstanceExpression(td) { Arguments = args.ToArray() };
+				}
+
+				var ret = td;
+				
+				while (def != (def = def.Parent as DNode) &&
+					def != null && !(def is DModule))
+				{
+					td = td.InnerDeclaration = new IdentifierDeclaration(def.NameHash);
+				}
+
+				return ret;
+			}
 		}
 	}
 
@@ -663,6 +715,14 @@ namespace D_Parser.Resolver
 		public override AbstractType Clone(bool cloneBase)
 		{
 			return new TemplateParameterSymbol(Parameter, ParameterValue ?? (cloneBase && Base != null ? Base.Clone(true) : Base) as ISemantic, DeclarationOrExpressionBase);
+		}
+
+		public override ITypeDeclaration TypeDeclarationOf
+		{
+			get
+			{
+				return Base != null ? Base.TypeDeclarationOf : (DeclarationOrExpressionBase as ITypeDeclaration ?? new IdentifierDeclaration(Parameter.NameHash));
+			}
 		}
 	}
 	
