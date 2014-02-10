@@ -7,6 +7,9 @@ using D_Parser.Dom.Statements;
 using D_Parser.Parser;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.Templates;
+using System.Threading;
+
+
 namespace D_Parser.Resolver.TypeResolution
 {
 	/// <summary>
@@ -258,8 +261,10 @@ namespace D_Parser.Resolver.TypeResolution
 
 		static readonly int ObjectNameHash = "Object".GetHashCode();
 
+		[ThreadStatic]
 		static int bcStack = 0;
-		static List<ISyntaxRegion> parsedClassInstanceDecls = new List<ISyntaxRegion> ();
+		[ThreadStatic]
+		static List<ISyntaxRegion> parsedClassInstanceDecls;
 		/// <summary>
 		/// Takes the class passed via the tr, and resolves its base class and/or implemented interfaces.
 		/// Also usable for enums.
@@ -269,6 +274,9 @@ namespace D_Parser.Resolver.TypeResolution
 		/// </summary>
 		public static TemplateIntermediateType ResolveClassOrInterface(DClassLike dc, ResolutionContext ctxt, ISyntaxRegion instanceDeclaration, bool ResolveFirstBaseIdOnly=false, IEnumerable<TemplateParameterSymbol> extraDeducedTemplateParams = null)
 		{
+			if (parsedClassInstanceDecls == null)
+				parsedClassInstanceDecls = new List<ISyntaxRegion> ();
+
 			switch (dc.ClassType)
 			{
 				case DTokens.Class:
@@ -287,6 +295,10 @@ namespace D_Parser.Resolver.TypeResolution
 				return isClass ? new ClassType(dc, instanceDeclaration, null) as TemplateIntermediateType : new InterfaceType(dc, instanceDeclaration);
 			}
 
+			if (instanceDeclaration != null)
+				parsedClassInstanceDecls.Add(instanceDeclaration);
+			bcStack++;
+
 			var deducedTypes = new DeducedTypeDictionary(dc);
 			var tix = instanceDeclaration as TemplateInstanceExpression;
 			if (tix != null && (ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) == 0)
@@ -295,7 +307,11 @@ namespace D_Parser.Resolver.TypeResolution
 				var givenTemplateArguments = TemplateInstanceHandler.PreResolveTemplateArgs(tix, ctxt, out hasUndeterminedArgs);
 
 				if (!TemplateInstanceHandler.DeduceParams(givenTemplateArguments, false, ctxt, null, dc, deducedTypes))
+				{
+					parsedClassInstanceDecls.Remove(instanceDeclaration);
+					bcStack--;
 					return null;
+				}
 			}
 
 			if (extraDeducedTemplateParams != null)
@@ -305,11 +321,14 @@ namespace D_Parser.Resolver.TypeResolution
 
 			if(dc.BaseClasses == null || dc.BaseClasses.Count < 1)
 			{
+				parsedClassInstanceDecls.Remove (instanceDeclaration);
+				bcStack--;
+
 				// The Object class has no further base class;
 				// Normal class instances have the object as base class;
 				// Interfaces must not have any default base class/interface
-				return isClass ? new ClassType(dc, instanceDeclaration, dc.NameHash != ObjectNameHash ? ctxt.ParseCache.ObjectClassResult : null, null, deducedTypes.Values) :
-					new InterfaceType(dc, instanceDeclaration, null, deducedTypes.Values) as TemplateIntermediateType;
+				return isClass ? new ClassType(dc, instanceDeclaration, dc.NameHash != ObjectNameHash ? ctxt.ParseCache.ObjectClassResult : null, null, deducedTypes.Count != 0 ? deducedTypes.ToReadonly() : null) :
+					new InterfaceType(dc, instanceDeclaration, null, deducedTypes.Count != 0 ? deducedTypes.ToReadonly() : null) as TemplateIntermediateType;
 			}
 
 
@@ -321,10 +340,6 @@ namespace D_Parser.Resolver.TypeResolution
 
 			foreach (var kv in deducedTypes)
 				ctxt.CurrentContext.DeducedTemplateParameters[kv.Key] = kv.Value;
-
-			if (instanceDeclaration != null)
-				parsedClassInstanceDecls.Add(instanceDeclaration);
-			bcStack++;
 
 			TemplateIntermediateType baseClass=null;
 			var interfaces = new List<InterfaceType>();
@@ -404,9 +419,9 @@ namespace D_Parser.Resolver.TypeResolution
 			#endregion
 
 			if (isClass)
-				return new ClassType(dc, instanceDeclaration, baseClass, interfaces.Count == 0 ? null : interfaces.ToArray(), deducedTypes.Values);
+				return new ClassType(dc, instanceDeclaration, baseClass, interfaces.Count == 0 ? null : interfaces.ToArray(), deducedTypes.Count != 0 ? deducedTypes.ToReadonly() : null);
 
-			return new InterfaceType(dc, instanceDeclaration, interfaces.Count == 0 ? null : interfaces.ToArray(), deducedTypes.Values);
+			return new InterfaceType(dc, instanceDeclaration, interfaces.Count == 0 ? null : interfaces.ToArray(), deducedTypes.Count != 0 ? deducedTypes.ToReadonly() : null);
 		}
 
 		public static IBlockNode SearchBlockAt(IBlockNode Parent, CodeLocation Where)
