@@ -61,7 +61,7 @@ namespace D_Parser.Parser
 			if (startOff >= caretOffset)
 				return;
 
-			var tempParentBlock = new DBlockNode ();
+			var tempParentBlock = new DMethod ();
 			var tempBlockStmt = new BlockStatement { ParentNode = tempParentBlock };
 
 			try{
@@ -105,7 +105,11 @@ namespace D_Parser.Parser
 			if (tempBlockStmt.EndLocation > bs.EndLocation)
 				bs.EndLocation = tempBlockStmt.EndLocation;
 			foreach (var stmt in tempBlockStmt._Statements)
+			{
+				stmt.ParentNode = finalParentMethod;
 				stmt.Parent = bs;
+			}
+			AssignInStatementDeclarationsToNewParentNode(tempBlockStmt, finalParentMethod);
 			finalStmtsList.InsertRange(startStmtIndex+1, tempBlockStmt._Statements);
 			
 			if (finalParentMethod != null) {
@@ -135,6 +139,24 @@ namespace D_Parser.Parser
 			}
 
 			//TODO: Handle DBlockNode parents?
+		}
+
+		static void AssignInStatementDeclarationsToNewParentNode(StatementContainingStatement ss, INode newParentNode)
+		{
+			IDeclarationContainingStatement dcs;
+			if (ss.SubStatements != null)
+			{
+				foreach (var s in ss.SubStatements)
+				{
+					dcs = s as IDeclarationContainingStatement;
+					if (dcs != null && dcs.Declarations != null)
+						foreach (var n in dcs.Declarations)
+							n.Parent = newParentNode;
+
+					if (s is StatementContainingStatement)
+						AssignInStatementDeclarationsToNewParentNode(s as StatementContainingStatement, newParentNode);
+				}
+			}
 		}
 		#endregion
 
