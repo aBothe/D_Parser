@@ -6,6 +6,7 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
 using D_Parser.Parser;
 using D_Parser.Resolver.ExpressionSemantics;
+using D_Parser.Resolver.Templates;
 namespace D_Parser.Resolver.TypeResolution
 {
 	/// <summary>
@@ -266,7 +267,7 @@ namespace D_Parser.Resolver.TypeResolution
 		/// Never returns null. Instead, the original 'tr' object will be returned if no base class was resolved.
 		/// Will clone 'tr', whereas the new object will contain the base class.
 		/// </summary>
-		public static TemplateIntermediateType ResolveClassOrInterface(DClassLike dc, ResolutionContext ctxt, ISyntaxRegion instanceDeclaration, bool ResolveFirstBaseIdOnly=false, IEnumerable<TemplateParameterSymbol> deducedTypes = null)
+		public static TemplateIntermediateType ResolveClassOrInterface(DClassLike dc, ResolutionContext ctxt, ISyntaxRegion instanceDeclaration, bool ResolveFirstBaseIdOnly=false, IEnumerable<TemplateParameterSymbol> extraDeducedTemplateParams = null)
 		{
 			switch (dc.ClassType)
 			{
@@ -281,100 +282,131 @@ namespace D_Parser.Resolver.TypeResolution
 
 			bool isClass = dc.ClassType == DTokens.Class;
 
-			if(dc.BaseClasses == null || dc.BaseClasses.Count < 1)
-			{
-				// The Object class has no further base class;
-				// Normal class instances have the object as base class;
-				// Interfaces must not have any default base class/interface
-				return isClass ? new ClassType(dc, instanceDeclaration, dc.NameHash != ObjectNameHash ? ctxt.ParseCache.ObjectClassResult : null) :
-					new InterfaceType(dc, instanceDeclaration) as TemplateIntermediateType;
-			}
-
 			if (bcStack > 6 || (instanceDeclaration != null && parsedClassInstanceDecls.Contains(instanceDeclaration)))
 			{
 				return isClass ? new ClassType(dc, instanceDeclaration, null) as TemplateIntermediateType : new InterfaceType(dc, instanceDeclaration);
 			}
 
-			#region Base class & interface resolution
-			TemplateIntermediateType baseClass=null;
-			var interfaces = new List<InterfaceType>();
-
-			for (int i = 0; i < (ResolveFirstBaseIdOnly ? 1 : dc.BaseClasses.Count); i++)
+			var deducedTypes = new DeducedTypeDictionary(dc);
+			var tix = instanceDeclaration as TemplateInstanceExpression;
+			if (tix != null && (ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) == 0)
 			{
-				var type = dc.BaseClasses[i];
+				bool hasUndeterminedArgs;
+				var givenTemplateArguments = TemplateInstanceHandler.PreResolveTemplateArgs(tix, ctxt, out hasUndeterminedArgs);
 
-				// If there's an explicit 'Object' inheritance, also return the pre-resolved object class
-				if (type is IdentifierDeclaration && 
-					(type as IdentifierDeclaration).IdHash == ObjectNameHash)
-				{
-					if (baseClass!=null)
-					{
-						ctxt.LogError(new ResolutionError(dc, "Class must not have two base classes"));
-						continue;
-					}
-					else if (i != 0)
-					{
-						ctxt.LogError(new ResolutionError(dc, "The base class name must preceed base interfaces"));
-						continue;
-					}
+				if (!TemplateInstanceHandler.DeduceParams(givenTemplateArguments, false, ctxt, null, dc, deducedTypes))
+					return null;
+			}
 
-					baseClass = ctxt.ParseCache.ObjectClassResult;
-					continue;
-				}
+			if (extraDeducedTemplateParams != null)
+				foreach (var tps in extraDeducedTemplateParams)
+					deducedTypes[tps.Parameter] = tps;
 
-				if (type == null || (type is IdentifierDeclaration && (type as IdentifierDeclaration).IdHash == dc.NameHash) || dc.NodeRoot == dc)
-				{
-					ctxt.LogError(new ResolutionError(dc, "A class cannot inherit from itself"));
-					continue;
-				}
-				AbstractType[] res;
+
+			if(dc.BaseClasses == null || dc.BaseClasses.Count < 1)
+			{
+				// The Object class has no further base class;
+				// Normal class instances have the object as base class;
+				// Interfaces must not have any default base class/interface
+				return isClass ? new ClassType(dc, instanceDeclaration, dc.NameHash != ObjectNameHash ? ctxt.ParseCache.ObjectClassResult : null, null, deducedTypes.Values) :
+					new InterfaceType(dc, instanceDeclaration, null, deducedTypes.Values) as TemplateIntermediateType;
+			}
+
+
+			#region Base class & interface resolution
+			AbstractType[] res;
+			var pop = ctxt.ScopedBlock != dc.Parent;
+			if (pop)
 				ctxt.PushNewScope(dc.Parent as IBlockNode);
 
-				if(instanceDeclaration != null)
-					parsedClassInstanceDecls.Add(instanceDeclaration);
-				bcStack++;
-				try{
-					res= DResolver.StripAliasSymbols(TypeDeclarationResolver.Resolve(type, ctxt));
-				}finally{
-					bcStack--;
-					parsedClassInstanceDecls.Remove(instanceDeclaration);
-				}
+			foreach (var kv in deducedTypes)
+				ctxt.CurrentContext.DeducedTemplateParameters[kv.Key] = kv.Value;
 
-				ctxt.Pop();
+			if (instanceDeclaration != null)
+				parsedClassInstanceDecls.Add(instanceDeclaration);
+			bcStack++;
 
-				ctxt.CheckForSingleResult(res, type);
-
-				if(res!=null && res.Length != 0)
+			TemplateIntermediateType baseClass=null;
+			var interfaces = new List<InterfaceType>();
+			try
+			{
+				for (int i = 0; i < (ResolveFirstBaseIdOnly ? 1 : dc.BaseClasses.Count); i++)
 				{
-					var r = res[0];
-					if (r is ClassType || r is TemplateType)
+					var type = dc.BaseClasses[i];
+
+					// If there's an explicit 'Object' inheritance, also return the pre-resolved object class
+					if (type is IdentifierDeclaration && 
+						(type as IdentifierDeclaration).IdHash == ObjectNameHash)
 					{
-						if (!isClass)
-							ctxt.LogError(new ResolutionError(type, "An interface cannot inherit from non-interfaces"));
-						else if (i == 0)
+						if (baseClass!=null)
 						{
-							baseClass = r as TemplateIntermediateType;
+							ctxt.LogError(new ResolutionError(dc, "Class must not have two base classes"));
+							continue;
+						}
+						else if (i != 0)
+						{
+							ctxt.LogError(new ResolutionError(dc, "The base class name must preceed base interfaces"));
+							continue;
+						}
+
+						baseClass = ctxt.ParseCache.ObjectClassResult;
+						continue;
+					}
+
+					if (type == null || (type is IdentifierDeclaration && (type as IdentifierDeclaration).IdHash == dc.NameHash) || dc.NodeRoot == dc)
+					{
+						ctxt.LogError(new ResolutionError(dc, "A class cannot inherit from itself"));
+						continue;
+					}
+				
+					res= DResolver.StripAliasSymbols(TypeDeclarationResolver.Resolve(type, ctxt));
+
+					ctxt.CheckForSingleResult(res, type);
+
+					if(res!=null && res.Length != 0)
+					{
+						var r = res[0];
+						if (r is ClassType || r is TemplateType)
+						{
+							if (!isClass)
+								ctxt.LogError(new ResolutionError(type, "An interface cannot inherit from non-interfaces"));
+							else if (i == 0)
+							{
+								baseClass = r as TemplateIntermediateType;
+							}
+							else
+								ctxt.LogError(new ResolutionError(dc, "The base "+(r is ClassType ?  "class" : "template")+" name must preceed base interfaces"));
+						}
+						else if (r is InterfaceType)
+						{
+							interfaces.Add(r as InterfaceType);
 						}
 						else
-							ctxt.LogError(new ResolutionError(dc, "The base "+(r is ClassType ?  "class" : "template")+" name must preceed base interfaces"));
-					}
-					else if (r is InterfaceType)
-					{
-						interfaces.Add(r as InterfaceType);
-					}
-					else
-					{
-						ctxt.LogError(new ResolutionError(type, "Resolved class is neither a class nor an interface"));
-						continue;
+						{
+							ctxt.LogError(new ResolutionError(type, "Resolved class is neither a class nor an interface"));
+							continue;
+						}
 					}
 				}
 			}
+			finally
+			{
+				bcStack--;
+				parsedClassInstanceDecls.Remove(instanceDeclaration);
+			}
+
+			if (pop)
+				ctxt.Pop();
+			else
+				foreach (var kv in deducedTypes) // May be backup old tps?
+					ctxt.CurrentContext.DeducedTemplateParameters.Remove(kv.Key);
+
 			#endregion
 
 			if (isClass)
-				return new ClassType(dc, instanceDeclaration, baseClass, interfaces.Count == 0 ? null : interfaces.ToArray(), deducedTypes);
+				return new ClassType(dc, instanceDeclaration, baseClass, interfaces.Count == 0 ? null : interfaces.ToArray(), deducedTypes.Values);
 
-			return new InterfaceType(dc, instanceDeclaration, interfaces.Count == 0 ? null : interfaces.ToArray(), deducedTypes);
+			return new InterfaceType(dc, instanceDeclaration, interfaces.Count == 0 ? null : interfaces.ToArray(), deducedTypes.Values);
 		}
 
 		public static IBlockNode SearchBlockAt(IBlockNode Parent, CodeLocation Where)

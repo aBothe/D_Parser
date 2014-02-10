@@ -266,7 +266,9 @@ namespace D_Parser.Resolver.TypeResolution
 
 				var deducedTypes = new DeducedTypeDictionary(overload);
 
-				if (DeduceParams(givenTemplateArguments, isMethodCall, ctxt, overload, tplNode, deducedTypes))
+				if (deducedTypes.AllParamatersSatisfied) // Happens e.g. after resolving a class/interface definition
+					filteredOverloads.Add(o);
+				else if (DeduceParams(givenTemplateArguments, isMethodCall, ctxt, overload, tplNode, deducedTypes))
 				{
 					overload.DeducedTypes = deducedTypes.ToReadonly(); // Assign calculated types to final result
 					filteredOverloads.Add(o);
@@ -277,7 +279,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return filteredOverloads;
 		}
 
-		private static bool DeduceParams(IEnumerable<ISemantic> givenTemplateArguments, 
+		internal static bool DeduceParams(IEnumerable<ISemantic> givenTemplateArguments, 
 			bool isMethodCall, 
 			ResolutionContext ctxt, 
 			DSymbol overload, 
@@ -312,7 +314,7 @@ namespace D_Parser.Resolver.TypeResolution
 			IEnumerator<ISemantic> argEnum, 
 			TemplateParameter expectedParam)
 		{
-			if (expectedParam is TemplateThisParameter && overload.Base != null)
+			if (expectedParam is TemplateThisParameter && overload != null && overload.Base != null)
 			{
 				var ttp = (TemplateThisParameter)expectedParam;
 

@@ -30,7 +30,8 @@ namespace D_Parser.Resolver.Templates
 		{
 			if (ms.DeducedTypes != null)
 				foreach (var i in ms.DeducedTypes)
-					this [i.Parameter] = i;
+					if(i != null)
+						this [i.Parameter] = i;
 		}
 
 		public ReadOnlyCollection<TemplateParameterSymbol> ToReadonly()
