@@ -108,10 +108,10 @@ namespace D_Parser.Resolver
 		{
 			get
 			{
-				return base.TypeDeclarationOf ?? (modifier == 0 ? 
+				return modifier == 0 ? 
 				                                  (ITypeDeclaration)new DTokenDeclaration(TypeToken) :
 				                                  new MemberFunctionAttributeDecl(modifier){ 
-				                                  	InnerType = new DTokenDeclaration(TypeToken)});
+				                                  	InnerType = new DTokenDeclaration(TypeToken)};
 			}
 		}
 
