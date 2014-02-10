@@ -231,8 +231,34 @@ namespace D_Parser.Resolver.TypeResolution
 			return l;
 		}
 
+		public static EnumType ResolveDEnum(DEnum de, ResolutionContext ctxt, ISyntaxRegion instanceDeclaration)
+		{
+			AbstractType bt;
+
+			if (de.Type == null)
+				bt = new PrimitiveType(DTokens.Int);
+			else
+			{
+				if (de.Parent is IBlockNode)
+					ctxt.PushNewScope(de.Parent as IBlockNode);
+
+				var bts = TypeDeclarationResolver.Resolve(de.Type, ctxt);
+
+				if (de.Parent is IBlockNode)
+					ctxt.Pop();
+
+				ctxt.CheckForSingleResult(bts, de.Type);
+
+				bt = bts != null && bts.Length != 0 ? bts[0] : null;
+			}
+
+			return new EnumType(de, bt, instanceDeclaration);
+		}
+
+		static readonly int ObjectNameHash = "Object".GetHashCode();
 
 		static int bcStack = 0;
+		static List<ISyntaxRegion> parsedClassInstanceDecls = new List<ISyntaxRegion> ();
 		/// <summary>
 		/// Takes the class passed via the tr, and resolves its base class and/or implemented interfaces.
 		/// Also usable for enums.
@@ -240,72 +266,46 @@ namespace D_Parser.Resolver.TypeResolution
 		/// Never returns null. Instead, the original 'tr' object will be returned if no base class was resolved.
 		/// Will clone 'tr', whereas the new object will contain the base class.
 		/// </summary>
-		public static UserDefinedType ResolveBaseClasses(UserDefinedType tr, ResolutionContext ctxt, bool ResolveFirstBaseIdOnly=false)
+		public static TemplateIntermediateType ResolveClassOrInterface(DClassLike dc, ResolutionContext ctxt, ISyntaxRegion instanceDeclaration, bool ResolveFirstBaseIdOnly=false, IEnumerable<TemplateParameterSymbol> deducedTypes = null)
 		{
-			if (bcStack > 8)
+			switch (dc.ClassType)
 			{
-				bcStack--;
-				return tr;
+				case DTokens.Class:
+				case DTokens.Interface:
+					break;
+				default:
+					if (dc.BaseClasses.Count != 0)
+						ctxt.LogError(dc, "Only classes and interfaces may inherit from other classes/interfaces");
+					return null;
 			}
 
-			if (tr is EnumType)
-			{
-				var et = tr as EnumType;
+			bool isClass = dc.ClassType == DTokens.Class;
 
-				AbstractType bt = null;
-
-				if(et.Definition.Type == null)
-					bt = new PrimitiveType(DTokens.Int);
-				else
-				{
-					if(tr.Definition.Parent is IBlockNode)
-						ctxt.PushNewScope((IBlockNode)tr.Definition.Parent);
-
-					var bts=TypeDeclarationResolver.Resolve(et.Definition.Type, ctxt);
-
-					if (tr.Definition.Parent is IBlockNode)
-						ctxt.Pop();
-
-					ctxt.CheckForSingleResult(bts, et.Definition.Type);
-
-					if(bts!=null && bts.Length!=0)
-						bt=bts[0];
-				}
-
-				return new EnumType(et.Definition, bt, et.DeclarationOrExpressionBase);
-			}
-
-			var dc = tr.Definition as DClassLike;
-			// Return immediately if searching base classes of the Object class
-			if (dc == null || ((dc.BaseClasses == null || dc.BaseClasses.Count < 1) && dc.Name == "Object"))
-				return tr;
-
-			// If no base class(es) specified, and if it's no interface that is handled, return the global Object reference
-			// -- and do not throw any error message, it's ok
 			if(dc.BaseClasses == null || dc.BaseClasses.Count < 1)
 			{
-				if(tr is ClassType) // Only Classes can inherit from non-interfaces
-					return new ClassType(dc, tr.DeclarationOrExpressionBase, ctxt.ParseCache.ObjectClassResult);
-				return tr;
+				// The Object class has no further base class;
+				// Normal class instances have the object as base class;
+				// Interfaces must not have any default base class/interface
+				return isClass ? new ClassType(dc, instanceDeclaration, dc.NameHash != ObjectNameHash ? ctxt.ParseCache.ObjectClassResult : null) :
+					new InterfaceType(dc, instanceDeclaration) as TemplateIntermediateType;
+			}
+
+			if (bcStack > 6 || (instanceDeclaration != null && parsedClassInstanceDecls.Contains(instanceDeclaration)))
+			{
+				return isClass ? new ClassType(dc, instanceDeclaration, null) as TemplateIntermediateType : new InterfaceType(dc, instanceDeclaration);
 			}
 
 			#region Base class & interface resolution
 			TemplateIntermediateType baseClass=null;
 			var interfaces = new List<InterfaceType>();
 
-			if (!(tr is ClassType || tr is InterfaceType))
-			{
-				if (dc.BaseClasses.Count != 0)
-					ctxt.LogError(dc,"Only classes and interfaces may inherit from other classes/interfaces");
-				return tr;
-			}
-
 			for (int i = 0; i < (ResolveFirstBaseIdOnly ? 1 : dc.BaseClasses.Count); i++)
 			{
 				var type = dc.BaseClasses[i];
 
 				// If there's an explicit 'Object' inheritance, also return the pre-resolved object class
-				if (type is IdentifierDeclaration && ((IdentifierDeclaration)type).Id == "Object")
+				if (type is IdentifierDeclaration && 
+					(type as IdentifierDeclaration).IdHash == ObjectNameHash)
 				{
 					if (baseClass!=null)
 					{
@@ -327,12 +327,20 @@ namespace D_Parser.Resolver.TypeResolution
 					ctxt.LogError(new ResolutionError(dc, "A class cannot inherit from itself"));
 					continue;
 				}
-
+				AbstractType[] res;
 				ctxt.PushNewScope(dc.Parent as IBlockNode);
 
+				if(instanceDeclaration != null)
+					parsedClassInstanceDecls.Add(instanceDeclaration);
 				bcStack++;
+				try{
+					res= DResolver.StripAliasSymbols(TypeDeclarationResolver.Resolve(type, ctxt));
+				}finally{
+					bcStack--;
+					parsedClassInstanceDecls.Remove(instanceDeclaration);
+				}
 
-				var res= DResolver.StripAliasSymbols(TypeDeclarationResolver.Resolve(type, ctxt));
+				ctxt.Pop();
 
 				ctxt.CheckForSingleResult(res, type);
 
@@ -341,18 +349,18 @@ namespace D_Parser.Resolver.TypeResolution
 					var r = res[0];
 					if (r is ClassType || r is TemplateType)
 					{
-						if (tr is InterfaceType)
+						if (!isClass)
 							ctxt.LogError(new ResolutionError(type, "An interface cannot inherit from non-interfaces"));
 						else if (i == 0)
 						{
-							baseClass = (TemplateIntermediateType)r;
+							baseClass = r as TemplateIntermediateType;
 						}
 						else
 							ctxt.LogError(new ResolutionError(dc, "The base "+(r is ClassType ?  "class" : "template")+" name must preceed base interfaces"));
 					}
 					else if (r is InterfaceType)
 					{
-						interfaces.Add((InterfaceType)r);
+						interfaces.Add(r as InterfaceType);
 					}
 					else
 					{
@@ -360,23 +368,13 @@ namespace D_Parser.Resolver.TypeResolution
 						continue;
 					}
 				}
-
-				bcStack--;
-
-				ctxt.Pop();
 			}
 			#endregion
 
-			if (baseClass == null && interfaces.Count == 0)
-				return tr;
+			if (isClass)
+				return new ClassType(dc, instanceDeclaration, baseClass, interfaces.Count == 0 ? null : interfaces.ToArray(), deducedTypes);
 
-			if (tr is ClassType)
-				return new ClassType(dc, tr.DeclarationOrExpressionBase, baseClass, interfaces.Count == 0 ? null : interfaces.ToArray(), tr.DeducedTypes);
-			else if (tr is InterfaceType)
-				return new InterfaceType(dc, tr.DeclarationOrExpressionBase, interfaces.Count == 0 ? null : interfaces.ToArray(), tr.DeducedTypes);
-			
-			// Method should end here
-			return tr;
+			return new InterfaceType(dc, instanceDeclaration, interfaces.Count == 0 ? null : interfaces.ToArray(), deducedTypes);
 		}
 
 		public static IBlockNode SearchBlockAt(IBlockNode Parent, CodeLocation Where)

@@ -599,7 +599,7 @@ namespace D_Parser.Resolver.TypeResolution
 					ret = new ModuleSymbol(m as DModule, typeBase);
 			}
 			else if (m is DEnum)
-				ret = new EnumType((DEnum)m, typeBase);
+				ret = DResolver.ResolveDEnum(m as DEnum, ctxt, typeBase);
 			else if (m is TemplateParameter.Node)
 			{
 				var tpn = m as TemplateParameter.Node;
@@ -686,41 +686,30 @@ namespace D_Parser.Resolver.TypeResolution
 			return invisibleTypeParams;
 		}
 
-		static AbstractType HandleClassLikeMatch (DClassLike dc, ResolutionContext ctxt, object typeBase, bool canResolveBase)
+		static AbstractType HandleClassLikeMatch (DClassLike dc, ResolutionContext ctxt, ISyntaxRegion typeBase, bool canResolveBase)
 		{
-			AbstractType ret;
-			UserDefinedType udt = null;
 			var invisibleTypeParams = GetInvisibleTypeParameters (dc, ctxt);
 
 			switch (dc.ClassType) {
 				case DTokens.Struct:
-					ret = new StructType (dc, typeBase as ISyntaxRegion, invisibleTypeParams);
-					break;
+					return new StructType (dc, typeBase, invisibleTypeParams);
+
 				case DTokens.Union:
-					ret = new UnionType (dc, typeBase as ISyntaxRegion, invisibleTypeParams);
-					break;
-				case DTokens.Class:
-					udt = new ClassType (dc, typeBase as ISyntaxRegion, null, null, invisibleTypeParams);
-					ret = null;
-					break;
+					return new UnionType (dc, typeBase, invisibleTypeParams);
+
 				case DTokens.Interface:
-					udt = new InterfaceType (dc, typeBase as ISyntaxRegion, null, invisibleTypeParams);
-					ret = null;
-					break;
+				case DTokens.Class:
+					return DResolver.ResolveClassOrInterface(dc, ctxt, typeBase, false, invisibleTypeParams);
+
 				case DTokens.Template:
 					if (dc.ContainsAttribute (DTokens.Mixin))
-						ret = new MixinTemplateType (dc, typeBase as ISyntaxRegion, invisibleTypeParams);
-					else
-						ret = new TemplateType (dc, typeBase as ISyntaxRegion, invisibleTypeParams);
-					break;
+						return new MixinTemplateType (dc, typeBase, invisibleTypeParams);
+					return new TemplateType (dc, typeBase, invisibleTypeParams);
+
 				default:
-					ret = null;
 					ctxt.LogError (new ResolutionError (dc, "Unknown type (" + DTokens.GetTokenString (dc.ClassType) + ")"));
-					break;
+					return null;
 			}
-			if (dc.ClassType == DTokens.Class || dc.ClassType == DTokens.Interface)
-				ret = canResolveBase ? DResolver.ResolveBaseClasses (udt, ctxt) : udt;
-			return ret;
 		}
 
 		public static AbstractType[] HandleNodeMatches(

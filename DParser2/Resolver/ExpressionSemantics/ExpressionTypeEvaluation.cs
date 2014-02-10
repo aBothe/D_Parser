@@ -811,9 +811,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					while (!(classDef is DClassLike) && classDef != null)
 						classDef = classDef.Parent as IBlockNode;
 
-					if (classDef != null)
+					if (classDef is DClassLike)
 					{
-						var tr = DResolver.ResolveBaseClasses(new ClassType(classDef as DClassLike, null, null), ctxt, true);
+						var tr = DResolver.ResolveClassOrInterface(classDef as DClassLike, ctxt, null, true);
 
 						if (tr.Base != null)
 						{

@@ -252,8 +252,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 							EnlistInterfaceHierarchy(interfaces, I);
 					}
 
-					if(resolveBaseClassIfRequired && udt.Base == null && type == DTokens.Class)
-						udt = DResolver.ResolveBaseClasses(udt, ctxt);
+					if(resolveBaseClassIfRequired && udt.Base == null && 
+						(type == DTokens.Class ||type == DTokens.Interface))
+						udt = DResolver.ResolveClassOrInterface(udt.Definition as DClassLike, ctxt, udt.DeclarationOrExpressionBase);
 
 					udt = udt.Base as UserDefinedType;
 

@@ -1190,6 +1190,29 @@ int sym;
 		}
 
 		[Test]
+		public void TemplateArgAsBasetype()
+		{
+			var ctxt = CreateCtxt("A",@"module A;
+class A(T) { T t; }
+class B(Z) : A!Z {}
+
+B!int b;");
+
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression("b.t");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			t = (t as DerivedDataType).Base;
+			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
+			t = (t as DerivedDataType).Base;
+			Assert.That(t, Is.TypeOf(typeof(PrimitiveType)));
+			
+		}
+
+		[Test]
 		public void TemplateTypeTuple1()
 		{
 			var pcl = CreateCache(@"module modA;

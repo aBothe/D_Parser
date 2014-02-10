@@ -76,7 +76,7 @@ namespace D_Parser.Refactoring
 				return false;
 				
 			// resolve immediate base classes/interfaces; Rely on dc being either a class or an interface, nothing else.
-			var t = DResolver.ResolveBaseClasses (dc.ClassType == DTokens.Class ? (UserDefinedType)new ClassType (dc, null, null) : new InterfaceType (dc, null),ctxt) as TemplateIntermediateType;
+			var t = DResolver.ResolveClassOrInterface (dc,ctxt, null);
 			alreadyResolvedClasses.Add (dc);
 
 			// Look for classes/interfaces that match dc (check all dcs to have better performance on ambiguous lastresults),
