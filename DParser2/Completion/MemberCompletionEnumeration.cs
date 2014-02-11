@@ -50,8 +50,8 @@ namespace D_Parser.Completion
 		{
 			var dv = n as DVariable;
 			if(isVarInst || !(n is DMethod || dv != null || n is TemplateParameter.Node) || 
-			   (n as DNode).IsStatic ||
-			   (dv != null && dv.IsConst))
+			   (n as DNode).IsStatic || n is DEnumValue ||
+			   (dv != null && (dv.IsConst || dv.IsAlias)))
 			{
 				if(n is DModule)
 					gen.AddModule(n as DModule);
