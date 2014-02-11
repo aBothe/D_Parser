@@ -1657,6 +1657,22 @@ template Baz(B)
 		}
 
 		[Test]
+		public void SustainingDeducedTypesInImplicitTemplProps()
+		{
+			var ctxt = CreateCtxt("A",@"module A;
+template baz(string s) { enum baz = ""int ""~s~"";""; }
+");
+
+			var x = DParser.ParseExpression("baz!\"w\"");
+			var v = Evaluation.EvaluateValue(x, ctxt);
+
+			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+			var av = v as ArrayValue;
+			Assert.That(av.IsString);
+			Assert.That(av.StringValue, Is.EqualTo("int w;"));
+		}
+
+		[Test]
 		public void CrossModuleTemplateDecl()
 		{
 			var ctxt = CreateCtxt ("c",@"

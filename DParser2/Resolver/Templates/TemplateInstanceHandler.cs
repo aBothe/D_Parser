@@ -188,7 +188,17 @@ namespace D_Parser.Resolver.TypeResolution
 
 			if (matchingChild != null) // Currently requried for proper UFCS resolution - sustain template's Tag
 				foreach (var ch in matchingChild)
+				{
+					var ds = ch as DSymbol;
+					if (ds != null)
+					{
+						var newDeducedTypes = new DeducedTypeDictionary(ds);
+						foreach (var tps in template.DeducedTypes)
+							newDeducedTypes[tps.Parameter] = tps;
+						ds.DeducedTypes = newDeducedTypes.ToReadonly();
+					}
 					ch.Tag = template.Tag;
+				}
 
 			// Undo context-related changes
 			if (pop)
