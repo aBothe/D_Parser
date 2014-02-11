@@ -220,109 +220,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			foreach (var ov in methodOverloads)
 			{
 				if (ov is MemberSymbol)
-				{
-					var ms = ov as MemberSymbol;
-					var dm = ms.Definition as DMethod;
-
-					if (dm != null)
-					{
-						ISemantic firstUfcsArg;
-						bool isUfcs = UFCSResolver.IsUfcsResult(ov, out firstUfcsArg);
-						// In the case of an ufcs, insert the first argument into the CallArguments list
-						if (isUfcs && !hasHandledUfcsResultBefore)
-						{
-							callArguments.Insert(0, ValueProvider != null ? baseValue as ISemantic : firstUfcsArg);
-							hasHandledUfcsResultBefore = true;
-						}
-						else if (!isUfcs && hasHandledUfcsResultBefore) // In the rare case of having a ufcs result occuring _after_ a normal member result, remove the initial arg again
-						{
-							callArguments.RemoveAt(0);
-							hasHandledUfcsResultBefore = false;
-						}
-
-						var deducedTypeDict = new DeducedTypeDictionary(ms);
-						var templateParamDeduction = new TemplateParameterDeduction(deducedTypeDict, ctxt);
-
-
-						if (dm.Parameters.Count == 0 && callArguments.Count > 0)
-							continue;
-
-						int currentArg = 0;
-						bool add = true;
-						if (dm.Parameters.Count > 0 || callArguments.Count > 0)
-							for (int i = 0; i < dm.Parameters.Count; i++)
-							{
-								var paramType = dm.Parameters[i].Type;
-
-								// Handle the usage of tuples: Tuples may only be used as as-is, so not as an array, pointer or in a modified way..
-								if (paramType is IdentifierDeclaration &&
-									TryHandleMethodArgumentTuple(ctxt,ref add, callArguments, dm, deducedTypeDict, i, ref currentArg))
-									continue;
-								else if (currentArg < callArguments.Count)
-								{
-									if (!templateParamDeduction.HandleDecl(null, paramType, callArguments[currentArg++]))
-									{
-										add = false;
-										break;
-									}
-								}
-								else
-								{
-									// If there are more parameters than arguments given, check if the param has default values
-									if (!(dm.Parameters[i] is DVariable) || (dm.Parameters[i] as DVariable).Initializer == null)
-									{
-										add = false;
-										break;
-									}
-									// Assume that all further method parameters do have default values - and don't check further parameters
-									break;
-								}
-							}
-
-						// If type params were unassigned, try to take the defaults
-						if (add && dm.TemplateParameters != null)
-						{
-							foreach (var tpar in dm.TemplateParameters)
-							{
-								if (deducedTypeDict[tpar] == null)
-								{
-									add = templateParamDeduction.Handle(tpar, null);
-									if (!add)
-									{
-										if (hasNonFinalArgs)
-										{
-											deducedTypeDict[tpar] = new TemplateParameterSymbol(tpar, null);
-											add = true;
-										}
-										else
-											break;
-									}
-								}
-							}
-						}
-
-						if (add && (deducedTypeDict.AllParamatersSatisfied || hasNonFinalArgs))
-						{
-							ms.DeducedTypes = deducedTypeDict.ToReadonly();
-							var pop = ctxt.ScopedBlock != dm;
-							if (pop)
-								ctxt.PushNewScope(dm);
-							ctxt.CurrentContext.IntroduceTemplateParameterTypes(ms);
-
-							var bt = TypeDeclarationResolver.GetMethodReturnType(dm, ctxt) ?? ms.Base;
-
-							if (pop)
-								ctxt.Pop();
-							else
-								ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(ms);
-
-							if (ValueProvider != null || !returnBaseTypeOnly)
-								argTypeFilteredOverloads.Add(new MemberSymbol(dm, bt, ms.DeclarationOrExpressionBase, ms.DeducedTypes) { Tag = ms.Tag });
-							else
-								argTypeFilteredOverloads.Add(bt);
-						}
-					}
-				}
+					HandleDMethodOverload(ctxt, ValueProvider != null, baseValue, callArguments, returnBaseTypeOnly, hasNonFinalArgs, argTypeFilteredOverloads, ref hasHandledUfcsResultBefore, ov as MemberSymbol);
 				else if (ov is DelegateType)
 				{
 					var dg = ov as DelegateType;
@@ -348,6 +246,118 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			#endregion
 
 			return argTypeFilteredOverloads;
+		}
+
+		static void HandleDMethodOverload(ResolutionContext ctxt, bool eval, ISymbolValue baseValue, List<ISemantic> callArguments, bool returnBaseTypeOnly, bool hasNonFinalArgs, List<AbstractType> argTypeFilteredOverloads, ref bool hasHandledUfcsResultBefore, MemberSymbol ms)
+		{
+			var dm = ms.Definition as DMethod;
+
+			if (dm == null)
+				return;
+
+			ISemantic firstUfcsArg;
+			bool isUfcs = UFCSResolver.IsUfcsResult(ms, out firstUfcsArg);
+			// In the case of an ufcs, insert the first argument into the CallArguments list
+			if (isUfcs && !hasHandledUfcsResultBefore)
+			{
+				callArguments.Insert(0, eval ? baseValue as ISemantic : firstUfcsArg);
+				hasHandledUfcsResultBefore = true;
+			}
+			else if (!isUfcs && hasHandledUfcsResultBefore) // In the rare case of having a ufcs result occuring _after_ a normal member result, remove the initial arg again
+			{
+				callArguments.RemoveAt(0);
+				hasHandledUfcsResultBefore = false;
+			}
+
+			if (dm.Parameters.Count == 0 && callArguments.Count > 0)
+				return;
+
+			var deducedTypeDict = new DeducedTypeDictionary(ms);
+			var templateParamDeduction = new TemplateParameterDeduction(deducedTypeDict, ctxt);
+
+			var pop = ctxt.ScopedBlock != dm;
+			if (pop){
+				ctxt.PushNewScope(dm);
+				ctxt.CurrentContext.DeducedTemplateParameters = deducedTypeDict;
+			}
+
+			bool add = true;
+			int currentArg = 0;
+			if (dm.Parameters.Count > 0 || callArguments.Count > 0)
+				for (int i = 0; i < dm.Parameters.Count; i++)
+				{
+					var paramType = dm.Parameters[i].Type;
+
+					if (!pop)
+						ctxt.CurrentContext.IntroduceTemplateParameterTypes(ms);
+					
+					// Handle the usage of tuples: Tuples may only be used as as-is, so not as an array, pointer or in a modified way..
+					if (paramType is IdentifierDeclaration &&
+						TryHandleMethodArgumentTuple(ctxt, ref add, callArguments, dm, deducedTypeDict, i, ref currentArg))
+						continue;
+					else if (currentArg < callArguments.Count)
+					{
+						if(!(add = templateParamDeduction.HandleDecl(null, paramType, callArguments[currentArg++])))
+							break;
+					}
+					else
+					{
+						// If there are more parameters than arguments given, check if the param has default values
+						add = !(dm.Parameters[i] is DVariable) || (dm.Parameters[i] as DVariable).Initializer != null;
+
+						// Assume that all further method parameters do have default values - and don't check further parameters
+						break;
+					}
+				}
+
+			if(!add)
+			{
+				if (pop)
+					ctxt.Pop();
+				else
+					ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(ms);
+				return;
+			}
+
+			// If type params were unassigned, try to take the defaults
+			if (dm.TemplateParameters != null)
+			{
+				foreach (var tpar in dm.TemplateParameters)
+				{
+					if (deducedTypeDict[tpar] == null && !templateParamDeduction.Handle(tpar, null))
+					{
+						if (!hasNonFinalArgs)
+						{
+							if (pop)
+								ctxt.Pop();
+							else
+								ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(ms);
+							return;
+						}
+
+						deducedTypeDict[tpar] = new TemplateParameterSymbol(tpar, null);
+					}
+				}
+			}
+
+			if (deducedTypeDict.AllParamatersSatisfied || hasNonFinalArgs)
+			{
+				ms.DeducedTypes = deducedTypeDict.ToReadonly();
+				if(!pop)
+					ctxt.CurrentContext.IntroduceTemplateParameterTypes(ms);
+
+				var bt = TypeDeclarationResolver.GetMethodReturnType(dm, ctxt) ?? ms.Base;
+
+				if (pop)
+					ctxt.Pop();
+				else
+					ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(ms);
+
+				if (eval || !returnBaseTypeOnly)
+					argTypeFilteredOverloads.Add(new MemberSymbol(dm, bt, ms.DeclarationOrExpressionBase, ms.DeducedTypes) { Tag = ms.Tag });
+				else
+					argTypeFilteredOverloads.Add(bt);
+			}
 		}
 
 		static ISemantic HandleCallDelegateType(AbstractSymbolValueProvider ValueProvider,DelegateType dg, List<AbstractType> methodOverloads, bool returnBaseTypeOnly)

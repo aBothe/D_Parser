@@ -2453,6 +2453,29 @@ unittest
 			Assert.That(pt.Modifier, Is.EqualTo(0));
 		}
 
+		[Test]
+		public void MethodParameterTypeResolutionScope()
+		{
+			var ctxt = CreateCtxt("A", @"module A;
+public static struct Namespace
+{
+alias ulong UserId;
+int getGames(UserId); // UserId, not Namespace.UserId
+}
+
+Namespace.UserId uid;
+");
+
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression("Namespace.getGames(uid)");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(PrimitiveType)));
+
+		}
+
 		/// <summary>
 		/// Strings literals which are sliced are now implicitly convertible to a char pointer:
 		/// 
