@@ -5054,27 +5054,50 @@ namespace D_Parser.Parser
 				 *		true 
 				 *		false 
 				 *		null 
-				 *		__FILE__ 
-				 *		__LINE__
+				 *		this
+				*		__FILE__
+				*		__MODULE__
+				*		__LINE__
+				*		__FUNCTION__
+				*		__PRETTY_FUNCTION__
 				 */
 
-				if (IsBasicType(laKind)) {
-					Step ();
-					args.Add (new TypeDeclarationExpression (new DTokenDeclaration (t.Kind) {
-						Location = t.Location,
-						EndLocation = t.EndLocation
-					}));
-				} else if (laKind == Literal ||
-				           laKind == True || laKind == False || laKind == Null ||
-				           laKind == __FILE__ || laKind == __LINE__ || IsEOF)
-					args.Add (PrimaryExpression (Scope));
-				else if(laKind == Identifier) {
-					Step();
-					args.Add(new IdentifierExpression(t.Value) { Location=t.Location, EndLocation = t.EndLocation });
-				}
-				else {
-					SynErr (laKind, "Illegal token found on template instance expression argument");
-					Step ();
+				switch (laKind)
+				{
+					case Literal:
+					case True:
+					case False:
+					case Null:
+					case This:
+					case __FILE__:
+					case __MODULE__:
+					case __LINE__:
+					case __FUNCTION__:
+					case __PRETTY_FUNCTION__:
+						args.Add(PrimaryExpression(Scope));
+						break;
+					case Identifier:
+						Step();
+						args.Add(new IdentifierExpression(t.Value) {
+							Location = t.Location,
+							EndLocation = t.EndLocation
+						});
+						break;
+					default:
+						if (IsBasicType(laKind))
+						{
+							Step ();
+							args.Add (new TypeDeclarationExpression (new DTokenDeclaration (t.Kind) {
+								Location = t.Location,
+								EndLocation = t.EndLocation
+							}));
+							break;
+						}
+						else if (IsEOF)
+							goto case Literal;
+						SynErr(laKind, "Illegal token found on template instance expression argument");
+						Step();
+						break;
 				}
 
 				if (laKind == Not)
