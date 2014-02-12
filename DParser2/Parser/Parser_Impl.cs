@@ -5077,7 +5077,7 @@ namespace D_Parser.Parser
 					Step ();
 				}
 
-				if (laKind == Not)
+				if (laKind == Not && Peek(1).Kind != Is && Peek(1).Kind != In)
 				{
 					SynErr(laKind, "multiple ! arguments are not allowed");
 					Step();
