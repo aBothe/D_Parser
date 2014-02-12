@@ -900,7 +900,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 			public bool Visit(AsmStatement s)
 			{
-				return false;
+				return VisitSubStatements(s);
 			}
 
 			public bool Visit(PragmaStatement s)
