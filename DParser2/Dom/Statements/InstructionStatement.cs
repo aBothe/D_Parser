@@ -48,6 +48,11 @@ namespace D_Parser.Dom.Statements
 
 			public enum OpCode
 			{
+				/// <summary>
+				/// Mainly used for code completion
+				/// </summary>
+				__INCOMPLETE__,
+
 				// Analysis disable InconsistentNaming
 				__UNKNOWN__,
 
@@ -718,7 +723,7 @@ namespace D_Parser.Dom.Statements
 			}
 
 			#region Instruction Tables
-			public static Dictionary<string, string> OpCodeCompletionTable { get; private set; }
+			public static readonly Dictionary<string, string> OpCodeCompletionTable = new Dictionary<string, string>();
 
 			static InstructionStatement()
 			{
@@ -729,7 +734,7 @@ namespace D_Parser.Dom.Statements
 						string opCodeName = mi.Name;
 						string opCodeDescription = "";
 
-						foreach (var at in mi.GetCustomAttributes())
+						foreach (var at in mi.GetCustomAttributes(false))
 						{
 							if (at is NameAttribute)
 								opCodeName = ((NameAttribute)at).Name;

@@ -417,7 +417,7 @@ namespace D_Parser.Completion
 
 		public override void Visit(AsmStatement.InstructionStatement s)
 		{
-			if (s.Operation == AsmStatement.InstructionStatement.OpCode.__UNKNOWN__)
+			if (s.Operation == AsmStatement.InstructionStatement.OpCode.__INCOMPLETE__)
 			{
 				prv = new InlineAsmCompletionProvider(s, cdgen);
 				scopedStatement = s;

@@ -4178,12 +4178,15 @@ namespace D_Parser.Parser
 				if (laKind != Semicolon)
 					SynErr(Semicolon);
 
-				if (!noStatement)
+				if (l.Count != 0)
 					l[l.Count - 1].EndLocation = t.Location;
 				Step();
 			}
 
-			Expect(CloseCurlyBrace);
+			if (!Expect(CloseCurlyBrace) && 
+				(t.Kind == OpenCurlyBrace || t.Kind == Semicolon) && IsEOF)
+				l.Add(new AsmStatement.InstructionStatement() { Operation = AsmStatement.InstructionStatement.OpCode.__INCOMPLETE__ });
+
 			s.EndLocation = t.EndLocation;
 			s.Instructions = l.ToArray();
 			return s;
