@@ -3,6 +3,7 @@ using D_Parser.Dom.Expressions;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace D_Parser.Dom.Statements
 {
@@ -48,12 +49,10 @@ namespace D_Parser.Dom.Statements
 
 			public enum OpCode
 			{
-				/// <summary>
-				/// Mainly used for code completion
-				/// </summary>
-				__INCOMPLETE__,
-
 				// Analysis disable InconsistentNaming
+
+				[Invalid32Bit]
+				[Invalid64Bit]
 				__UNKNOWN__,
 
 				[Invalid64Bit]
@@ -723,16 +722,24 @@ namespace D_Parser.Dom.Statements
 			}
 
 			#region Instruction Tables
-			public static readonly Dictionary<string, string> OpCodeCompletionTable = new Dictionary<string, string>();
+			public static Dictionary<string, string> OpCodeCompletionTable { get; private set; }
+			public static Dictionary<string, OpCode> OpCodeMap { get; private set; }
+			public static Dictionary<OpCode, string> OpCodeReverseMap { get; private set; }
 
 			static InstructionStatement()
 			{
+				OpCodeCompletionTable = new Dictionary<string, string>();
+				OpCodeMap = new Dictionary<string, OpCode>(StringComparer.InvariantCultureIgnoreCase);
+				OpCodeReverseMap = new Dictionary<OpCode, string>();
+
 				foreach (var mi in typeof(OpCode).GetMembers())
 				{
-					if (mi.MemberType == System.Reflection.MemberTypes.Field)
+					if (mi.MemberType == MemberTypes.Field && mi.Name != "value__")
 					{
 						string opCodeName = mi.Name;
 						string opCodeDescription = "";
+						bool invalid32Bit = false;
+						bool invalid64Bit = false;
 
 						foreach (var at in mi.GetCustomAttributes(false))
 						{
@@ -740,9 +747,20 @@ namespace D_Parser.Dom.Statements
 								opCodeName = ((NameAttribute)at).Name;
 							else if (at is DescriptionAttribute)
 								opCodeDescription = ((DescriptionAttribute)at).Description;
+							else if (at is Invalid32BitAttribute)
+								invalid32Bit = true;
+							else if (at is Invalid64BitAttribute)
+								invalid64Bit = true;
 						}
 
-						OpCodeCompletionTable.Add(opCodeName, opCodeDescription);
+						if (!invalid32Bit || !invalid64Bit)
+						{
+							OpCode curOpCode = (OpCode)Enum.Parse(typeof(OpCode), mi.Name);
+
+							OpCodeCompletionTable.Add(opCodeName, opCodeDescription);
+							OpCodeMap.Add(opCodeName, curOpCode);
+							OpCodeReverseMap.Add(curOpCode, opCodeName);
+						}
 					}
 				}
 			}
@@ -750,40 +768,12 @@ namespace D_Parser.Dom.Statements
 
 			public static bool TryParseOpCode(string str, out OpCode dst)
 			{
-				switch (str.ToLower())
-				{
-					case "in":
-						dst = OpCode.in_;
-						return true;
-					case "int":
-						dst = OpCode.int_;
-						return true;
-					case "lock":
-						dst = OpCode.lock_;
-						return true;
-					case "out":
-						dst = OpCode.out_;
-						return true;
-					default:
-						return Enum.TryParse(str, true, out dst);
-				}
+				return OpCodeMap.TryGetValue(str, out dst);
 			}
 
 			public static string StringForOpCode(OpCode val)
 			{
-				switch (val)
-				{
-					case OpCode.in_:
-						return "in";
-					case OpCode.int_:
-						return "int";
-					case OpCode.lock_:
-						return "lock";
-					case OpCode.out_:
-						return "out";
-					default:
-						return val.ToString();
-				}
+				return OpCodeReverseMap[val];
 			}
 
 			public override string ToCode()

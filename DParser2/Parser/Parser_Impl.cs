@@ -4178,14 +4178,13 @@ namespace D_Parser.Parser
 				if (laKind != Semicolon)
 					SynErr(Semicolon);
 
-				if (l.Count != 0)
+				if (!noStatement)
 					l[l.Count - 1].EndLocation = t.Location;
 				Step();
 			}
 
-			if (!Expect(CloseCurlyBrace) && 
-				(t.Kind == OpenCurlyBrace || t.Kind == Semicolon) && IsEOF)
-				l.Add(new AsmStatement.InstructionStatement() { Operation = AsmStatement.InstructionStatement.OpCode.__INCOMPLETE__ });
+			if (!Expect(CloseCurlyBrace) && (t.Kind == OpenCurlyBrace || t.Kind == Semicolon) && IsEOF)
+				l.Add(new AsmStatement.InstructionStatement() { Operation = AsmStatement.InstructionStatement.OpCode.__UNKNOWN__ });
 
 			s.EndLocation = t.EndLocation;
 			s.Instructions = l.ToArray();
@@ -4499,7 +4498,7 @@ namespace D_Parser.Parser
 											Step();
 											// NOTE: DMD actually allows you to not have an expression after a
 											//       segment specifier, however I consider this a bug, and, as
-											//       such am making an expression in that form fail to parse.
+											//       such, am making an expression in that form fail to parse.
 											return new UnaryExpression_SegmentBase() { RegisterExpression = ex, UnaryExpression = ParseAsmExpression(Scope, Parent) };
 										}
 										break;
@@ -4523,6 +4522,8 @@ namespace D_Parser.Parser
 				default:
 					SynErr(Identifier, "Expected a $, literal or an identifier!");
 					Step();
+					if (IsEOF)
+						return new TokenExpression(Incomplete);
 					return null;
 			}
 		}
