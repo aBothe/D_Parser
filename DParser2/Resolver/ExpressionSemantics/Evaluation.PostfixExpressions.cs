@@ -34,10 +34,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return delegValue;
 
 			// Convert ISemantic[] to ISymbolValue[]
-			var args = new List<ISymbolValue>(callArguments.Count);
+			var args = new List<ISymbolValue>(callArguments != null ? callArguments.Count : 0);
 
-			foreach (var a in callArguments)
-				args.Add(a as ISymbolValue);
+			if(callArguments != null)
+				foreach (var a in callArguments)
+					args.Add(a as ISymbolValue);
 
 			// Execute/Evaluate the variable contents etc.
 			return TryDoCTFEOrGetValueRefs(argTypeFilteredOverloads.ToArray(), call.PostfixForeExpression, true, args.ToArray());
