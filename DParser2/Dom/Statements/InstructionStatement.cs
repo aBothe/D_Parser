@@ -13,31 +13,21 @@ namespace D_Parser.Dom.Statements
 			public IExpression[] Arguments { get; set; }
 
 			#region Instruction Annotations
-			[Flags]
-			public enum Register
-			{
-				__UNKNOWN__ = 0,
 
-				AX,
-				CX,
-				DX,
-				SI,
-				DI,
-				ES,
-				R11,
-				XMM0,
-
-				NotArg1,
-				Arg2,
-
-				All,
-			}
 			/// <summary>
 			/// Indicates that the op-code is invalid in
 			/// 64-bit mode.
 			/// </summary>
 			[AttributeUsage(AttributeTargets.Field)]
 			public sealed class Invalid64BitAttribute : Attribute { }
+
+			/// <summary>
+			/// Indicates that the op-code is invalid in
+			/// 32-bit mode.
+			/// </summary>
+			[AttributeUsage(AttributeTargets.Field)]
+			public sealed class Invalid32BitAttribute : Attribute { }
+
 			/// <summary>
 			/// Indicates that the name of the enum value is
 			/// not the actual name of the op-code.
@@ -52,24 +42,7 @@ namespace D_Parser.Dom.Statements
 					this.Name = name;
 				}
 			}
-			/// <summary>
-			/// Indicates which registers the op-code modifies.
-			/// The absence of this attribute indicates that no
-			/// registers are modified.
-			/// </summary>
-			[AttributeUsage(AttributeTargets.Field)]
-			public sealed class ModifiesAttribute : Attribute
-			{
-				public Register ModifiedRegisters { get; private set; }
 
-				public ModifiesAttribute(params Register[] modifiedRegs)
-				{
-					Register reg = Register.__UNKNOWN__;
-					foreach (var r in modifiedRegs)
-						reg |= r;
-					this.ModifiedRegisters = reg;
-				}
-			}
 			#endregion
 
 			public enum OpCode
@@ -78,23 +51,15 @@ namespace D_Parser.Dom.Statements
 				__UNKNOWN__,
 
 				[Invalid64Bit]
-				[Modifies(Register.AX)]
 				[Description("ASCII adjust AL after addition.")]
 				aaa,
-				[Form(imm8)]
 				[Invalid64Bit]
-				[Arg1Default(10)]
-				[Modifies(Register.AX)]
 				[Description("ASCII adjust AX after division.")]
 				aad,
-				[Form(imm8)]
 				[Invalid64Bit]
-				[Arg1Default(10)]
-				[Modifies(Register.AX)]
 				[Description("ASCII adjust AX after multiplication.")]
 				aam,
 				[Invalid64Bit]
-				[Modifies(Register.AX)]
 				[Description("ASCII adjust AL after subtraction.")]
 				aas,
 				adc,
@@ -479,7 +444,8 @@ namespace D_Parser.Dom.Statements
 				popa,
 				popad,
 				popf,
-				popfd, // 32-bit ONLY
+				[Invalid64Bit]
+				popfd,
 				por,
 				prefetchnta,
 				prefetcht0,
@@ -520,7 +486,8 @@ namespace D_Parser.Dom.Statements
 				pusha,
 				pushad,
 				pushf,
-				pushfd, // 32-bit ONLY
+				[Invalid64Bit]
+				pushfd,
 				pxor,
 				rcl,
 				rcpps,
@@ -677,9 +644,11 @@ namespace D_Parser.Dom.Statements
 				xsetbv,
 				xgetbv,
 
-				// 64-bit ONLY
+				[Invalid32Bit]
 				movsq,
+				[Invalid32Bit]
 				popfq,
+				[Invalid32Bit]
 				pushfq,
 
 				// SSE 4.1
@@ -710,11 +679,13 @@ namespace D_Parser.Dom.Statements
 				insertps,
 				pinsrb,
 				pinsrd,
-				pinsrq, // 64-bit ONLY
+				[Invalid32Bit]
+				pinsrq,
 				extractps,
 				pextrb,
 				pextrd,
-				pextrq, // 64-bit ONLY
+				[Invalid32Bit]
+				pextrq,
 				pmovsxbw,
 				pmovzxbw,
 				pmovsxbd,
