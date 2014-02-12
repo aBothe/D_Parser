@@ -999,6 +999,7 @@ namespace D_Parser.Parser
 			return 
 				IsBasicType(laKind) || 
 				laKind == (Typeof) || 
+				//laKind == __vector ||
 				IsFunctionAttribute ||
 				(laKind == (Dot) && Lexer.CurrentPeekToken.Kind == (Identifier)) || 
 				//BasicTypes[Lexer.CurrentPeekToken.Kind] || 
@@ -2712,7 +2713,7 @@ namespace D_Parser.Parser
 						if (laKind == DTokens.Dot)
 						{
 							Step();  // Skip to .
-							if (laKind == DTokens.Identifier || IsEOF)
+							if ((laKind == DTokens.Identifier && Peek(1).Kind != Not && Peek(1).Kind != OpenParenthesis) || IsEOF)
 							{
 								Lexer.PopLookAheadBackup();
 								Step();  // Skip to identifier
