@@ -2,6 +2,7 @@
 using D_Parser.Dom.Expressions;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Collections.Generic;
 
 namespace D_Parser.Dom.Statements
 {
@@ -715,6 +716,32 @@ namespace D_Parser.Dom.Statements
 
 				// Analysis restore InconsistentNaming
 			}
+
+			#region Instruction Tables
+			public static Dictionary<string, string> OpCodeCompletionTable { get; private set; }
+
+			static InstructionStatement()
+			{
+				foreach (var mi in typeof(OpCode).GetMembers())
+				{
+					if (mi.MemberType == System.Reflection.MemberTypes.Field)
+					{
+						string opCodeName = mi.Name;
+						string opCodeDescription = "";
+
+						foreach (var at in mi.GetCustomAttributes())
+						{
+							if (at is NameAttribute)
+								opCodeName = ((NameAttribute)at).Name;
+							else if (at is DescriptionAttribute)
+								opCodeDescription = ((DescriptionAttribute)at).Description;
+						}
+
+						OpCodeCompletionTable.Add(opCodeName, opCodeDescription);
+					}
+				}
+			}
+			#endregion
 
 			public static bool TryParseOpCode(string str, out OpCode dst)
 			{

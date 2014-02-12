@@ -414,6 +414,18 @@ namespace D_Parser.Completion
 			else
 				base.Visit (s);
 		}
+
+		public override void Visit(AsmStatement.InstructionStatement s)
+		{
+			if (s.Operation == AsmStatement.InstructionStatement.OpCode.__UNKNOWN__)
+			{
+				prv = new InlineAsmCompletionProvider(s, cdgen);
+				scopedStatement = s;
+				halt = true;
+			}
+			else
+				base.Visit(s);
+		}
 		#endregion
 
 		#region Expressions

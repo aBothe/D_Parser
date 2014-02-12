@@ -338,6 +338,7 @@
     <Compile Include="Dom\Statements\AlignStatement.cs">
       <DependentUpon>Dom\Statements\AsmStatement.cs</DependentUpon>
     </Compile>
+    <Compile Include="Completion\Providers\InlineAsmCompletionProvider.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="readme.txt" />
