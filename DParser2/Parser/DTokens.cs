@@ -224,11 +224,13 @@ namespace D_Parser.Parser
 		public const byte __FUNCTION__ = 181;
 		public const byte __PRETTY_FUNCTION__ = 182;
 
-		public const byte Incomplete = 183;
+		public const byte __LOCAL_SIZE = 183;
+
+		public const byte Incomplete = 184;
 		public const string IncompleteId = "<Incomplete>";
 		public static readonly int IncompleteIdHash = IncompleteId.GetHashCode();
 
-		public const byte MaxToken = 184;
+		public const byte MaxToken = 185;
         public static BitArray NewSet(params byte[] values)
         {
             BitArray bitArray = new BitArray(MaxToken);
@@ -258,6 +260,8 @@ namespace D_Parser.Parser
 			{ __TIME__, "__TIME__" },
 			{ __TIMESTAMP__, "__TIMESTAMP__" },
 			{ __VENDOR__, "__VENDOR__" },
+
+			{ __LOCAL_SIZE, "__LOCAL_SIZE" },
 
 			{ Abstract, "abstract" },
 			{ Alias, "alias" },

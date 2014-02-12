@@ -131,6 +131,17 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return ret;
 		}
 
+		public ISymbolValue Visit(AsmRegisterExpression x)
+		{
+			EvalError(x, "Cannot evaluate inline assembly.");
+			return null;
+		}
+
+		public ISymbolValue Visit(UnaryExpression_SegmentBase x)
+		{
+			return x.UnaryExpression.Accept(this);
+		}
+
 		public ISymbolValue Visit(SurroundingParenthesesExpression x)
 		{
 			return x.Expression.Accept(this);

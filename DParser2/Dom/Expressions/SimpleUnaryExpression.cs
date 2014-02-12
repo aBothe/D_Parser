@@ -14,7 +14,7 @@ namespace D_Parser.Dom.Expressions
 			return DTokens.GetTokenString(ForeToken) + UnaryExpression.ToString();
 		}
 
-		public CodeLocation Location
+		public virtual CodeLocation Location
 		{
 			get;
 			set;
@@ -34,7 +34,7 @@ namespace D_Parser.Dom.Expressions
 
 		public abstract R Accept<R>(ExpressionVisitor<R> vis);
 
-		public ulong GetHash()
+		public virtual ulong GetHash()
 		{
 			ulong hashCode;
 			unchecked

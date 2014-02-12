@@ -1101,5 +1101,16 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return null;
 		}
 		#endregion
+
+		public AbstractType Visit(AsmRegisterExpression x)
+		{
+			// TODO
+			return null;
+		}
+
+		public AbstractType Visit(UnaryExpression_SegmentBase x)
+		{
+			return x.UnaryExpression.Accept(this);
+		}
 	}
 }

@@ -377,9 +377,23 @@ namespace D_Parser.Dom
 			VisitChildren(s);
 		}
 
-		public virtual void Visit(Statements.AsmStatement s)
+		public virtual void Visit(Statements.AsmStatement s) { VisitChildren(s); }
+		public virtual void Visit(Statements.AsmStatement.RawDataStatement s) { VisitAbstractStmt(s); }
+		public virtual void Visit(Statements.AsmStatement.InstructionStatement s) 
 		{
 			VisitAbstractStmt(s);
+			if (s.Arguments != null)
+			{
+				foreach (var a in s.Arguments)
+					a.Accept(this);
+			}
+		}
+		public virtual void Visit(Statements.AsmStatement.AlignStatement s) 
+		{
+			VisitAbstractStmt(s);
+
+			if (s.ValueExpression != null)
+				s.ValueExpression.Accept(this);
 		}
 
 		public virtual void Visit(Statements.PragmaStatement s)
@@ -833,6 +847,19 @@ namespace D_Parser.Dom
 		{
 			if (init.Value != null)
 				init.Value.Accept(this);
+		}
+
+		public virtual void Visit(AsmRegisterExpression x)
+		{
+
+		}
+
+		public virtual void Visit(UnaryExpression_SegmentBase x)
+		{
+			if (x.RegisterExpression != null)
+				x.RegisterExpression.Accept(this);
+			if (x.UnaryExpression != null)
+				x.UnaryExpression.Accept(this);
 		}
 		#endregion
 

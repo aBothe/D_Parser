@@ -145,6 +145,9 @@ namespace D_Parser.Dom
 		void Visit(ThrowStatement throwStatement);
 		void Visit(ScopeGuardStatement scopeGuardStatement);
 		void Visit(AsmStatement asmStatement);
+		void Visit(AsmStatement.InstructionStatement instrStatement);
+		void Visit(AsmStatement.RawDataStatement dataStatement);
+		void Visit(AsmStatement.AlignStatement alignStatement);
 		void Visit(PragmaStatement pragmaStatement);
 		void Visit(AssertStatement assertStatement);
 		void Visit(StatementCondition condition);
@@ -186,6 +189,9 @@ namespace D_Parser.Dom
 		R Visit(ThrowStatement throwStatement);
 		R Visit(ScopeGuardStatement scopeGuardStatement);
 		R Visit(AsmStatement asmStatement);
+		R Visit(AsmStatement.InstructionStatement instrStatement);
+		R Visit(AsmStatement.RawDataStatement dataStatement);
+		R Visit(AsmStatement.AlignStatement alignStatement);
 		R Visit(PragmaStatement pragmaStatement);
 		R Visit(AssertStatement assertStatement);
 		R Visit(StatementCondition condition);
@@ -260,6 +266,9 @@ namespace D_Parser.Dom
 		void Visit(ArrayInitializer x);
 		void Visit(StructInitializer x);
 		void Visit(StructMemberInitializer structMemberInitializer);
+
+		void Visit(AsmRegisterExpression x);
+		void Visit(UnaryExpression_SegmentBase x);
 	}
 
 	public interface ExpressionVisitor<out R> : IVisitor<R>
@@ -323,6 +332,9 @@ namespace D_Parser.Dom
 		R Visit(ArrayInitializer x);
 		R Visit(StructInitializer x);
 		R Visit(StructMemberInitializer structMemberInitializer);
+
+		R Visit(AsmRegisterExpression x);
+		R Visit(UnaryExpression_SegmentBase x);
 	}
 
 	public interface TypeDeclarationVisitor : IVisitor

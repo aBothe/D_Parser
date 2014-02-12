@@ -2,12 +2,10 @@
 
 namespace D_Parser.Dom.Statements
 {
-	public class AsmStatement : AbstractStatement
+	public partial class AsmStatement : StatementContainingStatement
 	{
-		/// <summary>
-		/// TODO: Put the instructions into extra ISyntaxRegions
-		/// </summary>
-		public string[] Instructions;
+		public bool Naked { get; set; }
+		public AbstractStatement[] Instructions;
 
 		public override string ToCode()
 		{
@@ -16,22 +14,15 @@ namespace D_Parser.Dom.Statements
 			if (Instructions != null && Instructions.Length > 0)
 			{
 				foreach (var i in Instructions)
-					ret += Environment.NewLine + i + ';';
+					ret += Environment.NewLine + i.ToCode() + ';';
 				ret += Environment.NewLine;
 			}
 
 			return ret + '}';
 		}
 
-		public override void Accept(StatementVisitor vis)
-		{
-			vis.Visit(this);
-		}
-
-		public override R Accept<R>(StatementVisitor<R> vis)
-		{
-			return vis.Visit(this);
-		}
+		public override void Accept(StatementVisitor vis) { vis.Visit(this); }
+		public override R Accept<R>(StatementVisitor<R> vis) { return vis.Visit(this); }
 	}
 }
 

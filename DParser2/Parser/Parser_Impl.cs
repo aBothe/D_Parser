@@ -3871,7 +3871,7 @@ namespace D_Parser.Parser
 						PushAttribute(new Modifier(DTokens.Scope), false);
 					goto default;
 				case Asm:
-					return AsmStatement(Parent);
+					return ParseAsmStatement(Scope, Parent);
 				case Pragma:
 					var ps = new PragmaStatement { Location = la.Location };
 
@@ -4081,32 +4081,439 @@ namespace D_Parser.Parser
 			return dbs;
 		}
 
-		AsmStatement AsmStatement(IStatement Parent)
+		#region Asm Statement
+
+		AsmStatement ParseAsmStatement(IBlockNode Scope, IStatement Parent)
 		{
 			Step();
 			var s = new AsmStatement() { Location = t.Location, Parent = Parent };
 
 			Expect(OpenCurlyBrace);
 
-			var l = new List<string>();
-			var curInstr = "";
+			var l = new List<AbstractStatement>();
 			while (!IsEOF && laKind != (CloseCurlyBrace))
 			{
-				if (laKind == Semicolon)
+				bool noStatement = false;
+				if (laKind == Align)
 				{
-					l.Add(curInstr.Trim());
-					curInstr = "";
+					var als = new AsmStatement.AlignStatement() { Location = la.Location, Parent = s };
+					Step();
+					als.ValueExpression = Expression(Scope);
+					l.Add(als);
 				}
-				else
-					curInstr += laKind == Identifier ? la.Value : DTokens.GetTokenString(laKind);
+				else if (laKind == Identifier)
+				{
+					var opCode = AsmStatement.InstructionStatement.OpCode.__UNKNOWN__;
+					var dataType = AsmStatement.RawDataStatement.DataType.__UNKNOWN__;
+					if (Peek(1).Kind == Colon)
+					{
+						l.Add(new LabeledStatement() { Location = la.Location, Parent = s, Identifier = la.Value, EndLocation = Peek(1).EndLocation });
+						Step();
+						Step();
+						if (laKind == Semicolon)
+							Step();
+						continue;
+					}
 
+					if (AsmStatement.RawDataStatement.TryParseDataType(la.Value, out dataType))
+						l.Add(new AsmStatement.RawDataStatement() { Location = la.Location, Parent = s, TypeOfData = dataType });
+					else if (AsmStatement.InstructionStatement.TryParseOpCode(la.Value, out opCode))
+						l.Add(new AsmStatement.InstructionStatement() { Location = la.Location, Parent = s, Operation = opCode });
+					else switch (la.Value.ToLower())
+					{
+						case "pause":
+							SynErr(Identifier, "Pause is not supported by dmd's assembler. Use `rep; nop;` instead to achieve the same effect.");
+							break;
+						case "even":
+							var als = new AsmStatement.AlignStatement() { Location = la.Location, Parent = s };
+							als.ValueExpression = new IdentifierExpression(2) { Location = la.Location, EndLocation = la.EndLocation };
+							l.Add(als);
+							break;
+						case "naked":
+							Step();
+							noStatement = true;
+							break;
+						default:
+							SynErr(Identifier, "Unknown op-code!");
+							l.Add(new AsmStatement.InstructionStatement() { Location = la.Location, Parent = s, Operation = opCode });
+							break;
+					}
+					
+					if (noStatement && laKind != Semicolon)
+						SynErr(Semicolon);
+					var parentStatement = noStatement ? s : l[l.Count - 1];
+					var args = new List<IExpression>();
+					while (!IsEOF && laKind != Semicolon && laKind != (CloseCurlyBrace))
+					{
+					SOL:
+						var e = ParseAsmExpression(Scope, parentStatement);
+						if (e != null)
+							args.Add(e);
+						if (laKind == Comma)
+						{
+							Step();
+							goto SOL;
+						}
+					}
+					if (parentStatement is AsmStatement.InstructionStatement)
+						((AsmStatement.InstructionStatement)parentStatement).Arguments = args.ToArray();
+					else if (parentStatement is AsmStatement.RawDataStatement)
+						((AsmStatement.RawDataStatement)parentStatement).Data = args.ToArray();
+
+				}
+				else if (laKind != Semicolon)
+					SynErr(Identifier);
+
+				if (laKind != Semicolon)
+					SynErr(Semicolon);
+
+				if (!noStatement)
+					l[l.Count - 1].EndLocation = t.Location;
 				Step();
 			}
 
 			Expect(CloseCurlyBrace);
 			s.EndLocation = t.EndLocation;
+			s.Instructions = l.ToArray();
 			return s;
 		}
+
+		IExpression ParseAsmExpression(IBlockNode Scope, IStatement Parent)
+		{
+			var left = ParseAsmLogOrExpression(Scope, Parent);
+			while (laKind == Question)
+			{
+				Step();
+				var e = new ConditionalExpression();
+				e.TrueCaseExpression = ParseAsmExpression(Scope, Parent);
+				Expect(Colon);
+				e.FalseCaseExpression = ParseAsmExpression(Scope, Parent);
+				left = e;
+			}
+			return left;
+		}
+
+		IExpression ParseAsmLogOrExpression(IBlockNode Scope, IStatement Parent)
+		{
+			var left = ParseAsmLogAndExpression(Scope, Parent);
+			while (laKind == LogicalOr)
+			{
+				Step();
+				var e = new OrOrExpression();
+				e.LeftOperand = left;
+				e.RightOperand = ParseAsmLogAndExpression(Scope, Parent);
+				left = e;
+			}
+			return left;
+		}
+
+		IExpression ParseAsmLogAndExpression(IBlockNode Scope, IStatement Parent)
+		{
+			var left = ParseAsmOrExpression(Scope, Parent);
+			while (laKind == LogicalAnd)
+			{
+				Step();
+				var e = new AndAndExpression();
+				e.LeftOperand = left;
+				e.RightOperand = ParseAsmOrExpression(Scope, Parent);
+				left = e;
+			}
+			return left;
+		}
+
+		IExpression ParseAsmOrExpression(IBlockNode Scope, IStatement Parent)
+		{
+			var left = ParseAsmXorExpression(Scope, Parent);
+			while (laKind == BitwiseOr)
+			{
+				Step();
+				var e = new OrExpression();
+				e.LeftOperand = left;
+				e.RightOperand = ParseAsmXorExpression(Scope, Parent);
+				left = e;
+			}
+			return left;
+		}
+
+		IExpression ParseAsmXorExpression(IBlockNode Scope, IStatement Parent)
+		{
+			var left = ParseAsmAndExpression(Scope, Parent);
+			while (laKind == Xor)
+			{
+				Step();
+				var e = new XorExpression();
+				e.LeftOperand = left;
+				e.RightOperand = ParseAsmAndExpression(Scope, Parent);
+				left = e;
+			}
+			return left;
+		}
+
+		IExpression ParseAsmAndExpression(IBlockNode Scope, IStatement Parent)
+		{
+			var left = ParseAsmEqualExpression(Scope, Parent);
+			while (laKind == BitwiseAnd)
+			{
+				Step();
+				var e = new AndExpression();
+				e.LeftOperand = left;
+				e.RightOperand = ParseAsmEqualExpression(Scope, Parent);
+				left = e;
+			}
+			return left;
+		}
+
+		IExpression ParseAsmEqualExpression(IBlockNode Scope, IStatement Parent)
+		{
+			var left = ParseAsmRelExpression(Scope, Parent);
+			while (laKind == Equal || laKind == NotEqual)
+			{
+				Step();
+				var e = new EqualExpression(t.Kind == NotEqual);
+				e.LeftOperand = left;
+				e.RightOperand = ParseAsmRelExpression(Scope, Parent);
+				left = e;
+			}
+			return left;
+		}
+
+		IExpression ParseAsmRelExpression(IBlockNode Scope, IStatement Parent)
+		{
+			var left = ParseAsmShiftExpression(Scope, Parent);
+			while (true)
+			{
+				switch (laKind)
+				{
+					case LessThan:
+					case LessEqual:
+					case GreaterThan:
+					case GreaterEqual:
+						Step();
+						var e = new RelExpression(t.Kind);
+						e.LeftOperand = left;
+						e.RightOperand = ParseAsmShiftExpression(Scope, Parent);
+						left = e;
+						continue;
+					default:
+						return left;
+				}
+			}
+		}
+
+		IExpression ParseAsmShiftExpression(IBlockNode Scope, IStatement Parent)
+		{
+			var left = ParseAsmAddExpression(Scope, Parent);
+			while (laKind == ShiftRight || laKind == ShiftRightUnsigned || laKind == ShiftLeft)
+			{
+				Step();
+				var e = new ShiftExpression(t.Kind);
+				e.LeftOperand = left;
+				e.RightOperand = ParseAsmAddExpression(Scope, Parent);
+				left = e;
+			}
+			return left;
+		}
+
+		IExpression ParseAsmAddExpression(IBlockNode Scope, IStatement Parent)
+		{
+			var left = ParseAsmMulExpression(Scope, Parent);
+			while (laKind == Plus || laKind == Minus)
+			{
+				Step();
+				var e = new AddExpression(t.Kind == Minus);
+				e.LeftOperand = left;
+				e.RightOperand = ParseAsmMulExpression(Scope, Parent);
+				left = e;
+			}
+			return left;
+		}
+
+		IExpression ParseAsmMulExpression(IBlockNode Scope, IStatement Parent)
+		{
+			IExpression left = ParseAsmBracketExpression(Scope, Parent);
+			while (laKind == Times || laKind == Div || laKind == Mod)
+			{
+				Step();
+				var e = new MulExpression(t.Kind);
+				e.LeftOperand = left;
+				e.RightOperand = ParseAsmBracketExpression(Scope, Parent);
+				left = e;
+			}
+			return left;
+		}
+
+		IExpression ParseAsmBracketExpression(IBlockNode Scope, IStatement Parent)
+		{
+			var left = ParseAsmUnaryExpression(Scope, Parent);
+			while (laKind == OpenSquareBracket)
+			{
+				Step();
+				var e = new PostfixExpression_Index();
+				e.PostfixForeExpression = left;
+				e.Arguments = new IExpression[] { ParseAsmExpression(Scope, Parent) };
+				Expect(CloseSquareBracket);
+				left = e;
+			}
+			return left;
+		}
+
+		IExpression ParseAsmUnaryExpression(IBlockNode Scope, IStatement Parent)
+		{
+			switch (laKind)
+			{
+				case Byte:
+					la.LiteralValue = "byte";
+					goto case Identifier;
+				case Short:
+					la.LiteralValue = "short";
+					goto case Identifier;
+				case Int:
+					la.LiteralValue = "int";
+					goto case Identifier;
+				case Float:
+					la.LiteralValue = "float";
+					goto case Identifier;
+				case Double:
+					la.LiteralValue = "double";
+					goto case Identifier;
+				case Real:
+					la.LiteralValue = "real";
+					goto case Identifier;
+
+				case Identifier:
+					switch (la.Value)
+					{
+						case "seg":
+							Step();
+							return new PostfixExpression_Access() { PostfixForeExpression = ParseAsmExpression(Scope, Parent), AccessExpression = new IdentifierExpression("seg") };
+						case "offsetof":
+							Step();
+							return new PostfixExpression_Access() { PostfixForeExpression = ParseAsmExpression(Scope, Parent), AccessExpression = new IdentifierExpression("offsetof") };
+						case "near":
+						case "far":
+						case "byte":
+						case "short":
+						case "int":
+						case "word":
+						case "dword":
+						case "qword":
+						case "float":
+						case "double":
+						case "real":
+							// TODO: Put this information in the AST
+							Step();
+							if (laKind == Identifier && la.Value == "ptr")
+									Step();
+							else if (t.Value != "short")
+								SynErr(Identifier, "Expected ptr!");
+							else if (!(Parent is AsmStatement.InstructionStatement) || !((AsmStatement.InstructionStatement)Parent).IsJmpFamily)
+								SynErr(Identifier, "A short reference is only valid for the jmp family of instructions!");
+							return ParseAsmExpression(Scope, Parent);
+
+						default:
+							return ParseAsmPrimaryExpression(Scope, Parent);
+					}
+				case Plus:
+					Step();
+					return new UnaryExpression_Add() { UnaryExpression = ParseAsmUnaryExpression(Scope, Parent) };
+				case Minus:
+					Step();
+					return new UnaryExpression_Sub() { UnaryExpression = ParseAsmUnaryExpression(Scope, Parent) };
+				case Not:
+					Step();
+					return new UnaryExpression_Not() { UnaryExpression = ParseAsmUnaryExpression(Scope, Parent) };
+				case Tilde:
+					Step();
+					return new UnaryExpression_Cat() { UnaryExpression = ParseAsmUnaryExpression(Scope, Parent) };
+				default:
+					return ParseAsmPrimaryExpression(Scope, Parent);
+			}
+		}
+
+		IExpression ParseAsmPrimaryExpression(IBlockNode Scope, IStatement Parent)
+		{
+			switch (laKind)
+			{
+				case OpenSquareBracket:
+					Step();
+					var e = new PostfixExpression_Index() { EndLocation = t.EndLocation };
+					e.Arguments = new IExpression[] { ParseAsmExpression(Scope, Parent) };
+					Expect(CloseSquareBracket);
+					return e;
+				case Dollar:
+					var ins = Parent as AsmStatement.InstructionStatement;
+					if (ins == null || (!ins.IsJmpFamily && ins.Operation != AsmStatement.InstructionStatement.OpCode.call))
+						SynErr(Dollar, "The $ operator is only valid on jmp and call instructions!");
+					Step();
+					return new TokenExpression(t.Kind) { Location = t.Location, EndLocation = t.EndLocation };
+				case Literal:
+					Step();
+					return new IdentifierExpression(t.LiteralValue, t.LiteralFormat, t.Subformat) { Location = t.Location, EndLocation = t.EndLocation };
+				case Identifier:
+					Step();
+					switch (t.Value)
+					{
+						case "__LOCAL_SIZE":
+							return new TokenExpression(__LOCAL_SIZE)  { Location = t.Location, EndLocation = t.EndLocation };
+						default:
+							if (AsmRegisterExpression.IsRegister(t.Value))
+							{
+								string reg = t.Value;
+								if (reg == "ST" && laKind == OpenParenthesis)
+								{
+									reg += "(";
+									Step();
+									Expect(Literal);
+									reg += t.LiteralValue.ToString();
+									if (laKind != CloseParenthesis)
+										SynErr(CloseParenthesis);
+									else
+										Step();
+									reg += ")";
+								}
+								switch (reg)
+								{
+									case "ES":
+									case "CS":
+									case "SS":
+									case "DS":
+									case "GS":
+									case "FS":
+										if (laKind == Colon)
+										{
+											var ex = new AsmRegisterExpression() { Location = t.Location, EndLocation = t.EndLocation, Register = string.Intern(reg) };
+											Step();
+											// NOTE: DMD actually allows you to not have an expression after a
+											//       segment specifier, however I consider this a bug, and, as
+											//       such am making an expression in that form fail to parse.
+											return new UnaryExpression_SegmentBase() { RegisterExpression = ex, UnaryExpression = ParseAsmExpression(Scope, Parent) };
+										}
+										break;
+								}
+								return new AsmRegisterExpression() { Location = t.Location, EndLocation = t.EndLocation, Register = string.Intern(reg) };
+							}
+							else
+							{
+								IExpression outer = new IdentifierExpression(t.Value) { Location = t.Location, EndLocation = t.EndLocation };
+								while (laKind == Dot)
+								{
+									Step();
+									if (laKind != Identifier)
+										SynErr(Identifier);
+									outer = new PostfixExpression_Access() { AccessExpression = new IdentifierExpression(la.Value), PostfixForeExpression = outer };
+									Step();
+								}
+								return outer;
+							}
+					}
+				default:
+					SynErr(Identifier, "Expected a $, literal or an identifier!");
+					Step();
+					return null;
+			}
+		}
+
+		#endregion
 
 		StatementCondition StmtCondition(IStatement Parent, IBlockNode Scope)
 		{

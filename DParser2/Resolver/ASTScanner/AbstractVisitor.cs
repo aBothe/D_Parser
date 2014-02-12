@@ -970,6 +970,21 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			{
 				return VisitExpressionStmt(s);
 			}
+
+			public bool Visit(AsmStatement.InstructionStatement instrStatement)
+			{
+				return false;
+			}
+
+			public bool Visit(AsmStatement.RawDataStatement dataStatement)
+			{
+				return false;
+			}
+
+			public bool Visit(AsmStatement.AlignStatement alignStatement)
+			{
+				return false;
+			}
 			#endregion
 		}
 

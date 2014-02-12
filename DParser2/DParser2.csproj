@@ -327,6 +327,17 @@
     <Compile Include="Dom\Expressions\ArrayInitializer.cs" />
     <Compile Include="Dom\Expressions\StructInitializer.cs" />
     <Compile Include="Dom\Expressions\StructMemberInitializer.cs" />
+    <Compile Include="Dom\Expressions\AsmRegisterExpression.cs" />
+    <Compile Include="Dom\Expressions\UnaryExpression_SegmentBase.cs" />
+    <Compile Include="Dom\Statements\InstructionStatement.cs">
+      <DependentUpon>Dom\Statements\AsmStatement.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Dom\Statements\RawDataStatement.cs">
+      <DependentUpon>Dom\Statements\AsmStatement.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Dom\Statements\AlignStatement.cs">
+      <DependentUpon>Dom\Statements\AsmStatement.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Content Include="readme.txt" />
