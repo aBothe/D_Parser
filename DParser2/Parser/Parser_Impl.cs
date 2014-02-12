@@ -4304,27 +4304,30 @@ namespace D_Parser.Parser
 			var OldPreviousCommentString = PreviousComment;
 			PreviousComment = new StringBuilder ();
 
-			if (Expect(OpenCurlyBrace))
+			if (laKind == OpenCurlyBrace)
 			{
+				Step();
 				var stk_backup = BlockAttributes;
 
-				if(!KeepBlockAttributes)
+				if (!KeepBlockAttributes)
 					BlockAttributes = new Stack<DAttribute>();
 
-				if(UpdateBoundaries)
+				if (UpdateBoundaries)
 					ret.BlockStartLocation = t.Location;
 
 				while (!IsEOF && laKind != (CloseCurlyBrace))
 					DeclDef(ret);
 
-				Expect (CloseCurlyBrace);
+				Expect(CloseCurlyBrace);
 
-				if(UpdateBoundaries)
+				if (UpdateBoundaries)
 					ret.EndLocation = t.EndLocation;
 
-				if(!KeepBlockAttributes)
+				if (!KeepBlockAttributes)
 					BlockAttributes = stk_backup;
 			}
+			else
+				Expect(Semicolon);
 
 			PreviousComment = OldPreviousCommentString;
 
