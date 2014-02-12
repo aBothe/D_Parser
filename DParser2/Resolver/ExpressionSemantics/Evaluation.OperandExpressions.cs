@@ -542,7 +542,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return new PrimitiveValue(pl.BaseTypeToken, m(pl, pr), x);
 			}
 
-			throw new NotImplementedException("Operator overloading not implemented yet.");
+			return null;
+			//throw new NotImplementedException("Operator overloading not implemented yet.");
 		}
 
 		static ISymbolValue HandleSingleMathOp(OperatorBasedExpression x, ISemantic l, ISemantic r, MathOp2 m, bool UnorderedCheck = true)
@@ -563,7 +564,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return m(pl, pr, x);
 			}
 
-			throw new NotImplementedException("Operator overloading not implemented yet.");
+			return null;
+			//throw new NotImplementedException("Operator overloading not implemented yet.");
 		}
 
 		public ISymbolValue Visit(ConditionalExpression x)
