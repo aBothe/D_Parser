@@ -3403,7 +3403,8 @@ namespace D_Parser.Parser
 
 			AllowWeakTypeParsing = wkType;
 
-			if (tp != null && (laKind == Identifier || IsEOF))
+			if (tp != null && ((laKind == Identifier && 
+				(Peek(1).Kind == Assign || Lexer.CurrentPeekToken.Kind == CloseParenthesis)) || IsEOF)) // if(a * b * c) is an expression, if(a * b = 123) may be a pointer variable
 			{
 				var dv = Declarator(tp, false, par.ParentNode) as DVariable;
 				if (dv == null)

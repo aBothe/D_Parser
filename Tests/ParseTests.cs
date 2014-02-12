@@ -87,8 +87,11 @@ class A {
 		public void TestSyntaxError5()
 		{
 			var mod = DParser.ParseString (@"module A;
-static if (extra * extra * 2 < y.length*y.length)
-int derp;");
+void main(){
+	if (extra * extra * 2 < y.length * y.length)
+		int derp;
+}
+");
 			Assert.That (mod.ParseErrors.Count, Is.EqualTo (0));
 		}
 
