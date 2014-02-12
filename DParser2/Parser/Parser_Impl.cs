@@ -695,36 +695,45 @@ namespace D_Parser.Parser
 			// Enum possible storage class attributes
 			bool HasStorageClassModifiers = CheckForStorageClasses(Scope as DBlockNode);
 
-			// Aliases
-			if (laKind == (Alias) || laKind == Typedef)
-				return AliasDeclaration (Scope, HasStorageClassModifiers);
-			else if (laKind == (Struct) || laKind == (Union))
-				return new[]{ AggregateDeclaration (Scope) };
-			else if (laKind == Enum) {
-				// As another meta-programming feature, it is possible to create static functions 
-				// that return enums, i.e. a constant value or something
-				// Additionally, eponymous template declarations are there since 2.064 - and both syntaxes are quite similar
-				if (Lexer.CurrentPeekToken.Kind == Identifier && Peek ().Kind == OpenParenthesis) {
-					Peek (1);
-					var l = Decl (HasStorageClassModifiers, Scope);
-					return l != null ? l.ToArray () : null;
-				}
+			switch (laKind)
+			{
+				case Alias:
+				case Typedef:
+					return AliasDeclaration (Scope, HasStorageClassModifiers);
+				case Struct:
+				case Union:
+					return new[]{ AggregateDeclaration (Scope) };
+				case Enum:
+					// As another meta-programming feature, it is possible to create static functions 
+					// that return enums, i.e. a constant value or something
+					// Additionally, eponymous template declarations are there since 2.064 - and both syntaxes are quite similar
+					if (Lexer.CurrentPeekToken.Kind == Identifier && Peek ().Kind == OpenParenthesis) {
+						Peek (1);
+						var l = Decl (HasStorageClassModifiers, Scope);
+						return l != null ? l.ToArray () : null;
+					}
 
-				return EnumDeclaration (Scope);
-			} else if (laKind == (Class))
-				return new[]{ ClassDeclaration (Scope) };
-			else if (laKind == (Template) || (laKind == Mixin && Peek (1).Kind == Template))
-				return new[]{ TemplateDeclaration (Scope) };
-			else if (laKind == (Interface))
-				return new[]{ InterfaceDeclaration (Scope) };
-			else if (IsBasicType () || laKind == Ref || (HasStorageClassModifiers && IsEOF)) {
-				var l = Decl(HasStorageClassModifiers, Scope);
-				return l != null ? l.ToArray () : null;
+					return EnumDeclaration (Scope);
+				case Class:
+					return new[]{ ClassDeclaration (Scope) };
+				case Template:
+					return new[]{ TemplateDeclaration (Scope) };
+				case Mixin:
+					if (Peek(1).Kind == Template)
+						goto case Template;
+					goto default;
+				case Interface:
+					return new[]{ InterfaceDeclaration (Scope) };
+				case Ref:
+					var dl = Decl(HasStorageClassModifiers, Scope);
+					return dl != null ? dl.ToArray () : null;
+				default:
+					if (IsBasicType() || (HasStorageClassModifiers && IsEOF))
+						goto case Ref;
+					SynErr(laKind,"Declaration expected, not "+GetTokenString(laKind));
+					Step();
+					return null;
 			}
-				
-			SynErr(laKind,"Declaration expected, not "+GetTokenString(laKind));
-			Step();
-			return null;
 		}
 
 		INode[] AliasDeclaration(IBlockNode Scope, bool HasStorageClassModifiers)
@@ -990,6 +999,7 @@ namespace D_Parser.Parser
 			return 
 				IsBasicType(laKind) || 
 				laKind == (Typeof) || 
+				//laKind == __vector ||
 				IsFunctionAttribute ||
 				(laKind == (Dot) && Lexer.CurrentPeekToken.Kind == (Identifier)) || 
 				//BasicTypes[Lexer.CurrentPeekToken.Kind] || 
@@ -2703,7 +2713,7 @@ namespace D_Parser.Parser
 						if (laKind == DTokens.Dot)
 						{
 							Step();  // Skip to .
-							if (laKind == DTokens.Identifier || IsEOF)
+							if ((laKind == DTokens.Identifier && Peek(1).Kind != Not && Peek(1).Kind != OpenParenthesis) || IsEOF)
 							{
 								Lexer.PopLookAheadBackup();
 								Step();  // Skip to identifier
