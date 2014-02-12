@@ -19,6 +19,8 @@ namespace D_Parser.Completion.Providers
 				if(!kv.Key.StartsWith("__")) // No internal pseudo-opcodes
 					CompletionDataGenerator.AddTextItem(kv.Key, kv.Value);
 			}
+
+			CompletionDataGenerator.AddTextItem("naked", "Omits function call's entry/exit instructions");
 		}
 	}
 }
