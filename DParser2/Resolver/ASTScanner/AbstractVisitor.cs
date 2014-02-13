@@ -531,7 +531,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			#region Static Statements
 			public bool VisitExpressionStmt(IExpressionContainingStatement Statement)
 			{
-				if (Statement.Location < Caret && Statement.EndLocation >= Caret)
+				if (Statement.Location < Caret && Statement.EndLocation >= Caret && Statement.SubExpressions != null)
 					foreach (var x in Statement.SubExpressions)
 						if (x != null && x.Location < Caret && x.EndLocation >= Caret && v.HandleExpression(x, VisibleMembers))
 							return true;
