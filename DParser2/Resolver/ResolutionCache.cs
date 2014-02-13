@@ -113,9 +113,9 @@ namespace D_Parser.Resolver
 			var stk = new Stack<ContextFrame>();
 			while(ctxt.CurrentContext != null)
 			{
-				foreach(var tparam in ctxt.CurrentContext.DeducedTemplateParameters.Values)
-					if(relatedNodes.Contains(tparam.Parameter.Parent))
-						relatedTemplateParameters.Add(tparam);
+				foreach(var kv in ctxt.CurrentContext.DeducedTemplateParameters)
+					if(kv.Value != null && relatedNodes.Contains(kv.Key.Parent))
+						relatedTemplateParameters.Add(kv.Value);
 				
 				if(!ctxt.PrevContextIsInSameHierarchy)
 					break;
