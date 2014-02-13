@@ -2985,10 +2985,13 @@ namespace D_Parser.Parser
 						FunctionAttributes(fl.AnonymousMethod);
 					}
 
-					if(!IsEOF)
+					if (!IsEOF)
+					{
 						FunctionBody(fl.AnonymousMethod);
-
-					fl.EndLocation = t.EndLocation;
+						fl.EndLocation = fl.AnonymousMethod.EndLocation;
+					}
+					else
+						fl.EndLocation = la.Location;
 
 					if (Scope != null)
 						Scope.Add(fl.AnonymousMethod);
@@ -4587,7 +4590,11 @@ namespace D_Parser.Parser
 					}
 				}
 
-				Expect (CloseCurlyBrace);
+				if (!Expect(CloseCurlyBrace) && IsEOF)
+				{
+					bs.EndLocation = la.Location;
+					return bs;
+				}
 			}
 			if(t!=null)
 				bs.EndLocation = t.EndLocation;
@@ -5092,7 +5099,7 @@ namespace D_Parser.Parser
 			}
 
 			BlockAttributes = stk_Backup;
-			par.EndLocation = t.EndLocation;
+			par.EndLocation = par.Body != null ? par.Body.EndLocation : t.EndLocation;
 		}
 		#endregion
 

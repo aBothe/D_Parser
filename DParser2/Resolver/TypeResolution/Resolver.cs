@@ -454,7 +454,7 @@ namespace D_Parser.Resolver.TypeResolution
 					start += midIndex;
 
 					// If we've reached the (temporary) goal, break immediately
-					if (Where < midElement.EndLocation)
+					if (Where <= midElement.EndLocation)
 						break;
 					// If it's the last tested element and if the caret is beyond the end location, 
 					// return the Parent instead the last tested child

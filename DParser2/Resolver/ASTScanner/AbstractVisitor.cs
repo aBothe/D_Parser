@@ -538,8 +538,12 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				return false;
 			}
 
-			public bool VisitSubStatements(StatementContainingStatement stmtContainer)
+			public bool VisitSubStatements(StatementContainingStatement stmtContainer, bool ignoreBounds = false)
 			{
+				if (!(ignoreBounds || caretInsensitive) && 
+					(stmtContainer.Location > Caret || stmtContainer.EndLocation < Caret))
+					return false;
+
 				var ss = stmtContainer.SubStatements;
 				if (ss != null)
 				{
@@ -930,8 +934,11 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					v.HandleExpression((sc.Condition as StaticIfCondition).Expression, VisibleMembers))
 					return true;
 
-				if (sc.ScopedStatement != null)
-					return sc.ScopedStatement.Accept(this);
+				if (sc.ScopedStatement is BlockStatement &&
+					VisitSubStatements(sc.ScopedStatement as StatementContainingStatement, true))
+					return true;
+				else if (sc.ScopedStatement != null && sc.ScopedStatement.Accept(this))
+					return true;
 				
 				return sc.ElseStatement != null && sc.ElseStatement.Accept(this);
 			}
