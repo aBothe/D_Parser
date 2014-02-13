@@ -379,7 +379,7 @@ namespace D_Parser.Completion
 		{
 			if(s.IdentifierHash == DTokens.IncompleteIdHash) {
 
-				prv = new GotoLabelCompletionProvider (s, cdgen);
+				prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, s, MemberFilter.Labels);
 
 				scopedStatement = s;
 				halt = true;
@@ -392,7 +392,7 @@ namespace D_Parser.Completion
 		{
 			if(s.IdentifierHash == DTokens.IncompleteIdHash) {
 
-				prv = new GotoLabelCompletionProvider (s, cdgen);
+				prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, s, MemberFilter.Labels);
 
 				scopedStatement = s;
 				halt = true;
@@ -406,13 +406,19 @@ namespace D_Parser.Completion
 			if(s.StmtType == GotoStatement.GotoStmtType.Identifier &&
 				s.LabelIdentifierHash == DTokens.IncompleteIdHash) {
 
-				prv = new GotoLabelCompletionProvider (s, cdgen);
+				prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, s, MemberFilter.Labels);
 
 				scopedStatement = s;
 				halt = true;
 			}
 			else
 				base.Visit (s);
+		}
+
+		public override void Visit(AsmStatement s)
+		{
+			scopedStatement = s;
+			base.Visit(s);
 		}
 
 		public override void Visit(AsmStatement.InstructionStatement s)
@@ -439,7 +445,9 @@ namespace D_Parser.Completion
 		{
 			if (e.Token == DTokens.Incomplete) {
 				halt = true;
-				if (handlesInitializer)
+				if (scopedStatement is AsmStatement)
+					prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, scopedStatement, MemberFilter.All | MemberFilter.x86Registers | MemberFilter.x64Registers | MemberFilter.Labels);
+				else if (handlesInitializer)
 					prv = new CtrlSpaceCompletionProvider (cdgen, scopedBlock, scopedStatement);
 			}
 		}

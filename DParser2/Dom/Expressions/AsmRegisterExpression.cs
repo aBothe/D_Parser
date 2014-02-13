@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace D_Parser.Dom.Expressions
 {
@@ -21,148 +22,155 @@ namespace D_Parser.Dom.Expressions
 			return (ulong)Register.GetHashCode();
 		}
 
+		public static readonly Dictionary<string, string> x86RegisterTable = new Dictionary<string, string>
+		{
+			{ "AL", "" },
+			{ "AH", "" },
+			{ "AX", "" },
+			{ "EAX", "" },
+			{ "BL", "" },
+			{ "BH", "" },
+			{ "BX", "" },
+			{ "EBX", "" },
+			{ "CL", "" },
+			{ "CH", "" },
+			{ "CX", "" },
+			{ "ECX", "" },
+			{ "DL", "" },
+			{ "DH", "" },
+			{ "DX", "" },
+			{ "EDX", "" },
+			{ "BP", "" },
+			{ "EBP", "" },
+			{ "SP", "" },
+			{ "ESP", "" },
+			{ "DI", "" },
+			{ "EDI", "" },
+			{ "SI", "" },
+			{ "ESI", "" },
+			{ "ES", "" },
+			{ "CS", "" },
+			{ "SS", "" },
+			{ "DS", "" },
+			{ "GS", "" },
+			{ "FS", "" },
+			{ "CR0", "" },
+			{ "CR2", "" },
+			{ "CR3", "" },
+			{ "CR4", "" },
+			{ "DR0", "" },
+			{ "DR1", "" },
+			{ "DR2", "" },
+			{ "DR3", "" },
+			{ "DR6", "" },
+			{ "DR7", "" },
+			{ "TR3", "" },
+			{ "TR4", "" },
+			{ "TR5", "" },
+			{ "TR6", "" },
+			{ "TR7", "" },
+			{ "MM0", "" },
+			{ "MM1", "" },
+			{ "MM2", "" },
+			{ "MM3", "" },
+			{ "MM4", "" },
+			{ "MM5", "" },
+			{ "MM6", "" },
+			{ "MM7", "" },
+			{ "XMM0", "" },
+			{ "XMM1", "" },
+			{ "XMM2", "" },
+			{ "XMM3", "" },
+			{ "XMM4", "" },
+			{ "XMM5", "" },
+			{ "XMM6", "" },
+			{ "XMM7", "" },
+			{ "ST", "" },
+			{ "ST(0)", "" },
+			{ "ST(1)", "" },
+			{ "ST(2)", "" },
+			{ "ST(3)", "" },
+			{ "ST(4)", "" },
+			{ "ST(5)", "" },
+			{ "ST(6)", "" },
+			{ "ST(7)", "" },
+		};
+
+		public static readonly Dictionary<string, string> x64RegisterTable = new Dictionary<string, string>
+		{
+			{ "RAX", "" },
+			{ "RBX", "" },
+			{ "RCX", "" },
+			{ "RDX", "" },
+			{ "BPL", "" },
+			{ "RBP", "" },
+			{ "SPL", "" },
+			{ "RSP", "" },
+			{ "DIL", "" },
+			{ "RDI", "" },
+			{ "SIL", "" },
+			{ "RSI", "" },
+			{ "R8B", "" },
+			{ "R8W", "" },
+			{ "R8D", "" },
+			{ "R8", "" },
+			{ "R9B", "" },
+			{ "R9W", "" },
+			{ "R9D", "" },
+			{ "R9", "" },
+			{ "R10B", "" },
+			{ "R10W", "" },
+			{ "R10D", "" },
+			{ "R10", "" },
+			{ "R11B", "" },
+			{ "R11W", "" },
+			{ "R11D", "" },
+			{ "R11", "" },
+			{ "R12B", "" },
+			{ "R12W", "" },
+			{ "R12D", "" },
+			{ "R12", "" },
+			{ "R13B", "" },
+			{ "R13W", "" },
+			{ "R13D", "" },
+			{ "R13", "" },
+			{ "R14B", "" },
+			{ "R14W", "" },
+			{ "R14D", "" },
+			{ "R14", "" },
+			{ "R15B", "" },
+			{ "R15W", "" },
+			{ "R15D", "" },
+			{ "R15", "" },
+			{ "XMM8", "" },
+			{ "XMM9", "" },
+			{ "XMM10", "" },
+			{ "XMM11", "" },
+			{ "XMM12", "" },
+			{ "XMM13", "" },
+			{ "XMM14", "" },
+			{ "XMM15", "" },
+			{ "YMM0", "" },
+			{ "YMM1", "" },
+			{ "YMM2", "" },
+			{ "YMM3", "" },
+			{ "YMM4", "" },
+			{ "YMM5", "" },
+			{ "YMM6", "" },
+			{ "YMM7", "" },
+			{ "YMM8", "" },
+			{ "YMM9", "" },
+			{ "YMM10", "" },
+			{ "YMM11", "" },
+			{ "YMM12", "" },
+			{ "YMM13", "" },
+			{ "YMM14", "" },
+			{ "YMM15", "" },
+		};
+
 		public static bool IsRegister(string str)
 		{
-			switch (str)
-			{
-				// x86
-				case "AL":
-				case "AH":
-				case "AX":
-				case "EAX":
-				case "BL":
-				case "BH":
-				case "BX":
-				case "EBX":
-				case "CL":
-				case "CH":
-				case "CX":
-				case "ECX":
-				case "DL":
-				case "DH":
-				case "DX":
-				case "EDX":
-				case "BP":
-				case "EBP":
-				case "SP":
-				case "ESP":
-				case "DI":
-				case "EDI":
-				case "SI":
-				case "ESI":
-				case "ES":
-				case "CS":
-				case "SS":
-				case "DS":
-				case "GS":
-				case "FS":
-				case "CR0":
-				case "CR2":
-				case "CR3":
-				case "CR4":
-				case "DR0":
-				case "DR1":
-				case "DR2":
-				case "DR3":
-				case "DR6":
-				case "DR7":
-				case "TR3":
-				case "TR4":
-				case "TR5":
-				case "TR6":
-				case "TR7":
-				case "MM0":
-				case "MM1":
-				case "MM2":
-				case "MM3":
-				case "MM4":
-				case "MM5":
-				case "MM6":
-				case "MM7":
-				case "XMM0":
-				case "XMM1":
-				case "XMM2":
-				case "XMM3":
-				case "XMM4":
-				case "XMM5":
-				case "XMM6":
-				case "XMM7":
-
-				// x86_64
-				case "RAX":
-				case "RBX":
-				case "RCX":
-				case "RDX":
-				case "BPL":
-				case "RBP":
-				case "SPL":
-				case "RSP":
-				case "DIL":
-				case "RDI":
-				case "SIL":
-				case "RSI":
-				case "R8B":
-				case "R8W":
-				case "R8D":
-				case "R8":
-				case "R9B":
-				case "R9W":
-				case "R9D":
-				case "R9":
-				case "R10B":
-				case "R10W":
-				case "R10D":
-				case "R10":
-				case "R11B":
-				case "R11W":
-				case "R11D":
-				case "R11":
-				case "R12B":
-				case "R12W":
-				case "R12D":
-				case "R12":
-				case "R13B":
-				case "R13W":
-				case "R13D":
-				case "R13":
-				case "R14B":
-				case "R14W":
-				case "R14D":
-				case "R14":
-				case "R15B":
-				case "R15W":
-				case "R15D":
-				case "R15":
-				case "XMM8":
-				case "XMM9":
-				case "XMM10":
-				case "XMM11":
-				case "XMM12":
-				case "XMM13":
-				case "XMM14":
-				case "XMM15":
-				case "YMM0":
-				case "YMM1":
-				case "YMM2":
-				case "YMM3":
-				case "YMM4":
-				case "YMM5":
-				case "YMM6":
-				case "YMM7":
-				case "YMM8":
-				case "YMM9":
-				case "YMM10":
-				case "YMM11":
-				case "YMM12":
-				case "YMM13":
-				case "YMM14":
-				case "YMM15":
-
-				case "ST":
-					return true;
-				default:
-					return false;
-			}
+			return x86RegisterTable.ContainsKey(str) || x64RegisterTable.ContainsKey(str);
 		}
 	}
 }

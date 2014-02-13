@@ -33,17 +33,21 @@ namespace D_Parser.Resolver.ASTScanner
 	[Flags]
 	public enum MemberFilter
 	{
-		None=0,
-		Variables=1,
-		Methods=1<<2,
-		Classes=1<<3,
-		Interfaces=1<<4,
-		Templates=1<<5,
-		StructsAndUnions=1<<6,
-		Enums=1<<7,
-		Keywords=1<<8,
-		TypeParameters=1<<9,
+		None = 0,
+		Variables = 1,
+		Methods = 1 << 2,
+		Classes = 1 << 3,
+		Interfaces = 1 << 4,
+		Templates = 1 << 5,
+		StructsAndUnions = 1 << 6,
+		Enums = 1 << 7,
+		Keywords = 1 << 8,
+		TypeParameters = 1 << 9,
+		Labels = 1 << 10,
+		x86Registers = 1 << 11,
+		x64Registers = 1 << 12,
 
+		Registers = x86Registers | x64Registers,
 		Types = Classes | Interfaces | Templates | StructsAndUnions,
 		All = Variables | Methods | Types | Enums | Keywords | TypeParameters
 	}
