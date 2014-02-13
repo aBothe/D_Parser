@@ -15,10 +15,7 @@ namespace D_Parser.Completion.Providers
 		protected override void BuildCompletionDataInternal (IEditorData ed, char enteredChar)
 		{
 			foreach (var kv in AsmStatement.InstructionStatement.OpCodeCompletionTable)
-			{
-				if(!kv.Key.StartsWith("__")) // No internal pseudo-opcodes
-					CompletionDataGenerator.AddTextItem(kv.Key, kv.Value);
-			}
+				CompletionDataGenerator.AddTextItem(kv.Key, kv.Value);
 
 			CompletionDataGenerator.AddTextItem("naked", "Omits function call's entry/exit instructions");
 		}

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace D_Parser.Dom.Statements
 {
@@ -21,13 +22,7 @@ namespace D_Parser.Dom.Statements
 			return ret + '}';
 		}
 
-		public override System.Collections.Generic.IEnumerable<IStatement> SubStatements
-		{
-			get
-			{
-				return Instructions;
-			}
-		}
+		public override IEnumerable<IStatement> SubStatements { get { return Instructions; } }
 
 		public override void Accept(StatementVisitor vis) { vis.Visit(this); }
 		public override R Accept<R>(StatementVisitor<R> vis) { return vis.Visit(this); }
