@@ -229,7 +229,6 @@
     <Compile Include="Parser\IncrementalParsing.cs" />
     <Compile Include="Parser\DDocParser.cs" />
     <Compile Include="Refactoring\ImportStmtCreation.cs" />
-    <Compile Include="Completion\Providers\GotoLabelCompletionProvider.cs" />
     <Compile Include="Dom\Statements\IStatement.cs" />
     <Compile Include="Dom\Statements\IExpressionContainingStatement.cs" />
     <Compile Include="Dom\Statements\IDeclarationContainingStatement.cs" />

@@ -4154,6 +4154,8 @@ namespace D_Parser.Parser
 						SynErr(Semicolon);
 					var parentStatement = noStatement ? s : l[l.Count - 1];
 					var args = new List<IExpression>();
+					if (IsEOF)
+						args.Add(new TokenExpression(Incomplete));
 					while (!IsEOF && laKind != Semicolon && laKind != (CloseCurlyBrace))
 					{
 					SOL:
@@ -4165,6 +4167,8 @@ namespace D_Parser.Parser
 							Step();
 							goto SOL;
 						}
+						else if (IsEOF)
+							args.Add(new TokenExpression(Incomplete));
 					}
 					if (parentStatement is AsmStatement.InstructionStatement)
 						((AsmStatement.InstructionStatement)parentStatement).Arguments = args.ToArray();
