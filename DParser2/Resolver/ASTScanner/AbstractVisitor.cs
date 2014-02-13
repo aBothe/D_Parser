@@ -804,6 +804,13 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 			public bool Visit(ForeachStatement s)
 			{
+				if (s.Location < Caret && 
+					(s.ScopedStatement == null || s.ScopedStatement.EndLocation >= Caret) && 
+					s.ForeachTypeList != null)
+					foreach (var n in s.ForeachTypeList)
+						if (n.Accept(this))
+							return true;
+
 				return VisitExpressionStmt(s) || VisitSubStatements(s);
 			}
 

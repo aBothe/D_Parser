@@ -4061,7 +4061,7 @@ namespace D_Parser.Parser
 					var type = BasicType();
 					
 					var tnode = Declarator(type, false, Scope);
-					if (tnode == null)
+					if (!(tnode is DVariable))
 						break;
 					if(forEachVar.Attributes != null)
 						if(tnode.Attributes == null)
@@ -4069,7 +4069,7 @@ namespace D_Parser.Parser
 						else
 							tnode.Attributes.AddRange(forEachVar.Attributes);
 					tnode.Location = forEachVar.Location;
-					forEachVar = (DVariable)tnode;
+					forEachVar = tnode as DVariable;
 				}
 				forEachVar.EndLocation = t.EndLocation;
 
