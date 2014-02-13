@@ -445,8 +445,11 @@ namespace D_Parser.Completion
 		{
 			if (e.Token == DTokens.Incomplete) {
 				halt = true;
-				if (scopedStatement is AsmStatement)
-					prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, scopedStatement, MemberFilter.All | MemberFilter.x86Registers | MemberFilter.x64Registers | MemberFilter.Labels);
+				const MemberFilter BaseAsmFlags = MemberFilter.Classes | MemberFilter.StructsAndUnions | MemberFilter.Enums | MemberFilter.Methods | MemberFilter.TypeParameters | MemberFilter.Types | MemberFilter.Variables;
+				if (scopedStatement is AsmStatement || scopedStatement is AsmStatement.InstructionStatement)
+					prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, scopedStatement, BaseAsmFlags | MemberFilter.x86Registers | MemberFilter.x64Registers | MemberFilter.Labels);
+				else if (scopedStatement is AsmStatement.RawDataStatement)
+					prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, scopedStatement, BaseAsmFlags | MemberFilter.Labels);
 				else if (handlesInitializer)
 					prv = new CtrlSpaceCompletionProvider (cdgen, scopedBlock, scopedStatement);
 			}

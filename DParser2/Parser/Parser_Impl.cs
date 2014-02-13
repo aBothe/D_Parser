@@ -4114,6 +4114,7 @@ namespace D_Parser.Parser
 					Step();
 					als.ValueExpression = Expression(Scope);
 					l.Add(als);
+					Step();
 				}
 				else if (laKind == Identifier)
 				{
@@ -4144,14 +4145,14 @@ namespace D_Parser.Parser
 							l.Add(als);
 							break;
 						case "naked":
-							Step();
 							noStatement = true;
 							break;
 						default:
 							SynErr(Identifier, "Unknown op-code!");
-							l.Add(new AsmStatement.InstructionStatement() { Location = la.Location, Parent = s, Operation = opCode });
+							l.Add(new AsmStatement.InstructionStatement() { Location = la.Location, Parent = s, Operation = AsmStatement.InstructionStatement.OpCode.__UNKNOWN__ });
 							break;
 					}
+					Step();
 					
 					if (noStatement && laKind != Semicolon)
 						SynErr(Semicolon);
@@ -4159,20 +4160,33 @@ namespace D_Parser.Parser
 					var args = new List<IExpression>();
 					if (IsEOF)
 						args.Add(new TokenExpression(Incomplete));
-					while (!IsEOF && laKind != Semicolon && laKind != (CloseCurlyBrace))
+					if (laKind != Semicolon)
 					{
-					SOL:
-						var e = ParseAsmExpression(Scope, parentStatement);
-						if (e != null)
-							args.Add(e);
-						if (laKind == Comma)
+						while (true)
 						{
-							Step();
-							goto SOL;
+							var e = ParseAsmExpression(Scope, parentStatement);
+							if (e != null)
+								args.Add(e);
+							if (laKind == Comma)
+							{
+								Step();
+								continue;
+							}
+							if (IsEOF)
+								args.Add(new TokenExpression(Incomplete));
+							if (!Expect(Semicolon))
+							{
+								while (laKind != Semicolon && laKind != CloseCurlyBrace && !IsEOF)
+									Step();
+								if (laKind == Semicolon)
+									Step();
+							}
+
+							break;
 						}
-						else if (IsEOF)
-							args.Add(new TokenExpression(Incomplete));
 					}
+					else
+						Step();
 					if (parentStatement is AsmStatement.InstructionStatement)
 						((AsmStatement.InstructionStatement)parentStatement).Arguments = args.ToArray();
 					else if (parentStatement is AsmStatement.RawDataStatement)
@@ -4180,14 +4194,16 @@ namespace D_Parser.Parser
 
 				}
 				else if (laKind != Semicolon)
+				{
+					noStatement = true;
 					SynErr(Identifier);
-
-				if (laKind != Semicolon)
-					SynErr(Semicolon);
+					Step();
+				}
+				else
+					Step();
 
 				if (!noStatement)
 					l[l.Count - 1].EndLocation = t.Location;
-				Step();
 			}
 
 			if (!Expect(CloseCurlyBrace) && (t.Kind == OpenCurlyBrace || t.Kind == Semicolon) && IsEOF)
