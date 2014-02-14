@@ -58,18 +58,18 @@ namespace D_Parser.Completion.Providers
 
 			//TODO: Split the keywords into such that are allowed within block statements and non-block statements
 			// Insert typable keywords
-			if (visibleMembers.HasFlag(MemberFilter.Keywords))
+			if ((visibleMembers & MemberFilter.Keywords) != 0)
 			{
 				foreach (var kv in DTokens.Keywords)
 					CompletionDataGenerator.Add(kv.Key);
 			}
-			else if (visibleMembers.HasFlag(MemberFilter.StructsAndUnions))
+			else if ((visibleMembers & MemberFilter.StructsAndUnions) != 0)
 			{
 				foreach (var kv in DTokens.BasicTypes_Array)
 					CompletionDataGenerator.Add(kv);
 			}
 
-			if (visibleMembers.HasFlag(MemberFilter.Labels))
+			if ((visibleMembers & MemberFilter.Labels) != 0)
 			{
 				IStatement stmt = curStmt;
 				do
@@ -87,19 +87,19 @@ namespace D_Parser.Completion.Providers
 					stmt.Accept (new LabelVisitor (CompletionDataGenerator));
 			}
 
-			if (visibleMembers.HasFlag(MemberFilter.x86Registers))
+			if ((visibleMembers & MemberFilter.x86Registers) != 0)
 			{
 				foreach (var kv in AsmRegisterExpression.x86RegisterTable)
 					CompletionDataGenerator.AddTextItem(kv.Key, kv.Value);
 			}
 
-			if (visibleMembers.HasFlag(MemberFilter.x64Registers))
+			if ((visibleMembers & MemberFilter.x64Registers) != 0)
 			{
 				foreach (var kv in AsmRegisterExpression.x64RegisterTable)
 					CompletionDataGenerator.AddTextItem(kv.Key, kv.Value);
 			}
 
-			if (visibleMembers.HasFlag(MemberFilter.BuiltInPropertyAttributes))
+			if ((visibleMembers & MemberFilter.BuiltInPropertyAttributes) != 0)
 			{
 				foreach (var propAttr in PropertyAttributeCompletionItems)
 					CompletionDataGenerator.AddPropertyAttribute(propAttr);
