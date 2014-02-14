@@ -76,7 +76,8 @@ namespace D_Parser.Completion.Providers
 			}
 
 			foreach (var attr in remainingAttributes)
-				sb.Append(attr.ToString()).Append(' ');
+				if(attr.Location < dm.NameLocation)
+					sb.Append(attr.ToString()).Append(' ');
 
 			// Type
 
@@ -107,11 +108,17 @@ namespace D_Parser.Completion.Providers
 				sb.Append ((p is AbstractNode ? (p as AbstractNode).ToString(false) : p.ToString())).Append(',');
 			if (sb[sb.Length - 1] == ',')
 				sb.Length--;
-			sb.Append(')');
+			sb.Append(") ");
+
+			// Post-param attributes
+
+			foreach (var attr in remainingAttributes)
+				if (attr.Location > dm.NameLocation)
+					sb.Append(attr.ToString()).Append(' ');
 
 			// Return stub
 
-			sb.AppendLine(" {");
+			sb.AppendLine("{");
 
 			if (dm.Type == null || !(dm.Type is DTokenDeclaration && (dm.Type as DTokenDeclaration).Token == DTokens.Void))
 				sb.Append("return ");
