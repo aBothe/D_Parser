@@ -728,8 +728,19 @@ namespace D_Parser.Parser
 					var dl = Decl(HasStorageClassModifiers, Scope);
 					return dl != null ? dl.ToArray () : null;
 				default:
-					if (IsBasicType() || (HasStorageClassModifiers && IsEOF))
+					if (IsBasicType())
 						goto case Ref;
+					else if (IsEOF)
+					{
+						if (HasStorageClassModifiers)
+							goto case Ref;
+						dl = Decl(false, Scope);
+						if (dl != null)
+						{
+							dl[dl.Count - 1].NameHash = 0;
+							return dl.ToArray();
+						}
+					}
 					SynErr(laKind,"Declaration expected, not "+GetTokenString(laKind));
 					Step();
 					return null;
