@@ -395,6 +395,9 @@ namespace D_Parser.Resolver.TypeResolution
 						else if (r is InterfaceType)
 						{
 							interfaces.Add(r as InterfaceType);
+
+							if (isClass && dc.NameHash != ObjectNameHash)
+								baseClass = ctxt.ParseCache.ObjectClassResult;
 						}
 						else
 						{
