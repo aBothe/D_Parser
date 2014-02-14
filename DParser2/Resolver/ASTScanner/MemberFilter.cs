@@ -46,6 +46,7 @@ namespace D_Parser.Resolver.ASTScanner
 		Labels = 1 << 10,
 		x86Registers = 1 << 11,
 		x64Registers = 1 << 12,
+		BuiltInPropertyAttributes = 1 << 13,
 
 		Registers = x86Registers | x64Registers,
 		Types = Classes | Interfaces | Templates | StructsAndUnions,

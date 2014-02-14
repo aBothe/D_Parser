@@ -36,6 +36,15 @@ namespace D_Parser.Completion.Providers
 			}
 		}
 
+		static readonly string[] PropertyAttributeCompletionItems = new[] 
+		{
+			"disable",
+			"property",
+			"safe",
+			"system",
+			"trusted"
+		};
+
 		protected override void BuildCompletionDataInternal(IEditorData Editor, char enteredChar)
 		{
 			MemberCompletionEnumeration.EnumAllAvailableMembers(
@@ -88,6 +97,12 @@ namespace D_Parser.Completion.Providers
 			{
 				foreach (var kv in AsmRegisterExpression.x64RegisterTable)
 					CompletionDataGenerator.AddTextItem(kv.Key, kv.Value);
+			}
+
+			if (visibleMembers.HasFlag(MemberFilter.BuiltInPropertyAttributes))
+			{
+				foreach (var propAttr in PropertyAttributeCompletionItems)
+					CompletionDataGenerator.AddPropertyAttribute(propAttr);
 			}
 		}
 	}

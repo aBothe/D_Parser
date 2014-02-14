@@ -144,7 +144,8 @@ namespace D_Parser.Dom
 		{
 			if(a.AttributeExpression != null && a.AttributeExpression.Length != 0)
 				foreach(var x in a.AttributeExpression)
-					x.Accept(this);
+					if(x != null)
+						x.Accept(this);
 		}
 		
 		public virtual void VisitAttribute(StaticIfCondition a)

@@ -249,7 +249,8 @@ namespace D_Parser.Completion
 			if (a.AttributeExpression != null && 
 				a.AttributeExpression.Length>0 &&
 				IsIncompleteExpression (a.AttributeExpression[0])) {
-				prv = new PropertyAttributeCompletionProvider (cdgen);
+				prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, scopedStatement, 
+					MemberFilter.BuiltInPropertyAttributes | MemberFilter.Methods | MemberFilter.Variables | MemberFilter.Types);
 				halt = true;
 			}
 			else

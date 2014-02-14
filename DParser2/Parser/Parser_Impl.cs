@@ -1988,43 +1988,43 @@ namespace D_Parser.Parser
 		{
 			var sl = la.Location;
 			Expect(At);
-			
-			if(laKind == Identifier)
+
+			if (laKind == Identifier)
 			{
 				BuiltInAtAttribute.BuiltInAttributes att = 0;
-				switch(la.Value)
+				switch (la.Value)
 				{
 					case "safe":
 						att = BuiltInAtAttribute.BuiltInAttributes.Safe;
-					break;
+						break;
 					case "system":
 						att = BuiltInAtAttribute.BuiltInAttributes.System;
-					break;
+						break;
 					case "trusted":
 						att = BuiltInAtAttribute.BuiltInAttributes.Trusted;
-					break;
+						break;
 					case "property":
 						att = BuiltInAtAttribute.BuiltInAttributes.Property;
-					break;
+						break;
 					case "disable":
 						att = BuiltInAtAttribute.BuiltInAttributes.Disable;
-					break;
+						break;
 				}
-				
-				if(att != 0)
+
+				if (att != 0)
 				{
 					Step();
-					return new BuiltInAtAttribute(att){Location = sl, EndLocation = t.EndLocation};
+					return new BuiltInAtAttribute(att) { Location = sl, EndLocation = t.EndLocation };
 				}
 			}
-			else if(laKind == OpenParenthesis)
+			else if (laKind == OpenParenthesis)
 			{
 				Step();
 				var args = ArgumentList(scope);
 				Expect(CloseParenthesis);
-				return new UserDeclarationAttribute(args.ToArray()){Location = sl, EndLocation = t.EndLocation};
+				return new UserDeclarationAttribute(args.ToArray()) { Location = sl, EndLocation = t.EndLocation };
 			}
-			
+
 			return new UserDeclarationAttribute(new[]{PostfixExpression(scope)}) { Location = sl, EndLocation = t.EndLocation };
 		}
 
