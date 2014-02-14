@@ -24,5 +24,10 @@ namespace D_Parser.Completion
 
 		void AddModule(DModule module,string nameOverride = null);
 		void AddPackage(string packageName);
+
+		/// <summary>
+		/// Used for method override completion
+		/// </summary>
+		void AddCodeGeneratingNodeItem(INode node, string codeToGenerate);
 	}
 }
