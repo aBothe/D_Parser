@@ -773,7 +773,8 @@ namespace D_Parser.Dom.Statements
 
 			public static string StringForOpCode(OpCode val)
 			{
-				return OpCodeReverseMap[val];
+				string ret;
+				return OpCodeReverseMap.TryGetValue(val, out ret) ? ret : "<Unkown instruction>";
 			}
 
 			public override string ToCode()
