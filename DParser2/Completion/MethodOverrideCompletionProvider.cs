@@ -14,7 +14,7 @@ namespace D_Parser.Completion.Providers
 		//TODO: Filter out already implemented methods
 		readonly DNode begunNode;
 
-		public MethodOverrideCompletionProvider(DNode begunNode,ICompletionDataGenerator gen)
+		public MethodOverrideCompletionProvider(DNode begunNode, ICompletionDataGenerator gen)
 			: base(gen)
 		{
 			this.begunNode = begunNode;
@@ -32,21 +32,46 @@ namespace D_Parser.Completion.Providers
 			if (classType == null)
 				return;
 
-			while ((classType = classType.Base as TemplateIntermediateType) != null)
+			var typesToScan = new List<TemplateIntermediateType>();
+			IterateThroughBaseClassesInterfaces(typesToScan, classType);
+
+			foreach (var t in typesToScan)
 			{
-				foreach (var n in classType.Definition)
+				foreach (var n in t.Definition)
 				{
 					var dm = n as DMethod;
 					if (dm == null ||
-						dm.ContainsAttribute(DTokens.Override, DTokens.Final, DTokens.Private, DTokens.Static))
+						dm.ContainsAttribute(DTokens.Final, DTokens.Private, DTokens.Static))
 						continue; //TODO: Other attributes?
 
-					CompletionDataGenerator.AddCodeGeneratingNodeItem(dm, GenerateOverridingMethodStub(dm, begunNode));
+					CompletionDataGenerator.AddCodeGeneratingNodeItem(dm, GenerateOverridingMethodStub(dm, begunNode, !(t is InterfaceType)));
 				}
 			}
 		}
 
-		static string GenerateOverridingMethodStub(DMethod dm, DNode begunNode = null)
+		static void IterateThroughBaseClassesInterfaces(List<TemplateIntermediateType> l, TemplateIntermediateType tit)
+		{
+			if (tit == null)
+				return;
+
+			var @base = tit.Base as TemplateIntermediateType;
+			if (@base != null)
+			{
+				if (!l.Contains(@base))
+					l.Add(@base);
+				IterateThroughBaseClassesInterfaces(l, @base);
+			}
+
+			if (tit.BaseInterfaces != null)
+				foreach (var I in tit.BaseInterfaces)
+				{
+					if (!l.Contains(I))
+						l.Add(I);
+					IterateThroughBaseClassesInterfaces(l, I);
+				}
+		}
+
+		static string GenerateOverridingMethodStub(DMethod dm, DNode begunNode, bool generateExecuteSuperFunctionStmt = true)
 		{
 			var sb = new StringBuilder();
 
@@ -76,7 +101,7 @@ namespace D_Parser.Completion.Providers
 			}
 
 			foreach (var attr in remainingAttributes)
-				if(attr.Location < dm.NameLocation)
+				if (attr.Location < dm.NameLocation)
 					sb.Append(attr.ToString()).Append(' ');
 
 			// Type
@@ -94,7 +119,7 @@ namespace D_Parser.Completion.Providers
 			if (dm.TemplateParameters != null && dm.TemplateParameters.Length != 0)
 			{
 				sb.Append('(');
-				foreach(var tp in dm.TemplateParameters)
+				foreach (var tp in dm.TemplateParameters)
 					sb.Append(tp.ToString()).Append(',');
 				if (sb[sb.Length - 1] == ',')
 					sb.Length--;
@@ -105,7 +130,7 @@ namespace D_Parser.Completion.Providers
 
 			sb.Append('(');
 			foreach (var p in dm.Parameters)
-				sb.Append ((p is AbstractNode ? (p as AbstractNode).ToString(false) : p.ToString())).Append(',');
+				sb.Append((p is AbstractNode ? (p as AbstractNode).ToString(false) : p.ToString())).Append(',');
 			if (sb[sb.Length - 1] == ',')
 				sb.Length--;
 			sb.Append(") ");
@@ -117,35 +142,41 @@ namespace D_Parser.Completion.Providers
 					sb.Append(attr.ToString()).Append(' ');
 
 			// Return stub
-
 			sb.AppendLine("{");
 
-			if (dm.Type == null || !(dm.Type is DTokenDeclaration && (dm.Type as DTokenDeclaration).Token == DTokens.Void))
-				sb.Append("return ");
-
-			sb.Append("super.").Append(dm.Name);
-
-			if (dm.TemplateParameters != null && dm.TemplateParameters.Length != 0)
+			if (generateExecuteSuperFunctionStmt)
 			{
-				sb.Append("!(");
-				foreach (var tp in dm.TemplateParameters)
-					sb.Append(tp.Name).Append(',');
-				if (sb[sb.Length - 1] == ',')
-					sb.Length--;
-				sb.Append(')');
-			}
+				if (dm.Type == null || !(dm.Type is DTokenDeclaration && (dm.Type as DTokenDeclaration).Token == DTokens.Void))
+					sb.Append("return ");
 
-			if (dm.Parameters.Count != 0) // super.foo will also call the base overload;
-			{
-				sb.Append('(');
-				foreach (var p in dm.Parameters)
-					sb.Append(p.Name).Append(',');
-				if (sb[sb.Length - 1] == ',')
-					sb.Length--;
-				sb.Append(')');
-			}
+				sb.Append("super.").Append(dm.Name);
 
-			sb.AppendLine(";").AppendLine("}");
+				if (dm.TemplateParameters != null && dm.TemplateParameters.Length != 0)
+				{
+					sb.Append("!(");
+					foreach (var tp in dm.TemplateParameters)
+						sb.Append(tp.Name).Append(',');
+					if (sb[sb.Length - 1] == ',')
+						sb.Length--;
+					sb.Append(')');
+				}
+
+				if (dm.Parameters.Count != 0) // super.foo will also call the base overload;
+				{
+					sb.Append('(');
+					foreach (var p in dm.Parameters)
+						sb.Append(p.Name).Append(',');
+					if (sb[sb.Length - 1] == ',')
+						sb.Length--;
+					sb.Append(')');
+				}
+
+				sb.AppendLine(";");
+			}
+			else
+				sb.AppendLine();
+
+			sb.AppendLine("}");
 
 			return sb.ToString();
 		}
