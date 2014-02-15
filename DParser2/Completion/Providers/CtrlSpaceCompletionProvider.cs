@@ -99,6 +99,21 @@ namespace D_Parser.Completion.Providers
 					CompletionDataGenerator.AddTextItem(kv.Key, kv.Value);
 			}
 
+			if ((visibleMembers & (MemberFilter.x86Registers | MemberFilter.x64Registers)) != 0) {
+				CompletionDataGenerator.Add (DTokens.__LOCAL_SIZE);
+
+				CompletionDataGenerator.AddTextItem("offsetof","");
+				CompletionDataGenerator.AddTextItem("seg","The seg means load the segment number that the symbol is in. This is not relevant for flat model code. Instead, do a move from the relevant segment register.");
+
+				// Provide AsmTypePrefixes
+				CompletionDataGenerator.AddTextItem("near","");
+				CompletionDataGenerator.AddTextItem("far","");
+				CompletionDataGenerator.AddTextItem("word","");
+				CompletionDataGenerator.AddTextItem("dword","");
+				CompletionDataGenerator.AddTextItem("qword","");
+				CompletionDataGenerator.AddTextItem("ptr","");
+			}
+
 			if ((visibleMembers & MemberFilter.BuiltInPropertyAttributes) != 0)
 			{
 				foreach (var propAttr in PropertyAttributeCompletionItems)
