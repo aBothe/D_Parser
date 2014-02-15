@@ -144,7 +144,7 @@ namespace D_Parser.Resolver.TypeResolution
 			else if(o is ITypeDeclaration)
 				ret = TypeDeclarationResolver.Resolve((ITypeDeclaration)o, ctxt);
 			else if (o is INode)
-				ret = new[] { TypeDeclarationResolver.HandleNodeMatch(o as INode, ctxt) };
+				ret = new[] { TypeDeclarationResolver.HandleNodeMatch(o as INode, ctxt, null, o) };
 			else
 				ret = null;
 
@@ -166,8 +166,13 @@ namespace D_Parser.Resolver.TypeResolution
 
 			if (ret == null) {
 				resolutionAttempt = NodeResolutionAttempt.RawSymbolLookup;
-				ret = TypeDeclarationResolver.HandleNodeMatches (LookupIdRawly (editor, o as ISyntaxRegion), ctxt);
+				ret = TypeDeclarationResolver.HandleNodeMatches (LookupIdRawly (editor, o as ISyntaxRegion), ctxt, null, o);
 			}
+
+			if (ret != null)
+				foreach (var r in ret)
+					if (r != null)
+						r.DeclarationOrExpressionBase = o;
 
 			ctxt.CurrentContext.ContextDependentOptions = optionBackup;
 			return ret;
