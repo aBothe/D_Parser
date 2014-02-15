@@ -4496,62 +4496,59 @@ namespace D_Parser.Parser
 				case Literal:
 					Step();
 					return new IdentifierExpression(t.LiteralValue, t.LiteralFormat, t.Subformat) { Location = t.Location, EndLocation = t.EndLocation };
+				case __LOCAL_SIZE:
+					Step ();
+					return new TokenExpression(__LOCAL_SIZE)  { Location = t.Location, EndLocation = t.EndLocation };
 				case Identifier:
 					Step();
-					switch (t.Value)
+					if (AsmRegisterExpression.IsRegister(t.Value))
 					{
-						case "__LOCAL_SIZE":
-							return new TokenExpression(__LOCAL_SIZE)  { Location = t.Location, EndLocation = t.EndLocation };
-						default:
-							if (AsmRegisterExpression.IsRegister(t.Value))
-							{
-								string reg = t.Value;
-								if (reg == "ST" && laKind == OpenParenthesis)
-								{
-									reg += "(";
-									Step();
-									Expect(Literal);
-									reg += t.LiteralValue.ToString();
-									if (laKind != CloseParenthesis)
-										SynErr(CloseParenthesis);
-									else
-										Step();
-									reg += ")";
-								}
-								switch (reg)
-								{
-									case "ES":
-									case "CS":
-									case "SS":
-									case "DS":
-									case "GS":
-									case "FS":
-										if (laKind == Colon)
-										{
-											var ex = new AsmRegisterExpression() { Location = t.Location, EndLocation = t.EndLocation, Register = string.Intern(reg) };
-											Step();
-											// NOTE: DMD actually allows you to not have an expression after a
-											//       segment specifier, however I consider this a bug, and, as
-											//       such, am making an expression in that form fail to parse.
-											return new UnaryExpression_SegmentBase() { RegisterExpression = ex, UnaryExpression = ParseAsmExpression(Scope, Parent) };
-										}
-										break;
-								}
-								return new AsmRegisterExpression() { Location = t.Location, EndLocation = t.EndLocation, Register = string.Intern(reg) };
-							}
+						string reg = t.Value;
+						if (reg == "ST" && laKind == OpenParenthesis)
+						{
+							reg += "(";
+							Step();
+							Expect(Literal);
+							reg += t.LiteralValue.ToString();
+							if (laKind != CloseParenthesis)
+								SynErr(CloseParenthesis);
 							else
-							{
-								IExpression outer = new IdentifierExpression(t.Value) { Location = t.Location, EndLocation = t.EndLocation };
-								while (laKind == Dot)
+								Step();
+							reg += ")";
+						}
+						switch (reg)
+						{
+							case "ES":
+							case "CS":
+							case "SS":
+							case "DS":
+							case "GS":
+							case "FS":
+								if (laKind == Colon)
 								{
+									var ex = new AsmRegisterExpression() { Location = t.Location, EndLocation = t.EndLocation, Register = string.Intern(reg) };
 									Step();
-									if (laKind != Identifier)
-										SynErr(Identifier);
-									outer = new PostfixExpression_Access() { AccessExpression = new IdentifierExpression(la.Value), PostfixForeExpression = outer };
-									Step();
+									// NOTE: DMD actually allows you to not have an expression after a
+									//       segment specifier, however I consider this a bug, and, as
+									//       such, am making an expression in that form fail to parse.
+									return new UnaryExpression_SegmentBase() { RegisterExpression = ex, UnaryExpression = ParseAsmExpression(Scope, Parent) };
 								}
-								return outer;
-							}
+								break;
+						}
+						return new AsmRegisterExpression() { Location = t.Location, EndLocation = t.EndLocation, Register = string.Intern(reg) };
+					}
+					else
+					{
+						IExpression outer = new IdentifierExpression(t.Value) { Location = t.Location, EndLocation = t.EndLocation };
+						while (laKind == Dot)
+						{
+							Step();
+							if (laKind != Identifier)
+								SynErr(Identifier);
+							outer = new PostfixExpression_Access() { AccessExpression = new IdentifierExpression(la.Value), PostfixForeExpression = outer };
+							Step();
+						}
+						return outer;
 					}
 				default:
 					SynErr(Identifier, "Expected a $, literal or an identifier!");
