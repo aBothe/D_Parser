@@ -2580,7 +2580,7 @@ ConnectionPool!RedisConnection m_connections;
 			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
 
 			Assert.That (t, Is.TypeOf(typeof(PrimitiveType)));
-			Assert.That ((t as PrimitiveType).TypeToken, Is.EqualTo(DTokens.Int));
+			Assert.That ((t as PrimitiveType).TypeToken, Is.EqualTo(DTokens.Uint));
 		}
 		#endregion
 		

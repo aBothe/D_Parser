@@ -401,7 +401,7 @@ namespace D_Parser.Resolver.TypeResolution
 						{
 							interfaces.Add(r as InterfaceType);
 
-							if (isClass && dc.NameHash != ObjectNameHash)
+							if (isClass && dc.NameHash != ObjectNameHash && baseClass == null)
 								baseClass = ctxt.ParseCache.ObjectClassResult;
 						}
 						else
