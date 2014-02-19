@@ -464,14 +464,6 @@ namespace D_Parser.Resolver
 			return Base != null ? Base.ToCode() : Definition.ToString(false,false);
 		}
 
-		public override ITypeDeclaration TypeDeclarationOf
-		{
-			get
-			{
-				return Base != null ? Base.TypeDeclarationOf : DeclarationOrExpressionBase as ITypeDeclaration;
-			}
-		}
-
 		public override AbstractType Clone(bool cloneBase)
 		{
 			return new AliasedType(Definition, cloneBase && Base != null ? Base.Clone(true) : Base, DeclarationOrExpressionBase, DeducedTypes);
