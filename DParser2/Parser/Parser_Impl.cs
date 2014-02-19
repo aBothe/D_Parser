@@ -4811,6 +4811,7 @@ namespace D_Parser.Parser
 				Name = DMethod.ConstructorIdentifier,
 				NameLocation = t.Location
 			};
+			ApplyAttributes (dm);
 			dm.Description = GetComments();
 
 			if (IsTemplateParameterList())
@@ -4849,6 +4850,7 @@ namespace D_Parser.Parser
 			Expect(Tilde);
 			var dm = new DMethod{ Location = t.Location, NameLocation = la.Location };
 			Expect(This);
+			ApplyAttributes (dm);
 			
 			dm.SpecialType = DMethod.MethodType.Destructor;
 			dm.Name = "~this";
