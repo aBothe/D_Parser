@@ -360,6 +360,11 @@ void main() { Class. }";
 
 			#region ICompletionDataGenerator implementation
 
+			public void AddCodeGeneratingNodeItem (INode node, string codeToGenerate)
+			{
+
+			}
+
 			public List<byte> Tokens = new List<byte> ();
 			public void Add (byte Token)
 			{
