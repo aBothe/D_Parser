@@ -5371,12 +5371,10 @@ namespace D_Parser.Parser
 				{
 					Step();
 
-					AllowWeakTypeParsing=true;
-					al.DefaultType = Type();
-					AllowWeakTypeParsing=false;
-
-					if (al.DefaultType==null)
-						al.DefaultExpression = ConditionalExpression();
+					if (IsAssignExpression ())
+						al.DefaultExpression = ConditionalExpression ();
+					else
+						al.DefaultType = Type ();
 				}
 				al.EndLocation = t.EndLocation;
 				return al;
