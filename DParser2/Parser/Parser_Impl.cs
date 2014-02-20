@@ -692,28 +692,43 @@ namespace D_Parser.Parser
 
 		public INode[] Declaration(IBlockNode Scope)
 		{
-			// Enum possible storage class attributes
-			bool HasStorageClassModifiers = CheckForStorageClasses(Scope as DBlockNode);
+			CheckForStorageClasses (Scope);
 
 			switch (laKind)
 			{
 				case Alias:
 				case Typedef:
-					return AliasDeclaration (Scope, HasStorageClassModifiers);
+					return AliasDeclaration (Scope);
 				case Struct:
 				case Union:
 					return new[]{ AggregateDeclaration (Scope) };
 				case Enum:
-					// As another meta-programming feature, it is possible to create static functions 
-					// that return enums, i.e. a constant value or something
-					// Additionally, eponymous template declarations are there since 2.064 - and both syntaxes are quite similar
-					if (Lexer.CurrentPeekToken.Kind == Identifier && Peek ().Kind == OpenParenthesis) {
-						Peek (1);
-						var l = Decl (HasStorageClassModifiers, Scope);
-						return l != null ? l.ToArray () : null;
+					Step ();
+
+					switch(laKind)
+					{
+						case Identifier:
+							switch (Lexer.CurrentPeekToken.Kind) {
+								case __EOF__:
+								case EOF:
+								case DTokens.Semicolon: // enum E;
+								case DTokens.Colon: // enum E : int {...}
+								case DTokens.OpenCurlyBrace: // enum E {...}
+									return new[]{ EnumDeclaration (Scope) };
+							}
+							break;
+
+						case __EOF__:
+						case EOF:
+
+						case DTokens.Semicolon: // enum;
+						case DTokens.Colon: // enum : int {...}
+						case DTokens.OpenCurlyBrace: // enum {...}
+							return new[]{ EnumDeclaration (Scope) };
 					}
 
-					return EnumDeclaration (Scope);
+					var l = Decl (Scope, new Modifier(DTokens.Enum) { Location = t.Location, EndLocation = t.EndLocation });
+					return l != null ? l.ToArray () : null;
 				case Class:
 					return new[]{ ClassDeclaration (Scope) };
 				case Template:
@@ -725,16 +740,16 @@ namespace D_Parser.Parser
 				case Interface:
 					return new[]{ InterfaceDeclaration (Scope) };
 				case Ref:
-					var dl = Decl(HasStorageClassModifiers, Scope);
+					var dl = Decl(Scope);
 					return dl != null ? dl.ToArray () : null;
 				default:
 					if (IsBasicType())
 						goto case Ref;
 					else if (IsEOF)
 					{
-						if (HasStorageClassModifiers)
+						if (CheckForStorageClasses(Scope as DBlockNode))
 							goto case Ref;
-						dl = Decl(false, Scope);
+						dl = Decl(Scope);
 						if (dl != null)
 						{
 							dl[dl.Count - 1].NameHash = 0;
@@ -747,7 +762,7 @@ namespace D_Parser.Parser
 			}
 		}
 
-		INode[] AliasDeclaration(IBlockNode Scope, bool HasStorageClassModifiers)
+		INode[] AliasDeclaration(IBlockNode Scope)
 		{
 			Step();
 			// _t is just a synthetic node which holds possible following attributes
@@ -762,7 +777,8 @@ namespace D_Parser.Parser
 				return new[]{AliasThisDeclaration(_t, Scope)};
 
 			// AliasInitializerList
-			else if(laKind == Identifier && Lexer.CurrentPeekToken.Kind == Assign)
+			else if(laKind == Identifier && (Lexer.CurrentPeekToken.Kind == Assign || 
+				(Lexer.CurrentPeekToken.Kind == OpenParenthesis && OverPeekBrackets(OpenParenthesis) && Lexer.CurrentPeekToken.Kind == Assign)))
 			{
 				decls = new List<INode>();
 				do{
@@ -779,12 +795,14 @@ namespace D_Parser.Parser
 						Location = t.Location,
 						Parent = Scope
 					};
+
 					if(laKind == OpenParenthesis){
 						var ep = new EponymousTemplate();
 						ep.AssignFrom(dv);
 						dv = ep;
 						TemplateParameterList(ep);
 					}
+
 					if(Expect(Assign))
 					{
 						Lexer.PushLookAheadBackup();
@@ -807,7 +825,7 @@ namespace D_Parser.Parser
 			}
 
 			// alias BasicType Declarator
-			decls=Decl(HasStorageClassModifiers,Scope, laKind != Identifier || Lexer.CurrentPeekToken.Kind != OpenParenthesis ? null : new Modifier(DTokens.Alias));
+			decls=Decl(Scope, laKind != Identifier || Lexer.CurrentPeekToken.Kind != OpenParenthesis ? null : new Modifier(DTokens.Alias));
 
 			if(decls!=null){
 				foreach (var n in decls)
@@ -872,7 +890,7 @@ namespace D_Parser.Parser
 			return dv;
 		}
 
-		List<INode> Decl(bool HasStorageClassModifiers,IBlockNode Scope, DAttribute StorageClass = null)
+		List<INode> Decl(IBlockNode Scope, DAttribute StorageClass = null)
 		{
 			var startLocation = la.Location;
 			var initialComment = GetComments();
@@ -967,12 +985,13 @@ namespace D_Parser.Parser
 						otherNode.Location = t.Location;
 						if (t.Kind == DTokens.Identifier)
 							otherNode.Name = t.Value;
-						else
+						else if(IsEOF)
 							otherNode.NameHash = IncompleteIdHash;
 						otherNode.NameLocation = t.Location;
 
 						if (laKind == OpenParenthesis)
 							TemplateParameterList (otherNode);
+
 						if (laKind == Assign)
 							otherNode.Initializer = Initializer (Scope);
 
@@ -4923,52 +4942,20 @@ namespace D_Parser.Parser
 		#endregion
 
 		#region Enums
-		private INode[] EnumDeclaration(INode Parent)
+		private DEnum EnumDeclaration(INode Parent)
 		{
-			Expect(Enum);
-			var ret = new List<INode>();
-
 			var mye = new DEnum() { Location = t.Location, Description = GetComments(), Parent=Parent };
 
 			ApplyAttributes(mye);
 
-			if (laKind != Identifier && IsBasicType())
-				mye.Type = Type();
-			else if (laKind == Auto)
-			{
-				Step();
-				mye.Attributes.Add(new Modifier(Auto));
-			}
-
 			if (laKind == (Identifier))
 			{
-				// Normal enum identifier
-				if (Lexer.CurrentPeekToken.Kind == (Assign) || // enum e = 1234;
-				    Lexer.CurrentPeekToken.Kind == (OpenCurlyBrace) || // enum e { A,B,C, }
-				    Lexer.CurrentPeekToken.Kind == (Semicolon) || // enum e;
-				    Lexer.CurrentPeekToken.Kind == Colon) { // enum e : uint {..}
-					Step ();
-					mye.Name = t.Value;
-					mye.NameLocation = t.Location;
-				}
-				else {
-					if (mye.Type == null)
-						mye.Type = Type();
-
-					if (Expect(Identifier))
-					{
-						mye.Name = t.Value;
-						mye.NameLocation = t.Location;
-					}
-				}
+				Step ();
+				mye.Name = t.Value;
+				mye.NameLocation = t.Location;
 			}
 			else if (IsEOF)
 				mye.NameHash = DTokens.IncompleteIdHash;
-
-			if (IsDeclaratorSuffix)
-			{
-				DeclaratorSuffixes(mye);
-			}
 
 			// Enum inhertance type
 			if (laKind == (Colon))
@@ -4977,51 +4964,13 @@ namespace D_Parser.Parser
 				mye.Type = Type();
 			}
 
-			if (laKind == OpenCurlyBrace) // Normal enum block
-			{
-				EnumBody(mye);
-				ret.Add(mye);
-				mye.Description += CheckForPostSemicolonComment();
-			}
-			// Variables with 'enum' as base type
-			else if (laKind == Assign || laKind == Semicolon || IsEOF)
-			{
-				DVariable enumVar = null;
-				do
-				{
-					enumVar = new DVariable();
+			if (laKind == OpenCurlyBrace)
+				EnumBody (mye);
+			else if (Expect(Semicolon))
+				Step ();
 
-					enumVar.AssignFrom(mye);
-
-					enumVar.Attributes.Add(new Modifier(Enum));
-					if (mye.Type != null)
-						enumVar.Type = mye.Type;
-					else
-						enumVar.Type = new DTokenDeclaration(Enum);
-
-					if (laKind == (Comma))
-					{
-						Step();
-						Expect(Identifier);
-						enumVar.Name = t.Value;
-						enumVar.NameLocation = t.Location;
-					}
-
-					if (laKind == (Assign))
-					{
-						//Step(); -- expected by initializer
-						enumVar.Initializer = Initializer(); // Seems to be specified wrongly - theoretically there must be an AssignExpression();
-					}
-					enumVar.EndLocation = t.Location;
-					ret.Add(enumVar);
-				}
-				while (laKind == Comma);
-
-				Expect(Semicolon);
-				enumVar.Description += CheckForPostSemicolonComment();
-			}
-
-			return ret.ToArray();
+			mye.Description += CheckForPostSemicolonComment();
+			return mye;			
 		}
 
 		public void EnumBody(DEnum mye)

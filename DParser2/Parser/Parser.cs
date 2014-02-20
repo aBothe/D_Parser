@@ -255,7 +255,7 @@ namespace D_Parser.Parser
             return attrs;
         }
 
-        void OverPeekBrackets(byte OpenBracketKind,bool LAIsOpenBracket = false)
+		bool OverPeekBrackets(byte OpenBracketKind,bool LAIsOpenBracket = false)
         {
             int CloseBracket = CloseParenthesis;
 
@@ -276,11 +276,12 @@ namespace D_Parser.Parser
                     if (i <= 0) 
 					{ 
 						Peek(); 
-						break; 
+						return true; 
 					}
                 }
                 pk = Peek();
             }
+			return false;
         }
 
         private bool Expect(byte n)

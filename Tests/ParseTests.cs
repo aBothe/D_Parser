@@ -119,11 +119,16 @@ void main(){
 		[Test]
 		public void TestSyntaxError1()
 		{
+			DModule mod;
+
+			mod = DParser.ParseString ("enum bool isNumeric(T) = is(NumericTypeOf!T) && !isAggregateType!T; alias Pointify(T) = void*;");
+			Assert.That (mod.ParseErrors.Count, Is.EqualTo (0));
+
 			var e = DParser.ParseExpression("new ubyte[size]");
 
 			var s = DParser.ParseBlockStatement(@"long neIdx = find(pResult, ""{/loop");
 
-			var mod = DParser.ParseString(@"void foo() {}
+			mod = DParser.ParseString(@"void foo() {}
 
 //* one line
 void bar();");
@@ -571,6 +576,12 @@ void foo()
 			var m = DParser.ParseString(@"
 enum isIntOrFloat(T) = is(T == int) || is(T == float);
 alias isInt(T) = is(T == int);
+
+enum
+    allSatisfy(alias pred, TL...) =
+        TL.length == 0 || (pred!(TL[0]) && allSatisfy!(pred, TL[1..$])),
+    anySatisfy(alias pred, TL...) =
+        TL.length != 0 && (pred!(TL[0]) || anySatisfy!(pred, TL[1..$])) || false;
 ");
 
 			Assert.AreEqual(0, m.ParseErrors.Count);
