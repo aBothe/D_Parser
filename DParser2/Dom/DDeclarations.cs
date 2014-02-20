@@ -313,6 +313,7 @@ namespace D_Parser.Dom
 	public class VectorDeclaration : AbstractTypeDeclaration
 	{
 		public IExpression Id;
+		public ITypeDeclaration IdDeclaration;
 
 		public override string ToString(bool IncludesBase)
 		{

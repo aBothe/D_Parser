@@ -122,6 +122,8 @@ void main(){
 			DModule mod;
 
 			mod = DParser.ParseString (@"
+class U : int, float, __vector(int[3]) {}
+enum __vector(long[2]) v = f();
 .Tuple!(int, string, float, double) a;
 void main()
 {

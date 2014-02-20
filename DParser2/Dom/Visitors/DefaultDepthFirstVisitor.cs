@@ -934,6 +934,8 @@ namespace D_Parser.Dom
 		{
 			VisitInner(td);
 
+			if (td.IdDeclaration != null)
+				td.IdDeclaration.Accept(this);
 			if (td.Id != null)
 				td.Id.Accept(this);
 		}

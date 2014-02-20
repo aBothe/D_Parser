@@ -1830,7 +1830,10 @@ namespace D_Parser.Parser
 
 			if (Expect(OpenParenthesis))
 			{
-				md.Id = Expression();
+				if (IsAssignExpression())
+					md.Id = Expression();
+				else
+					md.IdDeclaration = Type();
 				Expect(CloseParenthesis);
 			}
 
