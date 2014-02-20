@@ -1899,6 +1899,37 @@ cl clInst;
 		}
 
 		[Test]
+		public void AliasedTemplate()
+		{
+			var ctxt = CreateDefCtxt(@"module A;
+int bar(){}
+void* bar(T)(){}
+alias bar!int aliasOne;
+alias bar aliasTwo;
+");
+
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression("aliasOne");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(PointerType)));
+
+			x = DParser.ParseExpression("aliasOne!(byte*)");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(PointerType)));
+
+			x = DParser.ParseExpression("aliasOne!(byte*,int)");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+
+			Assert.That(t, Is.Null);
+		}
+
+		[Test]
 		public void AliasThis()
 		{
 			var pcl = CreateCache (@"
