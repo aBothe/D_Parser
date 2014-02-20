@@ -122,14 +122,16 @@ void main(){
 			DModule mod;
 
 			mod = DParser.ParseString (@"
+.Tuple!(int, string, float, double) a;
+void main()
+{
+	.Tuple!(int, string, float, double) a;
+	foreach (inout(Entry)* e; aa.impl.buckets) { }
+}
 template X(alias pred = function int(x) => x) {}
 template X(alias pred = function int(int x) => x) {}
 template X(alias pred = x => x) {}
 enum bool isCovariantWith(alias f, alias g) = .isCovariantWith!(typeof(f), typeof(g));
-void main()
-{
-	foreach (inout(Entry)* e; aa.impl.buckets) { }
-}
 
 class Impl2 : C_Foo, .I_Foo
 {

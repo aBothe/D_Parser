@@ -2147,7 +2147,7 @@ namespace D_Parser.Parser
 					// Skip initial dot
 					if (Peek(laKind == Dot ? 2 :1).Kind != Identifier)
 					{
-						if (laKind == Identifier)
+						if (laKind == Identifier || laKind == Dot)
 						{
 							// Skip initial identifier list
 							if (Lexer.CurrentPeekToken.Kind == Not)
