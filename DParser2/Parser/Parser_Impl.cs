@@ -141,10 +141,10 @@ namespace D_Parser.Parser
 
 		public void DeclDef(DBlockNode module)
 		{
-			if (IsAttributeSpecifier ()) {
+			if (IsAttributeSpecifier) {
 				do
 					AttributeSpecifier (module);
-				while(IsAttributeSpecifier ());
+				while(IsAttributeSpecifier);
 
 				var tkind = t.Kind;
 				if(tkind == Semicolon || tkind == CloseCurlyBrace || tkind == Colon)
@@ -676,7 +676,7 @@ namespace D_Parser.Parser
 			bool ret = false;
 			while (IsStorageClass)
 			{
-				if (IsAttributeSpecifier()) // extern, align
+				if (IsAttributeSpecifier) // extern, align
 					AttributeSpecifier(scope);
 				else
 				{
@@ -1891,35 +1891,38 @@ namespace D_Parser.Parser
 			return s;
 		}
 
-		bool IsAttributeSpecifier()
+		bool IsAttributeSpecifier
 		{
-			switch (laKind)
+			get
 			{
-				case Extern:
-				case Export:
-				case Align:
-				case Pragma:
-				case Deprecated:
-				case Final:
-				case Override:
-				case Abstract:
-				case Scope:
-				case __gshared:
-				case Synchronized:
-				case At:
-					return true;
-				case Static:
-					if (Lexer.CurrentPeekToken.Kind != If)
+				switch (laKind)
+				{
+					case Extern:
+					case Export:
+					case Align:
+					case Pragma:
+					case Deprecated:
+					case Final:
+					case Override:
+					case Abstract:
+					case Scope:
+					case __gshared:
+					case Synchronized:
+					case At:
 						return true;
-					return false;
-				case Auto:
-					if (Lexer.CurrentPeekToken.Kind != OpenParenthesis && Lexer.CurrentPeekToken.Kind != Identifier)
-						return true;
-					return false;
-				default:
-					if (IsMemberFunctionAttribute(laKind))
-						goto case Auto;
-					return IsProtectionAttribute();
+					case Static:
+						if (Lexer.CurrentPeekToken.Kind != If)
+							return true;
+						return false;
+					case Auto:
+						if (Lexer.CurrentPeekToken.Kind != OpenParenthesis && Lexer.CurrentPeekToken.Kind != Identifier)
+							return true;
+						return false;
+					default:
+						if (IsMemberFunctionAttribute(laKind))
+							goto case Auto;
+						return IsProtectionAttribute();
+				}
 			}
 		}
 		
