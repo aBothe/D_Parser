@@ -1045,7 +1045,7 @@ namespace D_Parser.Parser
 			return 
 				IsBasicType(laKind) || 
 				laKind == (Typeof) || 
-				//laKind == __vector ||
+				laKind == __vector ||
 				IsFunctionAttribute ||
 				(laKind == (Dot) && Lexer.CurrentPeekToken.Kind == (Identifier)) || 
 				//BasicTypes[Lexer.CurrentPeekToken.Kind] || 
