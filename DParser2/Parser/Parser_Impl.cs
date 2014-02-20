@@ -832,11 +832,15 @@ namespace D_Parser.Parser
 			decls=Decl(Scope, laKind != Identifier || Lexer.CurrentPeekToken.Kind != OpenParenthesis ? null : new Modifier(DTokens.Alias));
 
 			if(decls!=null){
-				foreach (var n in decls)
-					if (n is DVariable){
-						((DNode)n).Attributes.AddRange(_t.Attributes);
-						((DVariable)n).IsAlias = true;
+				foreach (var n in decls) {
+					var dv = n as DVariable;
+					if (dv != null) {
+						if (n.NameHash == DTokens.IncompleteIdHash && n.Type == null) // 'alias |' shall trigger completion, 'alias int |' not
+							n.NameHash = 0;
+						dv.Attributes.AddRange (_t.Attributes);
+						dv.IsAlias = true;
 					}
+				}
 
 				decls[decls.Count-1].Description += CheckForPostSemicolonComment();
 				return decls.ToArray ();
@@ -925,7 +929,7 @@ namespace D_Parser.Parser
 				else
 					ttd = BasicType();
 			}
-			else
+			else if(!IsEOF)
 				ttd = BasicType();
 
 
