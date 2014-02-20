@@ -3384,36 +3384,43 @@ namespace D_Parser.Parser
 			else if (laKind == OpenParenthesis)
 				fl.AnonymousMethod.Parameters = Parameters(fl.AnonymousMethod);
 
-
-
-			if (Expect (GoesTo)) {
-				var dm = fl.AnonymousMethod;
-				if (laKind == OpenCurlyBrace)
-					dm.Body = BlockStatement (fl.AnonymousMethod);
-				else {
-					dm.Body = new BlockStatement { Location = t.EndLocation, ParentNode = dm };
-
-					var ae = AssignExpression (dm);
-
-					// +1 due to SearchRegionAt which is enforcing < on EndLocations and not <=
-					var endLocation = IsEOF ? new CodeLocation (la.EndColumn + 1, la.Line) : t.EndLocation;
-
-					dm.Body.Add (new ReturnStatement {
-						Location = ae.Location,
-						EndLocation = endLocation,
-						ReturnExpression = ae
-					});
-
-					dm.Body.EndLocation = endLocation;
-				}
-				fl.EndLocation = fl.AnonymousMethod.EndLocation = fl.AnonymousMethod.Body.EndLocation;
-			} else // (string | -- see IsLambdaExpression()
-				fl.EndLocation = fl.AnonymousMethod.EndLocation = la.Location;
+			LambdaBody(fl.AnonymousMethod);
+			fl.EndLocation = fl.AnonymousMethod.EndLocation;
 
 			if (Scope != null)
 				Scope.Add(fl.AnonymousMethod);
 
 			return fl;
+		}
+
+		void LambdaBody(DMethod anonymousMethod)
+		{
+			if (Expect(GoesTo))
+			{
+				if (laKind == OpenCurlyBrace)
+					anonymousMethod.Body = BlockStatement(anonymousMethod);
+				else
+				{
+					anonymousMethod.Body = new BlockStatement { Location = t.EndLocation, ParentNode = anonymousMethod };
+
+					var ae = AssignExpression(anonymousMethod);
+
+					// +1 due to SearchRegionAt which is enforcing < on EndLocations and not <=
+					var endLocation = IsEOF ? new CodeLocation(la.EndColumn + 1, la.Line) : t.EndLocation;
+
+					anonymousMethod.Body.Add(new ReturnStatement
+					{
+						Location = ae.Location,
+						EndLocation = endLocation,
+						ReturnExpression = ae
+					});
+
+					anonymousMethod.Body.EndLocation = endLocation;
+				}
+				anonymousMethod.EndLocation = anonymousMethod.Body.EndLocation;
+			}
+			else // (string | -- see IsLambdaExpression()
+				anonymousMethod.EndLocation = la.Location;
 		}
 		#endregion
 
@@ -5032,6 +5039,12 @@ namespace D_Parser.Parser
 				Step();
 				par.Description += CheckForPostSemicolonComment();
 				par.EndLocation = t.EndLocation;
+				return;
+			}
+
+			if (laKind == GoesTo)
+			{
+				LambdaBody(par);
 				return;
 			}
 
