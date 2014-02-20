@@ -806,7 +806,10 @@ namespace D_Parser.Parser
 					if(Expect(Assign))
 					{
 						Lexer.PushLookAheadBackup();
+						var wkTypeParsingBackup = AllowWeakTypeParsing;
+						AllowWeakTypeParsing = true;
 						dv.Type = Type();
+						AllowWeakTypeParsing = wkTypeParsingBackup;
 						if(!(laKind == Comma || laKind == Semicolon))
 						{
 							Lexer.RestoreLookAheadBackup();
