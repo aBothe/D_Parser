@@ -49,12 +49,12 @@ namespace TestTool
 
 			Console.WriteLine ("Begin parsing...");
 
-			var dirs = Environment.OSVersion.Platform == PlatformID.Unix ? new[]{@"/usr/include/dlang"} : new[]{@"D:\D\dmd2\src\phobos", @"D:\D\dmd2\src\druntime\import"};
+			var dirs = Environment.OSVersion.Platform == PlatformID.Unix ? new[] { @"/usr/include/dlang" } : new[] { @"B:\Programs\D\dmd2\src\phobos", @"B:\Programs\D\dmd2\src\druntime\import" };
 			var dirsLeft = dirs.Length;
 			var ev=new System.Threading.AutoResetEvent(false);
 			GlobalParseCache.BeginAddOrUpdatePaths(dirs, false, (pc) =>
 			{
-				Console.WriteLine("{1}ms", pc.Directory, pc.Duration);
+				Console.WriteLine("{1}ms", pc.Directory, pc.ParseDuration);
 				ev.Set();
 			});
 
