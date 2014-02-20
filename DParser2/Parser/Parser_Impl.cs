@@ -254,7 +254,7 @@ namespace D_Parser.Parser
 					goto default;
 				case Assert:
 					Step();
-
+					CheckForStorageClasses(module);
 					if (!Modifier.ContainsAttribute(DeclarationAttributes, Static))
 						SynErr(Static, "Static assert statements must be explicitly marked as static");
 
@@ -4973,9 +4973,9 @@ namespace D_Parser.Parser
 			}
 
 			if (laKind == OpenCurlyBrace)
-				EnumBody (mye);
-			else if (Expect(Semicolon))
-				Step ();
+				EnumBody(mye);
+			else 
+				Expect(Semicolon);
 
 			mye.Description += CheckForPostSemicolonComment();
 			return mye;			
