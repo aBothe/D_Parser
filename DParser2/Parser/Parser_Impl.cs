@@ -4931,6 +4931,9 @@ namespace D_Parser.Parser
 			if (laKind == (Colon))
 				BaseClassList(dc);
 
+			if (laKind == (If))
+				Constraint(dc);
+
 			// Empty interfaces are allowed
 			if (laKind == Semicolon)
 				Step();

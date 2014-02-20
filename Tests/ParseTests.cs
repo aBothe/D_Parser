@@ -122,6 +122,10 @@ void main(){
 			DModule mod;
 
 			mod = DParser.ParseString (@"
+interface OutputRange(T...) : OutputRange!(T[0])
+    if (T.length > 1)
+{
+}
 void main()
 {
     align(1)
