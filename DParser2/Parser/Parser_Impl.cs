@@ -904,7 +904,7 @@ namespace D_Parser.Parser
 			var initialComment = GetComments();
 			ITypeDeclaration ttd = null;
 
-			CheckForStorageClasses(Scope as DBlockNode);
+			CheckForStorageClasses(Scope);
 
 			// Autodeclaration
 			if(StorageClass == null)
@@ -1269,26 +1269,17 @@ namespace D_Parser.Parser
 					ret.Name = t.Value;
 					ret.NameLocation = t.Location;
 
-					if (laKind == OpenParenthesis && ret.Type == null) {
-						OverPeekBrackets (DTokens.OpenParenthesis, true);
+					// enum asdf(...) = ...;
+					if (laKind == OpenParenthesis && OverPeekBrackets(DTokens.OpenParenthesis, true) &&
+						Lexer.CurrentPeekToken.Kind == Assign)
+					{
+						var eponymousTemplateDecl = new EponymousTemplate ();
+						eponymousTemplateDecl.AssignFrom (ret);
+						ret = eponymousTemplateDecl;
 
-						var k = Lexer.LastToken.Kind;
-						if (k == DTokens.Alias || k == DTokens.Enum) {
-							if (ret.Attributes == null)
-								ret.Attributes = new List<DAttribute> ();
-							ret.Attributes.Add (new Modifier (k));
-						}
+						TemplateParameterList (eponymousTemplateDecl);
 
-						// enum asdf(...) = ...;
-						if (Lexer.CurrentPeekToken.Kind == Assign) {
-							var eponymousTemplateDecl = new EponymousTemplate ();
-							eponymousTemplateDecl.AssignFrom (ret);
-							ret = eponymousTemplateDecl;
-
-							TemplateParameterList (eponymousTemplateDecl);
-
-							return ret;
-						}
+						return ret;
 					}
 				}
 				else

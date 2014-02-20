@@ -122,6 +122,7 @@ void main(){
 			DModule mod;
 
 			mod = DParser.ParseString (@"
+enum bool isCovariantWith(alias f, alias g) = .isCovariantWith!(typeof(f), typeof(g));
 void main()
 {
 	foreach (inout(Entry)* e; aa.impl.buckets) { }
