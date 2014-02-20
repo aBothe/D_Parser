@@ -574,6 +574,7 @@ void foo()
 		public void EponymousTemplates()
 		{
 			var m = DParser.ParseString(@"
+enum mixinStuff = q{import C;};
 enum isIntOrFloat(T) = is(T == int) || is(T == float);
 alias isInt(T) = is(T == int);
 

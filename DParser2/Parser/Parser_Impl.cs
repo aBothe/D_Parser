@@ -705,8 +705,7 @@ namespace D_Parser.Parser
 				case Enum:
 					Step ();
 
-					switch(laKind)
-					{
+					switch (laKind) {
 						case Identifier:
 							switch (Lexer.CurrentPeekToken.Kind) {
 								case __EOF__:
@@ -727,7 +726,9 @@ namespace D_Parser.Parser
 							return new[]{ EnumDeclaration (Scope) };
 					}
 
-					var l = Decl (Scope, new Modifier(DTokens.Enum) { Location = t.Location, EndLocation = t.EndLocation });
+					var enumAttr = new Modifier (DTokens.Enum) { Location = t.Location, EndLocation = t.EndLocation };
+					PushAttribute (enumAttr, false);
+					var l = Decl (Scope, enumAttr);
 					return l != null ? l.ToArray () : null;
 				case Class:
 					return new[]{ ClassDeclaration (Scope) };
