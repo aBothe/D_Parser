@@ -122,6 +122,11 @@ void main(){
 			DModule mod;
 
 			mod = DParser.ParseString (@"
+void main()
+{
+	foreach (inout(Entry)* e; aa.impl.buckets) { }
+}
+
 class Impl2 : C_Foo, .I_Foo
 {
 }

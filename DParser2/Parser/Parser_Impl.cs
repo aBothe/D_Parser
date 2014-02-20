@@ -4074,14 +4074,6 @@ namespace D_Parser.Parser
 				var forEachVar = new DVariable{ Parent = Scope };
 				forEachVar.Location = la.Location;
 
-				if (laKind == Ref || laKind == InOut)
-				{
-					Step();
-					if(forEachVar.Attributes == null)
-						forEachVar.Attributes = new List<DAttribute>();
-					forEachVar.Attributes.Add(new Modifier(t.Kind));
-				}
-
 				CheckForStorageClasses(Scope);
 				ApplyAttributes(forEachVar);
 				
