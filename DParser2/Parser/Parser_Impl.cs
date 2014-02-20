@@ -779,6 +779,12 @@ namespace D_Parser.Parser
 						Location = t.Location,
 						Parent = Scope
 					};
+					if(laKind == OpenParenthesis){
+						var ep = new EponymousTemplate();
+						ep.AssignFrom(dv);
+						dv = ep;
+						TemplateParameterList(ep);
+					}
 					if(Expect(Assign))
 					{
 						Lexer.PushLookAheadBackup();
@@ -965,6 +971,8 @@ namespace D_Parser.Parser
 							otherNode.NameHash = IncompleteIdHash;
 						otherNode.NameLocation = t.Location;
 
+						if (laKind == OpenParenthesis)
+							TemplateParameterList (otherNode);
 						if (laKind == Assign)
 							otherNode.Initializer = Initializer (Scope);
 
