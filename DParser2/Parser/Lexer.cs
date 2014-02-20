@@ -555,7 +555,8 @@ namespace D_Parser.Parser
 						token = Token(DTokens.At, Col-1, Line, 1);
 						break;
 					case '#':
-						ReadSpecialTokenSequence ();
+						if ((token = ReadSpecialTokenSequence()) != null)
+							break;
 						continue;
 					default:
 						ch = (char)nextChar;
@@ -1794,51 +1795,47 @@ namespace D_Parser.Parser
 		/// <summary>
 		/// http://dlang.org/lex.html#SpecialTokenSequence
 		/// </summary>
-		void ReadSpecialTokenSequence()
+		DToken ReadSpecialTokenSequence()
 		{
 			int x = Col-1;
 			int startLine = Line;
 
-			bool _u;
-			char ch = (char)ReaderRead ();
-			var cmd = ReadIdent (ch, out _u);
+			var nextToken = Next();
 
-			/*
-			 * This sets the source line number to IntegerLiteral, 
-			 * and optionally the source file name to Filespec, 
-			 * beginning with the next line of source text. 
-			 * The source file and line number is used for printing error messages 
-			 * and for mapping generated code back to the source for the symbolic debugging output.
-			 */
-			if (cmd == "line") {
-				ch = (char)ReaderRead ();
-				while (ch == ' ' || ch == '\t')
-					ch = (char)ReaderRead ();
+			if (nextToken.Kind != DTokens.Identifier)
+			{
+				OnError(nextToken.Line, nextToken.Column, "Identifier expected");
+				return null;
+			}
 
-				if (Line != startLine) {
-					LexerErrors.Add (new ParserError (false, "At least there's a line number required for a #line directive", DTokens.INVALID, new CodeLocation (x, Line)));
-					return;
-				}
+			switch (nextToken.Value)
+			{
+				/*
+				 * This sets the source line number to IntegerLiteral, 
+				 * and optionally the source file name to Filespec, 
+				 * beginning with the next line of source text. 
+				 * The source file and line number is used for printing error messages 
+				 * and for mapping generated code back to the source for the symbolic debugging output.
+				 */
+				case "line":
+					nextToken = Next();
 
-				var digit = ReadDigit (ch, Col - 1);
-				string file;
+					// nextToken can be __LINE__ or 123 now.
 
-				ch = (char)ReaderPeek ();
-				while (ch == ' ' || ch == '\t') {
-					ReaderRead ();
-					ch = (char)ReaderPeek ();
-				}
+					//TODO: How to handle this then properly? Only set Line to digit's value?
+					var prevLine = Line;
+					nextToken = Next(); //ISSUE: Successive #line tokens will be skipped here - perhaps detect if there's a special token following?
 
-				if (ch == '\"') {
-					ReaderRead ();
-					file = ReadString (ch).Value;
-				}
+					if (nextToken.Line > prevLine ||
+						nextToken.Kind != DTokens.Literal || nextToken.LiteralFormat != LiteralFormat.StringLiteral)
+						return nextToken;
+					break;
+				default:
+					OnError(nextToken.Line, nextToken.Column, "Invalid special token sequence");
+					break;
+			}
 
-				//TODO: How to handle this then properly? Only set Line to digit's value?
-			} else
-				LexerErrors.Add (new ParserError (false, "Invalid special token sequence", DTokens.INVALID, new CodeLocation (x, Line)));
-
-			SkipToEndOfLine ();
+			return null;
 		}
 		#endregion
 

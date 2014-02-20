@@ -122,6 +122,9 @@ void main(){
 			DModule mod;
 
 			mod = DParser.ParseString (@"
+#line 123
+# line 123
+#line ""hurrdurr""
 			enum E11554;
 static assert(is(E11554 == enum));
 			enum bool isNumeric(T) = is(NumericTypeOf!T) && !isAggregateType!T; alias Pointify(T) = void*;");
