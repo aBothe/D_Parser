@@ -122,6 +122,9 @@ void main(){
 			DModule mod;
 
 			mod = DParser.ParseString (@"
+class Impl2 : C_Foo, .I_Foo
+{
+}
 interface OutputRange(T...) : OutputRange!(T[0])
     if (T.length > 1)
 {
