@@ -211,8 +211,9 @@ namespace D_Parser.Resolver.TypeResolution
 
 		static AbstractType DeduceEponymousTemplate(EponymousTemplateType ept, ResolutionContext ctxt)
 		{
-			if (ept.Definition.Initializer == null) {
-				ctxt.LogError (ept.Definition, "Can't deduce type from empty initializer!");
+			if (ept.Definition.Initializer == null &&
+				ept.Definition.Type == null) {
+				ctxt.LogError(ept.Definition, "Can't deduce type from empty initializer!");
 				return null;
 			}
 
@@ -221,8 +222,10 @@ namespace D_Parser.Resolver.TypeResolution
 
 			// Get actual overloads
 			AbstractType deducedType = null;
-
-			deducedType = new MemberSymbol(ept.Definition, ExpressionTypeEvaluation.EvaluateType(ept.Definition.Initializer, ctxt), null, ept.DeducedTypes); //ept; //ExpressionTypeEvaluation.EvaluateType (ept.Definition.Initializer, ctxt);
+			var def = ept.Definition;
+			deducedType = new MemberSymbol(def, def.Type != null ? 
+				TypeDeclarationResolver.ResolveSingle(def.Type, ctxt) :
+				ExpressionTypeEvaluation.EvaluateType(def.Initializer, ctxt), null, ept.DeducedTypes); //ept; //ExpressionTypeEvaluation.EvaluateType (ept.Definition.Initializer, ctxt);
 
 			deducedType.Tag = ept.Tag; // Currently requried for proper UFCS resolution - sustain ept's Tag
 
