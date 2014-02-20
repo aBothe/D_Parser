@@ -128,6 +128,7 @@ enum __vector(long[2]) v = f();
 .Tuple!(int, string, float, double) a;
 void main()
 {
+	__vector(long[2]) q;
 	.Tuple!(int, string, float, double) a;
 	foreach (inout(Entry)* e; aa.impl.buckets) { }
 }

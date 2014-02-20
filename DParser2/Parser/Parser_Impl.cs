@@ -2214,7 +2214,7 @@ namespace D_Parser.Parser
 								Peek(1);
 								return isPrimitiveExpr;
 							}
-							else if (laKind == Typeof)
+							else if (laKind == Typeof || laKind == __vector)
 								OverPeekBrackets(OpenParenthesis);
 						}
 					}
@@ -3519,7 +3519,6 @@ namespace D_Parser.Parser
 
 		public IStatement Statement(bool BlocksAllowed = true, bool EmptyAllowed = true, IBlockNode Scope = null, IStatement Parent=null)
 		{
-			bool declaration = false;
 			switch (laKind)
 			{
 				case Semicolon:
