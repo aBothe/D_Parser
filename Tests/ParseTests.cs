@@ -122,6 +122,7 @@ void main(){
 			DModule mod;
 
 			mod = DParser.ParseString (@"
+class T : typeof(new A) { }
 #line 123
 # line 123
 #line ""hurrdurr""

@@ -4794,7 +4794,7 @@ namespace D_Parser.Parser
 				if (IsProtectionAttribute() && laKind != (Protected))
 					Step();
 
-				var ids=IdentifierList();
+				var ids=Type();
 				if (ids != null)
 					ret.Add(ids);
 			}
