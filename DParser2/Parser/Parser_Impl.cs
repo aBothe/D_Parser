@@ -1493,13 +1493,13 @@ namespace D_Parser.Parser
 					case Final:
 					case Override:
 					case Scope:
-					case Static:
 					case Synchronized:
 					case __gshared:
 					case Ref:
+					case At:
 						return true;
 					default:
-						return IsAtAttribute || (IsMemberFunctionAttribute(laKind) && Lexer.CurrentPeekToken.Kind != OpenParenthesis);
+						return IsAttributeSpecifier;
 				}
 			}
 		}
@@ -1920,19 +1920,9 @@ namespace D_Parser.Parser
 						return false;
 					default:
 						if (IsMemberFunctionAttribute(laKind))
-							goto case Auto;
+							return Lexer.CurrentPeekToken.Kind != OpenParenthesis;
 						return IsProtectionAttribute();
 				}
-			}
-		}
-		
-		/// <summary>
-		/// True on e.g. @property or @"Hey ho my attribute"
-		/// </summary>
-		bool IsAtAttribute
-		{
-			get{
-				return laKind == At;
 			}
 		}
 
@@ -1954,7 +1944,7 @@ namespace D_Parser.Parser
 		private void AttributeSpecifier(IBlockNode scope)
 		{
 			DAttribute attr;
-			if(IsAtAttribute)
+			if(laKind == At)
 				attr = AtAttribute(scope);
 			else if (laKind == Pragma)
 				 attr=_Pragma();
@@ -2104,7 +2094,7 @@ namespace D_Parser.Parser
 		
 		bool IsFunctionAttribute
 		{
-			get { return IsMemberFunctionAttribute(laKind) || IsAtAttribute; }
+			get { return IsMemberFunctionAttribute(laKind) || laKind == At; }
 		}
 
 		void FunctionAttributes(DNode n)
@@ -2118,7 +2108,7 @@ namespace D_Parser.Parser
 			attributes = attributes ?? new List<DAttribute> ();
 			while (IsFunctionAttribute)
 			{
-                if(IsAtAttribute)
+                if(laKind == At)
                 	attr = AtAttribute(null);
                 else
                 {
@@ -4004,7 +3994,7 @@ namespace D_Parser.Parser
 					ds.EndLocation = t.EndLocation;
 					return ds;
 				default:
-					if (IsClassLike(laKind) || IsBasicType(laKind) || IsModifier(laKind) || IsAtAttribute)
+					if (IsClassLike(laKind) || IsBasicType(laKind) || IsModifier(laKind))
 						goto case Typedef;
 					if (IsAssignExpression())
 						return ExpressionStatement(Scope, Parent);

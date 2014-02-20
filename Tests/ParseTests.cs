@@ -122,6 +122,11 @@ void main(){
 			DModule mod;
 
 			mod = DParser.ParseString (@"
+void main()
+{
+    align(1)
+    struct X1 { ubyte b; int n; }
+}
 class T : typeof(new A) { }
 #line 123
 # line 123
