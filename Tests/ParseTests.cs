@@ -121,7 +121,10 @@ void main(){
 		{
 			DModule mod;
 
-			mod = DParser.ParseString ("enum bool isNumeric(T) = is(NumericTypeOf!T) && !isAggregateType!T; alias Pointify(T) = void*;");
+			mod = DParser.ParseString (@"
+			enum E11554;
+static assert(is(E11554 == enum));
+			enum bool isNumeric(T) = is(NumericTypeOf!T) && !isAggregateType!T; alias Pointify(T) = void*;");
 			Assert.That (mod.ParseErrors.Count, Is.EqualTo (0));
 
 			var e = DParser.ParseExpression("new ubyte[size]");
