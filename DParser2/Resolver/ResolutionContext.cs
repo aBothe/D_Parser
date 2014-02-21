@@ -97,8 +97,11 @@ namespace D_Parser.Resolver
 				if (c != null && c.ScopedBlock != null && ResolutionErrors.Count > 0)
 				{
 					Debugger.Log(0, "Resolution Error", c.ToString() + "\n");
+					int i = 100;
 					foreach (var err in ResolutionErrors)
 					{
+						if (--i < 1)
+							break;
 						if (err.SyntacticalContext != null)
 							Debugger.Log(0, "Resolution Error", err.SyntacticalContext.ToString() + "\n");
 						Debugger.Log(0, "Resolution Error", err.Message + "\n");
