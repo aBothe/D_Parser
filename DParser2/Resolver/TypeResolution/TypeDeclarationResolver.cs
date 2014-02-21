@@ -487,6 +487,423 @@ namespace D_Parser.Resolver.TypeResolution
 		[ThreadStatic]
 		static Dictionary<INode, int> stackCalls;
 
+		public class NodeMatchHandleVisitor : NodeVisitor<AbstractType>
+		{
+			public ResolutionContext ctxt;
+			public bool canResolveBase;
+			public ISyntaxRegion typeBase;
+			public AbstractType resultBase;
+
+			public AbstractType Visit(DEnumValue n)
+			{
+				return new MemberSymbol(n, HandleNodeMatch(n.Parent, ctxt), typeBase);
+			}
+
+			public AbstractType Visit(DVariable variable)
+			{
+				AbstractType bt;
+
+				if (canResolveBase)
+				{
+					var bts = TypeDeclarationResolver.Resolve(variable.Type, ctxt);
+
+					if (bts != null && bts.Length != 0)
+						bt = bts[0];
+
+				// For auto variables, use the initializer to get its type
+					else if (variable.Initializer != null)
+					{
+						bt = DResolver.StripMemberSymbols(ExpressionTypeEvaluation.EvaluateType(variable.Initializer, ctxt));
+					}
+					else
+						bt = null;
+
+					// Check if inside an foreach statement header
+					if (bt == null && ctxt.ScopedStatement != null)
+						bt = GetForeachIteratorType(variable);
+
+					if (bt == null)
+						ctxt.CheckForSingleResult(bts, variable.Type as ISyntaxRegion ?? variable.Initializer);
+				}
+				else
+					bt = null;
+
+				// Note: Also works for aliases! In this case, we simply try to resolve the aliased type, otherwise the variable's base type
+				return variable.IsAlias ?
+				new AliasedType(variable, bt, typeBase) :
+				new MemberSymbol(variable, bt, typeBase);
+			}
+
+			/// <summary>
+			/// string[] s;
+			/// 
+			/// foreach(i;s)
+			/// {
+			///		// i is of type 'string'
+			///		writeln(i);
+			/// }
+			/// </summary>
+			public AbstractType GetForeachIteratorType(DVariable i)
+			{
+				var r = new List<AbstractType>();
+				var curStmt = ctxt.ScopedStatement;
+
+				bool init = true;
+				// Walk up statement hierarchy -- note that foreach loops can be nested
+				while (curStmt != null)
+				{
+					if (init)
+						init = false;
+					else
+						curStmt = curStmt.Parent;
+
+					if (curStmt is ForeachStatement)
+					{
+						var fe = (ForeachStatement)curStmt;
+
+						if (fe.ForeachTypeList == null)
+							continue;
+
+						// If the searched variable is declared in the header
+						int iteratorIndex = -1;
+
+						for (int j = 0; j < fe.ForeachTypeList.Length; j++)
+							if (fe.ForeachTypeList[j] == i)
+							{
+								iteratorIndex = j;
+								break;
+							}
+
+						if (iteratorIndex == -1)
+							continue;
+
+						bool keyIsSearched = iteratorIndex == 0 && fe.ForeachTypeList.Length > 1;
+
+
+						// foreach(var k, var v; 0 .. 9)
+						if (keyIsSearched && fe.IsRangeStatement)
+						{
+							// -- it's static type int, of course(?)
+							return new PrimitiveType(DTokens.Int);
+						}
+
+						var aggregateType = ExpressionTypeEvaluation.EvaluateType(fe.Aggregate, ctxt);
+
+						aggregateType = DResolver.StripMemberSymbols(aggregateType);
+
+						if (aggregateType == null)
+							return null;
+
+						// The most common way to do a foreach
+						if (aggregateType is AssocArrayType)
+						{
+							var ar = (AssocArrayType)aggregateType;
+
+							return keyIsSearched ? ar.KeyType : ar.ValueType;
+						}
+						else if (aggregateType is UserDefinedType)
+						{
+							var tr = (UserDefinedType)aggregateType;
+
+							if (keyIsSearched || !(tr.Definition is IBlockNode))
+								continue;
+
+							bool foundIterPropertyMatch = false;
+							#region Foreach over Structs and Classes with Ranges
+
+							// Enlist all 'back'/'front' members
+							var t_l = new List<AbstractType>();
+
+							foreach (var n in (IBlockNode)tr.Definition)
+								if (fe.IsReverse ? n.Name == "back" : n.Name == "front")
+									t_l.Add(HandleNodeMatch(n, ctxt));
+
+							// Remove aliases
+							var iterPropertyTypes = DResolver.StripAliasSymbols(t_l);
+
+							foreach (var iterPropType in iterPropertyTypes)
+								if (iterPropType is MemberSymbol)
+								{
+									foundIterPropertyMatch = true;
+
+									var itp = (MemberSymbol)iterPropType;
+
+									// Only take non-parameterized methods
+									if (itp.Definition is DMethod && ((DMethod)itp.Definition).Parameters.Count != 0)
+										continue;
+
+									// Handle its base type [return type] as iterator type
+									if (itp.Base != null)
+										r.Add(itp.Base);
+
+									foundIterPropertyMatch = true;
+								}
+
+							if (foundIterPropertyMatch)
+								continue;
+							#endregion
+
+							#region Foreach over Structs and Classes with opApply
+							t_l.Clear();
+							r.Clear();
+
+							foreach (var n in (IBlockNode)tr.Definition)
+								if (n is DMethod &&
+									(fe.IsReverse ? n.Name == "opApplyReverse" : n.Name == "opApply"))
+									t_l.Add(HandleNodeMatch(n, ctxt));
+
+							iterPropertyTypes = DResolver.StripAliasSymbols(t_l);
+
+							foreach (var iterPropertyType in iterPropertyTypes)
+								if (iterPropertyType is MemberSymbol)
+								{
+									var mr = (MemberSymbol)iterPropertyType;
+									var dm = mr.Definition as DMethod;
+
+									if (dm == null || dm.Parameters.Count != 1)
+										continue;
+
+									var dg = dm.Parameters[0].Type as DelegateDeclaration;
+
+									if (dg == null || dg.Parameters.Count != fe.ForeachTypeList.Length)
+										continue;
+
+									var paramType = Resolve(dg.Parameters[iteratorIndex].Type, ctxt);
+
+									if (paramType != null && paramType.Length > 0)
+										r.Add(paramType[0]);
+								}
+							#endregion
+						}
+
+						if (r.Count > 1)
+							ctxt.LogError(new ResolutionError(curStmt, "Ambigous iterator type"));
+
+						return r.Count != 0 ? r[0] : null;
+					}
+				}
+
+				return null;
+			}
+
+			/// <summary>
+			/// Add 'superior' template parameters to the current symbol because 
+			/// the parameters might be re-used in the nested class.
+			/// </summary>
+			List<TemplateParameterSymbol> GetInvisibleTypeParameters(DNode n)
+			{
+				var invisibleTypeParams = new List<TemplateParameterSymbol>();
+
+				var tStk = new Stack<ContextFrame>();
+				do
+				{
+					var curCtxt = ctxt.Pop();
+					tStk.Push(curCtxt);
+					foreach (var kv in curCtxt.DeducedTemplateParameters)
+						if (!n.ContainsTemplateParameter(kv.Value.Parameter))
+							invisibleTypeParams.Add(kv.Value);
+				}
+				while (ctxt.PrevContextIsInSameHierarchy);
+				while (tStk.Count != 0)
+					ctxt.Push(tStk.Pop());
+
+				return invisibleTypeParams;
+			}
+
+			public AbstractType Visit(EponymousTemplate ep)
+			{
+				return new EponymousTemplateType(ep, GetInvisibleTypeParameters(ep).AsReadOnly(), typeBase);
+			}
+
+			public AbstractType Visit(DMethod m)
+			{
+				return new MemberSymbol(m, canResolveBase ? GetMethodReturnType(m, ctxt) : null, typeBase);
+			}
+
+			public AbstractType Visit(DClassLike dc)
+			{
+				var invisibleTypeParams = GetInvisibleTypeParameters(dc);
+
+				switch (dc.ClassType)
+				{
+					case DTokens.Struct:
+						return new StructType(dc, typeBase, invisibleTypeParams);
+
+					case DTokens.Union:
+						return new UnionType(dc, typeBase, invisibleTypeParams);
+
+					case DTokens.Interface:
+					case DTokens.Class:
+						return DResolver.ResolveClassOrInterface(dc, ctxt, typeBase, false, invisibleTypeParams);
+
+					case DTokens.Template:
+						if (dc.ContainsAttribute(DTokens.Mixin))
+							return new MixinTemplateType(dc, typeBase, invisibleTypeParams);
+						return new TemplateType(dc, typeBase, invisibleTypeParams);
+
+					default:
+						ctxt.LogError(new ResolutionError(dc, "Unknown type (" + DTokens.GetTokenString(dc.ClassType) + ")"));
+						return null;
+				}
+			}
+
+			public AbstractType Visit(DEnum de)
+			{
+				AbstractType bt;
+
+				if (de.Type == null)
+					bt = new PrimitiveType(DTokens.Int);
+				else
+				{
+					if (de.Parent is IBlockNode)
+						ctxt.PushNewScope(de.Parent as IBlockNode);
+
+					var bts = TypeDeclarationResolver.Resolve(de.Type, ctxt);
+
+					if (de.Parent is IBlockNode)
+						ctxt.Pop();
+
+					ctxt.CheckForSingleResult(bts, de.Type);
+
+					bt = bts != null && bts.Length != 0 ? bts[0] : null;
+				}
+
+				return new EnumType(de, bt, typeBase);
+			}
+
+			public AbstractType Visit(DModule mod)
+			{
+				if (typeBase != null && typeBase.ToString() != mod.ModuleName)
+				{
+					var pack = ctxt.ParseCache.LookupPackage(typeBase.ToString()).FirstOrDefault();
+					if (pack != null)
+						return new PackageSymbol(pack, typeBase);
+				}
+				
+				return new ModuleSymbol(mod, typeBase);
+			}
+
+			public AbstractType Visit(DBlockNode dBlockNode)
+			{
+				throw new NotImplementedException();
+			}
+
+			public AbstractType Visit(TemplateParameter.Node tpn)
+			{
+				TemplateParameterSymbol tpnBase;
+
+				//TODO: Resolve the specialization type
+				//var templateParameterType = TemplateInstanceHandler.ResolveTypeSpecialization(tmp, ctxt);
+
+				if (ctxt.GetTemplateParam(tpn.NameHash, out tpnBase) && tpnBase.Parameter == tpn.TemplateParameter)
+					return tpnBase;
+
+				return new TemplateParameterSymbol(tpn, null, typeBase);
+			}
+
+			public AbstractType Visit(NamedTemplateMixinNode n)
+			{
+				return Visit(n as DVariable);
+			}
+
+			// Only import symbol aliases are allowed to search in the parse cache
+			public AbstractType Visit(ImportSymbolNode importSymbolNode)
+			{
+				AbstractType ret = null;
+
+				var modAlias = importSymbolNode is ModuleAliasNode;
+				if (modAlias ? importSymbolNode.Type != null : importSymbolNode.Type.InnerDeclaration != null)
+				{
+					var mods = new List<DModule>();
+					var td = modAlias ? importSymbolNode.Type : importSymbolNode.Type.InnerDeclaration;
+					foreach (var mod in ctxt.ParseCache.LookupModuleName(td.ToString()))
+						mods.Add(mod);
+					if (mods.Count == 0)
+						ctxt.LogError(new NothingFoundError(importSymbolNode.Type));
+					else
+						if (mods.Count > 1)
+						{
+							var m__ = new List<ISemantic>();
+							foreach (var mod in mods)
+								m__.Add(new ModuleSymbol(mod, importSymbolNode.Type));
+							ctxt.LogError(new AmbiguityError(importSymbolNode.Type, m__));
+						}
+					var bt = mods.Count != 0 ? (AbstractType)new ModuleSymbol(mods[0], td) : null;
+					//TODO: Is this correct behaviour?
+					if (!modAlias)
+					{
+						var furtherId = ResolveFurtherTypeIdentifier(importSymbolNode.Type.ToString(false), new[] {
+						bt
+					}, ctxt, importSymbolNode.Type);
+						ctxt.CheckForSingleResult(furtherId, importSymbolNode.Type);
+						if (furtherId != null && furtherId.Length != 0)
+							bt = furtherId[0];
+						else
+							bt = null;
+					}
+					ret = new AliasedType(importSymbolNode, bt, importSymbolNode.Type);
+				}
+				return ret;
+			}
+
+			public AbstractType Visit(ModuleAliasNode moduleAliasNode)
+			{
+				return Visit(moduleAliasNode as ImportSymbolNode);
+			}
+
+			public AbstractType Visit(ImportSymbolAlias importSymbolAlias)
+			{
+				return Visit(importSymbolAlias as ImportSymbolNode);
+			}
+
+			#region Attributes etc.
+			public AbstractType VisitAttribute(Modifier attr)
+			{
+				throw new NotImplementedException();
+			}
+
+			public AbstractType VisitAttribute(DeprecatedAttribute a)
+			{
+				throw new NotImplementedException();
+			}
+
+			public AbstractType VisitAttribute(PragmaAttribute attr)
+			{
+				throw new NotImplementedException();
+			}
+
+			public AbstractType VisitAttribute(BuiltInAtAttribute a)
+			{
+				throw new NotImplementedException();
+			}
+
+			public AbstractType VisitAttribute(UserDeclarationAttribute a)
+			{
+				throw new NotImplementedException();
+			}
+
+			public AbstractType VisitAttribute(VersionCondition a)
+			{
+				throw new NotImplementedException();
+			}
+
+			public AbstractType VisitAttribute(DebugCondition a)
+			{
+				throw new NotImplementedException();
+			}
+
+			public AbstractType VisitAttribute(StaticIfCondition a)
+			{
+				throw new NotImplementedException();
+			}
+
+			public AbstractType VisitAttribute(NegatedDeclarationCondition a)
+			{
+				throw new NotImplementedException();
+			}
+			#endregion
+		}
+
 		/// <summary>
 		/// The variable's or method's base type will be resolved (if auto type, the intializer's type will be taken).
 		/// A class' base class will be searched.
@@ -496,10 +913,9 @@ namespace D_Parser.Resolver.TypeResolution
 			INode m,
 			ResolutionContext ctxt,
 			AbstractType resultBase = null,
-			ISyntaxRegion typeBase = null)
+			ISyntaxRegion typeBase = null,
+			NodeMatchHandleVisitor vis = null)
 		{
-			AbstractType ret = null;
-
 			// See https://github.com/aBothe/Mono-D/issues/161
 			int stkC;
 
@@ -537,81 +953,13 @@ namespace D_Parser.Resolver.TypeResolution
 			if (resultBase is DSymbol)
 				ctxt.CurrentContext.IntroduceTemplateParameterTypes((DSymbol)resultBase);
 
-			var importSymbolNode = m as ImportSymbolNode;
-			var variable = m as DVariable;
-
-			// Only import symbol aliases are allowed to search in the parse cache
-			if (importSymbolNode != null)
-				ret = HandleImportSymbolMatch (importSymbolNode,ctxt);
-			else if (variable != null)
+			AbstractType ret;
+			if (vis == null)
+				ret = m.Accept(new NodeMatchHandleVisitor { canResolveBase = canResolveBase, ctxt = ctxt, resultBase = resultBase, typeBase = typeBase });
+			else
 			{
-				AbstractType bt = null;
-
-				if (variable is DEnumValue)
-				{
-					ret = new MemberSymbol(variable, HandleNodeMatch(variable.Parent, ctxt), typeBase);
-				}
-				else if (!(variable is EponymousTemplate)) {
-					if (canResolveBase) {
-						
-						var bts = TypeDeclarationResolver.Resolve (variable.Type, ctxt);
-
-						if (bts != null && bts.Length != 0)
-							bt = bts[0];
-
-					// For auto variables, use the initializer to get its type
-						else if (variable.Initializer != null)
-						{
-							bt = DResolver.StripMemberSymbols(ExpressionTypeEvaluation.EvaluateType(variable.Initializer, ctxt));
-						}
-
-						// Check if inside an foreach statement header
-						if (bt == null && ctxt.ScopedStatement != null)
-							bt = GetForeachIteratorType (variable, ctxt);
-
-						if (bt == null)
-							ctxt.CheckForSingleResult(bts, variable.Type);
-					}
-
-					// Note: Also works for aliases! In this case, we simply try to resolve the aliased type, otherwise the variable's base type
-					ret = variable.IsAlias ?
-					new AliasedType (variable, bt, typeBase) as MemberSymbol :
-					new MemberSymbol (variable, bt, typeBase);
-				} else
-					ret = new EponymousTemplateType (variable as EponymousTemplate, GetInvisibleTypeParameters(variable, ctxt).AsReadOnly(), typeBase);
-			}
-			else if (m is DMethod)
-			{
-				ret = new MemberSymbol(m as DNode,canResolveBase ? GetMethodReturnType(m as DMethod, ctxt) : null, typeBase);
-			}
-			else if (m is DClassLike)
-				ret = HandleClassLikeMatch (m as DClassLike, ctxt, typeBase, canResolveBase);
-			else if (m is DModule)
-			{
-				var mod = (DModule)m;
-				if (typeBase != null && typeBase.ToString() != mod.ModuleName)
-				{
-					var pack = ctxt.ParseCache.LookupPackage(typeBase.ToString()).FirstOrDefault();
-					if (pack != null)
-						ret = new PackageSymbol(pack, typeBase);
-				}
-				else
-					ret = new ModuleSymbol(m as DModule, typeBase);
-			}
-			else if (m is DEnum)
-				ret = DResolver.ResolveDEnum(m as DEnum, ctxt, typeBase);
-			else if (m is TemplateParameter.Node)
-			{
-				var tpn = m as TemplateParameter.Node;
-				TemplateParameterSymbol tpnBase;
-
-				//TODO: Resolve the specialization type
-				//var templateParameterType = TemplateInstanceHandler.ResolveTypeSpecialization(tmp, ctxt);
-
-				if (ctxt.GetTemplateParam(m.NameHash, out tpnBase) && tpnBase.Parameter == tpn.TemplateParameter)
-					return tpnBase;
-
-				ret = new TemplateParameterSymbol(tpn, null, typeBase);
+				vis.canResolveBase = canResolveBase;
+				ret = m.Accept(vis);
 			}
 
 			if (popAfterwards)
@@ -627,91 +975,6 @@ namespace D_Parser.Resolver.TypeResolution
 			return ret;
 		}
 
-		static AbstractType HandleImportSymbolMatch (ImportSymbolNode importSymbolNode,ResolutionContext ctxt)
-		{
-			AbstractType ret = null;
-
-			var modAlias = importSymbolNode is ModuleAliasNode;
-			if (modAlias ? importSymbolNode.Type != null : importSymbolNode.Type.InnerDeclaration != null) {
-				var mods = new List<DModule> ();
-				var td = modAlias ? importSymbolNode.Type : importSymbolNode.Type.InnerDeclaration;
-				foreach (var mod in ctxt.ParseCache.LookupModuleName (td.ToString ()))
-					mods.Add (mod);
-				if (mods.Count == 0)
-					ctxt.LogError (new NothingFoundError (importSymbolNode.Type));
-				else
-					if (mods.Count > 1) {
-						var m__ = new List<ISemantic> ();
-						foreach (var mod in mods)
-							m__.Add (new ModuleSymbol (mod, importSymbolNode.Type));
-						ctxt.LogError (new AmbiguityError (importSymbolNode.Type, m__));
-					}
-				var bt = mods.Count != 0 ? (AbstractType)new ModuleSymbol (mods [0], td) : null;
-				//TODO: Is this correct behaviour?
-				if (!modAlias) {
-					var furtherId = ResolveFurtherTypeIdentifier (importSymbolNode.Type.ToString (false), new[] {
-						bt
-					}, ctxt, importSymbolNode.Type);
-					ctxt.CheckForSingleResult (furtherId, importSymbolNode.Type);
-					if (furtherId != null && furtherId.Length != 0)
-						bt = furtherId [0];
-					else
-						bt = null;
-				}
-				ret = new AliasedType (importSymbolNode, bt, importSymbolNode.Type);
-			}
-			return ret;
-		}
-
-		/// <summary>
-		/// Add 'superior' template parameters to the current symbol because 
-		/// the parameters might be re-used in the nested class.
-		/// </summary>
-		static List<TemplateParameterSymbol> GetInvisibleTypeParameters(DNode n,ResolutionContext ctxt)
-		{
-			var invisibleTypeParams = new List<TemplateParameterSymbol> ();
-
-			var tStk = new Stack<ContextFrame> ();
-			do {
-				var curCtxt = ctxt.Pop ();
-				tStk.Push (curCtxt);
-				foreach (var kv in curCtxt.DeducedTemplateParameters)
-					if (!n.ContainsTemplateParameter (kv.Value.Parameter))
-						invisibleTypeParams.Add (kv.Value);
-			}
-			while (ctxt.PrevContextIsInSameHierarchy);
-			while (tStk.Count != 0)
-				ctxt.Push (tStk.Pop ());
-
-			return invisibleTypeParams;
-		}
-
-		static AbstractType HandleClassLikeMatch (DClassLike dc, ResolutionContext ctxt, ISyntaxRegion typeBase, bool canResolveBase)
-		{
-			var invisibleTypeParams = GetInvisibleTypeParameters (dc, ctxt);
-
-			switch (dc.ClassType) {
-				case DTokens.Struct:
-					return new StructType (dc, typeBase, invisibleTypeParams);
-
-				case DTokens.Union:
-					return new UnionType (dc, typeBase, invisibleTypeParams);
-
-				case DTokens.Interface:
-				case DTokens.Class:
-					return DResolver.ResolveClassOrInterface(dc, ctxt, typeBase, false, invisibleTypeParams);
-
-				case DTokens.Template:
-					if (dc.ContainsAttribute (DTokens.Mixin))
-						return new MixinTemplateType (dc, typeBase, invisibleTypeParams);
-					return new TemplateType (dc, typeBase, invisibleTypeParams);
-
-				default:
-					ctxt.LogError (new ResolutionError (dc, "Unknown type (" + DTokens.GetTokenString (dc.ClassType) + ")"));
-					return null;
-			}
-		}
-
 		public static AbstractType[] HandleNodeMatches(
 			IEnumerable<INode> matches,
 			ResolutionContext ctxt,
@@ -723,18 +986,21 @@ namespace D_Parser.Resolver.TypeResolution
 			if (ll != null && ll.Count == 1)
 				return new[] { ll[0] == null ? null : HandleNodeMatch(ll[0], ctxt, resultBase, typeDeclaration) };
 
+			if (matches == null)
+				return new AbstractType[0];
+
+			var vis = new NodeMatchHandleVisitor { ctxt = ctxt, resultBase = resultBase, typeBase = typeDeclaration };
 			var rl = new List<AbstractType>();
 
-			if (matches != null)
-				foreach (var m in matches)
-				{
-					if (m == null)
-						continue;
+			foreach (var m in matches)
+			{
+				if (m == null)
+					continue;
 
-					var res = HandleNodeMatch(m, ctxt, resultBase, typeDeclaration);
-					if (res != null)
-						rl.Add(res);
-				}
+				var res = HandleNodeMatch(m, ctxt, resultBase, typeDeclaration, vis);
+				if (res != null)
+					rl.Add(res);
+			}
 			
 			return rl.ToArray();
 		}
@@ -838,158 +1104,6 @@ namespace D_Parser.Resolver.TypeResolution
 				}
 
 				return new PrimitiveType (DTokens.Void);
-			}
-
-			return null;
-		}
-
-		/// <summary>
-		/// string[] s;
-		/// 
-		/// foreach(i;s)
-		/// {
-		///		// i is of type 'string'
-		///		writeln(i);
-		/// }
-		/// </summary>
-		public static AbstractType GetForeachIteratorType(DVariable i, ResolutionContext ctxt)
-		{
-			var r = new List<AbstractType>();
-			var curStmt = ctxt.ScopedStatement;
-
-			bool init = true;
-			// Walk up statement hierarchy -- note that foreach loops can be nested
-			while (curStmt != null)
-			{
-				if (init)
-					init = false;
-				else
-					curStmt = curStmt.Parent;
-
-				if (curStmt is ForeachStatement)
-				{
-					var fe = (ForeachStatement)curStmt;
-
-					if (fe.ForeachTypeList == null)
-						continue;
-
-					// If the searched variable is declared in the header
-					int iteratorIndex = -1;
-
-					for (int j = 0; j < fe.ForeachTypeList.Length; j++)
-						if (fe.ForeachTypeList[j] == i)
-						{
-							iteratorIndex = j;
-							break;
-						}
-
-					if (iteratorIndex == -1)
-						continue;
-
-					bool keyIsSearched = iteratorIndex == 0 && fe.ForeachTypeList.Length > 1;
-
-
-					// foreach(var k, var v; 0 .. 9)
-					if (keyIsSearched && fe.IsRangeStatement)
-					{
-						// -- it's static type int, of course(?)
-						return new PrimitiveType(DTokens.Int);
-					}
-
-					var aggregateType = ExpressionTypeEvaluation.EvaluateType(fe.Aggregate, ctxt);
-
-					aggregateType = DResolver.StripMemberSymbols(aggregateType);
-
-					if (aggregateType == null)
-						return null;
-
-					// The most common way to do a foreach
-					if (aggregateType is AssocArrayType)
-					{
-						var ar = (AssocArrayType)aggregateType;
-
-						return keyIsSearched ? ar.KeyType : ar.ValueType;
-					}
-					else if (aggregateType is UserDefinedType)
-					{
-						var tr = (UserDefinedType)aggregateType;
-
-						if (keyIsSearched || !(tr.Definition is IBlockNode))
-							continue;
-
-						bool foundIterPropertyMatch = false;
-						#region Foreach over Structs and Classes with Ranges
-
-						// Enlist all 'back'/'front' members
-						var t_l = new List<AbstractType>();
-
-						foreach (var n in (IBlockNode)tr.Definition)
-							if (fe.IsReverse ? n.Name == "back" : n.Name == "front")
-								t_l.Add(HandleNodeMatch(n, ctxt));
-
-						// Remove aliases
-						var iterPropertyTypes = DResolver.StripAliasSymbols(t_l);
-
-						foreach (var iterPropType in iterPropertyTypes)
-							if (iterPropType is MemberSymbol)
-							{
-								foundIterPropertyMatch = true;
-
-								var itp = (MemberSymbol)iterPropType;
-
-								// Only take non-parameterized methods
-								if (itp.Definition is DMethod && ((DMethod)itp.Definition).Parameters.Count != 0)
-									continue;
-
-								// Handle its base type [return type] as iterator type
-								if (itp.Base != null)
-									r.Add(itp.Base);
-
-								foundIterPropertyMatch = true;
-							}
-
-						if (foundIterPropertyMatch)
-							continue;
-						#endregion
-
-						#region Foreach over Structs and Classes with opApply
-						t_l.Clear();
-						r.Clear();
-
-						foreach (var n in (IBlockNode)tr.Definition)
-							if (n is DMethod &&
-								(fe.IsReverse ? n.Name == "opApplyReverse" : n.Name == "opApply"))
-								t_l.Add(HandleNodeMatch(n, ctxt));
-
-						iterPropertyTypes = DResolver.StripAliasSymbols(t_l);
-
-						foreach (var iterPropertyType in iterPropertyTypes)
-							if (iterPropertyType is MemberSymbol)
-							{
-								var mr = (MemberSymbol)iterPropertyType;
-								var dm = mr.Definition as DMethod;
-
-								if (dm == null || dm.Parameters.Count != 1)
-									continue;
-
-								var dg = dm.Parameters[0].Type as DelegateDeclaration;
-
-								if (dg == null || dg.Parameters.Count != fe.ForeachTypeList.Length)
-									continue;
-
-								var paramType = Resolve(dg.Parameters[iteratorIndex].Type, ctxt);
-
-								if (paramType != null && paramType.Length > 0)
-									r.Add(paramType[0]);
-							}
-						#endregion
-					}
-
-					if (r.Count > 1)
-						ctxt.LogError(new ResolutionError(curStmt, "Ambigous iterator type"));
-
-					return r.Count != 0 ? r[0] : null;
-				}
 			}
 
 			return null;

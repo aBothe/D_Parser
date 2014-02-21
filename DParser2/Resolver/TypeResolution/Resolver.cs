@@ -240,30 +240,6 @@ namespace D_Parser.Resolver.TypeResolution
 			return l;
 		}
 
-		public static EnumType ResolveDEnum(DEnum de, ResolutionContext ctxt, ISyntaxRegion instanceDeclaration)
-		{
-			AbstractType bt;
-
-			if (de.Type == null)
-				bt = new PrimitiveType(DTokens.Int);
-			else
-			{
-				if (de.Parent is IBlockNode)
-					ctxt.PushNewScope(de.Parent as IBlockNode);
-
-				var bts = TypeDeclarationResolver.Resolve(de.Type, ctxt);
-
-				if (de.Parent is IBlockNode)
-					ctxt.Pop();
-
-				ctxt.CheckForSingleResult(bts, de.Type);
-
-				bt = bts != null && bts.Length != 0 ? bts[0] : null;
-			}
-
-			return new EnumType(de, bt, instanceDeclaration);
-		}
-
 		static readonly int ObjectNameHash = "Object".GetHashCode();
 
 		[ThreadStatic]
