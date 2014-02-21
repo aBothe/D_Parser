@@ -459,5 +459,15 @@ namespace D_Parser.Dom
 
 			return sb.ToString();
 		}
+
+		public override R Accept<R>(NodeVisitor<R> vis)
+		{
+			return vis.Visit(this);
+		}
+
+		public override void Accept(NodeVisitor vis)
+		{
+			vis.Visit(this);
+		}
 	}
 }

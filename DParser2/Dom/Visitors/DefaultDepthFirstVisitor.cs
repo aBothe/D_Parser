@@ -42,6 +42,11 @@ namespace D_Parser.Dom
 			VisitDNode(n);
 		}
 
+		public virtual void Visit(EponymousTemplate ep)
+		{
+			Visit(ep as DVariable);
+		}
+
 		public virtual void Visit(DMethod n)
 		{
 			VisitDNode(n);
@@ -92,6 +97,21 @@ namespace D_Parser.Dom
 			
 			if(n.Mixin != null)
 				n.Mixin.Accept(this);
+		}
+
+		public virtual void Visit(ModuleAliasNode n)
+		{
+			
+		}
+
+		public virtual void Visit(ImportSymbolNode n)
+		{
+
+		}
+
+		public virtual void Visit(ImportSymbolAlias n)
+		{
+
 		}
 
 		public virtual void VisitDNode(DNode n)

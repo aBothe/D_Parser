@@ -222,6 +222,16 @@ namespace D_Parser.Dom
 			this.ImportStatement = impStmt;
 			Parent = parentNode;
 		}
+
+		public override void Accept(NodeVisitor vis)
+		{
+			vis.Visit(this);
+		}
+
+		public override R Accept<R>(NodeVisitor<R> vis)
+		{
+			return vis.Visit(this);
+		}
 	}
 
 	/// <summary>
@@ -240,6 +250,16 @@ namespace D_Parser.Dom
 			Location = NameLocation = imp.ModuleIdentifier.Location;
 
 			Type = imp.ModuleIdentifier;
+		}
+
+		public override void Accept(NodeVisitor vis)
+		{
+			vis.Visit(this);
+		}
+
+		public override R Accept<R>(NodeVisitor<R> vis)
+		{
+			return vis.Visit(this);
 		}
 	}
 
@@ -271,6 +291,16 @@ namespace D_Parser.Dom
 		public override string ToString ()
 		{
 			return string.Format ("[ImportSymbolAlias] {0}", ImportBinding.ToString());
+		}
+
+		public override void Accept(NodeVisitor vis)
+		{
+			vis.Visit(this);
+		}
+
+		public override R Accept<R>(NodeVisitor<R> vis)
+		{
+			return vis.Visit(this);
 		}
 	}
 }

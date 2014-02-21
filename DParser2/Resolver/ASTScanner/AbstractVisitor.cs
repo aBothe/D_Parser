@@ -479,6 +479,26 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			{
 				return (caretInsensitive || Caret >= decl.Location) && v.HandleItem(decl);
 			}
+
+			public bool Visit(ModuleAliasNode n)
+			{
+				return Visit(n as DVariable);
+			}
+
+			public bool Visit(ImportSymbolNode n)
+			{
+				return Visit(n as DVariable);
+			}
+
+			public bool Visit(ImportSymbolAlias n)
+			{
+				return Visit(n as DVariable);
+			}
+
+			public bool Visit(EponymousTemplate n)
+			{
+				return Visit(n as DVariable);
+			}
 			#endregion
 
 			#region Attributes

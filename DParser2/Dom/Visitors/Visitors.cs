@@ -51,6 +51,11 @@ namespace D_Parser.Dom
 		void VisitAttribute(DebugCondition a);
 		void VisitAttribute(StaticIfCondition a);
 		void VisitAttribute(NegatedDeclarationCondition a);
+
+		void Visit(EponymousTemplate ep);
+		void Visit(ModuleAliasNode moduleAliasNode);
+		void Visit(ImportSymbolNode importSymbolNode);
+		void Visit(ImportSymbolAlias importSymbolAlias);
 	}
 
 	public interface NodeVisitor<out R> : IVisitor<R>
@@ -75,6 +80,11 @@ namespace D_Parser.Dom
 		R VisitAttribute(DebugCondition a);
 		R VisitAttribute(StaticIfCondition a);
 		R VisitAttribute(NegatedDeclarationCondition a);
+
+		R Visit(EponymousTemplate ep);
+		R Visit(ModuleAliasNode moduleAliasNode);
+		R Visit(ImportSymbolNode importSymbolNode);
+		R Visit(ImportSymbolAlias importSymbolAlias);
 	}
 
 	public interface MetaDeclarationVisitor : IVisitor
