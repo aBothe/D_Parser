@@ -490,7 +490,14 @@ namespace D_Parser.Resolver.TypeResolution
 		public class NodeMatchHandleVisitor : NodeVisitor<AbstractType>
 		{
 			public ResolutionContext ctxt;
-			public bool canResolveBase;
+			public bool CanResolveBase(INode m)
+			{
+				int stkC;
+				stackCalls.TryGetValue(m, out stkC);
+				return ((ctxt.Options & ResolutionOptions.DontResolveBaseTypes) != ResolutionOptions.DontResolveBaseTypes) &&
+						stkC < 4 && 
+						(!(m.Type is IdentifierDeclaration) || (m.Type as IdentifierDeclaration).IdHash != m.NameHash); // pretty rough and incomplete SO prevention hack
+			}
 			public ISyntaxRegion typeBase;
 			public AbstractType resultBase;
 
@@ -503,7 +510,7 @@ namespace D_Parser.Resolver.TypeResolution
 			{
 				AbstractType bt;
 
-				if (canResolveBase)
+				if (CanResolveBase(variable))
 				{
 					var bts = TypeDeclarationResolver.Resolve(variable.Type, ctxt);
 
@@ -717,7 +724,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 			public AbstractType Visit(DMethod m)
 			{
-				return new MemberSymbol(m, canResolveBase ? GetMethodReturnType(m, ctxt) : null, typeBase);
+				return new MemberSymbol(m, CanResolveBase(m) ? GetMethodReturnType(m, ctxt) : null, typeBase);
 			}
 
 			public AbstractType Visit(DClassLike dc)
@@ -922,12 +929,11 @@ namespace D_Parser.Resolver.TypeResolution
 			if (stackCalls == null)
 			{
 				stackCalls = new Dictionary<INode, int>();
-				stackCalls[m] = stkC = 1;
+				stackCalls[m] = 1;
 			}
-			else if (stackCalls.TryGetValue(m, out stkC))
-				stackCalls[m] = ++stkC;
 			else
-				stackCalls[m] = stkC = 1;
+				stackCalls[m] = stackCalls.TryGetValue(m, out stkC) ? ++stkC : 1;
+
 			/*
 			 * Pushing a new scope is only required if current scope cannot be found in the handled node's hierarchy.
 			 * Edit: No, it is required nearly every time because of nested type declarations - then, we do need the 
@@ -946,27 +952,18 @@ namespace D_Parser.Resolver.TypeResolution
 				}
 			}
 
-			var canResolveBase = ((ctxt.Options & ResolutionOptions.DontResolveBaseTypes) != ResolutionOptions.DontResolveBaseTypes) && 
-			                     stkC < 10 && (m.Type == null || m.Type.ToString(false) != m.Name);
-			
 			// To support resolving type parameters to concrete types if the context allows this, introduce all deduced parameters to the current context
 			if (resultBase is DSymbol)
 				ctxt.CurrentContext.IntroduceTemplateParameterTypes((DSymbol)resultBase);
 
-			AbstractType ret;
-			if (vis == null)
-				ret = m.Accept(new NodeMatchHandleVisitor { canResolveBase = canResolveBase, ctxt = ctxt, resultBase = resultBase, typeBase = typeBase });
-			else
-			{
-				vis.canResolveBase = canResolveBase;
-				ret = m.Accept(vis);
-			}
+			var ret = m.Accept(vis ?? new NodeMatchHandleVisitor { ctxt = ctxt, resultBase = resultBase, typeBase = typeBase });
 
 			if (popAfterwards)
 				ctxt.Pop();
 			else if (resultBase is DSymbol)
 				ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals((DSymbol)resultBase);
 
+			stackCalls.TryGetValue(m, out stkC);
 			if (stkC == 1)
 				stackCalls.Remove(m);
 			else
