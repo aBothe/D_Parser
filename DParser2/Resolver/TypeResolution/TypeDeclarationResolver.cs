@@ -503,7 +503,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 			public AbstractType Visit(DEnumValue n)
 			{
-				return new MemberSymbol(n, HandleNodeMatch(n.Parent, ctxt), typeBase);
+				return new MemberSymbol(n, resultBase ?? HandleNodeMatch(n.Parent, ctxt), typeBase);
 			}
 
 			public AbstractType Visit(DVariable variable)
@@ -762,12 +762,13 @@ namespace D_Parser.Resolver.TypeResolution
 					bt = new PrimitiveType(DTokens.Int);
 				else
 				{
-					if (de.Parent is IBlockNode)
+					var pop = de.Parent is IBlockNode && ctxt.ScopedBlock != de.Parent;
+					if (pop)
 						ctxt.PushNewScope(de.Parent as IBlockNode);
 
 					var bts = TypeDeclarationResolver.Resolve(de.Type, ctxt);
 
-					if (de.Parent is IBlockNode)
+					if (pop)
 						ctxt.Pop();
 
 					ctxt.CheckForSingleResult(bts, de.Type);

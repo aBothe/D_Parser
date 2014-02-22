@@ -2599,6 +2599,37 @@ ConnectionPool!RedisConnection m_connections;
 		}
 
 		[Test]
+		public void AliasThis3()
+		{
+			var ctxt = CreateCtxt("A", @"module A;
+struct CL {
+  enum en : Color {
+    none = Color( 0, 0, 0, 0 ),
+   
+    white = Color( 1 ),
+    black = Color( 0 ),
+   
+    red = Color( 1, 0, 0 ),
+    green = Color( 0, 1, 0 ),
+    blue = Color( 0, 0, 1 ),
+  }
+  alias en this;
+ 
+  alias assoc = EnumAssociativeFunc!( en, en.none );
+}
+");
+
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression("CL.white");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That((t as MemberSymbol).Definition, Is.TypeOf(typeof(DEnumValue)));
+		}
+
+		[Test]
 		public void TypeofIntSize()
 		{
 			var ctxt = CreateDefCtxt();

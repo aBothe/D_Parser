@@ -298,7 +298,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 									bool isMixinAst = false,
 									bool takeStaticChildrenOnly = false,
 		                            bool scopeIsInInheritanceHierarchy =false, 
-									UserDefinedType resolvedCurScope = null)
+									DSymbol resolvedCurScope = null)
 		{
 			bool foundItems = false;
 			TemporaryResolvedNodeParent = resolvedCurScope;
@@ -1027,6 +1027,8 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			return StatementHandler.GetTemplateMixinContent(ctxt, tmx, pushOnAnalysisStack);
 		}
 
+		[ThreadStatic]
+		static Dictionary<IBlockNode, DVariable> aliasThisDefsBeingParsed;
 
 		bool HandleAliasThisDeclarations(TemplateIntermediateType tit, MemberFilter vis)
 		{
@@ -1037,6 +1039,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					if (aliasDef.Type == null || !MatchesCompilationConditions(aliasDef))
 						continue;
 
+					if (aliasThisDefsBeingParsed == null)
+						aliasThisDefsBeingParsed = new Dictionary<IBlockNode, DVariable>();
+					
 					pop = ctxt.ScopedBlock != tit.Definition;
 					if (pop)
 					{
@@ -1044,28 +1049,29 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 						ctxt.CurrentContext.IntroduceTemplateParameterTypes(tit);
 					}
 
-					// Resolve the aliased symbol and expect it to be a member symbol(?).
-					//TODO: Check if other cases are allowed as well!
-					var aliasedSymbol = DResolver.StripAliasSymbol(TypeDeclarationResolver.ResolveSingle (aliasDef.Type, ctxt));
-					var aliasedMember = aliasedSymbol as MemberSymbol;
+					DVariable alreadyParsedAliasThis;
+					AbstractType aliasedSymbol;
+
+					if (!aliasThisDefsBeingParsed.TryGetValue(ctxt.ScopedBlock, out alreadyParsedAliasThis) || alreadyParsedAliasThis != aliasDef)
+					{
+						aliasThisDefsBeingParsed[ctxt.ScopedBlock] = aliasDef;
+
+						// Resolve the aliased symbol and expect it to be a member symbol(?).
+						//TODO: Check if other cases are allowed as well!
+						aliasedSymbol = DResolver.StripMemberSymbols(TypeDeclarationResolver.ResolveSingle(aliasDef.Type, ctxt));
+
+						aliasThisDefsBeingParsed.Remove(ctxt.ScopedBlock);
+
+						if (aliasedSymbol is TemplateParameterSymbol)
+							aliasedSymbol = DResolver.StripAliasSymbol((aliasedSymbol as TemplateParameterSymbol).Base);
+					}
+					else
+						aliasedSymbol = null;
 
 					if (pop)
 						ctxt.Pop ();
 
-					if (aliasedMember == null) {
-						if (aliasedSymbol != null)
-							ctxt.LogError (aliasDef, "Aliased type from 'alias this' definition is expected to be a type instance, not "+aliasedSymbol.ToString()+"!");
-
-						continue;
-					}
-
-					/*
-					 * The aliased member's type can be everything!
-					 */
-					aliasedSymbol = DResolver.StripAliasSymbol(aliasedMember.Base);
-
-					if (aliasedSymbol is TemplateParameterSymbol)
-						aliasedSymbol = DResolver.StripAliasSymbol((aliasedSymbol as TemplateParameterSymbol).Base);
+					
 
 					foreach (var statProp in StaticProperties.ListProperties (aliasedSymbol))
 						if (HandleItem (statProp))
@@ -1076,21 +1082,25 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					 */
 
 					var tit_ = aliasedSymbol as TemplateIntermediateType;
-					if(tit_ != null)
+					DSymbol ds;
+					if (tit_ != null)
 					{
 						pop = !ctxt.ScopedBlockIsInNodeHierarchy(tit_.Definition);
-						if(pop)
+						if (pop)
 							ctxt.PushNewScope(tit_.Definition);
 						ctxt.CurrentContext.IntroduceTemplateParameterTypes(tit_);
 						var r = DeepScanClass(tit_, vis, true);
-						if(pop)
+						if (pop)
 							ctxt.Pop();
 						else
 							ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(tit_);
-						if(r)
+						if (r)
 							return true;
 					}
-
+					// Applies to DEnums
+					else if ((ds = aliasedSymbol as DSymbol) != null && ds.Definition is DBlockNode &&
+						scanChildren(ds.Definition as DBlockNode, vis, resolvedCurScope:ds))
+						return true;
 				}
 			}
 
