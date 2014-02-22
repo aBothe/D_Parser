@@ -624,13 +624,16 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				{
 					var idx = Evaluation.EvaluateValue(x.Arguments[0], ctxt) as PrimitiveValue;
 
-					if (idx == null || !DTokens.IsBasicType_Integral(idx.BaseTypeToken))
+					if (tt.Items == null)
+					{
+						ctxt.LogError(tt.DeclarationOrExpressionBase,"No items in Type tuple");
+					}
+					else if (idx == null || !DTokens.IsBasicType_Integral(idx.BaseTypeToken))
 					{
 						ctxt.LogError(x.Arguments[0], "Index expression must evaluate to integer value");
 					}
 					else if (idx.Value > (decimal)Int32.MaxValue ||
-							 (int)idx.Value >= tt.Items.Length ||
-							 (int)idx.Value < 0)
+							 (int)idx.Value >= tt.Items.Length || idx.Value < 0m)
 					{
 						ctxt.LogError(x.Arguments[0], "Index number must be a value between 0 and " + tt.Items.Length);
 					}
