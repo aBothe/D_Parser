@@ -11,7 +11,7 @@ using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Resolver
 {
-	public abstract class AbstractType : ISemantic
+	public abstract class AbstractType : ISemantic, IVisitable<IResolvedTypeVisitor>
 	{
 		#region Properties
 		public object Tag;
@@ -77,6 +77,9 @@ namespace D_Parser.Resolver
 		}
 
 		public abstract AbstractType Clone(bool cloneBase);
+
+		public abstract void Accept(IResolvedTypeVisitor vis);
+		public abstract R Accept<R>(IResolvedTypeVisitor<R> vis);
 	}
 
 	public class PrimitiveType : AbstractType
@@ -119,6 +122,16 @@ namespace D_Parser.Resolver
 		{
 			return new PrimitiveType(TypeToken, modifier);
 		}
+
+		public override void Accept(IResolvedTypeVisitor vis)
+		{
+			vis.VisitPrimitiveType(this);
+		}
+
+		public override R Accept<R>(IResolvedTypeVisitor<R> vis)
+		{
+			return vis.VisitPrimitiveType(this);
+		}
 	}
 
 	#region Derived data types
@@ -152,6 +165,16 @@ namespace D_Parser.Resolver
 		public override AbstractType Clone(bool cloneBase)
 		{
 			return new PointerType(cloneBase && Base != null ? Base.Clone(true) : Base, base.DeclarationOrExpressionBase);
+		}
+
+		public override void Accept(IResolvedTypeVisitor vis)
+		{
+			vis.VisitPointerType(this);
+		}
+
+		public override R Accept<R>(IResolvedTypeVisitor<R> vis)
+		{
+			return vis.VisitPointerType(this);
 		}
 	}
 
@@ -190,6 +213,16 @@ namespace D_Parser.Resolver
 					ValueType = (Base != null ? Base.TypeDeclarationOf : null), 
 					KeyExpression = IsStaticArray ? new IdentifierExpression(FixedLength, LiteralFormat.Scalar) : null };
 			}
+		}
+
+		public override void Accept(IResolvedTypeVisitor vis)
+		{
+			vis.VisitArrayType(this);
+		}
+
+		public override R Accept<R>(IResolvedTypeVisitor<R> vis)
+		{
+			return vis.VisitArrayType(this);
 		}
 	}
 
@@ -239,6 +272,16 @@ namespace D_Parser.Resolver
 		{
 			return new AssocArrayType(cloneBase && Base != null ? Base.Clone(true) : Base, cloneBase && KeyType != null ? KeyType.Clone(true) : KeyType, base.DeclarationOrExpressionBase);
 		}
+
+		public override void Accept(IResolvedTypeVisitor vis)
+		{
+			vis.VisitAssocArrayType(this);
+		}
+
+		public override R Accept<R>(IResolvedTypeVisitor<R> vis)
+		{
+			return vis.VisitAssocArrayType(this);
+		}
 	}
 
 	/// <summary>
@@ -268,6 +311,16 @@ namespace D_Parser.Resolver
 		public override AbstractType Clone(bool cloneBase)
 		{
 			return new DelegateCallSymbol(cloneBase && Delegate != null ? Delegate.Clone(true) as DelegateType : Delegate, base.DeclarationOrExpressionBase);
+		}
+
+		public override void Accept(IResolvedTypeVisitor vis)
+		{
+			vis.VisitDelegateCallSymbol(this);
+		}
+
+		public override R Accept<R>(IResolvedTypeVisitor<R> vis)
+		{
+			return vis.VisitDelegateCallSymbol(this);
 		}
 	}
 
@@ -337,6 +390,16 @@ namespace D_Parser.Resolver
 		{
 			//TODO: Clone parameters
 			return new DelegateType(cloneBase && Base != null ? Base.Clone(true) : Base, base.DeclarationOrExpressionBase as DelegateDeclaration, Parameters);
+		}
+
+		public override void Accept(IResolvedTypeVisitor vis)
+		{
+			vis.VisitDelegateType(this);
+		}
+
+		public override R Accept<R>(IResolvedTypeVisitor<R> vis)
+		{
+			return vis.VisitDelegateType(this);
 		}
 	}
 	#endregion
@@ -468,6 +531,16 @@ namespace D_Parser.Resolver
 		{
 			return new AliasedType(Definition, cloneBase && Base != null ? Base.Clone(true) : Base, DeclarationOrExpressionBase, DeducedTypes);
 		}
+
+		public override void Accept(IResolvedTypeVisitor vis)
+		{
+			vis.VisitAliasedType(this);
+		}
+
+		public override R Accept<R>(IResolvedTypeVisitor<R> vis)
+		{
+			return vis.VisitAliasedType(this);
+		}
 	}
 
 	public class EnumType : UserDefinedType
@@ -486,6 +559,16 @@ namespace D_Parser.Resolver
 		{
 			return new EnumType(Definition, cloneBase && Base != null ? Base.Clone(true) : Base, DeclarationOrExpressionBase);
 		}
+
+		public override void Accept(IResolvedTypeVisitor vis)
+		{
+			vis.VisitEnumType(this);
+		}
+
+		public override R Accept<R>(IResolvedTypeVisitor<R> vis)
+		{
+			return vis.VisitEnumType(this);
+		}
 	}
 
 	public class StructType : TemplateIntermediateType
@@ -501,6 +584,16 @@ namespace D_Parser.Resolver
 		{
 			return new StructType(Definition, DeclarationOrExpressionBase, DeducedTypes);
 		}
+
+		public override void Accept(IResolvedTypeVisitor vis)
+		{
+			vis.VisitStructType(this);
+		}
+
+		public override R Accept<R>(IResolvedTypeVisitor<R> vis)
+		{
+			return vis.VisitStructType(this);
+		}
 	}
 
 	public class UnionType : TemplateIntermediateType
@@ -515,6 +608,16 @@ namespace D_Parser.Resolver
 		public override AbstractType Clone(bool cloneBase)
 		{
 			return new UnionType(Definition, DeclarationOrExpressionBase, DeducedTypes);
+		}
+
+		public override void Accept(IResolvedTypeVisitor vis)
+		{
+			vis.VisitUnionType(this);
+		}
+
+		public override R Accept<R>(IResolvedTypeVisitor<R> vis)
+		{
+			return vis.VisitUnionType(this);
 		}
 	}
 
@@ -541,6 +644,16 @@ namespace D_Parser.Resolver
 		{
 			return new ClassType(Definition, DeclarationOrExpressionBase, cloneBase && Base != null ? Base.Clone(true) as TemplateIntermediateType : Base as TemplateIntermediateType, BaseInterfaces, DeducedTypes);
 		}
+
+		public override void Accept(IResolvedTypeVisitor vis)
+		{
+			vis.VisitClassType(this);
+		}
+
+		public override R Accept<R>(IResolvedTypeVisitor<R> vis)
+		{
+			return vis.VisitClassType(this);
+		}
 	}
 
 	public class InterfaceType : TemplateIntermediateType
@@ -559,6 +672,16 @@ namespace D_Parser.Resolver
 		{
 			return new InterfaceType(Definition, DeclarationOrExpressionBase, BaseInterfaces, DeducedTypes);
 		}
+
+		public override void Accept(IResolvedTypeVisitor vis)
+		{
+			vis.VisitInterfaceType(this);
+		}
+
+		public override R Accept<R>(IResolvedTypeVisitor<R> vis)
+		{
+			return vis.VisitInterfaceType(this);
+		}
 	}
 
 	public class TemplateType : TemplateIntermediateType
@@ -570,6 +693,16 @@ namespace D_Parser.Resolver
 		{
 			return new TemplateType(Definition, DeclarationOrExpressionBase, DeducedTypes);
 		}
+
+		public override void Accept(IResolvedTypeVisitor vis)
+		{
+			vis.VisitTemplateType(this);
+		}
+
+		public override R Accept<R>(IResolvedTypeVisitor<R> vis)
+		{
+			return vis.VisitTemplateType(this);
+		}
 	}
 	
 	public class MixinTemplateType : TemplateType
@@ -580,6 +713,16 @@ namespace D_Parser.Resolver
 		public override AbstractType Clone(bool cloneBase)
 		{
 			return new MixinTemplateType(Definition, DeclarationOrExpressionBase, DeducedTypes);
+		}
+
+		public override void Accept(IResolvedTypeVisitor vis)
+		{
+			vis.VisitMixinTemplateType(this);
+		}
+
+		public override R Accept<R>(IResolvedTypeVisitor<R> vis)
+		{
+			return vis.VisitMixinTemplateType(this);
 		}
 	}
 
@@ -621,6 +764,16 @@ namespace D_Parser.Resolver
 		{
 			return new EponymousTemplateType(Definition, DeducedTypes, DeclarationOrExpressionBase);
 		}
+
+		public override void Accept(IResolvedTypeVisitor vis)
+		{
+			vis.VisitEponymousTemplateType(this);
+		}
+
+		public override R Accept<R>(IResolvedTypeVisitor<R> vis)
+		{
+			return vis.VisitEponymousTemplateType(this);
+		}
 	}
 
 	public class StaticProperty : MemberSymbol
@@ -641,6 +794,16 @@ namespace D_Parser.Resolver
 		{
 			return new StaticProperty(Definition, cloneBase && Base != null ? Base.Clone(true) : Base, ValueGetter);
 		}
+
+		public override void Accept(IResolvedTypeVisitor vis)
+		{
+			vis.VisitStaticProperty(this);
+		}
+
+		public override R Accept<R>(IResolvedTypeVisitor<R> vis)
+		{
+			return vis.VisitStaticProperty(this);
+		}
 	}
 
 	public class MemberSymbol : DSymbol
@@ -656,6 +819,16 @@ namespace D_Parser.Resolver
 		public override AbstractType Clone(bool cloneBase)
 		{
 			return new MemberSymbol(Definition, cloneBase && Base != null ? Base.Clone(true) : Base, DeclarationOrExpressionBase , DeducedTypes);
+		}
+
+		public override void Accept(IResolvedTypeVisitor vis)
+		{
+			vis.VisitMemberSymbol(this);
+		}
+
+		public override R Accept<R>(IResolvedTypeVisitor<R> vis)
+		{
+			return vis.VisitMemberSymbol(this);
 		}
 	}
 	
@@ -716,6 +889,16 @@ namespace D_Parser.Resolver
 				return Base != null ? Base.TypeDeclarationOf : (DeclarationOrExpressionBase as ITypeDeclaration ?? new IdentifierDeclaration(Parameter.NameHash));
 			}
 		}
+
+		public override void Accept(IResolvedTypeVisitor vis)
+		{
+			vis.VisitTemplateParameterSymbol(this);
+		}
+
+		public override R Accept<R>(IResolvedTypeVisitor<R> vis)
+		{
+			return vis.VisitTemplateParameterSymbol(this);
+		}
 	}
 	
 	/// <summary>
@@ -737,6 +920,16 @@ namespace D_Parser.Resolver
 		{
 			return new ArrayAccessSymbol(DeclarationOrExpressionBase as PostfixExpression_Index, cloneBase && Base != null ? Base.Clone(true) : Base);
 		}
+
+		public override void Accept(IResolvedTypeVisitor vis)
+		{
+			vis.VisitArrayAccessSymbol(this);
+		}
+
+		public override R Accept<R>(IResolvedTypeVisitor<R> vis)
+		{
+			return vis.VisitArrayAccessSymbol(this);
+		}
 	}
 
 	public class ModuleSymbol : DSymbol
@@ -753,6 +946,16 @@ namespace D_Parser.Resolver
 		public override AbstractType Clone(bool cloneBase)
 		{
 			return new ModuleSymbol(Definition, DeclarationOrExpressionBase, cloneBase && Base != null ? Base.Clone(true) as PackageSymbol : Base as PackageSymbol);
+		}
+
+		public override void Accept(IResolvedTypeVisitor vis)
+		{
+			vis.VisitModuleSymbol(this);
+		}
+
+		public override R Accept<R>(IResolvedTypeVisitor<R> vis)
+		{
+			return vis.VisitModuleSymbol(this);
 		}
 	}
 
@@ -777,6 +980,16 @@ namespace D_Parser.Resolver
 		public override AbstractType Clone(bool cloneBase)
 		{
 			return new PackageSymbol(Package, DeclarationOrExpressionBase);
+		}
+
+		public override void Accept(IResolvedTypeVisitor vis)
+		{
+			vis.VisitPackageSymbol(this);
+		}
+
+		public override R Accept<R>(IResolvedTypeVisitor<R> vis)
+		{
+			return vis.VisitPackageSymbol(this);
 		}
 	}
 	#endregion
@@ -829,6 +1042,16 @@ namespace D_Parser.Resolver
 		public override AbstractType Clone(bool cloneBase)
 		{
 			return new DTuple(DeclarationOrExpressionBase, Items);
+		}
+
+		public override void Accept(IResolvedTypeVisitor vis)
+		{
+			vis.VisitDTuple(this);
+		}
+
+		public override R Accept<R>(IResolvedTypeVisitor<R> vis)
+		{
+			return vis.VisitDTuple(this);
 		}
 	}
 }

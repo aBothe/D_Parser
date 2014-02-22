@@ -33,6 +33,16 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			return new AmbiguousType(Overloads);
 		}
+
+		public override void Accept(IResolvedTypeVisitor vis)
+		{
+			vis.VisitAmbigousType(this);
+		}
+
+		public override R Accept<R>(IResolvedTypeVisitor<R> vis)
+		{
+			return vis.VisitAmbigousType(this);
+		}
 	}
 
 	public class ExpressionTypeEvaluation : ExpressionVisitor<AbstractType>

@@ -164,6 +164,7 @@
     <Compile Include="Resolver\DType.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.PrimaryExpression.cs" />
     <Compile Include="Resolver\ISemantic.cs" />
+    <Compile Include="Resolver\IResolvedTypeVisitor.cs" />
     <Compile Include="Resolver\MixinAnalysis.cs" />
     <Compile Include="Resolver\ResolutionCache.cs" />
     <Compile Include="Resolver\ResolutionError.cs" />
