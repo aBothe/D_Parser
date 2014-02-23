@@ -433,7 +433,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			public bool Visit(DModule dbn)
 			{
 				// Every module imports 'object' implicitly
-				var ret = !handlePublicImportsOnly && HandleNonAliasedImport(_objectImport, VisibleMembers);
+				var ret = !handlePublicImportsOnly && _objectImport.Accept(this);
 				
 				ret |= Visit(dbn as DBlockNode);
 
@@ -600,12 +600,12 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 				if (!impStmt.IsStatic)
 					foreach (var imp in impStmt.Imports)
-						ret |= imp.ModuleAlias == null && HandleNonAliasedImport(imp, VisibleMembers);
+						ret |= imp.ModuleAlias == null && imp.Accept(this);
 
 				return ret;
 			}
 
-			bool HandleNonAliasedImport(ImportStatement.Import imp, MemberFilter VisibleMembers)
+			public bool VisitImport(ImportStatement.Import imp)
 			{
 				if (imp == null || imp.ModuleIdentifier == null)
 					return false;
@@ -775,11 +775,6 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 			#region In-Method statements
 			public bool Visit(ModuleStatement moduleStatement)
-			{
-				return false;
-			}
-
-			public bool VisitImport(ImportStatement.Import import)
 			{
 				return false;
 			}
