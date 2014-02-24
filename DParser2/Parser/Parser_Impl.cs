@@ -3218,7 +3218,7 @@ namespace D_Parser.Parser
 							return new PostfixExpression_Access()
 							{
 								PostfixForeExpression = new TypeDeclarationExpression(bt),
-								AccessExpression = string.IsNullOrEmpty(t.Value) ? null : new IdentifierExpression(t.Value) { Location=t.Location, EndLocation=t.EndLocation },
+								AccessExpression = IsEOF ? new TokenExpression(Incomplete) as IExpression : new IdentifierExpression(t.Value) { Location=t.Location, EndLocation=t.EndLocation },
 								EndLocation = t.EndLocation
 							};
 
@@ -3994,7 +3994,7 @@ namespace D_Parser.Parser
 					ds.EndLocation = t.EndLocation;
 					return ds;
 				default:
-					if (IsClassLike(laKind) || IsBasicType(laKind) || IsModifier(laKind))
+					if (IsClassLike(laKind) || (IsBasicType(laKind) && Lexer.CurrentPeekToken.Kind != Dot) || IsModifier(laKind))
 						goto case Typedef;
 					if (IsAssignExpression())
 						return ExpressionStatement(Scope, Parent);
