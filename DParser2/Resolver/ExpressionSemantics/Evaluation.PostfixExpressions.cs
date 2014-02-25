@@ -32,6 +32,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			if (delegValue != null)
 				return delegValue;
+			if (argTypeFilteredOverloads == null)
+				return null;
 
 			// Convert ISemantic[] to ISymbolValue[]
 			var args = new List<ISymbolValue>(callArguments != null ? callArguments.Count : 0);
