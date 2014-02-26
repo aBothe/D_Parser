@@ -120,6 +120,7 @@ namespace D_Parser.Dom.Statements
 			public enum IS
 			{
 				X86,
+				FPU,
 				MMX,
 				SSE,
 				SSE2,
