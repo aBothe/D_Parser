@@ -106,7 +106,7 @@ namespace D_Parser.Dom.Statements
 			/// Indicates a valid combination of arguments
 			/// for this op-code.
 			/// </summary>
-			[AttributeUsage(AttributeTargets.Field)]
+			[AttributeUsage(AttributeTargets.Field, AllowMultiple = true)]
 			public sealed class FormAttribute : Attribute
 			{
 				public AT[] Arguments { get; private set; }
