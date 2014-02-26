@@ -14,6 +14,7 @@ namespace D_Parser.Completion
 		/// </summary>
 		void AddPropertyAttribute(string AttributeText);
 
+		void AddIconItem(string iconName, string text, string description);
 		void AddTextItem(string Text, string Description);
 
 		/// <summary>

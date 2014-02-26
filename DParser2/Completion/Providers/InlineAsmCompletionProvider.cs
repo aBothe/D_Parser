@@ -15,7 +15,17 @@ namespace D_Parser.Completion.Providers
 		protected override void BuildCompletionDataInternal (IEditorData ed, char enteredChar)
 		{
 			foreach (var kv in AsmStatement.InstructionStatement.OpCodeCompletionTable)
-				CompletionDataGenerator.AddTextItem(kv.Key, kv.Value);
+			{
+				switch (AsmStatement.InstructionStatement.OpCodeInstructionSets[kv.Key])
+				{
+					case AsmStatement.InstructionStatement.IS.SSE42:
+						CompletionDataGenerator.AddIconItem("d-asm-x86-sse4.2", kv.Key, kv.Value);
+						break;
+					default:
+						CompletionDataGenerator.AddTextItem(kv.Key, kv.Value);
+						break;
+				}
+			}
 
 			CompletionDataGenerator.AddTextItem("naked", "Omits function call's entry/exit instructions");
 		}
