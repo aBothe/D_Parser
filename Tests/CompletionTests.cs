@@ -382,6 +382,11 @@ void main() { Class. }";
 
 			}
 
+			public void AddIconItem (string iconName, string text, string description)
+			{
+
+			}
+
 			public List<INode> addedItems = new List<INode> ();
 			public void Add (INode n)
 			{
