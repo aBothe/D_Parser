@@ -264,6 +264,11 @@ namespace D_Parser.Completion.Providers
 			GenUfcsAndStaticProperties(tps);
 		}
 
+		public void VisitUnknownType(UnknownType t)
+		{
+			// Error
+		}
+
 		public void VisitAmbigousType(AmbiguousType t)
 		{
 			// Error?

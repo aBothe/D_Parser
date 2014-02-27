@@ -82,6 +82,69 @@ namespace D_Parser.Resolver
 		public abstract R Accept<R>(IResolvedTypeVisitor<R> vis);
 	}
 
+	#region Special types
+	public class UnknownType : AbstractType
+	{
+		public UnknownType(ISyntaxRegion typeBase) : base(typeBase) {
+		}
+
+		public override void Accept (IResolvedTypeVisitor vis)
+		{
+			vis.VisitUnknownType (this);
+		}
+
+		public override R Accept<R> (IResolvedTypeVisitor<R> vis)
+		{
+			return vis.VisitUnknownType (this);
+		}
+
+		public override string ToCode ()
+		{
+			return "?";
+		}
+
+		public override AbstractType Clone (bool cloneBase)
+		{
+			return new UnknownType (DeclarationOrExpressionBase);
+		}
+	}
+
+	public class AmbiguousType : AbstractType
+	{
+		public AbstractType[] Overloads;
+
+		public AmbiguousType(AbstractType[] o)
+		{
+			Overloads = o;
+		}
+
+		public AmbiguousType(IEnumerable<AbstractType> o)
+		{
+			Overloads = o.ToArray();
+		}
+
+		public override string ToCode()
+		{
+			return "<Overloads>";
+		}
+
+		public override AbstractType Clone(bool cloneBase)
+		{
+			return new AmbiguousType(Overloads);
+		}
+
+		public override void Accept(IResolvedTypeVisitor vis)
+		{
+			vis.VisitAmbigousType(this);
+		}
+
+		public override R Accept<R>(IResolvedTypeVisitor<R> vis)
+		{
+			return vis.VisitAmbigousType(this);
+		}
+	}
+	#endregion
+
 	public class PrimitiveType : AbstractType
 	{
 		public readonly byte TypeToken;

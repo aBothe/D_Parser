@@ -10,41 +10,6 @@ using System.Text;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
-	public class AmbiguousType : AbstractType
-	{
-		public AbstractType[] Overloads;
-
-		public AmbiguousType(AbstractType[] o)
-		{
-			Overloads = o;
-		}
-
-		public AmbiguousType(IEnumerable<AbstractType> o)
-		{
-			Overloads = o.ToArray();
-		}
-
-		public override string ToCode()
-		{
-			return "<Overloads>";
-		}
-
-		public override AbstractType Clone(bool cloneBase)
-		{
-			return new AmbiguousType(Overloads);
-		}
-
-		public override void Accept(IResolvedTypeVisitor vis)
-		{
-			vis.VisitAmbigousType(this);
-		}
-
-		public override R Accept<R>(IResolvedTypeVisitor<R> vis)
-		{
-			return vis.VisitAmbigousType(this);
-		}
-	}
-
 	public class ExpressionTypeEvaluation : ExpressionVisitor<AbstractType>
 	{
 		#region Properties / LowLevel

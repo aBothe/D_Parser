@@ -32,6 +32,7 @@ namespace D_Parser.Resolver
 		void VisitPackageSymbol(PackageSymbol tps);
 		void VisitDTuple(DTuple tps);
 
+		void VisitUnknownType(UnknownType t);
 		void VisitAmbigousType(AmbiguousType t);
 	}
 	public interface IResolvedTypeVisitor<R> : IVisitor<R>
@@ -59,6 +60,7 @@ namespace D_Parser.Resolver
 		R VisitPackageSymbol(PackageSymbol tps);
 		R VisitDTuple(DTuple tps);
 
+		R VisitUnknownType(UnknownType t);
 		R VisitAmbigousType(AmbiguousType t);
 	}
 }
