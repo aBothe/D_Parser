@@ -208,7 +208,7 @@ namespace D_Parser.Resolver.TypeResolution
 						r.AddRange(OpDispatchResolution.TryResolveFurtherIdViaOpDispatch (ctxt, nextIdentifierHash, udt));
 
 					if(r.Count == 0)
-						r.AddRange(UFCSResolver.TryResolveUFCS (b, nextIdentifierHash, ctxt.ScopedBlock.BlockStartLocation, ctxt, typeIdObject));
+						r.AddRange (UFCSResolver.TryResolveUFCS (b, nextIdentifierHash, !pop && typeIdObject != null ? typeIdObject.Location : ctxt.ScopedBlock.BlockStartLocation, ctxt, typeIdObject));
 
 					if(pop)
 						ctxt.Pop();
@@ -233,10 +233,9 @@ namespace D_Parser.Resolver.TypeResolution
 					if (statProp != null)
 						r.Add(statProp);
 
-					if(r.Count == 0)
-						r.AddRange(UFCSResolver.TryResolveUFCS (b, nextIdentifierHash, ctxt.ScopedBlock.BlockStartLocation, ctxt, typeIdObject));
+					if(r.Count == 0) // Only if there hasn't been a result yet?
+						r.AddRange(UFCSResolver.TryResolveUFCS (b, nextIdentifierHash, typeIdObject != null ? typeIdObject.Location : ctxt.ScopedBlock.BlockStartLocation, ctxt, typeIdObject));
 				}
-				// TODO: Search for UFCS symbols
 			}
 
 			return r.Count == 0 ? null : r.ToArray();
