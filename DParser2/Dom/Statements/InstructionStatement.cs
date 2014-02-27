@@ -106,7 +106,7 @@ namespace D_Parser.Dom.Statements
 			/// Indicates a valid combination of arguments
 			/// for this op-code.
 			/// </summary>
-			[AttributeUsage(AttributeTargets.Field)]
+			[AttributeUsage(AttributeTargets.Field, AllowMultiple = true)]
 			public sealed class FormAttribute : Attribute
 			{
 				public AT[] Arguments { get; private set; }
@@ -114,6 +114,30 @@ namespace D_Parser.Dom.Statements
 				public FormAttribute(params AT[] args)
 				{
 					this.Arguments = args;
+				}
+			}
+
+			public enum IS
+			{
+				X86,
+				FPU,
+				MMX,
+				SSE,
+				SSE2,
+				SSE3,
+				SSSE3,
+				SSE41,
+				SSE42,
+				AVX,
+			}
+
+			public sealed class InstructionSetAttribute : Attribute
+			{
+				public IS Set { get; private set; }
+
+				public InstructionSetAttribute(IS iset)
+				{
+					this.Set = iset;
 				}
 			}
 
@@ -139,7 +163,19 @@ namespace D_Parser.Dom.Statements
 				[Invalid64Bit]
 				[Description("ASCII adjust AL after subtraction.")]
 				aas,
-				[Incomplete]
+				[Form(AT.RM8, AT.Imm8)]
+				[Form(AT.RM16, AT.Imm16)]
+				[Form(AT.RM32, AT.Imm32)]
+				[Form(AT.RM64, AT.Imm32)]
+				[Form(AT.RM8, AT.Reg8)]
+				[Form(AT.RM16, AT.Reg16)]
+				[Form(AT.RM32, AT.Reg32)]
+				[Form(AT.RM64, AT.Reg64)]
+				[Form(AT.Reg8, AT.RM8)]
+				[Form(AT.Reg16, AT.RM16)]
+				[Form(AT.Reg32, AT.RM32)]
+				[Form(AT.Reg64, AT.RM64)]
+				[Description("Adds the 2 arguments and adds 1 if the carry flag is set. Literals are sign extended to the operation size.")]
 				adc,
 				[Incomplete]
 				add,
@@ -1429,16 +1465,22 @@ namespace D_Parser.Dom.Statements
 
 				// SSE 4.2
 				[Incomplete]
+				[InstructionSet(IS.SSE42)]
 				crc32,
 				[Incomplete]
+				[InstructionSet(IS.SSE42)]
 				pcmpestri,
 				[Incomplete]
+				[InstructionSet(IS.SSE42)]
 				pcmpestrm,
 				[Incomplete]
+				[InstructionSet(IS.SSE42)]
 				pcmpistri,
 				[Incomplete]
+				[InstructionSet(IS.SSE42)]
 				pcmpistrm,
 				[Incomplete]
+				[InstructionSet(IS.SSE42)]
 				pcmpgtq,
 
 				#endregion
@@ -1451,12 +1493,16 @@ namespace D_Parser.Dom.Statements
 			public static Dictionary<string, OpCode> OpCodeMap { get; private set; }
 			public static Dictionary<OpCode, string> OpCodeReverseMap { get; private set; }
 			public static Dictionary<OpCode, OpCodeFormatCollection> OpCodeFormats { get; private set; }
+			public static Dictionary<string, IS> OpCodeInstructionSets { get; private set; }
 
 			static InstructionStatement()
 			{
 				OpCodeCompletionTable = new Dictionary<string, string>();
 				OpCodeMap = new Dictionary<string, OpCode>(StringComparer.InvariantCultureIgnoreCase);
 				OpCodeReverseMap = new Dictionary<OpCode, string>();
+				OpCodeFormats = new Dictionary<OpCode, OpCodeFormatCollection>();
+				OpCodeInstructionSets = new Dictionary<string, IS>();
+
 
 				foreach (var mi in typeof(OpCode).GetMembers())
 				{
@@ -1467,6 +1513,7 @@ namespace D_Parser.Dom.Statements
 						bool invalid32Bit = false;
 						bool invalid64Bit = false;
 						bool incomplete = false;
+						IS iset = IS.X86;
 						var argumentForms = new List<AT[]>(16);
 
 						foreach (var at in mi.GetCustomAttributes(false))
@@ -1475,12 +1522,15 @@ namespace D_Parser.Dom.Statements
 								opCodeName = ((NameAttribute)at).Name;
 							else if (at is DescriptionAttribute)
 								opCodeDescription = ((DescriptionAttribute)at).Description;
+							else if (at is InstructionSetAttribute)
+								iset = ((InstructionSetAttribute)at).Set;
 
 							invalid32Bit |= at is Invalid32BitAttribute;
 							invalid64Bit |= at is Invalid64BitAttribute;
 							incomplete |= at is IncompleteAttribute;
 						}
 
+						opCodeName = string.Intern(opCodeName);
 						if (!invalid32Bit || !invalid64Bit)
 						{
 							OpCode curOpCode = (OpCode)Enum.Parse(typeof(OpCode), mi.Name);
@@ -1489,6 +1539,7 @@ namespace D_Parser.Dom.Statements
 							OpCodeMap.Add(opCodeName, curOpCode);
 							OpCodeReverseMap.Add(curOpCode, opCodeName);
 							OpCodeFormats.Add(curOpCode, new OpCodeFormatCollection(incomplete, argumentForms.Select(f => (byte)f.Length).Distinct().ToArray()));
+							OpCodeInstructionSets.Add(opCodeName, iset);
 						}
 					}
 				}
