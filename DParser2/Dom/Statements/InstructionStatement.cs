@@ -77,7 +77,7 @@ namespace D_Parser.Dom.Statements
 				}
 			}
 
-			public enum AT
+			public enum AT : byte
 			{
 				RM8,
 				RM16,
@@ -117,7 +117,7 @@ namespace D_Parser.Dom.Statements
 				}
 			}
 
-			public enum IS
+			public enum IS : byte
 			{
 				X86,
 				FPU,
@@ -1489,21 +1489,39 @@ namespace D_Parser.Dom.Statements
 			}
 
 			#region Instruction Tables
-			public static Dictionary<string, string> OpCodeCompletionTable { get; private set; }
-			public static Dictionary<string, OpCode> OpCodeMap { get; private set; }
+			public struct OpCodeDescriptor
+			{
+				public readonly string Name;
+				public readonly string Description;
+				public readonly AT[][] ValidForms;
+				public readonly byte[] ValidArgumentCounts;
+				public readonly OpCode OpCode;
+				public readonly IS InstructionSet;
+				public readonly bool Incomplete;
+				public readonly bool Is32BitOnly;
+				public readonly bool Is64BitOnly;
+
+				public OpCodeDescriptor(OpCode opcode, string name, string description, AT[][] validForms, bool incomplete, IS insSet, bool is32BitOnly, bool is64BitOnly)
+				{
+					this.OpCode = opcode;
+					this.Name = name;
+					this.Description = string.Intern(description);
+					this.ValidForms = validForms;
+					this.ValidArgumentCounts = validForms.Select(f => (byte)f.Length).Distinct().ToArray();
+					this.Incomplete = incomplete;
+					this.InstructionSet = insSet;
+					this.Is32BitOnly = is32BitOnly;
+					this.Is64BitOnly = is64BitOnly;
+				}
+			}
+
+			public static Dictionary<string, OpCodeDescriptor> OpCodeMap { get; private set; }
 			public static Dictionary<OpCode, string> OpCodeReverseMap { get; private set; }
-			public static Dictionary<OpCode, OpCodeFormatCollection> OpCodeFormats { get; private set; }
-			public static Dictionary<string, IS> OpCodeInstructionSets { get; private set; }
-			public static Dictionary<string, bool> OpCode64BitOnly { get; private set; }
 
 			static InstructionStatement()
 			{
-				OpCodeCompletionTable = new Dictionary<string, string>();
-				OpCodeMap = new Dictionary<string, OpCode>(StringComparer.InvariantCultureIgnoreCase);
+				OpCodeMap = new Dictionary<string, OpCodeDescriptor>(StringComparer.InvariantCultureIgnoreCase);
 				OpCodeReverseMap = new Dictionary<OpCode, string>();
-				OpCodeFormats = new Dictionary<OpCode, OpCodeFormatCollection>();
-				OpCodeInstructionSets = new Dictionary<string, IS>();
-				OpCode64BitOnly = new Dictionary<string, bool>();
 
 				foreach (var mi in typeof(OpCode).GetMembers())
 				{
@@ -1536,12 +1554,8 @@ namespace D_Parser.Dom.Statements
 						{
 							OpCode curOpCode = (OpCode)Enum.Parse(typeof(OpCode), mi.Name);
 
-							OpCodeCompletionTable.Add(opCodeName, opCodeDescription);
-							OpCodeMap.Add(opCodeName, curOpCode);
+							OpCodeMap.Add(opCodeName, new OpCodeDescriptor(curOpCode, opCodeName, opCodeDescription, argumentForms, incomplete, iset, invalid32Bit, invalid64Bit));
 							OpCodeReverseMap.Add(curOpCode, opCodeName);
-							OpCodeFormats.Add(curOpCode, new OpCodeFormatCollection(incomplete, argumentForms.Select(f => (byte)f.Length).Distinct().ToArray()));
-							OpCodeInstructionSets.Add(opCodeName, iset);
-							OpCode64BitOnly.Add(opCodeName, invalid32Bit);
 						}
 					}
 				}
@@ -1550,7 +1564,14 @@ namespace D_Parser.Dom.Statements
 
 			public static bool TryParseOpCode(string str, out OpCode dst)
 			{
-				return OpCodeMap.TryGetValue(str, out dst);
+				OpCodeDescriptor dsc;
+				if (OpCodeMap.TryGetValue(str, out dsc))
+				{
+					dst = dsc.OpCode;
+					return true;
+				}
+				dst = OpCode.__UNKNOWN__;
+				return false;
 			}
 
 			public static string StringForOpCode(OpCode val)
