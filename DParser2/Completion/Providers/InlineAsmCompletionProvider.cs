@@ -25,15 +25,15 @@ namespace D_Parser.Completion.Providers
 		{
 			var dt = new List<ItemData>();
 
-			foreach (var kv in AsmStatement.InstructionStatement.OpCodeCompletionTable)
+			foreach (var desc in AsmStatement.InstructionStatement.OpCodeMap.Values)
 			{
 				string icon = "d-asm-";
-				if (AsmStatement.InstructionStatement.OpCode64BitOnly[kv.Key])
+				if (desc.Is64BitOnly)
 					icon += "x64";
 				else
 					icon += "x86";
 
-				switch (AsmStatement.InstructionStatement.OpCodeInstructionSets[kv.Key])
+				switch (desc.InstructionSet)
 				{
 					case AsmStatement.InstructionStatement.IS.X86:
 						break;
@@ -68,7 +68,7 @@ namespace D_Parser.Completion.Providers
 						throw new Exception("Unknown instruction set! Woops!");
 				}
 
-				dt.Add(new ItemData(string.Intern(icon), kv.Key, kv.Value));
+				dt.Add(new ItemData(string.Intern(icon), desc.Name, desc.Description));
 			}
 			dt.Add(new ItemData("md-keyword", "align", "Inserts nops such that the start of the next instruction lies on an N-byte boundary."));
 			dt.Add(new ItemData("md-keyword", "even", "Inserts nops such that the next instruction begins on an even byte boundary."));
