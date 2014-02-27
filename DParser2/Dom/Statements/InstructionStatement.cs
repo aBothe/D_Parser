@@ -1494,6 +1494,7 @@ namespace D_Parser.Dom.Statements
 			public static Dictionary<OpCode, string> OpCodeReverseMap { get; private set; }
 			public static Dictionary<OpCode, OpCodeFormatCollection> OpCodeFormats { get; private set; }
 			public static Dictionary<string, IS> OpCodeInstructionSets { get; private set; }
+			public static Dictionary<string, bool> OpCode64BitOnly { get; private set; }
 
 			static InstructionStatement()
 			{
@@ -1502,7 +1503,7 @@ namespace D_Parser.Dom.Statements
 				OpCodeReverseMap = new Dictionary<OpCode, string>();
 				OpCodeFormats = new Dictionary<OpCode, OpCodeFormatCollection>();
 				OpCodeInstructionSets = new Dictionary<string, IS>();
-
+				OpCode64BitOnly = new Dictionary<string, bool>();
 
 				foreach (var mi in typeof(OpCode).GetMembers())
 				{
@@ -1540,6 +1541,7 @@ namespace D_Parser.Dom.Statements
 							OpCodeReverseMap.Add(curOpCode, opCodeName);
 							OpCodeFormats.Add(curOpCode, new OpCodeFormatCollection(incomplete, argumentForms.Select(f => (byte)f.Length).Distinct().ToArray()));
 							OpCodeInstructionSets.Add(opCodeName, iset);
+							OpCode64BitOnly.Add(opCodeName, invalid32Bit);
 						}
 					}
 				}
