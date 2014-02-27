@@ -1554,7 +1554,7 @@ namespace D_Parser.Dom.Statements
 						{
 							OpCode curOpCode = (OpCode)Enum.Parse(typeof(OpCode), mi.Name);
 
-							OpCodeMap.Add(opCodeName, new OpCodeDescriptor(curOpCode, opCodeName, opCodeDescription, argumentForms, incomplete, iset, invalid32Bit, invalid64Bit));
+							OpCodeMap.Add(opCodeName, new OpCodeDescriptor(curOpCode, opCodeName, opCodeDescription, argumentForms.ToArray(), incomplete, iset, invalid32Bit, invalid64Bit));
 							OpCodeReverseMap.Add(curOpCode, opCodeName);
 						}
 					}
