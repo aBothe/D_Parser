@@ -49,6 +49,8 @@ namespace D_Parser.Formatting.Indent
 			public string indent;
 			public int nSpaces;
 			public int lineNr;
+
+			public IndentStack ifelseBackupStack;
 			
 			public override string ToString ()
 			{
@@ -217,6 +219,7 @@ namespace D_Parser.Formatting.Indent
 			node.nSpaces = nSpaces;
 			node.lineNr = lineNr;
 			node.inside = inside;
+			node.ifelseBackupStack = null;
 			
 			if (size == stack.Length)
 				Array.Resize <Node> (ref stack, 2 * size);
@@ -233,7 +236,8 @@ namespace D_Parser.Formatting.Indent
 			node.nSpaces = nSpaces;
 			node.lineNr = lineNr;
 			node.inside = inside;
-			
+			node.ifelseBackupStack = null;
+
 			if (size == stack.Length)
 				Array.Resize <Node> (ref stack, 2 * size);
 			
@@ -268,6 +272,17 @@ namespace D_Parser.Formatting.Indent
 				if(size > 0)
 					return stack[size-1].keyword;
 				return DTokens.INVALID;
+			}
+		}
+
+		public IndentStack PeekIfElseBackupStack
+		{
+			get{
+				return size > 0 ? stack[size-1].ifelseBackupStack : null;
+			}
+			set{
+				if (size > 0)
+					stack [size - 1].ifelseBackupStack = value;
 			}
 		}
 		

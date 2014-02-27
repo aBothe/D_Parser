@@ -620,12 +620,9 @@ namespace D_Parser.Formatting.Indent
 		{
 			if ((inside & (Inside.PreProcessor | Inside.StringOrChar | Inside.Comment)) != 0)
 				return;
-			
-			if (inside == Inside.FoldedStatement) {
-				// chain-pop folded statements
-				while (stack.PeekInside (0) == Inside.FoldedStatement)
-					stack.Pop ();
-			}
+				
+			if (inside == Inside.FoldedStatement)
+				PopFoldedStatements ();
 			
 			keyword = DTokens.INVALID;
 		}
@@ -787,9 +784,7 @@ namespace D_Parser.Formatting.Indent
 				return;
 			if (inside != Inside.Block && inside != Inside.Case) {
 				if (stack.PeekInside (0) == Inside.FoldedStatement) {
-					while (stack.PeekInside (0) == Inside.FoldedStatement) {
-						stack.Pop ();
-					}
+					PopFoldedStatements ();
 					curIndent = stack.PeekIndent (0);
 					keyword = stack.PeekKeyword;
 					inside = stack.PeekInside (0);
@@ -828,7 +823,20 @@ namespace D_Parser.Formatting.Indent
 				TrimIndent ();
 			}
 		}
-		
+
+
+
+		void PopFoldedStatements()
+		{
+			var ifelseifBackupStack = stack.PeekKeyword == DTokens.If ? stack.Clone () as IndentStack : null;
+
+			while (stack.PeekInside (0) == Inside.FoldedStatement)
+				stack.Pop ();
+
+			if (ifelseifBackupStack != null)
+				stack.PeekIfElseBackupStack = ifelseifBackupStack;
+		}
+
 		void PushNewLine (Inside inside)
 		{
 			top:
@@ -1044,7 +1052,7 @@ namespace D_Parser.Formatting.Indent
 			}*/
 			
 			//Console.WriteLine ("Pushing '{0}'/#{3}; wordStart = {1}; keyword = {2}", c, wordStart, keyword, (int)c);
-			
+
 			switch (c) {
 			case '#':
 				PushHash (inside);
@@ -1108,6 +1116,25 @@ namespace D_Parser.Formatting.Indent
 				}
 				lastChar = c;
 				return;
+				case 'e': // If there's an 'else', look if there has been a if-else backup stack prepared
+					//KNOWN ISSUE: Reset this backup stack if there's anything else than an 'else' following the recently closed if-stmt; 
+					// Anyway this shouldn't be noticed that often as there can't be a stand-alone 'else' dangling around somewhere. 
+					if (linebuf.Length > 2 && linebuf.ToString (linebuf.Length - 3, 3) == "els") {
+						var backup = stack.PeekIfElseBackupStack;
+						stack.PeekIfElseBackupStack = null;
+						if (backup != null) {
+							keyword = DTokens.Else;
+							inside = Inside.FoldedStatement;
+							stack = backup;
+							stack.Pop ();
+							var newIndent = stack.PeekIndent (0);				
+							if (curIndent != newIndent) {
+								curIndent = newIndent;
+								needsReindent = true;
+							}
+						}
+					}
+					break;
 			default:
 				break;
 			}
