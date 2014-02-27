@@ -175,7 +175,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				}, false);
 			}
 
-			throw new WrongEvaluationArgException();
+			EvalError(x, "Wrong expression");
+			return null;
 		}
 
 		public ISymbolValue Visit(EqualExpression x)
