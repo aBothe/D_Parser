@@ -4193,10 +4193,17 @@ namespace D_Parser.Parser
 					var args = new List<IExpression>();
 					if (IsEOF)
 						args.Add(new TokenExpression(Incomplete));
-					if (laKind != Semicolon)
+					else if (laKind != Semicolon)
 					{
 						while (true)
 						{
+							if (laKind == CloseCurlyBrace)
+							{
+								// This is required as a custom error message because
+								// it would complain about finding an identifier instead.
+								SynErr(Semicolon, "; expected, } found");
+								break;
+							}
 							var e = ParseAsmExpression(Scope, parentStatement);
 							if (e != null)
 								args.Add(e);
