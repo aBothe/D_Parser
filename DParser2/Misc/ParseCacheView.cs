@@ -58,7 +58,7 @@ namespace D_Parser.Misc
 
 		public void Add(RootPackage pack)
 		{
-			if(pack!=null)
+			if(pack!=null && !packs.Contains(pack))
 				packs.Add (pack);
 		}
 
@@ -66,7 +66,7 @@ namespace D_Parser.Misc
 		{
 			RootPackage rp;
 			foreach (var r in roots)
-				if((rp=GlobalParseCache.GetRootPackage (r))!=null)
+				if((rp=GlobalParseCache.GetRootPackage (r))!=null && !packs.Contains(rp))
 					packs.Add (rp);
 		}
 
