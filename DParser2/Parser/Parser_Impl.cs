@@ -4138,6 +4138,8 @@ namespace D_Parser.Parser
 			var l = new List<AbstractStatement>();
 			while (!IsEOF && laKind != (CloseCurlyBrace))
 			{
+				bool retrying = false;
+			Retry:
 				bool noStatement = false;
 				if (laKind == Align)
 				{
@@ -4191,10 +4193,17 @@ namespace D_Parser.Parser
 					var args = new List<IExpression>();
 					if (IsEOF)
 						args.Add(new TokenExpression(Incomplete));
-					if (laKind != Semicolon)
+					else if (laKind != Semicolon)
 					{
 						while (true)
 						{
+							if (laKind == CloseCurlyBrace)
+							{
+								// This is required as a custom error message because
+								// it would complain about finding an identifier instead.
+								SynErr(Semicolon, "; expected, } found");
+								break;
+							}
 							var e = ParseAsmExpression(Scope, parentStatement);
 							if (e != null)
 								args.Add(e);
@@ -4222,13 +4231,24 @@ namespace D_Parser.Parser
 						((AsmStatement.InstructionStatement)parentStatement).Arguments = args.ToArray();
 					else if (parentStatement is AsmStatement.RawDataStatement)
 						((AsmStatement.RawDataStatement)parentStatement).Data = args.ToArray();
-
 				}
 				else if (laKind != Semicolon)
 				{
-					noStatement = true;
-					SynErr(Identifier);
-					Step();
+					string val;
+					if (!retrying && Keywords.TryGetValue(laKind, out val))
+					{
+						la.LiteralValue = val;
+						la.Kind = Identifier;
+						Lexer.laKind = Identifier;
+						retrying = true;
+						goto Retry;
+					}
+					else
+					{
+						noStatement = true;
+						SynErr(Identifier);
+						Step();
+					}
 				}
 				else
 					Step();
