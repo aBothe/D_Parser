@@ -342,6 +342,8 @@
       <DependentUpon>Dom\Statements\AsmStatement.cs</DependentUpon>
     </Compile>
     <Compile Include="Completion\Providers\InlineAsmCompletionProvider.cs" />
+    <Compile Include="Formatting\Indent\IDocumentIndentEngine.cs" />
+    <Compile Include="Formatting\Indent\IStateMachineIndentEngine.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="readme.txt" />
@@ -350,6 +352,8 @@
   <ItemGroup>
     <None Include="license.txt" />
     <None Include="Misc\ParseLog.cs" />
+    <None Include="Formatting\Indent\DIndentEngine.cs" />
+    <None Include="Formatting\Indent\IndentStates.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
