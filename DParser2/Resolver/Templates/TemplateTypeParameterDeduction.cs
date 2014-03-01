@@ -102,14 +102,11 @@ namespace D_Parser.Resolver.Templates
 			/*
 			 * If not stand-alone identifier or is not required as template param, resolve the id and compare it against r
 			 */
-			var _r = TypeDeclarationResolver.Resolve(id, ctxt);
+			var _r = TypeDeclarationResolver.ResolveSingle(id, ctxt);
 
-			ctxt.CheckForSingleResult(_r, id);
-
-			return _r != null && _r.Length != 0 && 
-				(EnforceTypeEqualityWhenDeducing ?
-				ResultComparer.IsEqual(r,_r[0]) :
-				ResultComparer.IsImplicitlyConvertible(r,_r[0]));
+			return _r != null && (EnforceTypeEqualityWhenDeducing ?
+				ResultComparer.IsEqual(r,_r) :
+				ResultComparer.IsImplicitlyConvertible(r,_r));
 		}
 
 		bool HandleDecl(TemplateTypeParameter parameter, TemplateInstanceExpression tix, AbstractType r)

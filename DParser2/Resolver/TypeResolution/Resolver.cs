@@ -313,7 +313,6 @@ namespace D_Parser.Resolver.TypeResolution
 
 
 			#region Base class & interface resolution
-			AbstractType[] res;
 			var pop = ctxt.ScopedBlock != dc.Parent;
 			if (pop)
 				ctxt.PushNewScope(dc.Parent as IBlockNode);
@@ -354,36 +353,30 @@ namespace D_Parser.Resolver.TypeResolution
 						continue;
 					}
 				
-					res= DResolver.StripAliasSymbols(TypeDeclarationResolver.Resolve(type, ctxt));
+					var r = TypeDeclarationResolver.ResolveSingle(type, ctxt);
 
-					ctxt.CheckForSingleResult(res, type);
-
-					if(res!=null && res.Length != 0)
+					if (r is ClassType || r is TemplateType)
 					{
-						var r = res[0];
-						if (r is ClassType || r is TemplateType)
+						if (!isClass)
+							ctxt.LogError(new ResolutionError(type, "An interface cannot inherit from non-interfaces"));
+						else if (i == 0)
 						{
-							if (!isClass)
-								ctxt.LogError(new ResolutionError(type, "An interface cannot inherit from non-interfaces"));
-							else if (i == 0)
-							{
-								baseClass = r as TemplateIntermediateType;
-							}
-							else
-								ctxt.LogError(new ResolutionError(dc, "The base "+(r is ClassType ?  "class" : "template")+" name must preceed base interfaces"));
-						}
-						else if (r is InterfaceType)
-						{
-							interfaces.Add(r as InterfaceType);
-
-							if (isClass && dc.NameHash != ObjectNameHash && baseClass == null)
-								baseClass = ctxt.ParseCache.ObjectClassResult;
+							baseClass = r as TemplateIntermediateType;
 						}
 						else
-						{
-							ctxt.LogError(new ResolutionError(type, "Resolved class is neither a class nor an interface"));
-							continue;
-						}
+							ctxt.LogError(new ResolutionError(dc, "The base "+(r is ClassType ?  "class" : "template")+" name must preceed base interfaces"));
+					}
+					else if (r is InterfaceType)
+					{
+						interfaces.Add(r as InterfaceType);
+
+						if (isClass && dc.NameHash != ObjectNameHash && baseClass == null)
+							baseClass = ctxt.ParseCache.ObjectClassResult;
+					}
+					else
+					{
+						ctxt.LogError(new ResolutionError(type, "Resolved class is neither a class nor an interface"));
+						continue;
 					}
 				}
 			}

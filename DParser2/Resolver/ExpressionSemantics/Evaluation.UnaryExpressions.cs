@@ -102,19 +102,15 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (uat.Type == null)
 				return null;
 
-			var types = TypeDeclarationResolver.Resolve(uat.Type, ctxt);
-			ctxt.CheckForSingleResult(types, uat.Type);
+			var types = TypeDeclarationResolver.ResolveSingle(uat.Type, ctxt);
 
-			if (types != null && types.Length != 0)
-			{
-				// First off, try to resolve static properties
-				var statProp = StaticProperties.TryEvalPropertyValue(ValueProvider, types[0], uat.AccessIdentifierHash);
+			// First off, try to resolve static properties
+			var statProp = StaticProperties.TryEvalPropertyValue(ValueProvider, types, uat.AccessIdentifierHash);
 
-				if (statProp != null)
-					return statProp;
+			if (statProp != null)
+				return statProp;
 
-				//TODO
-			}
+			//TODO
 
 			return null;
 		}
