@@ -505,27 +505,12 @@ namespace D_Parser.Resolver.TypeResolution
 				return new MemberSymbol(n, resultBase ?? HandleNodeMatch(n.Parent, ctxt), typeBase);
 			}
 
-			AbstractType VisitAlias(DVariable n)
-			{
-				var optionsBackup = ctxt.CurrentContext.ContextDependentOptions;
-				ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.NoTemplateParameterDeduction;
-
-				var baseTypes = TypeDeclarationResolver.Resolve (n.Type, ctxt);
-
-				ctxt.CurrentContext.ContextDependentOptions = optionsBackup;
-
-				return new AliasedType(n, baseTypes.Length > 1 ? new AmbiguousType() : baseTypes[0], typeBase, );
-			}
-
 			public AbstractType Visit(DVariable variable)
 			{
 				AbstractType bt;
 
 				if (CanResolveBase(variable))
 				{
-					if (variable.IsAlias)
-						return VisitAlias (variable);
-
 					var bts = TypeDeclarationResolver.Resolve(variable.Type, ctxt);
 
 					if (bts != null && bts.Length != 0)
