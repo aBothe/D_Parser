@@ -41,8 +41,8 @@ namespace D_Parser.Resolver.Templates
 			IStatement stmt = null;
 			ctxt.PushNewScope(DResolver.SearchBlockAt(ctxt.ScopedBlock.NodeRoot as IBlockNode, p.Default.Location, out stmt), stmt);
 
-			var defaultTypeRes = TypeDeclarationResolver.Resolve(p.Default, ctxt);
-			var b = defaultTypeRes != null && Set (p, defaultTypeRes [0], 0);
+			var defaultTypeRes = TypeDeclarationResolver.ResolveSingle(p.Default, ctxt);
+			var b = defaultTypeRes != null && Set (p, defaultTypeRes, 0);
 
 			ctxt.Pop();
 
@@ -402,13 +402,10 @@ namespace D_Parser.Resolver.Templates
 					// Compare types
 					if (p.Type!=null && dr_paramEnum.MoveNext() && dr_paramEnum.Current.Type!=null)
 					{
-						var dr_resolvedParamType = TypeDeclarationResolver.Resolve(dr_paramEnum.Current.Type, ctxt);
+						var dr_resolvedParamType = TypeDeclarationResolver.ResolveSingle(dr_paramEnum.Current.Type, ctxt);
 
-						ctxt.CheckForSingleResult(dr_resolvedParamType, dr_paramEnum.Current.Type);
-
-						if (dr_resolvedParamType == null ||
-							dr_resolvedParamType.Length == 0 ||
-							!HandleDecl(par, p.Type, dr_resolvedParamType[0]))
+						if (dr_resolvedParamType == null  ||
+							!HandleDecl(par, p.Type, dr_resolvedParamType))
 							return false;
 					}
 					else

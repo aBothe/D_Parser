@@ -10,6 +10,201 @@ namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public partial class Evaluation
 	{
+		class CTFEOrValueRefsVisitor : IResolvedTypeVisitor<ISymbolValue>
+		{
+			public bool ImplicitlyExecute;
+			IExpression idOrTemplateInstance;
+			ISymbolValue[] executionArguments;
+			AbstractSymbolValueProvider ValueProvider;
+
+			public CTFEOrValueRefsVisitor(AbstractSymbolValueProvider vp,IExpression idOrTemplateInstance, bool ImplicitlyExecute = true, ISymbolValue[] executionArguments = null)
+			{
+				this.ValueProvider = vp;
+				this.ImplicitlyExecute = ImplicitlyExecute;
+				this.idOrTemplateInstance = idOrTemplateInstance;
+				this.executionArguments = executionArguments;
+			}
+
+			public ISymbolValue VisitPrimitiveType(PrimitiveType pt)
+			{
+				return new TypeValue(pt);
+			}
+
+			public ISymbolValue VisitPointerType(PointerType pt)
+			{
+				return new TypeValue(pt);
+			}
+
+			public ISymbolValue VisitArrayType(ArrayType at)
+			{
+				return new TypeValue(at);
+			}
+
+			public ISymbolValue VisitAssocArrayType(AssocArrayType aa)
+			{
+				return new TypeValue(aa);
+			}
+
+			public ISymbolValue VisitDelegateCallSymbol(DelegateCallSymbol dg)
+			{
+				return new TypeValue(dg);
+			}
+
+			public ISymbolValue VisitDelegateType(DelegateType dg)
+			{
+				return new TypeValue(dg);
+			}
+
+			public ISymbolValue VisitAliasedType(AliasedType at)
+			{
+				return VisitMemberSymbol(at); // ?
+			}
+
+			public ISymbolValue VisitEnumType(EnumType t)
+			{
+				return new TypeValue(t);
+			}
+
+			public ISymbolValue VisitStructType(StructType t)
+			{
+				return new TypeValue(t);
+			}
+
+			public ISymbolValue VisitUnionType(UnionType t)
+			{
+				return new TypeValue(t);
+			}
+
+			public ISymbolValue VisitClassType(ClassType t)
+			{
+				return new TypeValue(t);
+			}
+
+			public ISymbolValue VisitInterfaceType(InterfaceType t)
+			{
+				return new TypeValue(t);
+			}
+
+			public ISymbolValue VisitTemplateType(TemplateType t)
+			{
+				return new TypeValue(t);
+			}
+
+			public ISymbolValue VisitMixinTemplateType(MixinTemplateType t)
+			{
+				return new TypeValue(t);
+			}
+
+			public ISymbolValue VisitEponymousTemplateType(EponymousTemplateType t)
+			{
+				return new TypeValue(t);
+			}
+
+			public ISymbolValue VisitStaticProperty(StaticProperty p)
+			{
+				return VisitMemberSymbol(p);
+			}
+
+			public ISymbolValue VisitMemberSymbol(MemberSymbol mr)
+			{
+				// If we've got a function here, execute it
+				if (mr.Definition is DMethod)
+				{
+					Dictionary<DVariable, ISymbolValue> targetArgs;
+					if(!FunctionEvaluation.AssignCallArgumentsToIC(mr.Definition as DMethod, executionArguments, ValueProvider, out targetArgs))
+						return null;
+
+					return ImplicitlyExecute ? FunctionEvaluation.Execute(mr, targetArgs, ValueProvider) : new TypeValue(mr);
+				}
+				else if (mr.Definition is DVariable)
+					return new VariableValue(mr);
+
+				// Are there other types to execute/handle?
+				return null;
+			}
+
+			public ISymbolValue VisitTemplateParameterSymbol(TemplateParameterSymbol tps)
+			{
+				if ((tps.Parameter is TemplateTypeParameter ||
+					tps.Parameter is TemplateAliasParameter))
+					return new TypeValue(tps.Base ?? tps);
+				if (tps.Parameter is TemplateValueParameter)
+					return tps.ParameterValue;
+				if (tps.Parameter is TemplateTupleParameter)
+					return new TypeValue(tps.Base);
+				//TODO: Are there other evaluable template parameters?
+				return null;
+			}
+
+			public ISymbolValue VisitArrayAccessSymbol(ArrayAccessSymbol tps)
+			{
+				// correct?
+				return tps.Base != null ? tps.Base.Accept(this) : null;
+			}
+
+			public ISymbolValue VisitModuleSymbol(ModuleSymbol t)
+			{
+				return new TypeValue(t);
+			}
+
+			public ISymbolValue VisitPackageSymbol(PackageSymbol t)
+			{
+				return new TypeValue(t);
+			}
+
+			public ISymbolValue VisitDTuple(DTuple t)
+			{
+				return new TypeValue(t);
+			}
+
+			public ISymbolValue VisitUnknownType(UnknownType t)
+			{
+				return null;
+			}
+
+			public ISymbolValue VisitAmbigousType(AmbiguousType t)
+			{
+				ISymbolValue v = null;
+				List<AbstractType> types = null;
+
+				foreach (var o in t.Overloads)
+				{
+					var newValue = o.Accept(this);
+					if (newValue != null)
+					{
+						ImplicitlyExecute = false; // For a second overload, don't do ctfe if there's a second match
+
+						if(newValue is TypeValue && (v != null || types != null))
+						{
+							if(types == null)
+								types = new List<AbstractType>();
+
+							if(v is TypeValue)
+							{
+								types.Add((v as TypeValue).RepresentedType);
+								v = null;
+							}
+							else{
+								// Error: Incompatible overloads?
+								v = null;
+							}
+
+							types.Add((newValue as TypeValue).RepresentedType);
+							continue;
+						}
+						else if (v != null)
+						{
+							// Ambiguous value
+							continue;
+						}
+						v = newValue;
+					}
+				}
+
+				return types != null ? new InternalOverloadValue(types.ToArray()) : v;					
+			}
+		}
+
 		/// <summary>
 		/// Evaluates the identifier/template instance as usual.
 		/// If the id points to a variable, the initializer/dynamic value will be evaluated using its initializer.
@@ -17,87 +212,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// If ImplicitlyExecute is false but value evaluation is switched on, an InternalOverloadValue-object will be returned
 		/// that keeps all overloads passed via 'overloads'
 		/// </summary>
-		ISymbolValue TryDoCTFEOrGetValueRefs(AbstractType[] overloads, IExpression idOrTemplateInstance, bool ImplicitlyExecute = true, ISymbolValue[] executionArguments=null)
+		ISymbolValue TryDoCTFEOrGetValueRefs(AbstractType r, IExpression idOrTemplateInstance, bool ImplicitlyExecute = true, ISymbolValue[] executionArguments=null)
 		{
-			if (overloads == null || overloads.Length == 0){
-				EvalError(idOrTemplateInstance, "No symbols found");
-				return null;
-			}
-
-			var r = overloads[0];
-			const string ambigousExprMsg = "Ambiguous expression";
-
-			if(r is TemplateParameterSymbol)
-			{
-				var tps = (TemplateParameterSymbol)r;
-
-				if((tps.Parameter is TemplateTypeParameter ||
-					tps.Parameter is TemplateAliasParameter))
-					return new TypeValue(tps.Base ?? tps);
-				if(tps.Parameter is TemplateValueParameter)
-					return tps.ParameterValue;
-				if(tps.Parameter is TemplateTupleParameter)
-					return new TypeValue(tps.Base);
-				//TODO: Are there other evaluable template parameters?
-			}
-			else if (r is UserDefinedType || r is PackageSymbol || r is ModuleSymbol || r is AliasedType)
-			{
-				if (overloads.Length > 1)
-				{
-					EvalError(idOrTemplateInstance, ambigousExprMsg, overloads);
-					return null;
-				}
-				return new TypeValue(r);
-			}
-			else if (r is MemberSymbol)
-			{
-				var mr = (MemberSymbol)r;
-
-				// If we've got a function here, execute it
-				if (mr.Definition is DMethod)
-				{
-					if (ImplicitlyExecute)
-					{
-						Dictionary<DVariable, ISymbolValue> targetArgs = null, newArgs;
-
-						foreach(var overload in overloads)
-							if ((mr = overload as MemberSymbol) != null &&
-								mr.Definition is DMethod &&
-								FunctionEvaluation.AssignCallArgumentsToIC((overload as MemberSymbol).Definition as DMethod, executionArguments, ValueProvider, out newArgs))
-							{
-								if (targetArgs == null)
-									targetArgs = newArgs;
-								else
-								{
-									EvalError(idOrTemplateInstance, ambigousExprMsg, overloads);
-									return null;
-								}
-							}
-
-						if (targetArgs == null)
-						{
-							EvalError(idOrTemplateInstance, "No matching overload found", overloads);
-							return null;
-						}
-
-						return FunctionEvaluation.Execute(mr, targetArgs, ValueProvider);
-					}
-					
-					return new InternalOverloadValue(overloads);
-				}
-				else if (mr.Definition is DVariable)
-				{
-					if (overloads.Length > 1)
-					{
-						EvalError(idOrTemplateInstance, ambigousExprMsg, overloads);
-						return null;
-					}
-					return new VariableValue(mr);
-				}
-			}
-
-			EvalError(idOrTemplateInstance, "Could neither execute nor evaluate symbol value", overloads);
-			return null;
+			return r != null ? r.Accept(new CTFEOrValueRefsVisitor(ValueProvider, idOrTemplateInstance, ImplicitlyExecute, executionArguments)) : null;
 		}
 
 		bool ImplicitlyExecute = true;
@@ -107,9 +224,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var ImplicitlyExecute = this.ImplicitlyExecute;
 			this.ImplicitlyExecute = true;
 
-			var o = DResolver.StripAliasSymbols(ExpressionTypeEvaluation.GetOverloads(tix, ctxt));
-			
-			return TryDoCTFEOrGetValueRefs(o, tix, ImplicitlyExecute);
+			return TryDoCTFEOrGetValueRefs(AmbiguousType.Get(ExpressionTypeEvaluation.GetOverloads(tix, ctxt), tix), tix, ImplicitlyExecute);
 		}
 
 		public ISymbolValue Visit(IdentifierExpression id)
@@ -119,9 +234,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			if (id.IsIdentifier)
 			{
-				var o = ExpressionTypeEvaluation.EvaluateTypes(id, ctxt);
+				var o = ExpressionTypeEvaluation.EvaluateType(id, ctxt);
 
-				if (o == null || o.Length == 0)
+				if (o == null)
 				{
 					EvalError(id, "Symbol could not be found");
 					return null;

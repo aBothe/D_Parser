@@ -178,16 +178,16 @@ namespace D_Parser.Resolver.Templates
 			foreach (var kv in t1_DummyParamList)
 				frame.DeducedTemplateParameters[kv.Key] = new TemplateParameterSymbol(t2,dummyType);
 
-			var t1_TypeResults = Resolver.TypeResolution.TypeDeclarationResolver.Resolve(Spec, ctxt);
+			var t1_TypeResults = Resolver.TypeResolution.TypeDeclarationResolver.ResolveSingle(Spec, ctxt);
 			
 			if(pop)
 				ctxt.Pop();
 			
-			if (t1_TypeResults == null || t1_TypeResults.Length == 0)
+			if (t1_TypeResults == null)
 				return true;
 
 			// Now try to fit the virtual Type t2 into t1 - and return true if it's possible
-			return new TemplateParameterDeduction(new DeducedTypeDictionary(), ctxt).Handle(t2, t1_TypeResults[0]);
+			return new TemplateParameterDeduction(new DeducedTypeDictionary(), ctxt).Handle(t2, t1_TypeResults);
 		}
 	}
 }

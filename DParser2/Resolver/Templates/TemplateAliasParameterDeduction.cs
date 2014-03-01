@@ -22,20 +22,9 @@ namespace D_Parser.Resolver.Templates
 				}
 				else if (p.DefaultType != null)
 				{
-					var res = TypeDeclarationResolver.Resolve(p.DefaultType, ctxt);
+					var res = TypeDeclarationResolver.ResolveSingle(p.DefaultType, ctxt);
 
-					if (res == null)
-						return false;
-
-					bool ret = false;
-					foreach(var r in res)
-						if (!Set(p, r, 0))
-						{
-							ret = true;
-						}
-
-					if (ret)
-						return false;
+					return res != null && Set(p, res, 0);
 				}
 				return false;
 			}

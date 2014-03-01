@@ -22,12 +22,16 @@ namespace D_Parser.Completion
 			DResolver.NodeResolutionAttempt att;
 			var rr = DResolver.ResolveTypeLoosely(Editor, out att);
 
-			if (rr == null || rr.Length < 1)
+			if (rr == null)
 				return null;
 
 			var l = new List<AbstractTooltipContent>();
-			foreach (var res in rr)
-				l.Add(BuildTooltipContent(res));
+
+			if (rr is AmbiguousType)
+				foreach (var res in (rr as AmbiguousType).Overloads)
+					l.Add(BuildTooltipContent(res));
+			else if (rr != null)
+				l.Add(BuildTooltipContent(rr));
 
 			return l;
 		}

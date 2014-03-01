@@ -113,6 +113,21 @@ namespace D_Parser.Resolver
 	{
 		public readonly AbstractType[] Overloads;
 
+		public static AbstractType Get(IEnumerable<AbstractType> types, ISyntaxRegion typeBase = null)
+		{
+			if (types == null)
+				return null;
+			var en = types.GetEnumerator();
+			if (!en.MoveNext())
+				return null;
+			var first = en.Current;
+			if (!en.MoveNext())
+				return first;
+			en.Dispose();
+
+			return new AmbiguousType(types, typeBase);
+		}
+
 		public override byte Modifier
 		{
 			get
@@ -138,12 +153,13 @@ namespace D_Parser.Resolver
 			Overloads = o;
 		}
 
-		public AmbiguousType(IEnumerable<AbstractType> o)
+		public AmbiguousType(IEnumerable<AbstractType> o, ISyntaxRegion typeBase = null)
 		{
 			if (o == null)
 				throw new ArgumentNullException("o");
 
-			Overloads = o.ToArray();
+			DeclarationOrExpressionBase = typeBase;
+			Overloads = o as AbstractType[] ?? o.ToArray();
 		}
 
 		public override string ToCode()
@@ -153,7 +169,7 @@ namespace D_Parser.Resolver
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new AmbiguousType(Overloads);
+			return new AmbiguousType(Overloads, DeclarationOrExpressionBase);
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)

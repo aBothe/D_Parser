@@ -2316,33 +2316,33 @@ class aa(T) if(is(T==int)) {}");
 			var A = pcl[0]["A"];
 			var ctxt = CreateDefCtxt(pcl, A);
 			
-			var x = TypeDeclarationResolver.Resolve(new IdentifierDeclaration("cl"),ctxt,null,true);
+			var x = TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration("cl"),ctxt,null,true);
 			Assert.That(x, Is.Null);
 			
 			var ex = DParser.ParseAssignExpression("cl!int");
-			x = ExpressionTypeEvaluation.EvaluateTypes(ex, ctxt);
-			Assert.That(x.Length, Is.EqualTo(1));
+			x = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
+			Assert.That(x, Is.Not.TypeOf(typeof(AmbiguousType)));
 			
 			ex = DParser.ParseAssignExpression("cl!float");
-			x = ExpressionTypeEvaluation.EvaluateTypes(ex, ctxt);
+			x = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(x, Is.Null);
 			
 			ex = DParser.ParseAssignExpression("aa!float");
-			x = ExpressionTypeEvaluation.EvaluateTypes(ex, ctxt);
-			Assert.That(x.Length, Is.EqualTo(1));
-			var t = x[0] as ClassType;
+			x = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
+			Assert.That(x, Is.Not.TypeOf(typeof(AmbiguousType)));
+			var t = x as ClassType;
 			Assert.That(t, Is.Not.Null);
 			Assert.That(t.Definition, Is.EqualTo(A["aa"].First()));
 			
 			ex = DParser.ParseAssignExpression("aa!int");
-			x = ExpressionTypeEvaluation.EvaluateTypes(ex, ctxt);
-			Assert.That(x.Length, Is.EqualTo(1));
-			t = x[0] as ClassType;
+			x = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
+			Assert.That(x, Is.Not.TypeOf(typeof(AmbiguousType)));
+			t = x as ClassType;
 			Assert.That(t, Is.Not.Null);
 			Assert.That(t.Definition, Is.EqualTo((A["aa"] as List<INode>)[1]));
 			
 			ex = DParser.ParseAssignExpression("aa!string");
-			x = ExpressionTypeEvaluation.EvaluateTypes(ex, ctxt);
+			x = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(x, Is.Null);
 		}
 

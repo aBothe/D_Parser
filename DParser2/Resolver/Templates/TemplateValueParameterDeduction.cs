@@ -31,13 +31,11 @@ namespace D_Parser.Resolver.Templates
 				return false;
 
 			// Check for param type <-> arg expression type match
-			var paramType = TypeDeclarationResolver.Resolve(p.Type, ctxt);
+			var paramType = TypeDeclarationResolver.ResolveSingle(p.Type, ctxt);
 
-			if (paramType == null || paramType.Length == 0)
-				return false;
-
-			if (valueArgument.RepresentedType == null ||
-				!ResultComparer.IsImplicitlyConvertible(paramType[0], valueArgument.RepresentedType))
+			if (paramType == null ||
+				valueArgument.RepresentedType == null ||
+				!ResultComparer.IsImplicitlyConvertible(paramType, valueArgument.RepresentedType))
 				return false;
 
 			// If spec given, test for equality (only ?)

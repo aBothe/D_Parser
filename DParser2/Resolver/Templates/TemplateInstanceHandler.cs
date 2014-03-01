@@ -22,43 +22,47 @@ namespace D_Parser.Resolver.TypeResolution
 					{
 						var tde = (TypeDeclarationExpression)arg;
 
-						var res = TypeDeclarationResolver.Resolve(tde.Declaration, ctxt);
+						var res = TypeDeclarationResolver.ResolveSingle(tde.Declaration, ctxt);
 
 						// Might be a simple symbol without any applied template arguments that is then passed to an template alias parameter
 						if (res == null && tde.Declaration is IdentifierDeclaration)
-							res = TypeDeclarationResolver.Resolve(tde.Declaration as IdentifierDeclaration, ctxt, null, false);
+							res = TypeDeclarationResolver.ResolveSingle(tde.Declaration as IdentifierDeclaration, ctxt, null, false);
 
-						if (ctxt.CheckForSingleResult(res, tde.Declaration) || (res != null && res.Length > 0))
+						var amb = res as AmbiguousType;
+						if (amb != null)
 						{
-							var mr = res[0] as MemberSymbol;
-							if (mr != null && mr.Definition is DVariable)
+							// Error
+							res = amb.Overloads[0];
+						}
+
+						var mr = res as MemberSymbol;
+						if (mr != null && mr.Definition is DVariable)
+						{
+							var dv = (DVariable)mr.Definition;
+
+							if (dv.IsAlias || dv.Initializer == null)
 							{
-								var dv = (DVariable)mr.Definition;
-
-								if (dv.IsAlias || dv.Initializer == null)
-								{
-									templateArguments.Add(mr);
-									continue;
-								}
-
-								ISemantic eval = null;
-
-								try
-								{
-									eval = new StandardValueProvider(ctxt)[dv];
-								}
-								catch(System.Exception ee) // Should be a non-const-expression error here only
-								{
-									ctxt.LogError(dv.Initializer, ee.Message);
-								}
-
-								templateArguments.Add(eval ?? (ISemantic)mr);
+								templateArguments.Add(mr);
+								continue;
 							}
-							else{
-								if(!hasNonFinalArgument)
-									hasNonFinalArgument = IsNonFinalArgument(res[0]);
-								templateArguments.Add(res[0]);
+
+							ISemantic eval = null;
+
+							try
+							{
+								eval = new StandardValueProvider(ctxt)[dv];
 							}
+							catch(System.Exception ee) // Should be a non-const-expression error here only
+							{
+								ctxt.LogError(dv.Initializer, ee.Message);
+							}
+
+							templateArguments.Add(eval ?? (ISemantic)mr);
+						}
+						else{
+							if(!hasNonFinalArgument)
+								hasNonFinalArgument = IsNonFinalArgument(res);
+							templateArguments.Add(res);
 						}
 					}
 					else

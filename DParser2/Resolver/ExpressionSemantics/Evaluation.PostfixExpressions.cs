@@ -43,10 +43,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					args.Add(a as ISymbolValue);
 
 			// Execute/Evaluate the variable contents etc.
-			return TryDoCTFEOrGetValueRefs(argTypeFilteredOverloads.ToArray(), call.PostfixForeExpression, true, args.ToArray());
+			return TryDoCTFEOrGetValueRefs(argTypeFilteredOverloads, call.PostfixForeExpression, true, args.ToArray());
 		}
 
-		public static List<AbstractType> EvalMethodCall(AbstractType[] baseExpression, ISymbolValue baseValue, TemplateInstanceExpression tix,
+		public static AbstractType EvalMethodCall(AbstractType[] baseExpression, ISymbolValue baseValue, TemplateInstanceExpression tix,
 			ResolutionContext ctxt, 
 			PostfixExpression_MethodCall call, out List<ISemantic> callArguments, out ISymbolValue delegateValue,
 			bool returnBaseTypeOnly, AbstractSymbolValueProvider ValueProvider = null)
@@ -110,7 +110,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 										return null;
 									}
 									else if (ret is AbstractType)
-										return new List<AbstractType> { ret as AbstractType };
+										return ret as AbstractType;
 								}
 								else
 								{
@@ -142,7 +142,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							return null;
 						}
 						else if (ret is AbstractType)
-							return new List<AbstractType> { ret as AbstractType };
+							return ret as AbstractType;
 					}
 					else if (b is ClassType || b is StructType)
 					{
@@ -169,7 +169,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						if (b is StructType && methodOverloads.Count == 0)
 						{
 							//TODO: Deduce parameters
-							return new List<AbstractType> { b };
+							return b;
 						}
 					}
 
@@ -248,7 +248,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 			#endregion
 
-			return argTypeFilteredOverloads;
+			return AmbiguousType.Get(argTypeFilteredOverloads, tix);
 		}
 
 		static void HandleDMethodOverload(ResolutionContext ctxt, bool eval, ISymbolValue baseValue, List<ISemantic> callArguments, bool returnBaseTypeOnly, bool hasNonFinalArgs, List<AbstractType> argTypeFilteredOverloads, ref bool hasHandledUfcsResultBefore, MemberSymbol ms)
@@ -608,7 +608,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			// If evaluation active and the access expression is stand-alone, return a single item only.
 			if (EvalAndFilterOverloads && ValueProvider != null)
-				return new[] { (R)new Evaluation(ValueProvider).TryDoCTFEOrGetValueRefs(overloads, acc.AccessExpression) };
+				return new[] { (R)new Evaluation(ValueProvider).TryDoCTFEOrGetValueRefs(AmbiguousType.Get(overloads, acc.AccessExpression), acc.AccessExpression) };
 
 			return overloads as R[];
 		}

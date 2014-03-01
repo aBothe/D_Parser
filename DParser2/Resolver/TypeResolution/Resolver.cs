@@ -157,11 +157,7 @@ namespace D_Parser.Resolver.TypeResolution
 				ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.NoTemplateParameterDeduction;
 
 				if (o is IdentifierExpression)
-				{
-					var overloads = ExpressionTypeEvaluation.GetOverloads(o as IdentifierExpression, ctxt, deduceParameters: false);
-					if (overloads != null && overloads.Length != 0)
-						ret = overloads.Length == 1 ? overloads[0] : new AmbiguousType(overloads, o);
-				}
+					ret = AmbiguousType.Get(ExpressionTypeEvaluation.GetOverloads(o as IdentifierExpression, ctxt, deduceParameters: false), o);
 				else if (o is ITypeDeclaration)
 					ret = TypeDeclarationResolver.ResolveSingle(o as ITypeDeclaration, ctxt);
 				else if (o is IExpression)
@@ -170,13 +166,12 @@ namespace D_Parser.Resolver.TypeResolution
 
 			if (ret == null) {
 				resolutionAttempt = NodeResolutionAttempt.RawSymbolLookup;
-				ret = TypeDeclarationResolver.HandleNodeMatches (LookupIdRawly (editor, o as ISyntaxRegion), ctxt, null, o);
+				var overloads = TypeDeclarationResolver.HandleNodeMatches (LookupIdRawly (editor, o as ISyntaxRegion), ctxt, null, o);
+				ret = AmbiguousType.Get(overloads, o);
 			}
 
 			if (ret != null)
-				foreach (var r in ret)
-					if (r != null)
-						r.DeclarationOrExpressionBase = o;
+				ret.DeclarationOrExpressionBase = o;
 
 			ctxt.CurrentContext.ContextDependentOptions = optionBackup;
 			return ret;

@@ -72,11 +72,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			GetRawCallOverloads(ctxt, call, out baseExpression, out tix);
 
-			var argTypeFilteredOverloads = Evaluation.EvalMethodCall(baseExpression, null, tix, ctxt, call, out callArgs, out delegValue, !ctxt.Options.HasFlag(ResolutionOptions.ReturnMethodReferencesOnly));
-
-			// Check if one overload remains and return that one.
-			ctxt.CheckForSingleResult(argTypeFilteredOverloads, call);
-			return argTypeFilteredOverloads != null && argTypeFilteredOverloads.Count != 0 ? argTypeFilteredOverloads[0] : null;
+			return Evaluation.EvalMethodCall(baseExpression, null, tix, ctxt, call, out callArgs, out delegValue, !ctxt.Options.HasFlag(ResolutionOptions.ReturnMethodReferencesOnly));
 		}
 
 		void GetRawCallOverloads(ResolutionContext ctxt, PostfixExpression_MethodCall call,
@@ -375,17 +371,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		#region Prefix (unary) experssions
 		public AbstractType Visit(CastExpression ce)
 		{
-			AbstractType castedType = null;
+			AbstractType castedType;
 
 			if (ce.Type != null)
-			{
-				var castedTypes = TypeDeclarationResolver.Resolve(ce.Type, ctxt);
-
-				ctxt.CheckForSingleResult(castedTypes, ce.Type);
-
-				if (castedTypes != null && castedTypes.Length != 0)
-					castedType = castedTypes[0];
-			}
+				castedType = TypeDeclarationResolver.ResolveSingle(ce.Type, ctxt);
 			else if (ce.UnaryExpression != null)
 			{
 				castedType = AbstractType.Get(ce.UnaryExpression.Accept(this));
@@ -395,6 +384,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					//TODO: Wrap resolved type with member function attributes
 				}
 			}
+			else
+				castedType = null;
 
 			return castedType;
 		}
@@ -455,14 +446,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			ctxt.CheckForSingleResult(types, uat.Type);
 
 			if (types != null && types.Length != 0)
-			{
-				var res = TypeDeclarationResolver.Resolve(new IdentifierDeclaration(uat.AccessIdentifierHash) { EndLocation = uat.EndLocation }, ctxt, types);
-
-				ctxt.CheckForSingleResult(res, x);
-
-				if (res != null && res.Length != 0)
-					return res[0];
-			}
+				return TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration(uat.AccessIdentifierHash) { EndLocation = uat.EndLocation }, ctxt, types);
 
 			return null;
 		}
@@ -619,31 +603,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		#region Identifier primitives
 		public AbstractType Visit(TemplateInstanceExpression tix)
 		{
-			var o = DResolver.StripAliasSymbols(GetOverloads(tix, ctxt));
-			
-			ctxt.CheckForSingleResult(o, tix);
-			if (o != null)
-				if (o.Length == 1)
-					return o[0];
-				else if (o.Length > 1)
-					return new AmbiguousType(o);
-			return null;
+			return AmbiguousType.Get(GetOverloads(tix, ctxt), tix);
 		}
 
 		public AbstractType Visit(IdentifierExpression id)
 		{
 			if (id.IsIdentifier)
-			{
-				var o = GetOverloads(id, ctxt);
-
-				ctxt.CheckForSingleResult(o, id);
-				if (o != null)
-					if (o.Length == 1)
-						return o[0];
-					else if (o.Length > 1)
-						return new AmbiguousType(o);
-				return null;
-			}
+				return AmbiguousType.Get(GetOverloads(id, ctxt),id);
 
 			byte tt;
 			switch (id.Format)

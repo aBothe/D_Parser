@@ -740,14 +740,10 @@ namespace D_Parser.Resolver.TypeResolution
 					if (pop)
 						ctxt.PushNewScope(de.Parent as IBlockNode);
 
-					var bts = TypeDeclarationResolver.Resolve(de.Type, ctxt);
+					bt = TypeDeclarationResolver.ResolveSingle(de.Type, ctxt);
 
 					if (pop)
 						ctxt.Pop();
-
-					ctxt.CheckForSingleResult(bts, de.Type);
-
-					bt = bts != null && bts.Length != 0 ? bts[0] : null;
 				}
 
 				return new EnumType(de, bt, typeBase);
@@ -984,15 +980,8 @@ namespace D_Parser.Resolver.TypeResolution
 
 			if (dg.IsFunctionLiteral)
 				return GetMethodReturnType(((FunctionLiteral)dg.DeclarationOrExpressionBase).AnonymousMethod, ctxt);
-			else
-			{
-				var rt = ((DelegateDeclaration)dg.DeclarationOrExpressionBase).ReturnType;
-				var r = Resolve(rt, ctxt);
-
-				ctxt.CheckForSingleResult(r, rt);
-
-				return r[0];
-			}
+			
+			return ResolveSingle(((DelegateDeclaration)dg.DeclarationOrExpressionBase).ReturnType, ctxt);
 		}
 
 		public static AbstractType GetMethodReturnType(DMethod method, ResolutionContext ctxt)
@@ -1014,14 +1003,12 @@ namespace D_Parser.Resolver.TypeResolution
 					ctxt.PushNewScope(method);
 
 				//FIXME: Is it legal to explicitly return a nested type?
-				var returnType = TypeDeclarationResolver.Resolve(method.Type, ctxt);
+				var returnType = TypeDeclarationResolver.ResolveSingle(method.Type, ctxt);
 
 				if (pushMethodScope)
 					ctxt.Pop();
 
-				ctxt.CheckForSingleResult(returnType, method.Type);
-				if(returnType != null && returnType.Length > 0)
-					return returnType[0];
+				return returnType;
 			}
 			else if (method.Body != null)
 			{
