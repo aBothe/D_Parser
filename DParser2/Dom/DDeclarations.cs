@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
+using System.Text;
 
 namespace D_Parser.Dom
 {
@@ -188,23 +189,30 @@ namespace D_Parser.Dom
 
 		public override string ToString(bool IncludesBase)
 		{
-			string ret = (IncludesBase && ReturnType != null ? ReturnType.ToString() : "") + (IsFunction ? " function" : " delegate") + "(";
+			var sb = new StringBuilder(IncludesBase && ReturnType != null ? ReturnType.ToString() : "");
+			sb.Append(IsFunction ? " function" : " delegate").Append('(');
 
-			foreach (DVariable n in Parameters)
+			foreach (INode n in Parameters)
 			{
 				if (n.Type != null)
-					ret += n.Type.ToString();
+					sb.Append(n.Type.ToString());
 
 				if (n.NameHash != 0)
-					ret += (" " + n.Name);
+					sb.Append(' ').Append(n.Name);
 
-				if (n.Initializer != null)
-					ret += "= " + n.Initializer.ToString();
+				var dv = n as DVariable;
+				if (dv.Initializer != null)
+					sb.Append("= ").Append(dv.Initializer.ToString());
 
-				ret += ", ";
+				sb.Append(", ");
 			}
-			ret = ret.TrimEnd(',', ' ') + ")";
-			return ret;
+
+			while(sb[sb.Length-1] == ' ')
+				sb.Length--;
+			if(sb[sb.Length-1] == ',')
+				sb.Length--;
+			
+			return sb.Append(')').ToString();
 		}
 
 		public override void Accept(TypeDeclarationVisitor vis)
