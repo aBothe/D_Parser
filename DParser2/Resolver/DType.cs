@@ -111,15 +111,38 @@ namespace D_Parser.Resolver
 
 	public class AmbiguousType : AbstractType
 	{
-		public AbstractType[] Overloads;
+		public readonly AbstractType[] Overloads;
 
-		public AmbiguousType(AbstractType[] o)
+		public override byte Modifier
 		{
+			get
+			{
+				if (Overloads.Length != 0)
+					return Overloads[0].Modifier;
+				return base.Modifier;
+			}
+			set
+			{
+				foreach (var ov in Overloads)
+					ov.Modifier = value;
+				base.Modifier = value;
+			}
+		}
+
+		public AmbiguousType(AbstractType[] o, ISyntaxRegion typeBase = null)
+		{
+			if (o == null)
+				throw new ArgumentNullException("o");
+
+			DeclarationOrExpressionBase = typeBase;
 			Overloads = o;
 		}
 
 		public AmbiguousType(IEnumerable<AbstractType> o)
 		{
+			if (o == null)
+				throw new ArgumentNullException("o");
+
 			Overloads = o.ToArray();
 		}
 

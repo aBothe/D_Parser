@@ -94,11 +94,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			if (isExpression.TypeSpecialization != null)
 			{
-				var spec = DResolver.StripAliasSymbols(TypeDeclarationResolver.Resolve(isExpression.TypeSpecialization, ctxt));
+				var spec = TypeDeclarationResolver.ResolveSingle(isExpression.TypeSpecialization, ctxt);
 
-				return spec != null && spec.Length != 0 && (isExpression.EqualityTest ?
-					ResultComparer.IsEqual(typeToCheck, spec[0]) :
-					ResultComparer.IsImplicitlyConvertible(typeToCheck, spec[0], ctxt));
+				return spec != null && (isExpression.EqualityTest ?
+					ResultComparer.IsEqual(typeToCheck, spec) :
+					ResultComparer.IsImplicitlyConvertible(typeToCheck, spec, ctxt));
 			}
 
 			return isExpression.EqualityTest && evalIsExpression_EvalSpecToken(isExpression, typeToCheck, false).Item1;

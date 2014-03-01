@@ -264,15 +264,11 @@ namespace D_Parser.Resolver.TypeResolution
 		{
 			if (attrDecl != null)
 			{
-				var ret = Resolve(attrDecl.InnerType, ctxt);
+				var ret = ResolveSingle(attrDecl.InnerType, ctxt);
 
-				ctxt.CheckForSingleResult(ret, attrDecl.InnerType);
-
-				if (ret != null && ret.Length != 0 && ret[0] != null)
-				{
-					ret[0].Modifier = attrDecl.Modifier;
-					return ret[0];
-				}
+				if(ret != null)
+					ret.Modifier = attrDecl.Modifier;
+				return ret;
 			}
 			return null;
 		}
@@ -332,29 +328,17 @@ namespace D_Parser.Resolver.TypeResolution
 				catch { }
 			}
 			else
-			{
-				var t = Resolve(ad.KeyType, ctxt);
-				ctxt.CheckForSingleResult(t, ad.KeyType);
-
-				if (t != null && t.Length != 0)
-					return t[0];
-			}
+				return ResolveSingle(ad.KeyType, ctxt);
 
 			return keyType;
 		}
 
 		public static AbstractType Resolve(ArrayDecl ad, ResolutionContext ctxt)
 		{
-			var valueTypes = Resolve(ad.ValueType, ctxt);
+			var valueType = ResolveSingle(ad.ValueType, ctxt);
 
-			ctxt.CheckForSingleResult(valueTypes, ad);
-
-			AbstractType valueType = null;
 			AbstractType keyType = null;
 			int fixedArrayLength = -1;
-
-			if (valueTypes != null && valueTypes.Length != 0)
-				valueType = valueTypes[0];
 
 			ISymbolValue val;
 			keyType = ResolveKey(ad, out fixedArrayLength, out val, ctxt);
@@ -383,35 +367,24 @@ namespace D_Parser.Resolver.TypeResolution
 
 		public static PointerType Resolve(PointerDecl pd, ResolutionContext ctxt)
 		{
-			var ptrBaseTypes = Resolve(pd.InnerDeclaration, ctxt);
+			var ptrBaseTypes = ResolveSingle(pd.InnerDeclaration, ctxt);
 
-			ctxt.CheckForSingleResult(ptrBaseTypes, pd);
-
-			if (ptrBaseTypes == null || ptrBaseTypes.Length == 0)
-				return null;
-
-			return new PointerType(ptrBaseTypes[0], pd);
+			return new PointerType(ptrBaseTypes, pd);
 		}
 
 		public static DelegateType Resolve(DelegateDeclaration dg, ResolutionContext ctxt)
 		{
-			var returnTypes = Resolve(dg.ReturnType, ctxt);
+			var returnTypes = ResolveSingle(dg.ReturnType, ctxt);
 
-			ctxt.CheckForSingleResult(returnTypes, dg.ReturnType);
-
-			if (returnTypes != null && returnTypes.Length != 0)
-			{
-				List<AbstractType> paramTypes=null;
-				if(dg.Parameters!=null && 
-				   dg.Parameters.Count != 0)
-				{	
-					paramTypes = new List<AbstractType>();
-					foreach(var par in dg.Parameters)
-						paramTypes.Add(ResolveSingle(par.Type, ctxt));
-				}
-				return new DelegateType(returnTypes[0], dg, paramTypes);
+			List<AbstractType> paramTypes=null;
+			if(dg.Parameters!=null && 
+				dg.Parameters.Count != 0)
+			{	
+				paramTypes = new List<AbstractType>();
+				foreach(var par in dg.Parameters)
+					paramTypes.Add(ResolveSingle(par.Type, ctxt));
 			}
-			return null;
+			return new DelegateType(returnTypes, dg, paramTypes);
 		}
 
 		public static AbstractType ResolveSingle(ITypeDeclaration declaration, ResolutionContext ctxt)
@@ -505,18 +478,6 @@ namespace D_Parser.Resolver.TypeResolution
 				return new MemberSymbol(n, resultBase ?? HandleNodeMatch(n.Parent, ctxt), typeBase);
 			}
 
-			AbstractType VisitAlias(DVariable n)
-			{
-				var optionsBackup = ctxt.CurrentContext.ContextDependentOptions;
-				ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.NoTemplateParameterDeduction;
-
-				var baseTypes = TypeDeclarationResolver.Resolve (n.Type, ctxt);
-
-				ctxt.CurrentContext.ContextDependentOptions = optionsBackup;
-
-				return new AliasedType(n, baseTypes.Length > 1 ? new AmbiguousType() : baseTypes[0], typeBase, );
-			}
-
 			public AbstractType Visit(DVariable variable)
 			{
 				AbstractType bt;
@@ -524,35 +485,34 @@ namespace D_Parser.Resolver.TypeResolution
 				if (CanResolveBase(variable))
 				{
 					if (variable.IsAlias)
-						return VisitAlias (variable);
+					{
+						var optionsBackup = ctxt.CurrentContext.ContextDependentOptions;
+						ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.NoTemplateParameterDeduction;
 
-					var bts = TypeDeclarationResolver.Resolve(variable.Type, ctxt);
+						bt = TypeDeclarationResolver.ResolveSingle(variable.Type, ctxt);
 
-					if (bts != null && bts.Length != 0)
-						bt = bts[0];
+						if (bt == null && variable.Initializer != null)
+							bt = ExpressionTypeEvaluation.EvaluateType(variable.Initializer, ctxt);
+
+						ctxt.CurrentContext.ContextDependentOptions = optionsBackup;
+
+						return new AliasedType(variable, bt, typeBase);
+					}
+
+					bt = TypeDeclarationResolver.ResolveSingle(variable.Type, ctxt);
 
 				// For auto variables, use the initializer to get its type
-					else if (variable.Initializer != null)
-					{
+					if (bt == null && variable.Initializer != null)
 						bt = DResolver.StripMemberSymbols(ExpressionTypeEvaluation.EvaluateType(variable.Initializer, ctxt));
-					}
-					else
-						bt = null;
 
 					// Check if inside an foreach statement header
 					if (bt == null && ctxt.ScopedStatement != null)
 						bt = GetForeachIteratorType(variable);
-
-					if (bt == null)
-						ctxt.CheckForSingleResult(bts, variable.Type as ISyntaxRegion ?? variable.Initializer);
 				}
 				else
 					bt = null;
 
-				// Note: Also works for aliases! In this case, we simply try to resolve the aliased type, otherwise the variable's base type
-				return variable.IsAlias ?
-				new AliasedType(variable, bt, typeBase) :
-				new MemberSymbol(variable, bt, typeBase);
+				return new MemberSymbol(variable, bt, typeBase);
 			}
 
 			/// <summary>

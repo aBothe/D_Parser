@@ -93,7 +93,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return vis.IdNearCaret;
 		}
 
-		public static AbstractType[] ResolveType(IEditorData editor, ResolutionContext ctxt = null)
+		public static AbstractType ResolveType(IEditorData editor, ResolutionContext ctxt = null)
 		{
 			if (ctxt == null)
 				ctxt = ResolutionContext.Create(editor);
@@ -103,14 +103,14 @@ namespace D_Parser.Resolver.TypeResolution
 			var optionBackup = ctxt.CurrentContext.ContextDependentOptions;
 			ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
 
-			AbstractType[] ret;
+			AbstractType ret;
 
 			if (o is IExpression)
-				ret = ExpressionTypeEvaluation.EvaluateTypes((IExpression)o, ctxt);
+				ret = ExpressionTypeEvaluation.EvaluateType((IExpression)o, ctxt);
 			else if (o is ITypeDeclaration)
-				ret = TypeDeclarationResolver.Resolve((ITypeDeclaration)o, ctxt);
+				ret = TypeDeclarationResolver.ResolveSingle((ITypeDeclaration)o, ctxt);
 			else if (o is INode)
-				ret = new[] { TypeDeclarationResolver.HandleNodeMatch(o as INode, ctxt) };
+				ret = TypeDeclarationResolver.HandleNodeMatch(o as INode, ctxt);
 			else
 				ret = null;
 
@@ -126,7 +126,7 @@ namespace D_Parser.Resolver.TypeResolution
 			RawSymbolLookup
 		}
 
-		public static AbstractType[] ResolveTypeLoosely(IEditorData editor, out NodeResolutionAttempt resolutionAttempt, ResolutionContext ctxt = null)
+		public static AbstractType ResolveTypeLoosely(IEditorData editor, out NodeResolutionAttempt resolutionAttempt, ResolutionContext ctxt = null)
 		{
 			if (ctxt == null)
 				ctxt = ResolutionContext.Create(editor);
@@ -137,14 +137,14 @@ namespace D_Parser.Resolver.TypeResolution
 			ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
 			resolutionAttempt = NodeResolutionAttempt.Normal;
 
-			AbstractType[] ret;
+			AbstractType ret;
 
 			if (o is IExpression)
-				ret = ExpressionTypeEvaluation.EvaluateTypes((IExpression)o, ctxt);
+				ret = ExpressionTypeEvaluation.EvaluateType((IExpression)o, ctxt);
 			else if(o is ITypeDeclaration)
-				ret = TypeDeclarationResolver.Resolve((ITypeDeclaration)o, ctxt);
+				ret = TypeDeclarationResolver.ResolveSingle((ITypeDeclaration)o, ctxt);
 			else if (o is INode)
-				ret = new[] { TypeDeclarationResolver.HandleNodeMatch(o as INode, ctxt, null, o) };
+				ret = TypeDeclarationResolver.HandleNodeMatch(o as INode, ctxt, null, o);
 			else
 				ret = null;
 
@@ -157,11 +157,15 @@ namespace D_Parser.Resolver.TypeResolution
 				ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.NoTemplateParameterDeduction;
 
 				if (o is IdentifierExpression)
-					ret = ExpressionTypeEvaluation.GetOverloads(o as IdentifierExpression, ctxt, deduceParameters: false);
+				{
+					var overloads = ExpressionTypeEvaluation.GetOverloads(o as IdentifierExpression, ctxt, deduceParameters: false);
+					if (overloads != null && overloads.Length != 0)
+						ret = overloads.Length == 1 ? overloads[0] : new AmbiguousType(overloads, o);
+				}
 				else if (o is ITypeDeclaration)
-					ret = TypeDeclarationResolver.Resolve (o as ITypeDeclaration, ctxt);
+					ret = TypeDeclarationResolver.ResolveSingle(o as ITypeDeclaration, ctxt);
 				else if (o is IExpression)
-					ret = ExpressionTypeEvaluation.EvaluateTypes(o as IExpression, ctxt);
+					ret = ExpressionTypeEvaluation.EvaluateType(o as IExpression, ctxt);
 			}
 
 			if (ret == null) {

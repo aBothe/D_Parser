@@ -49,26 +49,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			this.ctxt = ctxt;
 		}
 
-		/// <summary>
-		/// Since most expressions should return a single type only, it's not needed to use this function unless you might
-		/// want to pay attention on (illegal) multiple overloads.
-		/// </summary>
-		public static AbstractType[] EvaluateTypes(IExpression x, ResolutionContext ctxt)
-		{
-			var ev = new ExpressionTypeEvaluation(ctxt);
-			AbstractType t;
-			if (!Debugger.IsAttached)
-				try { t = x.Accept(ev); }
-				catch { t = null; }
-			else
-				t = x.Accept(ev);
-
-			if (t is AmbiguousType)
-				return ((AmbiguousType)t).Overloads;
-
-			return t == null ? null : new[] { t };
-		}
-
 		public static AbstractType EvaluateType(IExpression x, ResolutionContext ctxt)
 		{
 			var ev = new ExpressionTypeEvaluation(ctxt);
