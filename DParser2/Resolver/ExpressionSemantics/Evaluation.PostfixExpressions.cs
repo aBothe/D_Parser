@@ -488,7 +488,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			out ISymbolValue baseValue, 
 			out TemplateInstanceExpression tix)
 		{
-			baseExpression = null;
 			baseValue = null;
 			tix = null;
 

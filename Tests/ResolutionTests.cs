@@ -310,7 +310,6 @@ alias Thing!(int) IntThing;");
 			
 			ex = DParser.ParseExpression("IntThing");
 			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
-			Assert.That(t, Is.TypeOf(typeof(AliasedType)));
 			t = DResolver.StripAliasSymbol(t);
 			Assert.That(t, Is.TypeOf(typeof(StructType)));
 			
@@ -351,8 +350,6 @@ class Blah(T){ T b; }");
 
 			var x = DParser.ParseExpression(@"(new Object).toString()");
 			var t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.That(t, Is.TypeOf(typeof(AliasedType)));
-			t = DResolver.StripAliasSymbol(t);
 			Assert.That(t, Is.TypeOf(typeof(ArrayType)));
 		}
 
@@ -1790,13 +1787,15 @@ void main() {
 			Assert.That (t, Is.TypeOf(typeof(PointerType)));
 
 			x = DParser.ParseExpression ("s.foo");
-			ds = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as DSymbol;
-			Assert.That (ds, Is.TypeOf(typeof(MemberSymbol)));
-			Assert.That (ds.Base, Is.TypeOf(typeof(PrimitiveType)));
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+			ds = t as DSymbol;
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That(ds.Base, Is.TypeOf(typeof(PrimitiveType)));
 
 			x = DParser.ParseExpression ("D.foo");
-			ds = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as DSymbol;
-			Assert.That (ds, Is.TypeOf(typeof(MemberSymbol)));
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
+			ds = t as DSymbol;
+			Assert.That (t, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That (ds.Base, Is.TypeOf(typeof(PrimitiveType)));
 
 			v = Evaluation.EvaluateValue (x, ctxt);
@@ -1804,9 +1803,10 @@ void main() {
 			Assert.That ((v as PrimitiveValue).Value, Is.EqualTo(8m));
 
 			td = DParser.ParseBasicType("D.foo");
-			ds = TypeDeclarationResolver.ResolveSingle (td, ctxt) as DSymbol;
-			Assert.That (ds, Is.TypeOf(typeof(MemberSymbol)));
-			Assert.That (ds.Base , Is.TypeOf(typeof(PrimitiveType)));
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+			ds = t as DSymbol;
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That(ds.Base, Is.TypeOf(typeof(PrimitiveType)));
 		}
 
 		#endregion
