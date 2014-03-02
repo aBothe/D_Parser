@@ -314,10 +314,10 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					if (!CanHandleNode (n as DNode, VisibleMembers, isBaseClass, isMixinAst, takeStaticChildrenOnly, publicImports, scopeIsInInheritanceHierarchy))
 						continue;
 
-					// Add anonymous enums' items
-					if (n is DEnum && n.NameHash == 0)
+                    // Add anonymous enums',structs' or unions' items
+					if (((n is DEnum) || (n is DClassLike)) && n.NameHash == 0)
 					{
-						var ch2 = PrefilterSubnodes(n as DEnum);
+						var ch2 = PrefilterSubnodes(n as DBlockNode);
 						if (ch2 != null)
 							foundItems |= HandleItems(ch2);
 						continue;
@@ -1310,7 +1310,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 						return (vis & MemberFilter.Templates) != 0;
 					case DTokens.Struct:
 					case DTokens.Union:
-						return (vis & MemberFilter.StructsAndUnions) != 0;
+						return dc.IsAnonymous ?
+							(vis & MemberFilter.Variables) != 0 : 
+							(vis & MemberFilter.StructsAndUnions) != 0;
 				}
 			}
 
