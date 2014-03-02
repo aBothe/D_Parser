@@ -1915,9 +1915,7 @@ alias bar aliasTwo;
 			x = DParser.ParseExpression("aliasOne()");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			ms = t as MemberSymbol;
-			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
-			Assert.That(ms.Base, Is.TypeOf(typeof(PointerType)));
+			Assert.That(t, Is.TypeOf(typeof(PointerType)));
 
 			x = DParser.ParseExpression("aliasOne!(byte*)");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);

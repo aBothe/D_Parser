@@ -531,24 +531,50 @@ namespace D_Parser.Resolver.TypeResolution
 				return new MemberSymbol(n, resultBase ?? HandleNodeMatch(n.Parent, ctxt), typeBase);
 			}
 
+			AbstractType VisitAliasDefinition(DVariable v)
+			{
+				AbstractType bt;
+
+				// Ignore explicitly set resolution restrictions - aliases must be resolved!
+				if (!CanResolveBase(v) &&
+					(ctxt.Options & ResolutionOptions.DontResolveBaseTypes) == 0)
+					return new AliasedType(v, null, typeBase);
+
+				// Is it really that easy?
+				else if (v.Type is IdentifierDeclaration)
+				{
+					var optBackup = ctxt.CurrentContext.ContextDependentOptions;
+					ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.NoTemplateParameterDeduction;
+
+					bt = TypeDeclarationResolver.ResolveSingle(v.Type, ctxt);
+
+					ctxt.CurrentContext.ContextDependentOptions = optBackup;
+				}
+				else
+					bt = TypeDeclarationResolver.ResolveSingle(v.Type, ctxt);
+
+				// For auto variables, use the initializer to get its type
+				if (bt == null && v.Initializer != null)
+					bt = DResolver.StripMemberSymbols(ExpressionTypeEvaluation.EvaluateType(v.Initializer, ctxt));
+
+				// Check if inside an foreach statement header
+				if (bt == null && ctxt.ScopedStatement != null)
+					bt = GetForeachIteratorType(v);
+
+				if (bt != null)
+					bt.Tag = new AliasTag { aliasDefinition = v, typeBase = typeBase };
+				return bt;
+			}
+
 			public AbstractType Visit(DVariable variable)
 			{
+				if (variable.IsAlias)
+					return VisitAliasDefinition(variable);
 				AbstractType bt;
 
 				if (CanResolveBase(variable))
 				{
-					// Is it really that easy?
-					if (variable.IsAlias && variable.Type is IdentifierDeclaration)
-					{
-						var optBackup = ctxt.CurrentContext.ContextDependentOptions;
-						ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.NoTemplateParameterDeduction;
-
-						bt = TypeDeclarationResolver.ResolveSingle(variable.Type, ctxt);
-
-						ctxt.CurrentContext.ContextDependentOptions = optBackup;
-					}
-					else
-						bt = TypeDeclarationResolver.ResolveSingle(variable.Type, ctxt);
+					bt = TypeDeclarationResolver.ResolveSingle(variable.Type, ctxt);
 
 					// For auto variables, use the initializer to get its type
 					if (bt == null && variable.Initializer != null)
@@ -560,14 +586,6 @@ namespace D_Parser.Resolver.TypeResolution
 				}
 				else
 					bt = null;
-
-				if (variable.IsAlias)
-				{
-					if (bt != null)
-						bt.Tag = new AliasTag { aliasDefinition=variable, typeBase = typeBase };
-
-					return bt;
-				}
 
 				return new MemberSymbol(variable, bt, typeBase);
 			}
