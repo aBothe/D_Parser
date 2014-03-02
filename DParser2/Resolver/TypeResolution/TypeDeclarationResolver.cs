@@ -81,7 +81,12 @@ namespace D_Parser.Resolver.TypeResolution
 				ctxt.Pop();
 
 			if (res.Count != 0)
-				return /*res.Count == 0 ? null :*/ res.ToArray();
+			{
+				if (idObject is IdentifierExpression || idObject is IdentifierDeclaration)
+					for (var i = res.Count; i > 0; )
+						res[--i] = TryPostDeduceAliasDefinition(res[i], idObject, ctxt);
+				return res.ToArray();
+			}
 
 			// Support some very basic static typing if no phobos is given atm
 			if (idHash == Evaluation.stringTypeHash)
@@ -164,8 +169,10 @@ namespace D_Parser.Resolver.TypeResolution
 
 			var r = new List<AbstractType>();
 
-			foreach(var b in resultBases)
+			foreach(var b_ in resultBases)
 			{
+				var b = TryPostDeduceAliasDefinition(b_, typeIdObject, ctxt);
+
 				if (b is UserDefinedType)
 				{
 					var udt = b as UserDefinedType;
@@ -447,6 +454,64 @@ namespace D_Parser.Resolver.TypeResolution
 		[ThreadStatic]
 		static Dictionary<INode, int> stackCalls;
 
+		public static void ResetDeducedSymbols(AbstractType b)
+		{
+			var ds = b as DSymbol;
+			if (ds != null && ds.DeducedTypes != null)
+			{
+				var remainingTemplateSymbols = new List<TemplateParameterSymbol>(ds.DeducedTypes);
+
+				foreach (var tp in ds.Definition.TemplateParameters)
+				{
+					if (tp != null)
+					{
+						foreach (var sym in remainingTemplateSymbols)
+							if (sym.Parameter == tp)
+							{
+								remainingTemplateSymbols.Remove(sym);
+								break;
+							}
+					}
+				}
+
+				ds.DeducedTypes = remainingTemplateSymbols.Count > 0 ? 
+					new System.Collections.ObjectModel.ReadOnlyCollection<TemplateParameterSymbol>(remainingTemplateSymbols) : null;
+			}
+		}
+
+		public static AbstractType TryPostDeduceAliasDefinition(AbstractType b, ISyntaxRegion typeBase, ResolutionContext ctxt)
+		{
+			if (b != null && b.Tag is AliasTag)
+			{
+				var bases = b is AmbiguousType ? (b as AmbiguousType).Overloads : new[] { b };
+
+				AbstractType ret;
+
+				//TODO: Declare alias-level context? 
+
+				if (typeBase is TemplateInstanceExpression)
+				{
+					// Reset 
+					foreach (var bas in bases)
+						ResetDeducedSymbols(bas);
+	
+					ret = AmbiguousType.Get(TemplateInstanceHandler.DeduceParamsAndFilterOverloads(bases, typeBase as TemplateInstanceExpression, ctxt, false));
+				}
+				else
+					ret = AmbiguousType.Get(TemplateInstanceHandler.DeduceParamsAndFilterOverloads(bases, null, false, ctxt));
+
+				return ret;
+			}
+
+			return b;
+		}
+
+		public class AliasTag
+		{
+			public DVariable aliasDefinition;
+			public ISyntaxRegion typeBase;
+		}
+
 		public class NodeMatchHandleVisitor : NodeVisitor<AbstractType>
 		{
 			public ResolutionContext ctxt;
@@ -472,6 +537,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 				if (CanResolveBase(variable))
 				{
+					// Is it really that easy?
 					if (variable.IsAlias && variable.Type is IdentifierDeclaration)
 					{
 						var optBackup = ctxt.CurrentContext.ContextDependentOptions;
@@ -497,8 +563,9 @@ namespace D_Parser.Resolver.TypeResolution
 
 				if (variable.IsAlias)
 				{
-					//TODO: Decorate bt with an alias tag so that the front-end may show the alias than the actual type(? - couldn't DeclOrExpressionBase be used as well?)
-					//bt.Tag = 
+					if (bt != null)
+						bt.Tag = new AliasTag { aliasDefinition=variable, typeBase = typeBase };
+
 					return bt;
 				}
 

@@ -259,10 +259,13 @@ namespace D_Parser.Resolver.TypeResolution
 					overload = overload.Base as DSymbol;
 				if (overload == null)
 				{
-					if(!hasTemplateArgsPassed)
+					if (!hasTemplateArgsPassed)
 						filteredOverloads.Add(o);
 					continue;
 				}
+				else if (overload.Tag is TypeDeclarationResolver.AliasTag && 
+					(hasTemplateArgsPassed || !(overload.DeclarationOrExpressionBase is TemplateInstanceExpression)))
+					TypeDeclarationResolver.ResetDeducedSymbols(overload);
 
 				var tplNode = overload.Definition;
 
