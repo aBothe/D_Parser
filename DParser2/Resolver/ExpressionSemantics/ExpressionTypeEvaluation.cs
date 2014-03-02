@@ -508,10 +508,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public AbstractType Visit(PostfixExpression_Access ex)
 		{
-			var r = Evaluation.EvalPostfixAccessExpression(this, ctxt, ex);
-			ctxt.CheckForSingleResult(r, ex);
-
-			return r != null && r.Length != 0 ? r[0] : null;
+			return AmbiguousType.Get(Evaluation.EvalPostfixAccessExpression(this, ctxt, ex));
 		}
 
 		public AbstractType Visit(PostfixExpression_Increment x)

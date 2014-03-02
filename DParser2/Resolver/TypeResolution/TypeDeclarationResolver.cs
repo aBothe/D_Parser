@@ -800,14 +800,7 @@ namespace D_Parser.Resolver.TypeResolution
 					//TODO: Is this correct behaviour?
 					if (!modAlias)
 					{
-						var furtherId = ResolveFurtherTypeIdentifier(importSymbolNode.Type.ToString(false), new[] {
-						bt
-					}, ctxt, importSymbolNode.Type);
-						ctxt.CheckForSingleResult(furtherId, importSymbolNode.Type);
-						if (furtherId != null && furtherId.Length != 0)
-							bt = furtherId[0];
-						else
-							bt = null;
+						bt = AmbiguousType.Get(ResolveFurtherTypeIdentifier(importSymbolNode.Type.ToString(false), new[] { bt }, ctxt, importSymbolNode.Type));
 					}
 					ret = new AliasedType(importSymbolNode, bt, importSymbolNode.Type);
 				}
