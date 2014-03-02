@@ -99,11 +99,7 @@ namespace D_Parser.Resolver.TypeResolution
 		/// </summary>
 		public static AbstractType ResolveSingle(string id, ResolutionContext ctxt, ISyntaxRegion idObject, bool ModuleScope = false)
 		{
-			var r = ResolveIdentifier(id, ctxt, idObject, ModuleScope);
-
-			ctxt.CheckForSingleResult(r, idObject as ISyntaxRegion);
-
-			return r != null && r.Length != 0 ? r[0] : null;
+			return AmbiguousType.Get(ResolveIdentifier(id, ctxt, idObject, ModuleScope), idObject);
 		}
 
 		/// <summary>
@@ -111,11 +107,7 @@ namespace D_Parser.Resolver.TypeResolution
 		/// </summary>
 		public static AbstractType ResolveSingle(IdentifierDeclaration id, ResolutionContext ctxt, AbstractType[] resultBases = null, bool filterForTemplateArgs = true)
 		{
-			var r = Resolve(id, ctxt, resultBases, filterForTemplateArgs);
-
-			ctxt.CheckForSingleResult(r, id);
-
-			return r != null && r.Length != 0 ? r[0] : null;
+			return AmbiguousType.Get(Resolve(id, ctxt, resultBases, filterForTemplateArgs), id);
 		}
 
 		public static AbstractType[] Resolve(IdentifierDeclaration id, ResolutionContext ctxt, AbstractType[] resultBases = null, bool filterForTemplateArgs = true)
@@ -392,11 +384,7 @@ namespace D_Parser.Resolver.TypeResolution
 			if (declaration is IdentifierDeclaration)
 				return ResolveSingle(declaration as IdentifierDeclaration, ctxt);
 			else if (declaration is TemplateInstanceExpression)
-			{
-				var a = ExpressionTypeEvaluation.GetOverloads(declaration as TemplateInstanceExpression, ctxt);
-				ctxt.CheckForSingleResult(a, declaration);
-				return a != null && a.Length != 0 ? a[0] : null;
-			}
+				return AmbiguousType.Get(ExpressionTypeEvaluation.GetOverloads(declaration as TemplateInstanceExpression, ctxt), declaration);
 
 			AbstractType t = null;
 
@@ -484,24 +472,19 @@ namespace D_Parser.Resolver.TypeResolution
 
 				if (CanResolveBase(variable))
 				{
-					if (variable.IsAlias)
+					if (variable.IsAlias && variable.Type is IdentifierDeclaration)
 					{
-						var optionsBackup = ctxt.CurrentContext.ContextDependentOptions;
+						var optBackup = ctxt.CurrentContext.ContextDependentOptions;
 						ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.NoTemplateParameterDeduction;
 
 						bt = TypeDeclarationResolver.ResolveSingle(variable.Type, ctxt);
 
-						if (bt == null && variable.Initializer != null)
-							bt = ExpressionTypeEvaluation.EvaluateType(variable.Initializer, ctxt);
-
-						ctxt.CurrentContext.ContextDependentOptions = optionsBackup;
-
-						return new AliasedType(variable, bt, typeBase);
+						ctxt.CurrentContext.ContextDependentOptions = optBackup;
 					}
+					else
+						bt = TypeDeclarationResolver.ResolveSingle(variable.Type, ctxt);
 
-					bt = TypeDeclarationResolver.ResolveSingle(variable.Type, ctxt);
-
-				// For auto variables, use the initializer to get its type
+					// For auto variables, use the initializer to get its type
 					if (bt == null && variable.Initializer != null)
 						bt = DResolver.StripMemberSymbols(ExpressionTypeEvaluation.EvaluateType(variable.Initializer, ctxt));
 
@@ -511,6 +494,13 @@ namespace D_Parser.Resolver.TypeResolution
 				}
 				else
 					bt = null;
+
+				if (variable.IsAlias)
+				{
+					//TODO: Decorate bt with an alias tag so that the front-end may show the alias than the actual type(? - couldn't DeclOrExpressionBase be used as well?)
+					//bt.Tag = 
+					return bt;
+				}
 
 				return new MemberSymbol(variable, bt, typeBase);
 			}

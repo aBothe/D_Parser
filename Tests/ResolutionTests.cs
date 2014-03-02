@@ -1911,6 +1911,11 @@ alias bar aliasTwo;
 			IExpression x;
 			AbstractType t;
 
+			x = DParser.ParseExpression("aliasTwo");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(AmbiguousType)));
+
 			x = DParser.ParseExpression("aliasOne");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
@@ -1920,8 +1925,11 @@ alias bar aliasTwo;
 			x = DParser.ParseExpression("aliasOne!(byte*)");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
+			var ms = t as MemberSymbol;
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
-			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(PointerType)));
+			Assert.That(ms.Base, Is.TypeOf(typeof(PointerType)));
+
+			Assert.That(ms.DeducedTypes[0].Base, Is.TypeOf(typeof(PointerType)));
 
 			x = DParser.ParseExpression("aliasOne!(byte*,int)");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
