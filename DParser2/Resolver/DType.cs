@@ -575,7 +575,7 @@ namespace D_Parser.Resolver
 					{
 						IExpression argEx = null;
 						foreach(var tps in DeducedTypes)
-							if (tps.Parameter == tp)
+							if (tps != null && tps.Parameter == tp)
 							{
 								if (tps.ParameterValue != null){
 									//TODO: Convert ISymbolValues back to IExpression
