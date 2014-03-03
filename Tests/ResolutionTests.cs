@@ -314,12 +314,12 @@ alias Thing!(int) IntThing;");
 			Assert.That(t, Is.TypeOf(typeof(StructType)));
 			
 			ex = DParser.ParseExpression("new Thing!int");
-			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt,false);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol))); // Returns the ctor
 			Assert.That(((DSymbol)t).Name, Is.EqualTo(DMethod.ConstructorIdentifier));
 			
 			ex = DParser.ParseExpression("new IntThing");
-			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt, false);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That(((DSymbol)t).Name, Is.EqualTo(DMethod.ConstructorIdentifier));
 		}
@@ -1912,7 +1912,7 @@ alias bar aliasTwo;
 			Assert.That(t, Is.TypeOf(typeof(PointerType)));
 
 			x = DParser.ParseExpression("aliasOne!(byte*)");
-			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false);
 
 			ms = t as MemberSymbol;
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
@@ -1923,14 +1923,12 @@ alias bar aliasTwo;
 			x = DParser.ParseExpression("aliasTwo");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
-			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.That(t, Is.TypeOf(typeof(PrimitiveType)));
 
 			x = DParser.ParseExpression("aliasOne");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
-			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(PointerType)));
+			Assert.That(t, Is.TypeOf(typeof(PointerType)));
 
 			x = DParser.ParseExpression("aliasOne!(byte*,int)");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);

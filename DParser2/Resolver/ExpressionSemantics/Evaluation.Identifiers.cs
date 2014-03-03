@@ -107,6 +107,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			public ISymbolValue VisitMemberSymbol(MemberSymbol mr)
 			{
+				if (mr.Definition is DVariable)
+					return new VariableValue(mr);
+
+				if (!ImplicitlyExecute)
+					return new TypeValue(mr);
+
 				// If we've got a function here, execute it
 				if (mr.Definition is DMethod)
 				{
@@ -114,10 +120,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					if(!FunctionEvaluation.AssignCallArgumentsToIC(mr.Definition as DMethod, executionArguments, ValueProvider, out targetArgs))
 						return null;
 
-					return ImplicitlyExecute ? FunctionEvaluation.Execute(mr, targetArgs, ValueProvider) : new TypeValue(mr);
+					return FunctionEvaluation.Execute(mr, targetArgs, ValueProvider);
 				}
-				else if (mr.Definition is DVariable)
-					return new VariableValue(mr);
 
 				// Are there other types to execute/handle?
 				return null;
