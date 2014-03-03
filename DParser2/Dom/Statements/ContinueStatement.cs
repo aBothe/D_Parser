@@ -24,7 +24,7 @@ namespace D_Parser.Dom.Statements
 
 		public IExpression[] SubExpressions
 		{
-			get { return IdentifierHash == 0 ? null : new[]{ new IdentifierExpression(Identifier) }; }
+			get { return string.IsNullOrEmpty(Identifier) ? null : new[] { new IdentifierExpression(Identifier) }; }
 		}
 
 		public override void Accept(StatementVisitor vis)
