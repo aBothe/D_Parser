@@ -1788,25 +1788,19 @@ void main() {
 
 			x = DParser.ParseExpression ("s.foo");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			ds = t as DSymbol;
-			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
-			Assert.That(ds.Base, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.That(t, Is.TypeOf(typeof(PrimitiveType)));
 
 			x = DParser.ParseExpression ("D.foo");
 			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
-			ds = t as DSymbol;
-			Assert.That (t, Is.TypeOf(typeof(MemberSymbol)));
-			Assert.That (ds.Base, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.That (t, Is.TypeOf(typeof(PrimitiveType)));
 
 			v = Evaluation.EvaluateValue (x, ctxt);
 			Assert.That (v, Is.TypeOf(typeof(PrimitiveValue)));
 			Assert.That ((v as PrimitiveValue).Value, Is.EqualTo(8m));
 
 			td = DParser.ParseBasicType("D.foo");
-			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			ds = t as DSymbol;
-			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
-			Assert.That(ds.Base, Is.TypeOf(typeof(PrimitiveType)));
+			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
+			//Assert.That(t, Is.TypeOf(typeof(PrimitiveType)));
 		}
 
 		#endregion

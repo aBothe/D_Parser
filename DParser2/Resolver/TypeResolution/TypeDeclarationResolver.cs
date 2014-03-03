@@ -457,7 +457,10 @@ namespace D_Parser.Resolver.TypeResolution
 		public static void ResetDeducedSymbols(AbstractType b)
 		{
 			var ds = b as DSymbol;
-			if (ds != null && ds.DeducedTypes != null)
+			if (ds != null && 
+				ds.DeducedTypes != null && 
+				ds.DeducedTypes.Count != 0 &&
+				ds.Definition.TemplateParameters != null)
 			{
 				var remainingTemplateSymbols = new List<TemplateParameterSymbol>(ds.DeducedTypes);
 

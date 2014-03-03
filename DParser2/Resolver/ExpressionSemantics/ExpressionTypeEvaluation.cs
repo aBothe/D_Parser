@@ -1,6 +1,7 @@
 ﻿using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
+using D_Parser.Resolver.ExpressionSemantics.CTFE;
 using D_Parser.Resolver.TypeResolution;
 using System;
 using System.Collections.Generic;
@@ -73,6 +74,48 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			GetRawCallOverloads(ctxt, call, out baseExpression, out tix);
 
 			return Evaluation.EvalMethodCall(baseExpression, null, tix, ctxt, call, out callArgs, out delegValue, !ctxt.Options.HasFlag(ResolutionOptions.ReturnMethodReferencesOnly));
+		}
+
+
+		AbstractType TryPretendMethodExecution(AbstractType b, ISyntaxRegion typeBase = null)
+		{
+			return b;
+
+			if (b is AmbiguousType)
+			{
+				AbstractType first = null;
+
+				foreach (var ov in (b as AmbiguousType).Overloads)
+				{
+					if (ov is MemberSymbol)
+					{
+						var next = TryPretendMethodExecution_(ov as MemberSymbol);
+						if (first == null)
+						{
+							first = next;
+							continue;
+						}
+						// Error - ambiguous parameter configurations
+					}
+					
+					// Error
+				}
+
+				return first ?? b;
+			}
+
+			var mr = b as MemberSymbol;
+			return mr == null ? b : TryPretendMethodExecution_(mr);
+		}
+
+		AbstractType TryPretendMethodExecution_(MemberSymbol mr)
+		{
+			var dm = mr.Definition as DMethod;
+			if (dm == null)
+				return mr;
+
+			Dictionary<DVariable, AbstractType> args;
+			return FunctionEvaluation.AssignCallArgumentsToIC<AbstractType>(dm, null, null, out args, ctxt) ? mr.Base : null;
 		}
 
 		void GetRawCallOverloads(ResolutionContext ctxt, PostfixExpression_MethodCall call,
@@ -488,7 +531,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			else if (possibleTypes.Length != 0)
 				return AbstractType.Get(possibleTypes[0]);
 
-			return finalCtor;
+			return TryPretendMethodExecution(finalCtor);
 		}
 		#endregion
 
@@ -508,7 +551,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public AbstractType Visit(PostfixExpression_Access ex)
 		{
-			return AmbiguousType.Get(Evaluation.EvalPostfixAccessExpression(this, ctxt, ex));
+			return TryPretendMethodExecution(AmbiguousType.Get(Evaluation.EvalPostfixAccessExpression(this, ctxt, ex)));
 		}
 
 		public AbstractType Visit(PostfixExpression_Increment x)
@@ -600,13 +643,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		#region Identifier primitives
 		public AbstractType Visit(TemplateInstanceExpression tix)
 		{
-			return AmbiguousType.Get(GetOverloads(tix, ctxt), tix);
+			return TryPretendMethodExecution(AmbiguousType.Get(GetOverloads(tix, ctxt), tix));
 		}
 
 		public AbstractType Visit(IdentifierExpression id)
 		{
 			if (id.IsIdentifier)
-				return AmbiguousType.Get(GetOverloads(id, ctxt),id);
+				return TryPretendMethodExecution(AmbiguousType.Get(GetOverloads(id, ctxt),id));
 
 			byte tt;
 			switch (id.Format)

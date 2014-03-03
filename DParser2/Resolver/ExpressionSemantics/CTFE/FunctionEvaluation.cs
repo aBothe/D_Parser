@@ -35,10 +35,10 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 		/// <param name="dm"></param>
 		/// <param name="args"></param>
 		/// <param name="baseValueProvider">Required for evaluating missing default parameters.</param>
-		public static bool AssignCallArgumentsToIC(DMethod dm, ISymbolValue[] args, AbstractSymbolValueProvider baseValueProvider,
-			out Dictionary<DVariable,ISymbolValue> targetArgs)
+		public static bool AssignCallArgumentsToIC<T>(DMethod dm, T[] args, AbstractSymbolValueProvider baseValueProvider,
+			out Dictionary<DVariable,T> targetArgs, ResolutionContext ctxt = null) where T:class,ISemantic
 		{
-			targetArgs = new Dictionary<DVariable, ISymbolValue>();
+			targetArgs = new Dictionary<DVariable, T>();
 			var argsRemaining = args != null ? args.Length : 0;
 			int argu = 0;
 
@@ -48,7 +48,7 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 
 				if (par.Type is VarArgDecl && argsRemaining > 0)
 				{
-					var va_args = new ISemantic[argsRemaining];
+					var va_args = new T[argsRemaining];
 					args.CopyTo(va_args, argu);
 					argsRemaining=0;
 					//TODO: Assign a value tuple to par
@@ -63,7 +63,10 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 				}
 				else if (par.Initializer != null)
 				{
-					targetArgs[par] = Evaluation.EvaluateValue(par.Initializer, baseValueProvider);
+					if (typeof(T) == typeof(AbstractType))
+						targetArgs[par] = ExpressionTypeEvaluation.EvaluateType(par.Initializer, ctxt) as T;
+					else if(typeof(T) == typeof(ISymbolValue))
+						targetArgs[par] = Evaluation.EvaluateValue(par.Initializer, baseValueProvider) as T;
 				}
 				else
 					return false;
