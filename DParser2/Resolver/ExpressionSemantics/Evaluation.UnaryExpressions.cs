@@ -13,7 +13,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public ISymbolValue Visit(NewExpression nex)
 		{
 			//TODO: Create virtual object and call the appropriate ctor, then return the object
-			return TryDoCTFEOrGetValueRefs(ExpressionTypeEvaluation.EvaluateType(nex, ctxt), nex);
+			return TryDoCTFEOrGetValueRefs(ExpressionTypeEvaluation.EvaluateType(nex, ctxt, false), nex);
 		}
 
 		public ISymbolValue Visit(CastExpression ce)

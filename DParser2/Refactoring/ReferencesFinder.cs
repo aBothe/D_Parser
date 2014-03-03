@@ -164,7 +164,7 @@ namespace D_Parser.Refactoring
 			var resolvedSymbol = TryPopPFAStack ();
 			if (id.IsIdentifier && id.ValueStringHash == searchHash) {
 				if(resolvedSymbol == null)
-					resolvedSymbol = ExpressionTypeEvaluation.EvaluateType(id, ctxt) as DSymbol;
+					resolvedSymbol = ExpressionTypeEvaluation.EvaluateType(id, ctxt, false) as DSymbol;
 
 				if (resolvedSymbol != null && resolvedSymbol.Definition == symbol) {
 					l.Add (id);
@@ -179,7 +179,7 @@ namespace D_Parser.Refactoring
 			var resolvedSymbol = TryPopPFAStack ();
 			if (tix.TemplateIdHash == searchHash) {
 				if(resolvedSymbol == null)
-					resolvedSymbol = ExpressionTypeEvaluation.EvaluateType(tix, ctxt) as DSymbol;
+					resolvedSymbol = ExpressionTypeEvaluation.EvaluateType(tix, ctxt, false) as DSymbol;
 
 				if (resolvedSymbol != null && resolvedSymbol.Definition == symbol) {
 					l.Add (tix);
@@ -214,7 +214,7 @@ namespace D_Parser.Refactoring
 				// Are there other types to test for?
 			}
 
-			var s = resolvedSymbol ?? ExpressionTypeEvaluation.EvaluateType(acc, ctxt) as DerivedDataType;
+			var s = resolvedSymbol ?? ExpressionTypeEvaluation.EvaluateType(acc, ctxt, false) as DerivedDataType;
 
 			if (s is DSymbol) {
 				if (((DSymbol)s).Definition == symbol)

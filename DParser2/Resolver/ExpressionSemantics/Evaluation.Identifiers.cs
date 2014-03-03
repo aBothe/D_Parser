@@ -234,7 +234,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			if (id.IsIdentifier)
 			{
-				var o = ExpressionTypeEvaluation.EvaluateType(id, ctxt);
+				var o = ExpressionTypeEvaluation.EvaluateType(id, ctxt, false);
 
 				if (o == null)
 				{

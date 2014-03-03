@@ -14,6 +14,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	public class ExpressionTypeEvaluation : ExpressionVisitor<AbstractType>
 	{
 		#region Properties / LowLevel
+		public bool TryReturnMethodReturnType = true;
 		private readonly ResolutionContext ctxt;
 		public readonly List<EvaluationException> Errors = new List<EvaluationException>();
 
@@ -50,9 +51,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			this.ctxt = ctxt;
 		}
 
-		public static AbstractType EvaluateType(IExpression x, ResolutionContext ctxt)
+		public static AbstractType EvaluateType(IExpression x, ResolutionContext ctxt, bool tryReturnMethodReturnType = true)
 		{
-			var ev = new ExpressionTypeEvaluation(ctxt);
+			var ev = new ExpressionTypeEvaluation(ctxt) { TryReturnMethodReturnType = tryReturnMethodReturnType };
 			
 			if (!Debugger.IsAttached)
 				try { return x.Accept(ev); }
@@ -79,7 +80,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		AbstractType TryPretendMethodExecution(AbstractType b, ISyntaxRegion typeBase = null)
 		{
-			return b;
+			if(!TryReturnMethodReturnType || 
+				(ctxt.Options & (ResolutionOptions.DontResolveBaseTypes | ResolutionOptions.ReturnMethodReferencesOnly)) != 0)
+				return b;
 
 			if (b is AmbiguousType)
 			{
@@ -90,7 +93,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					if (ov is MemberSymbol)
 					{
 						var next = TryPretendMethodExecution_(ov as MemberSymbol);
-						if (first == null)
+						if (first == null && next != ov)
 						{
 							first = next;
 							continue;
