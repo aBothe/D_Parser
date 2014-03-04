@@ -269,7 +269,7 @@ namespace D_Parser.Resolver.Templates
 		static bool HandleDecl(DTokenDeclaration tk, AbstractType r)
 		{
 			if (r is PrimitiveType)
-				return tk.Token == ((PrimitiveType)r).TypeToken;
+				return ResultComparer.IsPrimitiveTypeImplicitlyConvertible(((PrimitiveType)r).TypeToken, tk.Token);
 
 			return false;
 		}

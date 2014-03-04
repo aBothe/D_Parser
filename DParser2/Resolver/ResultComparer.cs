@@ -76,10 +76,15 @@ namespace D_Parser.Resolver
 			return false;
 		}
 
-		static List<int> ImplicitConvertabilityTable = new List<int> { 
+		static readonly List<int> ImplicitConvertabilityTable = new List<int> { 
 			{(DTokens.Long << 8) + DTokens.Int},
 			{(DTokens.Ulong << 8) + DTokens.Uint},
 		};
+
+		public static bool IsPrimitiveTypeImplicitlyConvertible(byte fromType, byte toType)
+		{
+			return fromType == toType || ImplicitConvertabilityTable.Contains((fromType << 8) + toType);
+		}
 
 		/// <summary>
 		/// Checks results for implicit type convertability 
@@ -123,11 +128,11 @@ namespace D_Parser.Resolver
 			{
 				var sr1 = (PrimitiveType)resToCheck;
 				var sr2 = (PrimitiveType)targetType;
-
-				if (sr1.TypeToken == sr2.TypeToken /*&& sr1.Modifier == sr2.Modifier*/)
-					return true;
-
-				return ImplicitConvertabilityTable.Contains((sr2.TypeToken << 8) + sr1.TypeToken);
+				
+				//if (sr1.TypeToken == sr2.TypeToken /*&& sr1.Modifier == sr2.Modifier*/)
+				//	return true;
+				
+				return IsPrimitiveTypeImplicitlyConvertible(sr1.TypeToken, sr2.TypeToken);
 			}
 			else if (resToCheck is UserDefinedType && targetType is UserDefinedType)
 				return IsImplicitlyConvertible((UserDefinedType)resToCheck, (UserDefinedType)targetType);

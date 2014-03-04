@@ -750,8 +750,8 @@ class A
 		public void TestOverloads2()
 		{
 			var ctxt = CreateCtxt ("A", @"module A;
-int foo(int n) { }
 int* foo(T)(T t) { }
+int foo(int n) { }
 long longVar = 10L;");
 
 			IExpression x;

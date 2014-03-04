@@ -219,11 +219,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			#region Filter by parameter-argument comparison
 			var argTypeFilteredOverloads = new List<AbstractType>();
 			bool hasHandledUfcsResultBefore = false;
+			AbstractType untemplatedMethodResult = null;
 
 			foreach (var ov in methodOverloads)
 			{
 				if (ov is MemberSymbol)
-					HandleDMethodOverload(ctxt, ValueProvider != null, baseValue, callArguments, returnBaseTypeOnly, hasNonFinalArgs, argTypeFilteredOverloads, ref hasHandledUfcsResultBefore, ov as MemberSymbol);
+					HandleDMethodOverload(ctxt, ValueProvider != null, baseValue, callArguments, returnBaseTypeOnly, hasNonFinalArgs, argTypeFilteredOverloads, ref hasHandledUfcsResultBefore, 
+						ov as MemberSymbol, ref untemplatedMethodResult);
 				else if (ov is DelegateType)
 				{
 					var dg = ov as DelegateType;
@@ -246,12 +248,17 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					}
 				}
 			}
+
+			// Prefer untemplated methods over templated ones
+			if (untemplatedMethodResult != null)
+				return untemplatedMethodResult;
 			#endregion
 
 			return AmbiguousType.Get(argTypeFilteredOverloads, tix);
 		}
 
-		static void HandleDMethodOverload(ResolutionContext ctxt, bool eval, ISymbolValue baseValue, List<ISemantic> callArguments, bool returnBaseTypeOnly, bool hasNonFinalArgs, List<AbstractType> argTypeFilteredOverloads, ref bool hasHandledUfcsResultBefore, MemberSymbol ms)
+		static void HandleDMethodOverload(ResolutionContext ctxt, bool eval, ISymbolValue baseValue, List<ISemantic> callArguments, bool returnBaseTypeOnly, bool hasNonFinalArgs, List<AbstractType> argTypeFilteredOverloads, ref bool hasHandledUfcsResultBefore, 
+			MemberSymbol ms, ref AbstractType untemplatedMethod)
 		{
 			var dm = ms.Definition as DMethod;
 
@@ -357,9 +364,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(ms);
 
 				if (eval || !returnBaseTypeOnly)
-					argTypeFilteredOverloads.Add(new MemberSymbol(dm, bt, ms.DeclarationOrExpressionBase, ms.DeducedTypes) { Tag = ms.Tag });
-				else
-					argTypeFilteredOverloads.Add(bt);
+					bt = new MemberSymbol(dm, bt, ms.DeclarationOrExpressionBase, ms.DeducedTypes) { Tag = ms.Tag };
+
+				if (dm.TemplateParameters == null || dm.TemplateParameters.Length == 0)
+					untemplatedMethod = bt; //ISSUE: Have another state that indicates an ambiguous non-templated method matching.
+				
+				argTypeFilteredOverloads.Add(bt);
 			}
 		}
 
