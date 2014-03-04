@@ -1187,6 +1187,52 @@ int sym;
 		}
 
 		[Test]
+		public void TemplateParamDeduction13()
+		{
+			var ctxt = CreateCtxt("A", @"module A;
+class A(S:string) {}
+class A(T){}
+class C(U: A!W, W){ W item; }
+");
+
+			ITypeDeclaration td;
+			AbstractType t;
+
+			td = DParser.ParseBasicType("C!(A!int)");
+			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(ClassType)));
+			var ct = t as ClassType;
+			Assert.That(ct.DeducedTypes.Count, Is.EqualTo(2));
+			Assert.That(ct.DeducedTypes[0].Name, Is.EqualTo("U"));
+			Assert.That(ct.DeducedTypes[1].Name, Is.EqualTo("W"));
+			Assert.That(ct.DeducedTypes[1].Base, Is.TypeOf(typeof(PrimitiveType)));
+
+			td = DParser.ParseBasicType("C!(A!string)");
+			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
+
+			Assert.That(t, Is.Null);
+		}
+
+		[Test]
+		public void TemplateParamDeduction14()
+		{
+			var ctxt = CreateCtxt("mod", @"module mod;
+class A(T) {}
+class B{ class SubClass; }
+class C(A!X.SubClass, X) {}
+");
+
+			ITypeDeclaration td;
+			AbstractType t;
+
+			td = DParser.ParseBasicType("C!(A!B)"); // TODO: Elaborate behavior in dmd
+			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(ClassType)));
+		}
+
+		[Test]
 		public void TemplateArgAsBasetype()
 		{
 			var ctxt = CreateCtxt("A",@"module A;

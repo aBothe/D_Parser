@@ -543,9 +543,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			var foreExpr = ex.PostfixForeExpression != null ? ex.PostfixForeExpression.Accept(this) : null;
 
-			if (foreExpr is AliasedType)
-				foreExpr = DResolver.StripAliasSymbol(foreExpr);
-			
 			if (foreExpr == null)
 				ctxt.LogError(new NothingFoundError(ex.PostfixForeExpression));
 

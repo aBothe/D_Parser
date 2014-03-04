@@ -733,7 +733,7 @@ namespace D_Parser.Resolver.TypeResolution
 						}
 
 						if (r.Count > 1)
-							ctxt.LogError(new ResolutionError(curStmt, "Ambigous iterator type"));
+							ctxt.LogError(new AmbiguityError(curStmt, r, "Ambigous iterator type"));
 
 						return r.Count != 0 ? r[0] : null;
 					}
@@ -798,7 +798,7 @@ namespace D_Parser.Resolver.TypeResolution
 						return new TemplateType(dc, typeBase, invisibleTypeParams);
 
 					default:
-						ctxt.LogError(new ResolutionError(dc, "Unknown type (" + DTokens.GetTokenString(dc.ClassType) + ")"));
+						ctxt.LogError(new NothingFoundError(dc, "Unknown type (" + DTokens.GetTokenString(dc.ClassType) + ")"));
 						return null;
 				}
 			}

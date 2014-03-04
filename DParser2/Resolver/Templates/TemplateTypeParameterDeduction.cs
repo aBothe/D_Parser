@@ -202,39 +202,15 @@ namespace D_Parser.Resolver.Templates
 			ctxt.CurrentContext.ContextDependentOptions = ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.DontResolveBaseTypes;
 
 			var initialResults = TypeDeclarationResolver.ResolveIdentifier(tix.TemplateIdHash, ctxt, tix);
-			var l = _handleResStep(initialResults);
+
+			var l = new List<DNode>();
+			foreach (var res in initialResults)
+				if (res is DSymbol)
+					l.Add((res as DSymbol).Definition);
 
 			ctxt.CurrentContext.ContextDependentOptions = optBackup;
 
 			return l.ToArray();
-		}
-
-		List<DNode> _handleResStep(AbstractType[] res)
-		{
-			var l = new List<DNode>();
-
-			if(res!=null)
-				foreach (var r in res)
-				{
-					if (r is AliasedType)
-					{
-						var alias = (AliasedType)r;
-						AbstractType[] next=null;
-
-						ctxt.CurrentContext.Set(alias.Definition.Parent as IBlockNode);
-
-						if (alias.Definition.Type is IdentifierDeclaration)
-							next = TypeDeclarationResolver.Resolve((IdentifierDeclaration)alias.Definition.Type, ctxt, null, false);
-						else
-							next = TypeDeclarationResolver.Resolve(alias.Definition.Type, ctxt);
-
-						l.AddRange(_handleResStep(next));
-					}
-					else if (r is DSymbol)
-						l.Add(((DSymbol)r).Definition);
-				}
-
-			return l;
 		}
 
 		/// <summary>
@@ -253,14 +229,19 @@ namespace D_Parser.Resolver.Templates
 			 * C!(A!int) -- is possible
 			 * C!(A!string) -- is not allowed somehow - because there are probably two 'matching' template types.
 			 * (dmd version 2.060, August 2012)
+			 * Testing is done in ResolutionTests.TemplateParamDeduction13()
 			 */
 			return expectedTemplateTypes != null && expectedTemplateTypes.Contains(controllee);
 		}
 
 		static ITypeDeclaration ConvertToTypeDeclarationRoughly(IExpression p)
 		{
-			if (p is IdentifierExpression)
-				return new IdentifierDeclaration(((IdentifierExpression)p).Value as string) { Location = p.Location, EndLocation = p.EndLocation };
+			var id = p as IdentifierExpression;
+			if (id != null)
+			{
+				if(id.IsIdentifier)
+					return new IdentifierDeclaration(id.ValueStringHash) { Location = p.Location, EndLocation = p.EndLocation };
+			}
 			else if (p is TypeDeclarationExpression)
 				return ((TypeDeclarationExpression)p).Declaration;
 			return null;

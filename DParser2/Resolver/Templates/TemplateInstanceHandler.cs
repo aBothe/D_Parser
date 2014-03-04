@@ -87,7 +87,8 @@ namespace D_Parser.Resolver.TypeResolution
 		static bool IsNonFinalArgument(ISemantic v)
 		{
 			return (v is TypeValue && (v as TypeValue).RepresentedType is TemplateParameterSymbol) ||
-				(v is TemplateParameterSymbol && (v as TemplateParameterSymbol).Base == null);
+				(v is TemplateParameterSymbol && (v as TemplateParameterSymbol).Base == null) ||
+				v is ErrorValue;
 		}
 
 		public static AbstractType[] DeduceParamsAndFilterOverloads(IEnumerable<AbstractType> rawOverloadList,

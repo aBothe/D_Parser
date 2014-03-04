@@ -21,8 +21,8 @@ namespace D_Parser.Resolver
 	{
 		public readonly ISemantic[] DetectedOverloads;
 
-		public AmbiguityError(ISyntaxRegion syntaxObj, IEnumerable<ISemantic> results)
-			: base(syntaxObj, "Resolution returned too many results")
+		public AmbiguityError(ISyntaxRegion syntaxObj, IEnumerable<ISemantic> results, string msg=null)
+			: base(syntaxObj, msg ?? "Resolution returned too many results")
 		{
 			if (results is ISemantic[])
 				this.DetectedOverloads = (ISemantic[])results;
@@ -33,8 +33,8 @@ namespace D_Parser.Resolver
 
 	public class NothingFoundError : ResolutionError
 	{
-		public NothingFoundError(ISyntaxRegion syntaxObj)
-			: base(syntaxObj, (syntaxObj is IExpression ? "Expression" : "Declaration") + " could not be resolved.")
+		public NothingFoundError(ISyntaxRegion syntaxObj, string msg =null)
+			: base(syntaxObj, msg ?? ((syntaxObj is IExpression ? "Expression" : "Declaration") + " could not be resolved."))
 		{ }
 	}
 
