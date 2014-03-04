@@ -67,7 +67,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			{
 				foreach (var b in scanResults)
 				{
-					if (b is TemplateParameterSymbol)
+					if (b is AmbiguousType)
+						nextResults.AddRange((b as AmbiguousType).Overloads);
+					else if (b is TemplateParameterSymbol)
 						nextResults.Add((b as TemplateParameterSymbol).Base);
 					else if (b is MemberSymbol)
 					{

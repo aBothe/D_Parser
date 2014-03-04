@@ -862,6 +862,8 @@ namespace D_Parser.Resolver.TypeResolution
 			// Only import symbol aliases are allowed to search in the parse cache
 			public AbstractType Visit(ImportSymbolNode importSymbolNode)
 			{
+				return VisitAliasDefinition(importSymbolNode);
+
 				AbstractType ret = null;
 
 				var modAlias = importSymbolNode is ModuleAliasNode;
