@@ -177,8 +177,8 @@ namespace D_Parser.Resolver.TypeResolution
 				{
 					var udt = b as UserDefinedType;
 					var bn = udt.Definition as IBlockNode;
-					
-					bool pop = b is MixinTemplateType;
+
+					bool pop = b is MixinTemplateType || (udt is TemplateType && !ctxt.ScopedBlockIsInNodeHierarchy(bn));
 					if(pop)
 						ctxt.PushNewScope(bn);
 					ctxt.CurrentContext.IntroduceTemplateParameterTypes(udt);

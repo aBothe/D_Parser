@@ -179,14 +179,6 @@ namespace D_Parser.Resolver.TypeResolution
 
 		static AbstractType[] TryGetImplicitProperty(TemplateType template, ResolutionContext ctxt)
 		{
-			// Prepare a new context
-			bool pop = !ctxt.ScopedBlockIsInNodeHierarchy(template.Definition);
-			if (pop)
-				ctxt.PushNewScope(template.Definition);
-
-			// Introduce the deduced params to the current resolution context
-			ctxt.CurrentContext.IntroduceTemplateParameterTypes(template);
-
 			// Get actual overloads
 			var matchingChild = TypeDeclarationResolver.ResolveFurtherTypeIdentifier( template.NameHash, new[]{ template }, ctxt);
 
@@ -203,12 +195,6 @@ namespace D_Parser.Resolver.TypeResolution
 					}
 					ch.Tag = template.Tag;
 				}
-
-			// Undo context-related changes
-			if (pop)
-				ctxt.Pop();
-			else
-				ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(template);
 
 			return matchingChild;
 		}
