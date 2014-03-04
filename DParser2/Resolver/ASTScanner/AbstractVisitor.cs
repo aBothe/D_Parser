@@ -1103,12 +1103,37 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		}
 
 		#region Declaration conditions & Static statements
+		INode lastCheckedNodeParent;
+		Dictionary<DeclarationCondition, bool> alreadyCheckedConditions = new Dictionary<DeclarationCondition,bool>();
+
 		bool MatchesCompilationConditions(DNode n)
 		{
 			if((ctxt.Options & ResolutionOptions.IgnoreDeclarationConditions) != 0)
 				return true;
 
-			return ctxt.CurrentContext.MatchesDeclarationEnvironment (n.Attributes);
+			if (lastCheckedNodeParent != n.Parent)
+			{
+				lastCheckedNodeParent = n.Parent;
+				alreadyCheckedConditions.Clear();
+			}
+
+			if (n.Attributes != null)
+				foreach (var c in n.Attributes)
+				{
+					var neg = c as NegatedDeclarationCondition;
+					var cond = neg != null ? neg.FirstCondition : c as DeclarationCondition;
+					if (cond == null)
+						continue;
+
+					bool res;
+					if(!alreadyCheckedConditions.TryGetValue(cond, out res))
+						alreadyCheckedConditions[cond] = res = ctxt.CurrentContext.MatchesDeclarationEnvironment(cond);
+
+					if (neg != null ? res : !res)
+						return false;
+				}
+
+			return true;
 		}
 
 		// Following methods aren't used atm!
@@ -1217,8 +1242,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		#region Handle-ability checks for Nodes
 		bool CanHandleNode(DNode dn, MemberFilter VisibleMembers, bool isBaseClass, bool isMixinAst, bool takeStaticChildrenOnly, bool publicImports, bool scopeIsInInheritanceHierarchy)
 		{
-			if (dn == null || !MatchesCompilationConditions(dn) ||
-				!CanAddMemberOfType (VisibleMembers, dn))
+			if (dn == null || 
+				!CanAddMemberOfType (VisibleMembers, dn) || 
+				!MatchesCompilationConditions(dn))
 				return false;
 
 			if((ctxt.Options & ResolutionOptions.IgnoreAllProtectionAttributes) != ResolutionOptions.IgnoreAllProtectionAttributes){
