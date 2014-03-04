@@ -1301,15 +1301,7 @@ namespace D_Parser.Parser
 				OldCStyleFunctionPointer(ret, IsParam);
 
 			if (IsDeclaratorSuffix || IsFunctionAttribute)
-			{
-				var dm = new DMethod { Parent = parent, Parameters = null };
-				dm.AssignFrom(ret);
-
-				DeclaratorSuffixes(dm);
-
-				if (dm.Parameters != null)
-					ret = dm;
-			}
+				DeclaratorSuffixes(ref ret);
 
 			return ret;
 		}
@@ -1368,7 +1360,7 @@ namespace D_Parser.Parser
 					 */
 					if (laKind != (CloseParenthesis))
 					{
-						DeclaratorSuffixes(ret);
+						DeclaratorSuffixes(ref ret);
 					}
 				}
 			}
@@ -1389,7 +1381,7 @@ namespace D_Parser.Parser
 		/// 
 		/// TemplateParameterList[opt] Parameters MemberFunctionAttributes[opt]
 		/// </summary>
-		void DeclaratorSuffixes(DNode dn)
+		void DeclaratorSuffixes(ref DNode dn)
 		{
 			FunctionAttributes(ref dn.Attributes);
 
@@ -1433,8 +1425,14 @@ namespace D_Parser.Parser
 					TemplateParameterList(dn);
 				}
 				var dm = dn as DMethod;
-				if(dm != null)
-					dm.Parameters = Parameters(dm);
+				if (dm == null)
+				{
+					dm = new DMethod{ Parent = dn.Parent, Parameters = null };
+					dm.AssignFrom(dn);
+					dn = dm;
+				}
+
+				dm.Parameters = Parameters(dm);
 			}
 
 			FunctionAttributes(ref dn.Attributes);
@@ -1538,9 +1536,9 @@ namespace D_Parser.Parser
 				// DeclaratorSuffixes
 				if (laKind == (OpenSquareBracket))
 				{
-					var dn = new DVariable();
+					DNode dn = new DVariable();
 					dn.Type = td;
-					DeclaratorSuffixes(dn);
+					DeclaratorSuffixes(ref dn);
 					td = dn.Type;
 
 					if(dn.Attributes!= null && dn.Attributes.Count != 0)

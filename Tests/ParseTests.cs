@@ -181,6 +181,17 @@ void bar();");
 		}
 
 		[Test]
+		public void ObsoleteArrayNotation()
+		{
+			var mod = DParser.ParseString(@"int arr[]; int[] brr;");
+
+			var arr = mod["arr"].First() as DVariable;
+			var brr = mod["brr"].First() as DVariable;
+
+			Assert.That(arr.Type.ToString(), Is.EqualTo(brr.Type.ToString()));
+		}
+
+		[Test]
 		public void Attributes1()
 		{
 			var n = DParser.ParseString("align(2) align int a;");
