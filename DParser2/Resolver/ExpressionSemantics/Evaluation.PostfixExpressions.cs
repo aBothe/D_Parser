@@ -590,9 +590,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			{
 				var id = acc.AccessExpression as IdentifierExpression;
 
-				if (ValueProvider != null && EvalAndFilterOverloads && resultBase != null)
+				if (ValueProvider != null && EvalAndFilterOverloads && baseExpression != null)
 				{
-					var staticPropResult = StaticProperties.TryEvalPropertyValue(ValueProvider, resultBase, id.ValueStringHash);
+					var staticPropResult = StaticProperties.TryEvalPropertyValue(ValueProvider, baseExpression, id.ValueStringHash);
 					if (staticPropResult != null)
 						return new[]{(R)staticPropResult};
 				}
