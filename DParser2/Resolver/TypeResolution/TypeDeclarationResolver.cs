@@ -484,7 +484,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 		public static AbstractType TryPostDeduceAliasDefinition(AbstractType b, ISyntaxRegion typeBase, ResolutionContext ctxt)
 		{
-			if (b != null && b.Tag is AliasTag)
+			if (b != null && b.Tag is AliasTag && (ctxt.Options & ResolutionOptions.DontResolveAliases) == 0)
 			{
 				var bases = b is AmbiguousType ? (b as AmbiguousType).Overloads : new[] { b };
 

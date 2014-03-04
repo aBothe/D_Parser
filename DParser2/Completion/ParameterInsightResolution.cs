@@ -100,6 +100,8 @@ namespace D_Parser.Completion
 				ParsedExpression = lastParamExpression
 			};
 
+			ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.DontResolveAliases;
+
 			// 1), 2)
 			if (lastParamExpression is PostfixExpression_MethodCall) {
 				res.IsMethodArguments = true;

@@ -168,60 +168,69 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			else if (foreExpression is TokenExpression)
 				overloads = GetResolvedConstructorOverloads((TokenExpression)foreExpression, ctxt);
 			else
-				overloads = new[] { EvaluateType(foreExpression, ctxt) };
+				overloads = new[] { EvaluateType(foreExpression, ctxt, false) };
 
 			var l = new List<AbstractType>();
 			bool staticOnly = true;
 
 			foreach (var ov in overloads)
 			{
-				var t = ov;
-				if (ov is MemberSymbol)
-				{
-					var ms = ov as MemberSymbol;
-					if (ms.Definition is Dom.DMethod)
-					{
-						l.Add(ms);
-						continue;
-					}
-
-					staticOnly = false;
-					t = ms.Base;
-				}
-
-				if (t is TemplateIntermediateType)
-				{
-					var tit = t as TemplateIntermediateType;
-
-					var m = TypeDeclarationResolver.HandleNodeMatches(
-						GetOpCalls(tit, staticOnly), ctxt,
-						null, supExpression ?? foreExpression);
-
-					/*
-					 * On structs, there must be a default () constructor all the time.
-					 * If there are (other) constructors in structs, the explicit member initializer constructor is not
-					 * provided anymore. This will be handled in the GetConstructors() method.
-					 * If there are opCall overloads, canCreateeExplicitStructCtor overrides the ctor existence check in GetConstructors()
-					 * and enforces that the explicit ctor will not be generated.
-					 * An opCall overload with no parameters supersedes the default ctor.
-					 */
-					var canCreateExplicitStructCtor = m == null || m.Length == 0;
-
-					if (!canCreateExplicitStructCtor)
-						l.AddRange(m);
-
-					m = TypeDeclarationResolver.HandleNodeMatches(
-						GetConstructors(tit, canCreateExplicitStructCtor), ctxt,
-						null, supExpression ?? foreExpression);
-
-					if (m != null && m.Length != 0)
-						l.AddRange(m);
-				}
+				if (ov is AmbiguousType)
+					foreach (var o in (ov as AmbiguousType).Overloads)
+						GetUnfilteredMethodOverloads_Helper(foreExpression, ctxt, supExpression, l, ref staticOnly, o);
 				else
-					l.Add(ov);
+					GetUnfilteredMethodOverloads_Helper(foreExpression, ctxt, supExpression, l, ref staticOnly, ov);
 			}
 
 			return l.ToArray();
+		}
+
+		private static void GetUnfilteredMethodOverloads_Helper(IExpression foreExpression, ResolutionContext ctxt, IExpression supExpression, List<AbstractType> l, ref bool staticOnly, AbstractType ov)
+		{
+			var t = ov;
+			if (ov is MemberSymbol)
+			{
+				var ms = ov as MemberSymbol;
+				if (ms.Definition is Dom.DMethod)
+				{
+					l.Add(ms);
+					return;
+				}
+
+				staticOnly = false;
+				t = ms.Base;
+			}
+
+			if (t is TemplateIntermediateType)
+			{
+				var tit = t as TemplateIntermediateType;
+
+				var m = TypeDeclarationResolver.HandleNodeMatches(
+					GetOpCalls(tit, staticOnly), ctxt,
+					null, supExpression ?? foreExpression);
+
+				/*
+				 * On structs, there must be a default () constructor all the time.
+				 * If there are (other) constructors in structs, the explicit member initializer constructor is not
+				 * provided anymore. This will be handled in the GetConstructors() method.
+				 * If there are opCall overloads, canCreateeExplicitStructCtor overrides the ctor existence check in GetConstructors()
+				 * and enforces that the explicit ctor will not be generated.
+				 * An opCall overload with no parameters supersedes the default ctor.
+				 */
+				var canCreateExplicitStructCtor = m == null || m.Length == 0;
+
+				if (!canCreateExplicitStructCtor)
+					l.AddRange(m);
+
+				m = TypeDeclarationResolver.HandleNodeMatches(
+					GetConstructors(tit, canCreateExplicitStructCtor), ctxt,
+					null, supExpression ?? foreExpression);
+
+				if (m != null && m.Length != 0)
+					l.AddRange(m);
+			}
+			else
+				l.Add(ov);
 		}
 
 		public static AbstractType[] GetAccessedOverloads(PostfixExpression_Access acc, ResolutionContext ctxt,
