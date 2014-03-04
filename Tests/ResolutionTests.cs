@@ -1340,8 +1340,9 @@ void foo(U)(U u)
 			Assert.That(t, Is.Not.Null);
 			Assert.That(t.Length, Is.EqualTo(1));
 			
-			t_ = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
-			Assert.That(t_, Is.TypeOf(typeof(ArrayType)));
+			t_ = ExpressionTypeEvaluation.EvaluateType(ex, ctxt, false);
+			Assert.That(t_, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That((t_ as MemberSymbol).Base, Is.TypeOf(typeof(ArrayType)));
 			
 			ex = (subSt[2] as ExpressionStatement).Expression;
 			t = ExpressionTypeEvaluation.GetOverloads((ex as PostfixExpression_MethodCall).PostfixForeExpression as TemplateInstanceExpression, ctxt, null, true);
