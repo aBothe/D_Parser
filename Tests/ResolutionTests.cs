@@ -1333,8 +1333,7 @@ void foo(U)(U u)
 			Assert.That(t.Length, Is.EqualTo(1));
 			
 			var t_ = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
-			Assert.That(t_ , Is.TypeOf(typeof(MemberSymbol)));
-			Assert.That((t_ as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.That(t_, Is.TypeOf(typeof(PrimitiveType)));
 			
 			ex = (subSt[1] as ExpressionStatement).Expression;
 			t = ExpressionTypeEvaluation.GetOverloads(ex  as TemplateInstanceExpression, ctxt, null, true);
@@ -1342,8 +1341,7 @@ void foo(U)(U u)
 			Assert.That(t.Length, Is.EqualTo(1));
 			
 			t_ = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
-			Assert.That(t_ , Is.TypeOf(typeof(MemberSymbol)));
-			Assert.That((t_ as MemberSymbol).Base, Is.TypeOf(typeof(ArrayType)));
+			Assert.That(t_, Is.TypeOf(typeof(ArrayType)));
 			
 			ex = (subSt[2] as ExpressionStatement).Expression;
 			t = ExpressionTypeEvaluation.GetOverloads((ex as PostfixExpression_MethodCall).PostfixForeExpression as TemplateInstanceExpression, ctxt, null, true);
@@ -2414,8 +2412,6 @@ unittest
 			td = DParser.ParseBasicType("Unqual!ImmIntArr");
 			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
 
-			Assert.That(t, Is.TypeOf(typeof(AliasedType)));
-			t = DResolver.StripAliasSymbol(t);
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			at = (t as TemplateParameterSymbol).Base as ArrayType;
 			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(ArrayType)));
@@ -2429,8 +2425,6 @@ unittest
 			td = DParser.ParseBasicType("Unqual!int");
 			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
 
-			Assert.That(t, Is.TypeOf(typeof(AliasedType)));
-			t = DResolver.StripAliasSymbol(t);
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 
@@ -2439,8 +2433,6 @@ unittest
 			td = DParser.ParseBasicType("Unqual!(const(int))");
 			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
 
-			Assert.That(t, Is.TypeOf(typeof(AliasedType)));
-			t = DResolver.StripAliasSymbol(t);
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			pt = (t as TemplateParameterSymbol).Base as PrimitiveType;
 			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
@@ -2451,8 +2443,6 @@ unittest
 			td = DParser.ParseBasicType("Unqual!(inout(int))");
 			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
 
-			Assert.That(t, Is.TypeOf(typeof(AliasedType)));
-			t = DResolver.StripAliasSymbol(t);
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			pt = (t as TemplateParameterSymbol).Base as PrimitiveType;
 			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
@@ -2463,8 +2453,6 @@ unittest
 			td = DParser.ParseBasicType("Unqual!(immutable(int))");
 			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
 
-			Assert.That(t, Is.TypeOf(typeof(AliasedType)));
-			t = DResolver.StripAliasSymbol(t);
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			pt = (t as TemplateParameterSymbol).Base as PrimitiveType;
 			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
@@ -2475,8 +2463,6 @@ unittest
 			td = DParser.ParseBasicType("Unqual!(shared(int))");
 			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
 
-			Assert.That(t, Is.TypeOf(typeof(AliasedType)));
-			t = DResolver.StripAliasSymbol(t);
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			pt = (t as TemplateParameterSymbol).Base as PrimitiveType;
 			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
@@ -2487,8 +2473,6 @@ unittest
 			td = DParser.ParseBasicType("Unqual!(const(shared(int)))");
 			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
 
-			Assert.That(t, Is.TypeOf(typeof(AliasedType)));
-			t = DResolver.StripAliasSymbol(t);
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			pt = (t as TemplateParameterSymbol).Base as PrimitiveType;
 			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
@@ -2499,8 +2483,6 @@ unittest
 			td = DParser.ParseBasicType("Unqual!(shared const int)");
 			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
 
-			Assert.That(t, Is.TypeOf(typeof(AliasedType)));
-			t = DResolver.StripAliasSymbol(t);
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			pt = (t as TemplateParameterSymbol).Base as PrimitiveType;
 			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
@@ -2909,13 +2891,11 @@ void test() {
 			
 			var ex = DParser.ParseExpression("(new Code()).func");
 			var x = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
-			Assert.That(x, Is.InstanceOf(typeof(MemberSymbol)));
-			Assert.That((x as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.That(x, Is.TypeOf(typeof(PrimitiveType)));
 			
 			ex = DParser.ParseExpression("(new Bar()).func");
 			x = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
-			Assert.That(x, Is.InstanceOf(typeof(MemberSymbol)));
-			Assert.That((x as MemberSymbol).Base, Is.TypeOf(typeof(ArrayType)));
+			Assert.That(x, Is.InstanceOf(typeof(ArrayType)));
 		}
 		
 		[Test]
@@ -2966,7 +2946,7 @@ void foo() {
 			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 			
 			var ex = DParser.ParseExpression("clA.getInstance");
-			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt, false);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			
 			foo = (A["Singleton"].First() as DClassLike)["singletonBar"].First() as DMethod;
