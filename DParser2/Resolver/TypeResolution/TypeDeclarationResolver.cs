@@ -391,7 +391,7 @@ namespace D_Parser.Resolver.TypeResolution
 			if (declaration is IdentifierDeclaration)
 				return ResolveSingle(declaration as IdentifierDeclaration, ctxt);
 			else if (declaration is TemplateInstanceExpression)
-				return AmbiguousType.Get(ExpressionTypeEvaluation.GetOverloads(declaration as TemplateInstanceExpression, ctxt), declaration);
+				return ExpressionTypeEvaluation.EvaluateType(declaration as TemplateInstanceExpression, ctxt);
 
 			AbstractType t = null;
 
