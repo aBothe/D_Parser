@@ -544,17 +544,14 @@ namespace D_Parser.Resolver.TypeResolution
 					return new AliasedType(v, null, typeBase);
 
 				// Is it really that easy?
-				else if (v.Type is IdentifierDeclaration)
-				{
-					var optBackup = ctxt.CurrentContext.ContextDependentOptions;
+				var optBackup = ctxt.CurrentContext.ContextDependentOptions;
+				ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
+				if (v.Type is IdentifierDeclaration)
 					ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.NoTemplateParameterDeduction;
 
-					bt = TypeDeclarationResolver.ResolveSingle(v.Type, ctxt);
+				bt = TypeDeclarationResolver.ResolveSingle(v.Type, ctxt);
 
-					ctxt.CurrentContext.ContextDependentOptions = optBackup;
-				}
-				else
-					bt = TypeDeclarationResolver.ResolveSingle(v.Type, ctxt);
+				ctxt.CurrentContext.ContextDependentOptions = optBackup;
 
 				// For auto variables, use the initializer to get its type
 				if (bt == null && v.Initializer != null)

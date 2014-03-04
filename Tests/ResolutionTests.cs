@@ -737,9 +737,9 @@ class A
 
 			var e = DParser.ParseExpression("123.foo");
 
-			var t = ExpressionTypeEvaluation.EvaluateType(e, ctxt);
+			var t = ExpressionTypeEvaluation.EvaluateType(e, ctxt, false);
 
-			Assert.IsInstanceOfType(typeof(MemberSymbol),t);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.AreEqual(pcl[0]["modA"]["foo"].First(), ((MemberSymbol)t).Definition);
 		}
 
@@ -997,7 +997,7 @@ Appender!(E[]) appender(A : E[], E)(A array = null)
 			var ctxt = CreateDefCtxt(pcl, A);
 			
 			var ex = DParser.ParseExpression("new Appender!(double[])()");
-			var t = ExpressionTypeEvaluation.EvaluateType(ex,ctxt);
+			var t = ExpressionTypeEvaluation.EvaluateType(ex,ctxt, false);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol))); // ctor
 			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(StructType)));
 			
