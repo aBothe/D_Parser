@@ -45,8 +45,6 @@ namespace D_Parser.Completion.Providers
 			else
 				return;
 
-			t = DResolver.StripAliasSymbol (t);
-
 			if (t == null) //TODO: Add after-space list creation when an unbound . (Dot) was entered which means to access the global scope
 				return;
 

@@ -157,7 +157,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public static AbstractType[] GetUnfilteredMethodOverloads(IExpression foreExpression, ResolutionContext ctxt, IExpression supExpression = null)
 		{
-			AbstractType[] overloads = null;
+			AbstractType[] overloads;
 
 			if (foreExpression is TemplateInstanceExpression)
 				overloads = GetOverloads(foreExpression as TemplateInstanceExpression, ctxt, null);
@@ -173,7 +173,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var l = new List<AbstractType>();
 			bool staticOnly = true;
 
-			foreach (var ov in DResolver.StripAliasSymbols(overloads))
+			foreach (var ov in overloads)
 			{
 				var t = ov;
 				if (ov is MemberSymbol)
@@ -186,7 +186,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					}
 
 					staticOnly = false;
-					t = DResolver.StripAliasSymbol(ms.Base);
+					t = ms.Base;
 				}
 
 				if (t is TemplateIntermediateType)
@@ -513,7 +513,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			foreach (var t in possibleTypes)
 			{
-				var ct = DResolver.StripAliasSymbol(t as AbstractType) as TemplateIntermediateType;
+				var ct = t as TemplateIntermediateType;
 				if (ct != null &&
 					!ct.Definition.ContainsAttribute(DTokens.Abstract))
 					foreach (var ctor in GetConstructors(ct))
@@ -1059,7 +1059,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (arg.Type != null)
 				return TypeDeclarationResolver.ResolveSingle(arg.Type, ctxt);
 			else if (arg.AssignExpression != null)
-				return DResolver.StripAliasSymbol(EvaluateType(arg.AssignExpression, ctxt));
+				return EvaluateType(arg.AssignExpression, ctxt);
 			else
 				return null;
 		}

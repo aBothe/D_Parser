@@ -1058,7 +1058,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 						aliasThisDefsBeingParsed.Remove(ctxt.ScopedBlock);
 
 						if (aliasedSymbol is TemplateParameterSymbol)
-							aliasedSymbol = DResolver.StripAliasSymbol((aliasedSymbol as TemplateParameterSymbol).Base);
+							aliasedSymbol = (aliasedSymbol as TemplateParameterSymbol).Base;
 					}
 					else
 						aliasedSymbol = null;

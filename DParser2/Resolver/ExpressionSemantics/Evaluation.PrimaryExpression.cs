@@ -33,7 +33,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 					if (strNode != null)
 						foreach (var n in strNode) {
-							_t = DResolver.StripAliasSymbol(TypeDeclarationResolver.HandleNodeMatch(n, ctxt)) as ArrayType;
+							_t = TypeDeclarationResolver.HandleNodeMatch(n, ctxt) as ArrayType;
 							if (_t != null)
 								break;
 						}

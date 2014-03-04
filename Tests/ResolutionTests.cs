@@ -310,7 +310,6 @@ alias Thing!(int) IntThing;");
 			
 			ex = DParser.ParseExpression("IntThing");
 			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
-			t = DResolver.StripAliasSymbol(t);
 			Assert.That(t, Is.TypeOf(typeof(StructType)));
 			
 			ex = DParser.ParseExpression("new Thing!int");
@@ -2064,7 +2063,7 @@ notherClass ncl;
 			x = DParser.ParseExpression ("ncl.length");
 			v = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 			Assert.That (v, Is.TypeOf(typeof(MemberSymbol)));
-			Assert.That (DResolver.StripAliasSymbol((v as MemberSymbol).Base), Is.TypeOf(typeof(PrimitiveType)));
+			Assert.That ((v as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 		}
 
 		[Test]

@@ -474,7 +474,7 @@ template isIntOrFloat(T)
 			AbstractType t;
 
 			x = DParser.ParseExpression ("Tup[2]");
-			t = DResolver.StripAliasSymbol(ExpressionTypeEvaluation.EvaluateType (x, ctxt));
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 			Assert.That (t, Is.TypeOf(typeof(ArrayType)));
 
 			x = DParser.ParseExpression ("isIntOrFloat!(Tup[2])");
@@ -529,7 +529,7 @@ enum isIntOrFloat(F) = is(F == int) || is(F == float);
 			Assert.That (t, Is.TypeOf(typeof(PrimitiveType)));
 
 			x = DParser.ParseExpression ("Tup[2]");
-			t = DResolver.StripAliasSymbol(ExpressionTypeEvaluation.EvaluateType (x, ctxt));
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 			Assert.That (t, Is.TypeOf(typeof(ArrayType)));
 
 

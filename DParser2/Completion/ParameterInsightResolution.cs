@@ -129,8 +129,6 @@ namespace D_Parser.Completion
 			 * myDeleg( -- not allowed though
 			 * myDeleg2( -- allowed neither!
 			 */
-			if (res.ResolvedTypesOrMethods != null)
-				res.ResolvedTypesOrMethods = DResolver.StripAliasSymbols(res.ResolvedTypesOrMethods);
 
 			return res;
 		}

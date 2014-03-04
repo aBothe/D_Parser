@@ -100,8 +100,6 @@ namespace D_Parser.Resolver
 				return IsEqual(resToCheck,targetType);
 			resToCheck = _r;
 			
-			targetType = DResolver.StripAliasSymbol(targetType);
-
 			if (targetType is DSymbol)
 			{
 				var tpn = ((DSymbol)targetType).Definition as TemplateParameter.Node;

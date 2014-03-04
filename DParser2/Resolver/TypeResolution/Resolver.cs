@@ -630,42 +630,10 @@ namespace D_Parser.Resolver.TypeResolution
 		}
 
 		/// <summary>
-		/// If an aliased type result has been passed to this method, it'll return the resolved type.
-		/// If aliases were done multiple times, it also tries to skip through these.
-		/// 
-		/// alias char[] A;
-		/// alias A B;
-		/// 
-		/// var resolvedType=TryRemoveAliasesFromResult(% the member result from B %);
-		/// --> resolvedType will be StaticTypeResult from char[]
-		/// 
-		/// </summary>
-		public static AbstractType StripAliasSymbol(AbstractType r)
-		{
-			while(r is AliasedType)
-				r = (r as DerivedDataType).Base;
-
-			return r;
-		}
-
-		public static AbstractType[] StripAliasSymbols(IEnumerable<AbstractType> symbols)
-		{
-			var l = new List<AbstractType>();
-
-			if(symbols != null)
-				foreach (var r in symbols)
-					l.Add(StripAliasSymbol(r));
-
-			return l.ToArray();
-		}
-
-		/// <summary>
 		/// Removes all kinds of members from the given results.
 		/// </summary>
 		public static AbstractType StripMemberSymbols(AbstractType r)
 		{
-			r = StripAliasSymbol(r);
-
 			var ds = r as DerivedDataType;
 			if (ds != null && ds.Base != null) {
 				if (ds is ArrayAccessSymbol || ds is MemberSymbol || ds is DelegateCallSymbol) {
@@ -686,7 +654,7 @@ namespace D_Parser.Resolver.TypeResolution
 					r = ds.Base;
 			}
 
-			return StripAliasSymbol(r);
+			return r;
 		}
 
 		public static ISemantic StripValueTypeWrappers(ISemantic s)

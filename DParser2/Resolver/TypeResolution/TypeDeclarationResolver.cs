@@ -294,7 +294,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 					if (keyType != null)
 					{
-						var tt = DResolver.StripAliasSymbol(keyType) as MemberSymbol;
+						var tt = keyType as MemberSymbol;
 
 						if (tt == null ||
 							!(tt.Definition is DVariable) ||
@@ -561,8 +561,10 @@ namespace D_Parser.Resolver.TypeResolution
 				if (bt == null && ctxt.ScopedStatement != null)
 					bt = GetForeachIteratorType(v);
 
-				if (bt != null)
-					bt.Tag = new AliasTag { aliasDefinition = v, typeBase = typeBase };
+				if (bt == null)
+					return new AliasedType(v, null, typeBase);
+
+				bt.Tag = new AliasTag { aliasDefinition = v, typeBase = typeBase };
 				return bt;
 			}
 
@@ -668,14 +670,11 @@ namespace D_Parser.Resolver.TypeResolution
 							#region Foreach over Structs and Classes with Ranges
 
 							// Enlist all 'back'/'front' members
-							var t_l = new List<AbstractType>();
+							var iterPropertyTypes = new List<AbstractType>();
 
 							foreach (var n in (IBlockNode)tr.Definition)
 								if (fe.IsReverse ? n.Name == "back" : n.Name == "front")
-									t_l.Add(HandleNodeMatch(n, ctxt));
-
-							// Remove aliases
-							var iterPropertyTypes = DResolver.StripAliasSymbols(t_l);
+									iterPropertyTypes.Add(HandleNodeMatch(n, ctxt));
 
 							foreach (var iterPropType in iterPropertyTypes)
 								if (iterPropType is MemberSymbol)
@@ -700,15 +699,13 @@ namespace D_Parser.Resolver.TypeResolution
 							#endregion
 
 							#region Foreach over Structs and Classes with opApply
-							t_l.Clear();
+							iterPropertyTypes.Clear();
 							r.Clear();
 
 							foreach (var n in (IBlockNode)tr.Definition)
 								if (n is DMethod &&
 									(fe.IsReverse ? n.Name == "opApplyReverse" : n.Name == "opApply"))
-									t_l.Add(HandleNodeMatch(n, ctxt));
-
-							iterPropertyTypes = DResolver.StripAliasSymbols(t_l);
+									iterPropertyTypes.Add(HandleNodeMatch(n, ctxt));
 
 							foreach (var iterPropertyType in iterPropertyTypes)
 								if (iterPropertyType is MemberSymbol)
@@ -732,10 +729,7 @@ namespace D_Parser.Resolver.TypeResolution
 							#endregion
 						}
 
-						if (r.Count > 1)
-							ctxt.LogError(new AmbiguityError(curStmt, r, "Ambigous iterator type"));
-
-						return r.Count != 0 ? r[0] : null;
+						return AmbiguousType.Get(r, typeBase);
 					}
 				}
 

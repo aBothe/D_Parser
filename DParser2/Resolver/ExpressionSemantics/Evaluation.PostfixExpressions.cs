@@ -60,7 +60,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			#region Search possible methods, opCalls or delegates that could be called
 			bool requireStaticItems = true; //TODO: What if there's an opCall and a foreign method at the same time? - and then this variable would be bullshit
-			IEnumerable<AbstractType> scanResults = DResolver.StripAliasSymbols(baseExpression);
+			IEnumerable<AbstractType> scanResults = baseExpression;
 			var nextResults = new List<AbstractType>();
 
 			while (scanResults != null)
@@ -100,7 +100,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							}
 							else
 							{
-								var bt = DResolver.StripAliasSymbol(mr.Base ?? TypeDeclarationResolver.ResolveSingle(mr.Definition.Type, ctxt));
+								var bt = mr.Base ?? TypeDeclarationResolver.ResolveSingle(mr.Definition.Type, ctxt);
 
 								// Must be of type delegate
 								if (bt is DelegateType)
