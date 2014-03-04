@@ -128,6 +128,15 @@ namespace D_Parser.Resolver
 			return new AmbiguousType(types, typeBase);
 		}
 
+		public static AbstractType[] TryDissolve(AbstractType t)
+		{
+			if (t is AmbiguousType)
+				return (t as AmbiguousType).Overloads;
+			if (t != null)
+				return new[] { t };
+			return null;
+		}
+
 		public override byte Modifier
 		{
 			get

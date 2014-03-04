@@ -27,11 +27,8 @@ namespace D_Parser.Completion
 
 			var l = new List<AbstractTooltipContent>();
 
-			if (rr is AmbiguousType)
-				foreach (var res in (rr as AmbiguousType).Overloads)
-					l.Add(BuildTooltipContent(res));
-			else if (rr != null)
-				l.Add(BuildTooltipContent(rr));
+			foreach (var res in AmbiguousType.TryDissolve(rr))
+				l.Add(BuildTooltipContent(res));
 
 			return l;
 		}
