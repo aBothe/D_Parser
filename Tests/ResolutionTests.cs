@@ -561,21 +561,21 @@ auto o = new Obj();
 			var bar = A["bar"].First() as DMethod;
 			var call_fooC = bar.Body.SubStatements.First();
 
-			Assert.IsInstanceOfType(typeof(ExpressionStatement),call_fooC);
+			Assert.That(call_fooC, Is.TypeOf(typeof(ExpressionStatement)));
 
 			var ctxt = CreateDefCtxt(pcl, bar, call_fooC);
 
 			var call = ((ExpressionStatement)call_fooC).Expression;
 			var methodName = ((PostfixExpression_MethodCall)call).PostfixForeExpression;
 
-			var res=ExpressionTypeEvaluation.EvaluateType(methodName,ctxt);
+			var res=ExpressionTypeEvaluation.EvaluateType(methodName,ctxt, false);
 
 			Assert.IsTrue(res!=null , "Resolve() returned no result!");
-			Assert.IsInstanceOfType(typeof(MemberSymbol),res);
+			Assert.That(res, Is.TypeOf(typeof(MemberSymbol)));
 
 			var mr = (MemberSymbol)res;
 
-			Assert.IsInstanceOfType(typeof(DMethod),mr.Definition);
+			Assert.That(mr.Definition, Is.TypeOf(typeof(DMethod)));
 			Assert.AreEqual(mr.Name, "fooC");
 		}
 		
@@ -1791,7 +1791,8 @@ void main() {
 
 			x = DParser.ParseExpression ("D.foo");
 			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
-			Assert.That (t, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 
 			v = Evaluation.EvaluateValue (x, ctxt);
 			Assert.That (v, Is.TypeOf(typeof(PrimitiveValue)));
@@ -1799,7 +1800,8 @@ void main() {
 
 			td = DParser.ParseBasicType("D.foo");
 			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
-			//Assert.That(t, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 		}
 
 		#endregion
