@@ -488,8 +488,6 @@ namespace D_Parser.Resolver.TypeResolution
 			{
 				var bases = b is AmbiguousType ? (b as AmbiguousType).Overloads : new[] { b };
 
-				AbstractType ret;
-
 				//TODO: Declare alias-level context? 
 
 				if (typeBase is TemplateInstanceExpression)
@@ -497,13 +495,11 @@ namespace D_Parser.Resolver.TypeResolution
 					// Reset 
 					foreach (var bas in bases)
 						ResetDeducedSymbols(bas);
-	
-					ret = AmbiguousType.Get(TemplateInstanceHandler.DeduceParamsAndFilterOverloads(bases, typeBase as TemplateInstanceExpression, ctxt, false));
-				}
-				else
-					ret = AmbiguousType.Get(TemplateInstanceHandler.DeduceParamsAndFilterOverloads(bases, null, false, ctxt));
 
-				return ret;
+					return AmbiguousType.Get(TemplateInstanceHandler.DeduceParamsAndFilterOverloads(bases, typeBase as TemplateInstanceExpression, ctxt, false));
+				}
+				else if (typeBase != null) // SO-prevention
+					return AmbiguousType.Get(TemplateInstanceHandler.DeduceParamsAndFilterOverloads(bases, null, false, ctxt));
 			}
 
 			return b;
