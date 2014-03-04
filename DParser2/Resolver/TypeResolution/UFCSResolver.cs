@@ -48,9 +48,9 @@ namespace D_Parser.Resolver.TypeResolution
 
 		protected override bool HandleItem (INode n)
 		{
-			if ((nameFilterHash != 0 && n.NameHash != nameFilterHash) || !(n.Parent is DModule))
+			if ((nameFilterHash != 0 && n.NameHash != nameFilterHash) || (!(n is ImportSymbolNode) && !(n.Parent is DModule)))
 				return false;
-
+			DSymbol ds;
 			DVariable dv;
 			var dc = n as DClassLike;
 			if (dc != null && dc.ClassType == DTokens.Template) {
@@ -66,14 +66,29 @@ namespace D_Parser.Resolver.TypeResolution
 			{
 				var t = TypeDeclarationResolver.HandleNodeMatch(n, ctxt, null, sr);
 
-				var t_ = DResolver.StripAliasSymbol(t) as DSymbol;
-				if(t_ != null){
-					if (t_ is MemberSymbol && t_.Definition is DMethod)
-						HandleMethod(t_.Definition as DMethod, t_ as MemberSymbol);
-					else if (t_.Definition is DClassLike)
+				if (t is AmbiguousType)
+				{
+					foreach (var ov in (t as AmbiguousType).Overloads)
 					{
-						t_.Tag = new UfcsTag { firstArgument = firstArgument };
-						matches.Add(t_);
+						ds = ov as DSymbol;
+						if (ds is MemberSymbol && ds.Definition is DMethod)
+							HandleMethod(ds.Definition as DMethod, ov as MemberSymbol);
+						else if (ds != null && ds.Definition is DClassLike)
+						{
+							ds.Tag = new UfcsTag { firstArgument = firstArgument };
+							matches.Add(ds);
+						}
+					}
+				}
+				else
+				{
+					ds = t as DSymbol;
+					if (t is MemberSymbol && ds.Definition is DMethod)
+						HandleMethod(ds.Definition as DMethod, t as MemberSymbol);
+					else if (ds != null && ds.Definition is DClassLike)
+					{
+						t.Tag = new UfcsTag { firstArgument = firstArgument };
+						matches.Add(ds);
 					}
 					// Perhaps other types may occur here as well - but which remain then to be added?
 				}

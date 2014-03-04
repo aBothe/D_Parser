@@ -524,7 +524,7 @@ namespace D_Parser.Resolver.TypeResolution
 				stackCalls.TryGetValue(m, out stkC);
 				return ((ctxt.Options & ResolutionOptions.DontResolveBaseTypes) != ResolutionOptions.DontResolveBaseTypes) &&
 						stkC < 4 && 
-						(!(m.Type is IdentifierDeclaration) || (m.Type as IdentifierDeclaration).IdHash != m.NameHash); // pretty rough and incomplete SO prevention hack
+						(!(m.Type is IdentifierDeclaration) || (m.Type as IdentifierDeclaration).IdHash != m.NameHash || m.Type.InnerDeclaration != null); // pretty rough and incomplete SO prevention hack
 			}
 			public ISyntaxRegion typeBase;
 			public AbstractType resultBase;

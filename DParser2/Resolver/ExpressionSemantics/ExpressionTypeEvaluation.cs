@@ -113,12 +113,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		AbstractType TryPretendMethodExecution_(MemberSymbol mr)
 		{
-			var dm = mr.Definition as DMethod;
-			if (dm == null)
+			if (!(mr.Definition is DMethod))
 				return mr;
 
 			Dictionary<DVariable, AbstractType> args;
-			return FunctionEvaluation.AssignCallArgumentsToIC<AbstractType>(dm, null, null, out args, ctxt) ? mr.Base : null;
+			return FunctionEvaluation.AssignCallArgumentsToIC<AbstractType>(mr, null, null, out args, ctxt) ? mr.Base : null;
 		}
 
 		void GetRawCallOverloads(ResolutionContext ctxt, PostfixExpression_MethodCall call,

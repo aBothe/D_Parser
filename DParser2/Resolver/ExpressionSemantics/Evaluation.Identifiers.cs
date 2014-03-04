@@ -117,7 +117,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				if (mr.Definition is DMethod)
 				{
 					Dictionary<DVariable, ISymbolValue> targetArgs;
-					if(!FunctionEvaluation.AssignCallArgumentsToIC(mr.Definition as DMethod, executionArguments, ValueProvider, out targetArgs))
+					if(!FunctionEvaluation.AssignCallArgumentsToIC(mr, executionArguments, ValueProvider, out targetArgs))
 						return null;
 
 					return FunctionEvaluation.Execute(mr, targetArgs, ValueProvider);

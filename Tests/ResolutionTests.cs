@@ -626,7 +626,7 @@ void main()
 {
 	import A:foo;
 	int i;
-	x;
+	i.foo;
 }");
 
 			IExpression x;
@@ -639,10 +639,10 @@ void main()
 
 			var C = ctxt.ParseCache[0]["C"];
 			var main = C["main"].First() as DMethod;
-			ctxt.CurrentContext.Set(main, main.Body.SubStatements.ElementAt(2));
+			var i_foo_stmt = main.Body.SubStatements.ElementAt(2) as ExpressionStatement;
+			ctxt.CurrentContext.Set(main, i_foo_stmt);
 
-			x = DParser.ParseExpression("i.foo");
-			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+			t = ExpressionTypeEvaluation.EvaluateType(i_foo_stmt.Expression, ctxt);
 
 			Assert.That(t, Is.TypeOf(typeof(PointerType)));
 		}

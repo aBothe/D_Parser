@@ -35,14 +35,23 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 		/// <param name="dm"></param>
 		/// <param name="args"></param>
 		/// <param name="baseValueProvider">Required for evaluating missing default parameters.</param>
-		public static bool AssignCallArgumentsToIC<T>(DMethod dm, T[] args, AbstractSymbolValueProvider baseValueProvider,
+		public static bool AssignCallArgumentsToIC<T>(MemberSymbol mr, T[] args, AbstractSymbolValueProvider baseValueProvider,
 			out Dictionary<DVariable,T> targetArgs, ResolutionContext ctxt = null) where T:class,ISemantic
 		{
+			var dm = mr.Definition as DMethod;
+			int para = 0;
+
+			ISemantic firstArg;
+			if (TypeResolution.UFCSResolver.IsUfcsResult(mr, out firstArg))
+			{
+				para++;
+			}
+
 			targetArgs = new Dictionary<DVariable, T>();
 			var argsRemaining = args != null ? args.Length : 0;
 			int argu = 0;
 
-			for (int para = 0; para < dm.Parameters.Count; para++)
+			for (; para < dm.Parameters.Count; para++)
 			{
 				var par = dm.Parameters[para] as DVariable;
 
