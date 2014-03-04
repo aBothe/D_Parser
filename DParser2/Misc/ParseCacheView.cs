@@ -34,8 +34,13 @@ namespace D_Parser.Misc
 	{
 		protected List<RootPackage> packs;
 
-		static protected readonly AbstractType defaultSizeT = new AliasedType(
-			new DVariable{ Name = "size_t", Type = new DTokenDeclaration(DTokens.Uint)}, new PrimitiveType(DTokens.Uint), null);
+		static protected readonly AbstractType defaultSizeT = new PrimitiveType(DTokens.Uint) { 
+			Tag = new D_Parser.Resolver.TypeResolution.TypeDeclarationResolver.AliasTag { 
+				aliasDefinition = new DVariable { 
+					Name = "size_t", Type = new DTokenDeclaration(DTokens.Uint) 
+				} 
+			} 
+		};
 
 		DClassLike objectClass;
 		AbstractType sizet;
