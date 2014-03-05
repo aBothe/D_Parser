@@ -173,14 +173,15 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var l = new List<AbstractType>();
 			bool staticOnly = true;
 
-			foreach (var ov in overloads)
-			{
-				if (ov is AmbiguousType)
-					foreach (var o in (ov as AmbiguousType).Overloads)
-						GetUnfilteredMethodOverloads_Helper(foreExpression, ctxt, supExpression, l, ref staticOnly, o);
-				else
-					GetUnfilteredMethodOverloads_Helper(foreExpression, ctxt, supExpression, l, ref staticOnly, ov);
-			}
+			if(overloads != null)
+				foreach (var ov in overloads)
+				{
+					if (ov is AmbiguousType)
+						foreach (var o in (ov as AmbiguousType).Overloads)
+							GetUnfilteredMethodOverloads_Helper(foreExpression, ctxt, supExpression, l, ref staticOnly, o);
+					else
+						GetUnfilteredMethodOverloads_Helper(foreExpression, ctxt, supExpression, l, ref staticOnly, ov);
+				}
 
 			return l.ToArray();
 		}
