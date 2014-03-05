@@ -104,6 +104,8 @@ namespace D_Parser.Resolver.TypeResolution
 				var pop = ctxt.ScopedBlock != dm;
 				if (pop)
 					ctxt.PushNewScope (dm);
+				if (alreadyResolvedMethod != null)
+					ctxt.CurrentContext.IntroduceTemplateParameterTypes(alreadyResolvedMethod);
 
 				var t = TypeDeclarationResolver.ResolveSingle (dm.Parameters [0].Type, ctxt);
 				if (ResultComparer.IsImplicitlyConvertible (firstArgument, t, ctxt)) {
@@ -113,7 +115,9 @@ namespace D_Parser.Resolver.TypeResolution
 				}
 
 				if (pop)
-					ctxt.Pop ();
+					ctxt.Pop();
+				else if (alreadyResolvedMethod != null)
+					ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(alreadyResolvedMethod);
 			}
 		}
 
