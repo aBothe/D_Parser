@@ -17,13 +17,6 @@ namespace D_Parser.Resolver
 		public object Tag;
 		public ISyntaxRegion DeclarationOrExpressionBase;
 
-		/// <summary>
-		/// Returns either the original type declaration that was used to instantiate this abstract type
-		/// OR creates an artificial type declaration that represents this type.
-		/// May returns null.
-		/// </summary>
-		public virtual ITypeDeclaration TypeDeclarationOf{get{	return DeclarationOrExpressionBase as ITypeDeclaration;	}}
-
 		protected byte modifier;
 
 		/// <summary>
@@ -56,11 +49,14 @@ namespace D_Parser.Resolver
 		}
 		#endregion
 
-		public abstract string ToCode();
-
 		public override string ToString()
 		{
 			return ToCode();
+		}
+
+		public string ToCode()
+		{
+			return DTypeToCodeVisitor.GenerateCode(this);
 		}
 
 		public static AbstractType Get(ISemantic s)
@@ -96,11 +92,6 @@ namespace D_Parser.Resolver
 		public override R Accept<R> (IResolvedTypeVisitor<R> vis)
 		{
 			return vis.VisitUnknownType (this);
-		}
-
-		public override string ToCode ()
-		{
-			return "?";
 		}
 
 		public override AbstractType Clone (bool cloneBase)
@@ -171,11 +162,6 @@ namespace D_Parser.Resolver
 			Overloads = o as AbstractType[] ?? o.ToArray();
 		}
 
-		public override string ToCode()
-		{
-			return "<Overloads>";
-		}
-
 		public override AbstractType Clone(bool cloneBase)
 		{
 			return new AmbiguousType(Overloads, DeclarationOrExpressionBase);
@@ -210,25 +196,6 @@ namespace D_Parser.Resolver
 			this.modifier = Modifier;
 		}
 
-		public override string ToCode()
-		{
-			if(Modifier!=0)
-				return DTokens.GetTokenString(Modifier)+"("+DTokens.GetTokenString(TypeToken)+")";
-
-			return DTokens.GetTokenString(TypeToken);
-		}
-
-		public override ITypeDeclaration TypeDeclarationOf
-		{
-			get
-			{
-				return modifier == 0 ? 
-				                                  (ITypeDeclaration)new DTokenDeclaration(TypeToken) :
-				                                  new MemberFunctionAttributeDecl(modifier){ 
-				                                  	InnerType = new DTokenDeclaration(TypeToken)};
-			}
-		}
-
 		public override AbstractType Clone(bool cloneBase)
 		{
 			return new PrimitiveType(TypeToken, modifier);
@@ -259,19 +226,6 @@ namespace D_Parser.Resolver
 	public class PointerType : DerivedDataType
 	{
 		public PointerType(AbstractType Base, ISyntaxRegion td) : base(Base, td) { }
-
-		public override string ToCode()
-		{
-			return (Base != null ? Base.ToCode() : "") + "*";
-		}
-
-		public override ITypeDeclaration TypeDeclarationOf
-		{
-			get
-			{
-				return new PointerDecl(Base==null ? null : Base.TypeDeclarationOf);
-			}
-		}
 
 		public override AbstractType Clone(bool cloneBase)
 		{
@@ -304,26 +258,11 @@ namespace D_Parser.Resolver
 			IsStaticArray = ArrayLength >= 0;
 		}
 
-		public override string ToCode()
-		{
-			return (Base != null ? Base.ToCode() : "") + (IsStaticArray && FixedLength >= 0 ? string.Format("[{0}]",FixedLength) : "[]");
-		}
-
 		public override AbstractType Clone(bool cloneBase)
 		{
 			if(IsStaticArray)
 				return new ArrayType(cloneBase && Base != null ? Base.Clone(true) : Base, base.DeclarationOrExpressionBase);
 			return new ArrayType(cloneBase && Base != null ? Base.Clone(true) : Base, FixedLength, base.DeclarationOrExpressionBase);
-		}
-
-		public override ITypeDeclaration TypeDeclarationOf
-		{
-			get
-			{
-				return new ArrayDecl { 
-					ValueType = (Base != null ? Base.TypeDeclarationOf : null), 
-					KeyExpression = IsStaticArray ? new IdentifierExpression(FixedLength, LiteralFormat.Scalar) : null };
-			}
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -363,22 +302,6 @@ namespace D_Parser.Resolver
 			this.KeyType = KeyType;
 		}
 
-		public override string ToCode()
-		{
-			return (Base!=null ? Base.ToCode():"") + "[" + (KeyType!=null ? KeyType.ToCode() : "" )+ "]";
-		}
-
-		public override ITypeDeclaration TypeDeclarationOf
-		{
-			get
-			{
-				return new ArrayDecl { 
-					ValueType = ValueType==null ? null : ValueType.TypeDeclarationOf,
-					KeyType = KeyType == null ? null : KeyType.TypeDeclarationOf
-				};
-			}
-		}
-
 		public override AbstractType Clone(bool cloneBase)
 		{
 			return new AssocArrayType(cloneBase && Base != null ? Base.Clone(true) : Base, cloneBase && KeyType != null ? KeyType.Clone(true) : KeyType, base.DeclarationOrExpressionBase);
@@ -406,17 +329,6 @@ namespace D_Parser.Resolver
 		public DelegateCallSymbol (DelegateType dg, ISyntaxRegion callExpression) : base (dg.Base, callExpression)
 		{
 			this.Delegate = dg;
-		}
-
-		public override string ToCode ()
-		{
-			return DeclarationOrExpressionBase.ToString ();
-		}
-
-		public override ITypeDeclaration TypeDeclarationOf {
-			get {
-				return Delegate.TypeDeclarationOf;
-			}
 		}
 
 		public override AbstractType Clone(bool cloneBase)
@@ -462,40 +374,7 @@ namespace D_Parser.Resolver
 				this.Parameters = Parameters.ToArray();
 		}
 
-		public override string ToCode()
-		{
-			var c = (Base != null ? Base.ToCode() : "") + " " + (IsFunction ? "function" : "delegate") + " (";
-
-			if (Parameters != null)
-				foreach (var p in Parameters)
-					c += p.ToCode() + ",";
-
-			return c.TrimEnd(',') + ")";
-		}
-
 		public AbstractType ReturnType { get { return Base; } }
-
-		public override ITypeDeclaration TypeDeclarationOf
-		{
-			get
-			{
-				var td = base.TypeDeclarationOf;
-				
-				if(td!=null)
-					return td;
-
-				var dd = new DelegateDeclaration { 
-					ReturnType = ReturnType==null ? null : ReturnType.TypeDeclarationOf,
- 					IsFunction = this.IsFunction
-				};
-				//TODO: Modifiers?
-				if(Parameters!=null)
-					foreach (var p in Parameters)
-						dd.Parameters.Add(new DVariable { Type = p.TypeDeclarationOf });
-
-				return dd;
-			}
-		}
 
 		public override AbstractType Clone(bool cloneBase)
 		{
@@ -563,54 +442,6 @@ namespace D_Parser.Resolver
 			this.definition = new WeakReference(Node);
 			NameHash = Node.NameHash;
 		}
-
-		public override string ToCode()
-		{
-			var def = Definition;
-			return def != null ? def.ToString(false, true) : "<Node object no longer exists>";
-		}
-
-		public override ITypeDeclaration TypeDeclarationOf
-		{
-			get
-			{
-				var def = Definition;
-				ITypeDeclaration td = new IdentifierDeclaration(def != null ? def.NameHash : 0);
-
-				if (def != null && DeducedTypes != null && def.TemplateParameters != null)
-				{
-					var args = new List<IExpression>();
-					foreach (var tp in def.TemplateParameters)
-					{
-						IExpression argEx = null;
-						foreach(var tps in DeducedTypes)
-							if (tps != null && tps.Parameter == tp)
-							{
-								if (tps.ParameterValue != null){
-									//TODO: Convert ISymbolValues back to IExpression
-								}
-								else
-									argEx = new TypeDeclarationExpression(tps.TypeDeclarationOf);
-								break;
-							}
-
-						args.Add(argEx ?? new IdentifierExpression(tp.NameHash));
-					}
-
-					td = new TemplateInstanceExpression(td) { Arguments = args.ToArray() };
-				}
-
-				var ret = td;
-				
-				while (def != (def = def.Parent as DNode) &&
-					def != null && !(def is DModule))
-				{
-					td = td.InnerDeclaration = new IdentifierDeclaration(def.NameHash);
-				}
-
-				return ret;
-			}
-		}
 	}
 
 	#region User-defined types
@@ -631,11 +462,6 @@ namespace D_Parser.Resolver
 		public override string ToString()
 		{
 			return base.ToString();
-		}
-
-		public override string ToCode()
-		{
-			return Base != null ? Base.ToCode() : Definition.ToString(false,false);
 		}
 
 		public override AbstractType Clone(bool cloneBase)
@@ -975,13 +801,6 @@ namespace D_Parser.Resolver
 			this.Parameter = tp;
 			this.ParameterValue = representedTypeOrValue as ISymbolValue;
 		}*/
-		
-		public override string ToCode()
-		{
-			if(ParameterValue!=null)
-				return ParameterValue.ToCode();
-			return Base == null ? (Parameter == null ? "(unknown template parameter)" : Parameter.Name) : Base.ToCode(); //FIXME: It's not actually code but currently needed for correct ToString() representation in e.g. parameter insight
-		}
 
 		public override string ToString()
 		{
@@ -991,14 +810,6 @@ namespace D_Parser.Resolver
 		public override AbstractType Clone(bool cloneBase)
 		{
 			return new TemplateParameterSymbol(Parameter, ParameterValue ?? (cloneBase && Base != null ? Base.Clone(true) : Base) as ISemantic, DeclarationOrExpressionBase);
-		}
-
-		public override ITypeDeclaration TypeDeclarationOf
-		{
-			get
-			{
-				return Base != null ? Base.TypeDeclarationOf : (DeclarationOrExpressionBase as ITypeDeclaration ?? new IdentifierDeclaration(Parameter.NameHash));
-			}
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -1020,12 +831,6 @@ namespace D_Parser.Resolver
 	{
 		public ArrayAccessSymbol(PostfixExpression_Index indexExpr, AbstractType arrayValueType):
 			base(arrayValueType,indexExpr)	{ }
-
-		public override string ToCode ()
-		{
-			return (Base != null ? Base.ToCode () : string.Empty) + "[" + 
-				base.DeclarationOrExpressionBase.ToString() + "]";
-		}
 
 		public override AbstractType Clone(bool cloneBase)
 		{
@@ -1078,11 +883,6 @@ namespace D_Parser.Resolver
 			this.Package = pack;
 		}
 
-		public override string ToCode()
-		{
-			return Package.Path;
-		}
-
 		public override string ToString()
 		{
 			return "(package) "+base.ToString();
@@ -1118,21 +918,6 @@ namespace D_Parser.Resolver
 				Items = (ISemantic[])items;
 			else if (items != null)
 				Items = items.ToArray();
-		}
-
-		public override string ToCode()
-		{
-			var sb = new StringBuilder("(");
-
-			if (Items != null && Items.Length != 0)
-				foreach (var i in Items)
-				{
-					sb.Append(i.ToCode()).Append(',');
-				}
-			else
-				return "()";
-
-			return sb.Remove(sb.Length-1,1).Append(')').ToString();
 		}
 
 		public bool IsExpressionTuple

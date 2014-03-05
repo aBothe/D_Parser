@@ -145,6 +145,8 @@
     <Compile Include="Misc\StringView.cs" />
     <Compile Include="Refactoring\ReferencesFinder.cs" />
     <Compile Include="Resolver\ConditionalCompilation.cs" />
+    <Compile Include="Resolver\DTypeToCodeVisitor.cs" />
+    <Compile Include="Resolver\DTypeToTypeDeclVisitor.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Caching\ExpressionCache.cs" />
     <Compile Include="Resolver\ExpressionSemantics\CTFE\FunctionEvaluation.cs" />
     <Compile Include="Resolver\ExpressionSemantics\CTFE\InterpretationContext.cs" />

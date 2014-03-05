@@ -240,7 +240,7 @@ namespace D_Parser.Misc.Mangling
 			switch((char)r.Read())
 			{
 				case 'T':
-					return new TypeDeclarationExpression(Type().TypeDeclarationOf);
+					return new TypeDeclarationExpression(DTypeToTypeDeclVisitor.GenerateTypeDecl(Type()));
 				case 'V':
 					var t = Type(); // Where should the explicit type be used when there's already a value?
 					return Value();
@@ -478,7 +478,7 @@ namespace D_Parser.Misc.Mangling
 			}
 			
 			parType = Type(c);
-			par.Type = parType.TypeDeclarationOf;
+			par.Type = DTypeToTypeDeclVisitor.GenerateTypeDecl(parType);
 			return par;
 		}
 		
