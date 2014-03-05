@@ -134,7 +134,7 @@ namespace D_Parser.Resolver.TypeResolution
 			var o = GetScopedCodeObject(editor);
 
 			var optionBackup = ctxt.CurrentContext.ContextDependentOptions;
-			ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
+			ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly | ResolutionOptions.DontResolveAliases;
 			resolutionAttempt = NodeResolutionAttempt.Normal;
 
 			AbstractType ret;
