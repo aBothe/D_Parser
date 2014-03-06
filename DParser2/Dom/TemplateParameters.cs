@@ -13,7 +13,13 @@ namespace D_Parser.Dom
 		public CodeLocation EndLocation { get; set; }
 
 		readonly WeakReference parent;
-		public DNode Parent {get{ return parent.Target as DNode; }}
+		public DNode Parent {
+			get{ return parent.Target as DNode; } 
+			set { 
+				parent.Target = value;
+				// The representation node's parent will be altered automatically!
+			}
+		}
 
 		Node representation;
 		public Node Representation
