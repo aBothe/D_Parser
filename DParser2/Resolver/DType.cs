@@ -137,9 +137,11 @@ namespace D_Parser.Resolver
 		public static IEnumerable<AbstractType> TryDissolve(AbstractType t)
 		{
 			if (t is AmbiguousType)
+			{
 				foreach (var o in (t as AmbiguousType).Overloads)
-					if(o != null)
+					if (o != null)
 						yield return o;
+			}
 			else if (t != null)
 				yield return t;
 		}
