@@ -250,13 +250,6 @@ namespace D_Parser.Misc
 			if (basePaths == null)
 				throw new ArgumentNullException ("basePaths");
 
-			if (System.Diagnostics.Debugger.IsAttached) {
-				Console.WriteLine ("BeginAddOrUpdatePaths: ");
-				foreach (var p in basePaths)
-					Console.WriteLine (p);
-				Console.WriteLine ("---------");
-			}
-
 			GC.Collect ();
 
 			parseCompletedEvent.Reset ();
@@ -272,6 +265,14 @@ namespace D_Parser.Misc
 				Interlocked.Increment (ref parsingThreads);
 				noticeFinish (new ParseIntermediate (im, null, null));
 				return;
+			}
+
+			if (System.Diagnostics.Debugger.IsAttached)
+			{
+				Console.WriteLine("BeginAddOrUpdatePaths: ");
+				foreach (var p in basePaths)
+					Console.WriteLine(p);
+				Console.WriteLine("---------");
 			}
 
 			var countObj = new ParseSubtaskContainer (c, finishedHandler);

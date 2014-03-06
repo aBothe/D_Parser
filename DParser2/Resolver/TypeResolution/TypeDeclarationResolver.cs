@@ -1068,6 +1068,9 @@ namespace D_Parser.Resolver.TypeResolution
 				if (pushMethodScope)
 					ctxt.Pop();
 
+				if (returnType != null)
+					returnType.NonStaticAccess = true;
+
 				return returnType;
 			}
 			else if (method.Body != null)
@@ -1118,6 +1121,9 @@ namespace D_Parser.Resolver.TypeResolution
 
 					if (pushMethodScope)
 						ctxt.Pop();
+
+					if (t != null)
+						t.NonStaticAccess = true;
 
 					return t;
 				}

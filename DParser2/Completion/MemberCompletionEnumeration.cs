@@ -30,10 +30,10 @@ namespace D_Parser.Completion
 			en.IterateThroughScopeLayers(Caret, VisibleMembers);
 		}
 		
-		public static void EnumChildren(ICompletionDataGenerator cdgen,ResolutionContext ctxt, UserDefinedType udt, bool isVarInstance, 
+		public static void EnumChildren(ICompletionDataGenerator cdgen,ResolutionContext ctxt, UserDefinedType udt, 
 			MemberFilter vis = MemberFilter.Methods | MemberFilter.Types | MemberFilter.Variables | MemberFilter.Enums)
 		{
-			var scan = new MemberCompletionEnumeration(ctxt, cdgen) { isVarInst = isVarInstance };
+			var scan = new MemberCompletionEnumeration(ctxt, cdgen) { isVarInst = udt.NonStaticAccess };
 
 			scan.DeepScanClass(udt, vis);
 		}

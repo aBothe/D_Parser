@@ -154,7 +154,7 @@ namespace D_Parser.Resolver.TypeResolution
 				if (o is PostfixExpression_MethodCall)
 					o = (o as PostfixExpression_MethodCall).PostfixForeExpression;
 
-				ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.NoTemplateParameterDeduction;
+				ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.NoTemplateParameterDeduction | ResolutionOptions.DontResolveAliases;
 
 				if (o is IdentifierExpression)
 					ret = AmbiguousType.Get(ExpressionTypeEvaluation.GetOverloads(o as IdentifierExpression, ctxt, deduceParameters: false), o);

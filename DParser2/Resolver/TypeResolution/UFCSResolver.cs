@@ -109,7 +109,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 				var t = TypeDeclarationResolver.ResolveSingle (dm.Parameters [0].Type, ctxt);
 				if (ResultComparer.IsImplicitlyConvertible (firstArgument, t, ctxt)) {
-					var res = alreadyResolvedMethod ?? new MemberSymbol (dm, null, sr);
+					var res = alreadyResolvedMethod ?? TypeDeclarationResolver.HandleNodeMatch(dm, ctxt, typeBase:sr);
 					res.Tag = new UfcsTag{ firstArgument=firstArgument };
 					matches.Add (res);
 				}

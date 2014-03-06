@@ -267,6 +267,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (dm == null)
 				return;
 
+			
+
 			ISemantic firstUfcsArg;
 			bool isUfcs = UFCSResolver.IsUfcsResult(ms, out firstUfcsArg);
 			// In the case of an ufcs, insert the first argument into the CallArguments list
@@ -296,20 +298,21 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			bool add = true;
 			int currentArg = 0;
 			if (dm.Parameters.Count > 0 || callArguments.Count > 0)
+			{
 				for (int i = 0; i < dm.Parameters.Count; i++)
 				{
 					var paramType = dm.Parameters[i].Type;
 
 					if (!pop)
 						ctxt.CurrentContext.IntroduceTemplateParameterTypes(ms);
-					
+
 					// Handle the usage of tuples: Tuples may only be used as as-is, so not as an array, pointer or in a modified way..
 					if (paramType is IdentifierDeclaration &&
 						TryHandleMethodArgumentTuple(ctxt, ref add, callArguments, dm, deducedTypeDict, i, ref currentArg))
 						continue;
 					else if (currentArg < callArguments.Count)
 					{
-						if(!(add = templateParamDeduction.HandleDecl(null, paramType, callArguments[currentArg++])))
+						if (!(add = templateParamDeduction.HandleDecl(null, paramType, callArguments[currentArg++])))
 							break;
 					}
 					else
@@ -321,6 +324,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						break;
 					}
 				}
+
+				// Too few args
+				if (currentArg < callArguments.Count)
+					add = false;
+			}
 
 			if(!add)
 			{

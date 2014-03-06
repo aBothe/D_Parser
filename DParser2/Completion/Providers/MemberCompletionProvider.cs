@@ -21,7 +21,7 @@ namespace D_Parser.Completion.Providers
 		public MemberFilter MemberFilter = MemberFilter.All;
 		IEditorData ed;
 
-		bool isVariableInstance;
+		//bool isVariableInstance;
 
 
 		public MemberCompletionProvider(ICompletionDataGenerator cdg, ISyntaxRegion sr, IBlockNode b, IStatement stmt) : base(cdg) {
@@ -34,7 +34,6 @@ namespace D_Parser.Completion.Providers
 		{
 			ed = Editor;
 			ctxt = ResolutionContext.Create(Editor.ParseCache, new ConditionalCompilationFlags(Editor), ScopedBlock, ScopedStatement);
-			ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
 
 			AbstractType t;
 
@@ -48,20 +47,15 @@ namespace D_Parser.Completion.Providers
 			if (t == null) //TODO: Add after-space list creation when an unbound . (Dot) was entered which means to access the global scope
 				return;
 
-			isVariableInstance = false;
-
-			if (t.DeclarationOrExpressionBase is ITypeDeclaration)
-				isVariableInstance |= (t.DeclarationOrExpressionBase as ITypeDeclaration).ExpressesVariableAccess;
-
 			t.Accept(this);
 		}
 
 		void GenUfcsAndStaticProperties(AbstractType t)
 		{
-			if(isVariableInstance && CompletionOptions.Instance.ShowUFCSItems)
+			if(t.NonStaticAccess && CompletionOptions.Instance.ShowUFCSItems)
 				foreach (var ufcsItem in UFCSResolver.TryResolveUFCS(t, 0, ed.CaretLocation, ctxt))
 					CompletionDataGenerator.Add ((ufcsItem as DSymbol).Definition);
-			StaticProperties.ListProperties(CompletionDataGenerator, MemberFilter, t, isVariableInstance);
+			StaticProperties.ListProperties(CompletionDataGenerator, MemberFilter, t, t.NonStaticAccess);
 		}
 
 		public void VisitPrimitiveType(PrimitiveType pt)
@@ -74,7 +68,6 @@ namespace D_Parser.Completion.Providers
 			if (pt.Base != null &&
 				!(pt.Base is PrimitiveType && pt.Base.DeclarationOrExpressionBase is PointerDecl))
 			{
-				isVariableInstance = true;
 				pt.Base.Accept(this);
 			}
 			else
@@ -88,13 +81,13 @@ namespace D_Parser.Completion.Providers
 
 		public void VisitAssocArrayType(AssocArrayType aa)
 		{
-			isVariableInstance = true;
+			//isVariableInstance = true;
 			GenUfcsAndStaticProperties(aa);
 		}
 
 		public void VisitDelegateCallSymbol(DelegateCallSymbol dg)
 		{
-			isVariableInstance = true;
+			//isVariableInstance = true;
 			if (dg.Base != null)
 				dg.Base.Accept(this);
 			else
@@ -103,7 +96,7 @@ namespace D_Parser.Completion.Providers
 
 		public void VisitArrayAccessSymbol(ArrayAccessSymbol aas)
 		{
-			isVariableInstance = true;
+			//isVariableInstance = true;
 			if (aas.Base != null)
 				aas.Base.Accept(this);
 			else
@@ -129,7 +122,7 @@ namespace D_Parser.Completion.Providers
 			{
 				var token = ((TokenExpression)tr.DeclarationOrExpressionBase).Token;
 
-				isVariableInstance = token == DTokens.This || token == DTokens.Super;
+				//isVariableInstance = token == DTokens.This || token == DTokens.Super;
 			}
 
 			// Cases:
@@ -141,7 +134,7 @@ namespace D_Parser.Completion.Providers
 			// myClass. (not located in myClass)			<-- Show all static members
 			// myClass. (located in myClass)				<-- Show all static members
 
-			MemberCompletionEnumeration.EnumChildren(CompletionDataGenerator, ctxt, tr, isVariableInstance, MemberFilter);
+			MemberCompletionEnumeration.EnumChildren(CompletionDataGenerator, ctxt, tr, MemberFilter);
 
 			GenUfcsAndStaticProperties(tr);
 		}
@@ -179,9 +172,9 @@ namespace D_Parser.Completion.Providers
 			 * template t(){ void foo() { } }
 			 * t!().foo must be offered for completion
 			 */
-			if(t.Base == null)
+			/*if(t.Base == null)
 				isVariableInstance = true;
-
+			*/
 			VisitTemplateIntermediateType(t);
 		}
 
@@ -206,10 +199,10 @@ namespace D_Parser.Completion.Providers
 		public void VisitMemberSymbol(MemberSymbol mrr)
 		{
 			if (mrr.Base != null)
-			{
+			{/*
 				isVariableInstance |= (mrr.Definition is DVariable && !(mrr is AliasedType) || // True if we obviously have a variable handled here. Otherwise depends on the samely-named parameter..
 						mrr.Definition is DMethod);
-
+				*/
 				mrr.Base.Accept(this);
 			}
 			else
@@ -229,10 +222,10 @@ namespace D_Parser.Completion.Providers
 		}
 
 		public void VisitModuleSymbol(ModuleSymbol tr)
-		{
+		{/*
 			if (isVariableInstance)
 				return;
-
+			*/
 			foreach (var i in tr.Definition)
 			{
 				var di = i as DNode;

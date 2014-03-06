@@ -16,6 +16,7 @@ namespace D_Parser.Resolver
 		#region Properties
 		public object Tag;
 		public ISyntaxRegion DeclarationOrExpressionBase;
+		public virtual bool NonStaticAccess { get; set; }
 
 		protected byte modifier;
 
@@ -104,6 +105,20 @@ namespace D_Parser.Resolver
 	{
 		public readonly AbstractType[] Overloads;
 
+		public override bool NonStaticAccess
+		{
+			get
+			{
+				return base.NonStaticAccess;
+			}
+			set
+			{
+				base.NonStaticAccess = value;
+				foreach (var o in Overloads)
+					o.NonStaticAccess = value;
+			}
+		}
+
 		public static AbstractType Get(IEnumerable<AbstractType> types, ISyntaxRegion typeBase = null)
 		{
 			if (types == null)
@@ -119,13 +134,14 @@ namespace D_Parser.Resolver
 			return new AmbiguousType(types, typeBase);
 		}
 
-		public static AbstractType[] TryDissolve(AbstractType t)
+		public static IEnumerable<AbstractType> TryDissolve(AbstractType t)
 		{
 			if (t is AmbiguousType)
-				return (t as AmbiguousType).Overloads;
-			if (t != null)
-				return new[] { t };
-			return null;
+				foreach (var o in (t as AmbiguousType).Overloads)
+					if(o != null)
+						yield return o;
+			else if (t != null)
+				yield return t;
 		}
 
 		public override byte Modifier
@@ -299,6 +315,8 @@ namespace D_Parser.Resolver
 		public AssocArrayType(AbstractType ValueType, AbstractType KeyType, ISyntaxRegion td)
 			: base(ValueType, td)
 		{
+			if (ValueType != null)
+				ValueType.NonStaticAccess = true;
 			this.KeyType = KeyType;
 		}
 
@@ -455,9 +473,15 @@ namespace D_Parser.Resolver
 		public new DVariable Definition { get { return base.Definition as DVariable; } }
 
 		public AliasedType(DVariable AliasDefinition, AbstractType Type, ISyntaxRegion td, ReadOnlyCollection<TemplateParameterSymbol> deducedTypes=null)
-			: base(AliasDefinition,Type, td, deducedTypes) {}
+			: base(AliasDefinition,Type, td, deducedTypes) {
+				if (Type != null)
+					Type.NonStaticAccess = false;
+		}
 		public AliasedType(DVariable AliasDefinition, AbstractType Type, ISyntaxRegion td, IEnumerable<TemplateParameterSymbol> deducedTypes)
-			: base(AliasDefinition, Type, td, deducedTypes) { }
+			: base(AliasDefinition, Type, td, deducedTypes) {
+				if (Type != null)
+					Type.NonStaticAccess = false;
+		}
 
 		public override string ToString()
 		{
@@ -483,6 +507,11 @@ namespace D_Parser.Resolver
 	public class EnumType : UserDefinedType
 	{
 		public new DEnum Definition { get { return base.Definition as DEnum; } }
+		public override bool NonStaticAccess
+		{
+			get { return true; }
+			set { }
+		}
 
 		public EnumType(DEnum Enum, AbstractType BaseType, ISyntaxRegion td) : base(Enum, BaseType, null, td) { }
 		public EnumType(DEnum Enum, ISyntaxRegion td) : base(Enum, new PrimitiveType(DTokens.Int, 0), null, td) { }
@@ -747,11 +776,17 @@ namespace D_Parser.Resolver
 	{
 		public MemberSymbol(DNode member, AbstractType memberType, ISyntaxRegion td,
 			ReadOnlyCollection<TemplateParameterSymbol> deducedTypes = null)
-			: base(member, memberType, deducedTypes, td) { }
+			: base(member, memberType, deducedTypes, td) {
+				if (memberType != null)
+					memberType.NonStaticAccess = true;
+		}
 
 		public MemberSymbol(DNode member, AbstractType memberType, ISyntaxRegion td,
 			IEnumerable<TemplateParameterSymbol> deducedTypes)
-			: base(member, memberType, deducedTypes, td) { }
+			: base(member, memberType, deducedTypes, td) {
+				if (memberType != null)
+					memberType.NonStaticAccess = true;
+		}
 
 		public override AbstractType Clone(bool cloneBase)
 		{
@@ -851,8 +886,13 @@ namespace D_Parser.Resolver
 	public class ModuleSymbol : DSymbol
 	{
 		public new DModule Definition { get { return base.Definition as DModule; } }
+		public override bool NonStaticAccess
+		{
+			get	{ return true; }
+			set	{}
+		}
 
-		public ModuleSymbol(DModule mod, ISyntaxRegion td, PackageSymbol packageBase = null) : base(mod, packageBase, (IEnumerable<TemplateParameterSymbol>)null, td) { }
+		public ModuleSymbol(DModule mod, ISyntaxRegion td, PackageSymbol packageBase = null) : base(mod, packageBase, (IEnumerable<TemplateParameterSymbol>)null, td) {	}
 
 		public override string ToString()
 		{
