@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
+using System.Text;
 
 namespace D_Parser.Dom
 {
@@ -151,27 +152,25 @@ namespace D_Parser.Dom
         /// <returns></returns>
         public override string ToString(bool Attributes,bool IncludePath)
         {
-			string s = ""; 
+			var sb = new StringBuilder ();
 				
 			if(Attributes)
-				s=AttributeString+" ";
+				sb.Append(AttributeString).Append(' ');
 
-			s += base.ToString(Attributes,IncludePath);
+			sb.Append(base.ToString(Attributes,IncludePath));
 
             // Template parameters
             if (TemplateParameters!=null && TemplateParameters.Length > 0)
             {
-				if (this is DVariable)
-					s += '!';
-
-                s += "(";
+				sb.Append('(');
 				foreach (var p in TemplateParameters)
-					s += p.ToString() + ",";
-
-                s = s.Trim(',')+ ")";
+					sb.Append(p.ToString()).Append(',');
+				if (sb [sb.Length - 1] == ',')
+					sb.Length--;
+				sb.Append(')');
             }
-            
-            return s.Trim();
+
+			return sb.ToString ();
         }
 	}
 }
