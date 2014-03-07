@@ -263,6 +263,16 @@ namespace D_Parser.Resolver.TypeResolution
 					continue;
 				}
 
+				bool ignoreOtherOverloads;
+				var hook = D_Parser.Resolver.ResolutionHooks.HookRegistry.TryDeduce(overload, givenTemplateArguments, out ignoreOtherOverloads);
+				if (hook != null)
+				{
+					filteredOverloads.Add(hook);
+					if (ignoreOtherOverloads)
+						break;
+					continue;
+				}
+
 				// If the type or method has got no template parameters and if there were no args passed, keep it - it's legit.
 				if (tplNode.TemplateParameters == null)
 				{

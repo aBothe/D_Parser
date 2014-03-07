@@ -582,6 +582,23 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (foreExpression is MemberSymbol)
 				foreExpression = DResolver.StripMemberSymbols(foreExpression);
 
+			
+
+			if (foreExpression is TemplateIntermediateType)
+			{
+				var tit = foreExpression as TemplateIntermediateType;
+				var ch = tit.Definition[DVariable.AliasThisIdentifierHash];
+				if (ch != null)
+				{
+					foreach (DVariable aliasThis in ch)
+					{
+						foreExpression = TypeDeclarationResolver.HandleNodeMatch(aliasThis, ctxt, foreExpression);
+						if (foreExpression != null)
+							break; // HACK: Just omit other alias this' to have a quick run-through
+					}
+				}
+			}
+
 			foreExpression = DResolver.StripMemberSymbols(foreExpression);
 
 			if (foreExpression is AssocArrayType)

@@ -730,6 +730,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return null;
 			}
 
+			//TODO: myClassWithAliasThis[0] -- Valid!!
+
 			EvalError(x.PostfixForeExpression, "Invalid index expression base value type", foreExpression);
 			return null;
 		}
