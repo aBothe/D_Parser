@@ -609,6 +609,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				 * return the value type of a given array result
 				 */
 				//TODO: Handle opIndex overloads
+				if (ar.ValueType != null)
+					ar.ValueType.NonStaticAccess = true;
 
 				return new ArrayAccessSymbol(x, ar.ValueType);
 			}
@@ -618,7 +620,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			 * a[0] = 12;
 			 */
 			else if (foreExpression is PointerType)
-				return (foreExpression as PointerType).Base;
+			{
+				var b = (foreExpression as PointerType).Base;
+				if (b != null)
+					b.NonStaticAccess = true;
+				return b;
+			}
 			//return new ArrayAccessSymbol(x,((PointerType)foreExpression).Base);
 
 			else if (foreExpression is DTuple)
@@ -631,7 +638,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 					if (tt.Items == null)
 					{
-						ctxt.LogError(tt.DeclarationOrExpressionBase,"No items in Type tuple");
+						ctxt.LogError(tt.DeclarationOrExpressionBase, "No items in Type tuple");
 					}
 					else if (idx == null || !DTokens.IsBasicType_Integral(idx.BaseTypeToken))
 					{
@@ -787,7 +794,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						classDef = classDef.Parent as IBlockNode;
 
 					if (classDef is DClassLike)
-						return TypeDeclarationResolver.HandleNodeMatch(classDef, ctxt, null, x);
+					{
+						var res = TypeDeclarationResolver.HandleNodeMatch(classDef, ctxt, null, x);
+						res.NonStaticAccess = true;
+					}
 
 					//TODO: Throw
 					return null;
@@ -809,7 +819,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						{
 							// Important: Overwrite type decl base with 'super' token
 							tr.Base.DeclarationOrExpressionBase = x;
-
+							tr.Base.NonStaticAccess = true;
 							return tr.Base;
 						}
 					}

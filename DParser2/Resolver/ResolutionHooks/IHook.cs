@@ -5,7 +5,7 @@ using System.Text;
 
 namespace D_Parser.Resolver.ResolutionHooks
 {
-	interface IHook
+	public interface IHook
 	{
 		string HookedSymbol { get; }
 		bool SupersedesMultipleOverloads { get; }

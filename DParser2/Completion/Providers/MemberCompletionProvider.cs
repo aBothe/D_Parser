@@ -21,9 +21,6 @@ namespace D_Parser.Completion.Providers
 		public MemberFilter MemberFilter = MemberFilter.All;
 		IEditorData ed;
 
-		//bool isVariableInstance;
-
-
 		public MemberCompletionProvider(ICompletionDataGenerator cdg, ISyntaxRegion sr, IBlockNode b, IStatement stmt) : base(cdg) {
 			AccessExpression = sr;
 			ScopedBlock = b;
@@ -81,13 +78,11 @@ namespace D_Parser.Completion.Providers
 
 		public void VisitAssocArrayType(AssocArrayType aa)
 		{
-			//isVariableInstance = true;
 			GenUfcsAndStaticProperties(aa);
 		}
 
 		public void VisitDelegateCallSymbol(DelegateCallSymbol dg)
 		{
-			//isVariableInstance = true;
 			if (dg.Base != null)
 				dg.Base.Accept(this);
 			else
@@ -96,7 +91,6 @@ namespace D_Parser.Completion.Providers
 
 		public void VisitArrayAccessSymbol(ArrayAccessSymbol aas)
 		{
-			//isVariableInstance = true;
 			if (aas.Base != null)
 				aas.Base.Accept(this);
 			else
@@ -118,13 +112,6 @@ namespace D_Parser.Completion.Providers
 
 		void VisitTemplateIntermediateType(TemplateIntermediateType tr)
 		{
-			if (tr.DeclarationOrExpressionBase is TokenExpression)
-			{
-				var token = ((TokenExpression)tr.DeclarationOrExpressionBase).Token;
-
-				//isVariableInstance = token == DTokens.This || token == DTokens.Super;
-			}
-
 			// Cases:
 
 			// myVar. (located in basetype definition)		<-- Show everything
@@ -168,13 +155,6 @@ namespace D_Parser.Completion.Providers
 
 		public void VisitTemplateType(TemplateType t)
 		{
-			/*
-			 * template t(){ void foo() { } }
-			 * t!().foo must be offered for completion
-			 */
-			/*if(t.Base == null)
-				isVariableInstance = true;
-			*/
 			VisitTemplateIntermediateType(t);
 		}
 
@@ -199,12 +179,7 @@ namespace D_Parser.Completion.Providers
 		public void VisitMemberSymbol(MemberSymbol mrr)
 		{
 			if (mrr.Base != null)
-			{/*
-				isVariableInstance |= (mrr.Definition is DVariable && !(mrr is AliasedType) || // True if we obviously have a variable handled here. Otherwise depends on the samely-named parameter..
-						mrr.Definition is DMethod);
-				*/
 				mrr.Base.Accept(this);
-			}
 			else
 				GenUfcsAndStaticProperties(mrr);
 		}
@@ -223,7 +198,7 @@ namespace D_Parser.Completion.Providers
 
 		public void VisitModuleSymbol(ModuleSymbol tr)
 		{/*
-			if (isVariableInstance)
+			if (isVariableInstance) // WHY?
 				return;
 			*/
 			foreach (var i in tr.Definition)

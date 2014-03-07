@@ -376,6 +376,8 @@ namespace D_Parser.Resolver
 		public DelegateType(AbstractType ReturnType,DelegateDeclaration Declaration, IEnumerable<AbstractType> Parameters = null) : base(ReturnType, Declaration)
 		{
 			this.IsFunction = Declaration.IsFunction;
+			if (ReturnType != null)
+				ReturnType.NonStaticAccess = true;
 
 			if (Parameters is AbstractType[])
 				this.Parameters = (AbstractType[])Parameters;
@@ -387,6 +389,8 @@ namespace D_Parser.Resolver
 			: base(ReturnType, Literal)
 		{
 			this.IsFunction = Literal.LiteralToken == DTokens.Function;
+			if (ReturnType != null)
+				ReturnType.NonStaticAccess = true;
 			
 			if (Parameters is AbstractType[])
 				this.Parameters = (AbstractType[])Parameters;
@@ -654,6 +658,25 @@ namespace D_Parser.Resolver
 
 	public class TemplateType : TemplateIntermediateType
 	{
+		public override bool NonStaticAccess
+		{
+			get
+			{
+				/*
+				 * template t(){ void foo() { } }
+				 * t!().foo must be offered for completion
+				 */
+				/*if(t.Base == null)
+					isVariableInstance = true;
+				*/
+				return true;
+			}
+			set
+			{
+				
+			}
+		}
+
 		public TemplateType(DClassLike dc, ISyntaxRegion td, IEnumerable<TemplateParameterSymbol> inheritedTypeParams = null) : base(dc, td, null, null, inheritedTypeParams) { }
 		public TemplateType(DClassLike dc, ISyntaxRegion td, ReadOnlyCollection<TemplateParameterSymbol> inheritedTypeParams = null) : base(dc, td, null, null, inheritedTypeParams) { }
 

@@ -7,12 +7,18 @@ using System.Text;
 
 namespace D_Parser.Resolver.ResolutionHooks
 {
-	static class HookRegistry
+	public static class HookRegistry
 	{
 		static readonly Dictionary<string, IHook> DeductionHooks = new Dictionary<string, IHook>();
-		static void AddHook(IHook hook)
+
+		public static void AddHook(IHook hook)
 		{
 			DeductionHooks[hook.HookedSymbol] = hook;
+		}
+
+		public static bool RemoveHook(string hookedSymbol)
+		{
+			return DeductionHooks.Remove(hookedSymbol);
 		}
 
 		static HookRegistry()
