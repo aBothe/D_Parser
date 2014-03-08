@@ -38,7 +38,7 @@ namespace ExaustiveCompletionTester
 
 				foreach (var v in activeData)
 				{
-					if (v != null)
+					if (v != null && v.lengthString != null)
 					{
 						WriteFromLeft(v.FileID, String.Format("Thread {0} {1}/{2} ({3}%)", v.WorkerID, v.i.ToString().PadLeft(v.lengthString.Length, ' '), v.lengthString, ((int)((v.i / (double)v.FileLength) * 100)).ToString().PadLeft(3, ' ')));
 					}

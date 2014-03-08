@@ -14,7 +14,7 @@ namespace ExaustiveCompletionTester
 		public int FileLength { get; private set; }
 		public int WorkerID { get; set; }
 		public int i = 0;
-		public string lengthString;
+		public string lengthString = null;
 		public List<Tuple<int, string>> ExceptionsTriggered = new List<Tuple<int, string>>();
 
 		public FileProcessingData(string filePath, int fileID)
