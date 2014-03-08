@@ -123,16 +123,19 @@ namespace D_Parser.Completion
 
 			if (currentScope is DMethod &&
 			    (blockStmt = (currentScope as DMethod).GetSubBlockAt (editor.CaretLocation)) != null) {
-				blockStmt.UpdateBlockPartly (editor, out isInsideNonCodeSegment);
-				currentScope = DResolver.SearchBlockAt (currentScope, editor.CaretLocation, out currentStatement);
+				var tempBlock = blockStmt.UpdateBlockPartly (editor, out isInsideNonCodeSegment);
+				if (tempBlock == null)
+					return null;
+				currentScope = DResolver.SearchBlockAt (tempBlock, editor.CaretLocation);
+				currentStatement = null;
 			}else {
 				while (currentScope is DMethod)
 					currentScope = currentScope.Parent as IBlockNode;
 				if (currentScope == null)
 					return null;
 
-				(currentScope as DBlockNode).UpdateBlockPartly (editor, out isInsideNonCodeSegment);
-				currentScope = DResolver.SearchBlockAt (currentScope, editor.CaretLocation, out currentStatement);
+				var tempBlock = (currentScope as DBlockNode).UpdateBlockPartly (editor, out isInsideNonCodeSegment);
+				currentScope = DResolver.SearchBlockAt (tempBlock, editor.CaretLocation, out currentStatement);
 			}
 			return currentScope;
 		}

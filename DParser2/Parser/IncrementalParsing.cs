@@ -28,18 +28,19 @@ using D_Parser.Dom;
 using D_Parser.Misc;
 using D_Parser.Completion;
 using D_Parser.Dom.Statements;
+using System.Collections.Generic;
 
 namespace D_Parser.Parser
 {
 	public static class IncrementalParsing
 	{
 		#region DMethod updating
-		public static void UpdateBlockPartly(this BlockStatement bs, IEditorData ed, out bool isInsideNonCodeSegment)
+		public static IBlockNode UpdateBlockPartly(this BlockStatement bs, IEditorData ed, out bool isInsideNonCodeSegment)
 		{
-			UpdateBlockPartly (bs, ed.ModuleCode, ed.CaretOffset, ed.CaretLocation, out isInsideNonCodeSegment);
+			return UpdateBlockPartly (bs, ed.ModuleCode, ed.CaretOffset, ed.CaretLocation, out isInsideNonCodeSegment);
 		}
 
-		public static void UpdateBlockPartly(this BlockStatement bs, string code, int caretOffset, CodeLocation caretLocation, out bool isInsideNonCodeSegment)
+		public static IBlockNode UpdateBlockPartly(this BlockStatement bs, string code, int caretOffset, CodeLocation caretLocation, out bool isInsideNonCodeSegment)
 		{
 			isInsideNonCodeSegment = false;
 			var finalParentMethod = bs.ParentNode as DMethod;
@@ -59,10 +60,13 @@ namespace D_Parser.Parser
 			var startOff = startLoc.Line > 1 ? DocumentHelper.GetOffsetByRelativeLocation (code, caretLocation, caretOffset, startLoc) : 0;
 
 			if (startOff >= caretOffset)
-				return;
+				return null;
 
-			var tempParentBlock = new DMethod ();
+			var tempParentBlock = new DMethod();//new DBlockNode();
 			var tempBlockStmt = new BlockStatement { ParentNode = tempParentBlock };
+			tempParentBlock.Body = tempBlockStmt;
+			tempBlockStmt.Location = startLoc;
+			tempParentBlock.Location = startLoc;
 
 			try{
 				using (var sv = new StringView (code, startOff, caretOffset - startOff))
@@ -82,91 +86,65 @@ namespace D_Parser.Parser
 							continue;
 						}
 
-						var stmt = p.Statement (true, true, tempParentBlock, tempBlockStmt);
-						if(stmt != null)
+						var stmt = p.Statement (true, false, tempParentBlock, tempBlockStmt);
+						if (stmt != null)
+						{
 							tempBlockStmt.Add(stmt);
+						}
 					}
 
 					tempBlockStmt.EndLocation = new CodeLocation(p.la.Column+1,p.la.Line);
+					tempParentBlock.EndLocation = tempBlockStmt.EndLocation;
 
 					if(isInsideNonCodeSegment = p.Lexer.endedWhileBeingInNonCodeSequence)
-						return;
+						return null;
 				}
 			}catch(Exception ex) {
 				Console.WriteLine (ex.Message);
 			}
 
-			// Remove old statements from startLoc until caretLocation
-			int i = startStmtIndex + 1;
-			while (i < finalStmtsList.Count && finalStmtsList [i].Location < caretLocation)
-				finalStmtsList.RemoveAt (i);
+			DoubleDeclarationSilencer.RemoveDoubles(finalParentMethod, tempParentBlock);
 
-			// Insert new statements
-			if (tempBlockStmt.EndLocation > bs.EndLocation)
-				bs.EndLocation = tempBlockStmt.EndLocation;
-			foreach (var stmt in tempBlockStmt._Statements)
-			{
-				stmt.ParentNode = finalParentMethod;
-				stmt.Parent = bs;
-			}
-			AssignInStatementDeclarationsToNewParentNode(tempBlockStmt, finalParentMethod);
-			finalStmtsList.InsertRange(startStmtIndex+1, tempBlockStmt._Statements);
-			
-			if (finalParentMethod != null) {
-				var finalParentChildren = finalParentMethod.AdditionalChildren;
-				// Remove old parent block children
-				int startDeclIndex;
-				for(startDeclIndex = finalParentChildren.Count-1; startDeclIndex >= 0; startDeclIndex--) {
-					var n = finalParentChildren [startDeclIndex];
-					if (n == null) {
-						finalParentChildren.RemoveAt (startDeclIndex);
-						continue;
-					}
-					if (n.Location < startLoc)
-						break;
-					if (n.Location < caretLocation)
-						finalParentChildren.RemoveAt(startDeclIndex);
-				}
+			tempParentBlock.Parent = finalParentMethod;
+			//tempParentBlock.Add(new PseudoStaticStmt { Block = tempBlockStmt, ParentNode = tempParentBlock, Location = tempBlockStmt.Location, EndLocation = tempBlockStmt.EndLocation });
 
-				// Insert new special declarations
-				foreach (var decl in tempParentBlock)
-					decl.Parent = finalParentMethod;
-				finalParentChildren.InsertRange(startDeclIndex+1, tempParentBlock);
-
-				finalParentMethod.UpdateChildrenArray ();
-				if (bs.EndLocation > finalParentMethod.EndLocation)
-					finalParentMethod.EndLocation = bs.EndLocation;
-			}
-
-			//TODO: Handle DBlockNode parents?
+			return tempParentBlock;
 		}
-
-		static void AssignInStatementDeclarationsToNewParentNode(StatementContainingStatement ss, INode newParentNode)
+		/*
+		class PseudoStaticStmt : AbstractStatement,StaticStatement
 		{
-			IDeclarationContainingStatement dcs;
-			if (ss.SubStatements != null)
-			{
-				foreach (var s in ss.SubStatements)
-				{
-					dcs = s as IDeclarationContainingStatement;
-					if (dcs != null && dcs.Declarations != null)
-						foreach (var n in dcs.Declarations)
-							n.Parent = newParentNode;
+			public BlockStatement Block;
 
-					if (s is StatementContainingStatement)
-						AssignInStatementDeclarationsToNewParentNode(s as StatementContainingStatement, newParentNode);
-				}
+			public DAttribute[] Attributes
+			{
+				get	{ return null; }
+				set	{}
 			}
-		}
+
+			public override R Accept<R>(StatementVisitor<R> vis)
+			{
+				return Block.Accept(vis);
+			}
+
+			public override void Accept(StatementVisitor vis)
+			{
+				Block.Accept(vis);
+			}
+
+			public override string ToCode()
+			{
+				return null;
+			}
+		}*/
 		#endregion
 
 		#region DBlockNode updating
-		public static void UpdateBlockPartly(this DBlockNode bn, IEditorData ed, out bool isInsideNonCodeSegment)
+		public static DBlockNode UpdateBlockPartly(this DBlockNode bn, IEditorData ed, out bool isInsideNonCodeSegment)
 		{
-			UpdateBlockPartly (bn, ed.ModuleCode, ed.CaretOffset, ed.CaretLocation, out isInsideNonCodeSegment);
+			return UpdateBlockPartly (bn, ed.ModuleCode, ed.CaretOffset, ed.CaretLocation, out isInsideNonCodeSegment);
 		}
 
-		public static void UpdateBlockPartly(this DBlockNode bn, string code,
+		public static DBlockNode UpdateBlockPartly(this DBlockNode bn, string code,
 			int caretOffset, CodeLocation caretLocation, out bool isInsideNonCodeSegment)
 		{
 			isInsideNonCodeSegment = false;
@@ -187,13 +165,15 @@ namespace D_Parser.Parser
 
 			// Immediately break to waste no time if there's nothing to parse
 			if (startOff >= caretOffset)
-				return;
+				return null;
 
 			// Get meta block stack so they can be registered while parsing 
 			//var metaDecls = bn.GetMetaBlockStack (startLoc, true, false);
 
 			// Parse region from start until caret for maximum efficiency
 			var tempBlock = bn is DEnum ? new DEnum() : new DBlockNode();
+			tempBlock.BlockStartLocation = startLoc;
+			
 			try{
 				using (var sv = new StringView (code, startOff, caretOffset - startOff))
 				using (var p = DParser.Create(sv)) {
@@ -247,41 +227,73 @@ namespace D_Parser.Parser
 					}
 
 					if(isInsideNonCodeSegment = p.Lexer.endedWhileBeingInNonCodeSequence)
-						return;
+						return null;
+
+					tempBlock.EndLocation = new CodeLocation(p.la.Column + 1, p.la.Line);
 				}
 			}catch(Exception ex) {
 				Console.WriteLine (ex.Message);
 			}
 
-			// Remove old static stmts, declarations and meta blocks from bn
-			/*bn.MetaBlocks;*/
-			int startStatStmtIndex;
-			for (startStatStmtIndex = bn.StaticStatements.Count - 1; startStatStmtIndex >= 0; startStatStmtIndex--) {
-				var ss = bn.StaticStatements [startStatStmtIndex];
-				if (ss.Location >= startLoc && ss.Location <= caretLocation)
-					bn.StaticStatements.RemoveAt (startStatStmtIndex);
-				else if(ss.EndLocation < startLoc)
-					break;
+			DoubleDeclarationSilencer.RemoveDoubles(bn, tempBlock);
+
+			tempBlock.Parent = bn;
+
+			return tempBlock;
+		}
+		#endregion
+
+		class DoubleDeclarationSilencer : DefaultDepthFirstVisitor
+		{
+			List<INode> originalDeclarations = new List<INode>();
+			bool secondRun = false;
+
+			public static void RemoveDoubles(IBlockNode originalAst, IBlockNode blockToClean)
+			{
+				var rem = new DoubleDeclarationSilencer();
+				originalAst.Accept(rem);
+				rem.secondRun = true;
+				blockToClean.Accept(rem);
 			}
 
-			INode ch_;
-			int i = startDeclIndex + 1;
-			while (i < bn.Count && (ch_ = bn.Children [i]).Location < caretLocation)
-				bn.Children.Remove (ch_);
+			public override void VisitDNode(DNode n)
+			{
+				if(!secondRun)
+				{
+					originalDeclarations.Add(n);
+					return;
+				}
 
-			// Insert new static stmts, declarations and meta blocks(?) into bn
-			if (tempBlock.EndLocation > bn.EndLocation)
-				bn.EndLocation = tempBlock.EndLocation;
-			foreach (var n in tempBlock.Children) {
-				if (n != null) {
-					n.Parent = bn;
-					bn.Children.Insert (n, ++startDeclIndex);
+				foreach(var decl in originalDeclarations)
+				{
+					if (decl.NameHash == n.NameHash &&
+						decl.GetType() == n.GetType() &&
+						TryCompareNodeEquality(decl as DNode, n))
+					{
+						n.NameHash = 0; // Don't even risk referencing issues and just hide parsed stuff
+						return;
+					}
 				}
 			}
 
-			bn.StaticStatements.InsertRange(startStatStmtIndex+1, tempBlock.StaticStatements);
+			static bool TryCompareNodeEquality(DNode orig, DNode copy)
+			{
+				var dm1 = orig as DMethod;
+				var dm2 = copy as DMethod;
+				if(dm1 != null && dm2 != null)
+				{
+					if(dm1.Parameters.Count == dm2.Parameters.Count)
+						return true;
+					// TODO: Don't check parameter details for now
+					return false;
+				}
+
+				return true;
+			}
+
+			public override void Visit(ExpressionStatement s) { }
+			public override void VisitChildren(Dom.Expressions.ContainerExpression x) { }
 		}
-		#endregion
 	}
 }
 
