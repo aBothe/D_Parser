@@ -8,9 +8,10 @@ namespace ExaustiveCompletionTester
 {
 	public static class Program
 	{
-		public static ConcurrentQueue<FileProcessingData> completedFiles = new ConcurrentQueue<FileProcessingData>();
-		public static ConcurrentQueue<FileProcessingData> filesToProcess = new ConcurrentQueue<FileProcessingData>();
-		public static ConcurrentQueue<FileProcessingData> startedFiles = new ConcurrentQueue<FileProcessingData>();
+		public static readonly ConcurrentQueue<FileProcessingData> completedFiles = new ConcurrentQueue<FileProcessingData>();
+		public static readonly ConcurrentQueue<FileProcessingData> filesToProcess = new ConcurrentQueue<FileProcessingData>();
+		public static readonly ConcurrentQueue<FileProcessingData> startedFiles = new ConcurrentQueue<FileProcessingData>();
+		public static readonly HashSet<string> TriggeredExceptionLocations = new HashSet<string>();
 		public static FileProcessingData[] activeData;
 		public static volatile int liveWorkerCount = 0;
 		const string ExceptionsDirectory = ".\\Exceptions";
@@ -45,8 +46,14 @@ namespace ExaustiveCompletionTester
 							Directory.CreateDirectory(ExceptionsDirectory);
 						for (int i = 0; i < curFile.ExceptionsTriggered.Count; i++)
 						{
-							File.WriteAllText(ExceptionsDirectory + "\\" + curFile.ShortFilePath.Replace('\\', '_') + "-" + i.ToString() +".txt", curFile.str.Substring(0, curFile.ExceptionsTriggered[i].Item1));
-							File.WriteAllText(ExceptionsDirectory + "\\" + curFile.ShortFilePath.Replace('\\', '_') + "-" + i.ToString() +".trace.txt", curFile.ExceptionsTriggered[i].Item2);
+							var excI = curFile.ExceptionsTriggered[i];
+							var fLin = excI.Item2.Substring(0, (excI.Item2 + "\n").IndexOf('\n'));
+							if (!TriggeredExceptionLocations.Contains(fLin))
+							{
+								TriggeredExceptionLocations.Add(fLin);
+								File.WriteAllText(ExceptionsDirectory + "\\" + curFile.ShortFilePath.Replace('\\', '_') + "-" + i.ToString() + ".txt", curFile.str.Substring(0, excI.Item1));
+								File.WriteAllText(ExceptionsDirectory + "\\" + curFile.ShortFilePath.Replace('\\', '_') + "-" + i.ToString() + ".trace.txt", excI.Item2);
+							}
 						}
 					}
 				}
