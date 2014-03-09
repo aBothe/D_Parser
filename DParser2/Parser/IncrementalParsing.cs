@@ -88,9 +88,9 @@ namespace D_Parser.Parser
 
 						var stmt = p.Statement (true, false, tempParentBlock, tempBlockStmt);
 						if (stmt != null)
-						{
 							tempBlockStmt.Add(stmt);
-						}
+						else
+							p.Step();
 					}
 
 					tempBlockStmt.EndLocation = new CodeLocation(p.la.Column+1,p.la.Line);
