@@ -797,6 +797,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					{
 						var res = TypeDeclarationResolver.HandleNodeMatch(classDef, ctxt, null, x);
 						res.NonStaticAccess = true;
+						return res;
 					}
 
 					//TODO: Throw
