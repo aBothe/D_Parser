@@ -13,9 +13,12 @@ namespace ExaustiveCompletionTester
 		public static ConcurrentQueue<FileProcessingData> startedFiles = new ConcurrentQueue<FileProcessingData>();
 		public static FileProcessingData[] activeData;
 		public static volatile int liveWorkerCount = 0;
+		const string ExceptionsDirectory = ".\\Exceptions";
 
 		public static void Main (string[] args)
 		{
+			if (Directory.Exists(ExceptionsDirectory))
+				Directory.Delete(ExceptionsDirectory, true);
 			foreach (var v in Directory.EnumerateFileSystemEntries(Config.PhobosPath))
 				ProcessPath(v);
 
@@ -34,7 +37,19 @@ namespace ExaustiveCompletionTester
 					WriteAt(curFile.FileID, 1, "Processing " + curFile.ShortFilePath);
 
 				while (completedFiles.TryDequeue(out curFile))
+				{
 					WriteFromLeft(curFile.FileID, "100%)");
+					if (curFile.ExceptionsTriggered.Count > 0)
+					{
+						if (!Directory.Exists(ExceptionsDirectory))
+							Directory.CreateDirectory(ExceptionsDirectory);
+						for (int i = 0; i < curFile.ExceptionsTriggered.Count; i++)
+						{
+							File.WriteAllText(ExceptionsDirectory + "\\" + curFile.ShortFilePath.Replace('\\', '_') + "-" + i.ToString() +".txt", curFile.str.Substring(0, curFile.ExceptionsTriggered[i].Item1));
+							File.WriteAllText(ExceptionsDirectory + "\\" + curFile.ShortFilePath.Replace('\\', '_') + "-" + i.ToString() +".trace.txt", curFile.ExceptionsTriggered[i].Item2);
+						}
+					}
+				}
 
 				foreach (var v in activeData)
 				{

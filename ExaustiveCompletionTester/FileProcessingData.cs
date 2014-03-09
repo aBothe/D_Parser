@@ -12,6 +12,7 @@ namespace ExaustiveCompletionTester
 		public string ShortFilePath { get; private set; }
 		public int FileID { get; private set; }
 		public int FileLength { get; private set; }
+		public string str { get; private set; }
 		public int WorkerID { get; set; }
 		public int i = 0;
 		public string lengthString = null;
@@ -26,7 +27,7 @@ namespace ExaustiveCompletionTester
 
 		public void Process()
 		{
-			string str = File.ReadAllText(FullFilePath);
+			str = File.ReadAllText(FullFilePath);
 			this.FileLength = str.Length;
 			this.lengthString = this.FileLength.ToString();
 			int line = 1;
@@ -137,15 +138,6 @@ namespace ExaustiveCompletionTester
 				}
 
 				i++;
-			}
-
-			if (ExceptionsTriggered.Count > 0)
-			{
-				Console.WriteLine("Triggered {0} exceptions in {1}", ExceptionsTriggered.Count, ShortFilePath);
-				foreach (var v in ExceptionsTriggered)
-				{
-					Console.WriteLine("{" + str.Substring(0, v.Item1) + "}:{" + v.Item2 + "}");
-				}
 			}
 		}
 	}
