@@ -199,7 +199,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 					// Search for the deepest statement scope and add all declarations done in the entire hierarchy
 					if (nestedBlock != null)
-						breakOnNextScope |= ScanStatementHierarchy(nestedBlock.SearchStatementDeeply(Caret), Caret, VisibleMembers);
+						breakOnNextScope |= ScanStatementHierarchy(nestedBlock, Caret, VisibleMembers);
 				}
 
 				return breakOnNextScope;
@@ -372,21 +372,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		/// <returns>True if scan shall stop, false if not</returns>
 		bool ScanStatementHierarchy(IStatement Statement, CodeLocation Caret, MemberFilter VisibleMembers)
 		{
-			// To a prevent double entry of the same declaration, skip a most scoped declaration first
-			if (Statement is DeclarationStatement)
-				Statement = Statement.Parent;
-
-			var ss = new StatementHandler(this) { Caret=Caret, caretInsensitive = Caret.IsEmpty, VisibleMembers = VisibleMembers };
-
-			while (Statement != null)
-			{
-				if (Statement.Accept(ss))
-					return true;
-
-				Statement = Statement.Parent;
-			}
-
-			return false;
+			return Statement != null && Statement.Accept(new StatementHandler(this) { Caret = Caret, caretInsensitive = Caret.IsEmpty, VisibleMembers = VisibleMembers });
 		}
 
 		class StatementHandler : StatementVisitor<bool>, NodeVisitor<bool>

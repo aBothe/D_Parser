@@ -1029,6 +1029,8 @@ namespace D_Parser.Parser
 
 				var ret = new List<INode> ();
 				ret.Add (firstNode);
+				if (Scope is DMethod)
+					Scope.Add(firstNode);
 				return ret;
 			}
 			else

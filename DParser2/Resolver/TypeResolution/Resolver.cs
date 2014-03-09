@@ -529,10 +529,10 @@ namespace D_Parser.Resolver.TypeResolution
 					}
 				}
 
-				var body = dm.GetSubBlockAt(Where);
+				ScopedStatement = dm.GetSubBlockAt(Where);
 
 				// First search the deepest statement under the caret
-				if (body != null){
+				/*if (body != null){
 					ScopedStatement = body.SearchStatementDeeply(Where);
 
 					if (ScopedStatement is IDeclarationContainingStatement)
@@ -546,7 +546,7 @@ namespace D_Parser.Resolver.TypeResolution
 								    Where < decl.EndLocation)
 									return SearchBlockAt (decl as IBlockNode, Where, out ScopedStatement);
 					}
-				}
+				}*/
 			} else if(Parent is DBlockNode)
 				ScopedStatement = GetStatementAt(Parent as DBlockNode, Where);
 

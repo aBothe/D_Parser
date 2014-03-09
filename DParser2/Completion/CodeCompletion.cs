@@ -126,8 +126,7 @@ namespace D_Parser.Completion
 				var tempBlock = blockStmt.UpdateBlockPartly (editor, out isInsideNonCodeSegment);
 				if (tempBlock == null)
 					return null;
-				currentScope = DResolver.SearchBlockAt (tempBlock, editor.CaretLocation);
-				currentStatement = null;
+				currentScope = DResolver.SearchBlockAt (tempBlock, editor.CaretLocation, out currentStatement);
 			}else {
 				while (currentScope is DMethod)
 					currentScope = currentScope.Parent as IBlockNode;
