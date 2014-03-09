@@ -68,39 +68,35 @@ namespace D_Parser.Parser
 			tempBlockStmt.Location = startLoc;
 			tempParentBlock.Location = startLoc;
 
-			try{
-				using (var sv = new StringView (code, startOff, caretOffset - startOff))
-				using (var p = DParser.Create(sv)) {
-					p.Lexer.SetInitialLocation (startLoc);
-					p.Step ();
+			using (var sv = new StringView (code, startOff, caretOffset - startOff))
+			using (var p = DParser.Create(sv)) {
+				p.Lexer.SetInitialLocation (startLoc);
+				p.Step ();
 
-					if(p.laKind == DTokens.OpenCurlyBrace)
-						p.Step();
+				if(p.laKind == DTokens.OpenCurlyBrace)
+					p.Step();
 
-					while (!p.IsEOF) {
+				while (!p.IsEOF) {
 
-						if (p.laKind == DTokens.CloseCurlyBrace) {
-							p.Step ();
-							/*if (metaDecls.Count > 0)
-								metaDecls.RemoveAt (metaDecls.Count - 1);*/
-							continue;
-						}
-
-						var stmt = p.Statement (true, false, tempParentBlock, tempBlockStmt);
-						if (stmt != null)
-						{
-							tempBlockStmt.Add(stmt);
-						}
+					if (p.laKind == DTokens.CloseCurlyBrace) {
+						p.Step ();
+						/*if (metaDecls.Count > 0)
+							metaDecls.RemoveAt (metaDecls.Count - 1);*/
+						continue;
 					}
 
-					tempBlockStmt.EndLocation = new CodeLocation(p.la.Column+1,p.la.Line);
-					tempParentBlock.EndLocation = tempBlockStmt.EndLocation;
-
-					if(isInsideNonCodeSegment = p.Lexer.endedWhileBeingInNonCodeSequence)
-						return null;
+					var stmt = p.Statement (true, false, tempParentBlock, tempBlockStmt);
+					if (stmt != null)
+						tempBlockStmt.Add(stmt);
+					else
+						p.Step();
 				}
-			}catch(Exception ex) {
-				Console.WriteLine (ex.Message);
+
+				tempBlockStmt.EndLocation = new CodeLocation(p.la.Column+1,p.la.Line);
+				tempParentBlock.EndLocation = tempBlockStmt.EndLocation;
+
+				if(isInsideNonCodeSegment = p.Lexer.endedWhileBeingInNonCodeSequence)
+					return null;
 			}
 
 			DoubleDeclarationSilencer.RemoveDoubles(finalParentMethod, tempParentBlock);

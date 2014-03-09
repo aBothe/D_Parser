@@ -4012,7 +4012,9 @@ namespace D_Parser.Parser
 			s.EndLocation = t.EndLocation;
 
 			Expect (Semicolon);
-			return s;
+			if (s.Expression != null)
+				return s;
+			return null;
 		}
 		
 		ForStatement ForStatement(IBlockNode Scope, IStatement Parent)
