@@ -101,17 +101,6 @@ namespace D_Parser.Completion
 			}
 		}
 
-		public override void VisitChildren (IBlockNode block)
-		{
-			var b = scopedBlock;
-			var s = scopedStatement;
-			//scopedStatement = null;
-			//scopedBlock = block;
-			base.VisitChildren (block);
-			//scopedBlock = b;
-			//scopedStatement = s;
-		}
-
 		public override void Visit (DVariable n)
 		{
 			if (n.NameHash == 0 && n.ContainsAttribute(DTokens.Override))
@@ -309,14 +298,12 @@ namespace D_Parser.Completion
 
 		public override void VisitAbstractStmt (AbstractStatement stmt)
 		{
-			//scopedStatement = stmt;
 			base.VisitAbstractStmt (stmt);
 		}
 
 		public override void Visit (ModuleStatement s)
 		{
 			if (IsIncompleteDeclaration (s.ModuleName)) {
-				//scopedStatement = s;
 				prv = new ModuleStatementCompletionProvider (cdgen);
 				halt = true;
 			}
@@ -354,7 +341,6 @@ namespace D_Parser.Completion
 		{
 			if (!halt)
 			{
-				//scopedStatement = s;
 				base.Visit(s);
 			}
 		}
@@ -365,7 +351,6 @@ namespace D_Parser.Completion
 			if (decls != null && decls.Length > 0) {
 				var lastDecl = decls [decls.Length - 1] as DNode; 
 				if (lastDecl != null && lastDecl.NameHash == DTokens.IncompleteIdHash) {
-					//scopedStatement = s;
 					halt = true;
 					// Probably a more common case to have 'auto |' not completed
 					explicitlyNoCompletion = lastDecl.Type != null || (lastDecl.Attributes != null && lastDecl.Attributes.Count != 0);
@@ -378,7 +363,6 @@ namespace D_Parser.Completion
 		public override void Visit (TemplateMixin s)
 		{
 			if (s.MixinId == DTokens.IncompleteId) {
-				//scopedStatement = s;
 				explicitlyNoCompletion = true;
 				halt = true;
 			}
@@ -392,7 +376,6 @@ namespace D_Parser.Completion
 
 				prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, s, MemberFilter.Labels);
 
-				//scopedStatement = s;
 				halt = true;
 			}
 			else
@@ -405,7 +388,6 @@ namespace D_Parser.Completion
 
 				prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, s, MemberFilter.Labels);
 
-				//scopedStatement = s;
 				halt = true;
 			}
 			else
@@ -419,7 +401,6 @@ namespace D_Parser.Completion
 
 				prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, s, MemberFilter.Labels);
 
-				//scopedStatement = s;
 				halt = true;
 			}
 			else
@@ -428,7 +409,6 @@ namespace D_Parser.Completion
 
 		public override void Visit(AsmStatement s)
 		{
-			//scopedStatement = s;
 			base.Visit(s);
 		}
 
@@ -437,7 +417,6 @@ namespace D_Parser.Completion
 			if (s.Operation == AsmStatement.InstructionStatement.OpCode.__UNKNOWN__)
 			{
 				prv = new InlineAsmCompletionProvider(s, cdgen);
-				//scopedStatement = s;
 				halt = true;
 			}
 			else
