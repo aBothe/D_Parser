@@ -33,6 +33,8 @@ namespace D_Parser.Completion
 		public static void EnumChildren(ICompletionDataGenerator cdgen,ResolutionContext ctxt, UserDefinedType udt, 
 			MemberFilter vis = MemberFilter.Methods | MemberFilter.Types | MemberFilter.Variables | MemberFilter.Enums)
 		{
+			vis ^= MemberFilter.TypeParameters;
+
 			var scan = new MemberCompletionEnumeration(ctxt, cdgen) { isVarInst = udt.NonStaticAccess };
 
 			scan.DeepScanClass(udt, vis);
