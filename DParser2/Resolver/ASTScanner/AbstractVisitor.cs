@@ -809,7 +809,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					(s.ScopedStatement == null || s.ScopedStatement.EndLocation >= Caret) && 
 					s.ForeachTypeList != null)
 					foreach (var n in s.ForeachTypeList)
-						if (n.Accept(this))
+						if (n!= null && n.Accept(this))
 							return true;
 
 				return VisitExpressionStmt(s) || VisitSubStatements(s);
@@ -1209,6 +1209,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		/// <returns></returns>
 		bool HandleExpression(IExpression x, MemberFilter vis)
 		{
+			if (x == null)
+				return false;
+
 			if (isExprVisitor == null)
 				isExprVisitor = new IsExprVisitor(this);
 
