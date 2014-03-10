@@ -76,7 +76,6 @@ namespace D_Parser.Dom
 		BlockStatement _Body;
 
 		readonly NodeDictionary children;
-		readonly List<INode> additionalChildren = new List<INode>();
 
 		/// <summary>
 		/// Used to identify constructor methods. Since it'd be a token otherwise it cannot be used as a regular method's name.
@@ -114,7 +113,7 @@ namespace D_Parser.Dom
 				_In = dm._In;
 				_Out = dm._Out;
 				_Body = dm._Body;
-				UpdateChildrenArray();
+				children.AddRange(dm.children);
 			}
 
 			base.AssignFrom(other);
@@ -124,35 +123,13 @@ namespace D_Parser.Dom
 		public CodeLocation OutToken;
 		public CodeLocation BodyToken;
 		
-		public BlockStatement In { get { return _In; } set { _In = value; UpdateChildrenArray(); } }
-		public BlockStatement Out { get { return _Out; } set { _Out = value; UpdateChildrenArray(); } }
-		public BlockStatement Body { get { return _Body; } set { _Body = value; UpdateChildrenArray(); } }
+		public BlockStatement In { get { return _In; } set { _In = value; } }
+		public BlockStatement Out { get { return _Out; } set { _Out = value; } }
+		public BlockStatement Body { get { return _Body; } set { _Body = value; } }
 
 		public NodeDictionary Children
 		{
 			get { return children; }
-		}
-
-		/// <summary>
-		/// Children which were added artifically via Add() or AddRange()
-		/// In most cases, these are anonymous delegate/class declarations.
-		/// </summary>
-		public List<INode> AdditionalChildren
-		{
-			get { return additionalChildren; }
-		}
-
-		public void UpdateChildrenArray()
-		{
-			lock (children)
-			{
-				children.Clear();
-
-				if (additionalChildren.Count != 0)
-					children.AddRange(additionalChildren);
-
-				children.Sort ();
-			}
 		}
 
 		public enum MethodType
@@ -199,21 +176,12 @@ namespace D_Parser.Dom
 
 		public void Add(INode Node)
 		{
-			Node.Parent = this;
-			additionalChildren.Add(Node);
-
-			UpdateChildrenArray();
+			children.Add(Node);
 		}
 
 		public void AddRange(IEnumerable<INode> Nodes)
 		{
-			foreach (var n in Nodes)
-			{
-				n.Parent = this;
-				additionalChildren.Add(n);
-			}
-
-			UpdateChildrenArray();
+			children.AddRange(Nodes);
 		}
 
 		public int Count
@@ -244,17 +212,11 @@ namespace D_Parser.Dom
 
 		public IEnumerator<INode> GetEnumerator()
 		{
-			if (children == null)
-				UpdateChildrenArray();
-
 			return children.GetEnumerator();
 		}
 
 		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
 		{
-			if (children == null)
-				UpdateChildrenArray();
-
 			return children.GetEnumerator();
 		}
 
@@ -262,8 +224,6 @@ namespace D_Parser.Dom
 		public void Clear()
 		{
 			children.Clear();
-			additionalChildren.Clear();
-			UpdateChildrenArray();
 		}
 
 		/// <summary>
