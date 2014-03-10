@@ -134,7 +134,7 @@ namespace ExaustiveCompletionTester
 				}
 				catch (Exception e)
 				{
-					ExceptionsTriggered.Add(new Tuple<int, string>(i, e.StackTrace));
+					ExceptionsTriggered.Add(new Tuple<int, string>(i, e.Message + "\r\nStack Trace:\r\n" + e.StackTrace));
 				}
 
 				i++;

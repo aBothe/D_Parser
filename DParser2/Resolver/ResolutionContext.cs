@@ -90,6 +90,7 @@ namespace D_Parser.Resolver
 		}
 		#endregion
 
+		[Conditional("DEBUG")]
 		~ResolutionContext()
 		{
 			if (Debugger.IsLogging ()) {
