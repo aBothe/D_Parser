@@ -10,6 +10,9 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExaustiveCompletionTester", "ExaustiveCompletionTester\ExaustiveCompletionTester.csproj", "{264DEBEB-401D-4B3D-9927-880802E22991}"
 EndProject
 Global
+	GlobalSection(TestCaseManagementSettings) = postSolution
+		CategoryFile = DParser2.Unittest.vsmdi
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|Mixed Platforms = Debug|Mixed Platforms
@@ -21,6 +24,8 @@ Global
 		Release|Mixed Platforms = Release|Mixed Platforms
 		Release|x86 = Release|x86
 		Unittest|Any CPU = Unittest|Any CPU
+		Unittest|Mixed Platforms = Unittest|Mixed Platforms
+		Unittest|x86 = Unittest|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{0290A229-9AA1-41C3-B525-CAFB86D8BC42}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -41,6 +46,31 @@ Global
 		{0290A229-9AA1-41C3-B525-CAFB86D8BC42}.Release|x86.ActiveCfg = Release|Any CPU
 		{0290A229-9AA1-41C3-B525-CAFB86D8BC42}.Unittest|Any CPU.ActiveCfg = Debug|Any CPU
 		{0290A229-9AA1-41C3-B525-CAFB86D8BC42}.Unittest|Any CPU.Build.0 = Debug|Any CPU
+		{0290A229-9AA1-41C3-B525-CAFB86D8BC42}.Unittest|Mixed Platforms.ActiveCfg = Release|x86
+		{0290A229-9AA1-41C3-B525-CAFB86D8BC42}.Unittest|Mixed Platforms.Build.0 = Release|x86
+		{0290A229-9AA1-41C3-B525-CAFB86D8BC42}.Unittest|x86.ActiveCfg = Release|x86
+		{0290A229-9AA1-41C3-B525-CAFB86D8BC42}.Unittest|x86.Build.0 = Release|x86
+		{F6C093DA-4643-4063-8587-E61C1F38779B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F6C093DA-4643-4063-8587-E61C1F38779B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F6C093DA-4643-4063-8587-E61C1F38779B}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{F6C093DA-4643-4063-8587-E61C1F38779B}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{F6C093DA-4643-4063-8587-E61C1F38779B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F6C093DA-4643-4063-8587-E61C1F38779B}.Debug|x86.Build.0 = Debug|Any CPU
+		{F6C093DA-4643-4063-8587-E61C1F38779B}.Debug-Linux|Any CPU.ActiveCfg = Debug-Linux|Any CPU
+		{F6C093DA-4643-4063-8587-E61C1F38779B}.Debug-Linux|Any CPU.Build.0 = Debug-Linux|Any CPU
+		{F6C093DA-4643-4063-8587-E61C1F38779B}.Debug-Linux|Mixed Platforms.ActiveCfg = Debug-Linux|Any CPU
+		{F6C093DA-4643-4063-8587-E61C1F38779B}.Debug-Linux|Mixed Platforms.Build.0 = Debug-Linux|Any CPU
+		{F6C093DA-4643-4063-8587-E61C1F38779B}.Debug-Linux|x86.ActiveCfg = Debug-Linux|Any CPU
+		{F6C093DA-4643-4063-8587-E61C1F38779B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F6C093DA-4643-4063-8587-E61C1F38779B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F6C093DA-4643-4063-8587-E61C1F38779B}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{F6C093DA-4643-4063-8587-E61C1F38779B}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{F6C093DA-4643-4063-8587-E61C1F38779B}.Release|x86.ActiveCfg = Release|Any CPU
+		{F6C093DA-4643-4063-8587-E61C1F38779B}.Release|x86.Build.0 = Release|Any CPU
+		{F6C093DA-4643-4063-8587-E61C1F38779B}.Unittest|Any CPU.ActiveCfg = Debug|Any CPU
+		{F6C093DA-4643-4063-8587-E61C1F38779B}.Unittest|Any CPU.Build.0 = Debug|Any CPU
+		{F6C093DA-4643-4063-8587-E61C1F38779B}.Unittest|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{F6C093DA-4643-4063-8587-E61C1F38779B}.Unittest|x86.ActiveCfg = Release|Any CPU
 		{20ACEA79-DB1A-4F64-92D0-D31B4221CECB}.Debug|Any CPU.ActiveCfg = Debug|x86
 		{20ACEA79-DB1A-4F64-92D0-D31B4221CECB}.Debug|Any CPU.Build.0 = Debug|x86
 		{20ACEA79-DB1A-4F64-92D0-D31B4221CECB}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
@@ -61,6 +91,8 @@ Global
 		{20ACEA79-DB1A-4F64-92D0-D31B4221CECB}.Release|x86.Build.0 = Release|x86
 		{20ACEA79-DB1A-4F64-92D0-D31B4221CECB}.Unittest|Any CPU.ActiveCfg = Debug|x86
 		{20ACEA79-DB1A-4F64-92D0-D31B4221CECB}.Unittest|Any CPU.Build.0 = Debug|x86
+		{20ACEA79-DB1A-4F64-92D0-D31B4221CECB}.Unittest|Mixed Platforms.ActiveCfg = Release|x86
+		{20ACEA79-DB1A-4F64-92D0-D31B4221CECB}.Unittest|x86.ActiveCfg = Release|x86
 		{264DEBEB-401D-4B3D-9927-880802E22991}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{264DEBEB-401D-4B3D-9927-880802E22991}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{264DEBEB-401D-4B3D-9927-880802E22991}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
@@ -81,33 +113,13 @@ Global
 		{264DEBEB-401D-4B3D-9927-880802E22991}.Release|x86.Build.0 = Release|Any CPU
 		{264DEBEB-401D-4B3D-9927-880802E22991}.Unittest|Any CPU.ActiveCfg = Debug|Any CPU
 		{264DEBEB-401D-4B3D-9927-880802E22991}.Unittest|Any CPU.Build.0 = Debug|Any CPU
-		{F6C093DA-4643-4063-8587-E61C1F38779B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F6C093DA-4643-4063-8587-E61C1F38779B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F6C093DA-4643-4063-8587-E61C1F38779B}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{F6C093DA-4643-4063-8587-E61C1F38779B}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
-		{F6C093DA-4643-4063-8587-E61C1F38779B}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{F6C093DA-4643-4063-8587-E61C1F38779B}.Debug|x86.Build.0 = Debug|Any CPU
-		{F6C093DA-4643-4063-8587-E61C1F38779B}.Debug-Linux|Any CPU.ActiveCfg = Debug-Linux|Any CPU
-		{F6C093DA-4643-4063-8587-E61C1F38779B}.Debug-Linux|Any CPU.Build.0 = Debug-Linux|Any CPU
-		{F6C093DA-4643-4063-8587-E61C1F38779B}.Debug-Linux|Mixed Platforms.ActiveCfg = Debug-Linux|Any CPU
-		{F6C093DA-4643-4063-8587-E61C1F38779B}.Debug-Linux|Mixed Platforms.Build.0 = Debug-Linux|Any CPU
-		{F6C093DA-4643-4063-8587-E61C1F38779B}.Debug-Linux|x86.ActiveCfg = Debug-Linux|Any CPU
-		{F6C093DA-4643-4063-8587-E61C1F38779B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F6C093DA-4643-4063-8587-E61C1F38779B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F6C093DA-4643-4063-8587-E61C1F38779B}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{F6C093DA-4643-4063-8587-E61C1F38779B}.Release|Mixed Platforms.Build.0 = Release|Any CPU
-		{F6C093DA-4643-4063-8587-E61C1F38779B}.Release|x86.ActiveCfg = Release|Any CPU
-		{F6C093DA-4643-4063-8587-E61C1F38779B}.Release|x86.Build.0 = Release|Any CPU
-		{F6C093DA-4643-4063-8587-E61C1F38779B}.Unittest|Any CPU.ActiveCfg = Debug|Any CPU
-		{F6C093DA-4643-4063-8587-E61C1F38779B}.Unittest|Any CPU.Build.0 = Debug|Any CPU
-	EndGlobalSection
-	GlobalSection(MonoDevelopProperties) = preSolution
-		StartupItem = ExaustiveCompletionTester\ExaustiveCompletionTester.csproj
-	EndGlobalSection
-	GlobalSection(TestCaseManagementSettings) = postSolution
-		CategoryFile = DParser2.Unittest.vsmdi
+		{264DEBEB-401D-4B3D-9927-880802E22991}.Unittest|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{264DEBEB-401D-4B3D-9927-880802E22991}.Unittest|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = ExaustiveCompletionTester\ExaustiveCompletionTester.csproj
 	EndGlobalSection
 EndGlobal

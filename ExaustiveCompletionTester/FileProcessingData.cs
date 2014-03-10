@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using Tests;
 using D_Parser.Completion;
 using System.Collections.Generic;
 
@@ -126,7 +125,7 @@ namespace ExaustiveCompletionTester
 				}
 
 				var tStr = str.Substring(0, i);
-				var ed = CompletionTests.GenEditorData(line, i - lineStart, tStr);
+				var ed = CompletionFacilities.GenEditorData(line, i - lineStart, tStr);
 				var g = new SpecializedDataGen();
 				try
 				{
