@@ -8,6 +8,8 @@ namespace ExaustiveCompletionTester
 {
 	public static class Program
 	{
+		public static readonly List<string> filesToExclude = new List<string>();
+		public const string fileBlackListFile = ".\\done.txt";
 		public static readonly ConcurrentQueue<FileProcessingData> completedFiles = new ConcurrentQueue<FileProcessingData>();
 		public static readonly ConcurrentQueue<FileProcessingData> filesToProcess = new ConcurrentQueue<FileProcessingData>();
 		public static readonly ConcurrentQueue<FileProcessingData> startedFiles = new ConcurrentQueue<FileProcessingData>();
@@ -18,6 +20,9 @@ namespace ExaustiveCompletionTester
 
 		public static void Main (string[] args)
 		{
+			if (File.Exists(fileBlackListFile))
+				filesToExclude.AddRange(File.ReadLines(fileBlackListFile));
+
 			if (Directory.Exists(ExceptionsDirectory))
 				Directory.Delete(ExceptionsDirectory, true);
 			foreach (var v in Directory.EnumerateFileSystemEntries(Config.PhobosPath))
@@ -39,6 +44,7 @@ namespace ExaustiveCompletionTester
 
 				while (completedFiles.TryDequeue(out curFile))
 				{
+					File.AppendAllText(fileBlackListFile,Environment.NewLine + curFile.FullFilePath);
 					WriteFromLeft(curFile.FileID, "100%)");
 					if (curFile.ExceptionsTriggered.Count > 0)
 					{
@@ -104,7 +110,7 @@ namespace ExaustiveCompletionTester
 		{
 			if (File.Exists(path))
 			{
-				if (Path.GetExtension(path) == ".d" || Path.GetExtension(path) == ".di")
+				if (!filesToExclude.Contains(path) && (Path.GetExtension(path) == ".d" || Path.GetExtension(path) == ".di"))
 				{
 					filesToProcess.Enqueue(new FileProcessingData(path, filesToProcess.Count + 1));
 				}
