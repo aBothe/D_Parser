@@ -52,9 +52,9 @@ namespace TestTool
 			var dirs = Environment.OSVersion.Platform == PlatformID.Unix ? new[] { @"/usr/include/dlang" } : new[] { @"B:\Programs\D\dmd2\src\phobos", @"B:\Programs\D\dmd2\src\druntime\import" };
 			var dirsLeft = dirs.Length;
 			var ev=new System.Threading.AutoResetEvent(false);
-			GlobalParseCache.BeginAddOrUpdatePaths(dirs, false, (pc) =>
+			GlobalParseCache.BeginAddOrUpdatePaths(dirs, true, (pc) =>
 			{
-				Console.WriteLine("{1}ms", pc.Directory, pc.ParseDuration);
+				Console.WriteLine("{0}/{1}ms", pc.Duration, pc.ParseDuration);
 				ev.Set();
 			});
 
