@@ -30,14 +30,14 @@ namespace D_Parser.Dom
 				Node.Parent = ParentNode;
 
 			List<INode> l;
-		TryAdd:
-			if (!nameDict.TryAdd(Node.NameHash, l = new List<INode>()))
+		TryGet:
+			if (!nameDict.TryGetValue (Node.NameHash, out l))
 			{
 				// This may look like it has the possibility to loop
 				// infinitely, but the circumstances required for it
 				// to do so are very very very very specific.
-				if (!nameDict.TryGetValue (Node.NameHash, out l))
-					goto TryAdd;
+				if (!nameDict.TryAdd(Node.NameHash, l = new List<INode>()))
+					goto TryGet;
 			}
 
 			l.Add(Node);
@@ -51,14 +51,14 @@ namespace D_Parser.Dom
 
 			List<INode> l;
 
-		TryAdd:
-			if (!nameDict.TryAdd(Node.NameHash, l = new List<INode>()))
+		TryGet:
+			if (!nameDict.TryGetValue (Node.NameHash, out l))
 			{
 				// This may look like it has the possibility to loop
 				// infinitely, but the circumstances required for it
 				// to do so are very very very very specific.
-				if (!nameDict.TryGetValue (Node.NameHash, out l))
-					goto TryAdd;
+				if (!nameDict.TryAdd(Node.NameHash, l = new List<INode>()))
+					goto TryGet;
 			}
 
 			l.Add(Node);
