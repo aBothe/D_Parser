@@ -2852,7 +2852,8 @@ namespace D_Parser.Parser
 							else if (laKind == CloseSquareBracket || laKind == (Comma))
 							{
 								var args = new List<IExpression>();
-								args.Add(firstEx);
+								if(firstEx != null)
+									args.Add(firstEx);
 								if (laKind == Comma)
 								{
 									Step();
@@ -3038,12 +3039,16 @@ namespace D_Parser.Parser
 					var ce = new AssertExpression() { Location=startLoc};
 
 					var exprs = new List<IExpression>();
-					exprs.Add(AssignExpression());
+					var assertedExpr = AssignExpression();
+					if(assertedExpr!=null)
+						exprs.Add(assertedExpr);
 
 					if (laKind == (Comma))
 					{
 						Step();
-						exprs.Add(AssignExpression());
+						assertedExpr = AssignExpression();
+						if (assertedExpr != null)
+							exprs.Add(assertedExpr);
 					}
 					ce.AssignExpressions = exprs.ToArray();
 					Expect(CloseParenthesis);
@@ -3284,8 +3289,8 @@ namespace D_Parser.Parser
 			else // Normal array literal
 			{
 				var ae = new List<IExpression>();
-
-				ae.Add(firstExpression);
+				if(firstExpression != null)
+					ae.Add(firstExpression);
 
 				while (laKind == Comma)
 				{
@@ -4665,7 +4670,8 @@ namespace D_Parser.Parser
 							break;
 						}
 
-						bs.Add(s);
+						if(s != null)
+							bs.Add(s);
 					}
 				}
 
@@ -5485,7 +5491,9 @@ namespace D_Parser.Parser
 						}else
 						{
 							Lexer.RestoreLookAheadBackup();
-							args.Add(AssignExpression(Scope));
+							var ex = AssignExpression(Scope);
+							if(ex != null)
+								args.Add(ex);
 						}
 					}
 				}
