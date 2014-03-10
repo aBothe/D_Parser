@@ -46,6 +46,9 @@ namespace D_Parser.Misc
 					case "HideDeprecatedNodes":
 						HideDeprecatedNodes = x.ReadString().ToLower() == "true";
 						break;
+					case "ShowStructMembersInStructInitOnly":
+						ShowStructMembersInStructInitOnly = x.ReadString().ToLower() == "true";
+						break;
 				}
 			}
 		}
@@ -57,6 +60,7 @@ namespace D_Parser.Misc
 			x.WriteElementString("MixinAnalysis", (!DisableMixinAnalysis).ToString());
 			x.WriteElementString("CompletionSuggestionMode", EnableSuggestionMode.ToString());
 			x.WriteElementString("HideDeprecatedNodes", HideDeprecatedNodes.ToString());
+			x.WriteElementString("ShowStructMembersInStructInitOnly", ShowStructMembersInStructInitOnly.ToString());
 		}
 	}
 }
