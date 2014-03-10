@@ -484,7 +484,7 @@ namespace D_Parser.Parser
 
 			bool allowElse = laKind != Colon;
 
-			var metaBlock = AttributeTrail(module, c, true) as AttributeMetaDeclaration;
+			var metaBlock = AttributeSpecifier(module, c, true) as AttributeMetaDeclaration;
 
 			if (allowElse && metaBlock == null)
 			{
@@ -748,7 +748,7 @@ namespace D_Parser.Parser
 						goto case Ref;
 					else if (IsEOF)
 					{
-						if (CheckForStorageClasses(Scope as DBlockNode))
+						if (CheckForStorageClasses(Scope))
 							goto case Ref;
 						dl = Decl(Scope);
 						if (dl != null)
@@ -1644,7 +1644,7 @@ namespace D_Parser.Parser
 			var attr = new List<DAttribute>();
 			var startLocation = la.Location;
 
-			CheckForStorageClasses (Scope as DBlockNode);
+			CheckForStorageClasses (Scope);
 
 			while ((IsParamModifier(laKind) && laKind != InOut) || (IsMemberFunctionAttribute(laKind) && Lexer.CurrentPeekToken.Kind != OpenParenthesis))
 			{
@@ -1999,7 +1999,12 @@ namespace D_Parser.Parser
 
 			//TODO: What about these semicolons after e.g. a pragma? Enlist these attributes anyway in the meta decl list?
 			if (laKind != Semicolon)
-				AttributeTrail (scope as DBlockNode, attr);
+			{
+				if (scope is DBlockNode)
+					AttributeSpecifier(scope as DBlockNode, attr);
+				else
+					PushAttribute(attr, false);
+			}
 		}
 		
 		/// <summary>
@@ -2057,7 +2062,7 @@ namespace D_Parser.Parser
 		/// <param name="previouslyParsedAttribute"></param>
 		/// <param name="RequireDeclDef">If no colon and no open curly brace is given as lookahead, a DeclDef may be parsed otherwise, if parameter is true.</param>
 		/// <returns></returns>
-		IMetaDeclaration AttributeTrail(DBlockNode module, DAttribute previouslyParsedAttribute, bool RequireDeclDef = false)
+		IMetaDeclaration AttributeSpecifier(DBlockNode module, DAttribute previouslyParsedAttribute, bool RequireDeclDef = false)
 		{
 			if (laKind == Colon)
 			{
