@@ -55,8 +55,6 @@ namespace D_Parser.Completion.Providers
 				this.alreadyTakenNames = tkn;
 				this.gen = gen;
 
-				ctxt.CurrentContext.Set(structType.Definition as DClassLike);
-
 				if (CompletionOptions.Instance.ShowStructMembersInStructInitOnly)
 					this.DeepScanClass(structType, MemberFilter.Variables, false);
 				else
