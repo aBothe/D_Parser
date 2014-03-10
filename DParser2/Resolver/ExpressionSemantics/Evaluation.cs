@@ -66,6 +66,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public static ISymbolValue EvaluateValue(IExpression x, AbstractSymbolValueProvider vp)
 		{
+			if (x == null)
+				return null;
+
 			if (vp == null)
 				vp = new StandardValueProvider(null);
 

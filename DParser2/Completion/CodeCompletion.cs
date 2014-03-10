@@ -50,7 +50,7 @@ namespace D_Parser.Completion
 
 			var sr = FindCurrentCaretContext(editor, ref _b, out _s, out inNonCode);
 
-			if (inNonCode)
+			if (inNonCode || _b == null)
 				return false;
 
 			if (editor.CaretLocation > _b.EndLocation) {
