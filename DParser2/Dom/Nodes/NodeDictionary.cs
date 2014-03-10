@@ -8,7 +8,7 @@ namespace D_Parser.Dom
 	/// </summary>
 	public class NodeDictionary : IEnumerable<INode>
 	{
-		ConcurrentDictionary<int, List<INode>> nameDict = new ConcurrentDictionary<int, List<INode>>();
+		volatile ConcurrentDictionary<int, List<INode>> nameDict = new ConcurrentDictionary<int, List<INode>>();
 		/// <summary>
 		/// For faster enum access, store a separate list of INodes
 		/// </summary>
@@ -30,8 +30,15 @@ namespace D_Parser.Dom
 				Node.Parent = ParentNode;
 
 			List<INode> l;
-			if (!nameDict.TryGetValue (Node.NameHash, out l))
-				nameDict [Node.NameHash] = l = new List<INode> ();
+		TryAdd:
+			if (!nameDict.TryAdd(Node.NameHash, l = new List<INode>()))
+			{
+				// This may look like it has the possibility to loop
+				// infinitely, but the circumstances required for it
+				// to do so are very very very very specific.
+				if (!nameDict.TryGetValue (Node.NameHash, out l))
+					goto TryAdd;
+			}
 
 			l.Add(Node);
 		}
@@ -42,11 +49,16 @@ namespace D_Parser.Dom
 			if (ParentNode != null)
 				Node.Parent = ParentNode;
 
-			var n = Node.NameHash;
 			List<INode> l;
 
-			if (!nameDict.TryGetValue (n, out l)) {
-				nameDict [n] = l = new List<INode> ();
+		TryAdd:
+			if (!nameDict.TryAdd(Node.NameHash, l = new List<INode>()))
+			{
+				// This may look like it has the possibility to loop
+				// infinitely, but the circumstances required for it
+				// to do so are very very very very specific.
+				if (!nameDict.TryGetValue (Node.NameHash, out l))
+					goto TryAdd;
 			}
 
 			l.Add(Node);
@@ -78,7 +90,7 @@ namespace D_Parser.Dom
 
 		public void Clear()
 		{
-			nameDict.Clear();
+			nameDict = new ConcurrentDictionary<int, List<INode>> ();
 			children.Clear();
 			children.TrimExcess ();
 		}
