@@ -18,12 +18,12 @@ namespace D_Parser.Dom.Expressions
 
 		public CodeLocation Location
 		{
-			get { return LeftOperand.Location; }
+			get { return LeftOperand != null ? LeftOperand.Location : CodeLocation.Empty; }
 		}
 
 		public CodeLocation EndLocation
 		{
-			get { return RightOperand.EndLocation; }
+			get { return RightOperand != null ? RightOperand.EndLocation : CodeLocation.Empty; }
 		}
 
 		public IExpression[] SubExpressions
