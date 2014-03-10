@@ -139,8 +139,7 @@ namespace D_Parser.Resolver
 			if (t is AmbiguousType)
 			{
 				foreach (var o in (t as AmbiguousType).Overloads)
-					if (o != null)
-						yield return o;
+					yield return o;
 			}
 			else if (t != null)
 				yield return t;
@@ -162,22 +161,17 @@ namespace D_Parser.Resolver
 			}
 		}
 
-		public AmbiguousType(AbstractType[] o, ISyntaxRegion typeBase = null)
-		{
-			if (o == null)
-				throw new ArgumentNullException("o");
-
-			DeclarationOrExpressionBase = typeBase;
-			Overloads = o;
-		}
-
 		public AmbiguousType(IEnumerable<AbstractType> o, ISyntaxRegion typeBase = null)
 		{
 			if (o == null)
 				throw new ArgumentNullException("o");
 
 			DeclarationOrExpressionBase = typeBase;
-			Overloads = o as AbstractType[] ?? o.ToArray();
+			var l = new List<AbstractType>();
+			foreach (var ov in o)
+				if (ov != null)
+					l.Add(ov);
+			Overloads = l.ToArray();
 		}
 
 		public override AbstractType Clone(bool cloneBase)
