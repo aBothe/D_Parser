@@ -90,7 +90,7 @@ namespace D_Parser.Resolver
 		}
 		#endregion
 
-		[Conditional("DEBUG")]
+#if DEBUG
 		~ResolutionContext()
 		{
 			if (Debugger.IsLogging ()) {
@@ -110,6 +110,7 @@ namespace D_Parser.Resolver
 				}
 			}
 		}
+#endif
 		
 		#region ContextFrame stacking
 		public ContextFrame Pop()

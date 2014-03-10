@@ -452,7 +452,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return midElement;
 		}
 
-		public static SR SearchRegionAt<SR>(List<SR> children, CodeLocation Where) where SR : ISyntaxRegion
+		public static SR SearchRegionAt<SR>(IList<SR> children, CodeLocation Where) where SR : ISyntaxRegion
 		{
 			int start = 0;
 			SR midElement = default(SR);
@@ -519,7 +519,7 @@ namespace D_Parser.Resolver.TypeResolution
 			if (dm != null)
 			{
 				// Do an extra re-scan for anonymous methods etc.
-				var subItem = SearchRegionAt<INode> (dm.AdditionalChildren, Where);
+				var subItem = SearchRegionAt<INode> (dm.Children, Where);
 				if (subItem != null) {
 					if (!(subItem is DMethod))
 						subItem = subItem.Parent;

@@ -186,7 +186,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 				// The method's declaration children are handled above already via BlockStatement.GetItemHierarchy().
 				// except AdditionalChildren:
-				foreach (var ch in dm.AdditionalChildren)
+				foreach (var ch in dm.Children)
 					if (CanAddMemberOfType(VisibleMembers, ch))
 						breakOnNextScope |= HandleItem(ch);
 
