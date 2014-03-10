@@ -6,7 +6,7 @@ namespace D_Parser.Dom
 	/// <summary>
 	/// Stores node children. Thread safe.
 	/// </summary>
-	public class NodeDictionary : IEnumerable<INode>
+	public class NodeDictionary : IList<INode>
 	{
 		volatile ConcurrentDictionary<int, List<INode>> nameDict = new ConcurrentDictionary<int, List<INode>>();
 		/// <summary>
@@ -21,7 +21,7 @@ namespace D_Parser.Dom
 			ParentNode = parent;
 		}
 
-		public void Insert(INode Node, int i)
+		public void Insert(int i, INode Node)
 		{
 			children.Insert(i,Node);
 
@@ -159,6 +159,10 @@ namespace D_Parser.Dom
 			{
 				return children[Index];
 			}
+			set
+			{
+				throw new System.NotImplementedException();
+			}
 		}
 
 		class AscNodeLocationComparer : Comparer<INode>
@@ -184,6 +188,31 @@ namespace D_Parser.Dom
 		public void Sort(bool asc = true)
 		{
 			children.Sort (asc ? new AscNodeLocationComparer() as IComparer<INode> : new DescNodeLocationComparer());
+		}
+
+		public int IndexOf(INode item)
+		{
+			return children.IndexOf(item);
+		}
+
+		public void RemoveAt(int index)
+		{
+			Remove(ItemAt(index));
+		}
+
+		public bool Contains(INode item)
+		{
+			return children.Contains(item);
+		}
+
+		public void CopyTo(INode[] array, int arrayIndex)
+		{
+			children.CopyTo(array, arrayIndex);
+		}
+
+		public bool IsReadOnly
+		{
+			get { return false; }
 		}
 	}
 }
