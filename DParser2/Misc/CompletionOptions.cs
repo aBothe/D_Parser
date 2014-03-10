@@ -20,7 +20,10 @@ namespace D_Parser.Misc
 
 		public bool DisableMixinAnalysis = true;
 		public bool HideDeprecatedNodes = true;
-
+		/// <summary>
+		/// If false, all ctrl+space-leveled items will get shown in completion either
+		/// </summary>
+		public bool ShowStructMembersInStructInitOnly = true;
 
 		public void Load(XmlReader x)
 		{

@@ -44,6 +44,7 @@ namespace D_Parser.Completion
 		bool explicitlyNoCompletion;
 
 		bool handlesInitializer;
+		DVariable initializedNode;
 		bool handlesBaseClasses;
 		DClassLike handledClass;
 
@@ -119,6 +120,7 @@ namespace D_Parser.Completion
 					halt = true;
 				}
 			}else if (n.Initializer != null) {
+				initializedNode = n;
 				handlesInitializer = true;
 				n.Initializer.Accept (this);
 				handlesInitializer = false;
@@ -498,6 +500,22 @@ namespace D_Parser.Completion
 			}
 			else
 				base.Visit (x);
+		}
+
+		public override void Visit(StructInitializer init)
+		{
+			if (initializedNode != null && init.MemberInitializers != null && init.MemberInitializers.Length != 0)
+			{
+				var lastMemberInit = init.MemberInitializers[init.MemberInitializers.Length - 1];
+				if (lastMemberInit.MemberNameHash == DTokens.IncompleteIdHash)
+				{
+					prv = new StructInitializerCompletion(cdgen,initializedNode, init);
+					halt = true;
+					return;
+				}
+			}
+
+			base.Visit(init);
 		}
 		#endregion
 	}

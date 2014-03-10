@@ -1734,9 +1734,13 @@ namespace D_Parser.Parser
 						Step();
 						sinit.MemberName = t.Value;
 						Step();
-					}
 
-					sinit.Value = NonVoidInitializer(Scope);
+						sinit.Value = NonVoidInitializer(Scope);
+					}
+					else if (IsEOF)
+					{
+						sinit.MemberNameHash = DTokens.IncompleteIdHash;
+					}
 
 					sinit.EndLocation = t.EndLocation;
 

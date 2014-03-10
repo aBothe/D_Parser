@@ -4,12 +4,19 @@ namespace D_Parser.Dom.Expressions
 {
 	public class StructMemberInitializer : ISyntaxRegion, IVisitable<ExpressionVisitor>
 	{
-		public string MemberName = string.Empty;
+		public string MemberName { 
+			get { return Strings.TryGet(MemberNameHash); } 
+			set {
+				Strings.Add(value);
+				MemberNameHash = value.GetHashCode();
+			}
+		}
+		public int MemberNameHash = 0;
 		public IExpression Value;
 
 		public sealed override string ToString()
 		{
-			return (!string.IsNullOrEmpty(MemberName) ? (MemberName + ":") : "") + Value.ToString();
+			return (MemberNameHash != 0 ? (MemberName + ": ") : "") + (Value != null ? Value.ToString() : "");
 		}
 
 		public CodeLocation Location
@@ -39,8 +46,7 @@ namespace D_Parser.Dom.Expressions
 			ulong hashCode = AbstractVariableInitializer.AbstractInitializerHash;
 			unchecked
 			{
-				if (MemberName != null)
-					hashCode += 1000000007 * (ulong)MemberName.GetHashCode();
+				hashCode += 1000000007 * (ulong)MemberNameHash;
 				if (Value != null)
 					hashCode += 1000000009 * Value.GetHash();
 			}
