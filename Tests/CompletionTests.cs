@@ -189,7 +189,7 @@ int a;
 			var foo2 = m ["foo"].First () as DVariable;
 			Assert.That (foo2, Is.SameAs(foo));
 
-			var lambda = main2.AdditionalChildren [0] as DMethod;
+			var lambda = main2.Children [0] as DMethod;
 			Assert.That (lambda, Is.Not.Null);
 			Assert.That (lambda.Parameters.Count, Is.EqualTo (1));
 			Assert.That (lambda.Parameters [0].Type, Is.Not.Null);
@@ -234,7 +234,7 @@ int a;
 			var foo2 = m ["foo"].First () as DVariable;
 			Assert.That (foo2, Is.SameAs(foo));
 
-			var lambda = main2.AdditionalChildren [0] as DMethod;
+			var lambda = main2.Children [0] as DMethod;
 			Assert.That (lambda, Is.Not.Null);
 			Assert.That (lambda.Parameters.Count, Is.EqualTo (1));
 			Assert.That (lambda.Parameters [0].Type, Is.Not.Null);
