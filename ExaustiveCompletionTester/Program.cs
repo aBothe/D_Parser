@@ -33,8 +33,9 @@ namespace ExaustiveCompletionTester
 				workerCount = 1;
 			liveWorkerCount = workerCount;
 			activeData = new FileProcessingData[workerCount];
+			const int threadStackSize = 64 * 1024 * 1024; // 64mb
 			for (int i = 0; i < workerCount; i++)
-				new Thread(workerMain).Start(i);
+				new Thread(workerMain, threadStackSize).Start(i);
 
 			FileProcessingData curFile = null;
 			while (liveWorkerCount > 0)
