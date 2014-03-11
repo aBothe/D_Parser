@@ -291,7 +291,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			var pop = ctxt.ScopedBlock != dm;
 			if (pop){
-				ctxt.PushNewScope(dm);
+				ctxt.PushNewScope(dm, dm.Body);
 				ctxt.CurrentContext.DeducedTemplateParameters = deducedTypeDict;
 			}
 
@@ -299,6 +299,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			int currentArg = 0;
 			if (dm.Parameters.Count > 0 || callArguments.Count > 0)
 			{
+				bool hadDTuples = false;
 				for (int i = 0; i < dm.Parameters.Count; i++)
 				{
 					var paramType = dm.Parameters[i].Type;
@@ -308,7 +309,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 					// Handle the usage of tuples: Tuples may only be used as as-is, so not as an array, pointer or in a modified way..
 					if (paramType is IdentifierDeclaration &&
-						TryHandleMethodArgumentTuple(ctxt, ref add, callArguments, dm, deducedTypeDict, i, ref currentArg))
+						(hadDTuples |= TryHandleMethodArgumentTuple(ctxt, ref add, callArguments, dm, deducedTypeDict, i, ref currentArg)))
 						continue;
 					else if (currentArg < callArguments.Count)
 					{
@@ -326,7 +327,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				}
 
 				// Too few args
-				if (currentArg < callArguments.Count)
+				if (!hadDTuples && currentArg < callArguments.Count)
 					add = false;
 			}
 
