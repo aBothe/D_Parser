@@ -977,7 +977,7 @@ namespace D_Parser.Resolver.TypeResolution
 				if (popAfterwards) {
 					var options = ctxt.CurrentContext.ContextDependentOptions;
 					var applyOptions = ctxt.ScopedBlockIsInNodeHierarchy (m);
-					ctxt.PushNewScope (newScope);
+					ctxt.PushNewScope (newScope, newScope is DMethod ? (newScope as DMethod).GetSubBlockAt(m.Location) : null);
 					if (applyOptions)
 						ctxt.CurrentContext.ContextDependentOptions = options;
 				}
