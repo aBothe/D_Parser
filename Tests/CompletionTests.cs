@@ -143,16 +143,13 @@ string ) {
 }";
 			var caret = new CodeLocation (8, 4);
 			bool _u;
-			IncrementalParsing.UpdateBlockPartly (m, code, DocumentHelper.LocationToOffset (code, caret), caret, out _u);
+			var newMod = IncrementalParsing.UpdateBlockPartly (m, code, DocumentHelper.LocationToOffset (code, caret), caret, out _u);
 
-			var main2 = m ["main"].First () as DMethod;
+			var main2 = newMod ["main"].First () as DMethod;
 			Assert.That (main, Is.Not.SameAs (main2));
 			Assert.That (main2.Parameters.Count, Is.EqualTo (1));
 			Assert.That (main2.Parameters [0].Type, Is.Not.Null);
 			Assert.That (main2.Parameters [0].NameHash, Is.EqualTo(DTokens.IncompleteIdHash));
-
-			var foo2 = m ["foo"].First () as DVariable;
-			Assert.That (foo2, Is.SameAs(foo));
 		}
 
 		[Test]
@@ -181,23 +178,13 @@ int a;
 }";
 			var caret = new CodeLocation (15, 5);
 			bool _u;
-			IncrementalParsing.UpdateBlockPartly (stmt as BlockStatement, code, DocumentHelper.LocationToOffset (code, caret), caret, out _u);
+			var newMain = IncrementalParsing.UpdateBlockPartly (stmt as BlockStatement, code, DocumentHelper.LocationToOffset (code, caret), caret, out _u) as DMethod;
 
-			var main2 = m ["main"].First () as DMethod;
-			Assert.That (main, Is.SameAs (main2));
-
-			var foo2 = m ["foo"].First () as DVariable;
-			Assert.That (foo2, Is.SameAs(foo));
-
-			var lambda = main2.Children [0] as DMethod;
+			var lambda = newMain.Children [0] as DMethod;
 			Assert.That (lambda, Is.Not.Null);
 			Assert.That (lambda.Parameters.Count, Is.EqualTo (1));
 			Assert.That (lambda.Parameters [0].Type, Is.Not.Null);
 			Assert.That (lambda.Parameters [0].Name, Is.EqualTo("b"));
-
-			b = DResolver.SearchBlockAt (m, caret, out stmt);
-			Assert.That (lambda, Is.SameAs (b));
-			Assert.That (stmt, Is.TypeOf(typeof(ReturnStatement)));
 		}
 
 		[Test]
@@ -226,15 +213,9 @@ int a;
 }";
 			var caret = new CodeLocation (9, 5);
 			bool _u;
-			IncrementalParsing.UpdateBlockPartly (stmt as BlockStatement, code, DocumentHelper.LocationToOffset (code, caret), caret, out _u);
+			var newMod = IncrementalParsing.UpdateBlockPartly (stmt as BlockStatement, code, DocumentHelper.LocationToOffset (code, caret), caret, out _u) as DMethod;
 
-			var main2 = m ["main"].First () as DMethod;
-			Assert.That (main, Is.SameAs (main2));
-
-			var foo2 = m ["foo"].First () as DVariable;
-			Assert.That (foo2, Is.SameAs(foo));
-
-			var lambda = main2.Children [0] as DMethod;
+			var lambda = newMod.Children [0] as DMethod;
 			Assert.That (lambda, Is.Not.Null);
 			Assert.That (lambda.Parameters.Count, Is.EqualTo (1));
 			Assert.That (lambda.Parameters [0].Type, Is.Not.Null);

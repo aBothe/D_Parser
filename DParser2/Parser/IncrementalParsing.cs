@@ -262,7 +262,7 @@ namespace D_Parser.Parser
 
 				foreach(var decl in originalDeclarations)
 				{
-					if (decl.NameHash == n.NameHash &&
+					if (decl.NameHash == n.NameHash && n.NameHash != DTokens.IncompleteIdHash &&
 						decl.GetType() == n.GetType() &&
 						TryCompareNodeEquality(decl as DNode, n))
 					{
