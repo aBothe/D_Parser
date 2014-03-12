@@ -266,7 +266,7 @@ namespace D_Parser.Parser
 						decl.GetType() == n.GetType() &&
 						TryCompareNodeEquality(decl as DNode, n))
 					{
-						n.NameHash = 0; // Don't even risk referencing issues and just hide parsed stuff
+						n.NameHash = -1; // Don't even risk referencing issues and just hide parsed stuff
 						return;
 					}
 				}
