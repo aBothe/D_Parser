@@ -95,7 +95,7 @@ void foo() {}
 
 void ni() {}
 
-void asdf(int ni=23) {
+void asdf(int* ni=23) {
 	if(t.myMember < 50)
 	{
 		bool ni = true;
@@ -131,8 +131,9 @@ void asdf(int ni=23) {
 
 			mod = pcl[0]["modF"];
 			var f = mod["asdf"].First() as DMethod;
-			ctxt.CurrentContext.Set(f, ((f.Body.SubStatements.First() as IfStatement).ThenStatement as BlockStatement).SubStatements.ElementAt(1));
-			t = TypeDeclarationResolver.ResolveIdentifier("ni", ctxt, null);
+			ctxt.CurrentContext.Set(f, f.Body);
+			t = TypeDeclarationResolver.ResolveIdentifier("ni", ctxt, ((f.Body.SubStatements.First() as IfStatement).ThenStatement as BlockStatement).SubStatements.ElementAt(1));
+			Assert.That((t[0] as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 			Assert.That(t.Length, Is.EqualTo(2));
 
 			t = DResolver.FilterOutByResultPriority(ctxt, t).ToArray();
@@ -421,7 +422,7 @@ void foo()
 			var case1 = ((foo.Body.SubStatements.ElementAt(1) as SwitchStatement).ScopedStatement as BlockStatement).SubStatements.ElementAt(1) as SwitchStatement.CaseStatement;
 			var colStmt = case1.SubStatements.ElementAt(1) as ExpressionStatement;
 			
-			var ctxt = CreateDefCtxt(pcl, foo, colStmt);
+			var ctxt = CreateDefCtxt(pcl, foo, foo.Body);
 			
 			var t = ExpressionTypeEvaluation.EvaluateType(colStmt.Expression, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
@@ -639,7 +640,7 @@ void main()
 			var C = ctxt.ParseCache[0]["C"];
 			var main = C["main"].First() as DMethod;
 			var i_foo_stmt = main.Body.SubStatements.ElementAt(2) as ExpressionStatement;
-			ctxt.CurrentContext.Set(main, i_foo_stmt);
+			ctxt.CurrentContext.Set(main, main.Body);
 
 			t = ExpressionTypeEvaluation.EvaluateType(i_foo_stmt.Expression, ctxt);
 
@@ -1844,7 +1845,7 @@ void main() {
 					PostfixForeExpression = new IdentifierExpression("loc") { Location = stmt_x.Location }
 				} 
 			};
-			ctxt.PushNewScope (main, stmt_x);
+			ctxt.PushNewScope (main, main.Body);
 
 			ds = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as DSymbol;
 			Assert.That (ds, Is.TypeOf(typeof(TemplateParameterSymbol)));
@@ -2785,7 +2786,7 @@ void main()
 			var A = pcl[0]["A"];
 			var main = A["main"].First() as DMethod;
 			var stmt = main.Body.SubStatements.ElementAt(1);
-			var ctxt = ResolutionTests.CreateDefCtxt(pcl, main, stmt);
+			var ctxt = ResolutionTests.CreateDefCtxt(pcl, main, main.Body);
 			
 			var x = TypeDeclarationResolver.ResolveIdentifier("x", ctxt, stmt);
 			Assert.That(x.Length, Is.EqualTo(1));

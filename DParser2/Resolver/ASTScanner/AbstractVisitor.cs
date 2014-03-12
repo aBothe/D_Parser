@@ -790,7 +790,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				if (s.IfVariable != null && Visit(s.IfVariable))
 					return true;
 
-				return VisitExpressionStmt(s);
+				return VisitExpressionStmt(s) || VisitSubStatements(s);
 			}
 
 			public bool Visit(WhileStatement s)
