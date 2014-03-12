@@ -254,6 +254,9 @@ namespace D_Parser.Parser
 
 			public override void VisitDNode(DNode n)
 			{
+				if (n.NameHash == 0 || n.NameHash == DTokens.IncompleteIdHash)
+					return;
+
 				if(!secondRun)
 				{
 					originalDeclarations.Add(n);
@@ -262,7 +265,7 @@ namespace D_Parser.Parser
 
 				foreach(var decl in originalDeclarations)
 				{
-					if (decl.NameHash == n.NameHash && n.NameHash != DTokens.IncompleteIdHash &&
+					if (decl.NameHash == n.NameHash &&
 						decl.GetType() == n.GetType() &&
 						TryCompareNodeEquality(decl as DNode, n))
 					{
