@@ -408,25 +408,22 @@ post;
 
 			var main = ctxt.ParseCache[0]["A"]["main"].First() as DMethod;
 
-			ctxt.PushNewScope(main, main.Body.SubStatements.First());
-			t = TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration("U") { Location = main.Body.SubStatements.First().Location }, ctxt);
+			using(ctxt.Push(main, main.Body))
+				t = TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration("U") { Location = main.Body.SubStatements.First().Location }, ctxt);
 
 			Assert.That(t, Is.Null);
 
-			ctxt.Pop();
-			ctxt.PushNewScope(main, main.Body.SubStatements.ElementAt(2));
-			t = TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration("U") { Location = main.Body.SubStatements.ElementAt(2).Location }, ctxt);
+			using (ctxt.Push(main, main.Body))
+				t = TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration("U") { Location = main.Body.SubStatements.ElementAt(2).Location }, ctxt);
 
 			Assert.That(t, Is.Null);
-			ctxt.Pop();
 
 			x = DParser.ParseExpression("var");
 
-			IStatement stmt;
-			DResolver.SearchBlockAt(main, (x as IdentifierExpression).Location = new CodeLocation(3, 7), out stmt);
-
-			ctxt.PushNewScope(main, stmt);
-			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+			(x as IdentifierExpression).Location = new CodeLocation(3, 7);
+			
+			using (ctxt.Push(main, main.Body))
+				t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			ds = t as DSymbol;
 
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
@@ -434,7 +431,6 @@ post;
 			ds = ds.Base as DSymbol;
 			Assert.That(ds.Base, Is.TypeOf(typeof(PrimitiveType)));
 			Assert.That((ds.Base as PrimitiveType).Modifier, Is.EqualTo(0));
-
 		}
 		
 		[Test]

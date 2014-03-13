@@ -91,22 +91,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					return tps.ParameterValue;
 			}
 			
-			var bt = v.Member;
-			var ctxt = vp.ResolutionContext;
-
-			if(bt != null)
-			{
-				//TODO: This is not tested entirely - but it makes test passing successfully!
-				ctxt.PushNewScope (bt.Definition.Parent as Dom.IBlockNode);
-				ctxt.CurrentContext.IntroduceTemplateParameterTypes(bt);
-			}
-			
-			var val = vp[v.Variable];
-			
-			if(bt != null)
-				ctxt.Pop ();
-			
-			return val ?? v;
+			using(vp.ResolutionContext.Push(v.Member))
+				return vp[v.Variable] ?? v;
 		}
 
 		public ISymbolValue Visit(Expression ex)

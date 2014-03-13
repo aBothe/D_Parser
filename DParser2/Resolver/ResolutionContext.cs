@@ -6,6 +6,7 @@ using D_Parser.Dom.Statements;
 using D_Parser.Misc;
 using System.Diagnostics;
 using D_Parser.Resolver.TypeResolution;
+using System;
 
 namespace D_Parser.Resolver
 {
@@ -119,13 +120,63 @@ namespace D_Parser.Resolver
 				return stack.Pop();
 			return null;
 		}
+
+		class PopDisposable : IDisposable
+		{
+			public readonly ResolutionContext ctxt;
+			public readonly DSymbol ds;
+
+			public PopDisposable(ResolutionContext ctxt, DSymbol ds = null)
+			{
+				this.ctxt = ctxt;
+				this.ds = ds;
+			}
+
+			public void Dispose()
+			{
+				if (ds != null)
+					ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(ds);
+				else
+					ctxt.Pop();
+			}
+		}
+
+		bool Push_(INode newScope, ISyntaxRegion scopedRegion = null)
+		{
+			while (newScope != null && !(newScope is IBlockNode))
+				newScope = newScope.Parent as DNode;
+
+			var pop = newScope != null && ScopedBlock != newScope;
+
+			if (pop)
+			{
+				var s = newScope is DMethod && scopedRegion != null ?
+					(newScope as DMethod).GetSubBlockAt(scopedRegion.Location) : null;
+				PushNewScope(newScope as IBlockNode, s);
+			}
+			return pop;
+		}
+
+		public IDisposable Push(DSymbol ds, ISyntaxRegion scopedRegion = null)
+		{
+			var pop = Push_(ds.Definition, scopedRegion);
+
+			CurrentContext.IntroduceTemplateParameterTypes(ds);
+
+			return new PopDisposable(this, pop ? null : ds);
+		}
+
+		public IDisposable Push(INode newScope, ISyntaxRegion scopedRegion = null)
+		{
+			return Push_(newScope, scopedRegion) ? new PopDisposable(this) : null;
+		}
 		
 		public void Push(ContextFrame frm)
 		{
 			stack.Push(frm);
 		}
 
-		public void PushNewScope(IBlockNode scope, IStatement stmt = null)
+		void PushNewScope(IBlockNode scope, IStatement stmt = null)
 		{
 			new ContextFrame(this, scope, stmt);
 		}

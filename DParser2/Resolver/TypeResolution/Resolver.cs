@@ -313,85 +313,85 @@ namespace D_Parser.Resolver.TypeResolution
 
 
 			#region Base class & interface resolution
-			var pop = ctxt.ScopedBlock != dc.Parent;
-			if (pop)
-				ctxt.PushNewScope(dc.Parent as IBlockNode);
-
-			foreach (var kv in deducedTypes)
-				ctxt.CurrentContext.DeducedTemplateParameters[kv.Key] = kv.Value;
-
-			TemplateIntermediateType baseClass=null;
+			TemplateIntermediateType baseClass = null;
 			var interfaces = new List<InterfaceType>();
-			try
+
+			var back = ctxt.ScopedBlock;
+			using (ctxt.Push(dc.Parent))
 			{
-				for (int i = 0; i < (ResolveFirstBaseIdOnly ? 1 : dc.BaseClasses.Count); i++)
+				var pop = back != ctxt.ScopedBlock;
+
+				foreach (var kv in deducedTypes)
+					ctxt.CurrentContext.DeducedTemplateParameters[kv.Key] = kv.Value;
+
+				try
 				{
-					var type = dc.BaseClasses[i];
-
-					// If there's an explicit 'Object' inheritance, also return the pre-resolved object class
-					if (type is IdentifierDeclaration && 
-						(type as IdentifierDeclaration).IdHash == ObjectNameHash)
+					for (int i = 0; i < (ResolveFirstBaseIdOnly ? 1 : dc.BaseClasses.Count); i++)
 					{
-						if (baseClass!=null)
+						var type = dc.BaseClasses[i];
+
+						// If there's an explicit 'Object' inheritance, also return the pre-resolved object class
+						if (type is IdentifierDeclaration &&
+							(type as IdentifierDeclaration).IdHash == ObjectNameHash)
 						{
-							ctxt.LogError(new ResolutionError(dc, "Class must not have two base classes"));
+							if (baseClass != null)
+							{
+								ctxt.LogError(new ResolutionError(dc, "Class must not have two base classes"));
+								continue;
+							}
+							else if (i != 0)
+							{
+								ctxt.LogError(new ResolutionError(dc, "The base class name must preceed base interfaces"));
+								continue;
+							}
+
+							baseClass = ctxt.ParseCache.ObjectClassResult;
 							continue;
 						}
-						else if (i != 0)
+
+						if (type == null || (type is IdentifierDeclaration && (type as IdentifierDeclaration).IdHash == dc.NameHash) || dc.NodeRoot == dc)
 						{
-							ctxt.LogError(new ResolutionError(dc, "The base class name must preceed base interfaces"));
+							ctxt.LogError(new ResolutionError(dc, "A class cannot inherit from itself"));
 							continue;
 						}
 
-						baseClass = ctxt.ParseCache.ObjectClassResult;
-						continue;
-					}
+						var r = TypeDeclarationResolver.ResolveSingle(type, ctxt);
 
-					if (type == null || (type is IdentifierDeclaration && (type as IdentifierDeclaration).IdHash == dc.NameHash) || dc.NodeRoot == dc)
-					{
-						ctxt.LogError(new ResolutionError(dc, "A class cannot inherit from itself"));
-						continue;
-					}
-				
-					var r = TypeDeclarationResolver.ResolveSingle(type, ctxt);
-
-					if (r is ClassType || r is TemplateType)
-					{
-						if (!isClass)
-							ctxt.LogError(new ResolutionError(type, "An interface cannot inherit from non-interfaces"));
-						else if (i == 0)
+						if (r is ClassType || r is TemplateType)
 						{
-							baseClass = r as TemplateIntermediateType;
+							if (!isClass)
+								ctxt.LogError(new ResolutionError(type, "An interface cannot inherit from non-interfaces"));
+							else if (i == 0)
+							{
+								baseClass = r as TemplateIntermediateType;
+							}
+							else
+								ctxt.LogError(new ResolutionError(dc, "The base " + (r is ClassType ? "class" : "template") + " name must preceed base interfaces"));
+						}
+						else if (r is InterfaceType)
+						{
+							interfaces.Add(r as InterfaceType);
+
+							if (isClass && dc.NameHash != ObjectNameHash && baseClass == null)
+								baseClass = ctxt.ParseCache.ObjectClassResult;
 						}
 						else
-							ctxt.LogError(new ResolutionError(dc, "The base "+(r is ClassType ?  "class" : "template")+" name must preceed base interfaces"));
-					}
-					else if (r is InterfaceType)
-					{
-						interfaces.Add(r as InterfaceType);
-
-						if (isClass && dc.NameHash != ObjectNameHash && baseClass == null)
-							baseClass = ctxt.ParseCache.ObjectClassResult;
-					}
-					else
-					{
-						ctxt.LogError(new ResolutionError(type, "Resolved class is neither a class nor an interface"));
-						continue;
+						{
+							ctxt.LogError(new ResolutionError(type, "Resolved class is neither a class nor an interface"));
+							continue;
+						}
 					}
 				}
-			}
-			finally
-			{
-				bcStack--;
-				parsedClassInstanceDecls.Remove(instanceDeclaration);
-			}
+				finally
+				{
+					bcStack--;
+					parsedClassInstanceDecls.Remove(instanceDeclaration);
+				}
 
-			if (pop)
-				ctxt.Pop();
-			else
-				foreach (var kv in deducedTypes) // May be backup old tps?
-					ctxt.CurrentContext.DeducedTemplateParameters.Remove(kv.Key);
-
+				if (!pop)
+					foreach (var kv in deducedTypes) // May be backup old tps?
+						ctxt.CurrentContext.DeducedTemplateParameters.Remove(kv.Key);
+			}
 			#endregion
 
 			if (isClass)

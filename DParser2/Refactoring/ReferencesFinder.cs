@@ -64,13 +64,10 @@ namespace D_Parser.Refactoring
 			if (ast == null || symbol == null || ctxt == null)
 				return null;
 
-			ctxt.PushNewScope(ast);
-
 			var f = new ReferencesFinder(symbol, ast, ctxt);
 
-			ast.Accept (f);
-
-			ctxt.Pop();
+			using(ctxt.Push(ast))
+				ast.Accept (f);
 
 			var nodeRoot = symbol.NodeRoot as DModule;
 			if (includeDefinition && nodeRoot != null && nodeRoot.FileName == ast.FileName)

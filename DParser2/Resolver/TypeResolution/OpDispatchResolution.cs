@@ -43,21 +43,16 @@ namespace D_Parser.Resolver.TypeResolution
 			// The usual SO prevention
 			if (nextIdentifierHash == opDispatchId || b == null)
 				yield break;
-				
-			var pop = ctxt.ScopedBlock != b.Definition;
-			if (pop) {
-				// Mainly required for not resolving opDispatch's return type, as this will be performed later on in higher levels
-				var opt = ctxt.CurrentContext.ContextDependentOptions;
-				ctxt.PushNewScope (b.Definition as IBlockNode);
-				ctxt.CurrentContext.IntroduceTemplateParameterTypes (b);
-				ctxt.CurrentContext.ContextDependentOptions = opt;
-			}
 
+			AbstractType[] overloads;
+
+			var opt = ctxt.CurrentContext.ContextDependentOptions;
 			// Look for opDispatch-Members inside b's Definition
-			var overloads = TypeDeclarationResolver.ResolveFurtherTypeIdentifier (opDispatchId, new[]{b}, ctxt);
-
-			if(pop)
-				ctxt.Pop ();
+			using (ctxt.Push(b))
+			{
+				ctxt.CurrentContext.ContextDependentOptions = opt; // Mainly required for not resolving opDispatch's return type, as this will be performed later on in higher levels
+				overloads = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(opDispatchId, new[] { b }, ctxt);
+			}
 
 			if (overloads == null || overloads.Length < 0)
 				yield break;

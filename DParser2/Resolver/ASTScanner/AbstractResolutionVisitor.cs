@@ -42,84 +42,48 @@ namespace D_Parser.Resolver.ASTScanner
 
 		}
 
-		protected virtual void OnScopedStatementChanged(IStatement stmt)
-		{
-
-		}
-
 		#region Scoping visit overloads
 		public override void VisitAbstractStmt (AbstractStatement stmt)
 		{
-			var back = ctxt.ScopedStatement;
-			bool pop = false;
-			if (back != stmt) {
-				var parentNode = stmt.ParentNode;
-				if (parentNode != null && ctxt.ScopedBlock != parentNode) {
-					ctxt.PushNewScope (stmt.ParentNode as IBlockNode, stmt);
-					pop = true;
-				}
-				else if (ctxt.ScopedBlock != null)
-					ctxt.CurrentContext.Set (stmt);
-				else
-					back = stmt;
-				OnScopedStatementChanged (stmt);
-			}
-			base.VisitAbstractStmt (stmt);
-			if (back != stmt) {
-				if (!pop)
-					ctxt.CurrentContext.Set (back);
-				else
-					ctxt.Pop ();
-			}
+			using(ctxt.Push(stmt.ParentNode, stmt))
+				base.VisitAbstractStmt (stmt);
 		}
 
 		public override void VisitChildren (StatementContainingStatement stmt)
 		{
-			var back = ctxt.ScopedStatement;
-			if (back != stmt) {
-				ctxt.PushNewScope (ctxt.ScopedBlock, stmt);
-				OnScopedStatementChanged (stmt);
-			}
-			base.VisitSubStatements (stmt);
-			if (back != stmt)
-				ctxt.Pop ();
+			using (ctxt.Push(stmt.ParentNode, stmt)) 
+				base.VisitSubStatements(stmt);
 		}
 
 		public override void VisitBlock (DBlockNode bn)
 		{
 			var back = ctxt.ScopedBlock;
-			if (bn != back) {
-				ctxt.PushNewScope (bn);
-				OnScopedBlockChanged (bn);
+			using(ctxt.Push(bn)) {
+				 if (ctxt.ScopedBlock != back)
+					OnScopedBlockChanged (bn);
+				 base.VisitBlock(bn);
 			}
-			base.VisitBlock (bn);
-			if(bn != back)
-				ctxt.Pop ();
 		}
 
 		// Only for parsing the base class identifiers!
 		public override void Visit (DClassLike dc)
 		{
 			var back = ctxt.ScopedBlock;
-			if (back != dc) {
-				ctxt.PushNewScope (dc);
-				OnScopedBlockChanged (dc);
+			using(ctxt.Push(dc)) {
+				if(back != ctxt.ScopedBlock)
+					OnScopedBlockChanged (dc);
+				base.Visit(dc);
 			}
-			base.Visit (dc); 
-			if(back != dc)
-				ctxt.Pop ();
 		}
 
 		public override void Visit (DMethod dm)
 		{
 			var back = ctxt.ScopedBlock;
-			if (back != dm) {
-				ctxt.PushNewScope (dm);
-				OnScopedBlockChanged (dm);
+			using (ctxt.Push(dm)) {
+				if (back != ctxt.ScopedBlock)
+					OnScopedBlockChanged(dm);
+				base.Visit(dm);
 			}
-			base.Visit (dm);
-			if(back != dm)
-				ctxt.Pop ();
 		}
 		#endregion
 	}

@@ -38,15 +38,12 @@ namespace D_Parser.Resolver.Templates
 			if (p == null || p.Default == null)
 				return false;
 
-			IStatement stmt = null;
-			ctxt.PushNewScope(DResolver.SearchBlockAt(ctxt.ScopedBlock.NodeRoot as IBlockNode, p.Default.Location, out stmt), stmt);
-
-			var defaultTypeRes = TypeDeclarationResolver.ResolveSingle(p.Default, ctxt);
-			var b = defaultTypeRes != null && Set (p, defaultTypeRes, 0);
-
-			ctxt.Pop();
-
-			return b;
+			IStatement stmt;
+			using (ctxt.Push(DResolver.SearchBlockAt(ctxt.ScopedBlock.NodeRoot as IBlockNode, p.Default.Location, out stmt), stmt))
+			{
+				var defaultTypeRes = TypeDeclarationResolver.ResolveSingle(p.Default, ctxt);
+				return defaultTypeRes != null && Set(p, defaultTypeRes, 0);
+			}
 		}
 
 		public bool HandleDecl(TemplateTypeParameter p ,ITypeDeclaration td, ISemantic rr)

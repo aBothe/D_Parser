@@ -1078,17 +1078,15 @@ mixin(def!(-1,""bar""));
 				new TemplateParameterSymbol(def.TemplateParameters[0], new PrimitiveValue(DTokens.Int, 2, null)), 
 				new TemplateParameterSymbol(def.TemplateParameters[1], new ArrayValue(Evaluation.GetStringType(ctxt), "someVar")) 
 			});
-			ctxt.PushNewScope (def);
-			ctxt.CurrentContext.IntroduceTemplateParameterTypes (defS);
+			using (ctxt.Push(defS))
+			{
+				ex = DParser.ParseExpression("mxTemp!(-i) ~ \" \"~name~\";\"");
+				val = Evaluation.EvaluateValue(ex, ctxt);
+			}
 
-			ex = DParser.ParseExpression("mxTemp!(-i) ~ \" \"~name~\";\"");
-			val = Evaluation.EvaluateValue(ex, ctxt);
 			Assert.That(val, Is.TypeOf(typeof(ArrayValue)));
 			Assert.That((val as ArrayValue).IsString,Is.True);
 			Assert.That((val as ArrayValue).StringValue, Is.EqualTo("int someVar;"));
-
-			ctxt.Pop ();
-
 
 			ex = DParser.ParseExpression ("def2!5");
 			val = Evaluation.EvaluateValue (ex, ctxt);
@@ -1242,7 +1240,9 @@ class C(U: A!W, W){ W item; }
 			td = DParser.ParseBasicType("C!(A!string)");
 			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
 
-			Assert.That(t, Is.Null);
+			Assert.That(t, Is.TypeOf(typeof(ClassType)));
+			ct = t as ClassType;
+			Assert.That(ct.DeducedTypes.Count, Is.EqualTo(2));
 		}
 
 		[Test]
@@ -1845,13 +1845,11 @@ void main() {
 					PostfixForeExpression = new IdentifierExpression("loc") { Location = stmt_x.Location }
 				} 
 			};
-			ctxt.PushNewScope (main, main.Body);
 
-			ds = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as DSymbol;
+			using(ctxt.Push (main, main.Body))
+				ds = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as DSymbol;
 			Assert.That (ds, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			Assert.That (ds.Base, Is.TypeOf(typeof(PrimitiveType)));
-
-			ctxt.Pop ();
 
 			x = DParser.ParseExpression ("s2.bar(s)");
 			ds = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as DSymbol;
@@ -2286,23 +2284,24 @@ void main()
 
 			var main = pcl[0]["B"]["main"].First() as DMethod;
 			var subSt = main.Body.SubStatements as List<IStatement>;
-			ctxt.PushNewScope(main, main.Body);
+			using (ctxt.Push(main, main.Body))
+			{
+				var ss = subSt[0] as ExpressionStatement;
+				t = ExpressionTypeEvaluation.EvaluateType(ss.Expression, ctxt);
+				Assert.IsNotNull(t);
 
-			var ss = subSt[0] as ExpressionStatement;
-			t = ExpressionTypeEvaluation.EvaluateType(ss.Expression, ctxt);
-			Assert.IsNotNull(t);
+				ss = subSt[1] as ExpressionStatement;
+				t = ExpressionTypeEvaluation.EvaluateType(ss.Expression, ctxt);
+				Assert.IsNull(t);
 
-			ss = subSt[1] as ExpressionStatement;
-			t = ExpressionTypeEvaluation.EvaluateType(ss.Expression, ctxt);
-			Assert.IsNull(t);
+				ss = subSt[2] as ExpressionStatement;
+				t = ExpressionTypeEvaluation.EvaluateType(ss.Expression, ctxt);
+				Assert.IsNotNull(t);
 
-			ss = subSt[2] as ExpressionStatement;
-			t = ExpressionTypeEvaluation.EvaluateType(ss.Expression, ctxt);
-			Assert.IsNotNull(t);
-
-			ss = subSt[3] as ExpressionStatement;
-			t = ExpressionTypeEvaluation.EvaluateType(ss.Expression, ctxt);
-			Assert.IsNull(t);
+				ss = subSt[3] as ExpressionStatement;
+				t = ExpressionTypeEvaluation.EvaluateType(ss.Expression, ctxt);
+				Assert.IsNull(t);
+			}
 		}
 		
 		[Test]

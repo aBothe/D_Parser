@@ -54,45 +54,40 @@ namespace D_Parser.Resolver
 			
 			if(!CheckAndPushAnalysisStack(mx))
 				return null;
-			
-			bool pop = ctxt.ScopedBlock != mx.ParentNode && mx.ParentNode != null;
-			if(pop)
-				ctxt.PushNewScope(mx.ParentNode as IBlockNode, mx);
-			
-			bool hadCachedItem;
-			if(takeStmtCache)
+			ISemantic v;
+			using (ctxt.Push(mx.ParentNode, mx))
 			{
-				BlockStatement stmt;
-				hadCachedItem = mixinStmtCache.TryGet(ctxt, mx, out stmt);
-				cachedContent = stmt;
-			}
-			else
-			{
-				DModule mod;
-				hadCachedItem = mixinDeclCache.TryGet(ctxt, mx, out mod);
-				cachedContent = mod;
-			}
-			
-			if(hadCachedItem)
-			{
+				bool hadCachedItem;
+				if (takeStmtCache)
+				{
+					BlockStatement stmt;
+					hadCachedItem = mixinStmtCache.TryGet(ctxt, mx, out stmt);
+					cachedContent = stmt;
+				}
+				else
+				{
+					DModule mod;
+					hadCachedItem = mixinDeclCache.TryGet(ctxt, mx, out mod);
+					cachedContent = mod;
+				}
+
+				if (hadCachedItem)
+				{
+					stmtsBeingAnalysed.Remove(mx);
+					return null;
+				}
+
+				try // 'try' because there is always a risk of e.g. not having something implemented or having an evaluation exception...
+				{
+					// Evaluate the mixin expression
+					v = Evaluation.EvaluateValue(mx.MixinExpression, ctxt);
+				}
+				catch {
+					v = null;
+				}
+
 				stmtsBeingAnalysed.Remove(mx);
-				if(pop)
-					ctxt.Pop();
-				return null;
 			}
-			
-			var x = mx.MixinExpression;
-			ISemantic v = null;
-			try // 'try' because there is always a risk of e.g. not having something implemented or having an evaluation exception...
-			{
-				// Evaluate the mixin expression
-				v = Evaluation.EvaluateValue(x, ctxt);
-			}
-			catch{}
-			
-			stmtsBeingAnalysed.Remove(mx);
-			if(pop) 
-				ctxt.Pop();
 			
 			// Ensure it's a string literal
 			var av = v as ArrayValue;

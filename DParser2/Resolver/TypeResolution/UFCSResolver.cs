@@ -101,23 +101,16 @@ namespace D_Parser.Resolver.TypeResolution
 		{
 			if (dm != null && dm.Parameters.Count > 0 && dm.Parameters[0].Type != null)
 			{
-				var pop = ctxt.ScopedBlock != dm;
-				if (pop)
-					ctxt.PushNewScope (dm);
-				if (alreadyResolvedMethod != null)
-					ctxt.CurrentContext.IntroduceTemplateParameterTypes(alreadyResolvedMethod);
-
-				var t = TypeDeclarationResolver.ResolveSingle (dm.Parameters [0].Type, ctxt);
-				if (ResultComparer.IsImplicitlyConvertible (firstArgument, t, ctxt)) {
-					var res = alreadyResolvedMethod ?? TypeDeclarationResolver.HandleNodeMatch(dm, ctxt, typeBase:sr);
-					res.Tag = new UfcsTag{ firstArgument=firstArgument };
-					matches.Add (res);
+				using (alreadyResolvedMethod != null ? ctxt.Push(alreadyResolvedMethod, dm.Body) : ctxt.Push(dm, dm.Body))
+				{
+					var t = TypeDeclarationResolver.ResolveSingle(dm.Parameters[0].Type, ctxt);
+					if (ResultComparer.IsImplicitlyConvertible(firstArgument, t, ctxt))
+					{
+						var res = alreadyResolvedMethod ?? TypeDeclarationResolver.HandleNodeMatch(dm, ctxt, typeBase: sr);
+						res.Tag = new UfcsTag { firstArgument = firstArgument };
+						matches.Add(res);
+					}
 				}
-
-				if (pop)
-					ctxt.Pop();
-				else if (alreadyResolvedMethod != null)
-					ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(alreadyResolvedMethod);
 			}
 		}
 

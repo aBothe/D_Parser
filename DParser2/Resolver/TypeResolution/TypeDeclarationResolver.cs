@@ -64,8 +64,10 @@ namespace D_Parser.Resolver.TypeResolution
 		{
 			var loc = idObject is ISyntaxRegion ? ((ISyntaxRegion)idObject).Location : CodeLocation.Empty;
 
+			IDisposable disp = null;
+
 			if (ModuleScope)
-				ctxt.PushNewScope(ctxt.ScopedBlock.NodeRoot as DModule);
+				disp = ctxt.Push(ctxt.ScopedBlock.NodeRoot as DModule);
 
 			// If there are symbols that must be preferred, take them instead of scanning the ast
 			else
@@ -78,7 +80,10 @@ namespace D_Parser.Resolver.TypeResolution
 			var res = NameScan.SearchAndResolve(ctxt, loc, idHash, idObject);
 
 			if (ModuleScope)
-				ctxt.Pop();
+			{
+				disp.Dispose();
+				disp = null;
+			}
 
 			if (res.Count != 0)
 			{
@@ -176,43 +181,36 @@ namespace D_Parser.Resolver.TypeResolution
 				if (b is UserDefinedType)
 				{
 					var udt = b as UserDefinedType;
-					var bn = udt.Definition as IBlockNode;
 
-					bool pop = b is MixinTemplateType || (udt is TemplateType && !ctxt.ScopedBlockIsInNodeHierarchy(bn));
-					if(pop)
-						ctxt.PushNewScope(bn);
-					ctxt.CurrentContext.IntroduceTemplateParameterTypes(udt);
-
-					r.AddRange(SingleNodeNameScan.SearchChildrenAndResolve(ctxt, udt, nextIdentifierHash, typeIdObject));
-
-					List<TemplateParameterSymbol> dedTypes = null;
-					foreach (var t in r)
+					//bool pop = b is MixinTemplateType || (udt is TemplateType && !ctxt.ScopedBlockIsInNodeHierarchy(bn));
+					using (ctxt.Push(udt))
 					{
-						var ds = t as DSymbol;
-						if (ds != null && ds.DeducedTypes == null)
+						r.AddRange(SingleNodeNameScan.SearchChildrenAndResolve(ctxt, udt, nextIdentifierHash, typeIdObject));
+
+						List<TemplateParameterSymbol> dedTypes = null;
+						foreach (var t in r)
 						{
-							if (dedTypes == null)
-								dedTypes = ctxt.DeducedTypesInHierarchy;
+							var ds = t as DSymbol;
+							if (ds != null && ds.DeducedTypes == null)
+							{
+								if (dedTypes == null)
+									dedTypes = ctxt.DeducedTypesInHierarchy;
 
-							ds.DeducedTypes = new System.Collections.ObjectModel.ReadOnlyCollection<TemplateParameterSymbol>(dedTypes);
+								ds.DeducedTypes = new System.Collections.ObjectModel.ReadOnlyCollection<TemplateParameterSymbol>(dedTypes);
+							}
 						}
+
+						statProp = StaticProperties.TryEvalPropertyType(ctxt, b, nextIdentifierHash);
+						if (statProp != null)
+							r.Add(statProp);
+
+						// go the opDispatch way if possible - http://dlang.org/operatoroverloading.html#Dispatch
+						if (r.Count == 0 && nextIdentifierHash != OpDispatchResolution.opDispatchId)
+							r.AddRange(OpDispatchResolution.TryResolveFurtherIdViaOpDispatch(ctxt, nextIdentifierHash, udt));
+
+						if (r.Count == 0)
+							r.AddRange(UFCSResolver.TryResolveUFCS(b, nextIdentifierHash, ctxt.ScopedBlock != udt.Definition && typeIdObject != null ? typeIdObject.Location : ctxt.ScopedBlock.BlockStartLocation, ctxt, typeIdObject));
 					}
-
-					statProp = StaticProperties.TryEvalPropertyType(ctxt, b, nextIdentifierHash);
-					if (statProp != null)
-						r.Add(statProp);
-
-					// go the opDispatch way if possible - http://dlang.org/operatoroverloading.html#Dispatch
-					if (r.Count == 0 && nextIdentifierHash != OpDispatchResolution.opDispatchId)
-						r.AddRange(OpDispatchResolution.TryResolveFurtherIdViaOpDispatch (ctxt, nextIdentifierHash, udt));
-
-					if(r.Count == 0)
-						r.AddRange (UFCSResolver.TryResolveUFCS (b, nextIdentifierHash, !pop && typeIdObject != null ? typeIdObject.Location : ctxt.ScopedBlock.BlockStartLocation, ctxt, typeIdObject));
-
-					if(pop)
-						ctxt.Pop();
-					else
-						ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(udt);
 				}
 				else if (b is PackageSymbol)
 				{
@@ -801,14 +799,8 @@ namespace D_Parser.Resolver.TypeResolution
 					bt = new PrimitiveType(DTokens.Int);
 				else
 				{
-					var pop = de.Parent is IBlockNode && ctxt.ScopedBlock != de.Parent;
-					if (pop)
-						ctxt.PushNewScope(de.Parent as IBlockNode);
-
-					bt = TypeDeclarationResolver.ResolveSingle(de.Type, ctxt);
-
-					if (pop)
-						ctxt.Pop();
+					using(ctxt.Push(de.Parent))
+						bt = TypeDeclarationResolver.ResolveSingle(de.Type, ctxt);
 				}
 
 				return new EnumType(de, bt, typeBase);
@@ -970,29 +962,17 @@ namespace D_Parser.Resolver.TypeResolution
 			 * Edit: No, it is required nearly every time because of nested type declarations - then, we do need the 
 			 * current block scope.
 			 */
-			bool popAfterwards;
+			var options = ctxt.CurrentContext.ContextDependentOptions;
+			var applyOptions = ctxt.ScopedBlockIsInNodeHierarchy(m);
+			AbstractType ret;
+
+			using (resultBase is DSymbol ? ctxt.Push(resultBase as DSymbol, typeBase) : ctxt.Push(m, typeBase))
 			{
-				var newScope = m is IBlockNode ? (IBlockNode)m : m.Parent as IBlockNode;
-				popAfterwards = ctxt.ScopedBlock != newScope && newScope != null;
-				if (popAfterwards) {
-					var options = ctxt.CurrentContext.ContextDependentOptions;
-					var applyOptions = ctxt.ScopedBlockIsInNodeHierarchy (m);
-					ctxt.PushNewScope (newScope, newScope is DMethod ? (newScope as DMethod).GetSubBlockAt(m.Location) : null);
-					if (applyOptions)
-						ctxt.CurrentContext.ContextDependentOptions = options;
-				}
+				if (applyOptions)
+					ctxt.CurrentContext.ContextDependentOptions = options;
+
+				ret = m.Accept(vis ?? new NodeMatchHandleVisitor { ctxt = ctxt, resultBase = resultBase, typeBase = typeBase });
 			}
-
-			// To support resolving type parameters to concrete types if the context allows this, introduce all deduced parameters to the current context
-			if (resultBase is DSymbol)
-				ctxt.CurrentContext.IntroduceTemplateParameterTypes((DSymbol)resultBase);
-
-			var ret = m.Accept(vis ?? new NodeMatchHandleVisitor { ctxt = ctxt, resultBase = resultBase, typeBase = typeBase });
-
-			if (popAfterwards)
-				ctxt.Pop();
-			else if (resultBase is DSymbol)
-				ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals((DSymbol)resultBase);
 
 			stackCalls.TryGetValue(m, out stkC);
 			if (stkC == 1)
@@ -1046,6 +1026,8 @@ namespace D_Parser.Resolver.TypeResolution
 
 		public static AbstractType GetMethodReturnType(DMethod method, ResolutionContext ctxt)
 		{
+			AbstractType returnType;
+
 			if ((ctxt.Options & ResolutionOptions.DontResolveBaseTypes) == ResolutionOptions.DontResolveBaseTypes)
 				return null;
 
@@ -1055,18 +1037,10 @@ namespace D_Parser.Resolver.TypeResolution
 			 * 2) Resolve the returned expression
 			 * 3) Use that one as the method's type
 			 */
-			bool pushMethodScope = ctxt.ScopedBlock != method;
-
 			if (method.Type != null)
 			{
-				if (pushMethodScope)
-					ctxt.PushNewScope(method);
-
-				//FIXME: Is it legal to explicitly return a nested type?
-				var returnType = TypeDeclarationResolver.ResolveSingle(method.Type, ctxt);
-
-				if (pushMethodScope)
-					ctxt.Pop();
+				using (ctxt.Push(method)) //FIXME: Is it legal to explicitly return a nested type?
+					returnType = TypeDeclarationResolver.ResolveSingle(method.Type, ctxt);
 
 				if (returnType != null)
 					returnType.NonStaticAccess = true;
@@ -1107,25 +1081,20 @@ namespace D_Parser.Resolver.TypeResolution
 
 				if (returnStmt != null && returnStmt.ReturnExpression != null)
 				{
-					if (pushMethodScope)
+					var dedTypes = ctxt.CurrentContext.DeducedTemplateParameters;
+					using (ctxt.Push(method, returnStmt))
 					{
-						var dedTypes = ctxt.CurrentContext.DeducedTemplateParameters;
-						ctxt.PushNewScope(method,returnStmt);
-
-						if (dedTypes.Count != 0)
+						if (dedTypes.Count != 0 && dedTypes != ctxt.CurrentContext.DeducedTemplateParameters)
 							foreach (var kv in dedTypes)
 								ctxt.CurrentContext.DeducedTemplateParameters[kv.Key] = kv.Value;
+
+						returnType = DResolver.StripMemberSymbols(ExpressionTypeEvaluation.EvaluateType(returnStmt.ReturnExpression, ctxt));
 					}
 
-					var t = DResolver.StripMemberSymbols(ExpressionTypeEvaluation.EvaluateType(returnStmt.ReturnExpression, ctxt));
+					if (returnType != null)
+						returnType.NonStaticAccess = true;
 
-					if (pushMethodScope)
-						ctxt.Pop();
-
-					if (t != null)
-						t.NonStaticAccess = true;
-
-					return t;
+					return returnType;
 				}
 
 				return new PrimitiveType (DTokens.Void);

@@ -289,98 +289,76 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var deducedTypeDict = new DeducedTypeDictionary(ms);
 			var templateParamDeduction = new TemplateParameterDeduction(deducedTypeDict, ctxt);
 
-			var pop = ctxt.ScopedBlock != dm;
-			if (pop){
-				ctxt.PushNewScope(dm, dm.Body);
-				ctxt.CurrentContext.DeducedTemplateParameters = deducedTypeDict;
-			}
-
-			bool add = true;
-			int currentArg = 0;
-			if (dm.Parameters.Count > 0 || callArguments.Count > 0)
+			var back = ctxt.ScopedBlock;
+			using (ctxt.Push(ms, dm.Body))
 			{
-				bool hadDTuples = false;
-				for (int i = 0; i < dm.Parameters.Count; i++)
+				if (ctxt.ScopedBlock != back)
+					ctxt.CurrentContext.DeducedTemplateParameters = deducedTypeDict;
+
+				bool add = true;
+				int currentArg = 0;
+				if (dm.Parameters.Count > 0 || callArguments.Count > 0)
 				{
-					var paramType = dm.Parameters[i].Type;
-
-					if (!pop)
-						ctxt.CurrentContext.IntroduceTemplateParameterTypes(ms);
-
-					// Handle the usage of tuples: Tuples may only be used as as-is, so not as an array, pointer or in a modified way..
-					if (paramType is IdentifierDeclaration &&
-						(hadDTuples |= TryHandleMethodArgumentTuple(ctxt, ref add, callArguments, dm, deducedTypeDict, i, ref currentArg)))
-						continue;
-					else if (currentArg < callArguments.Count)
+					bool hadDTuples = false;
+					for (int i = 0; i < dm.Parameters.Count; i++)
 					{
-						if (!(add = templateParamDeduction.HandleDecl(null, paramType, callArguments[currentArg++])))
-							break;
-					}
-					else
-					{
-						// If there are more parameters than arguments given, check if the param has default values
-						add = !(dm.Parameters[i] is DVariable) || (dm.Parameters[i] as DVariable).Initializer != null;
+						var paramType = dm.Parameters[i].Type;
 
-						// Assume that all further method parameters do have default values - and don't check further parameters
-						break;
-					}
-				}
-
-				// Too few args
-				if (!hadDTuples && currentArg < callArguments.Count)
-					add = false;
-			}
-
-			if(!add)
-			{
-				if (pop)
-					ctxt.Pop();
-				else
-					ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(ms);
-				return;
-			}
-
-			// If type params were unassigned, try to take the defaults
-			if (dm.TemplateParameters != null)
-			{
-				foreach (var tpar in dm.TemplateParameters)
-				{
-					if (deducedTypeDict[tpar] == null && !templateParamDeduction.Handle(tpar, null))
-					{
-						if (!hasNonFinalArgs)
+						// Handle the usage of tuples: Tuples may only be used as as-is, so not as an array, pointer or in a modified way..
+						if (paramType is IdentifierDeclaration &&
+							(hadDTuples |= TryHandleMethodArgumentTuple(ctxt, ref add, callArguments, dm, deducedTypeDict, i, ref currentArg)))
+							continue;
+						else if (currentArg < callArguments.Count)
 						{
-							if (pop)
-								ctxt.Pop();
-							else
-								ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(ms);
-							return;
+							if (!(add = templateParamDeduction.HandleDecl(null, paramType, callArguments[currentArg++])))
+								break;
 						}
+						else
+						{
+							// If there are more parameters than arguments given, check if the param has default values
+							add = !(dm.Parameters[i] is DVariable) || (dm.Parameters[i] as DVariable).Initializer != null;
 
-						deducedTypeDict[tpar] = new TemplateParameterSymbol(tpar, null);
+							// Assume that all further method parameters do have default values - and don't check further parameters
+							break;
+						}
+					}
+
+					// Too few args
+					if (!hadDTuples && currentArg < callArguments.Count)
+						add = false;
+				}
+
+				if (!add)
+					return;
+
+				// If type params were unassigned, try to take the defaults
+				if (dm.TemplateParameters != null)
+				{
+					foreach (var tpar in dm.TemplateParameters)
+					{
+						if (deducedTypeDict[tpar] == null && !templateParamDeduction.Handle(tpar, null))
+						{
+							if (!hasNonFinalArgs)
+								return;
+
+							deducedTypeDict[tpar] = new TemplateParameterSymbol(tpar, null);
+						}
 					}
 				}
-			}
 
-			if (deducedTypeDict.AllParamatersSatisfied || hasNonFinalArgs)
-			{
-				ms.DeducedTypes = deducedTypeDict.ToReadonly();
-				if(!pop)
-					ctxt.CurrentContext.IntroduceTemplateParameterTypes(ms);
+				if (deducedTypeDict.AllParamatersSatisfied || hasNonFinalArgs)
+				{
+					ms.DeducedTypes = deducedTypeDict.ToReadonly();
+					var bt = TypeDeclarationResolver.GetMethodReturnType(dm, ctxt) ?? ms.Base;
 
-				var bt = TypeDeclarationResolver.GetMethodReturnType(dm, ctxt) ?? ms.Base;
+					if (eval || !returnBaseTypeOnly)
+						bt = new MemberSymbol(dm, bt, ms.DeclarationOrExpressionBase, ms.DeducedTypes) { Tag = ms.Tag };
 
-				if (pop)
-					ctxt.Pop();
-				else
-					ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(ms);
+					if (dm.TemplateParameters == null || dm.TemplateParameters.Length == 0)
+						untemplatedMethod = bt; //ISSUE: Have another state that indicates an ambiguous non-templated method matching.
 
-				if (eval || !returnBaseTypeOnly)
-					bt = new MemberSymbol(dm, bt, ms.DeclarationOrExpressionBase, ms.DeducedTypes) { Tag = ms.Tag };
-
-				if (dm.TemplateParameters == null || dm.TemplateParameters.Length == 0)
-					untemplatedMethod = bt; //ISSUE: Have another state that indicates an ambiguous non-templated method matching.
-				
-				argTypeFilteredOverloads.Add(bt);
+					argTypeFilteredOverloads.Add(bt);
+				}
 			}
 		}
 

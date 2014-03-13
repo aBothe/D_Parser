@@ -166,22 +166,19 @@ namespace D_Parser.Resolver.Templates
 
 		bool IsMoreSpecialized(ITypeDeclaration Spec, TemplateParameter t2, Dictionary<TemplateParameter, ISemantic> t1_DummyParamList)
 		{
+			AbstractType t1_TypeResults;
 			// Make a type out of t1's specialization
-			var pop = ctxt.ScopedBlock != null;
-			if(pop)
-				ctxt.PushNewScope(ctxt.ScopedBlock.Parent as IBlockNode);
-			var frame = ctxt.CurrentContext;
+			using (ctxt.Push(ctxt.ScopedBlock != null ? ctxt.ScopedBlock.Parent : null))
+			{
+				var dict = ctxt.CurrentContext.DeducedTemplateParameters;
+				// Make the T in e.g. T[] a virtual type so T will be replaced by it
+				// T** will be X** then - so a theoretically valid type instead of a template param
+				var dummyType = new ClassType(new DClassLike { Name = "X" }, null, null);
+				foreach (var kv in t1_DummyParamList)
+					dict[kv.Key] = new TemplateParameterSymbol(t2, dummyType);
 
-			// Make the T in e.g. T[] a virtual type so T will be replaced by it
-			// T** will be X** then - so a theoretically valid type instead of a template param
-			var dummyType = new ClassType(new DClassLike { Name = "X" }, null, null);
-			foreach (var kv in t1_DummyParamList)
-				frame.DeducedTemplateParameters[kv.Key] = new TemplateParameterSymbol(t2,dummyType);
-
-			var t1_TypeResults = Resolver.TypeResolution.TypeDeclarationResolver.ResolveSingle(Spec, ctxt);
-			
-			if(pop)
-				ctxt.Pop();
+				t1_TypeResults = Resolver.TypeResolution.TypeDeclarationResolver.ResolveSingle(Spec, ctxt);
+			}
 			
 			if (t1_TypeResults == null)
 				return true;

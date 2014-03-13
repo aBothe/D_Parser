@@ -88,22 +88,21 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 		{
 			var dm = method.Definition as DMethod;
 			var eval = new FunctionEvaluation(method,vp,arguments);
+			ISymbolValue ret;
 
-			var ctxt = vp.ResolutionContext;
-			ctxt.PushNewScope(dm, dm.Body);
-
-			try
+			using (vp.ResolutionContext.Push(method, dm.Body))
 			{
-				dm.Body.Accept(eval);
-			}
-			catch (CtfeException ex)
-			{
-				vp.LogError(dm, "Can't execute function at precompile time: " + ex.Message);
-			}
+				try
+				{
+					dm.Body.Accept(eval);
+				}
+				catch (CtfeException ex)
+				{
+					vp.LogError(dm, "Can't execute function at precompile time: " + ex.Message);
+				}
 
-			var ret = Evaluation.GetVariableContents(eval.returnedValue, eval.vp);
-
-			ctxt.Pop();
+				ret = Evaluation.GetVariableContents(eval.returnedValue, eval.vp);
+			}
 
 			return ret;
 

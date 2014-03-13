@@ -662,18 +662,10 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				bool res = false;
 				if (tmxTemplate == null)
 					ctxt.LogError(tmx.Qualifier, "Mixin qualifier must resolve to a mixin template declaration.");
-				else
+				else using (ctxt.Push(tmxTemplate))
 				{
-					bool pop = !ctxt.ScopedBlockIsInNodeHierarchy(tmxTemplate.Definition);
-					if (pop)
-						ctxt.PushNewScope(tmxTemplate.Definition);
-					ctxt.CurrentContext.IntroduceTemplateParameterTypes(tmxTemplate);
 					v.dontHandleTemplateParamsInNodeScan = true;
 					res |= v.DeepScanClass(tmxTemplate, vis);
-					if (pop)
-						ctxt.Pop();
-					else
-						ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(tmxTemplate);
 				}
 
 				templateMixinsBeingAnalyzed.Remove(tmx);
@@ -1013,7 +1005,6 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 		bool HandleAliasThisDeclarations(TemplateIntermediateType tit, MemberFilter vis)
 		{
-			bool pop;
 			var ch = tit.Definition [DVariable.AliasThisIdentifierHash];
 			if(ch != null){
 				foreach (DVariable aliasDef in ch) {
@@ -1022,35 +1013,28 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 					if (aliasThisDefsBeingParsed == null)
 						aliasThisDefsBeingParsed = new Dictionary<IBlockNode, DVariable>();
-					
-					pop = ctxt.ScopedBlock != tit.Definition;
-					if (pop)
-					{
-						ctxt.PushNewScope(tit.Definition);
-						ctxt.CurrentContext.IntroduceTemplateParameterTypes(tit);
-					}
 
 					DVariable alreadyParsedAliasThis;
 					AbstractType aliasedSymbol;
 
-					if (!aliasThisDefsBeingParsed.TryGetValue(ctxt.ScopedBlock, out alreadyParsedAliasThis) || alreadyParsedAliasThis != aliasDef)
+					using (ctxt.Push(tit))
 					{
-						aliasThisDefsBeingParsed[ctxt.ScopedBlock] = aliasDef;
+						if (!aliasThisDefsBeingParsed.TryGetValue(ctxt.ScopedBlock, out alreadyParsedAliasThis) || alreadyParsedAliasThis != aliasDef)
+						{
+							aliasThisDefsBeingParsed[ctxt.ScopedBlock] = aliasDef;
 
-						// Resolve the aliased symbol and expect it to be a member symbol(?).
-						//TODO: Check if other cases are allowed as well!
-						aliasedSymbol = DResolver.StripMemberSymbols(TypeDeclarationResolver.ResolveSingle(aliasDef.Type, ctxt));
+							// Resolve the aliased symbol and expect it to be a member symbol(?).
+							//TODO: Check if other cases are allowed as well!
+							aliasedSymbol = DResolver.StripMemberSymbols(TypeDeclarationResolver.ResolveSingle(aliasDef.Type, ctxt));
 
-						aliasThisDefsBeingParsed.Remove(ctxt.ScopedBlock);
+							aliasThisDefsBeingParsed.Remove(ctxt.ScopedBlock);
 
-						if (aliasedSymbol is TemplateParameterSymbol)
-							aliasedSymbol = (aliasedSymbol as TemplateParameterSymbol).Base;
+							if (aliasedSymbol is TemplateParameterSymbol)
+								aliasedSymbol = (aliasedSymbol as TemplateParameterSymbol).Base;
+						}
+						else
+							aliasedSymbol = null;
 					}
-					else
-						aliasedSymbol = null;
-
-					if (pop)
-						ctxt.Pop ();
 
 					
 
@@ -1066,17 +1050,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					DSymbol ds;
 					if (tit_ != null)
 					{
-						pop = !ctxt.ScopedBlockIsInNodeHierarchy(tit_.Definition);
-						if (pop)
-							ctxt.PushNewScope(tit_.Definition);
-						ctxt.CurrentContext.IntroduceTemplateParameterTypes(tit_);
-						var r = DeepScanClass(tit_, vis, true);
-						if (pop)
-							ctxt.Pop();
-						else
-							ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(tit_);
-						if (r)
-							return true;
+						using (ctxt.Push(tit_))
+							if (DeepScanClass(tit_, vis, true))
+								return true;
 					}
 					// Applies to DEnums
 					else if ((ds = aliasedSymbol as DSymbol) != null && ds.Definition is DBlockNode &&
