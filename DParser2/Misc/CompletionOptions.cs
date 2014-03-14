@@ -8,6 +8,10 @@ namespace D_Parser.Misc
 
 		public bool LimitResolutionErrors = System.Diagnostics.Debugger.IsAttached;
 		public bool DumpResolutionErrors = System.Diagnostics.Debugger.IsAttached;
+		/// <summary>
+		/// Time a completion request has until it quits silently. Milliseconds. -1 for inifinite time.
+		/// </summary>
+		public int CompletionTimeout = 200;
 
 		public bool EnableSuggestionMode = true;
 
@@ -31,6 +35,9 @@ namespace D_Parser.Misc
 			{
 				switch (x.LocalName)
 				{
+					case "CompletionTimeout":
+						int.TryParse(x.ReadString(), out CompletionTimeout);
+						break;
 					case "EnableUFCSCompletion":
 						ShowUFCSItems = x.ReadString().ToLower() == "true";
 						break;
@@ -55,6 +62,7 @@ namespace D_Parser.Misc
 
 		public void Save(XmlWriter x)
 		{
+			x.WriteElementString("CompletionTimeout", CompletionTimeout.ToString());
 			x.WriteElementString("EnableUFCSCompletion", ShowUFCSItems.ToString());
 			x.WriteElementString("EnableDeclarationConstraints", EnableDeclarationConstraints.ToString());
 			x.WriteElementString("MixinAnalysis", (!DisableMixinAnalysis).ToString());

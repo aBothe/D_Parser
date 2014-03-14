@@ -22,7 +22,7 @@ namespace D_Parser.Resolver
 
 			public bool IsMatching(IEnumerable<DAttribute> conditions, ResolutionContext ctxt)
 			{
-				if(conditions!=null)
+				if (conditions != null)
 					foreach (var c in conditions)
 						if (c is DeclarationCondition)
 							if(!IsMatching((DeclarationCondition)c,ctxt))
@@ -32,6 +32,8 @@ namespace D_Parser.Resolver
 			
 			public bool IsMatching(DeclarationCondition dc, ResolutionContext ctxt)
 			{
+				if (ctxt.Cancel.IsCancellationRequested)
+					return true;
 				var r = true;
 
 				if(dc is NegatedDeclarationCondition)

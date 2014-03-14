@@ -4,6 +4,8 @@ using D_Parser.Dom.Statements;
 using D_Parser.Misc;
 using D_Parser.Resolver.ASTScanner;
 using D_Parser.Resolver;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace D_Parser.Completion
 {
@@ -24,10 +26,21 @@ namespace D_Parser.Completion
 			ConditionalCompilationFlags compilationEnvironment = null)
 		{
 			var ctxt = ResolutionContext.Create(CodeCache, compilationEnvironment, ScopedBlock, ScopedStatement);
-			
-			var en = new MemberCompletionEnumeration(ctxt, cdgen) {isVarInst = true};
 
-			en.IterateThroughScopeLayers(Caret, VisibleMembers);
+			var cts = new CancellationTokenSource();
+			ctxt.Cancel = cts.Token;
+
+			var task = Task.Factory.StartNew(() =>
+			{
+				var en = new MemberCompletionEnumeration(ctxt, cdgen) { isVarInst = true };
+				en.IterateThroughScopeLayers(Caret, VisibleMembers);
+			});
+
+			if (!task.Wait(CompletionOptions.Instance.CompletionTimeout))
+			{
+				cts.Cancel();
+				task.Wait();
+			}
 		}
 		
 		public static void EnumChildren(ICompletionDataGenerator cdgen,ResolutionContext ctxt, UserDefinedType udt, 

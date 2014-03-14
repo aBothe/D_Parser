@@ -9,6 +9,7 @@ using D_Parser.Resolver;
 using D_Parser.Resolver.ASTScanner;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
+using System.Threading.Tasks;
 
 namespace D_Parser.Completion.Providers
 {
@@ -32,14 +33,23 @@ namespace D_Parser.Completion.Providers
 			ed = Editor;
 			ctxt = ResolutionContext.Create(Editor.ParseCache, new ConditionalCompilationFlags(Editor), ScopedBlock, ScopedStatement);
 
-			AbstractType t;
+			var cts = new System.Threading.CancellationTokenSource();
+			ctxt.Cancel = cts.Token;
+			
+			AbstractType t = null;
+			var task = Task.Factory.StartNew(() =>
+			{
+				if (AccessExpression is IExpression)
+					t = ExpressionTypeEvaluation.EvaluateType(AccessExpression as IExpression, ctxt);
+				else if (AccessExpression is ITypeDeclaration)
+					t = TypeDeclarationResolver.ResolveSingle(AccessExpression as ITypeDeclaration, ctxt);
+			});
 
-			if (AccessExpression is IExpression)
-				t = ExpressionTypeEvaluation.EvaluateType(AccessExpression as IExpression, ctxt);
-			else if (AccessExpression is ITypeDeclaration)
-				t = TypeDeclarationResolver.ResolveSingle (AccessExpression as ITypeDeclaration, ctxt);
-			else
-				return;
+			if (!task.Wait(CompletionOptions.Instance.CompletionTimeout))
+			{
+				cts.Cancel();
+				task.Wait();
+			}
 
 			if (t == null) //TODO: Add after-space list creation when an unbound . (Dot) was entered which means to access the global scope
 				return;

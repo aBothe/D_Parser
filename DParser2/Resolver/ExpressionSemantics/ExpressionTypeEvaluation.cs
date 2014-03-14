@@ -53,6 +53,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public static AbstractType EvaluateType(IExpression x, ResolutionContext ctxt, bool tryReturnMethodReturnType = true)
 		{
+			if (ctxt.Cancel.IsCancellationRequested)
+				return new UnknownType(x);
+
 			var ev = new ExpressionTypeEvaluation(ctxt) { TryReturnMethodReturnType = tryReturnMethodReturnType };
 			
 			if (!Debugger.IsAttached)

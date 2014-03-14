@@ -7,6 +7,7 @@ using D_Parser.Misc;
 using System.Diagnostics;
 using D_Parser.Resolver.TypeResolution;
 using System;
+using System.Threading;
 
 namespace D_Parser.Resolver
 {
@@ -30,11 +31,12 @@ namespace D_Parser.Resolver
 		protected Stack<ContextFrame> stack = new Stack<ContextFrame>();
 		public ResolutionOptions ContextIndependentOptions = ResolutionOptions.Default;
 		public readonly List<ResolutionError> ResolutionErrors = new List<ResolutionError>();
+		public CancellationToken Cancel;
 
 		public ResolutionOptions Options
 		{
 			[DebuggerStepThrough]
-			get { return ContextIndependentOptions | CurrentContext.ContextDependentOptions; }
+			get { return ContextIndependentOptions | CurrentContext.ContextDependentOptions | (Cancel.IsCancellationRequested ? (ResolutionOptions.DontResolveBaseTypes | ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.NoTemplateParameterDeduction | ResolutionOptions.DontResolveAliases | ResolutionOptions.IgnoreDeclarationConditions) : 0); }
 		}
 
 		public ParseCacheView ParseCache;
