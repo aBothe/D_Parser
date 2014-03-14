@@ -72,11 +72,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (x == null)
 				return null;
 
-			if (vp.ResolutionContext.Cancel.IsCancellationRequested)
-				return new TypeValue(new UnknownType(x));
-
 			if (vp == null)
 				vp = new StandardValueProvider(null);
+			else if (vp.ResolutionContext != null && vp.ResolutionContext.Cancel.IsCancellationRequested)
+				return new TypeValue(new UnknownType(x));
 
 			var ev = new Evaluation(vp);
 
@@ -90,7 +89,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		
 		public static ISymbolValue EvaluateValue(VariableValue v, AbstractSymbolValueProvider vp)
 		{
-			if (vp.ResolutionContext.Cancel.IsCancellationRequested)
+			if (vp.ResolutionContext != null && vp.ResolutionContext.Cancel.IsCancellationRequested)
 				return v;
 
 			if(v.RepresentedType is TemplateParameterSymbol)

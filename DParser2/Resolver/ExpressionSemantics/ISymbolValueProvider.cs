@@ -10,8 +10,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	public abstract class AbstractSymbolValueProvider
 	{
 		internal Evaluation ev;
-		
-		public ResolutionContext ResolutionContext { get; protected set; }
+
+		public readonly ResolutionContext ResolutionContext;
 		public AbstractSymbolValueProvider(ResolutionContext ctxt)
 		{
 			this.ResolutionContext = ctxt;
