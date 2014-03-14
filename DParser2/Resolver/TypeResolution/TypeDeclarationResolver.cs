@@ -182,8 +182,7 @@ namespace D_Parser.Resolver.TypeResolution
 				{
 					var udt = b as UserDefinedType;
 
-					//bool pop = b is MixinTemplateType || (udt is TemplateType && !ctxt.ScopedBlockIsInNodeHierarchy(bn));
-					using (ctxt.Push(udt))
+					using (b is MixinTemplateType || udt is TemplateType ? ctxt.Push(udt) : null)
 					{
 						r.AddRange(SingleNodeNameScan.SearchChildrenAndResolve(ctxt, udt, nextIdentifierHash, typeIdObject));
 

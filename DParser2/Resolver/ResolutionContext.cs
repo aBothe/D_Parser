@@ -159,6 +159,9 @@ namespace D_Parser.Resolver
 
 		public IDisposable Push(DSymbol ds, ISyntaxRegion scopedRegion = null)
 		{
+			if (ds == null)
+				return null;
+
 			var pop = Push_(ds.Definition, scopedRegion);
 
 			CurrentContext.IntroduceTemplateParameterTypes(ds);
