@@ -28,8 +28,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					
 					if(pfa != null && t != null)
 					{
+						t.NonStaticAccess = true;
 						ignoreErrors = true;
-						ret = EvalPostfixAccessExpression(this, ctxt, pfa, t, false) != null;
+						var res = ExpressionTypeEvaluation.EvaluateType(pfa, ctxt, false);
+						ret = res != null;
 						ignoreErrors = false;
 					}
 					ctxt.ContextIndependentOptions = optionsBackup;
@@ -158,6 +160,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			{
 				var optionsBackup = ctxt.ContextIndependentOptions;
 				ctxt.ContextIndependentOptions = ResolutionOptions.IgnoreAllProtectionAttributes;
+				ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
 				bool ret = false;
 					
 				if(te.Arguments != null)
