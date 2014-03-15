@@ -45,6 +45,8 @@ namespace Tests
 
 			if (ProvideObjModule)
 				ctxt = ResolutionTests.CreateDefCtxt(ResolutionTests.CreateCache(), null);
+			else
+				ctxt = ResolutionTests.CreateDefCtxt(new ParseCacheView(new string[] { }), null);
 
 			var x = DParser.ParseExpression(literal);
 
@@ -191,28 +193,29 @@ namespace Tests
 			TestString("\"asdf\"w", "asdf", false);
 			TestString("\"asdf\"d", "asdf", false);
 
-			var ex = DParser.ParseExpression("['a','s','d','f']");
-			var v = Evaluation.EvaluateValue(ex, (ResolutionContext)null);
+			var ctxt = new ResolutionContext(new ParseCacheView(new string[]{}),null,null);
 
-			Assert.IsInstanceOfType(typeof(ArrayValue),v);
+			var ex = DParser.ParseExpression("['a','s','d','f']");
+			var v = Evaluation.EvaluateValue(ex, ctxt);
+
+			Assert.That(v,Is.TypeOf(typeof(ArrayValue)));
 			var ar = (ArrayValue)v;
 			Assert.AreEqual(ar.Elements.Length, 4);
 
 			foreach (var ev in ar.Elements)
-				Assert.IsInstanceOfType(typeof(PrimitiveValue),ev);
+				Assert.That(ev, Is.TypeOf(typeof(PrimitiveValue)));
 
 
 			ex = DParser.ParseExpression("[\"KeyA\":12, \"KeyB\":33, \"KeyC\":44]");
-			v = Evaluation.EvaluateValue(ex, (ResolutionContext)null);
+			v = Evaluation.EvaluateValue(ex, ctxt);
 
-			Assert.IsInstanceOfType(typeof(AssociativeArrayValue),v);
+			Assert.That(v, Is.TypeOf(typeof(AssociativeArrayValue)));
 			var aa = (AssociativeArrayValue)v;
 			Assert.AreEqual(aa.Elements.Count, 3);
 
 			ex = DParser.ParseExpression("(a,b) => a+b");
-			var pcl = new ParseCacheView (new[]{new MutableRootPackage()});
-			v = Evaluation.EvaluateValue(ex, ResolutionContext.Create(pcl, null, null));
-			Assert.IsInstanceOfType(typeof(DelegateValue),v);
+			v = Evaluation.EvaluateValue(ex, ctxt);
+			Assert.That(v, Is.TypeOf(typeof(DelegateValue)));
 		}
 
 		[Test]
