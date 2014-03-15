@@ -103,16 +103,17 @@ namespace D_Parser.Resolver.TypeResolution
 			var optionBackup = ctxt.CurrentContext.ContextDependentOptions;
 			ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
 
-			AbstractType ret;
+			AbstractType ret = null;
 
-			if (o is IExpression)
-				ret = ExpressionTypeEvaluation.EvaluateType((IExpression)o, ctxt, false);
-			else if (o is ITypeDeclaration)
-				ret = TypeDeclarationResolver.ResolveSingle((ITypeDeclaration)o, ctxt);
-			else if (o is INode)
-				ret = TypeDeclarationResolver.HandleNodeMatch(o as INode, ctxt);
-			else
-				ret = null;
+			CodeCompletion.DoTimeoutableCompletionTask(null, ctxt, () =>
+			{
+				if (o is IExpression)
+					ret = ExpressionTypeEvaluation.EvaluateType((IExpression)o, ctxt, false);
+				else if (o is ITypeDeclaration)
+					ret = TypeDeclarationResolver.ResolveSingle((ITypeDeclaration)o, ctxt);
+				else if (o is INode)
+					ret = TypeDeclarationResolver.HandleNodeMatch(o as INode, ctxt);
+			});
 
 			ctxt.CurrentContext.ContextDependentOptions = optionBackup;
 
@@ -137,38 +138,45 @@ namespace D_Parser.Resolver.TypeResolution
 			ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly | ResolutionOptions.DontResolveAliases;
 			resolutionAttempt = NodeResolutionAttempt.Normal;
 
-			AbstractType ret;
-
-			if (o is IExpression)
-				ret = ExpressionTypeEvaluation.EvaluateType((IExpression)o, ctxt, false);
-			else if(o is ITypeDeclaration)
-				ret = TypeDeclarationResolver.ResolveSingle((ITypeDeclaration)o, ctxt);
-			else if (o is INode)
-				ret = TypeDeclarationResolver.HandleNodeMatch(o as INode, ctxt, null, o);
-			else
-				ret = null;
-
-			if (ret == null) {
-				resolutionAttempt = NodeResolutionAttempt.NoParameterOrTemplateDeduction;
-
-				if (o is PostfixExpression_MethodCall)
-					o = (o as PostfixExpression_MethodCall).PostfixForeExpression;
-
-				ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.NoTemplateParameterDeduction | ResolutionOptions.DontResolveAliases;
-
-				if (o is IdentifierExpression)
-					ret = AmbiguousType.Get(ExpressionTypeEvaluation.GetOverloads(o as IdentifierExpression, ctxt, deduceParameters: false), o);
+			AbstractType ret = null;
+			NodeResolutionAttempt resAttempt = NodeResolutionAttempt.Normal;
+			CodeCompletion.DoTimeoutableCompletionTask(null, ctxt, () =>
+			{
+				if (o is IExpression)
+					ret = ExpressionTypeEvaluation.EvaluateType((IExpression)o, ctxt, false);
 				else if (o is ITypeDeclaration)
-					ret = TypeDeclarationResolver.ResolveSingle(o as ITypeDeclaration, ctxt);
-				else if (o is IExpression)
-					ret = ExpressionTypeEvaluation.EvaluateType(o as IExpression, ctxt, false);
-			}
+					ret = TypeDeclarationResolver.ResolveSingle((ITypeDeclaration)o, ctxt);
+				else if (o is INode)
+					ret = TypeDeclarationResolver.HandleNodeMatch(o as INode, ctxt, null, o);
+				else
+					ret = null;
 
-			if (ret == null) {
-				resolutionAttempt = NodeResolutionAttempt.RawSymbolLookup;
-				var overloads = TypeDeclarationResolver.HandleNodeMatches (LookupIdRawly (editor, o as ISyntaxRegion), ctxt, null, o);
-				ret = AmbiguousType.Get(overloads, o);
-			}
+				if (ret == null)
+				{
+					resAttempt = NodeResolutionAttempt.NoParameterOrTemplateDeduction;
+
+					if (o is PostfixExpression_MethodCall)
+						o = (o as PostfixExpression_MethodCall).PostfixForeExpression;
+
+					ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.NoTemplateParameterDeduction | ResolutionOptions.DontResolveAliases;
+
+					if (o is IdentifierExpression)
+						ret = AmbiguousType.Get(ExpressionTypeEvaluation.GetOverloads(o as IdentifierExpression, ctxt, deduceParameters: false), o);
+					else if (o is ITypeDeclaration)
+						ret = TypeDeclarationResolver.ResolveSingle(o as ITypeDeclaration, ctxt);
+					else if (o is IExpression)
+						ret = ExpressionTypeEvaluation.EvaluateType(o as IExpression, ctxt, false);
+				}
+
+				if (ret == null)
+				{
+					resAttempt = NodeResolutionAttempt.RawSymbolLookup;
+					var overloads = TypeDeclarationResolver.HandleNodeMatches(LookupIdRawly(editor, o as ISyntaxRegion), ctxt, null, o);
+					ret = AmbiguousType.Get(overloads, o);
+				}
+			});
+
+			resolutionAttempt = resAttempt;
 
 			if (ret != null)
 				ret.DeclarationOrExpressionBase = o;

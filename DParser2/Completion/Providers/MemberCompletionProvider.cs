@@ -37,19 +37,13 @@ namespace D_Parser.Completion.Providers
 			ctxt.Cancel = cts.Token;
 			
 			AbstractType t = null;
-			var task = Task.Factory.StartNew(() =>
+			CodeCompletion.DoTimeoutableCompletionTask(CompletionDataGenerator,ctxt,() =>
 			{
 				if (AccessExpression is IExpression)
 					t = ExpressionTypeEvaluation.EvaluateType(AccessExpression as IExpression, ctxt);
 				else if (AccessExpression is ITypeDeclaration)
 					t = TypeDeclarationResolver.ResolveSingle(AccessExpression as ITypeDeclaration, ctxt);
 			});
-
-			if (!task.Wait(CompletionOptions.Instance.CompletionTimeout))
-			{
-				cts.Cancel();
-				task.Wait();
-			}
 
 			if (t == null) //TODO: Add after-space list creation when an unbound . (Dot) was entered which means to access the global scope
 				return;

@@ -27,20 +27,11 @@ namespace D_Parser.Completion
 		{
 			var ctxt = ResolutionContext.Create(CodeCache, compilationEnvironment, ScopedBlock, ScopedStatement);
 
-			var cts = new CancellationTokenSource();
-			ctxt.Cancel = cts.Token;
-
-			var task = Task.Factory.StartNew(() =>
+			CodeCompletion.DoTimeoutableCompletionTask(cdgen, ctxt, () =>
 			{
 				var en = new MemberCompletionEnumeration(ctxt, cdgen) { isVarInst = true };
 				en.IterateThroughScopeLayers(Caret, VisibleMembers);
 			});
-
-			if (!task.Wait(CompletionOptions.Instance.CompletionTimeout))
-			{
-				cts.Cancel();
-				task.Wait();
-			}
 		}
 		
 		public static void EnumChildren(ICompletionDataGenerator cdgen,ResolutionContext ctxt, UserDefinedType udt, 

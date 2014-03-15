@@ -29,6 +29,11 @@ using D_Parser.Dom;
 using D_Parser.Dom.Statements;
 using D_Parser.Dom.Expressions;
 using D_Parser.Resolver.TypeResolution;
+using D_Parser.Resolver;
+using System;
+using System.Threading.Tasks;
+using System.Threading;
+using D_Parser.Misc;
 
 namespace D_Parser.Completion
 {//TODO: Flexible lambda completion
@@ -137,6 +142,25 @@ namespace D_Parser.Completion
 				currentScope = DResolver.SearchBlockAt (tempBlock, editor.CaretLocation, out currentStatement);
 			}
 			return currentScope;
+		}
+
+		/// <param name="cdgen">Can be null.</param>
+		/// <param name="ctxt"></param>
+		/// <param name="ac"></param>
+		internal static void DoTimeoutableCompletionTask(ICompletionDataGenerator cdgen,ResolutionContext ctxt, Action ac)
+		{
+			var cts = new CancellationTokenSource();
+			ctxt.Cancel = cts.Token;
+
+			var task = Task.Factory.StartNew(ac);
+
+			if (!task.Wait(CompletionOptions.Instance.CompletionTimeout))
+			{
+				cts.Cancel();
+				if(cdgen != null)
+					cdgen.NotifyTimeout();
+				task.Wait();
+			}
 		}
 	}
 }

@@ -102,22 +102,26 @@ namespace D_Parser.Completion
 
 			ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.DontResolveAliases;
 
-			// 1), 2)
-			if (lastParamExpression is PostfixExpression_MethodCall) {
-				res.IsMethodArguments = true;
-				var call = (PostfixExpression_MethodCall)lastParamExpression;
+			CodeCompletion.DoTimeoutableCompletionTask(null, ctxt, () =>
+			{
+				// 1), 2)
+				if (lastParamExpression is PostfixExpression_MethodCall)
+				{
+					res.IsMethodArguments = true;
+					var call = (PostfixExpression_MethodCall)lastParamExpression;
 
-				res.MethodIdentifier = call.PostfixForeExpression;
-				res.ResolvedTypesOrMethods = ExpressionTypeEvaluation.GetUnfilteredMethodOverloads(call.PostfixForeExpression, ctxt, call);
+					res.MethodIdentifier = call.PostfixForeExpression;
+					res.ResolvedTypesOrMethods = ExpressionTypeEvaluation.GetUnfilteredMethodOverloads(call.PostfixForeExpression, ctxt, call);
 
-				if (call.Arguments != null)
-					res.CurrentlyTypedArgumentIndex = call.ArgumentCount;
-			}
-			// 3)
-			else if (lastParamExpression is TemplateInstanceExpression)
-				HandleTemplateInstance (lastParamExpression as TemplateInstanceExpression, res, Editor, ctxt, curBlock);
-			else if (lastParamExpression is NewExpression)
-				HandleNewExpression((NewExpression)lastParamExpression,res,Editor,ctxt,curBlock);
+					if (call.Arguments != null)
+						res.CurrentlyTypedArgumentIndex = call.ArgumentCount;
+				}
+				// 3)
+				else if (lastParamExpression is TemplateInstanceExpression)
+					HandleTemplateInstance(lastParamExpression as TemplateInstanceExpression, res, Editor, ctxt, curBlock);
+				else if (lastParamExpression is NewExpression)
+					HandleNewExpression((NewExpression)lastParamExpression, res, Editor, ctxt, curBlock);
+			});
 
 			/*
 			 * alias int function(int a, bool b) myDeleg;

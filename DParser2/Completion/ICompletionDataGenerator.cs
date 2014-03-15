@@ -30,5 +30,11 @@ namespace D_Parser.Completion
 		/// Used for method override completion
 		/// </summary>
 		void AddCodeGeneratingNodeItem(INode node, string codeToGenerate);
+
+		/// <summary>
+		/// Notifies completion high-levels that the completion has been stopped due to taking too much time.
+		/// After this message has been sent, other completion items may still be added!
+		/// </summary>
+		void NotifyTimeout();
 	}
 }
