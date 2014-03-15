@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using D_Parser.Completion;
 using D_Parser.Dom;
+using System;
 
 namespace ExaustiveCompletionTester
 {
@@ -15,6 +16,10 @@ namespace ExaustiveCompletionTester
 		public void Add (INode n) { }
 		public void AddModule (DModule module, string nameOverride = null) { }
 		public void AddPackage (string packageName) { }
+		public void NotifyTimeout()
+		{
+			throw new OperationCanceledException();
+		}
 	}
 
 }

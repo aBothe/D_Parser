@@ -394,6 +394,12 @@ void main() { Class. }";
 			#endregion
 
 			public bool HasRemainingItems { get{ return remainingWhiteList != null && remainingWhiteList.Count > 0; } }
+
+
+			public void NotifyTimeout()
+			{
+				throw new OperationCanceledException();
+			}
 		}
 
 		public static INode GetNode(EditorData ed, string id, ref ResolutionContext ctxt)
