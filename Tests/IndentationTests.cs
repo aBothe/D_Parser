@@ -7,6 +7,7 @@ namespace Tests
 	[TestFixture]
 	public class IndentationTests
 	{
+		[Ignore]
 		[Test]
 		public void TestIndenter()
 		{

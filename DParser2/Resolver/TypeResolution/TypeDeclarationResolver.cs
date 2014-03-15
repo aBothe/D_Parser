@@ -760,7 +760,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 			public AbstractType Visit(DMethod m)
 			{
-				return new MemberSymbol(m, CanResolveBase(m) ? GetMethodReturnType(m, ctxt) : null, typeBase);
+				return new MemberSymbol(m, CanResolveBase(m) ? GetMethodReturnType(m, ctxt) : null, typeBase, GetInvisibleTypeParameters(m));
 			}
 
 			public AbstractType Visit(DClassLike dc)
