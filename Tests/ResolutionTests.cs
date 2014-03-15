@@ -315,13 +315,13 @@ alias Thing!(int) IntThing;");
 			
 			ex = DParser.ParseExpression("new Thing!int");
 			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt,false);
-			Assert.That(t, Is.TypeOf(typeof(MemberSymbol))); // Returns the ctor
-			Assert.That(((DSymbol)t).Name, Is.EqualTo(DMethod.ConstructorIdentifier));
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol))); // Returns the empty ctor
+			var ctors = AmbiguousType.TryDissolve(t).ToArray();
+			Assert.That(((DSymbol)ctors[0]).Name, Is.EqualTo(DMethod.ConstructorIdentifier));
 			
 			ex = DParser.ParseExpression("new IntThing");
-			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt, false);
-			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
-			Assert.That(((DSymbol)t).Name, Is.EqualTo(DMethod.ConstructorIdentifier));
+			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(StructType)));
 		}
 		
 		[Test]
@@ -1017,6 +1017,7 @@ T delegate(T dgParam) genDelegate(T)();");
 		public void TestParamDeduction8()
 		{
 			var pcl = CreateCache(@"module A;
+double[] darr;
 struct Appender(A:E[],E) { A data; }
 
 Appender!(E[]) appender(A : E[], E)(A array = null)
@@ -1027,7 +1028,7 @@ Appender!(E[]) appender(A : E[], E)(A array = null)
 			var A = pcl[0]["A"];
 			var ctxt = CreateDefCtxt(pcl, A);
 			
-			var ex = DParser.ParseExpression("new Appender!(double[])()");
+			var ex = DParser.ParseExpression("new Appender!(double[])(darr)");
 			var t = ExpressionTypeEvaluation.EvaluateType(ex,ctxt, false);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol))); // ctor
 			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(StructType)));
@@ -1530,19 +1531,19 @@ class B : A{
 		[Test]
 		public void QualifiedConstructors()
 		{
-			var ctxt = CreateCtxt("modA",@"module modA;
+			var ctxt = CreateCtxt("modA", @"module modA;
 class C
 {
-    this()           { }
-    this() const     { }
     this() immutable { }
     this() shared    { }
+	this()           { }
+    this() const     { }
 }
 
 class D
 {
-    this() const { }
     this() immutable { }
+	this() const { }
 }
 
 class P
@@ -1556,7 +1557,7 @@ class P
 			ClassType ct;
 
 			x = DParser.ParseExpression ("new C");
-			ctor = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as MemberSymbol;
+			ctor = ExpressionTypeEvaluation.EvaluateType (x, ctxt, false) as MemberSymbol;
 
 			Assert.That (ctor, Is.Not.Null);
 			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
@@ -1564,7 +1565,7 @@ class P
 			Assert.That (ct.Modifier, Is.EqualTo(0));
 
 			x = DParser.ParseExpression ("new const C");
-			ctor = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as MemberSymbol;
+			ctor = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false) as MemberSymbol;
 
 			Assert.That (ctor, Is.Not.Null);
 			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
@@ -1572,7 +1573,7 @@ class P
 			Assert.That (ct.Modifier, Is.EqualTo(DTokens.Const));
 
 			x = DParser.ParseExpression ("new immutable C");
-			ctor = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as MemberSymbol;
+			ctor = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false) as MemberSymbol;
 
 			Assert.That (ctor, Is.Not.Null);
 			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
@@ -1580,7 +1581,7 @@ class P
 			Assert.That (ct.Modifier, Is.EqualTo(DTokens.Immutable));
 
 			x = DParser.ParseExpression ("new shared C");
-			ctor = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as MemberSymbol;
+			ctor = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false) as MemberSymbol;
 
 			Assert.That (ctor, Is.Not.Null);
 			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
@@ -1590,7 +1591,7 @@ class P
 
 
 			x = DParser.ParseExpression ("new P");
-			ctor = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as MemberSymbol;
+			ctor = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false) as MemberSymbol;
 
 			Assert.That (ctor, Is.Not.Null);
 			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
@@ -1598,7 +1599,7 @@ class P
 			Assert.That (ct.Modifier, Is.EqualTo(0));
 
 			x = DParser.ParseExpression ("new const P");
-			ctor = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as MemberSymbol;
+			ctor = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false) as MemberSymbol;
 
 			Assert.That (ctor, Is.Not.Null);
 			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
@@ -1606,7 +1607,7 @@ class P
 			Assert.That (ct.Modifier, Is.EqualTo(DTokens.Const));
 
 			x = DParser.ParseExpression ("new immutable P");
-			ctor = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as MemberSymbol;
+			ctor = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false) as MemberSymbol;
 
 			Assert.That (ctor, Is.Not.Null);
 			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
@@ -1616,7 +1617,7 @@ class P
 
 
 			x = DParser.ParseExpression ("new const D");
-			ctor = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as MemberSymbol;
+			ctor = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false) as MemberSymbol;
 
 			Assert.That (ctor, Is.Not.Null);
 			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
@@ -1624,7 +1625,7 @@ class P
 			Assert.That (ct.Modifier, Is.EqualTo(DTokens.Const));
 
 			x = DParser.ParseExpression ("new D");
-			ctor = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as MemberSymbol;
+			ctor = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false) as MemberSymbol;
 
 			Assert.That (ctor, Is.Null);
 		}

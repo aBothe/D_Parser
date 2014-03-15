@@ -520,7 +520,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				possibleTypes = TypeDeclarationResolver.Resolve(nex.Type, ctxt);
 
 			var ctors = new Dictionary<DMethod, TemplateIntermediateType>();
-
+			
 			if (possibleTypes == null)
 				return null;
 
@@ -529,24 +529,77 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				var ct = t as TemplateIntermediateType;
 				if (ct != null &&
 					!ct.Definition.ContainsAttribute(DTokens.Abstract))
-					foreach (var ctor in GetConstructors(ct))
+					foreach (var ctor in GetConstructors(ct)){
+						// Omit all ctors that won't return the adequate 
+						if (ct.Modifier != 0)
+						{
+							if (!ctor.ContainsAttribute(ct.Modifier, DTokens.Pure))
+								continue;						
+						}
+						else if(ctor.Attributes != null && ctor.Attributes.Count != 0)
+						{
+							bool skip = false;
+							foreach (var attr in ctor.Attributes)
+							{
+								var mod = attr as Modifier;
+								if (mod != null)
+								{
+									switch (mod.Token)
+									{
+										case DTokens.Const:
+										case DTokens.Immutable:
+										case DTokens.Shared:
+										case DTokens.Nothrow: // ?
+										// not DTokens.Pure due to some mystical reasons
+											skip = true;
+											break;
+									}
+									
+									if(skip)
+										break;
+								}
+							}
+							if (skip)
+								continue;
+						}
 						ctors.Add(ctor, ct);
+					}
+				else if (t is AssocArrayType)
+				{
+					t.NonStaticAccess = true;
+					return AmbiguousType.Get(possibleTypes);
+				}
+			}
+
+			if (ctors.Count == 0)
+				return new UnknownType(nex);
+
+			// HACK: Return the base types immediately
+			if (TryReturnMethodReturnType)
+			{
+				var ret = ctors.First().Value; // AmbiguousType.Get(ctors.Values);
+				if (ret != null)
+					ret.NonStaticAccess = true;
+				return ret;
 			}
 
 			MemberSymbol finalCtor = null;
 
-			var kvArray = ctors.ToArray();
+			//TODO: Determine argument types and filter out ctor overloads.
+			var kvFirst = ctors.First();
+			finalCtor = new MemberSymbol(kvFirst.Key, kvFirst.Value, nex);
 
-			/*
-			 * TODO: Determine argument types and filter out ctor overloads.
-			 */
 
-			if (kvArray.Length != 0)
-				finalCtor = new MemberSymbol(kvArray[0].Key, kvArray[0].Value, nex);
-			else if (possibleTypes.Length != 0)
-				return AbstractType.Get(possibleTypes[0]);
 
-			return TryPretendMethodExecution(finalCtor);
+			if (finalCtor != null)
+				return TryPretendMethodExecution(finalCtor, nex);
+
+			var resolvedCtors = new List<AbstractType>();
+
+			foreach(var kv in ctors)
+				resolvedCtors.Add(new MemberSymbol(kv.Key, kv.Value, nex));
+
+			return TryPretendMethodExecution(AmbiguousType.Get(resolvedCtors, nex), nex);
 		}
 		#endregion
 
