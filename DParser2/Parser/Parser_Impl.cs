@@ -4609,9 +4609,10 @@ namespace D_Parser.Parser
 						while (laKind == Dot)
 						{
 							Step();
-							if (laKind != Identifier)
-								SynErr(Identifier);
-							outer = new PostfixExpression_Access() { AccessExpression = new IdentifierExpression(la.Value), PostfixForeExpression = outer };
+							if (Expect(Identifier))
+								outer = new PostfixExpression_Access() { AccessExpression = new IdentifierExpression(la.Value), PostfixForeExpression = outer };
+							else
+								outer = new TokenExpression(Incomplete);
 							Step();
 						}
 						return outer;
