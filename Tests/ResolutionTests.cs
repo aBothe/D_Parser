@@ -1247,24 +1247,6 @@ class C(U: A!W, W){ W item; }
 		}
 
 		[Test]
-		public void TemplateParamDeduction14()
-		{
-			var ctxt = CreateCtxt("mod", @"module mod;
-class A(T) {}
-class B{ class SubClass; }
-class C(A!X.SubClass, X) {}
-");
-
-			ITypeDeclaration td;
-			AbstractType t;
-
-			td = DParser.ParseBasicType("C!(A!B)"); // TODO: Elaborate behavior in dmd
-			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
-
-			Assert.That(t, Is.TypeOf(typeof(ClassType)));
-		}
-
-		[Test]
 		public void TemplateArgAsBasetype()
 		{
 			var ctxt = CreateCtxt("A",@"module A;
