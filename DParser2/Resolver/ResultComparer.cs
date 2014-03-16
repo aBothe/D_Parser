@@ -18,8 +18,17 @@ namespace D_Parser.Resolver
 		/// </summary>
 		public static bool IsEqual(ISemantic r1, ISemantic r2)
 		{
-			if(r1 is TemplateParameterSymbol)
-				r1 = ((TemplateParameterSymbol)r1).Base;
+			if (r1 is TemplateParameterSymbol)
+			{
+				var tps1 = r1 as TemplateParameterSymbol;
+				var tps2 = r2 as TemplateParameterSymbol;
+				if (tps2 != null && tps1.Parameter == tps2.Parameter)
+					return (tps1.Base == null && tps2.Base == null) || IsEqual(tps1.Base, tps2.Base);
+
+				if (TemplateInstanceHandler.IsNonFinalArgument(r2))
+					return true;
+				r1 = tps1.Base;
+			}
 			if(r2 is TemplateParameterSymbol)
 				r2 = ((TemplateParameterSymbol)r2).Base;
 			

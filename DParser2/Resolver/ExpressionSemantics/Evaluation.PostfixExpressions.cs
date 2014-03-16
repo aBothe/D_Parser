@@ -193,7 +193,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			// Get all arguments' types
 			callArguments = new List<ISemantic>();
-			bool hasNonFinalArgs = false;
 
 			if (call.Arguments != null)
 			{
@@ -210,8 +209,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			#region If explicit template type args were given, try to associate them with each overload
 			if (tix != null)
 			{
-				var args = TemplateInstanceHandler.PreResolveTemplateArgs(tix, ctxt, out hasNonFinalArgs);
-				var deducedOverloads = TemplateInstanceHandler.DeduceParamsAndFilterOverloads(methodOverloads, args, true, ctxt, hasNonFinalArgs);
+				var args = TemplateInstanceHandler.PreResolveTemplateArgs(tix, ctxt);
+				var deducedOverloads = TemplateInstanceHandler.DeduceParamsAndFilterOverloads(methodOverloads, args, true, ctxt);
 				methodOverloads.Clear();
 				if (deducedOverloads != null)
 					methodOverloads.AddRange(deducedOverloads);
@@ -226,7 +225,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			foreach (var ov in methodOverloads)
 			{
 				if (ov is MemberSymbol)
-					HandleDMethodOverload(ctxt, ValueProvider != null, baseValue, callArguments, returnBaseTypeOnly, hasNonFinalArgs, argTypeFilteredOverloads, ref hasHandledUfcsResultBefore, 
+					HandleDMethodOverload(ctxt, ValueProvider != null, baseValue, callArguments, returnBaseTypeOnly, argTypeFilteredOverloads, ref hasHandledUfcsResultBefore, 
 						ov as MemberSymbol, ref untemplatedMethodResult);
 				else if (ov is DelegateType)
 				{
@@ -259,7 +258,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return AmbiguousType.Get(argTypeFilteredOverloads, tix);
 		}
 
-		static void HandleDMethodOverload(ResolutionContext ctxt, bool eval, ISymbolValue baseValue, List<ISemantic> callArguments, bool returnBaseTypeOnly, bool hasNonFinalArgs, List<AbstractType> argTypeFilteredOverloads, ref bool hasHandledUfcsResultBefore, 
+		static void HandleDMethodOverload(ResolutionContext ctxt, bool eval, ISymbolValue baseValue, List<ISemantic> callArguments, bool returnBaseTypeOnly, List<AbstractType> argTypeFilteredOverloads, ref bool hasHandledUfcsResultBefore, 
 			MemberSymbol ms, ref AbstractType untemplatedMethod)
 		{
 			var dm = ms.Definition as DMethod;
@@ -337,16 +336,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					foreach (var tpar in dm.TemplateParameters)
 					{
 						if (deducedTypeDict[tpar] == null && !templateParamDeduction.Handle(tpar, null))
-						{
-							if (!hasNonFinalArgs)
-								return;
-
-							deducedTypeDict[tpar] = new TemplateParameterSymbol(tpar, null);
-						}
+							return;
 					}
 				}
 
-				if (deducedTypeDict.AllParamatersSatisfied || hasNonFinalArgs)
+				if (deducedTypeDict.AllParamatersSatisfied)
 				{
 					ms.DeducedTypes = deducedTypeDict.ToReadonly();
 					var bt = TypeDeclarationResolver.GetMethodReturnType(dm, ctxt) ?? ms.Base;

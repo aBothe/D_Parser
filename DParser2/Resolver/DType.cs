@@ -830,10 +830,12 @@ namespace D_Parser.Resolver
 		/// Only used for template value parameters.
 		/// </summary>
 		public readonly ISymbolValue ParameterValue;
+		public bool IsKnowinglyUndetermined;
 
 		public TemplateParameterSymbol(TemplateParameter.Node tpn, ISemantic typeOrValue, ISyntaxRegion paramIdentifier = null)
 			: base(tpn, AbstractType.Get(typeOrValue), paramIdentifier)
 		{
+			IsKnowinglyUndetermined = TemplateInstanceHandler.IsNonFinalArgument(typeOrValue);
 			this.Parameter = tpn.TemplateParameter;
 			this.ParameterValue = typeOrValue as ISymbolValue;
 		}
@@ -841,6 +843,7 @@ namespace D_Parser.Resolver
 		public TemplateParameterSymbol(TemplateParameter tpn, ISemantic typeOrValue, ISyntaxRegion paramIdentifier = null)
 			: base(tpn != null ? tpn.Representation : null, AbstractType.Get(typeOrValue), paramIdentifier)
 		{
+			IsKnowinglyUndetermined = TemplateInstanceHandler.IsNonFinalArgument(typeOrValue);
 			this.Parameter = tpn;
 			this.ParameterValue = typeOrValue as ISymbolValue;
 		}

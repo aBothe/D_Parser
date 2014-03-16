@@ -51,6 +51,15 @@ namespace D_Parser.Resolver.Templates
 			if (td is IdentifierDeclaration)
 				return HandleDecl(p,(IdentifierDeclaration)td, rr);
 
+			if (TemplateInstanceHandler.IsNonFinalArgument(rr))
+			{
+				foreach (var tp in this.TargetDictionary.Keys.ToList())
+					if (TargetDictionary[tp] == null)
+						TargetDictionary[tp] = new TemplateParameterSymbol(tp, null);
+
+				return true;
+			}
+
 			//HACK Ensure that no information gets lost by using this function 
 			// -- getting a value but requiring an abstract type and just extract it from the value - is this correct behaviour?
 			var at = AbstractType.Get(rr);

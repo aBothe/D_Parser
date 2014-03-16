@@ -291,8 +291,7 @@ namespace D_Parser.Resolver.TypeResolution
 			var tix = instanceDeclaration as TemplateInstanceExpression;
 			if (tix != null && (ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) == 0)
 			{
-				bool hasUndeterminedArgs;
-				var givenTemplateArguments = TemplateInstanceHandler.PreResolveTemplateArgs(tix, ctxt, out hasUndeterminedArgs);
+				var givenTemplateArguments = TemplateInstanceHandler.PreResolveTemplateArgs(tix, ctxt);
 
 				if (!TemplateInstanceHandler.DeduceParams(givenTemplateArguments, false, ctxt, null, dc, deducedTypes))
 				{

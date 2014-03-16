@@ -2485,7 +2485,7 @@ unittest
 			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			t = (t as MemberSymbol).Base;
-			Assert.That(t, Is.TypeOf(typeof(TemplateType)));
+			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 
 			ctxt.CurrentContext.Set(A);
 

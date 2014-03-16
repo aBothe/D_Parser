@@ -9,9 +9,8 @@ namespace D_Parser.Resolver.TypeResolution
 {
 	public static class TemplateInstanceHandler
 	{
-		public static List<ISemantic> PreResolveTemplateArgs(TemplateInstanceExpression tix, ResolutionContext ctxt, out bool hasNonFinalArgument)
+		public static List<ISemantic> PreResolveTemplateArgs(TemplateInstanceExpression tix, ResolutionContext ctxt)
 		{
-			hasNonFinalArgument = false;
 			// Resolve given argument expressions
 			var templateArguments = new List<ISemantic>();
 
@@ -59,11 +58,8 @@ namespace D_Parser.Resolver.TypeResolution
 
 							templateArguments.Add(eval ?? (ISemantic)mr);
 						}
-						else{
-							if(!hasNonFinalArgument)
-								hasNonFinalArgument = IsNonFinalArgument(res);
+						else
 							templateArguments.Add(res);
-						}
 					}
 					else
 					{
@@ -74,8 +70,7 @@ namespace D_Parser.Resolver.TypeResolution
 							if (vv.Variable.IsConst && vv.Variable.Initializer != null)
 								v = Evaluation.EvaluateValue(vv, new StandardValueProvider(ctxt));
 						}
-						if(!hasNonFinalArgument)
-							hasNonFinalArgument = IsNonFinalArgument(v);
+						
 						v = DResolver.StripValueTypeWrappers(v);
 						templateArguments.Add(v);
 					}
@@ -84,7 +79,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return templateArguments;
 		}
 		
-		static bool IsNonFinalArgument(ISemantic v)
+		internal static bool IsNonFinalArgument(ISemantic v)
 		{
 			return (v is TypeValue && (v as TypeValue).RepresentedType is TemplateParameterSymbol) ||
 				(v is TemplateParameterSymbol && (v as TemplateParameterSymbol).Base == null) ||
@@ -95,9 +90,8 @@ namespace D_Parser.Resolver.TypeResolution
 			TemplateInstanceExpression templateInstanceExpr,
 			ResolutionContext ctxt, bool isMethodCall = false)
 		{
-			bool hasUndeterminedArgs;
-			var args = PreResolveTemplateArgs(templateInstanceExpr, ctxt, out hasUndeterminedArgs);
-			return DeduceParamsAndFilterOverloads(rawOverloadList, args, isMethodCall, ctxt, hasUndeterminedArgs);
+			var args = PreResolveTemplateArgs(templateInstanceExpr, ctxt);
+			return DeduceParamsAndFilterOverloads(rawOverloadList, args, isMethodCall, ctxt);
 		}
 
 		/// <summary>
@@ -117,14 +111,12 @@ namespace D_Parser.Resolver.TypeResolution
 		public static AbstractType[] DeduceParamsAndFilterOverloads(IEnumerable<AbstractType> rawOverloadList,
 			IEnumerable<ISemantic> givenTemplateArguments,
 			bool isMethodCall,
-			ResolutionContext ctxt,
-			bool hasUndeterminedArguments=false)
+			ResolutionContext ctxt)
 		{
 			if (rawOverloadList == null)
 				return null;
 			
-			var filteredOverloads = hasUndeterminedArguments ? new List<AbstractType>(rawOverloadList) : 
-				DeduceOverloads(rawOverloadList, givenTemplateArguments, isMethodCall, ctxt);
+			var filteredOverloads = DeduceOverloads(rawOverloadList, givenTemplateArguments, isMethodCall, ctxt);
 
 			AbstractType[] sortedAndFilteredOverloads;
 
@@ -135,10 +127,10 @@ namespace D_Parser.Resolver.TypeResolution
 				sortedAndFilteredOverloads = new[] { filteredOverloads[0] };
 			else
 				return null;
-
+			/*
 			if (hasUndeterminedArguments)
 				return sortedAndFilteredOverloads;
-			
+			*/
 			if(sortedAndFilteredOverloads!=null)
 			{
 				filteredOverloads.Clear();
@@ -229,7 +221,7 @@ namespace D_Parser.Resolver.TypeResolution
 		private static List<AbstractType> DeduceOverloads(
 			IEnumerable<AbstractType> rawOverloadList, 
 			IEnumerable<ISemantic> givenTemplateArguments, 
-			bool isMethodCall, 
+			bool isMethodCall,
 			ResolutionContext ctxt)
 		{
 			bool hasTemplateArgsPassed = givenTemplateArguments != null && givenTemplateArguments.FirstOrDefault() != null;
@@ -300,7 +292,7 @@ namespace D_Parser.Resolver.TypeResolution
 			bool isMethodCall, 
 			ResolutionContext ctxt, 
 			DSymbol overload, 
-			DNode tplNode, 
+			DNode tplNode,
 			DeducedTypeDictionary deducedTypes)
 		{
 			bool isLegitOverload = true;
