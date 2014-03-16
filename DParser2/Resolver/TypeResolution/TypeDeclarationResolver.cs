@@ -79,7 +79,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 			var res = NameScan.SearchAndResolve(ctxt, loc, idHash, idObject);
 
-			if (ModuleScope)
+			if (disp != null)
 			{
 				disp.Dispose();
 				disp = null;

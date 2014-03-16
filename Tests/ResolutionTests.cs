@@ -2126,7 +2126,7 @@ debug(4)
 			var A = m["A"].First() as DClassLike;
 			var foo = A["foo"].First() as DMethod;
 			var subst = foo.Body.SubStatements as List<IStatement>;
-			var ctxt = CreateDefCtxt(pcl, foo, subst[0]);
+			var ctxt = CreateDefCtxt(pcl, foo, foo.Body);
 
 			var x = TypeDeclarationResolver.ResolveIdentifier("x", ctxt, null);
 			Assert.AreEqual(1, x.Length);
@@ -2144,7 +2144,7 @@ debug(4)
 			Assert.AreEqual(0, x.Length);
 
 			IStatement ss;
-			ctxt.CurrentContext.Set(ss=((subst[2] as StatementCondition).ScopedStatement as BlockStatement).SubStatements.First());
+			ss=((subst[2] as StatementCondition).ScopedStatement as BlockStatement).SubStatements.First();
 
 			var x2 = ExpressionTypeEvaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
 			Assert.That(x2, Is.TypeOf(typeof(MemberSymbol)));
