@@ -190,17 +190,17 @@ namespace D_Parser.Resolver
 
 			public override void VisitAttribute(NegatedDeclarationCondition a)
 			{
-				base.VisitAttribute(a);
+				
 			}
 
 			public override void VisitAttribute(StaticIfCondition a)
 			{
-				base.VisitAttribute(a);
+				
 			}
 
 			public override void VisitAttribute(VersionCondition vis)
 			{
-				base.VisitAttribute(vis);
+				
 			}
 
 			public override void Visit(VersionSpecification vs)
@@ -229,6 +229,11 @@ namespace D_Parser.Resolver
 			{
 				return ss.Location < caret && (ss.Attributes == null || cs.IsMatching(ss.Attributes, ctxt));
 			}
+
+			public override void VisitChildren(Dom.Expressions.ContainerExpression x){}
+			public override void Visit(ExpressionStatement s){}
+			public override void VisitOpBasedExpression(Dom.Expressions.OperatorBasedExpression ox){}
+			public override void VisitPostfixExpression(Dom.Expressions.PostfixExpression x){}
 		}
 
 		public static void EnumConditions(ConditionSet cs,IBlockNode block, ResolutionContext ctxt, CodeLocation caret)
