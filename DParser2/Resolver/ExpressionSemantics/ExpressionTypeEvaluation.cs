@@ -748,7 +748,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						id.Subformat == LiteralSubformat.Utf16 ? DTokens.Wchar :
 						DTokens.Char;
 
-					return new PrimitiveType(tk, 0, id);
+					return new PrimitiveType(tk, 0, id) { NonStaticAccess = true };
 
 				case LiteralFormat.FloatingPoint | LiteralFormat.Scalar:
 					var im = id.Subformat.HasFlag(LiteralSubformat.Imaginary);
@@ -760,7 +760,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					else if (id.Subformat.HasFlag(LiteralSubformat.Real))
 						tt = im ? DTokens.Ireal : DTokens.Real;
 
-					return new PrimitiveType(tt, 0, id);
+					return new PrimitiveType(tt, 0, id) { NonStaticAccess = true };
 
 				case LiteralFormat.Scalar:
 					var unsigned = id.Subformat.HasFlag(LiteralSubformat.Unsigned);
@@ -770,11 +770,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					else
 						tt = unsigned ? DTokens.Uint : DTokens.Int;
 
-					return new PrimitiveType(tt, 0, id);
+					return new PrimitiveType(tt, 0, id) { NonStaticAccess = true };
 
 				case Parser.LiteralFormat.StringLiteral:
 				case Parser.LiteralFormat.VerbatimStringLiteral:
-					return GetStringType(id.Subformat);
+					var str = GetStringType(id.Subformat);
+					str.NonStaticAccess = true;
+					return str;
 				default:
 					return null;
 			}
