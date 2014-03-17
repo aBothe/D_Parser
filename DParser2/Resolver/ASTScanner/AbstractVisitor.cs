@@ -1251,9 +1251,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 			// http://dlang.org/attribute.html#ProtectionAttribute
 			if (dn.ContainsAttribute(DTokens.Private))
-				return dn.NodeRoot == scope.NodeRoot;
+				return scope == null || dn.NodeRoot == scope.NodeRoot;
 			else if (dn.ContainsAttribute(DTokens.Package))
-				return dn.NodeRoot is DModule &&
+				return scope == null || dn.NodeRoot is DModule &&
 					ModuleNameHelper.ExtractPackageName((dn.NodeRoot as DModule).ModuleName) ==
 					ModuleNameHelper.ExtractPackageName((scope.NodeRoot as DModule).ModuleName);
 
