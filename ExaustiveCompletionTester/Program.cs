@@ -16,7 +16,8 @@ namespace ExaustiveCompletionTester
 		public static readonly HashSet<string> TriggeredExceptionLocations = new HashSet<string>();
 		public static FileProcessingData[] activeData;
 		public static volatile int liveWorkerCount = 0;
-		const string ExceptionsDirectory = ".\\Exceptions";
+		public const string ExceptionsDirectory = ".\\Exceptions";
+		public const string TesterErrorsDirectory = ".\\TesterErrors";
 
 		public static void Main (string[] args)
 		{
@@ -25,6 +26,8 @@ namespace ExaustiveCompletionTester
 
 			if (Directory.Exists(ExceptionsDirectory))
 				Directory.Delete(ExceptionsDirectory, true);
+			if (Directory.Exists(TesterErrorsDirectory))
+				Directory.Delete(TesterErrorsDirectory, true);
 			foreach (var v in Directory.EnumerateFileSystemEntries(Config.PhobosPath))
 				ProcessPath(v);
 
@@ -38,6 +41,7 @@ namespace ExaustiveCompletionTester
 				new Thread(workerMain, threadStackSize).Start(i);
 
 			FileProcessingData curFile = null;
+			Console.WriteLine("Started at {0} with {1} workers and {2} files blacklisted", DateTime.Now, workerCount, filesToExclude.Count);
 			while (liveWorkerCount > 0)
 			{
 				while (startedFiles.TryDequeue(out curFile))
@@ -79,14 +83,14 @@ namespace ExaustiveCompletionTester
 
 		public static void WriteFromLeft(int line, string str)
 		{
-			Console.CursorTop = line - 1;
+			Console.CursorTop = line;
 			Console.CursorLeft = Console.BufferWidth - str.Length;
 			Console.Write(str);
 		}
 
 		public static void WriteAt(int line, int column, string str)
 		{
-			Console.CursorTop = line - 1;
+			Console.CursorTop = line;
 			Console.CursorLeft = column - 1;
 			Console.Write(str);
 		}
