@@ -152,7 +152,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					//TODO
 					return null;
 				case DTokens.__PRETTY_FUNCTION__:
-					var dm = ctxt.ScopedStatement.ParentNode as DMethod;
+					var dm = ctxt.ScopedBlock as DMethod;
 					return new ArrayValue(GetStringType(), dm == null ? "<not inside function>" : dm.ToString(false, true));
 				default:
 					return null;

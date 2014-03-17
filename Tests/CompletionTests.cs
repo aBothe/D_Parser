@@ -130,10 +130,8 @@ void main() {}";
 			var main = m ["main"].First () as DMethod;
 			var foo = m ["foo"].First () as DVariable;
 
-			IStatement stmt;
-			var b = DResolver.SearchBlockAt (m, new CodeLocation (11, 3), out stmt);
+			var b = DResolver.SearchBlockAt (m, new CodeLocation (11, 3));
 			Assert.That (b, Is.SameAs (main));
-			Assert.That (stmt, Is.Null);
 
 			code = @"module A;
 int foo;
@@ -165,10 +163,9 @@ void main() {
 			var main = m ["main"].First () as DMethod;
 			var foo = m ["foo"].First () as DVariable;
 
-			IStatement stmt;
-			var b = DResolver.SearchBlockAt (m, new CodeLocation (1, 4), out stmt);
+			var b = DResolver.SearchBlockAt (m, new CodeLocation (1, 4));
 			Assert.That (b, Is.SameAs (main));
-			Assert.That (stmt, Is.TypeOf(typeof(BlockStatement)));
+			var stmt = main.Body;
 
 			code = @"module A;
 int foo;
@@ -178,7 +175,7 @@ int a;
 }";
 			var caret = new CodeLocation (15, 5);
 			bool _u;
-			var newMain = IncrementalParsing.UpdateBlockPartly (stmt as BlockStatement, code, DocumentHelper.LocationToOffset (code, caret), caret, out _u) as DMethod;
+			var newMain = IncrementalParsing.UpdateBlockPartly (stmt, code, DocumentHelper.LocationToOffset (code, caret), caret, out _u) as DMethod;
 
 			var lambda = newMain.Children [0] as DMethod;
 			Assert.That (lambda, Is.Not.Null);
@@ -200,10 +197,8 @@ void main() {
 			var main = m ["main"].First () as DMethod;
 			var foo = m ["foo"].First () as DVariable;
 
-			IStatement stmt;
-			var b = DResolver.SearchBlockAt (m, new CodeLocation (1, 4), out stmt);
+			var b = DResolver.SearchBlockAt (m, new CodeLocation (1, 4));
 			Assert.That (b, Is.SameAs (main));
-			Assert.That (stmt, Is.TypeOf(typeof(BlockStatement)));
 
 			code = @"module A;
 int foo;
@@ -213,7 +208,7 @@ int a;
 }";
 			var caret = new CodeLocation (9, 5);
 			bool _u;
-			var newMod = IncrementalParsing.UpdateBlockPartly (stmt as BlockStatement, code, DocumentHelper.LocationToOffset (code, caret), caret, out _u) as DMethod;
+			var newMod = IncrementalParsing.UpdateBlockPartly (main.Body, code, DocumentHelper.LocationToOffset (code, caret), caret, out _u) as DMethod;
 
 			var lambda = newMod.Children [0] as DMethod;
 			Assert.That (lambda, Is.Not.Null);

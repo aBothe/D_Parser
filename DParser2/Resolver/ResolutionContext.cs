@@ -50,17 +50,6 @@ namespace D_Parser.Resolver
 				return CurrentContext.ScopedBlock;
 			}
 		}
-
-		public IStatement ScopedStatement
-		{
-			get
-			{
-				if (stack.Count < 1)
-					return null;
-
-				return CurrentContext.ScopedStatement;
-			}
-		}
 		
 		public ContextFrame CurrentContext
 		{
@@ -73,23 +62,30 @@ namespace D_Parser.Resolver
 		#region Init/Constructor
 		public static ResolutionContext Create(IEditorData editor, ConditionalCompilationFlags globalConditions = null)
 		{
-			IStatement stmt;
 			return new ResolutionContext(editor.ParseCache, globalConditions ?? new ConditionalCompilationFlags(editor),
-										 DResolver.SearchBlockAt(editor.SyntaxTree, editor.CaretLocation, out stmt) ?? editor.SyntaxTree,
-										 stmt);
+										 DResolver.SearchBlockAt(editor.SyntaxTree, editor.CaretLocation) ?? editor.SyntaxTree,
+										 editor.CaretLocation);
 		}
 
-		public static ResolutionContext Create(ParseCacheView pcl, ConditionalCompilationFlags globalConditions, IBlockNode scopedBlock, IStatement scopedStatement=null)
+		public static ResolutionContext Create(ParseCacheView pcl, ConditionalCompilationFlags globalConditions, IBlockNode scopedBlock)
 		{
-			return new ResolutionContext(pcl, globalConditions, scopedBlock, scopedStatement);
+			return new ResolutionContext(pcl, globalConditions, scopedBlock, CodeLocation.Empty);
 		}
 
-		public ResolutionContext(ParseCacheView parseCache, ConditionalCompilationFlags gFlags, IBlockNode bn, IStatement stmt=null)
+		public static ResolutionContext Create(ParseCacheView pcl, ConditionalCompilationFlags globalConditions, IBlockNode scopedBlock, CodeLocation caret)
+		{
+			return new ResolutionContext(pcl, globalConditions, scopedBlock, caret);
+		}
+
+		public ResolutionContext(ParseCacheView parseCache, ConditionalCompilationFlags gFlags, IBlockNode bn)
+			: this(parseCache, gFlags, bn, CodeLocation.Empty) { }
+
+		public ResolutionContext(ParseCacheView parseCache, ConditionalCompilationFlags gFlags, IBlockNode bn, CodeLocation caret)
 		{
 			this.CompilationEnvironment = gFlags;
 			this.ParseCache = parseCache;
 			
-			new ContextFrame(this, bn, stmt);
+			new ContextFrame(this, bn, caret);
 		}
 		#endregion
 
@@ -143,7 +139,7 @@ namespace D_Parser.Resolver
 			}
 		}
 
-		bool Push_(INode newScope, ISyntaxRegion scopedRegion = null)
+		bool Push_(INode newScope, CodeLocation caret)
 		{
 			while (newScope != null && !(newScope is IBlockNode))
 				newScope = newScope.Parent as DNode;
@@ -151,29 +147,36 @@ namespace D_Parser.Resolver
 			var pop = newScope != null && ScopedBlock != newScope;
 
 			if (pop)
-			{
-				var s = newScope is DMethod && scopedRegion != null ?
-					(newScope as DMethod).GetSubBlockAt(scopedRegion.Location) : null;
-				PushNewScope(newScope as IBlockNode, s);
-			}
+				PushNewScope(newScope as IBlockNode, caret);
+			
 			return pop;
 		}
 
-		public IDisposable Push(DSymbol ds, ISyntaxRegion scopedRegion = null)
+		public IDisposable Push(DSymbol ds)
+		{
+			return ds != null ? Push(ds, ds.Definition.Location) : null;
+		}
+
+		public IDisposable Push(DSymbol ds, CodeLocation caret)
 		{
 			if (ds == null)
 				return null;
 
-			var pop = Push_(ds.Definition, scopedRegion);
+			var pop = Push_(ds.Definition, caret);
 
 			CurrentContext.IntroduceTemplateParameterTypes(ds);
 
 			return new PopDisposable(this, pop ? null : ds);
 		}
 
-		public IDisposable Push(INode newScope, ISyntaxRegion scopedRegion = null)
+		public IDisposable Push(INode newScope)
 		{
-			return Push_(newScope, scopedRegion) ? new PopDisposable(this) : null;
+			return newScope != null ? Push(newScope, newScope.Location) : null;
+		}
+
+		public IDisposable Push(INode newScope, CodeLocation caret)
+		{
+			return Push_(newScope, caret) ? new PopDisposable(this) : null;
 		}
 		
 		public void Push(ContextFrame frm)
@@ -181,10 +184,16 @@ namespace D_Parser.Resolver
 			stack.Push(frm);
 		}
 
-		void PushNewScope(IBlockNode scope, IStatement stmt = null)
+		void PushNewScope(IBlockNode scope, CodeLocation caret)
 		{
-			new ContextFrame(this, scope, stmt);
+			new ContextFrame(this, scope, caret);
 		}
+
+		void PushNewScope(IBlockNode scope)
+		{
+			new ContextFrame(this, scope, scope.BlockStartLocation);
+		}
+
 		
 		/// <summary>
 		/// Returns true if the the context that is stacked below the current context represents the parent item of the current block scope

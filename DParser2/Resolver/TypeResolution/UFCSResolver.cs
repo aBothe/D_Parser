@@ -101,7 +101,7 @@ namespace D_Parser.Resolver.TypeResolution
 		{
 			if (dm != null && dm.Parameters.Count > 0 && dm.Parameters[0].Type != null)
 			{
-				using (alreadyResolvedMethod != null ? ctxt.Push(alreadyResolvedMethod, dm.Body) : ctxt.Push(dm, dm.Body))
+				using (alreadyResolvedMethod != null ? ctxt.Push(alreadyResolvedMethod, dm.Body.Location) : ctxt.Push(dm, dm.Body.Location))
 				{
 					var t = TypeDeclarationResolver.ResolveSingle(dm.Parameters[0].Type, ctxt);
 					if (ResultComparer.IsImplicitlyConvertible(firstArgument, t, ctxt))

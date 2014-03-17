@@ -43,10 +43,11 @@ namespace Tests
 		{
 			ResolutionContext ctxt = null;
 
+			var block = new DBlockNode();
 			if (ProvideObjModule)
-				ctxt = ResolutionTests.CreateDefCtxt(ResolutionTests.CreateCache(), null);
+				ctxt = ResolutionTests.CreateDefCtxt(ResolutionTests.CreateCache(), block);
 			else
-				ctxt = ResolutionTests.CreateDefCtxt(new ParseCacheView(new string[] { }), null);
+				ctxt = ResolutionTests.CreateDefCtxt(new ParseCacheView(new string[] { }), block);
 
 			var x = DParser.ParseExpression(literal);
 
@@ -193,7 +194,7 @@ namespace Tests
 			TestString("\"asdf\"w", "asdf", false);
 			TestString("\"asdf\"d", "asdf", false);
 
-			var ctxt = new ResolutionContext(new ParseCacheView(new string[]{}),null,null);
+			var ctxt = new ResolutionContext(new ParseCacheView(new string[]{}), null, new DBlockNode());
 
 			var ex = DParser.ParseExpression("['a','s','d','f']");
 			var v = Evaluation.EvaluateValue(ex, ctxt);
@@ -411,12 +412,12 @@ post;
 
 			var main = ctxt.ParseCache[0]["A"]["main"].First() as DMethod;
 
-			using(ctxt.Push(main, main.Body))
+			using(ctxt.Push(main, main.Body.Location))
 				t = TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration("U") { Location = main.Body.SubStatements.First().Location }, ctxt);
 
 			Assert.That(t, Is.Null);
 
-			using (ctxt.Push(main, main.Body))
+			using (ctxt.Push(main, main.Body.Location))
 				t = TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration("U") { Location = main.Body.SubStatements.ElementAt(2).Location }, ctxt);
 
 			Assert.That(t, Is.Null);
@@ -425,7 +426,7 @@ post;
 
 			(x as IdentifierExpression).Location = new CodeLocation(3, 7);
 			
-			using (ctxt.Push(main, main.Body))
+			using (ctxt.Push(main, x.Location))
 				t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			ds = t as DSymbol;
 

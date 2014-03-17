@@ -38,8 +38,7 @@ namespace D_Parser.Resolver.Templates
 			if (p == null || p.Default == null)
 				return false;
 
-			IStatement stmt;
-			using (ctxt.Push(DResolver.SearchBlockAt(ctxt.ScopedBlock.NodeRoot as IBlockNode, p.Default.Location, out stmt), stmt))
+			using (ctxt.Push(DResolver.SearchBlockAt(ctxt.ScopedBlock.NodeRoot as IBlockNode, p.Default.Location), p.Default.Location))
 			{
 				var defaultTypeRes = TypeDeclarationResolver.ResolveSingle(p.Default, ctxt);
 				return defaultTypeRes != null && Set(p, defaultTypeRes, 0);

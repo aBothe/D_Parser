@@ -289,7 +289,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var templateParamDeduction = new TemplateParameterDeduction(deducedTypeDict, ctxt);
 
 			var back = ctxt.ScopedBlock;
-			using (ctxt.Push(ms, dm.Body))
+			using (ctxt.Push(ms))
 			{
 				if (ctxt.ScopedBlock != back)
 					ctxt.CurrentContext.DeducedTemplateParameters = deducedTypeDict;

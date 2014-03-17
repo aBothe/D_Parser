@@ -59,7 +59,7 @@ namespace D_Parser.Resolver
 			if(cond is VersionCondition)
 			{
 				var vc = (VersionCondition)cond;
-				return vc.VersionId == null ?
+				return vc.VersionIdHash == 0 ?
 					vc.VersionNumber >= versionNumber :
 					setVersions.Contains(vc.VersionId);
 			}
@@ -68,7 +68,7 @@ namespace D_Parser.Resolver
 				var dc = (DebugCondition)cond;
 				if (dc.HasNoExplicitSpecification)
 					return IsDebug;
-				return dc.DebugId == null ?
+				return dc.DebugIdHash == 0 ?
 					debugLevel >= dc.DebugLevel :
 					setDebugVersions.Contains(dc.DebugId);
 			}
@@ -81,7 +81,7 @@ namespace D_Parser.Resolver
 				if(cond is VersionCondition)
 				{
 					var vc = (VersionCondition)cond;
-					return vc.VersionId == null ?
+					return vc.VersionIdHash == 0 ?
 						vc.VersionNumber < versionNumber :
 						(!setVersions.Contains(vc.VersionId) || setVersions.Contains("!"+vc.VersionId));
 				}
@@ -90,7 +90,7 @@ namespace D_Parser.Resolver
 					var dc = (DebugCondition)cond;
 					if (dc.HasNoExplicitSpecification)
 						return !IsDebug;
-					return dc.DebugId == null ?
+					return dc.DebugIdHash == 0 ?
 						debugLevel < dc.DebugLevel :
 						(!setDebugVersions.Contains(dc.DebugId) || setDebugVersions.Contains("!" + dc.DebugId));
 				}
@@ -194,8 +194,8 @@ namespace D_Parser.Resolver
 
 		public void AddDebugCondition(int lvl)
 		{
-			if (lvl > debugLevel)
-				debugLevel = lvl;
+			//if (lvl > debugLevel) -- 
+			debugLevel = lvl;
 		}
 	}
 }

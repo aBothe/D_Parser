@@ -68,9 +68,8 @@ namespace D_Parser.Completion
 			ResolutionContext ctxt)
 		{
 			IBlockNode curBlock = null;
-			IStatement stmt;
 			bool inNonCode;
-			var sr = CodeCompletion.FindCurrentCaretContext(Editor, ref curBlock, out stmt, out inNonCode);
+			var sr = CodeCompletion.FindCurrentCaretContext(Editor, ref curBlock, out inNonCode);
 
 			IExpression lastParamExpression = null;
 

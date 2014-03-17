@@ -551,7 +551,7 @@ namespace D_Parser.Resolver.TypeResolution
 					bt = DResolver.StripMemberSymbols(ExpressionTypeEvaluation.EvaluateType(v.Initializer, ctxt));
 
 				// Check if inside an foreach statement header
-				if (bt == null && ctxt.ScopedStatement != null)
+				if (bt == null)
 					bt = GetForeachIteratorType(v);
 
 				if (bt == null)
@@ -576,7 +576,7 @@ namespace D_Parser.Resolver.TypeResolution
 						bt = DResolver.StripMemberSymbols(ExpressionTypeEvaluation.EvaluateType(variable.Initializer, ctxt));
 
 					// Check if inside an foreach statement header
-					if (bt == null && ctxt.ScopedStatement != null)
+					if (bt == null)
 						bt = GetForeachIteratorType(variable);
 				}
 				else
@@ -597,7 +597,11 @@ namespace D_Parser.Resolver.TypeResolution
 			public AbstractType GetForeachIteratorType(DVariable i)
 			{
 				var r = new List<AbstractType>();
-				var curStmt = ctxt.ScopedStatement;
+				var curMethod = ctxt.ScopedBlock as DMethod;
+				var curStmt = curMethod != null ? DResolver.SearchStatementDeeplyAt(curMethod.GetSubBlockAt(ctxt.CurrentContext.Caret), ctxt.CurrentContext.Caret) : null;
+
+				if (curStmt == null)
+					return null;
 
 				bool init = true;
 				// Walk up statement hierarchy -- note that foreach loops can be nested
@@ -965,7 +969,8 @@ namespace D_Parser.Resolver.TypeResolution
 			var applyOptions = ctxt.ScopedBlockIsInNodeHierarchy(m);
 			AbstractType ret;
 
-			using (resultBase is DSymbol ? ctxt.Push(resultBase as DSymbol, typeBase) : ctxt.Push(m, typeBase))
+			CodeLocation loc = typeBase != null ? typeBase.Location : m.Location;
+			using (resultBase is DSymbol ? ctxt.Push(resultBase as DSymbol, loc) : ctxt.Push(m, loc))
 			{
 				if (applyOptions)
 					ctxt.CurrentContext.ContextDependentOptions = options;
@@ -1081,7 +1086,7 @@ namespace D_Parser.Resolver.TypeResolution
 				if (returnStmt != null && returnStmt.ReturnExpression != null)
 				{
 					var dedTypes = ctxt.CurrentContext.DeducedTemplateParameters;
-					using (ctxt.Push(method, returnStmt))
+					using (ctxt.Push(method, returnStmt.Location))
 					{
 						if (dedTypes.Count != 0 && dedTypes != ctxt.CurrentContext.DeducedTemplateParameters)
 							foreach (var kv in dedTypes)

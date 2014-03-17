@@ -490,7 +490,7 @@ void main()
 			var main = pcl[0]["modA"]["main"].First() as DMethod;
 			Assert.AreEqual(0, (pcl[0]["modA"] as DModule).ParseErrors.Count);
 			var s = main.Body.SubStatements.Last() as IExpressionContainingStatement;
-			var ctxt = ResolutionContext.Create(pcl, null, main, s);
+			var ctxt = ResolutionContext.Create(pcl, null, main, s.Location);
 			//ctxt.ContextIndependentOptions |= ResolutionOptions.StopAfterFirstOverloads | ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.DontResolveBaseTypes;
 			var x = s.SubExpressions[0];
 			//pc.UfcsCache.Update(pcl);
@@ -557,23 +557,22 @@ class C
 
 }");
 
-			IStatement s;
-			var n = DResolver.SearchBlockAt(m, ((IBlockNode)m["A"].First())["d"].First().Location, out s);
+			var n = DResolver.SearchBlockAt(m, ((IBlockNode)m["A"].First())["d"].First().Location);
 			Assert.AreEqual("A", n.Name);
 
 			var loc = ((IBlockNode)m["C"].First()).BlockStartLocation;
-			n = DResolver.SearchBlockAt(m, loc, out s);
+			n = DResolver.SearchBlockAt(m, loc);
 			Assert.AreEqual("C", n.Name);
 
 			loc = ((IBlockNode)((IBlockNode)m["B"].First())["subB"].First())["c"].First().Location;
-			n = DResolver.SearchBlockAt(m, loc, out s);
+			n = DResolver.SearchBlockAt(m, loc);
 			Assert.AreEqual("subB", n.Name);
 
-			n = DResolver.SearchBlockAt(m, new CodeLocation(1, 10), out s);
+			n = DResolver.SearchBlockAt(m, new CodeLocation(1, 10));
 			Assert.AreEqual(m,n);
 
 			loc = (((DMethod)m["main"].First()).Body.First() as IDeclarationContainingStatement).Declarations[0].EndLocation;
-			n = DResolver.SearchBlockAt(m, loc, out s);
+			n = DResolver.SearchBlockAt(m, loc);
 			Assert.AreEqual("main", n.Name);
 		}
 

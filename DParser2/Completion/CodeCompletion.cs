@@ -50,20 +50,18 @@ namespace D_Parser.Completion
 				return false;
 
 			IBlockNode _b = null;
-			IStatement _s;
 			bool inNonCode;
 
-			var sr = FindCurrentCaretContext(editor, ref _b, out _s, out inNonCode);
+			var sr = FindCurrentCaretContext(editor, ref _b, out inNonCode);
 
 			if (inNonCode || _b == null)
 				return false;
 
 			if (editor.CaretLocation > _b.EndLocation) {
 				_b = editor.SyntaxTree;
-				_s = null;
 			}
 
-			var complVis = new CompletionProviderVisitor (completionDataGen, triggerChar) { scopedBlock = _b, scopedStatement = _s };
+			var complVis = new CompletionProviderVisitor (completionDataGen, triggerChar) { scopedBlock = _b };
 			if (sr is INode)
 				(sr as INode).Accept (complVis);
 			else if (sr is IStatement)
@@ -107,15 +105,13 @@ namespace D_Parser.Completion
 		}
 
 		public static ISyntaxRegion FindCurrentCaretContext(IEditorData editor, 
-			ref IBlockNode currentScope, 
-			out IStatement currentStatement,
+			ref IBlockNode currentScope,
 			out bool isInsideNonCodeSegment)
 		{
 			isInsideNonCodeSegment = false;
-			currentStatement = null;
 
 			if(currentScope == null)
-				currentScope = DResolver.SearchBlockAt (editor.SyntaxTree, editor.CaretLocation, out currentStatement);
+				currentScope = DResolver.SearchBlockAt (editor.SyntaxTree, editor.CaretLocation);
 
 			if (currentScope == null)
 				return null;
@@ -131,7 +127,7 @@ namespace D_Parser.Completion
 				var tempBlock = blockStmt.UpdateBlockPartly (editor, out isInsideNonCodeSegment);
 				if (tempBlock == null)
 					return null;
-				currentScope = DResolver.SearchBlockAt (tempBlock, editor.CaretLocation, out currentStatement);
+				currentScope = DResolver.SearchBlockAt (tempBlock, editor.CaretLocation);
 			}else {
 				while (currentScope is DMethod)
 					currentScope = currentScope.Parent as IBlockNode;
@@ -139,7 +135,7 @@ namespace D_Parser.Completion
 					return null;
 
 				var tempBlock = (currentScope as DBlockNode).UpdateBlockPartly (editor, out isInsideNonCodeSegment);
-				currentScope = DResolver.SearchBlockAt (tempBlock, editor.CaretLocation, out currentStatement);
+				currentScope = DResolver.SearchBlockAt (tempBlock, editor.CaretLocation);
 			}
 			return currentScope;
 		}

@@ -19,13 +19,12 @@ namespace D_Parser.Completion
 		}
 		
 		public static void EnumAllAvailableMembers(ICompletionDataGenerator cdgen, IBlockNode ScopedBlock
-			, IStatement ScopedStatement,
-			CodeLocation Caret,
+			, CodeLocation Caret,
 		    ParseCacheView CodeCache,
 			MemberFilter VisibleMembers,
 			ConditionalCompilationFlags compilationEnvironment = null)
 		{
-			var ctxt = ResolutionContext.Create(CodeCache, compilationEnvironment, ScopedBlock, ScopedStatement);
+			var ctxt = ResolutionContext.Create(CodeCache, compilationEnvironment, ScopedBlock, Caret);
 
 			CodeCompletion.DoTimeoutableCompletionTask(cdgen, ctxt, () =>
 			{

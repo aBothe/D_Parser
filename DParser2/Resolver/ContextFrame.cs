@@ -12,21 +12,20 @@ namespace D_Parser.Resolver
 		public DeducedTypeDictionary DeducedTemplateParameters = new DeducedTypeDictionary();
 		public ResolutionOptions ContextDependentOptions = 0;
 		IBlockNode scopedBlock;
-		IStatement scopedStmt;
+		public CodeLocation Caret { get; protected set; }
 		readonly ConditionalCompilation.ConditionSet declarationCondititons;
 		
 		public IBlockNode ScopedBlock{get{ return scopedBlock; }}
-		public IStatement ScopedStatement{get{return scopedStmt;}}
 		#endregion
 		
-		public ContextFrame(ResolutionContext ctxt, IBlockNode b, IStatement stmt = null)
+		public ContextFrame(ResolutionContext ctxt, IBlockNode b, CodeLocation caret)
 		{
 			this.ctxt = ctxt;
 			declarationCondititons = new ConditionalCompilation.ConditionSet(ctxt.CompilationEnvironment);
 
 			ctxt.Push(this);
 
-			Set(b,stmt);
+			Set(b, caret);
 		}
 		
 		public void IntroduceTemplateParameterTypes(DSymbol tir)
@@ -43,27 +42,27 @@ namespace D_Parser.Resolver
 				foreach (var dt in tir.DeducedTypes)
 					DeducedTemplateParameters.Remove(dt.Parameter);
 		}
-		
-		public void Set(IStatement stmt)
+
+		public void Set(CodeLocation caret)
 		{
-			Set(scopedBlock, stmt);
+			Caret = caret;
+			ConditionalCompilation.EnumConditions(declarationCondititons, scopedBlock, ctxt, caret); 
 		}
-		
-		public void Set(IBlockNode b, IStatement stmt = null)
+
+		public void Set(IBlockNode b)
 		{
 			scopedBlock = b;
-			scopedStmt = stmt;
+			Caret = CodeLocation.Empty;
+
+			ConditionalCompilation.EnumConditions(declarationCondititons, b, ctxt, CodeLocation.Empty);
+		}
+		
+		public void Set(IBlockNode b, CodeLocation caret)
+		{
+			scopedBlock = b;
+			Caret = caret;
 			
-			var c = CodeLocation.Empty; //TODO: Take the caret position if we're in the currently edited module and the scoped block is the module root(?)
-			if(stmt == null)
-			{
-				if(b!=null)
-					c = b.BlockStartLocation;
-			}
-			else
-				c = stmt.Location;
-			
-			ConditionalCompilation.EnumConditions(declarationCondititons, stmt, b, ctxt, c); 
+			ConditionalCompilation.EnumConditions(declarationCondititons, b, ctxt, caret); 
 		}
 		
 		/// <summary>
@@ -81,7 +80,7 @@ namespace D_Parser.Resolver
 
 		public override string ToString()
 		{
-			return scopedBlock.ToString() + " // " + (scopedStmt == null ? "" : scopedStmt.ToString());
+			return scopedBlock.ToString() + " // " + Caret.ToString();
 		}
 	}
 }

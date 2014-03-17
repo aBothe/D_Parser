@@ -87,10 +87,13 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 		public static ISymbolValue Execute(MemberSymbol method, Dictionary<DVariable, ISymbolValue> arguments, AbstractSymbolValueProvider vp)
 		{
 			var dm = method.Definition as DMethod;
+
+			if (dm == null || dm.BlockStartLocation.IsEmpty)
+				return new ErrorValue(new EvaluationException("Method either not declared or undefined", method));
 			var eval = new FunctionEvaluation(method,vp,arguments);
 			ISymbolValue ret;
 
-			using (vp.ResolutionContext.Push(method, dm.Body))
+			using (vp.ResolutionContext.Push(method, dm.BlockStartLocation))
 			{
 				try
 				{

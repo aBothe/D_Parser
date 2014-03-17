@@ -205,8 +205,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					break;
 
 				case DTokens.Return: // TODO: Test
-					IStatement _u = null;
-					var dm = DResolver.SearchBlockAt(ctxt.ScopedBlock, isExpression.Location, out _u) as DMethod;
+					var dm = DResolver.SearchBlockAt(ctxt.ScopedBlock, isExpression.Location) as DMethod;
 
 					if (dm != null)
 					{

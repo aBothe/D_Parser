@@ -4,19 +4,18 @@ using D_Parser.Resolver.ASTScanner;
 using D_Parser.Resolver;
 using D_Parser.Parser;
 using D_Parser.Dom.Expressions;
+using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Completion.Providers
 {
 	class CtrlSpaceCompletionProvider : AbstractCompletionProvider
 	{
 		public readonly IBlockNode curBlock;
-		public readonly IStatement curStmt;
 		public readonly MemberFilter visibleMembers;
 
-		public CtrlSpaceCompletionProvider(ICompletionDataGenerator cdg, IBlockNode b, IStatement stmt, MemberFilter vis = MemberFilter.All)
+		public CtrlSpaceCompletionProvider(ICompletionDataGenerator cdg, IBlockNode b, MemberFilter vis = MemberFilter.All)
 			: base(cdg) { 
 			this.curBlock = b;
-			this.curStmt = stmt;
 			visibleMembers = vis;
 		}
 
@@ -50,7 +49,6 @@ namespace D_Parser.Completion.Providers
 			MemberCompletionEnumeration.EnumAllAvailableMembers(
 					CompletionDataGenerator,
 					curBlock,
-					curStmt,
 					Editor.CaretLocation,
 					Editor.ParseCache,
 					visibleMembers,
@@ -71,17 +69,18 @@ namespace D_Parser.Completion.Providers
 
 			if ((visibleMembers & MemberFilter.Labels) != 0)
 			{
-				IStatement stmt = curStmt;
-				do
+				var stmt = DResolver.SearchStatementDeeplyAt(curBlock, Editor.CaretLocation);
+				bool addedSwitchKWs = false;
+				while(stmt != null && stmt.Parent != null)
 				{
 					stmt = stmt.Parent;
-					if (stmt is SwitchStatement) 
+					if (!addedSwitchKWs && stmt is SwitchStatement) 
 					{
+						addedSwitchKWs = true;
 						CompletionDataGenerator.Add (DTokens.Case);
 						CompletionDataGenerator.Add (DTokens.Default);
-						break;
 					}
-				} while(stmt != null && stmt.Parent != null);
+				}
 
 				if(stmt != null)
 					stmt.Accept (new LabelVisitor (CompletionDataGenerator));

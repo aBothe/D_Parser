@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using D_Parser.Dom;
 using D_Parser.Dom.Statements;
+using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Resolver
 {
@@ -70,91 +71,165 @@ namespace D_Parser.Resolver
 			}
 		}
 
-		public static void EnumConditions(ConditionSet cs,IStatement stmt, IBlockNode block, ResolutionContext ctxt, CodeLocation caret)
+		class ConditionVisitor : DefaultDepthFirstVisitor
 		{
-			var l = new MutableConditionFlagSet();
-			cs.LocalFlags = l;
+			public readonly ConditionSet cs;
+			public readonly MutableConditionFlagSet l;
+			public readonly ResolutionContext ctxt;
+			public readonly CodeLocation caret;
+
+			public ConditionVisitor(ConditionSet cs,ResolutionContext ctxt, CodeLocation caret)
+			{
+				this.caret = caret;
+				this.cs = cs;
+				this.ctxt = ctxt;
+				this.l = new MutableConditionFlagSet();
+				cs.LocalFlags = l;
+			}
+
+			public override void VisitBlock(DBlockNode block)
+			{
+				VisitChildren(block);
+				VisitDNode(block);
+
+				if (block.StaticStatements.Count != 0)
+					foreach (var s in block.StaticStatements)
+					{
+						if (s.Location > caret)
+							break;
+
+						s.Accept(this);
+					}
+
+				if (block.MetaBlocks.Count != 0)
+					foreach (var mb in block.MetaBlocks)
+					{
+						if (mb.Location > caret)
+							break;
+						mb.Accept(this);
+					}
+			}
+
+			public override void Visit(AttributeMetaDeclaration amd)
+			{
+				if (amd == null || amd.AttributeOrCondition == null || amd.AttributeOrCondition.Length == 0)
+					return;
+
+				if(amd.Location > caret || (amd is AttributeMetaDeclarationBlock && amd.EndLocation < caret))
+					return;
+
+				foreach (var attr in amd.AttributeOrCondition)
+						if (attr is DeclarationCondition)
+							l.Add((DeclarationCondition)attr);
+
+				//TODO: OptionalElseBlock
+			}
+
+			bool ignoreBounds = false;
+			public override void Visit(StatementCondition s)
+			{
+				if (s.Location > caret)
+					return;
+
+				// If the caret is inside this condition block, assume its condition as fulfilled
+				if (s.EndLocation > caret)
+				{
+					if (s.Condition != null)
+						l.Add(s.Condition);
+				}
+				else // otherwise check before walking through its child statements
+				{
+					if (!cs.IsMatching(s.Condition, ctxt))
+						return; // and break if e.g. the version is not matching
+				}
+
+				ignoreBounds = s.ScopedStatement is BlockStatement;
+
+				if (s.ScopedStatement != null)
+					s.ScopedStatement.Accept(this);
+
+				//TODO: ElseBlock
+			}
+
+			public override void Visit(BlockStatement s)
+			{
+				if (ignoreBounds || (caret >= s.Location && caret <= s.EndLocation))
+				{
+					ignoreBounds = false;
+					base.Visit(s);
+				}
+			}
+
 			
-			// If the current scope is a dedicated block.. (so NOT in a method but probably in an initializer or other static statement)
-			if(block is DBlockNode)
+			public override void VisitAttribute(DebugCondition debugCondition)
 			{
-				// If so, get all (scoping) declaration conditions in the current block 
-				// and add them to the condition list
-				var mblocks = ((DBlockNode)block).GetMetaBlockStack(caret, false, true);
+				base.VisitAttribute(debugCondition);
+			}
 
-				foreach(var mb in mblocks)
+			public override void VisitChildren(IBlockNode block)
+			{
+				var ch = DResolver.SearchBlockAt(block, caret);
+				if (ch != null && ch != block)
+					ch.Accept(this);
+			}
+
+			public override void VisitDNode(DNode n)
+			{
+				if (n.Attributes != null && caret >= n.Location && caret <= n.EndLocation)
 				{
-					var amd = mb as AttributeMetaDeclaration;
-					if(amd!=null && amd.AttributeOrCondition!=null && amd.AttributeOrCondition.Length!=0)
-						foreach(var attr in amd.AttributeOrCondition)
-							if(attr is DeclarationCondition)
-								l.Add((DeclarationCondition)attr);
+					foreach (var attr in n.Attributes)
+						if (attr is DeclarationCondition)
+							l.Add(((DeclarationCondition)attr));
 				}
 			}
 
-			// Scan up the current statement when e.g. inside a method body
-			while (stmt != null)
+			public override void VisitAttribute(NegatedDeclarationCondition a)
 			{
-				if (stmt is StatementCondition)
-					l.Add(((StatementCondition)stmt).Condition);
-				stmt = stmt.Parent;
+				base.VisitAttribute(a);
 			}
 
-			// Go up the block hierarchy and add all conditions that belong to the respective nodes
-			while (block != null)
+			public override void VisitAttribute(StaticIfCondition a)
 			{
-				var dn = block as DNode;
-				if (dn!=null)
-				{
-					if(dn is DBlockNode)
-						GetDoneVersionDebugSpecs(cs, l, dn as DBlockNode, ctxt);
-					if(dn.Attributes!=null)
-						foreach (var attr in dn.Attributes)
-							if (attr is DeclarationCondition)
-								l.Add(((DeclarationCondition)attr));
-				}
-				
-				block = block.Parent as IBlockNode;
+				base.VisitAttribute(a);
 			}
-		}
 
-		static void GetDoneVersionDebugSpecs(ConditionSet cs, MutableConditionFlagSet l, DBlockNode m, ResolutionContext ctxt)
-		{
-			if (m.StaticStatements == null || m.StaticStatements.Count == 0)
-				return;
-
-			foreach(var ss in m.StaticStatements)
+			public override void VisitAttribute(VersionCondition vis)
 			{
-				if(ss is VersionSpecification)
+				base.VisitAttribute(vis);
+			}
+
+			public override void Visit(VersionSpecification vs)
+			{
+				if (_checkForMatchinSpecConditions(vs))
 				{
-					var vs = (VersionSpecification)ss;
-					
-					if(!_checkForMatchinSpecConditions(m,cs,ss,ctxt))
-						continue;
-					
-					if(vs.SpecifiedId==null)
- 						l.AddVersionCondition(vs.SpecifiedNumber);
+					if (vs.SpecifiedId == null)
+						l.AddVersionCondition(vs.SpecifiedNumber);
 					else
 						l.AddVersionCondition(vs.SpecifiedId);
 				}
-				else if(ss is DebugSpecification)
-				{
-					var ds = (DebugSpecification)ss;
+			}
 
-					if(!_checkForMatchinSpecConditions(m,cs,ss, ctxt))
-						continue;
-					
+			public override void Visit(DebugSpecification ds)
+			{
+				if (_checkForMatchinSpecConditions(ds))
+				{
 					if (ds.SpecifiedId == null)
 						l.AddDebugCondition(ds.SpecifiedDebugLevel);
 					else
 						l.AddDebugCondition(ds.SpecifiedId);
 				}
 			}
+
+			bool _checkForMatchinSpecConditions(StaticStatement ss)
+			{
+				return ss.Location < caret && (ss.Attributes == null || cs.IsMatching(ss.Attributes, ctxt));
+			}
 		}
-		
-		static bool _checkForMatchinSpecConditions(DBlockNode m,ConditionSet cs,StaticStatement ss, ResolutionContext ctxt)
+
+		public static void EnumConditions(ConditionSet cs,IBlockNode block, ResolutionContext ctxt, CodeLocation caret)
 		{
-			return ss.Attributes == null || cs.IsMatching(ss.Attributes,ctxt);
+			block.NodeRoot.Accept(new ConditionVisitor(cs, ctxt, caret));
+			return;
 		}
 	}
 }

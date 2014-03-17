@@ -81,9 +81,12 @@ namespace D_Parser.Resolver.TypeResolution
 		/// <param name="editor">Can be null</param>
 		public static ISyntaxRegion GetScopedCodeObject(IEditorData editor)
 		{
-			IStatement stmt;
-			var block = SearchBlockAt(editor.SyntaxTree, editor.CaretLocation, out stmt);
+			var block = SearchBlockAt(editor.SyntaxTree, editor.CaretLocation);
 
+			IStatement stmt = null;
+			if (block is DMethod)
+				stmt = (block as DMethod).GetSubBlockAt(editor.CaretLocation);
+			
 			var vis = new ScopedObjectVisitor(editor.CaretLocation);
 			if (stmt != null)
 				stmt.Accept(vis);
@@ -407,12 +410,6 @@ namespace D_Parser.Resolver.TypeResolution
 			return new InterfaceType(dc, instanceDeclaration, interfaces.Count == 0 ? null : interfaces.ToArray(), deducedTypes.Count != 0 ? deducedTypes.ToReadonly() : null);
 		}
 
-		public static IBlockNode SearchBlockAt(IBlockNode Parent, CodeLocation Where)
-		{
-			IStatement s;
-			return SearchBlockAt(Parent, Where, out s);
-		}
-
 		/// <summary>
 		/// Binary search implementation for ordered syntax region (derivative) lists. 
 		/// </summary>
@@ -502,10 +499,8 @@ namespace D_Parser.Resolver.TypeResolution
 			return midElement;
 		}
 
-		public static IBlockNode SearchBlockAt(IBlockNode Parent, CodeLocation Where, out IStatement ScopedStatement)
+		public static IBlockNode SearchBlockAt(IBlockNode Parent, CodeLocation Where)
 		{
-			ScopedStatement = null;
-
 			if (Parent == null)
 				return null;
 
@@ -526,45 +521,48 @@ namespace D_Parser.Resolver.TypeResolution
 			if (dm != null)
 			{
 				// Do an extra re-scan for anonymous methods etc.
-				var subItem = SearchRegionAt<INode> (dm.Children, Where);
-				if (subItem != null) {
-					if (!(subItem is DMethod))
-						subItem = subItem.Parent;
-					if (subItem is DMethod) {
-						dm = subItem as DMethod;
-						Parent = dm;
-					}
-				}
-
-				ScopedStatement = dm.GetSubBlockAt(Where);
-
-				// First search the deepest statement under the caret
-				/*if (body != null){
-					ScopedStatement = body.SearchStatementDeeply(Where);
-
-					if (ScopedStatement is IDeclarationContainingStatement)
-					{
-						var dcs = (ScopedStatement as IDeclarationContainingStatement).Declarations;
-
-						if (dcs != null && dcs.Length != 0)
-							foreach (var decl in dcs)
-								if (decl is IBlockNode &&
-								    Where > decl.Location &&
-								    Where < decl.EndLocation)
-									return SearchBlockAt (decl as IBlockNode, Where, out ScopedStatement);
-					}
-				}*/
-			} else if(Parent is DBlockNode)
-				ScopedStatement = GetStatementAt(Parent as DBlockNode, Where);
+				var subItem = SearchRegionAt<INode>(dm.Children, Where) as IBlockNode;
+				if (subItem != null)
+					return SearchBlockAt(subItem, Where); // For e.g. nested nested methods inside anonymous class declarations that occur furtherly inside a method.
+			}
 
 			return Parent;
 		}
 
-		public static IStatement GetStatementAt(DBlockNode db, CodeLocation Where)
+		public static IStatement SearchStatementDeeplyAt(IBlockNode block, CodeLocation Where)
 		{
-			if (db.StaticStatements.Count != 0)
-				return SearchRegionAt<IStatement> (i => db.StaticStatements [i], db.StaticStatements.Count, Where);
+			var dm = block as DMethod;
+			if (dm != null)
+				return SearchStatementDeeplyAt(dm.GetSubBlockAt(Where), Where);
+			
+			var db = block as DBlockNode;
+			if (db != null && db.StaticStatements.Count != 0)
+				return SearchRegionAt<IStatement>(new List<IStatement>(db.StaticStatements), Where);
+			
 			return null;
+		}
+
+		public static IStatement SearchStatementDeeplyAt(IStatement stmt, CodeLocation Where)
+		{
+			while(stmt != null)
+			{
+				var ss = stmt as StatementContainingStatement;
+				if(ss != null)
+				{
+					var subst = ss.SubStatements;
+					if (subst != null)
+					{
+						stmt = SearchRegionAt<IStatement>(subst as IList<IStatement> ?? new List<IStatement>(subst), Where);
+						if (stmt == null || stmt == ss)
+							return ss;
+						continue;
+					}
+				}
+
+				break;
+			}
+
+			return stmt;
 		}
 
 		public static IBlockNode SearchClassLikeAt(IBlockNode Parent, CodeLocation Where)

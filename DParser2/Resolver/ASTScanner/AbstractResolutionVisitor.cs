@@ -45,13 +45,13 @@ namespace D_Parser.Resolver.ASTScanner
 		#region Scoping visit overloads
 		public override void VisitAbstractStmt (AbstractStatement stmt)
 		{
-			using(ctxt.Push(stmt.ParentNode, stmt))
+			using(ctxt.Push(stmt.ParentNode, stmt.Location))
 				base.VisitAbstractStmt (stmt);
 		}
 
 		public override void VisitChildren (StatementContainingStatement stmt)
 		{
-			using (ctxt.Push(stmt.ParentNode, stmt)) 
+			using (ctxt.Push(stmt.ParentNode, stmt.Location)) 
 				base.VisitSubStatements(stmt);
 		}
 

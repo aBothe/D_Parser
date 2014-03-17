@@ -17,21 +17,19 @@ namespace D_Parser.Completion.Providers
 	{
 		ResolutionContext ctxt;
 		public ISyntaxRegion AccessExpression;
-		public IStatement ScopedStatement;
 		public IBlockNode ScopedBlock;
 		public MemberFilter MemberFilter = MemberFilter.All;
 		IEditorData ed;
 
-		public MemberCompletionProvider(ICompletionDataGenerator cdg, ISyntaxRegion sr, IBlockNode b, IStatement stmt) : base(cdg) {
+		public MemberCompletionProvider(ICompletionDataGenerator cdg, ISyntaxRegion sr, IBlockNode b) : base(cdg) {
 			AccessExpression = sr;
 			ScopedBlock = b;
-			ScopedStatement = stmt;
 		}
 
 		protected override void BuildCompletionDataInternal(IEditorData Editor, char enteredChar)
 		{
 			ed = Editor;
-			ctxt = ResolutionContext.Create(Editor.ParseCache, new ConditionalCompilationFlags(Editor), ScopedBlock, ScopedStatement);
+			ctxt = ResolutionContext.Create(Editor.ParseCache, new ConditionalCompilationFlags(Editor), ScopedBlock, Editor.CaretLocation);
 
 			var cts = new System.Threading.CancellationTokenSource();
 			ctxt.Cancel = cts.Token;

@@ -38,9 +38,14 @@ namespace Tests
 			return new ParseCacheView (new [] { r });
 		}
 
-		public static ResolutionContext CreateDefCtxt(ParseCacheView pcl, IBlockNode scope, IStatement stmt=null)
+		public static ResolutionContext CreateDefCtxt(ParseCacheView pcl, IBlockNode scope, IStatement stmt = null)
 		{
-			var r = ResolutionContext.Create(pcl, new ConditionalCompilationFlags(new[]{"Windows","all"},1,true,null,0), scope, stmt);
+			return CreateDefCtxt(pcl, scope, stmt == null ? CodeLocation.Empty : stmt.Location);
+		}
+
+		public static ResolutionContext CreateDefCtxt(ParseCacheView pcl, IBlockNode scope, CodeLocation caret)
+		{
+			var r = ResolutionContext.Create(pcl, new ConditionalCompilationFlags(new[]{"Windows","all"},1,true,null,0), scope, caret);
 			CompletionOptions.Instance.DisableMixinAnalysis = false;
 			return r;
 		}
@@ -109,29 +114,29 @@ void asdf(int* ni=23) {
 			Assert.That(t.Length, Is.EqualTo(1));
 			Assert.That((t[0] as DSymbol).Definition.Parent, Is.SameAs(pcl[0]["modC"]));
 
-			ctxt.CurrentContext.Set(pcl[0]["modC"]);
+			ctxt.CurrentContext.Set(pcl[0]["modC"],CodeLocation.Empty);
 			t = TypeDeclarationResolver.ResolveIdentifier("T", ctxt, null);
 			Assert.That(t.Length, Is.EqualTo(1));
 			Assert.That((t[0] as DSymbol).Definition.Parent, Is.SameAs(pcl[0]["modC"]));
 
-			ctxt.CurrentContext.Set(pcl[0]["modB"]);
+			ctxt.CurrentContext.Set(pcl[0]["modB"], CodeLocation.Empty);
 			t = TypeDeclarationResolver.ResolveIdentifier("T", ctxt, null);
 			Assert.That(t.Length, Is.EqualTo(2));
 
 			ctxt.ResolutionErrors.Clear();
 			var mod = pcl[0]["modE"];
-			ctxt.CurrentContext.Set(mod);
+			ctxt.CurrentContext.Set(mod, CodeLocation.Empty);
 			t = TypeDeclarationResolver.ResolveIdentifier("U", ctxt, null);
 			Assert.That(t.Length, Is.EqualTo(2));
 
-			ctxt.CurrentContext.Set((mod["N"].First() as DClassLike)["foo"].First() as DMethod);
+			ctxt.CurrentContext.Set((mod["N"].First() as DClassLike)["foo"].First() as DMethod, CodeLocation.Empty);
 			t = TypeDeclarationResolver.ResolveIdentifier("X",ctxt,null);
 			Assert.That(t.Length, Is.EqualTo(1));
 			Assert.That(t[0], Is.TypeOf(typeof(ClassType)));
 
 			mod = pcl[0]["modF"];
 			var f = mod["asdf"].First() as DMethod;
-			ctxt.CurrentContext.Set(f, f.Body);
+			ctxt.CurrentContext.Set(f, CodeLocation.Empty);
 			t = TypeDeclarationResolver.ResolveIdentifier("ni", ctxt, ((f.Body.SubStatements.First() as IfStatement).ThenStatement as BlockStatement).SubStatements.ElementAt(1));
 			Assert.That((t[0] as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 			Assert.That(t.Length, Is.EqualTo(2));
@@ -210,7 +215,7 @@ void foo()
 	o.baseB;
 }", @"module B; import A; cl inst;");
 			var foo = pcl[0]["A"]["foo"].First() as DMethod;
-			var ctxt = CreateDefCtxt(pcl, foo, foo.Body);
+			var ctxt = CreateDefCtxt(pcl, foo, foo.Body.Location);
 			var subSt = foo.Body.SubStatements as List<IStatement>;
 			
 			var t = ExpressionTypeEvaluation.EvaluateType((subSt[1] as ExpressionStatement).Expression, ctxt);
@@ -344,9 +349,8 @@ class Blah(T){ T b; }");
 			var pcl = CreateCache(@"module modA;");
 			var ctxt = CreateDefCtxt(pcl, pcl[0]["modA"]);
 
-			var ts = TypeDeclarationResolver.Resolve(new IdentifierDeclaration("string"), ctxt);
-			Assert.That(ts, Is.Not.Null);
-			Assert.That(ts.Length, Is.EqualTo(1));
+			var ts = TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration("string"), ctxt);
+			Assert.That(ts, Is.TypeOf(typeof(ArrayType)));
 
 			var x = DParser.ParseExpression(@"(new Object).toString()");
 			var t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
@@ -422,7 +426,7 @@ void foo()
 			var case1 = ((foo.Body.SubStatements.ElementAt(1) as SwitchStatement).ScopedStatement as BlockStatement).SubStatements.ElementAt(1) as SwitchStatement.CaseStatement;
 			var colStmt = case1.SubStatements.ElementAt(1) as ExpressionStatement;
 			
-			var ctxt = CreateDefCtxt(pcl, foo, foo.Body);
+			var ctxt = CreateDefCtxt(pcl, foo, foo.Body.Location);
 			
 			var t = ExpressionTypeEvaluation.EvaluateType(colStmt.Expression, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
@@ -640,7 +644,7 @@ void main()
 			var C = ctxt.ParseCache[0]["C"];
 			var main = C["main"].First() as DMethod;
 			var i_foo_stmt = main.Body.SubStatements.ElementAt(2) as ExpressionStatement;
-			ctxt.CurrentContext.Set(main, main.Body);
+			ctxt.CurrentContext.Set(main, i_foo_stmt.Expression.Location);
 
 			t = ExpressionTypeEvaluation.EvaluateType(i_foo_stmt.Expression, ctxt);
 
@@ -1829,7 +1833,7 @@ void main() {
 				} 
 			};
 
-			using(ctxt.Push (main, main.Body))
+			using(ctxt.Push (main, stmt_x.Location))
 				ds = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as DSymbol;
 			Assert.That (ds, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			Assert.That (ds.Base, Is.TypeOf(typeof(PrimitiveType)));
@@ -1908,21 +1912,22 @@ version(C)
 			var m = ms[0] as MemberSymbol;
 			Assert.IsNotNull(m);
 
-			Assert.IsInstanceOfType(typeof(PointerType),m.Base);
+			Assert.That(m.Base, Is.TypeOf(typeof(PointerType)));
 
 			ms = TypeDeclarationResolver.ResolveIdentifier("d", ctxt, null);
 			Assert.AreEqual(1, ms.Length);
 			m = ms[0] as MemberSymbol;
 			Assert.IsNotNull(m);
 
-			Assert.IsInstanceOfType(typeof(PointerType),m.Base);
+			Assert.That(m.Base, Is.TypeOf(typeof(PointerType)));
 
+			ctxt.CurrentContext.Set(ctxt.ScopedBlock.EndLocation);
 			ms = TypeDeclarationResolver.ResolveIdentifier("a", ctxt, null);
 			Assert.AreEqual(1, ms.Length);
 			m = ms[0] as MemberSymbol;
 			Assert.IsNotNull(m);
 
-			Assert.IsInstanceOfType(typeof(PointerType),m.Base);
+			Assert.That(m.Base, Is.TypeOf(typeof(PointerType)));
 
 			ms = TypeDeclarationResolver.ResolveIdentifier("pubB", ctxt, null);
 			Assert.AreEqual(1, ms.Length);
@@ -2146,23 +2151,26 @@ debug(4)
 			IStatement ss;
 			ss=((subst[2] as StatementCondition).ScopedStatement as BlockStatement).SubStatements.First();
 
+			ctxt.CurrentContext.Set(ss.Location);
 			var x2 = ExpressionTypeEvaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
 			Assert.That(x2, Is.TypeOf(typeof(MemberSymbol)));
 
-			ctxt.CurrentContext.Set(ss = subst[4]);
+			ctxt.CurrentContext.Set((ss = subst[4]).Location);
 			x2 = ExpressionTypeEvaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
 			Assert.IsNull(x2);
 
-			ctxt.CurrentContext.Set(ss =  subst[5]);
+			ctxt.CurrentContext.Set((ss = subst[5]).Location);
 			x2 = ExpressionTypeEvaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
 			Assert.IsNull(x2);
 
-			ctxt.CurrentContext.Set(ss = subst[6]);
+			ctxt.CurrentContext.Set((ss = subst[6]).Location);
 			x2 = ExpressionTypeEvaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
-			Assert.IsNotNull(x2);
+			Assert.That(x2, Is.TypeOf(typeof(MemberSymbol)));
 
 			x = TypeDeclarationResolver.ResolveIdentifier("dbg_a", ctxt, null);
 			Assert.AreEqual(1, x.Length);
+
+			ctxt.CurrentContext.Set(m.EndLocation);
 
 			x = TypeDeclarationResolver.ResolveIdentifier("dbg_b", ctxt, null);
 			Assert.AreEqual(1, x.Length);
@@ -2226,7 +2234,8 @@ void main()
 	dbg;
 	noDbg;
 }");
-			var ctxt = CreateDefCtxt(pcl, pcl[0]["m"]);
+			var mod = pcl[0]["m"];
+			var ctxt = CreateDefCtxt(pcl, mod, mod.EndLocation);
 
 			var x = TypeDeclarationResolver.ResolveIdentifier("a", ctxt,null);
 			Assert.AreEqual(1, x.Length);
@@ -2243,7 +2252,7 @@ void main()
 			x = TypeDeclarationResolver.ResolveIdentifier("dbgY", ctxt, null);
 			Assert.AreEqual(0, x.Length);
 
-			ctxt.CurrentContext.Set(pcl[0]["B"]);
+			ctxt.CurrentContext.Set(mod = pcl[0]["B"], mod.EndLocation);
 
 			x = TypeDeclarationResolver.ResolveIdentifier("dbg", ctxt, null);
 			Assert.AreEqual(1, x.Length);
@@ -2267,21 +2276,25 @@ void main()
 
 			var main = pcl[0]["B"]["main"].First() as DMethod;
 			var subSt = main.Body.SubStatements as List<IStatement>;
-			using (ctxt.Push(main, main.Body))
+			using (ctxt.Push(main))
 			{
 				var ss = subSt[0] as ExpressionStatement;
+				ctxt.CurrentContext.Set(ss.Location);
 				t = ExpressionTypeEvaluation.EvaluateType(ss.Expression, ctxt);
 				Assert.IsNotNull(t);
 
 				ss = subSt[1] as ExpressionStatement;
+				ctxt.CurrentContext.Set(ss.Location);
 				t = ExpressionTypeEvaluation.EvaluateType(ss.Expression, ctxt);
 				Assert.IsNull(t);
 
 				ss = subSt[2] as ExpressionStatement;
+				ctxt.CurrentContext.Set(ss.Location);
 				t = ExpressionTypeEvaluation.EvaluateType(ss.Expression, ctxt);
 				Assert.IsNotNull(t);
 
 				ss = subSt[3] as ExpressionStatement;
+				ctxt.CurrentContext.Set(ss.Location);
 				t = ExpressionTypeEvaluation.EvaluateType(ss.Expression, ctxt);
 				Assert.IsNull(t);
 			}
@@ -2817,7 +2830,7 @@ class cl
 			Assert.That((t as MemberSymbol).Definition, Is.TypeOf(typeof(DMethod)));
 			
 			var bar = (B["cl"].First() as DClassLike)["bar"].First() as DMethod;
-			ctxt.CurrentContext.Set(bar, bar.Body);
+			ctxt.CurrentContext.Set(bar, bar.Body.Location);
 			
 			t = TypeDeclarationResolver.ResolveSingle("CFoo", ctxt, null);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
@@ -3012,12 +3025,12 @@ void foo() {
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			
 			foo = (A["Singleton"].First() as DClassLike)["singletonBar"].First() as DMethod;
-			ctxt.CurrentContext.Set(foo, foo.Body);
+			ctxt.CurrentContext.Set(foo, foo.Body.Location);
 			t = TypeDeclarationResolver.ResolveSingle("I",ctxt,null);
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			
 			foo = (A["clA"].First() as DClassLike)["clFoo"].First() as DMethod;
-			ctxt.CurrentContext.Set(foo, foo.Body);
+			ctxt.CurrentContext.Set(foo, foo.Body.Location);
 			t = TypeDeclarationResolver.ResolveSingle("I",ctxt,null);
 			Assert.That(t, Is.Null);
 		}
@@ -3041,7 +3054,7 @@ void CFoo() {}");
 			Assert.That((t as MemberSymbol).Definition, Is.TypeOf(typeof(DMethod)));
 			
 			var bar = (B["cl"].First() as DClassLike)["bar"].First() as DMethod;
-			ctxt.CurrentContext.Set(bar, bar.Body);
+			ctxt.CurrentContext.Set(bar, bar.Body.Location);
 			
 			t = TypeDeclarationResolver.ResolveSingle("CFoo", ctxt, null);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));

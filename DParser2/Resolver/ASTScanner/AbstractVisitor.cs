@@ -90,11 +90,12 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 		public virtual void IterateThroughScopeLayers(CodeLocation Caret, MemberFilter VisibleMembers = MemberFilter.All)
 		{
-			if (ctxt.ScopedStatement != null &&
-				ScanStatementHierarchy(ctxt.ScopedStatement, Caret, VisibleMembers))
+			var dm = ctxt.ScopedBlock as DMethod;
+			IStatement stmt;
+			if (dm != null && (stmt = dm.GetSubBlockAt(Caret)) != null &&
+				ScanStatementHierarchy(stmt, Caret, VisibleMembers))
 			{
-				if (ctxt.ScopedBlock is DMethod &&
-					ScanBlock(ctxt.ScopedBlock, Caret, VisibleMembers))
+				if (ScanBlock(dm, Caret, VisibleMembers))
 				{
 					// Error: Locals are shadowing parameters!
 				}
@@ -852,8 +853,8 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					(!caretInsensitive && Caret < ws.ScopedStatement.Location))
 					return false;
 
-				var back = ctxt.ScopedStatement;
-				ctxt.CurrentContext.Set(ws.Parent);
+				var back = ctxt.CurrentContext.Caret;
+				ctxt.CurrentContext.Set(ctxt.ScopedBlock,ws.Parent.Location);
 
 				AbstractType r;
 				// Must be an expression that returns an object reference
@@ -864,7 +865,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				else
 					r = null;
 
-				ctxt.CurrentContext.Set(back);
+				ctxt.CurrentContext.Set(ctxt.ScopedBlock,back);
 
 				if ((r = DResolver.StripMemberSymbols(r)) is TemplateIntermediateType &&
 					v.DeepScanClass(r as TemplateIntermediateType, VisibleMembers))

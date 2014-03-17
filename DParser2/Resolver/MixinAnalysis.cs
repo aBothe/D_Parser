@@ -55,7 +55,7 @@ namespace D_Parser.Resolver
 			if(!CheckAndPushAnalysisStack(mx))
 				return null;
 			ISemantic v;
-			using (ctxt.Push(mx.ParentNode, mx))
+			using (ctxt.Push(mx.ParentNode, mx.Location))
 			{
 				bool hadCachedItem;
 				if (takeStmtCache)

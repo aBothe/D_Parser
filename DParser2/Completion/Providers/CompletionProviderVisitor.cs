@@ -39,7 +39,7 @@ namespace D_Parser.Completion
 		#region Properties
 		bool halt; 
 		public IBlockNode scopedBlock;
-		public IStatement scopedStatement;
+		IStatement scopedStatement;
 
 		bool explicitlyNoCompletion;
 
@@ -61,7 +61,7 @@ namespace D_Parser.Completion
 				if (!(scopedBlock is DMethod) && !handlesInitializer)
 					vis = MemberFilter.Types | MemberFilter.TypeParameters | MemberFilter.Keywords;
 
-				return prv = new CtrlSpaceCompletionProvider(cdgen,scopedBlock,scopedStatement, vis); 
+				return prv = new CtrlSpaceCompletionProvider(cdgen,scopedBlock, vis); 
 			}
 		}
 		AbstractCompletionProvider prv;
@@ -116,7 +116,7 @@ namespace D_Parser.Completion
 				// alias id = |
 				// NOT alias Type |
 				if (IsIncompleteDeclaration (n.Type)) {
-					prv = new CtrlSpaceCompletionProvider (cdgen, scopedBlock,scopedStatement);
+					prv = new CtrlSpaceCompletionProvider (cdgen, scopedBlock);
 					halt = true;
 				}
 			}else if (n.Initializer != null) {
@@ -169,11 +169,11 @@ namespace D_Parser.Completion
 					else
 						vis = MemberFilter.Classes | MemberFilter.Interfaces | MemberFilter.Templates;
 
-					prv = new CtrlSpaceCompletionProvider (cdgen, handledClass, null, vis);
+					prv = new CtrlSpaceCompletionProvider (cdgen, handledClass, vis);
 				} else if (td.InnerDeclaration != null)
-					prv = new MemberCompletionProvider (cdgen, td.InnerDeclaration, scopedBlock, scopedStatement);
+					prv = new MemberCompletionProvider (cdgen, td.InnerDeclaration, scopedBlock);
 				else
-					prv = new CtrlSpaceCompletionProvider (cdgen, scopedBlock, scopedStatement);
+					prv = new CtrlSpaceCompletionProvider (cdgen, scopedBlock);
 
 				halt = true;
 			} else
@@ -185,7 +185,7 @@ namespace D_Parser.Completion
 			if (td.IdHash == DTokens.IncompleteIdHash) {
 				halt = true;
 				if(td.InnerDeclaration != null)
-					prv = new MemberCompletionProvider (cdgen, td.InnerDeclaration, scopedBlock, scopedStatement);
+					prv = new MemberCompletionProvider (cdgen, td.InnerDeclaration, scopedBlock);
 			}
 			else
 				base.Visit (td);
@@ -240,7 +240,7 @@ namespace D_Parser.Completion
 			if (a.AttributeExpression != null && 
 				a.AttributeExpression.Length>0 &&
 				IsIncompleteExpression (a.AttributeExpression[0])) {
-				prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, scopedStatement, 
+				prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, 
 					MemberFilter.BuiltInPropertyAttributes | MemberFilter.Methods | MemberFilter.Variables | MemberFilter.Types);
 				halt = true;
 			}
@@ -376,7 +376,7 @@ namespace D_Parser.Completion
 		{
 			if(s.IdentifierHash == DTokens.IncompleteIdHash) {
 
-				prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, s, MemberFilter.Labels);
+				prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, MemberFilter.Labels);
 
 				halt = true;
 			}
@@ -388,7 +388,7 @@ namespace D_Parser.Completion
 		{
 			if(s.IdentifierHash == DTokens.IncompleteIdHash) {
 
-				prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, s, MemberFilter.Labels);
+				prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, MemberFilter.Labels);
 
 				halt = true;
 			}
@@ -401,7 +401,7 @@ namespace D_Parser.Completion
 			if(s.StmtType == GotoStatement.GotoStmtType.Identifier &&
 				s.LabelIdentifierHash == DTokens.IncompleteIdHash) {
 
-				prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, s, MemberFilter.Labels);
+				prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, MemberFilter.Labels);
 
 				halt = true;
 			}
@@ -411,11 +411,14 @@ namespace D_Parser.Completion
 
 		public override void Visit(AsmStatement s)
 		{
+			scopedStatement = s;
 			base.Visit(s);
+			scopedStatement = null;
 		}
 
 		public override void Visit(AsmStatement.InstructionStatement s)
 		{
+			scopedStatement = s;
 			if (s.Operation == AsmStatement.InstructionStatement.OpCode.__UNKNOWN__)
 			{
 				prv = new InlineAsmCompletionProvider(s, cdgen);
@@ -423,6 +426,14 @@ namespace D_Parser.Completion
 			}
 			else
 				base.Visit(s);
+			scopedStatement = null;
+		}
+
+		public override void Visit(AsmStatement.RawDataStatement s)
+		{
+			scopedStatement = s;
+			base.Visit(s);
+			scopedStatement = null;
 		}
 		#endregion
 
@@ -433,17 +444,18 @@ namespace D_Parser.Completion
 				base.VisitChildren (x);
 		}
 
+
 		public override void Visit (TokenExpression e)
 		{
 			if (e.Token == DTokens.Incomplete) {
 				halt = true;
 				const MemberFilter BaseAsmFlags = MemberFilter.Classes | MemberFilter.StructsAndUnions | MemberFilter.Enums | MemberFilter.Methods | MemberFilter.TypeParameters | MemberFilter.Types | MemberFilter.Variables;
 				if (scopedStatement is AsmStatement || scopedStatement is AsmStatement.InstructionStatement)
-					prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, scopedStatement, BaseAsmFlags | MemberFilter.x86Registers | MemberFilter.x64Registers | MemberFilter.Labels);
+					prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, BaseAsmFlags | MemberFilter.x86Registers | MemberFilter.x64Registers | MemberFilter.Labels);
 				else if (scopedStatement is AsmStatement.RawDataStatement)
-					prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, scopedStatement, BaseAsmFlags | MemberFilter.Labels);
+					prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, BaseAsmFlags | MemberFilter.Labels);
 				else if (handlesInitializer)
-					prv = new CtrlSpaceCompletionProvider (cdgen, scopedBlock, scopedStatement);
+					prv = new CtrlSpaceCompletionProvider (cdgen, scopedBlock);
 			}
 		}
 
@@ -459,10 +471,10 @@ namespace D_Parser.Completion
 				if (x.PostfixForeExpression is DTokenDeclaration && (x.PostfixForeExpression as DTokenDeclaration).Token == DTokens.Dot) {
 					// Handle module-scoped things:
 					// When typing a dot without anything following, trigger completion and show types, methods and vars that are located in the module & import scope
-					prv = new CtrlSpaceCompletionProvider (cdgen, scopedBlock, null, MemberFilter.Methods | MemberFilter.Types | MemberFilter.Variables | MemberFilter.TypeParameters );
+					prv = new CtrlSpaceCompletionProvider (cdgen, scopedBlock, MemberFilter.Methods | MemberFilter.Types | MemberFilter.Variables | MemberFilter.TypeParameters );
 				}
 				else
-					prv = new MemberCompletionProvider (cdgen, x.PostfixForeExpression, scopedBlock, scopedStatement);
+					prv = new MemberCompletionProvider (cdgen, x.PostfixForeExpression, scopedBlock);
 			}
 			else
 				base.Visit (x);
@@ -483,7 +495,7 @@ namespace D_Parser.Completion
 		{
 			if (IsIncompleteDeclaration (x.Type)) {
 				halt = true;
-				prv = new CtrlSpaceCompletionProvider (cdgen, scopedBlock, scopedStatement, MemberFilter.Types | MemberFilter.TypeParameters);
+				prv = new CtrlSpaceCompletionProvider (cdgen, scopedBlock, MemberFilter.Types | MemberFilter.TypeParameters);
 			}
 			else
 				base.Visit (x);
