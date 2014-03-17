@@ -4,8 +4,6 @@ namespace D_Parser.Dom
 {
 	public abstract class AbstractNode : INode
 	{
-		protected WeakReference _Parent;
-
 		protected AbstractNode()
 		{
 			Description = null;
@@ -54,18 +52,7 @@ namespace D_Parser.Dom
 
 		public bool IsAnonymous { get { return NameHash == 0; } }
 
-		public INode Parent
-		{
-			get { 
-				return _Parent != null ? _Parent.Target as INode : null; 
-			}
-			set { 
-				if (_Parent == null)
-					_Parent = new WeakReference (value); 
-				else 
-					_Parent.Target = value;
-			}
-		}
+		public INode Parent { get;set; }
 
 		public override string ToString()
 		{
@@ -126,8 +113,7 @@ namespace D_Parser.Dom
 		{
 			get
 			{
-				var t = _Parent != null ? _Parent.Target as INode : null;
-				return t != null ? t.NodeRoot : this;
+				return Parent != null ? Parent.NodeRoot : this;
 			}
 		}
 

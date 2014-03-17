@@ -12,12 +12,16 @@ namespace D_Parser.Dom
 		public CodeLocation Location { get; set; }
 		public CodeLocation EndLocation { get; set; }
 
-		readonly WeakReference parent;
+		DNode parent;
 		public DNode Parent {
-			get{ return parent.Target as DNode; } 
-			set { 
-				parent.Target = value;
-				// The representation node's parent will be altered automatically!
+			set {
+				if (representation != null)
+					representation.Parent = value;
+				parent = value;
+			}
+			get
+			{
+				return parent;
 			}
 		}
 
@@ -39,7 +43,7 @@ namespace D_Parser.Dom
 		{
 			NameHash = nameHash;
 			NameLocation = nameLoc;
-			this.parent = new WeakReference (par);
+			Parent = par;
 		}
 
 		public static explicit operator TemplateParameter(Node tp)
@@ -61,7 +65,7 @@ namespace D_Parser.Dom
 
 				NameHash = param.NameHash;
 				NameLocation = param.NameLocation;
-				_Parent = param.parent;
+				Parent = param.Parent;
 
 				Location = param.Location;
 				EndLocation = param.EndLocation;
