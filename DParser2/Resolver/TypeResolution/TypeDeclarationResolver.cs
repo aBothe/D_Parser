@@ -642,6 +642,9 @@ namespace D_Parser.Resolver.TypeResolution
 							return new PrimitiveType(DTokens.Int);
 						}
 
+						if (fe.Aggregate == null)
+							return null;
+
 						var aggregateType = ExpressionTypeEvaluation.EvaluateType(fe.Aggregate, ctxt);
 
 						aggregateType = DResolver.StripMemberSymbols(aggregateType);
