@@ -16,6 +16,7 @@ namespace ExaustiveCompletionTester
 		public int i = 0;
 		public string lengthString = null;
 		public List<Tuple<int, string>> ExceptionsTriggered = new List<Tuple<int, string>>();
+		public List<int> TimeoutsTriggered = new List<int>();
 
 		public FileProcessingData(string filePath, int fileID)
 		{
@@ -206,6 +207,10 @@ namespace ExaustiveCompletionTester
 					try
 					{
 						CodeCompletion.GenerateCompletionData(ed, g, 'a', true);
+					}
+					catch (OperationCanceledException e)
+					{
+						TimeoutsTriggered.Add(i);
 					}
 					catch (Exception e)
 					{

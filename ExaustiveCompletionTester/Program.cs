@@ -17,6 +17,7 @@ namespace ExaustiveCompletionTester
 		public static FileProcessingData[] activeData;
 		public static volatile int liveWorkerCount = 0;
 		public const string ExceptionsDirectory = ".\\Exceptions";
+		public const string TimeoutsDirectory = ".\\Timeouts";
 		public const string TesterErrorsDirectory = ".\\TesterErrors";
 
 		public static void Main (string[] args)
@@ -26,6 +27,8 @@ namespace ExaustiveCompletionTester
 
 			if (Directory.Exists(ExceptionsDirectory))
 				Directory.Delete(ExceptionsDirectory, true);
+			if (Directory.Exists(TimeoutsDirectory))
+				Directory.Delete(TimeoutsDirectory, true);
 			if (Directory.Exists(TesterErrorsDirectory))
 				Directory.Delete(TesterErrorsDirectory, true);
 			foreach (var v in Directory.EnumerateFileSystemEntries(Config.PhobosPath))
@@ -51,6 +54,7 @@ namespace ExaustiveCompletionTester
 				{
 					File.AppendAllText(fileBlackListFile,Environment.NewLine + curFile.FullFilePath);
 					WriteFromLeft(curFile.FileID, "100%)");
+
 					if (curFile.ExceptionsTriggered.Count > 0)
 					{
 						if (!Directory.Exists(ExceptionsDirectory))
@@ -65,6 +69,16 @@ namespace ExaustiveCompletionTester
 								File.WriteAllText(ExceptionsDirectory + "\\" + curFile.ShortFilePath.Replace('\\', '_') + "-" + i.ToString() + ".txt", curFile.str.Substring(0, excI.Item1));
 								File.WriteAllText(ExceptionsDirectory + "\\" + curFile.ShortFilePath.Replace('\\', '_') + "-" + i.ToString() + ".trace.txt", excI.Item2);
 							}
+						}
+					}
+
+					if (curFile.TimeoutsTriggered.Count > 0)
+					{
+						if (!Directory.Exists(TimeoutsDirectory))
+							Directory.CreateDirectory(TimeoutsDirectory);
+						foreach (var to in curFile.TimeoutsTriggered)
+						{
+							File.WriteAllText(TimeoutsDirectory + "\\" + curFile.ShortFilePath.Replace('\\', '_') + "-" + to.ToString() + ".txt", curFile.str.Substring(0, to));
 						}
 					}
 				}
