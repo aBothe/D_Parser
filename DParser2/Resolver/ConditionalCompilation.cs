@@ -115,14 +115,19 @@ namespace D_Parser.Resolver
 				if (amd == null || amd.AttributeOrCondition == null || amd.AttributeOrCondition.Length == 0)
 					return;
 
-				if(amd.Location > caret || (amd is AttributeMetaDeclarationBlock && amd.EndLocation < caret))
-					return;
-
-				foreach (var attr in amd.AttributeOrCondition)
+				if (caret > amd.Location && (!(amd is AttributeMetaDeclarationBlock) || amd.EndLocation > caret))
+				{
+					foreach (var attr in amd.AttributeOrCondition)
 						if (attr is DeclarationCondition)
 							l.Add((DeclarationCondition)attr);
-
-				//TODO: OptionalElseBlock
+				}
+				else if(amd.OptionalElseBlock != null && 
+					caret > amd.OptionalElseBlock.Location && amd.OptionalElseBlock.EndLocation > caret)
+				{
+					foreach (var attr in amd.AttributeOrCondition)
+						if (attr is DeclarationCondition)
+							l.Add(new NegatedDeclarationCondition((DeclarationCondition)attr));
+				}
 			}
 
 			bool ignoreBounds = false;

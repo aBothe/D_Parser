@@ -1090,8 +1090,15 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 						continue;
 
 					bool res;
-					if(!alreadyCheckedConditions.TryGetValue(cond, out res))
+
+					if (cond is VersionCondition || cond is DebugCondition)
+					{
+						res = neg != null ? !ctxt.CurrentContext.MatchesDeclarationEnvironment(neg) : ctxt.CurrentContext.MatchesDeclarationEnvironment(cond);
+					}
+					else if (!alreadyCheckedConditions.TryGetValue(cond, out res))
+					{
 						alreadyCheckedConditions[cond] = res = ctxt.CurrentContext.MatchesDeclarationEnvironment(cond);
+					}
 
 					if (neg != null ? res : !res)
 						return false;

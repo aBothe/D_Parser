@@ -40,7 +40,16 @@ namespace Tests
 
 		public static ResolutionContext CreateDefCtxt(ParseCacheView pcl, IBlockNode scope, IStatement stmt = null)
 		{
-			return CreateDefCtxt(pcl, scope, stmt == null ? CodeLocation.Empty : stmt.Location);
+			CodeLocation loc = CodeLocation.Empty;
+
+			if (stmt != null)
+				loc = stmt.Location;
+			else if (scope is DModule)
+				loc = scope.EndLocation;
+			else if (scope != null)
+				loc = scope.Location;
+
+			return CreateDefCtxt(pcl, scope, loc);
 		}
 
 		public static ResolutionContext CreateDefCtxt(ParseCacheView pcl, IBlockNode scope, CodeLocation caret)
@@ -2298,6 +2307,66 @@ void main()
 				t = ExpressionTypeEvaluation.EvaluateType(ss.Expression, ctxt);
 				Assert.IsNull(t);
 			}
+		}
+
+		[Test]
+		public void DeclCond4()
+		{
+			var ctxt = CreateCtxt("A",@"module A;
+version = X;
+
+version(X){
+	int vx;
+}
+else{
+	int vy;
+}
+
+int xx1;
+
+version = Y;
+
+version(Y)
+{
+	int xa;
+}
+else
+	int xb;
+
+int xx2;
+
+version(Z){
+	version = U;
+}
+
+version(U)
+	int xu;
+
+int xx3;
+");
+			var A = ctxt.ParseCache[0]["A"];
+			ctxt.CurrentContext.Set(A["vy"].First().Location);
+
+			AbstractType t;
+			t = TypeDeclarationResolver.ResolveSingle("vy", ctxt, null);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+
+			t = TypeDeclarationResolver.ResolveSingle("vx", ctxt, null);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+
+
+			ctxt.CurrentContext.Set(A["xx2"].First().Location);
+
+			t = TypeDeclarationResolver.ResolveSingle("xa", ctxt, null);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+
+			t = TypeDeclarationResolver.ResolveSingle("xb", ctxt, null);
+			Assert.That(t, Is.Null);
+
+			ctxt.CurrentContext.Set(A["xx3"].First().Location);
+
+			t = TypeDeclarationResolver.ResolveSingle("xu", ctxt, null);
+			Assert.That(t, Is.Null);
 		}
 		
 		[Test]
