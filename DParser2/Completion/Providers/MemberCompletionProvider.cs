@@ -31,9 +31,6 @@ namespace D_Parser.Completion.Providers
 			ed = Editor;
 			ctxt = ResolutionContext.Create(Editor.ParseCache, new ConditionalCompilationFlags(Editor), ScopedBlock, Editor.CaretLocation);
 
-			var cts = new System.Threading.CancellationTokenSource();
-			ctxt.Cancel = cts.Token;
-			
 			AbstractType t = null;
 			CodeCompletion.DoTimeoutableCompletionTask(CompletionDataGenerator,ctxt,() =>
 			{

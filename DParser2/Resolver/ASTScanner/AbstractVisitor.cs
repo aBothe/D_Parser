@@ -148,7 +148,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				
 				curScope = curScope.Parent as IBlockNode;
 			}
-			while (curScope != null && !ctxt.Cancel.IsCancellationRequested);
+			while (curScope != null && !ctxt.CancelOperation);
 
 			return false;
 		}
@@ -1008,7 +1008,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		bool HandleAliasThisDeclarations(TemplateIntermediateType tit, MemberFilter vis)
 		{
 			var ch = tit.Definition [DVariable.AliasThisIdentifierHash];
-			if(ch != null && !ctxt.Cancel.IsCancellationRequested){
+			if(ch != null && !ctxt.CancelOperation){
 				foreach (DVariable aliasDef in ch) {
 					if (aliasDef.Type == null || !MatchesCompilationConditions(aliasDef))
 						continue;

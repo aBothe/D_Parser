@@ -145,14 +145,19 @@ namespace D_Parser.Completion
 		/// <param name="ac"></param>
 		internal static void DoTimeoutableCompletionTask(ICompletionDataGenerator cdgen,ResolutionContext ctxt, Action ac)
 		{
-			var cts = new CancellationTokenSource();
-			ctxt.Cancel = cts.Token;
+			ctxt.CancelOperation = false;
+
+			if (CompletionOptions.Instance.CompletionTimeout < 0)
+			{
+				ac();
+				return;
+			}
 
 			var task = Task.Factory.StartNew(ac);
 
 			if (!task.Wait(CompletionOptions.Instance.CompletionTimeout))
 			{
-				cts.Cancel();
+				ctxt.CancelOperation = true;
 				if(cdgen != null)
 					cdgen.NotifyTimeout();
 				task.Wait();
