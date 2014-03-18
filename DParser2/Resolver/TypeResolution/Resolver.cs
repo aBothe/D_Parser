@@ -98,27 +98,27 @@ namespace D_Parser.Resolver.TypeResolution
 
 		public static AbstractType ResolveType(IEditorData editor, ResolutionContext ctxt = null)
 		{
-			if (ctxt == null)
-				ctxt = ResolutionContext.Create(editor);
-
 			var o = GetScopedCodeObject(editor);
-
-			var optionBackup = ctxt.CurrentContext.ContextDependentOptions;
-			ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
 
 			AbstractType ret = null;
 
 			CodeCompletion.DoTimeoutableCompletionTask(null, ctxt, () =>
 			{
+				if (ctxt == null)
+					ctxt = ResolutionContext.Create(editor);
+
+				var optionBackup = ctxt.CurrentContext.ContextDependentOptions;
+				ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
+
 				if (o is IExpression)
 					ret = ExpressionTypeEvaluation.EvaluateType((IExpression)o, ctxt, false);
 				else if (o is ITypeDeclaration)
 					ret = TypeDeclarationResolver.ResolveSingle((ITypeDeclaration)o, ctxt);
 				else if (o is INode)
 					ret = TypeDeclarationResolver.HandleNodeMatch(o as INode, ctxt);
-			});
 
-			ctxt.CurrentContext.ContextDependentOptions = optionBackup;
+				ctxt.CurrentContext.ContextDependentOptions = optionBackup;
+			});
 
 			return ret;
 		}
@@ -132,19 +132,18 @@ namespace D_Parser.Resolver.TypeResolution
 
 		public static AbstractType ResolveTypeLoosely(IEditorData editor, out NodeResolutionAttempt resolutionAttempt, ResolutionContext ctxt = null)
 		{
-			if (ctxt == null)
-				ctxt = ResolutionContext.Create(editor);
-
 			var o = GetScopedCodeObject(editor);
-
-			var optionBackup = ctxt.CurrentContext.ContextDependentOptions;
-			ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly | ResolutionOptions.DontResolveAliases;
-			resolutionAttempt = NodeResolutionAttempt.Normal;
 
 			AbstractType ret = null;
 			NodeResolutionAttempt resAttempt = NodeResolutionAttempt.Normal;
 			CodeCompletion.DoTimeoutableCompletionTask(null, ctxt, () =>
 			{
+				if (ctxt == null)
+					ctxt = ResolutionContext.Create(editor);
+
+				var optionBackup = ctxt.CurrentContext.ContextDependentOptions;
+				ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly | ResolutionOptions.DontResolveAliases;
+
 				if (o is IExpression)
 					ret = ExpressionTypeEvaluation.EvaluateType((IExpression)o, ctxt, false);
 				else if (o is ITypeDeclaration)
@@ -177,6 +176,8 @@ namespace D_Parser.Resolver.TypeResolution
 					var overloads = TypeDeclarationResolver.HandleNodeMatches(LookupIdRawly(editor, o as ISyntaxRegion), ctxt, null, o);
 					ret = AmbiguousType.Get(overloads, o);
 				}
+
+				ctxt.CurrentContext.ContextDependentOptions = optionBackup;
 			});
 
 			resolutionAttempt = resAttempt;
@@ -184,7 +185,6 @@ namespace D_Parser.Resolver.TypeResolution
 			if (ret != null)
 				ret.DeclarationOrExpressionBase = o;
 
-			ctxt.CurrentContext.ContextDependentOptions = optionBackup;
 			return ret;
 		}
 

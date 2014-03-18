@@ -67,6 +67,11 @@ namespace D_Parser.Resolver
 										 editor.CaretLocation);
 		}
 
+		public static ResolutionContext Create(ParseCacheView pcl, ConditionalCompilationFlags globalConditions)
+		{
+			return new ResolutionContext(pcl, globalConditions);
+		}
+
 		public static ResolutionContext Create(ParseCacheView pcl, ConditionalCompilationFlags globalConditions, IBlockNode scopedBlock)
 		{
 			return new ResolutionContext(pcl, globalConditions, scopedBlock, CodeLocation.Empty);
@@ -79,6 +84,12 @@ namespace D_Parser.Resolver
 
 		public ResolutionContext(ParseCacheView parseCache, ConditionalCompilationFlags gFlags, IBlockNode bn)
 			: this(parseCache, gFlags, bn, CodeLocation.Empty) { }
+
+		public ResolutionContext(ParseCacheView parseCache, ConditionalCompilationFlags gFlags)
+		{
+			this.CompilationEnvironment = gFlags;
+			this.ParseCache = parseCache;
+		}
 
 		public ResolutionContext(ParseCacheView parseCache, ConditionalCompilationFlags gFlags, IBlockNode bn, CodeLocation caret)
 		{

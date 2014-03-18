@@ -145,8 +145,11 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 		public void Visit(BlockStatement blockStatement)
 		{
 			foreach (var stmt in blockStatement)
-				if (returnedValue == null)
-					stmt.Accept(this);
+			{
+				if (returnedValue != null || vp.ResolutionContext.CancelOperation)
+					break;
+				stmt.Accept(this);
+			}
 		}
 
 		public void Visit(LabeledStatement labeledStatement)

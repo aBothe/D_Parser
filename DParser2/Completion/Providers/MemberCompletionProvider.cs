@@ -29,11 +29,12 @@ namespace D_Parser.Completion.Providers
 		protected override void BuildCompletionDataInternal(IEditorData Editor, char enteredChar)
 		{
 			ed = Editor;
-			ctxt = ResolutionContext.Create(Editor.ParseCache, new ConditionalCompilationFlags(Editor), ScopedBlock, Editor.CaretLocation);
+			ctxt = ResolutionContext.Create(Editor.ParseCache, new ConditionalCompilationFlags(Editor));
 
 			AbstractType t = null;
 			CodeCompletion.DoTimeoutableCompletionTask(CompletionDataGenerator,ctxt,() =>
 			{
+				ctxt.Push(Editor.SyntaxTree, Editor.CaretLocation);
 				if (AccessExpression is IExpression)
 					t = ExpressionTypeEvaluation.EvaluateType(AccessExpression as IExpression, ctxt);
 				else if (AccessExpression is ITypeDeclaration)

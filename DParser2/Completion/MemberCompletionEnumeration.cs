@@ -24,10 +24,11 @@ namespace D_Parser.Completion
 			MemberFilter VisibleMembers,
 			ConditionalCompilationFlags compilationEnvironment = null)
 		{
-			var ctxt = ResolutionContext.Create(CodeCache, compilationEnvironment, ScopedBlock, Caret);
+			var ctxt = ResolutionContext.Create(CodeCache, compilationEnvironment);
 
 			CodeCompletion.DoTimeoutableCompletionTask(cdgen, ctxt, () =>
 			{
+				ctxt.Push(ScopedBlock, Caret);
 				var en = new MemberCompletionEnumeration(ctxt, cdgen) { isVarInst = true };
 				en.IterateThroughScopeLayers(Caret, VisibleMembers);
 			});
