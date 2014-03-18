@@ -86,6 +86,9 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 
 		public static ISymbolValue Execute(MemberSymbol method, Dictionary<DVariable, ISymbolValue> arguments, AbstractSymbolValueProvider vp)
 		{
+			if (vp.ResolutionContext.CancelOperation)
+				return null;
+
 			var dm = method.Definition as DMethod;
 
 			if (dm == null || dm.BlockStartLocation.IsEmpty)

@@ -73,8 +73,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return null;
 
 			if (vp == null)
-				vp = new StandardValueProvider(null);
-			else if (vp.ResolutionContext != null && vp.ResolutionContext.CancelOperation)
+				throw new ArgumentNullException("vp");
+
+			if (vp.ResolutionContext != null && vp.ResolutionContext.CancelOperation)
 				return new TypeValue(new UnknownType(x));
 
 			var ev = new Evaluation(vp);
