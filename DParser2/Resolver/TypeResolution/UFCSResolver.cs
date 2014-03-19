@@ -66,29 +66,18 @@ namespace D_Parser.Resolver.TypeResolution
 			{
 				var t = TypeDeclarationResolver.HandleNodeMatch(n, ctxt, null, sr);
 
-				if (t is AmbiguousType)
+				foreach (var ov in AmbiguousType.TryDissolve(t))
 				{
-					foreach (var ov in (t as AmbiguousType).Overloads)
+					ds = ov as DSymbol;
+					if (ds is MemberSymbol && ds.Definition is DMethod)
+						HandleMethod(ds.Definition as DMethod, ov as MemberSymbol);
+					else if (ds != null && (dc = ds.Definition as DClassLike) != null && dc.ClassType == DTokens.Template)
 					{
-						ds = ov as DSymbol;
-						if (ds is MemberSymbol && ds.Definition is DMethod)
-							HandleMethod(ds.Definition as DMethod, ov as MemberSymbol);
-						else if (ds != null && ds.Definition is DClassLike)
+						if (sr is TemplateInstanceExpression || nameFilterHash == 0)
 						{
 							ds.Tag = new UfcsTag { firstArgument = firstArgument };
 							matches.Add(ds);
 						}
-					}
-				}
-				else
-				{
-					ds = t as DSymbol;
-					if (t is MemberSymbol && ds.Definition is DMethod)
-						HandleMethod(ds.Definition as DMethod, t as MemberSymbol);
-					else if (ds != null && ds.Definition is DClassLike)
-					{
-						t.Tag = new UfcsTag { firstArgument = firstArgument };
-						matches.Add(ds);
 					}
 					// Perhaps other types may occur here as well - but which remain then to be added?
 				}
