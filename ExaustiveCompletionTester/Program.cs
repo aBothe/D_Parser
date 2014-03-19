@@ -22,6 +22,8 @@ namespace ExaustiveCompletionTester
 
 		public static void Main (string[] args)
 		{
+			Console.CursorVisible = false;
+
 			if (File.Exists(fileBlackListFile))
 				filesToExclude.AddRange(File.ReadLines(fileBlackListFile));
 
