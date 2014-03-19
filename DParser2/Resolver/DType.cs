@@ -52,12 +52,17 @@ namespace D_Parser.Resolver
 
 		public override string ToString()
 		{
-			return ToCode();
+			return ToCode(true);
 		}
 
 		public string ToCode()
 		{
 			return DTypeToCodeVisitor.GenerateCode(this);
+		}
+
+		public string ToCode(bool pretty)
+		{
+			return DTypeToCodeVisitor.GenerateCode(this, pretty);
 		}
 
 		public static AbstractType Get(ISemantic s)

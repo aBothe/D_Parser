@@ -9,15 +9,16 @@ namespace D_Parser.Resolver
 	public class DTypeToCodeVisitor : IResolvedTypeVisitor
 	{
 		StringBuilder sb = new StringBuilder();
+		protected readonly bool pretty;
 
-		private DTypeToCodeVisitor()
+		private DTypeToCodeVisitor(bool pretty)
 		{
-
+			this.pretty = pretty;
 		}
 
-		public static string GenerateCode(AbstractType t)
+		public static string GenerateCode(AbstractType t, bool pretty = false)
 		{
-			var vis = new DTypeToCodeVisitor();
+			var vis = new DTypeToCodeVisitor(pretty);
 
 			vis.AcceptType(t);
 
@@ -36,6 +37,13 @@ namespace D_Parser.Resolver
 
 			if (t.Modifier != 0)
 				sb.Append(')');
+
+			if (pretty)
+			{
+				var aliasTag = t.Tag as TypeResolution.TypeDeclarationResolver.AliasTag;
+				if (aliasTag != null)
+					sb.Append(" (").Append(aliasTag.typeBase != null ? aliasTag.typeBase.ToString() : aliasTag.aliasDefinition.ToString(false, false)).Append(")");
+			}
 		}
 
 		public void VisitPrimitiveType(PrimitiveType t)
