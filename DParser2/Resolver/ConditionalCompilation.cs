@@ -245,8 +245,8 @@ namespace D_Parser.Resolver
 
 		public static void EnumConditions(ConditionSet cs,IBlockNode block, ResolutionContext ctxt, CodeLocation caret)
 		{
-			if(block != null)
-			block.NodeRoot.Accept(new ConditionVisitor(cs, ctxt, caret));
+			if(block != null && block.NodeRoot != null)
+				block.NodeRoot.Accept(new ConditionVisitor(cs, ctxt, caret));
 			return;
 		}
 	}
