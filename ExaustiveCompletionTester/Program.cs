@@ -54,7 +54,8 @@ namespace ExaustiveCompletionTester
 
 				while (completedFiles.TryDequeue(out curFile))
 				{
-					File.AppendAllText(fileBlackListFile,Environment.NewLine + curFile.FullFilePath);
+					if (curFile.ExceptionsTriggered.Count == 0)
+						File.AppendAllText(fileBlackListFile, Environment.NewLine + curFile.FullFilePath);
 					WriteFromLeft(curFile.FileID, "100%)");
 
 					if (curFile.ExceptionsTriggered.Count > 0)
