@@ -24,7 +24,7 @@ namespace D_Parser.Completion.Providers
 
 		protected override void BuildCompletionDataInternal(IEditorData Editor, char enteredChar)
 		{
-			var ctxt = ResolutionContext.Create(Editor);
+			var ctxt = ResolutionContext.Create(Editor, true);
 			var resolvedVariable = TypeDeclarationResolver.HandleNodeMatch(initedVar, ctxt) as DSymbol;
 
 			if (resolvedVariable == null)

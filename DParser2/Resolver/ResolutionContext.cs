@@ -60,11 +60,12 @@ namespace D_Parser.Resolver
 		#endregion
 
 		#region Init/Constructor
-		public static ResolutionContext Create(IEditorData editor, ConditionalCompilationFlags globalConditions = null)
+		public static ResolutionContext Create(IEditorData editor, bool pushFirstScope, ConditionalCompilationFlags globalConditions = null)
 		{
-			return new ResolutionContext(editor.ParseCache, globalConditions ?? new ConditionalCompilationFlags(editor),
-										 DResolver.SearchBlockAt(editor.SyntaxTree, editor.CaretLocation) ?? editor.SyntaxTree,
-										 editor.CaretLocation);
+			var ctxt = new ResolutionContext(editor.ParseCache, globalConditions ?? new ConditionalCompilationFlags(editor));
+			if (pushFirstScope)
+				ctxt.Push(editor);
+			return ctxt;
 		}
 
 		public static ResolutionContext Create(ParseCacheView pcl, ConditionalCompilationFlags globalConditions)
@@ -161,6 +162,11 @@ namespace D_Parser.Resolver
 				PushNewScope(newScope as IBlockNode, caret);
 			
 			return pop;
+		}
+
+		public IDisposable Push(IEditorData editor)
+		{
+			return Push(DResolver.SearchBlockAt(editor.SyntaxTree, editor.CaretLocation) ?? editor.SyntaxTree, editor.CaretLocation);
 		}
 
 		public IDisposable Push(DSymbol ds)

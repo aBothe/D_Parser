@@ -27,7 +27,7 @@ namespace D_Parser.Completion.Providers
 			if (dc == null || dc.ClassType != DTokens.Class)
 				return;
 
-			var classType = DResolver.ResolveClassOrInterface(dc, ResolutionContext.Create(Editor), null) as TemplateIntermediateType;
+			var classType = DResolver.ResolveClassOrInterface(dc, ResolutionContext.Create(Editor, true), null) as TemplateIntermediateType;
 
 			if (classType == null)
 				return;

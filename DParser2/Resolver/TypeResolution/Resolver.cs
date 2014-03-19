@@ -99,14 +99,15 @@ namespace D_Parser.Resolver.TypeResolution
 		public static AbstractType ResolveType(IEditorData editor, ResolutionContext ctxt = null)
 		{
 			var o = GetScopedCodeObject(editor);
+			if (ctxt == null)
+				ctxt = ResolutionContext.Create(editor, false);
 
 			AbstractType ret = null;
 
 			CodeCompletion.DoTimeoutableCompletionTask(null, ctxt, () =>
 			{
-				if (ctxt == null)
-					ctxt = ResolutionContext.Create(editor);
-
+				ctxt.Push(editor);
+				
 				var optionBackup = ctxt.CurrentContext.ContextDependentOptions;
 				ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
 
@@ -133,14 +134,15 @@ namespace D_Parser.Resolver.TypeResolution
 		public static AbstractType ResolveTypeLoosely(IEditorData editor, out NodeResolutionAttempt resolutionAttempt, ResolutionContext ctxt = null)
 		{
 			var o = GetScopedCodeObject(editor);
+			if (ctxt == null)
+				ctxt = ResolutionContext.Create(editor, false);
 
 			AbstractType ret = null;
 			NodeResolutionAttempt resAttempt = NodeResolutionAttempt.Normal;
 			CodeCompletion.DoTimeoutableCompletionTask(null, ctxt, () =>
 			{
-				if (ctxt == null)
-					ctxt = ResolutionContext.Create(editor);
-
+				ctxt.Push(editor);
+				
 				var optionBackup = ctxt.CurrentContext.ContextDependentOptions;
 				ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly | ResolutionOptions.DontResolveAliases;
 

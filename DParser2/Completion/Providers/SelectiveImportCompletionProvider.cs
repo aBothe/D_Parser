@@ -25,7 +25,7 @@ namespace D_Parser.Completion.Providers
 			if (module == null)
 				return;
 
-			var ctxt = ResolutionContext.Create(Editor);
+			var ctxt = ResolutionContext.Create(Editor, true);
 
 			/*
 			 * Show all members of the imported module

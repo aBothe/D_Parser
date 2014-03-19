@@ -63,9 +63,7 @@ namespace D_Parser.Completion
 		/// counts its already typed arguments
 		/// and returns a wrapper containing all the information.
 		/// </summary>
-		public static ArgumentsResolutionResult ResolveArgumentContext(
-			IEditorData Editor,
-			ResolutionContext ctxt)
+		public static ArgumentsResolutionResult ResolveArgumentContext(IEditorData Editor)
 		{
 			IBlockNode curBlock = null;
 			bool inNonCode;
@@ -99,10 +97,14 @@ namespace D_Parser.Completion
 				ParsedExpression = lastParamExpression
 			};
 
-			ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.DontResolveAliases;
+			var ctxt = ResolutionContext.Create(Editor, false);				
 
 			CodeCompletion.DoTimeoutableCompletionTask(null, ctxt, () =>
 			{
+				ctxt.Push(Editor);
+
+				ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.DontResolveAliases;
+
 				// 1), 2)
 				if (lastParamExpression is PostfixExpression_MethodCall)
 				{
@@ -260,11 +262,6 @@ namespace D_Parser.Completion
 					i++;
 				}
 			}*/
-		}
-
-		public static ArgumentsResolutionResult ResolveArgumentContext(IEditorData editorData)
-		{
-			return ResolveArgumentContext(editorData, ResolutionContext.Create(editorData));
 		}
 	}
 }
