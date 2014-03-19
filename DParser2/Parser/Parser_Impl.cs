@@ -4601,7 +4601,7 @@ namespace D_Parser.Parser
 									//       such, am making an expression in that form fail to parse.
 									return new UnaryExpression_SegmentBase() { RegisterExpression = ex, UnaryExpression = ParseAsmExpression(Scope, Parent) };
 								}
-								break;
+								goto default;
 							default:
 								// This check is required because of how ST registers are handled.
 								if (AsmRegisterExpression.IsRegister(reg))
