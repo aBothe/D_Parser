@@ -400,7 +400,7 @@ void main() { Class. }";
 		public static INode GetNode(EditorData ed, string id, ref ResolutionContext ctxt)
 		{
 			if (ctxt == null)
-				ctxt = ResolutionContext.Create (ed);
+				ctxt = ResolutionContext.Create (ed, true);
 
 			DToken tk;
 			var bt = DParser.ParseBasicType (id, out tk);
