@@ -507,7 +507,7 @@ namespace D_Parser.Resolver.TypeResolution
 			var pCount = Parent.Count;
 			while (pCount != 0)
 			{
-				var midElement = SearchRegionAt<INode> (Parent.Children.ItemAt, pCount, Where);
+				var midElement = SearchRegionAt<INode> (Parent.Children, Where);
 
 				if (midElement is IBlockNode) {
 					Parent = (IBlockNode)midElement;

@@ -144,7 +144,8 @@ namespace D_Parser.Resolver
 				}
 				else // otherwise check before walking through its child statements
 				{
-					if (!cs.IsMatching(s.Condition, ctxt))
+					//FIXME: Don't check static if's for now..too slow
+					if (!(s.Condition is StaticIfCondition) && !cs.IsMatching(s.Condition, ctxt))
 						return; // and break if e.g. the version is not matching
 				}
 
@@ -173,7 +174,7 @@ namespace D_Parser.Resolver
 
 			public override void VisitChildren(IBlockNode block)
 			{
-				var ch = DResolver.SearchBlockAt(block, caret);
+				var ch = DResolver.SearchRegionAt<INode>(block.Children, caret);
 				if (ch != null && ch != block)
 					ch.Accept(this);
 			}
@@ -186,6 +187,12 @@ namespace D_Parser.Resolver
 						if (attr is DeclarationCondition)
 							l.Add(((DeclarationCondition)attr));
 				}
+			}
+
+			public override void Visit(DMethod n)
+			{
+				base.Visit(n);
+				VisitChildren(n);
 			}
 
 			public override void VisitAttribute(NegatedDeclarationCondition a)
