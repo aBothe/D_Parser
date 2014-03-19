@@ -628,9 +628,21 @@ namespace D_Parser.Resolver.TypeResolution
 			return newRes;
 		}
 
-		public static DNode GetResultMember(ISemantic res)
+		public static DNode GetResultMember(ISemantic res, bool keepAliases = false)
 		{
-			if(res is DSymbol)
+			var t = AbstractType.Get(res);
+
+			if(t == null)
+				return null;
+
+			if (keepAliases)
+			{
+				var aliasTag = t.Tag as TypeResolution.TypeDeclarationResolver.AliasTag;
+				if (aliasTag != null)
+					return aliasTag.aliasDefinition;
+			}
+
+			if(t is DSymbol)
 				return ((DSymbol)res).Definition;
 
 			return null;
