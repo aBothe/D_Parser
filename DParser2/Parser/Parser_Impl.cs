@@ -4574,13 +4574,15 @@ namespace D_Parser.Parser
 						{
 							reg += "(";
 							Step();
-							Expect(Literal);
-							reg += t.LiteralValue.ToString();
-							if (laKind != CloseParenthesis)
-								SynErr(CloseParenthesis);
-							else
-								Step();
-							reg += ")";
+							if (Expect(Literal))
+							{
+								reg += t.LiteralValue.ToString();
+								if (laKind != CloseParenthesis)
+									SynErr(CloseParenthesis);
+								else
+									Step();
+								reg += ")";
+							}
 						}
 						switch (reg)
 						{
@@ -4600,8 +4602,13 @@ namespace D_Parser.Parser
 									return new UnaryExpression_SegmentBase() { RegisterExpression = ex, UnaryExpression = ParseAsmExpression(Scope, Parent) };
 								}
 								break;
+							default:
+								// This check is required because of how ST registers are handled.
+								if (AsmRegisterExpression.IsRegister(reg))
+									return new AsmRegisterExpression() { Location = t.Location, EndLocation = t.EndLocation, Register = string.Intern(reg) };
+								SynErr(Identifier, "Unknown register!");
+								return IsEOF ? new TokenExpression(Incomplete) : null;
 						}
-						return new AsmRegisterExpression() { Location = t.Location, EndLocation = t.EndLocation, Register = string.Intern(reg) };
 					}
 					else
 					{
