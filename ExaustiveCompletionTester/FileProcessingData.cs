@@ -43,6 +43,12 @@ namespace ExaustiveCompletionTester
 						{
 							switch(str[i])
 							{
+								case ' ':
+								case '\t':
+									i++;
+									while (i < str.Length && (str[i] == ' ' || str[i] == '\t'))
+										i++;
+									goto BreakLoop;
 								case '\n':
 									line++;
 									lineStart = i + 1;
@@ -208,7 +214,7 @@ namespace ExaustiveCompletionTester
 					{
 						CodeCompletion.GenerateCompletionData(ed, g, 'a', true);
 					}
-					catch (OperationCanceledException e)
+					catch (OperationCanceledException)
 					{
 						TimeoutsTriggered.Add(i);
 					}
