@@ -398,26 +398,32 @@ namespace D_Parser.Misc.Mangling
 					{
 						case 'a':
 							r.Read();
+							nextChar = (char)r.Read();
 							attributes.Add(new Modifier(DTokens.Pure));
 							continue;
 						case 'b':
 							r.Read();
+							nextChar = (char)r.Read();
 							attributes.Add(new Modifier(DTokens.Nothrow));
 							continue;
 						case 'c':
 							r.Read();
+							nextChar = (char)r.Read();
 							attributes.Add(new Modifier(DTokens.Ref));
 							continue;
 						case 'd':
 							r.Read();
+							nextChar = (char)r.Read();
 							attributes.Add(new BuiltInAtAttribute(BuiltInAtAttribute.BuiltInAttributes.Property));
 							continue;
 						case 'e':
 							r.Read();
+							nextChar = (char)r.Read();
 							attributes.Add(new BuiltInAtAttribute(BuiltInAtAttribute.BuiltInAttributes.Trusted));
 							continue;
 						case 'f':
 							r.Read();
+							nextChar = (char)r.Read();
 							attributes.Add(new BuiltInAtAttribute(BuiltInAtAttribute.BuiltInAttributes.Safe));
 							continue;
 					}
