@@ -49,9 +49,12 @@ namespace D_Parser.Completion.Providers
 
 		void GenUfcsAndStaticProperties(AbstractType t)
 		{
-			if(t.NonStaticAccess && CompletionOptions.Instance.ShowUFCSItems)
-				foreach (var ufcsItem in UFCSResolver.TryResolveUFCS(t, 0, ed.CaretLocation, ctxt))
-					CompletionDataGenerator.Add ((ufcsItem as DSymbol).Definition);
+			if (t.NonStaticAccess && CompletionOptions.Instance.ShowUFCSItems)
+				CodeCompletion.DoTimeoutableCompletionTask(null, ctxt, () =>
+				{
+					foreach (var ufcsItem in UFCSResolver.TryResolveUFCS(t, 0, ed.CaretLocation, ctxt))
+						CompletionDataGenerator.Add((ufcsItem as DSymbol).Definition);
+				});
 			StaticProperties.ListProperties(CompletionDataGenerator, MemberFilter, t, t.NonStaticAccess);
 		}
 
