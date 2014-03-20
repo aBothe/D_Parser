@@ -638,7 +638,9 @@ namespace D_Parser.Resolver.TypeResolution
 			if (keepAliases)
 			{
 				var aliasTag = t.Tag as TypeResolution.TypeDeclarationResolver.AliasTag;
-				if (aliasTag != null)
+				if (aliasTag != null && 
+					(!(aliasTag.aliasDefinition is ImportSymbolAlias) || // Only if the import symbol alias definition was selected, go to its base
+					(aliasTag.typeBase != null && aliasTag.aliasDefinition.NameLocation != aliasTag.typeBase.Location)))
 					return aliasTag.aliasDefinition;
 			}
 
