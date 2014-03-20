@@ -30,6 +30,13 @@ namespace D_Parser.Resolver
 			if (t == null)
 				return;
 
+			if (pretty)
+			{
+				var aliasTag = t.Tag as TypeResolution.TypeDeclarationResolver.AliasTag;
+				if (aliasTag != null)
+					sb.Append(aliasTag.typeBase != null ? aliasTag.typeBase.ToString() : aliasTag.aliasDefinition.ToString(false, false)).Append('=');
+			}
+
 			if (t.Modifier != 0)
 				sb.Append(DTokens.GetTokenString(t.Modifier)).Append('(');
 
@@ -37,13 +44,6 @@ namespace D_Parser.Resolver
 
 			if (t.Modifier != 0)
 				sb.Append(')');
-
-			if (pretty)
-			{
-				var aliasTag = t.Tag as TypeResolution.TypeDeclarationResolver.AliasTag;
-				if (aliasTag != null)
-					sb.Append(" (").Append(aliasTag.typeBase != null ? aliasTag.typeBase.ToString() : aliasTag.aliasDefinition.ToString(false, false)).Append(")");
-			}
 		}
 
 		public void VisitPrimitiveType(PrimitiveType t)
