@@ -143,7 +143,7 @@ namespace D_Parser.Completion
 		/// <param name="cdgen">Can be null.</param>
 		/// <param name="ctxt"></param>
 		/// <param name="ac"></param>
-		internal static void DoTimeoutableCompletionTask(ICompletionDataGenerator cdgen,ResolutionContext ctxt, Action ac)
+		public static void DoTimeoutableCompletionTask(ICompletionDataGenerator cdgen,ResolutionContext ctxt, Action ac)
 		{
 			ctxt.CancelOperation = false;
 
