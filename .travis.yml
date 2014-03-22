@@ -1,9 +1,13 @@
 ## Travis CI Integration
 
+notifications:
+#  email: false
+  irc: "chat.freenode.net#d.mono-d"
+
 language: c
 
 before_install:
- - sudo deb http://ppa.launchpad.net/inizan-yannick/mono/ubuntu trusty main 
+ - sudo add-apt-repository ppa:inizan-yannick/mono trusty main 
 install:
   - sudo apt-get install mono nunit-console
 script:
