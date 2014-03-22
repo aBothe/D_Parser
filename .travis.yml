@@ -3,7 +3,8 @@
 language: c
 
 install:
-  - sudo apt-get install mono-devel mono-gmcs nunit-console
+  - sudo add-apt-repository ppa:inizan-yannick/mono
+  - sudo apt-get install mono nunit-console
 script:
   - xbuild DParser2.Unittest.sln
   - nunit-console Tests/bin/Debug/Tests.dll
