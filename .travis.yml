@@ -2,8 +2,9 @@
 
 language: c
 
+before_install:
+ - sudo deb http://ppa.launchpad.net/inizan-yannick/mono/ubuntu trusty main 
 install:
-  - sudo add-apt-repository ppa:inizan-yannick/mono
   - sudo apt-get install mono nunit-console
 script:
   - xbuild DParser2.Unittest.sln
