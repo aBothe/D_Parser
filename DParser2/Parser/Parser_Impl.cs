@@ -2687,8 +2687,8 @@ namespace D_Parser.Parser
 
 				if (ad != null && ad.KeyExpression == null)
 				{
-					if (ad.KeyType != null)
-						SemErr(ad.KeyType is DTokenDeclaration ? (ad.KeyType as DTokenDeclaration).Token : CloseSquareBracket, "Size of array expected, not type " + ad.KeyType);
+					if (ad.KeyType == null)
+						SemErr(CloseSquareBracket, "Size of array expected");
 				}
 
 				initExpr.Arguments = args.ToArray();
