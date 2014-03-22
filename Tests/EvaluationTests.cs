@@ -18,14 +18,19 @@ namespace Tests
 	[TestFixture]
 	public class EvaluationTests
 	{
+		public static AbstractSymbolValueProvider GetDefaultSymbolVP()
+		{
+			return new StandardValueProvider(new ResolutionContext(new ParseCacheView(new string[0]), null));
+		}
+
 		public static ISymbolValue E(string expression, AbstractSymbolValueProvider vp=null)
 		{
-			return Evaluation.EvaluateValue(DParser.ParseExpression(expression), vp);
+			return Evaluation.EvaluateValue(DParser.ParseExpression(expression), vp ?? GetDefaultSymbolVP());
 		}
 
 		public static PrimitiveValue GetPrimitiveValue(string literalCode,AbstractSymbolValueProvider vp=null)
 		{
-			var v = E(literalCode,vp);
+			var v = E(literalCode,vp ?? GetDefaultSymbolVP());
 
 			Assert.That(v,Is.TypeOf(typeof(PrimitiveValue)));
 			return (PrimitiveValue)v;
@@ -33,7 +38,7 @@ namespace Tests
 
 		public static void TestPrimitive(string literal, int btToken, object val, AbstractSymbolValueProvider vp=null)
 		{
-			var pv = GetPrimitiveValue(literal,vp);
+			var pv = GetPrimitiveValue(literal, vp ?? GetDefaultSymbolVP());
 
 			Assert.That(pv.BaseTypeToken, Is.EqualTo(btToken));
 			Assert.That(pv.Value, Is.EqualTo(val));
