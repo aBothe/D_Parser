@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
@@ -691,18 +692,21 @@ namespace D_Parser.Parser
 			return ret;
 		}
 
-		public INode[] Declaration(IBlockNode Scope)
+		public IEnumerable<INode> Declaration(IBlockNode Scope)
 		{
 			CheckForStorageClasses (Scope);
-
+			
 			switch (laKind)
 			{
 				case Alias:
 				case Typedef:
-					return AliasDeclaration (Scope);
+					foreach (var e in AliasDeclaration(Scope))
+						yield return e;
+					break;
 				case Struct:
 				case Union:
-					return new[]{ AggregateDeclaration (Scope) };
+					yield return AggregateDeclaration (Scope);
+					break;
 				case Enum:
 					Step ();
 
@@ -714,7 +718,8 @@ namespace D_Parser.Parser
 								case DTokens.Semicolon: // enum E;
 								case DTokens.Colon: // enum E : int {...}
 								case DTokens.OpenCurlyBrace: // enum E {...}
-									return new[]{ EnumDeclaration (Scope) };
+									yield return EnumDeclaration (Scope);
+									yield break;
 							}
 							break;
 
@@ -724,26 +729,32 @@ namespace D_Parser.Parser
 						case DTokens.Semicolon: // enum;
 						case DTokens.Colon: // enum : int {...}
 						case DTokens.OpenCurlyBrace: // enum {...}
-							return new[]{ EnumDeclaration (Scope) };
+							yield return EnumDeclaration (Scope);
+							yield break;
 					}
 
 					var enumAttr = new Modifier (DTokens.Enum) { Location = t.Location, EndLocation = t.EndLocation };
 					PushAttribute (enumAttr, false);
-					var l = Decl (Scope, enumAttr);
-					return l != null ? l.ToArray () : null;
+					foreach (var i in Decl (Scope, enumAttr))
+						yield return i;
+					break;
 				case Class:
-					return new[]{ ClassDeclaration (Scope) };
+					yield return ClassDeclaration (Scope);
+					break;
 				case Template:
-					return new[]{ TemplateDeclaration (Scope) };
+					yield return TemplateDeclaration (Scope);
+					break;
 				case Mixin:
 					if (Peek(1).Kind == Template)
 						goto case Template;
 					goto default;
 				case Interface:
-					return new[]{ InterfaceDeclaration (Scope) };
+					yield return InterfaceDeclaration (Scope);
+					break;
 				case Ref:
-					var dl = Decl(Scope);
-					return dl != null ? dl.ToArray () : null;
+					foreach (var i in Decl(Scope))
+						yield return i;
+					break;
 				default:
 					if (IsBasicType())
 						goto case Ref;
@@ -751,44 +762,46 @@ namespace D_Parser.Parser
 					{
 						if (CheckForStorageClasses(Scope))
 							goto case Ref;
-						dl = Decl(Scope);
-						if (dl != null)
+						foreach (var i in Decl(Scope))
 						{
-							dl[dl.Count - 1].NameHash = 0;
-							return dl.ToArray();
+							// If we're at EOF, there should only be exactly 1 node returned
+							i.NameHash = 0;
+							yield return i;
 						}
+						break;
 					}
 					SynErr(laKind,"Declaration expected, not "+GetTokenString(laKind));
 					Step();
-					return null;
+					break;
 			}
 		}
 
-		INode[] AliasDeclaration(IBlockNode Scope)
+		IEnumerable<INode> AliasDeclaration(IBlockNode Scope)
 		{
 			Step();
 			// _t is just a synthetic node which holds possible following attributes
 			var _t = new DVariable();
 			ApplyAttributes(_t);
 			_t.Description = GetComments();
-			List<INode> decls;
 
 			// AliasThis
 			if ((laKind == Identifier && Lexer.CurrentPeekToken.Kind == This) ||
-				(laKind == This && Lexer.CurrentPeekToken.Kind == Assign))
-				return new[]{AliasThisDeclaration(_t, Scope)};
+				(laKind == This && Lexer.CurrentPeekToken.Kind == Assign)){
+				yield return AliasThisDeclaration(_t, Scope);
+				yield break;
+			}
 
 			// AliasInitializerList
 			else if(laKind == Identifier && (Lexer.CurrentPeekToken.Kind == Assign || 
 				(Lexer.CurrentPeekToken.Kind == OpenParenthesis && OverPeekBrackets(OpenParenthesis) && Lexer.CurrentPeekToken.Kind == Assign)))
 			{
-				decls = new List<INode>();
+				DVariable dv = null;
 				do{
 					if(laKind == Comma)
 						Step();
 					if(!Expect(Identifier))
 						break;
-					var dv = new DVariable{
+					dv = new DVariable{
 						IsAlias = true,
 						Attributes = _t.Attributes,
 						Description = _t.Description,
@@ -820,33 +833,28 @@ namespace D_Parser.Parser
 						else
 							Lexer.PopLookAheadBackup();
 					}
-					decls.Add(dv);
+					yield return dv;
 				}
 				while(laKind == Comma);
 
 				Expect(Semicolon);
-				decls[decls.Count-1].Description += CheckForPostSemicolonComment();
-				return decls.ToArray();
+				if(dv != null)
+					dv.Description += CheckForPostSemicolonComment();
+				yield break;
 			}
 
 			// alias BasicType Declarator
-			decls=Decl(Scope, laKind != Identifier || Lexer.CurrentPeekToken.Kind != OpenParenthesis ? null : new Modifier(DTokens.Alias));
-
-			if(decls!=null){
-				foreach (var n in decls) {
-					var dv = n as DVariable;
-					if (dv != null) {
-						if (n.NameHash == DTokens.IncompleteIdHash && n.Type == null) // 'alias |' shall trigger completion, 'alias int |' not
-							n.NameHash = 0;
-						dv.Attributes.AddRange (_t.Attributes);
-						dv.IsAlias = true;
-					}
+			foreach(var n in Decl(Scope, laKind != Identifier || Lexer.CurrentPeekToken.Kind != OpenParenthesis ? null : new Modifier(DTokens.Alias)))
+			{
+				var dv = n as DVariable;
+				if (dv != null) {
+					if (n.NameHash == DTokens.IncompleteIdHash && n.Type == null) // 'alias |' shall trigger completion, 'alias int |' not
+						n.NameHash = 0;
+					dv.Attributes.AddRange (_t.Attributes);
+					dv.IsAlias = true;
 				}
-
-				decls[decls.Count-1].Description += CheckForPostSemicolonComment();
-				return decls.ToArray ();
+				yield return n;
 			}
-			return null;
 		}
 
 		DVariable AliasThisDeclaration(DVariable initiallyParsedNode, IBlockNode Scope)
@@ -899,7 +907,7 @@ namespace D_Parser.Parser
 			return dv;
 		}
 
-		List<INode> Decl(IBlockNode Scope, DAttribute StorageClass = null)
+		IEnumerable<INode> Decl(IBlockNode Scope, DAttribute StorageClass = null)
 		{
 			var startLocation = la.Location;
 			var initialComment = GetComments();
@@ -947,17 +955,17 @@ namespace D_Parser.Parser
 					if (tix.Arguments == null || tix.Arguments.Length == 0 ||
 					    (tix.Arguments [tix.Arguments.Length - 1] is TokenExpression &&
 					    (tix.Arguments [tix.Arguments.Length - 1] as TokenExpression).Token == DTokens.INVALID)) {
-						return null;
+							yield break;
 					}
 				} else if (ttd is MemberFunctionAttributeDecl && (ttd as MemberFunctionAttributeDecl).InnerType == null) {
-					return null;
+					yield break;
 				}
 			}
 
 			// Declarators
 			var firstNode = Declarator(ttd,false, Scope);
 			if (firstNode == null)
-				return null;
+				yield break;
 			firstNode.Description = initialComment;
 			firstNode.Location = startLocation;
 
@@ -977,15 +985,15 @@ namespace D_Parser.Parser
 						dv.Initializer = init;
 				}
 				firstNode.EndLocation = t.EndLocation;
-				var ret = new List<INode>();
-				ret.Add(firstNode);
+				yield return firstNode;
 
 				// DeclaratorIdentifierList
+				var otherNode = firstNode;
 				while (laKind == Comma)
 				{
 					Step();
 					if (IsEOF || Expect (Identifier)) {
-						var otherNode = new DVariable ();
+						otherNode = new DVariable ();
 
 						// Note: In DDoc, all declarations that are made at once (e.g. int a,b,c;) get the same pre-declaration-description!
 						otherNode.Description = initialComment;
@@ -1002,10 +1010,10 @@ namespace D_Parser.Parser
 							TemplateParameterList (otherNode);
 
 						if (laKind == Assign)
-							otherNode.Initializer = Initializer (Scope);
+							(otherNode as DVariable).Initializer = Initializer (Scope);
 
 						otherNode.EndLocation = t.EndLocation;
-						ret.Add (otherNode);
+						yield return otherNode;
 					} else
 						break;
 				}
@@ -1013,10 +1021,9 @@ namespace D_Parser.Parser
 				Expect(Semicolon);
 
 				// Note: In DDoc, only the really last declaration will get the post semicolon comment appended
-				if (ret.Count > 0)
-					ret[ret.Count - 1].Description += CheckForPostSemicolonComment();
+				otherNode.Description += CheckForPostSemicolonComment();
 
-				return ret;
+				yield break;
 			}
 
 			// BasicType Declarator FunctionBody
@@ -1028,19 +1035,14 @@ namespace D_Parser.Parser
 
 				firstNode.Description += CheckForPostSemicolonComment();
 
-				var ret = new List<INode> ();
-				ret.Add (firstNode);
-				if (Scope is DMethod)
-					Scope.Add(firstNode);
-				return ret;
+				yield return firstNode;
+				yield break;
 			}
 			else
 				SynErr(OpenCurlyBrace, "; or function body expected after declaration stub.");
 
 			if (IsEOF)
-				return new List<INode>{ firstNode };
-
-			return null;
+				yield return firstNode;
 		}
 
 		bool IsBasicType()
@@ -4004,7 +4006,7 @@ namespace D_Parser.Parser
 				case Alias:
 				case Typedef:
 					var ds = new DeclarationStatement() { Location = la.Location, Parent = Parent, ParentNode = Scope };
-					ds.Declarations = Declaration(Scope);
+					ds.Declarations = Declaration(Scope).ToArray();
 
 					if (ds.Declarations != null && 
 						ds.Declarations.Length == 1 && 
