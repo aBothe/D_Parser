@@ -54,8 +54,15 @@ namespace D_Parser.Completion
 		
 		protected override bool HandleItem(INode n)
 		{
-			if (n.NameHash == 0)
-				return false;
+			switch (n.NameHash)
+			{
+				case -1:
+				case 0:
+				case 1:
+					return false;
+				default:
+					break;
+			}
 
 			var dv = n as DVariable;
 			if(isVarInst || !(n is DMethod || dv != null || n is TemplateParameter.Node) || 
