@@ -488,7 +488,23 @@ struct Foo
 
 			Assert.That (t, Is.TypeOf(typeof(PrimitiveType)));
 		}
-		
+
+		[Test]
+		public void PtrStaticProp()
+		{
+			var ctxt = CreateCtxt("A", @"module A; ubyte[] arr;");
+
+			AbstractType t;
+			IExpression x;
+
+			x = DParser.ParseExpression("arr.ptr");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(StaticProperty)));
+			t = (t as StaticProperty).Base;
+			Assert.That(t, Is.TypeOf(typeof(PointerType)));
+			Assert.That((t as PointerType).Base, Is.TypeOf(typeof(PrimitiveType)));
+		}
+
 		[Test]
 		public void SwitchLocals()
 		{

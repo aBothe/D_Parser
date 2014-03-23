@@ -21,13 +21,19 @@ namespace D_Parser.Resolver
 
 			public Func<AbstractType, DNode> NodeGetter;
 			public Func<AbstractType, ITypeDeclaration> TypeGetter;
+			public Func<AbstractType, AbstractType> ResolvedBaseTypeGetter;
 			public ValueGetterHandler ValueGetter;
 
 			public StaticPropertyInfo(string name, string desc, string baseTypeId)
 			{ Name = name; Description = desc; OverrideType = new IdentifierDeclaration(baseTypeId); }
 
 			public StaticPropertyInfo(string name, string desc, byte primitiveType)
-			{ Name = name; Description = desc; OverrideType = new DTokenDeclaration(primitiveType); }
+			{ 
+				Name = name;
+				Description = desc; 
+				OverrideType = new DTokenDeclaration(primitiveType); 
+				ResolvedBaseTypeGetter = (t) => new PrimitiveType(primitiveType) { NonStaticAccess = RequireThis }; 
+			}
 
 			public StaticPropertyInfo(string name, string desc, ITypeDeclaration overrideType = null)
 			{ Name = name; Description = desc; OverrideType = overrideType; }
@@ -82,7 +88,7 @@ namespace D_Parser.Resolver
 			var props = new Dictionary<int, StaticPropertyInfo>();
 			Properties[PropOwnerType.Generic] = props;
 
-			props.AddProp(new StaticPropertyInfo("init", "A type's or variable's static initializer expression") { TypeGetter = help_ReflectType });
+			props.AddProp(new StaticPropertyInfo("init", "A type's or variable's static initializer expression") { TypeGetter = help_ReflectType, ResolvedBaseTypeGetter = help_ReflectResolvedType });
 			props.AddProp(new StaticPropertyInfo("sizeof", "Size of a type or variable in bytes", DTokens.Uint)); // Do not define it as size_t due to unnecessary recursive definition as typeof(int.sizeof)
 			props.AddProp(new StaticPropertyInfo("alignof", "Variable offset", DTokens.Uint) { RequireThis = true });
 			props.AddProp(new StaticPropertyInfo("mangleof", "String representing the ‘mangled’ representation of the type", "string"));
@@ -93,26 +99,26 @@ namespace D_Parser.Resolver
 			props = new Dictionary<int, StaticPropertyInfo>();
 			Properties[PropOwnerType.Integral] = props;
 
-			props.AddProp(new StaticPropertyInfo("max", "Maximum value") { TypeGetter = help_ReflectType });
-			props.AddProp(new StaticPropertyInfo("min", "Minimum value") { TypeGetter = help_ReflectType });
+			props.AddProp(new StaticPropertyInfo("max", "Maximum value") { TypeGetter = help_ReflectType, ResolvedBaseTypeGetter = help_ReflectResolvedType });
+			props.AddProp(new StaticPropertyInfo("min", "Minimum value") { TypeGetter = help_ReflectType, ResolvedBaseTypeGetter = help_ReflectResolvedType });
 
 
 
 			props = new Dictionary<int, StaticPropertyInfo>();
 			Properties[PropOwnerType.FloatingPoint] = props;
 
-			props.AddProp(new StaticPropertyInfo("infinity", "Infinity value") { TypeGetter = help_ReflectType });
-			props.AddProp(new StaticPropertyInfo("nan", "Not-a-Number value") { TypeGetter = help_ReflectType });
+			props.AddProp(new StaticPropertyInfo("infinity", "Infinity value") { TypeGetter = help_ReflectType, ResolvedBaseTypeGetter = help_ReflectResolvedType });
+			props.AddProp(new StaticPropertyInfo("nan", "Not-a-Number value") { TypeGetter = help_ReflectType, ResolvedBaseTypeGetter = help_ReflectResolvedType });
 			props.AddProp(new StaticPropertyInfo("dig", "Number of decimal digits of precision", DTokens.Int));
-			props.AddProp(new StaticPropertyInfo("epsilon", "Smallest increment to the value 1") { TypeGetter = help_ReflectType });
+			props.AddProp(new StaticPropertyInfo("epsilon", "Smallest increment to the value 1") { TypeGetter = help_ReflectType, ResolvedBaseTypeGetter = help_ReflectResolvedType });
 			props.AddProp(new StaticPropertyInfo("mant_dig", "Number of bits in mantissa", DTokens.Int));
 			props.AddProp(new StaticPropertyInfo("max_10_exp", "Maximum int value such that 10^max_10_exp is representable", DTokens.Int));
 			props.AddProp(new StaticPropertyInfo("max_exp", "Maximum int value such that 2^max_exp-1 is representable", DTokens.Int));
 			props.AddProp(new StaticPropertyInfo("min_10_exp", "Minimum int value such that 10^max_10_exp is representable", DTokens.Int));
 			props.AddProp(new StaticPropertyInfo("min_exp", "Minimum int value such that 2^max_exp-1 is representable", DTokens.Int));
 			props.AddProp(new StaticPropertyInfo("min_normal", "Number of decimal digits of precision", DTokens.Int));
-			props.AddProp(new StaticPropertyInfo("re", "Real part") { TypeGetter = help_ReflectType, RequireThis = true });
-			props.AddProp(new StaticPropertyInfo("in", "Imaginary part") { TypeGetter = help_ReflectType, RequireThis = true });
+			props.AddProp(new StaticPropertyInfo("re", "Real part") { TypeGetter = help_ReflectType, ResolvedBaseTypeGetter = help_ReflectResolvedType, RequireThis = true });
+			props.AddProp(new StaticPropertyInfo("in", "Imaginary part") { TypeGetter = help_ReflectType, ResolvedBaseTypeGetter = help_ReflectResolvedType, RequireThis = true });
 
 
 
@@ -127,11 +133,15 @@ namespace D_Parser.Resolver
 					return new PrimitiveValue(DTokens.Int, av.Elements != null ? av.Elements.Length : 0, null, 0m); 
 				}});
 
-			props.AddProp(new StaticPropertyInfo("dup", "Create a dynamic array of the same size and copy the contents of the array into it.") { TypeGetter = help_ReflectType, RequireThis = true });
+			props.AddProp(new StaticPropertyInfo("dup", "Create a dynamic array of the same size and copy the contents of the array into it.") { TypeGetter = help_ReflectType, ResolvedBaseTypeGetter = help_ReflectResolvedType, RequireThis = true });
 			props.AddProp(new StaticPropertyInfo("idup", "D2.0 only! Creates immutable copy of the array") { TypeGetter = t => new MemberFunctionAttributeDecl (DTokens.Immutable) { InnerType = help_ReflectType (t) }, RequireThis = true });
-			props.AddProp(new StaticPropertyInfo("reverse", "Reverses in place the order of the elements in the array. Returns the array.") { TypeGetter = help_ReflectType, RequireThis = true });
-			props.AddProp(new StaticPropertyInfo("sort", "Sorts in place the order of the elements in the array. Returns the array.") { TypeGetter = help_ReflectType, RequireThis = true });
-			props.AddProp(new StaticPropertyInfo("ptr", "Returns pointer to the array") { TypeGetter = t => new PointerDecl (DTypeToTypeDeclVisitor.GenerateTypeDecl(t)), RequireThis = true });
+			props.AddProp(new StaticPropertyInfo("reverse", "Reverses in place the order of the elements in the array. Returns the array.") { TypeGetter = help_ReflectType, ResolvedBaseTypeGetter = help_ReflectResolvedType, RequireThis = true });
+			props.AddProp(new StaticPropertyInfo("sort", "Sorts in place the order of the elements in the array. Returns the array.") { TypeGetter = help_ReflectType, ResolvedBaseTypeGetter = help_ReflectResolvedType, RequireThis = true });
+			props.AddProp(new StaticPropertyInfo("ptr", "Returns pointer to the array") { 
+				ResolvedBaseTypeGetter = t => new PointerType((t as DerivedDataType).Base, t.DeclarationOrExpressionBase),
+				TypeGetter = t => new PointerDecl (DTypeToTypeDeclVisitor.GenerateTypeDecl((t as DerivedDataType).Base)), 
+				RequireThis = true 
+			});
 
 
 
@@ -141,7 +151,7 @@ namespace D_Parser.Resolver
 			props.AddProp(new StaticPropertyInfo("length", "Returns number of values in the associative array. Unlike for dynamic arrays, it is read-only.", "size_t") { RequireThis = true });
 			props.AddProp(new StaticPropertyInfo("keys", "Returns dynamic array, the elements of which are the keys in the associative array.") { TypeGetter = t => new ArrayDecl { ValueType = DTypeToTypeDeclVisitor.GenerateTypeDecl((t as AssocArrayType).KeyType) }, RequireThis = true });
 			props.AddProp(new StaticPropertyInfo("values", "Returns dynamic array, the elements of which are the values in the associative array.") { TypeGetter = t => new ArrayDecl { ValueType = DTypeToTypeDeclVisitor.GenerateTypeDecl((t as AssocArrayType).ValueType) }, RequireThis = true });
-			props.AddProp(new StaticPropertyInfo("rehash", "Reorganizes the associative array in place so that lookups are more efficient. rehash is effective when, for example, the program is done loading up a symbol table and now needs fast lookups in it. Returns a reference to the reorganized array.") { TypeGetter = help_ReflectType, RequireThis = true });
+			props.AddProp(new StaticPropertyInfo("rehash", "Reorganizes the associative array in place so that lookups are more efficient. rehash is effective when, for example, the program is done loading up a symbol table and now needs fast lookups in it. Returns a reference to the reorganized array.") { TypeGetter = help_ReflectType, ResolvedBaseTypeGetter = help_ReflectResolvedType, RequireThis = true });
 			props.AddProp(new StaticPropertyInfo("byKey", "Returns a delegate suitable for use as an Aggregate to a ForeachStatement which will iterate over the keys of the associative array.") { TypeGetter = t => new DelegateDeclaration() { ReturnType = new ArrayDecl() { ValueType = DTypeToTypeDeclVisitor.GenerateTypeDecl((t as AssocArrayType).KeyType) } }, RequireThis = true });
 			props.AddProp(new StaticPropertyInfo("byValue", "Returns a delegate suitable for use as an Aggregate to a ForeachStatement which will iterate over the values of the associative array.") { TypeGetter = t => new DelegateDeclaration() { ReturnType = new ArrayDecl() { ValueType = DTypeToTypeDeclVisitor.GenerateTypeDecl((t as AssocArrayType).ValueType) } }, RequireThis = true });
 			props.AddProp(new StaticPropertyInfo("get", null)
@@ -222,6 +232,11 @@ namespace D_Parser.Resolver
 		static ITypeDeclaration help_ReflectType(AbstractType t)
 		{
 			return DTypeToTypeDeclVisitor.GenerateTypeDecl(t);
+		}
+
+		static AbstractType help_ReflectResolvedType(AbstractType t)
+		{
+			return t;
 		}
 		#endregion
 
@@ -312,7 +327,16 @@ namespace D_Parser.Resolver
 			if (props.TryGetValue(propName, out prop) || (Properties.TryGetValue(GetOwnerType(t), out props) && props.TryGetValue(propName, out prop)))
 			{
 				var n = prop.GenerateRepresentativeNode(t);
-				return new StaticProperty(n, n.Type != null ? TypeDeclarationResolver.ResolveSingle(n.Type, ctxt) : null, prop.ValueGetter);
+
+				AbstractType baseType;
+				if (prop.ResolvedBaseTypeGetter != null)
+					baseType = prop.ResolvedBaseTypeGetter(t);
+				else if (n.Type != null)
+					baseType = TypeDeclarationResolver.ResolveSingle(n.Type, ctxt);
+				else
+					baseType = null;
+
+				return new StaticProperty(n, baseType, prop.ValueGetter);
 			}
 
 			return null;
