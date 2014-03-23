@@ -1,7 +1,9 @@
-﻿using System;
+﻿using D_Parser.Dom;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using D_Parser.Resolver.ExpressionSemantics;
 
 namespace D_Parser.Resolver.ResolutionHooks
 {
@@ -9,6 +11,6 @@ namespace D_Parser.Resolver.ResolutionHooks
 	{
 		string HookedSymbol { get; }
 		bool SupersedesMultipleOverloads { get; }
-		AbstractType TryDeduce(DSymbol ds, IEnumerable<ISemantic> templateArguments);
+		AbstractType TryDeduce(DSymbol ds, IEnumerable<ISemantic> templateArguments, ref INode returnedNode);
 	}
 }

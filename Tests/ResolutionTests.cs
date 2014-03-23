@@ -3223,6 +3223,38 @@ void CFoo() {}");
 		}
 
 		[Test]
+		public void BitfieldsHook()
+		{
+			var ctxt = CreateCtxt("A", @"module A;
+import std.bitmanip;
+
+struct S {
+    int a;
+    mixin(bitfields!(
+        uint, ""x"",    2,
+        int*,  ""y"",    3,
+        uint[], ""z"",    2,
+        bool, ""flag"", 1));
+}
+
+S s;
+		", @"module std.bitmanip;
+
+template bitfields(T...)
+{
+    enum { bitfields = createFields!(createStoreName!(T), 0, T).result }
+}
+");
+
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression("s.x");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(PrimitiveType)));
+		}
+
+		[Test]
 		public void TemplateAliasParams()
 		{
 			var ctxt = CreateCtxt("A", @"module A;
