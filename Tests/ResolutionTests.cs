@@ -367,6 +367,81 @@ class Blah(T){ T b; }");
 			Assert.That(t, Is.TypeOf(typeof(ArrayType)));
 		}
 
+		[Test]
+		public void InMethodDeclScopes()
+		{
+			var ctxt = CreateCtxt("A", @"module A;
+
+void main()
+{
+    enum PixelFlags : uint
+    {
+        AlphaPixels = 0x01,
+        Alpha = 0x02,
+        FourCC = 0x04,
+        RGB = 0x40,
+        YUV = 0x200,
+        Luminance = 0x20000,
+    }
+
+    enum FourCC : uint
+    {
+        DXT1,
+        DXT2,
+        DXT3,
+        DXT4,
+        DXT5,
+        DX10,
+    }
+
+    static struct DDS_PixelFormat
+    {
+    align(1):
+        uint size;
+        PixelFlags flags;
+        FourCC fourCC;
+        uint rgbBitCount;
+        uint rBitMask;
+        uint gBitMask;
+        uint bBitMask;
+        uint aBitMask;
+    }
+
+    static struct DDS_Header
+    {
+    align(1):
+        uint size;
+        uint flags;
+        uint height;
+        uint width;
+        uint pitchOrLinearSize;
+        uint depth;
+        uint mipMapCount;
+        uint[11] reserved1;
+        DDS_PixelFormat pixFormat;
+        uint caps;
+        uint caps2;
+        uint caps3;
+        uint caps4;
+        uint reserved2;
+    }
+}
+");
+
+			var A = ctxt.ParseCache[0]["A"];
+			var main = A["main"].First() as DMethod;
+			var DDS_Header = main["DDS_Header"].First() as DClassLike;
+			var pixFormat = DDS_Header["pixFormat"].First() as DVariable;
+
+			ctxt.CurrentContext.Set(DDS_Header);
+
+			AbstractType t;
+			ITypeDeclaration td;
+
+			t = TypeDeclarationResolver.ResolveSingle(pixFormat.Type, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(StructType)));
+		}
+
 		/// <summary>
 		/// Accessing a non-static field without a this reference is only allowed in certain contexts:
 		/// 		Accessing non-static fields used to be allowed in many contexts, but is now limited to only a few:

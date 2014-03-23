@@ -4006,6 +4006,11 @@ namespace D_Parser.Parser
 					var ds = new DeclarationStatement() { Location = la.Location, Parent = Parent, ParentNode = Scope };
 					ds.Declarations = Declaration(Scope);
 
+					if (ds.Declarations != null && 
+						ds.Declarations.Length == 1 && 
+						!(ds.Declarations[0] is DVariable))
+						Scope.Add(ds.Declarations[0]);
+
 					ds.EndLocation = t.EndLocation;
 					return ds;
 				default:
