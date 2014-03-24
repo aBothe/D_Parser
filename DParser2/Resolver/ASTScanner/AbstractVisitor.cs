@@ -698,19 +698,19 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					if (ast == null)
 						return false;
 
-					var blockUpward = ctxt.ScopedBlock == mx.ParentNode.NodeRoot;
+					if(vv != null)
+						ctxt.CurrentContext.IntroduceTemplateParameterTypes(vv.Member);
 
-					using (vv != null ? ctxt.Push(vv.Member) : null)
-					{
-						// take ast.Endlocation because the cursor must be beyond the actual mixin expression 
-						// - and therewith _after_ each declaration
-						if (blockUpward)
-							return v.ScanBlockUpward(ast, ast.EndLocation, vis);
-						else
-						{
-							return v.scanChildren(ast, vis, isMixinAst: true);
-						}
-					}
+					// take ast.Endlocation because the cursor must be beyond the actual mixin expression 
+					// - and therewith _after_ each declaration
+					var res = ctxt.ScopedBlock == mx.ParentNode.NodeRoot ? 
+						v.ScanBlockUpward(ast, ast.EndLocation, vis) : 
+						v.scanChildren(ast, vis, isMixinAst: true);
+
+					if (vv != null)
+						ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(vv.Member);
+
+					return res;
 				}
 				else // => MixinStatement
 				{
@@ -720,8 +720,15 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					// and 2) the caret must be located somewhere after the mixin statement's end
 					if (bs != null)
 					{
-						using(vv != null ? ctxt.Push(vv.Member) : null)
-							return v.ScanStatementHierarchy(bs, CodeLocation.Empty, vis);
+						if (vv != null)
+							ctxt.CurrentContext.IntroduceTemplateParameterTypes(vv.Member);
+
+						var res = v.ScanStatementHierarchy(bs, CodeLocation.Empty, vis);
+
+						if (vv != null)
+							ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(vv.Member);
+
+						return res;
 					}
 				}
 

@@ -3279,7 +3279,8 @@ template bitfields(T...)
 
 			x = DParser.ParseExpression("s.x");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.That(t, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
+			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 		}
 
 		[Test]

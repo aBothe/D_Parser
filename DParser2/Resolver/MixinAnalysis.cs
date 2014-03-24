@@ -99,6 +99,8 @@ namespace D_Parser.Resolver
 			
 			if(ast == null)
 				return null;
+
+			ast.Parent = mx.ParentNode;
 			
 			foreach(var ch in ast)
 			{
