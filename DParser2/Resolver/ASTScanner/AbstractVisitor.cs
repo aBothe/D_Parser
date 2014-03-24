@@ -703,9 +703,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 					// take ast.Endlocation because the cursor must be beyond the actual mixin expression 
 					// - and therewith _after_ each declaration
-					var res = ctxt.ScopedBlock == mx.ParentNode.NodeRoot ? 
-						v.ScanBlockUpward(ast, ast.EndLocation, vis) : 
-						v.scanChildren(ast, vis, isMixinAst: true);
+					var res = v.scanChildren(ast, vis, isMixinAst: true);
 
 					if (vv != null)
 						ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(vv.Member);

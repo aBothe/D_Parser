@@ -30,7 +30,7 @@ namespace D_Parser.Resolver
 				{
 					if(mx.ParentNode.NodeRoot == pk.ParentNode.NodeRoot)
 					{
-						if(mx == pk || mx.Location > pk.Location)
+						if(mx == pk || mx.Location >= pk.Location)
 							return false;
 						break;
 					}
