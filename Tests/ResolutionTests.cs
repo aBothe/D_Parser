@@ -558,6 +558,34 @@ int a;
 		}
 
 		[Test]
+		public void StaticProperties_TupleOf()
+		{
+			var ctxt = CreateCtxt("A", @"module A;
+enum mstr = ""int* a; string b;"";
+
+struct S
+{
+	int c;
+	mixin(mstr);
+}
+
+S s;
+");
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression("s.tupleof");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(StaticProperty)));
+			Assert.That((t as StaticProperty).Base, Is.TypeOf(typeof(DTuple)));
+			var dtuple = (t as StaticProperty).Base as DTuple;
+			Assert.That(dtuple.Items.Length, Is.EqualTo(3));
+			Assert.That(dtuple.Items[0], Is.TypeOf(typeof(PrimitiveType)));
+			Assert.That(dtuple.Items[1], Is.TypeOf(typeof(PointerType)));
+			Assert.That(dtuple.Items[2], Is.TypeOf(typeof(ArrayType)));
+		}
+
+		[Test]
 		public void ParamArgMatching1()
 		{
 			var ctxt = CreateCtxt ("A", @"module A;

@@ -17,8 +17,6 @@ namespace D_Parser.Resolver
 			return t != null ? new DTypeToTypeDeclVisitor().AcceptType(t) : null;
 		}
 
-		private DTypeToTypeDeclVisitor() { }
-
 		ITypeDeclaration AcceptType(AbstractType t)
 		{
 			if (t == null)

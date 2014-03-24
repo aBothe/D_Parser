@@ -73,6 +73,8 @@ namespace D_Parser.Resolver
 			AssocArray,
 			Delegate,
 			TypeTuple,
+			Struct,
+			StructElement
 		}
 		#endregion
 
@@ -228,6 +230,55 @@ namespace D_Parser.Resolver
 			Properties[PropOwnerType.ClassLike] = props;
 
 			props.AddProp(new StaticPropertyInfo("classinfo", "Information about the dynamic type of the class", (ITypeDeclaration)new IdentifierDeclaration("TypeInfo_Class") { ExpressesVariableAccess = true, InnerDeclaration = new IdentifierDeclaration("object") }) { RequireThis = true });
+
+			props = new Dictionary<int, StaticPropertyInfo>();
+			Properties[PropOwnerType.Struct] = props;
+
+			props.AddProp(new StaticPropertyInfo("sizeof", "Size in bytes of struct", DTokens.Uint));
+			props.AddProp(new StaticPropertyInfo("alignof", "Size boundary struct needs to be aligned on", DTokens.Uint));
+			props.AddProp(new StaticPropertyInfo("tupleof", "Gets type tuple of fields")
+			{
+				TypeGetter = (t, ctxt) =>
+				{
+					var members = GetStructMembers(t as StructType, ctxt);
+					var l = new List<IExpression>();
+
+					var vis = new DTypeToTypeDeclVisitor();
+					foreach (var member in members)
+					{
+						var mt = DResolver.StripMemberSymbols(member);
+						if(mt == null){
+							l.Add(null);
+							continue;
+						}
+						var td = mt.Accept(vis);
+						if (td == null)
+						{
+							l.Add(null);
+							continue;
+						}
+						l.Add(td as IExpression ?? new TypeDeclarationExpression(td));
+					}
+
+					return new TemplateInstanceExpression(new IdentifierDeclaration("Tuple")) { Arguments =  l.ToArray() };
+				},
+
+				ResolvedBaseTypeGetter = (t, ctxt) =>
+				{
+					var members = GetStructMembers(t as StructType, ctxt);
+					var tupleItems = new List<ISemantic>();
+
+					foreach (var member in members)
+					{
+						var mt = DResolver.StripMemberSymbols(member);
+						if (mt != null)
+							tupleItems.Add(mt);
+					}
+
+					return new DTuple(t.DeclarationOrExpressionBase, tupleItems);
+				}
+			});
+
 		}
 		#endregion
 
@@ -240,6 +291,23 @@ namespace D_Parser.Resolver
 		static AbstractType help_ReflectResolvedType(AbstractType t, ResolutionContext ctxt)
 		{
 			return t;
+		}
+
+		[ThreadStatic]
+		static DClassLike lastStructHandled;
+		[ThreadStatic]
+		static IEnumerable<AbstractType> lastStructMembersEnlisted;
+		static IEnumerable<AbstractType> GetStructMembers(StructType t, ResolutionContext ctxt)
+		{
+			if(lastStructMembersEnlisted == null ||
+				lastStructHandled != t.Definition)
+			{
+				lastStructHandled = t.Definition;
+				var children = ItemEnumeration.EnumChildren(t, ctxt, MemberFilter.Variables);
+				lastStructMembersEnlisted = TypeDeclarationResolver.HandleNodeMatches(children, ctxt, t);
+			}
+			
+			return lastStructMembersEnlisted;
 		}
 		#endregion
 
@@ -255,22 +323,33 @@ namespace D_Parser.Resolver
 				return PropOwnerType.AssocArray;
 			else if (t is DelegateValue || t is DelegateType)
 				return PropOwnerType.Delegate;
-			else if (t is PrimitiveValue || t is PrimitiveType) {
+			else if (t is PrimitiveValue || t is PrimitiveType)
+			{
 				var tk = t is PrimitiveType ? (t as PrimitiveType).TypeToken : (t as PrimitiveValue).BaseTypeToken;
 				if (DTokens.IsBasicType_Integral(tk))
 					return PropOwnerType.Integral;
 				if (DTokens.IsBasicType_FloatingPoint(tk))
 					return PropOwnerType.FloatingPoint;
-			} else if (t is InstanceValue || t is ClassType || t is InterfaceType || t is TemplateType || t is StructType)
+			}
+			else if (t is InstanceValue || t is ClassType || t is InterfaceType || t is TemplateType)
 				return PropOwnerType.ClassLike;
+			else if (t is StructType)
+				return PropOwnerType.Struct;
 			else if (t is DTuple)
 				return PropOwnerType.TypeTuple;
-			else if (t is TemplateParameterSymbol) {
+			else if (t is TemplateParameterSymbol)
+			{
 				var tps = t as TemplateParameterSymbol;
-				if (tps != null && 
-					(tps.Parameter is TemplateThisParameter ? 
+				if (tps != null &&
+					(tps.Parameter is TemplateThisParameter ?
 						(tps.Parameter as TemplateThisParameter).FollowParameter : tps.Parameter) is TemplateTupleParameter)
 					return PropOwnerType.TypeTuple;
+			}
+			else if (t is MemberSymbol)
+			{
+				var ms = (t as MemberSymbol).Definition.Parent as DClassLike;
+				if (ms != null && ms.ClassType == DTokens.Struct)
+					return PropOwnerType.StructElement;
 			}
 			return PropOwnerType.None;
 		}

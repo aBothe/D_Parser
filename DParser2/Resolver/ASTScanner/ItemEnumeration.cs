@@ -43,6 +43,15 @@ namespace D_Parser.Resolver.ASTScanner
 			return en.Nodes;
 		}
 
+		public static List<INode> EnumChildren(UserDefinedType ds,ResolutionContext ctxt, MemberFilter VisibleMembers)
+		{
+			var en = new ItemEnumeration(ctxt);
+
+			en.DeepScanClass(ds, VisibleMembers);
+
+			return en.Nodes;
+		}
+
 		List<INode> Nodes = new List<INode> ();
 
 		protected override bool HandleItem (INode n)
