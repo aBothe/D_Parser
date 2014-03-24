@@ -12,9 +12,6 @@ namespace D_Parser.Resolver
 	/// </summary>
 	public static class MixinAnalysis
 	{
-		static ResolutionCache<DBlockNode> mixinDeclCache = new ResolutionCache<DBlockNode>();
-		static ResolutionCache<BlockStatement> mixinStmtCache = new ResolutionCache<BlockStatement>();
-		
 		[ThreadStatic]
 		static List<MixinStatement> stmtsBeingAnalysed;
 		
@@ -48,39 +45,22 @@ namespace D_Parser.Resolver
 			return true;
 		}
 		
-		static string GetMixinContent(MixinStatement mx, ResolutionContext ctxt, bool takeStmtCache ,out ISyntaxRegion cachedContent)
+		static string GetMixinContent(MixinStatement mx, ResolutionContext ctxt, bool takeStmtCache , out VariableValue evaluatedVariable)
 		{
-			cachedContent = null;
-			
+			evaluatedVariable = null;
+
 			if(!CheckAndPushAnalysisStack(mx))
 				return null;
 			ISemantic v;
 			using (ctxt.Push(mx.ParentNode, mx.Location))
 			{
-				bool hadCachedItem;
-				if (takeStmtCache)
-				{
-					BlockStatement stmt;
-					hadCachedItem = mixinStmtCache.TryGet(ctxt, mx, out stmt);
-					cachedContent = stmt;
-				}
-				else
-				{
-					DBlockNode mod;
-					hadCachedItem = mixinDeclCache.TryGet(ctxt, mx, out mod);
-					cachedContent = mod;
-				}
-
-				if (hadCachedItem)
-				{
-					stmtsBeingAnalysed.Remove(mx);
-					return null;
-				}
-
 				try // 'try' because there is always a risk of e.g. not having something implemented or having an evaluation exception...
 				{
 					// Evaluate the mixin expression
-					v = Evaluation.EvaluateValue(mx.MixinExpression, ctxt);
+					v = Evaluation.EvaluateValue(mx.MixinExpression, ctxt, true);
+					evaluatedVariable = v as VariableValue;
+					if (evaluatedVariable != null)
+						v = Evaluation.EvaluateValue(evaluatedVariable, new StandardValueProvider(ctxt));
 				}
 				catch {
 					v = null;
@@ -94,40 +74,28 @@ namespace D_Parser.Resolver
 			if(av != null && av.IsString)
 				return av.StringValue;
 			
-			if(takeStmtCache)
-				mixinStmtCache.Add(ctxt, mx, null);
-			else
-				mixinDeclCache.Add(ctxt, mx, null);
 			return null;
 		}
-		
-		public static BlockStatement ParseMixinStatement(MixinStatement mx, ResolutionContext ctxt)
+
+		public static BlockStatement ParseMixinStatement(MixinStatement mx, ResolutionContext ctxt, out VariableValue vv)
 		{
-			ISyntaxRegion sr;
-			var literal = GetMixinContent(mx, ctxt, true, out sr);
+			var literal = GetMixinContent(mx, ctxt, true, out vv);
 			
-			if(sr is BlockStatement)
-				return (BlockStatement)sr;
-			else if(literal == null)
+			if(literal == null)
 				return null;
 			
 			var bs = (BlockStatement)DParser.ParseBlockStatement("{"+literal+"}", mx.ParentNode);
-			mixinStmtCache.Add(ctxt, mx, bs);
 			return bs;
 		}
 		
-		public static DBlockNode ParseMixinDeclaration(MixinStatement mx, ResolutionContext ctxt)
+		public static DBlockNode ParseMixinDeclaration(MixinStatement mx, ResolutionContext ctxt, out VariableValue vv)
 		{
-			ISyntaxRegion sr;
-			var literal = GetMixinContent(mx, ctxt, false, out sr);
+			var literal = GetMixinContent(mx, ctxt, false, out vv);
 
-			if (sr is DBlockNode)
-				return (DBlockNode)sr;
-			else if(literal == null)
+			if(literal == null)
 				return null;
 			
 			var ast = DParser.ParseDeclDefs(literal);
-			mixinDeclCache.Add(ctxt, mx, ast);
 			
 			if(ast == null)
 				return null;

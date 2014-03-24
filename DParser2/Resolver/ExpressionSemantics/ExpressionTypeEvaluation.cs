@@ -120,7 +120,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return mr;
 
 			Dictionary<DVariable, AbstractType> args;
-			return FunctionEvaluation.AssignCallArgumentsToIC<AbstractType>(mr, null, null, out args, ctxt) ? mr.Base : null;
+			return FunctionEvaluation.AssignCallArgumentsToIC<AbstractType>(mr, null, null, out args, ctxt) ? mr.Base ?? mr : null;
 		}
 
 		void GetRawCallOverloads(ResolutionContext ctxt, PostfixExpression_MethodCall call,

@@ -642,7 +642,6 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					HandleUnnamedTemplateMixin(s, caretInsensitive, VisibleMembers);
 			}
 			
-			static ResolutionCache<AbstractType> templateMixinCache = new ResolutionCache<AbstractType>();
 			[ThreadStatic]
 			static List<TemplateMixin> templateMixinsBeingAnalyzed;
 			
@@ -690,33 +689,39 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			{
 				if (CompletionOptions.Instance.DisableMixinAnalysis)
 					return false;
-
+				VariableValue vv;
 				// If in a class/module block => MixinDeclaration
 				if (parseDeclDefs)
 				{
-					var ast = MixinAnalysis.ParseMixinDeclaration(mx, ctxt);
+					var ast = MixinAnalysis.ParseMixinDeclaration(mx, ctxt, out vv);
 
 					if (ast == null)
 						return false;
 
-					// take ast.Endlocation because the cursor must be beyond the actual mixin expression 
-					// - and therewith _after_ each declaration
-					if (ctxt.ScopedBlock == mx.ParentNode.NodeRoot)
-						return v.ScanBlockUpward(ast, ast.EndLocation, vis);
-					else
+					var blockUpward = ctxt.ScopedBlock == mx.ParentNode.NodeRoot;
+
+					using (vv != null ? ctxt.Push(vv.Member) : null)
 					{
-						return v.scanChildren(ast, vis, isMixinAst: true);
+						// take ast.Endlocation because the cursor must be beyond the actual mixin expression 
+						// - and therewith _after_ each declaration
+						if (blockUpward)
+							return v.ScanBlockUpward(ast, ast.EndLocation, vis);
+						else
+						{
+							return v.scanChildren(ast, vis, isMixinAst: true);
+						}
 					}
 				}
 				else // => MixinStatement
 				{
-					var bs = MixinAnalysis.ParseMixinStatement(mx, ctxt);
+					var bs = MixinAnalysis.ParseMixinStatement(mx, ctxt, out vv);
 
 					// As above, disregard the caret position because 1) caret and parsed code do not match 
 					// and 2) the caret must be located somewhere after the mixin statement's end
 					if (bs != null)
 					{
-						return v.ScanStatementHierarchy(bs, CodeLocation.Empty, vis);
+						using(vv != null ? ctxt.Push(vv.Member) : null)
+							return v.ScanStatementHierarchy(bs, CodeLocation.Empty, vis);
 					}
 				}
 
@@ -736,15 +741,11 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				}
 
 				AbstractType t;
-				if (!templateMixinCache.TryGet(ctxt, tmx, out t))
-				{
-					t = TypeDeclarationResolver.ResolveSingle(tmx.Qualifier, ctxt);
-					// Deadly important: To prevent mem leaks, all references from the result to the TemplateMixin must be erased!
-					// Elsewise there remains one reference from the dict value to the key - and won't get free'd THOUGH we can't access it anymore
-					if (t != null)
-						t.DeclarationOrExpressionBase = null;
-					templateMixinCache.Add(ctxt, tmx, t);
-				}
+				t = TypeDeclarationResolver.ResolveSingle(tmx.Qualifier, ctxt);
+				// Deadly important: To prevent mem leaks, all references from the result to the TemplateMixin must be erased!
+				// Elsewise there remains one reference from the dict value to the key - and won't get free'd THOUGH we can't access it anymore
+				if (t != null)
+					t.DeclarationOrExpressionBase = null;
 
 				if (pushOnAnalysisStack)
 					templateMixinsBeingAnalyzed.Remove(tmx);
