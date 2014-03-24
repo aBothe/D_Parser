@@ -1,5 +1,6 @@
 ﻿using D_Parser.Completion;
 using D_Parser.Dom;
+using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
 using D_Parser.Resolver.ASTScanner;
 using D_Parser.Resolver.ExpressionSemantics;
@@ -19,9 +20,9 @@ namespace D_Parser.Resolver
 			public readonly ITypeDeclaration OverrideType;
 			public bool RequireThis = false;
 
-			public Func<AbstractType, DNode> NodeGetter;
-			public Func<AbstractType, ITypeDeclaration> TypeGetter;
-			public Func<AbstractType, AbstractType> ResolvedBaseTypeGetter;
+			public Func<AbstractType, ResolutionContext, DNode> NodeGetter;
+			public Func<AbstractType, ResolutionContext, ITypeDeclaration> TypeGetter;
+			public Func<AbstractType, ResolutionContext, AbstractType> ResolvedBaseTypeGetter;
 			public ValueGetterHandler ValueGetter;
 
 			public StaticPropertyInfo(string name, string desc, string baseTypeId)
@@ -32,30 +33,30 @@ namespace D_Parser.Resolver
 				Name = name;
 				Description = desc; 
 				OverrideType = new DTokenDeclaration(primitiveType); 
-				ResolvedBaseTypeGetter = (t) => new PrimitiveType(primitiveType) { NonStaticAccess = RequireThis }; 
+				ResolvedBaseTypeGetter = (t,ctxt) => new PrimitiveType(primitiveType) { NonStaticAccess = RequireThis }; 
 			}
 
 			public StaticPropertyInfo(string name, string desc, ITypeDeclaration overrideType = null)
 			{ Name = name; Description = desc; OverrideType = overrideType; }
 
-			public ITypeDeclaration GetPropertyType(AbstractType t)
+			public ITypeDeclaration GetPropertyType(AbstractType t, ResolutionContext ctxt)
 			{
-				return OverrideType ?? (TypeGetter != null && t != null ? TypeGetter(t) : null);
+				return OverrideType ?? (TypeGetter != null && t != null ? TypeGetter(t,ctxt) : null);
 			}
 
 			public static readonly List<DAttribute> StaticAttributeList = new List<DAttribute> { new Modifier(DTokens.Static) };
 
-			public DNode GenerateRepresentativeNode(AbstractType t)
+			public DNode GenerateRepresentativeNode(AbstractType t, ResolutionContext ctxt)
 			{
 				if (NodeGetter != null)
-					return NodeGetter(t);
+					return NodeGetter(t, ctxt);
 
 				return new DVariable()
 				{
 					Attributes = !RequireThis ? StaticAttributeList : null,
 					Name = Name,
 					Description = Description,
-					Type = GetPropertyType(t)
+					Type = GetPropertyType(t, ctxt)
 				};
 			}
 		}
@@ -134,12 +135,12 @@ namespace D_Parser.Resolver
 				}});
 
 			props.AddProp(new StaticPropertyInfo("dup", "Create a dynamic array of the same size and copy the contents of the array into it.") { TypeGetter = help_ReflectType, ResolvedBaseTypeGetter = help_ReflectResolvedType, RequireThis = true });
-			props.AddProp(new StaticPropertyInfo("idup", "D2.0 only! Creates immutable copy of the array") { TypeGetter = t => new MemberFunctionAttributeDecl (DTokens.Immutable) { InnerType = help_ReflectType (t) }, RequireThis = true });
+			props.AddProp(new StaticPropertyInfo("idup", "D2.0 only! Creates immutable copy of the array") { TypeGetter = (t,ctxt) => new MemberFunctionAttributeDecl (DTokens.Immutable) { InnerType = help_ReflectType (t,ctxt) }, RequireThis = true });
 			props.AddProp(new StaticPropertyInfo("reverse", "Reverses in place the order of the elements in the array. Returns the array.") { TypeGetter = help_ReflectType, ResolvedBaseTypeGetter = help_ReflectResolvedType, RequireThis = true });
 			props.AddProp(new StaticPropertyInfo("sort", "Sorts in place the order of the elements in the array. Returns the array.") { TypeGetter = help_ReflectType, ResolvedBaseTypeGetter = help_ReflectResolvedType, RequireThis = true });
-			props.AddProp(new StaticPropertyInfo("ptr", "Returns pointer to the array") { 
-				ResolvedBaseTypeGetter = t => new PointerType((t as DerivedDataType).Base, t.DeclarationOrExpressionBase),
-				TypeGetter = t => new PointerDecl (DTypeToTypeDeclVisitor.GenerateTypeDecl((t as DerivedDataType).Base)), 
+			props.AddProp(new StaticPropertyInfo("ptr", "Returns pointer to the array") {
+				ResolvedBaseTypeGetter = (t, ctxt) => new PointerType((t as DerivedDataType).Base, t.DeclarationOrExpressionBase),
+				TypeGetter = (t, ctxt) => new PointerDecl(DTypeToTypeDeclVisitor.GenerateTypeDecl((t as DerivedDataType).Base)), 
 				RequireThis = true 
 			});
 
@@ -149,15 +150,16 @@ namespace D_Parser.Resolver
 			Properties[PropOwnerType.AssocArray] = props;
 			
 			props.AddProp(new StaticPropertyInfo("length", "Returns number of values in the associative array. Unlike for dynamic arrays, it is read-only.", "size_t") { RequireThis = true });
-			props.AddProp(new StaticPropertyInfo("keys", "Returns dynamic array, the elements of which are the keys in the associative array.") { TypeGetter = t => new ArrayDecl { ValueType = DTypeToTypeDeclVisitor.GenerateTypeDecl((t as AssocArrayType).KeyType) }, RequireThis = true });
-			props.AddProp(new StaticPropertyInfo("values", "Returns dynamic array, the elements of which are the values in the associative array.") { TypeGetter = t => new ArrayDecl { ValueType = DTypeToTypeDeclVisitor.GenerateTypeDecl((t as AssocArrayType).ValueType) }, RequireThis = true });
+			props.AddProp(new StaticPropertyInfo("keys", "Returns dynamic array, the elements of which are the keys in the associative array.") { TypeGetter = (t, ctxt) => new ArrayDecl { ValueType = DTypeToTypeDeclVisitor.GenerateTypeDecl((t as AssocArrayType).KeyType) }, RequireThis = true });
+			props.AddProp(new StaticPropertyInfo("values", "Returns dynamic array, the elements of which are the values in the associative array.") { TypeGetter = (t, ctxt) => new ArrayDecl { ValueType = DTypeToTypeDeclVisitor.GenerateTypeDecl((t as AssocArrayType).ValueType) }, RequireThis = true });
 			props.AddProp(new StaticPropertyInfo("rehash", "Reorganizes the associative array in place so that lookups are more efficient. rehash is effective when, for example, the program is done loading up a symbol table and now needs fast lookups in it. Returns a reference to the reorganized array.") { TypeGetter = help_ReflectType, ResolvedBaseTypeGetter = help_ReflectResolvedType, RequireThis = true });
-			props.AddProp(new StaticPropertyInfo("byKey", "Returns a delegate suitable for use as an Aggregate to a ForeachStatement which will iterate over the keys of the associative array.") { TypeGetter = t => new DelegateDeclaration() { ReturnType = new ArrayDecl() { ValueType = DTypeToTypeDeclVisitor.GenerateTypeDecl((t as AssocArrayType).KeyType) } }, RequireThis = true });
-			props.AddProp(new StaticPropertyInfo("byValue", "Returns a delegate suitable for use as an Aggregate to a ForeachStatement which will iterate over the values of the associative array.") { TypeGetter = t => new DelegateDeclaration() { ReturnType = new ArrayDecl() { ValueType = DTypeToTypeDeclVisitor.GenerateTypeDecl((t as AssocArrayType).ValueType) } }, RequireThis = true });
+			props.AddProp(new StaticPropertyInfo("byKey", "Returns a delegate suitable for use as an Aggregate to a ForeachStatement which will iterate over the keys of the associative array.") { TypeGetter = (t, ctxt) => new DelegateDeclaration() { ReturnType = new ArrayDecl() { ValueType = DTypeToTypeDeclVisitor.GenerateTypeDecl((t as AssocArrayType).KeyType) } }, RequireThis = true });
+			props.AddProp(new StaticPropertyInfo("byValue", "Returns a delegate suitable for use as an Aggregate to a ForeachStatement which will iterate over the values of the associative array.") { TypeGetter = (t, ctxt) => new DelegateDeclaration() { ReturnType = new ArrayDecl() { ValueType = DTypeToTypeDeclVisitor.GenerateTypeDecl((t as AssocArrayType).ValueType) } }, RequireThis = true });
 			props.AddProp(new StaticPropertyInfo("get", null)
 			{
 				RequireThis = true,
-				NodeGetter = t => {
+				NodeGetter = (t, ctxt) =>
+				{
 					var ad = t as AssocArrayType;
 					var valueType = DTypeToTypeDeclVisitor.GenerateTypeDecl(ad.ValueType);
 					return new DMethod () {
@@ -180,7 +182,8 @@ namespace D_Parser.Resolver
 			});
 			props.AddProp(new StaticPropertyInfo("remove", null) {
 				RequireThis = true,
-				NodeGetter = t => new DMethod {
+				NodeGetter = (t, ctxt) => new DMethod
+				{
 					Name = "remove",
 					Description = "remove(key) does nothing if the given key does not exist and returns false. If the given key does exist, it removes it from the AA and returns true.",
 					Type = new DTokenDeclaration (DTokens.Bool),
@@ -229,12 +232,12 @@ namespace D_Parser.Resolver
 		#endregion
 
 		#region Static prop resolution meta helpers
-		static ITypeDeclaration help_ReflectType(AbstractType t)
+		static ITypeDeclaration help_ReflectType(AbstractType t, ResolutionContext ctxt)
 		{
 			return DTypeToTypeDeclVisitor.GenerateTypeDecl(t);
 		}
 
-		static AbstractType help_ReflectResolvedType(AbstractType t)
+		static AbstractType help_ReflectResolvedType(AbstractType t, ResolutionContext ctxt)
 		{
 			return t;
 		}
@@ -272,9 +275,9 @@ namespace D_Parser.Resolver
 			return PropOwnerType.None;
 		}
 
-		public static void ListProperties(ICompletionDataGenerator gen, MemberFilter vis, AbstractType t, bool isVariableInstance)
+		public static void ListProperties(ICompletionDataGenerator gen, ResolutionContext ctxt, MemberFilter vis, AbstractType t, bool isVariableInstance)
 		{
-			foreach (var n in ListProperties(t, !isVariableInstance))
+			foreach (var n in ListProperties(t, ctxt, !isVariableInstance))
 				if (AbstractVisitor.CanAddMemberOfType(vis, n))
 					gen.Add(n);
 		}
@@ -295,7 +298,7 @@ namespace D_Parser.Resolver
 				t = (t as DerivedDataType).Base;
 		}
 
-		public static IEnumerable<DNode> ListProperties(AbstractType t, bool staticOnly = false)
+		public static IEnumerable<DNode> ListProperties(AbstractType t, ResolutionContext ctxt, bool staticOnly = false)
 		{
 			GetLookedUpType (ref t);
 
@@ -306,12 +309,12 @@ namespace D_Parser.Resolver
 
 			foreach (var kv in props)
 				if(!staticOnly || !kv.Value.RequireThis)
-				yield return kv.Value.GenerateRepresentativeNode(t);
+					yield return kv.Value.GenerateRepresentativeNode(t, ctxt);
 
 			if (Properties.TryGetValue(GetOwnerType(t), out props))
 				foreach (var kv in props)
 					if (!staticOnly || !kv.Value.RequireThis)
-						yield return kv.Value.GenerateRepresentativeNode(t);
+						yield return kv.Value.GenerateRepresentativeNode(t, ctxt);
 		}
 
 		public static StaticProperty TryEvalPropertyType(ResolutionContext ctxt, AbstractType t, int propName, bool staticOnly = false)
@@ -326,11 +329,11 @@ namespace D_Parser.Resolver
 
 			if (props.TryGetValue(propName, out prop) || (Properties.TryGetValue(GetOwnerType(t), out props) && props.TryGetValue(propName, out prop)))
 			{
-				var n = prop.GenerateRepresentativeNode(t);
+				var n = prop.GenerateRepresentativeNode(t, ctxt);
 
 				AbstractType baseType;
 				if (prop.ResolvedBaseTypeGetter != null)
-					baseType = prop.ResolvedBaseTypeGetter(t);
+					baseType = prop.ResolvedBaseTypeGetter(t, ctxt);
 				else if (n.Type != null)
 					baseType = TypeDeclarationResolver.ResolveSingle(n.Type, ctxt);
 				else

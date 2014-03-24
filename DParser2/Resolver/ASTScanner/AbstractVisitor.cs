@@ -1040,7 +1040,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 					
 
-					foreach (var statProp in StaticProperties.ListProperties (aliasedSymbol))
+					foreach (var statProp in StaticProperties.ListProperties (aliasedSymbol, ctxt))
 						if (HandleItem (statProp))
 							return true;
 

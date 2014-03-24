@@ -55,7 +55,7 @@ namespace D_Parser.Completion.Providers
 					foreach (var ufcsItem in UFCSResolver.TryResolveUFCS(t, 0, ed.CaretLocation, ctxt))
 						CompletionDataGenerator.Add((ufcsItem as DSymbol).Definition);
 				});
-			StaticProperties.ListProperties(CompletionDataGenerator, MemberFilter, t, t.NonStaticAccess);
+			StaticProperties.ListProperties(CompletionDataGenerator, ctxt, MemberFilter, t, t.NonStaticAccess);
 		}
 
 		public void VisitPrimitiveType(PrimitiveType pt)
@@ -195,7 +195,7 @@ namespace D_Parser.Completion.Providers
 			{
 				var tpp = tps.Parameter is TemplateThisParameter ? (tps.Parameter as TemplateThisParameter).FollowParameter : tps.Parameter;
 				if (tpp is TemplateTupleParameter)
-					StaticProperties.ListProperties(CompletionDataGenerator, MemberFilter, tps, true);
+					StaticProperties.ListProperties(CompletionDataGenerator, ctxt, MemberFilter, tps, true);
 			}
 		}
 
