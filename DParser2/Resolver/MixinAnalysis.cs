@@ -12,7 +12,7 @@ namespace D_Parser.Resolver
 	/// </summary>
 	public static class MixinAnalysis
 	{
-		static ResolutionCache<DModule> mixinDeclCache = new ResolutionCache<DModule>();
+		static ResolutionCache<DBlockNode> mixinDeclCache = new ResolutionCache<DBlockNode>();
 		static ResolutionCache<BlockStatement> mixinStmtCache = new ResolutionCache<BlockStatement>();
 		
 		[ThreadStatic]
@@ -66,7 +66,7 @@ namespace D_Parser.Resolver
 				}
 				else
 				{
-					DModule mod;
+					DBlockNode mod;
 					hadCachedItem = mixinDeclCache.TryGet(ctxt, mx, out mod);
 					cachedContent = mod;
 				}
@@ -116,17 +116,17 @@ namespace D_Parser.Resolver
 			return bs;
 		}
 		
-		public static DModule ParseMixinDeclaration(MixinStatement mx, ResolutionContext ctxt)
+		public static DBlockNode ParseMixinDeclaration(MixinStatement mx, ResolutionContext ctxt)
 		{
 			ISyntaxRegion sr;
 			var literal = GetMixinContent(mx, ctxt, false, out sr);
-			
-			if(sr is DModule)
-				return (DModule)sr;
+
+			if (sr is DBlockNode)
+				return (DBlockNode)sr;
 			else if(literal == null)
 				return null;
 			
-			var ast = (DModule)DParser.ParseString(literal, true);
+			var ast = DParser.ParseDeclDefs(literal);
 			mixinDeclCache.Add(ctxt, mx, ast);
 			
 			if(ast == null)

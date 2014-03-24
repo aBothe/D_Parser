@@ -109,6 +109,20 @@ namespace D_Parser.Parser
             return p.Expression();
         }
 
+		public static DBlockNode ParseDeclDefs(string Code)
+		{
+			var p = Create(new StringReader(Code));
+			p.Step();
+			var block = new DBlockNode();
+			while (!p.IsEOF)
+			{
+				p.DeclDef(block);
+			}
+
+			block.EndLocation = p.la.Location;
+			return block;
+		}
+
 		public static IExpression ParseAssignExpression(string Code)
 		{
 			var p = Create(new StringReader(Code));
