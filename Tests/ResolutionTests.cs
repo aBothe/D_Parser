@@ -368,6 +368,26 @@ class Blah(T){ T b; }");
 		}
 
 		[Test]
+		public void AnonymousClasses()
+		{
+			var ctxt = CreateCtxt("A",@"module A;
+
+class BaseClass
+{
+	int a;
+}
+
+auto n = new class BaseClass {};
+");
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression ("n.a");
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
+			Assert.That (t, Is.TypeOf(typeof(PrimitiveType)));
+		}
+
+		[Test]
 		public void InMethodDeclScopes()
 		{
 			var ctxt = CreateCtxt("A", @"module A;
