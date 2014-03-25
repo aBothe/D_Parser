@@ -98,6 +98,8 @@ namespace D_Parser.Refactoring
 						type = DTokens.Enum;
 					else if (n is TemplateParameter.Node)
 						type = DTokens.Not; // Only needed for highlighting and thus just a convention question
+					else if (n is DVariable)
+						type = DTokens.Alias;
 
 					dd[n.NameHash] = type;
 				}
