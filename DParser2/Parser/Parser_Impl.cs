@@ -2597,7 +2597,7 @@ namespace D_Parser.Parser
 						ac.ClassArguments = ArgumentList(Scope).ToArray();
 				}
 
-				var anclass = new DClassLike(Class) { IsAnonymousClass=true, Name = "(Anonymous Class)" };
+				var anclass = new DClassLike(Class) { IsAnonymousClass=true };
 
 				// BaseClasslist_opt
 				if (laKind == (Colon))
