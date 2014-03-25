@@ -384,7 +384,8 @@ auto n = new class BaseClass {};
 
 			x = DParser.ParseExpression ("n.a");
 			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
-			Assert.That (t, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 		}
 
 		[Test]

@@ -837,7 +837,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public AbstractType Visit(AnonymousClassExpression x)
 		{
-			throw new NotImplementedException();
+			return TypeDeclarationResolver.HandleNodeMatch(x.AnonymousClass, ctxt, typeBase: x);
 		}
 
 		public AbstractType Visit(TokenExpression x)
