@@ -22,7 +22,12 @@ namespace D_Parser.Completion.Providers
 
 		protected override void BuildCompletionDataInternal(IEditorData Editor, char enteredChar)
 		{
-			var dc = begunNode.Parent as DClassLike;
+			DClassLike dc;
+			var intermediateBlock = begunNode.Parent as DBlockNode; // Skip the incremental parse block
+			if (intermediateBlock != null && intermediateBlock.Location.IsEmpty)
+				dc = intermediateBlock.Parent as DClassLike;
+			else
+				dc = begunNode.Parent as DClassLike;
 
 			if (dc == null || dc.ClassType != DTokens.Class)
 				return;
