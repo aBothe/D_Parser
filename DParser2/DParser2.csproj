@@ -131,6 +131,7 @@
     <Compile Include="Dom\ModulePackage.cs" />
     <Compile Include="Dom\Nodes\NodeDictionary.cs" />
     <Compile Include="Dom\TemplateParameters.cs" />
+    <Compile Include="Dom\Visitors\AstElementHashingVisitor.cs" />
     <Compile Include="Formatting\DFormattingOptions.cs" />
     <Compile Include="Formatting\DFormattingVisitor.cs" />
     <Compile Include="Formatting\DFormattingVisitor.Impl.cs" />
