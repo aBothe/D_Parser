@@ -12,13 +12,15 @@ namespace D_Parser.Resolver
 			public AbstractType TryGetValue(ResolutionContext ctxt)
 			{
 				AbstractType t;
-				TryGetValue(GetTemplateParamHash(ctxt), out t);
+				Int64 d = GetTemplateParamHash(ctxt);
+				TryGetValue(d, out t);
 				return t;
 			}
 
 			public void Add(ResolutionContext ctxt, AbstractType t)
 			{
-				this[GetTemplateParamHash(ctxt)] = t;
+				Int64 d = GetTemplateParamHash(ctxt);
+				this[d] = t;
 			}
 
 			static long GetTemplateParamHash(ResolutionContext ctxt)
