@@ -56,13 +56,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (ctxt.CancelOperation)
 				return new UnknownType(x);
 
-			var ev = new ExpressionTypeEvaluation(ctxt) { TryReturnMethodReturnType = tryReturnMethodReturnType };
-			
-			if (!Debugger.IsAttached)
-				try { return x.Accept(ev); }
-				catch { return null; }
-			else
-				return x.Accept(ev);
+			return x.Accept(new ExpressionTypeEvaluation(ctxt) { TryReturnMethodReturnType = tryReturnMethodReturnType });
 		}
 		#endregion
 
