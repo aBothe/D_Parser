@@ -28,7 +28,7 @@ namespace D_Parser.Resolver
 		/// Used by BuildConditionSet() as global flags for ConditionSet instances.
 		/// </summary>
 		public readonly ConditionalCompilationFlags CompilationEnvironment;
-		protected Stack<ContextFrame> stack = new Stack<ContextFrame>();
+		protected readonly Stack<ContextFrame> stack = new Stack<ContextFrame>();
 		public ResolutionOptions ContextIndependentOptions = ResolutionOptions.Default;
 		public readonly List<ResolutionError> ResolutionErrors = new List<ResolutionError>();
 		public bool CancelOperation;
@@ -39,7 +39,8 @@ namespace D_Parser.Resolver
 			get { return ContextIndependentOptions | CurrentContext.ContextDependentOptions | (CancelOperation ? (ResolutionOptions.DontResolveBaseTypes | ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.NoTemplateParameterDeduction | ResolutionOptions.DontResolveAliases | ResolutionOptions.IgnoreDeclarationConditions) : 0); }
 		}
 
-		public ParseCacheView ParseCache;
+		public readonly ResolutionCache Cache;
+		public readonly ParseCacheView ParseCache;
 
 		public IBlockNode ScopedBlock
 		{
@@ -90,12 +91,14 @@ namespace D_Parser.Resolver
 		{
 			this.CompilationEnvironment = gFlags;
 			this.ParseCache = parseCache;
+			Cache = new ResolutionCache(this);
 		}
 
 		public ResolutionContext(ParseCacheView parseCache, ConditionalCompilationFlags gFlags, IBlockNode bn, CodeLocation caret)
 		{
 			this.CompilationEnvironment = gFlags;
 			this.ParseCache = parseCache;
+			Cache = new ResolutionCache(this);
 			
 			new ContextFrame(this, bn, caret);
 		}

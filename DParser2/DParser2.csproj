@@ -172,6 +172,7 @@
     <Compile Include="Resolver\ISemantic.cs" />
     <Compile Include="Resolver\IResolvedTypeVisitor.cs" />
     <Compile Include="Resolver\MixinAnalysis.cs" />
+    <Compile Include="Resolver\ResolutionCache.cs" />
     <Compile Include="Resolver\ResolutionError.cs" />
     <Compile Include="Resolver\ResolutionHooks\Hooks\bitfields.cs" />
     <Compile Include="Resolver\ResolutionHooks\Hooks\Tuple.cs" />
