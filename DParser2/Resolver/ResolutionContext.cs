@@ -39,7 +39,7 @@ namespace D_Parser.Resolver
 			get { return ContextIndependentOptions | CurrentContext.ContextDependentOptions | (CancelOperation ? (ResolutionOptions.DontResolveBaseTypes | ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.NoTemplateParameterDeduction | ResolutionOptions.DontResolveAliases | ResolutionOptions.IgnoreDeclarationConditions) : 0); }
 		}
 
-		public readonly ResolutionCache Cache;
+		internal readonly ResolutionCache Cache;
 		public readonly ParseCacheView ParseCache;
 
 		public IBlockNode ScopedBlock
