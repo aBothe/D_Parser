@@ -30,7 +30,7 @@ namespace D_Parser.Resolver
 				foreach (var tps in ctxt.DeducedTypesInHierarchy)
 					unchecked
 					{
-						if (tpm.Contains(tps.Parameter))
+						if (tps == null || tpm.Contains(tps.Parameter))
 							continue;
 
 						h += tps.Parameter.GetHashCode() + (tps.Base != null ? tps.Base.ToCode(false).GetHashCode() : tps.ParameterValue != null ? tps.ParameterValue.ToCode().GetHashCode() : 0);
