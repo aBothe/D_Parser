@@ -23,11 +23,16 @@ namespace D_Parser.Resolver
 
 			static long GetTemplateParamHash(ResolutionContext ctxt)
 			{
+				var tpm = new List<TemplateParameter>();
 				long h = 0;
 				foreach (var tps in ctxt.DeducedTypesInHierarchy)
 					unchecked
 					{
+						if (tpm.Contains(tps.Parameter))
+							continue;
+
 						h += tps.Parameter.GetHashCode() + (tps.Base != null ? tps.Base.ToCode(false).GetHashCode() : tps.ParameterValue != null ? tps.ParameterValue.ToCode().GetHashCode() : 0);
+						tpm.Add(tps.Parameter);
 					}
 				return h;
 			}
