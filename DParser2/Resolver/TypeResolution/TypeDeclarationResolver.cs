@@ -77,7 +77,35 @@ namespace D_Parser.Resolver.TypeResolution
 					return new[] { dedTemplateParam };
 			}
 
-			var res = NameScan.SearchAndResolve(ctxt, loc, idHash, idObject);
+			List<AbstractType> res = null;
+
+			var t = ctxt.Cache.TryGetType(idObject);
+			bool hasBaseValue = true;
+			if (t != null)
+			{
+				res = new List<AbstractType>(t.Length);
+				foreach (var t_ in t)
+				{
+					if(hasBaseValue)
+						foreach(var t__ in AmbiguousType.TryDissolve(t_))
+							if(!(hasBaseValue = (t__ is DerivedDataType) && (t__ as DerivedDataType).Base != null))
+								break;
+					res.Add(t_);
+				}
+			}
+
+			if (hasBaseValue || (ctxt.Options & ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.DontResolveBaseTypes) != 0)
+			{
+				var newRes = NameScan.SearchAndResolve(ctxt, loc, idHash, idObject);
+				if (newRes.Count > 0)
+				{
+					if (idObject != null)
+						ctxt.Cache.Add(newRes.ToArray(), idObject);
+					res = newRes;
+				}
+				else if (res == null)
+					res = new List<AbstractType>();
+			}
 
 			if (disp != null)
 			{

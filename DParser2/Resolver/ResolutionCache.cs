@@ -6,18 +6,18 @@ using System.Text;
 
 namespace D_Parser.Resolver
 {
-	class ResolutionCache
+	class ResolutionCache<T>
 	{
-		class CacheEntryDict : Dictionary<long, AbstractType> {
-			public AbstractType TryGetValue(ResolutionContext ctxt)
+		class CacheEntryDict : Dictionary<long, T> {
+			public T TryGetValue(ResolutionContext ctxt)
 			{
-				AbstractType t;
+				T t;
 				Int64 d = GetTemplateParamHash(ctxt);
 				TryGetValue(d, out t);
 				return t;
 			}
 
-			public void Add(ResolutionContext ctxt, AbstractType t)
+			public void Add(ResolutionContext ctxt, T t)
 			{
 				Int64 d = GetTemplateParamHash(ctxt);
 				this[d] = t;
@@ -26,7 +26,7 @@ namespace D_Parser.Resolver
 			static long GetTemplateParamHash(ResolutionContext ctxt)
 			{
 				var tpm = new List<TemplateParameter>();
-				long h = 0;
+				long h = DNode.GetNodePath(ctxt.ScopedBlock,true).GetHashCode();
 				foreach (var tps in ctxt.DeducedTypesInHierarchy)
 					unchecked
 					{
@@ -47,19 +47,15 @@ namespace D_Parser.Resolver
 			this.ctxt = ctxt;
 		}
 
-		public AbstractType TryGetType(ISyntaxRegion sr)
+		public T TryGetType(ISyntaxRegion sr)
 		{
 			CacheEntryDict ce;
-			return cache.TryGetValue(sr, out ce) ? ce.TryGetValue(ctxt) : null;
+			return sr != null && cache.TryGetValue(sr, out ce) ? ce.TryGetValue(ctxt) : default(T);
 		}
 
-		public void Add(AbstractType t, ISyntaxRegion sr = null)
+		public void Add(T t, ISyntaxRegion sr)
 		{
-			if (t == null)
-				return;
-			if (sr == null)
-				sr = t.DeclarationOrExpressionBase;
-			if (sr == null)
+			if (t == null || sr == null)
 				return;
 
 			CacheEntryDict ce;

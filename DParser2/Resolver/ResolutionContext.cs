@@ -8,6 +8,7 @@ using System.Diagnostics;
 using D_Parser.Resolver.TypeResolution;
 using System;
 using System.Threading;
+using D_Parser.Resolver.ExpressionSemantics;
 
 namespace D_Parser.Resolver
 {
@@ -39,7 +40,8 @@ namespace D_Parser.Resolver
 			get { return ContextIndependentOptions | CurrentContext.ContextDependentOptions | (CancelOperation ? (ResolutionOptions.DontResolveBaseTypes | ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.NoTemplateParameterDeduction | ResolutionOptions.DontResolveAliases | ResolutionOptions.IgnoreDeclarationConditions) : 0); }
 		}
 
-		internal readonly ResolutionCache Cache;
+		internal readonly ResolutionCache<AbstractType[]> Cache;
+		internal readonly ResolutionCache<ISymbolValue> ValueCache;
 		public readonly ParseCacheView ParseCache;
 
 		public IBlockNode ScopedBlock
@@ -91,14 +93,16 @@ namespace D_Parser.Resolver
 		{
 			this.CompilationEnvironment = gFlags;
 			this.ParseCache = parseCache;
-			Cache = new ResolutionCache(this);
+			Cache = new ResolutionCache<AbstractType[]>(this);
+			ValueCache = new ResolutionCache<ISymbolValue>(this);
 		}
 
 		public ResolutionContext(ParseCacheView parseCache, ConditionalCompilationFlags gFlags, IBlockNode bn, CodeLocation caret)
 		{
 			this.CompilationEnvironment = gFlags;
 			this.ParseCache = parseCache;
-			Cache = new ResolutionCache(this);
+			Cache = new ResolutionCache<AbstractType[]>(this);
+			ValueCache = new ResolutionCache<ISymbolValue>(this);
 			
 			new ContextFrame(this, bn, caret);
 		}
@@ -242,7 +246,7 @@ namespace D_Parser.Resolver
 				var dedTypes = new List<TemplateParameterSymbol>();
 				var stk = new Stack<ContextFrame>();
 
-				while (true)
+				while (stack.Count != 0)
 				{
 					dedTypes.AddRange(stack.Peek().DeducedTemplateParameters.Values);
 
