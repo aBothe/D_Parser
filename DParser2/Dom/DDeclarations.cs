@@ -192,20 +192,21 @@ namespace D_Parser.Dom
 			var sb = new StringBuilder(IncludesBase && ReturnType != null ? ReturnType.ToString() : "");
 			sb.Append(IsFunction ? " function" : " delegate").Append('(');
 
-			foreach (INode n in Parameters)
-			{
-				if (n.Type != null)
-					sb.Append(n.Type.ToString());
+			if(Parameters != null && Parameters.Count != 0)
+				foreach (INode n in Parameters)
+				{
+					if (n.Type != null)
+						sb.Append(n.Type.ToString());
 
-				if (n.NameHash != 0)
-					sb.Append(' ').Append(n.Name);
+					if (n.NameHash != 0)
+						sb.Append(' ').Append(n.Name);
 
-				var dv = n as DVariable;
-				if (dv.Initializer != null)
-					sb.Append("= ").Append(dv.Initializer.ToString());
+					var dv = n as DVariable;
+					if (dv.Initializer != null)
+						sb.Append("= ").Append(dv.Initializer.ToString());
 
-				sb.Append(", ");
-			}
+					sb.Append(", ");
+				}
 
 			while(sb[sb.Length-1] == ' ')
 				sb.Length--;
