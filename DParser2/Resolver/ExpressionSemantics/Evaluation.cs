@@ -79,13 +79,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			{
 				if(vp.ResolutionContext.CancelOperation)
 					return new TypeValue(new UnknownType(x));
-
+				/*
 				if (vp is StandardValueProvider) // only for read-only/immutable expression value states
 				{
 					v = vp.ResolutionContext.ValueCache.TryGetType(x);
 					if (v != null)
 						return v;
-				}
+				}*/
 			}
 
 			var ev = new Evaluation(vp);
@@ -94,10 +94,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			if(v == null && ev.Errors.Count != 0)
 				return new ErrorValue(ev.Errors.ToArray());
-
+			/*
 			if(vp.ResolutionContext != null && vp is StandardValueProvider)
 				vp.ResolutionContext.ValueCache.Add(v, x);
-
+			*/
 			return v;
 		}
 		

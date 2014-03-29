@@ -79,9 +79,9 @@ namespace D_Parser.Resolver.TypeResolution
 
 			List<AbstractType> res = null;
 
-			var t = ctxt.Cache.TryGetType(idObject);
+			//var t = ctxt.Cache.TryGetType(idObject);
 			bool hasBaseValue = true;
-			if (t != null)
+			/*if (t != null)
 			{
 				res = new List<AbstractType>(t.Length);
 				foreach (var t_ in t)
@@ -92,15 +92,15 @@ namespace D_Parser.Resolver.TypeResolution
 								break;
 					res.Add(t_);
 				}
-			}
+			}*/
 
 			if (hasBaseValue || (ctxt.Options & ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.DontResolveBaseTypes) != 0)
 			{
 				var newRes = NameScan.SearchAndResolve(ctxt, loc, idHash, idObject);
 				if (newRes.Count > 0)
-				{
+				{/*
 					if (idObject != null)
-						ctxt.Cache.Add(newRes.ToArray(), idObject);
+						ctxt.Cache.Add(newRes.ToArray(), idObject);*/
 					res = newRes;
 				}
 				else if (res == null)

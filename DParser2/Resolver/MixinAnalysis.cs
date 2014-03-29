@@ -49,11 +49,19 @@ namespace D_Parser.Resolver
 		{
 			evaluatedVariable = null;
 
-			if(!CheckAndPushAnalysisStack(mx))
-				return null;
 			ISemantic v;
 			using (ctxt.Push(mx.ParentNode, mx.Location))
 			{
+				var tup = ctxt.MixinCache.TryGetType(mx);
+				if (tup != null)
+				{
+					evaluatedVariable = tup.Item2;
+					return tup.Item1;
+				}
+
+				if (!CheckAndPushAnalysisStack(mx))
+					return null;
+
 				try // 'try' because there is always a risk of e.g. not having something implemented or having an evaluation exception...
 				{
 					// Evaluate the mixin expression
@@ -71,8 +79,12 @@ namespace D_Parser.Resolver
 			
 			// Ensure it's a string literal
 			var av = v as ArrayValue;
-			if(av != null && av.IsString)
+			if (av != null && av.IsString)
+			{
+				ctxt.MixinCache.Add(new Tuple<string, VariableValue>(av.StringValue, evaluatedVariable), mx);
+
 				return av.StringValue;
+			}
 			
 			return null;
 		}

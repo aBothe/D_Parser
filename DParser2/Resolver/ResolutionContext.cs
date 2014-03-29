@@ -40,8 +40,9 @@ namespace D_Parser.Resolver
 			get { return ContextIndependentOptions | CurrentContext.ContextDependentOptions | (CancelOperation ? (ResolutionOptions.DontResolveBaseTypes | ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.NoTemplateParameterDeduction | ResolutionOptions.DontResolveAliases | ResolutionOptions.IgnoreDeclarationConditions) : 0); }
 		}
 
-		internal readonly ResolutionCache<AbstractType[]> Cache;
-		internal readonly ResolutionCache<ISymbolValue> ValueCache;
+		internal readonly ResolutionCache<Tuple<string,VariableValue>> MixinCache;
+		//internal readonly ResolutionCache<AbstractType[]> Cache;
+		//internal readonly ResolutionCache<ISymbolValue> ValueCache;
 		public readonly ParseCacheView ParseCache;
 
 		public IBlockNode ScopedBlock
@@ -93,16 +94,18 @@ namespace D_Parser.Resolver
 		{
 			this.CompilationEnvironment = gFlags;
 			this.ParseCache = parseCache;
-			Cache = new ResolutionCache<AbstractType[]>(this);
-			ValueCache = new ResolutionCache<ISymbolValue>(this);
+			//Cache = new ResolutionCache<AbstractType[]>(this);
+			//ValueCache = new ResolutionCache<ISymbolValue>(this);
+			MixinCache = new ResolutionCache<Tuple<string,VariableValue>>(this);
 		}
 
 		public ResolutionContext(ParseCacheView parseCache, ConditionalCompilationFlags gFlags, IBlockNode bn, CodeLocation caret)
 		{
 			this.CompilationEnvironment = gFlags;
 			this.ParseCache = parseCache;
-			Cache = new ResolutionCache<AbstractType[]>(this);
-			ValueCache = new ResolutionCache<ISymbolValue>(this);
+			//Cache = new ResolutionCache<AbstractType[]>(this);
+			//ValueCache = new ResolutionCache<ISymbolValue>(this);
+			MixinCache = new ResolutionCache<Tuple<string, VariableValue>>(this);
 			
 			new ContextFrame(this, bn, caret);
 		}
