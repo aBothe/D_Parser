@@ -587,12 +587,17 @@ namespace D_Parser.Resolver.TypeResolution
 			ResolutionContext ctxt,
 			IEnumerable<T> results) where T : AbstractType
 		{
+			var symbols = new List<INode>();
 			var newRes = new List<T>();
 
 			if (results != null) {
 				foreach (var rb in results) {
 					var n = GetResultMember (rb);
 					if (n != null) {
+						if (symbols.Contains(n))
+							continue;
+						symbols.Add(n);
+
 						// Put priority on locals
 						if (n is DVariable &&
 						   (n as DVariable).IsLocal) {
@@ -621,7 +626,9 @@ namespace D_Parser.Resolver.TypeResolution
 									newRes.Remove (r);
 							}
 					}
-					newRes.Add (rb);
+
+					if(!newRes.Contains(rb))
+						newRes.Add (rb);
 				}
 			}
 
