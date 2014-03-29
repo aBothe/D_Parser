@@ -583,7 +583,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				if (!ResolveImmediateBaseType)
 					ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.DontResolveBaseTypes;
 
-				overloads = ExpressionTypeEvaluation.GetOverloads(id, ctxt, new[] { AbstractType.Get(baseExpression) }, EvalAndFilterOverloads);
+				overloads = ExpressionTypeEvaluation.GetOverloads(id, ctxt, AmbiguousType.TryDissolve(AbstractType.Get(baseExpression)), EvalAndFilterOverloads);
 
 				if (!ResolveImmediateBaseType)
 					ctxt.CurrentContext.ContextDependentOptions = optBackup;
