@@ -223,7 +223,8 @@ namespace D_Parser.Resolver.TypeResolution
 								if (dedTypes == null)
 									dedTypes = ctxt.DeducedTypesInHierarchy;
 
-								ds.DeducedTypes = new System.Collections.ObjectModel.ReadOnlyCollection<TemplateParameterSymbol>(dedTypes);
+								if(dedTypes.Count != 0)
+									ds.DeducedTypes = new System.Collections.ObjectModel.ReadOnlyCollection<TemplateParameterSymbol>(dedTypes);
 							}
 						}
 
