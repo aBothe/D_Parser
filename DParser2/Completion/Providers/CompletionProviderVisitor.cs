@@ -262,8 +262,7 @@ namespace D_Parser.Completion
 		{
 			if (c.DebugIdHash == DTokens.IncompleteIdHash) {
 				halt = true;
-				// TODO: Perhaps show all globally defined debug IDs
-				explicitlyNoCompletion = true;
+				prv = new AttributeCompletionProvider(cdgen) { Attribute = c };
 			}
 			else
 				base.VisitAttribute (c);
