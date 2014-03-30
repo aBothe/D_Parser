@@ -41,6 +41,7 @@ namespace D_Parser.Completion
 		public IBlockNode scopedBlock;
 		IStatement scopedStatement;
 
+		readonly char triggerChar;
 		bool explicitlyNoCompletion;
 
 		bool handlesInitializer;
@@ -71,6 +72,7 @@ namespace D_Parser.Completion
 		public CompletionProviderVisitor(ICompletionDataGenerator cdg, char enteredChar = '\0')
 		{
 			this.cdgen = cdg;
+			this.triggerChar = enteredChar;
 			explicitlyNoCompletion = char.IsWhiteSpace (enteredChar);
 		}
 
@@ -300,6 +302,17 @@ namespace D_Parser.Completion
 		public override void VisitAbstractStmt (AbstractStatement stmt)
 		{
 			base.VisitAbstractStmt (stmt);
+		}
+
+		public override void Visit(PostfixExpression_MethodCall x)
+		{
+			if (triggerChar == '(' && x.ArgumentCount > 0 && IsIncompleteExpression(x.Arguments[x.ArgumentCount - 1]))
+			{
+				halt = true;
+				explicitlyNoCompletion = true;
+			}
+			else
+				base.Visit(x);
 		}
 
 		public override void Visit (ModuleStatement s)

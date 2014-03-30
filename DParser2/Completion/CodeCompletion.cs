@@ -78,10 +78,10 @@ namespace D_Parser.Completion
 		}
 
 		static bool IsCompletionAllowed(IEditorData Editor, char enteredChar)
-		{
+		{/*'debug(', 'version(', 'pragma(' etc. shall trigger, but not 'foo('
 			if (enteredChar == '(')
 				return false;
-
+			*/
 			if (Editor.CaretOffset > 0)
 			{
 				if (Editor.CaretLocation.Line == 1 && Editor.ModuleCode.Length > 0 && Editor.ModuleCode[0] == '#')
