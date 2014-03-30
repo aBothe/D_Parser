@@ -106,7 +106,7 @@ namespace D_Parser.Resolver
 
 		public bool IsMatching(StaticIfCondition sc, ResolutionContext ctxt)
 		{
-			if (conditionsBeingChecked.Contains(sc))
+			if (conditionsBeingChecked.Contains(sc) || ctxt == null)
 				return false;
 
 			conditionsBeingChecked.Add(sc);
