@@ -50,25 +50,10 @@ namespace D_Parser.Refactoring
 			if (ast == null)
 				return new Dictionary<int, Dictionary<ISyntaxRegion,byte>>();
 
-			var typeRefFinder = new TypeReferenceFinder(ctxt);
-
-			ContextFrame backupFrame = null;
-
-			if(ctxt.ScopedBlock == ast)
-				backupFrame = ctxt.Pop ();
-			/*
-			if (ctxt.CurrentContext == null)
-			{
-				ctxt.Push(backupFrame);
-				backupFrame = null;
-			}*/
-
-			//typeRefFinder.ast = ast;
+			var typeRefFinder = new TypeReferenceFinder(ctxt, invalidConditionalCodeRegions);
+			
 			// Enum all identifiers
 			ast.Accept (typeRefFinder);
-
-			if (backupFrame != null)
-				ctxt.Push (backupFrame);
 
 			// Crawl through all remaining expressions by evaluating their types and check if they're actual type references.
 			/*typeRefFinder.queueCount = typeRefFinder.q.Count;
@@ -84,6 +69,8 @@ namespace D_Parser.Refactoring
 		protected override void OnScopedBlockChanged (IBlockNode bn)
 		{
 			Dictionary<int,byte> dd = null;
+			if (ctxt.CancelOperation)
+				return;
 			foreach (var n in ItemEnumeration.EnumScopedBlockChildren(ctxt, MemberFilter.Types | MemberFilter.Enums))
 			{
 				if (n.NameHash != 0) {
