@@ -87,8 +87,18 @@ namespace D_Parser.Completion.Providers
 		{
 			if (Attribute is VersionCondition)
 			{
+				if (Editor.GlobalVersionIds != null)
+					foreach (var id in Editor.GlobalVersionIds)
+						if(!VersionCompletionItems.ContainsKey(id))
+							CompletionDataGenerator.AddTextItem(id, "");
 				foreach (var kv in VersionCompletionItems)
 					CompletionDataGenerator.AddTextItem(kv.Key, kv.Value);
+			}
+			else if (Attribute is DebugCondition)
+			{
+				if(Editor.GlobalDebugIds != null)
+					foreach (var id in Editor.GlobalDebugIds)
+							CompletionDataGenerator.AddTextItem(id, "");
 			}
 			else if (Attribute is PragmaAttribute)
 			{
