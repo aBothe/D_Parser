@@ -110,7 +110,7 @@ namespace D_Parser.Resolver
 					}
 			}
 
-			public override void Visit(AttributeMetaDeclaration amd)
+			public override void VisitAttributeMetaDeclaration(AttributeMetaDeclaration amd)
 			{
 				if (amd == null || amd.AttributeOrCondition == null || amd.AttributeOrCondition.Length == 0)
 					return;

@@ -38,9 +38,14 @@ namespace D_Parser.Dom
 			set;
 		}
 
-		public void Accept(MetaDeclarationVisitor vis)
+		public virtual void Accept(MetaDeclarationVisitor vis)
 		{
-			vis.Visit(this);
+			vis.VisitAttributeMetaDeclaration(this);
+		}
+
+		public virtual R Accept<R>(MetaDeclarationVisitor<R> vis)
+		{
+			return vis.VisitAttributeMetaDeclaration(this);
 		}
 	}
 
@@ -49,9 +54,14 @@ namespace D_Parser.Dom
 		public CodeLocation Location	{ get;set; }
 		public CodeLocation EndLocation	{ get;set; }
 
-		public void Accept(MetaDeclarationVisitor vis)
+		public virtual void Accept(MetaDeclarationVisitor vis)
 		{
-			vis.Visit(this);
+			vis.VisitElseMetaDeclaration(this);
+		}
+
+		public virtual R Accept<R>(MetaDeclarationVisitor<R> vis)
+		{
+			return vis.VisitElseMetaDeclaration(this);
 		}
 	}
 
@@ -62,9 +72,29 @@ namespace D_Parser.Dom
 			get;
 			set;
 		}
+
+		public override void Accept(MetaDeclarationVisitor vis)
+		{
+			vis.VisitElseMetaDeclarationBlock(this);
+		}
+
+		public override R Accept<R>(MetaDeclarationVisitor<R> vis)
+		{
+			return vis.VisitElseMetaDeclarationBlock(this);
+		}
 	}
 
-	public class ElseMetaDeclarationSection : ElseMetaDeclaration { }
+	public class ElseMetaDeclarationSection : ElseMetaDeclaration {
+		public override void Accept(MetaDeclarationVisitor vis)
+		{
+			vis.VisitElseMetaDeclarationSection(this);
+		}
+
+		public override R Accept<R>(MetaDeclarationVisitor<R> vis)
+		{
+			return vis.VisitElseMetaDeclarationSection(this);
+		}
+	}
 
 	/// <summary>
 	/// Describes a meta block that begins with a colon. 'Ends' right after the colon.
@@ -72,6 +102,16 @@ namespace D_Parser.Dom
 	public class AttributeMetaDeclarationSection : AttributeMetaDeclaration
 	{
 		public AttributeMetaDeclarationSection(DAttribute attr) : base(attr) { }
+
+		public override void Accept(MetaDeclarationVisitor vis)
+		{
+			vis.VisitAttributeMetaDeclarationSection(this);
+		}
+
+		public override R Accept<R>(MetaDeclarationVisitor<R> vis)
+		{
+			return vis.VisitAttributeMetaDeclarationSection(this);
+		}
 	}
 
 	/// <summary>
@@ -91,6 +131,16 @@ namespace D_Parser.Dom
 		{
 			get;
 			set;
+		}
+
+		public virtual void Accept(MetaDeclarationVisitor vis)
+		{
+			vis.VisitAttributeMetaDeclarationBlock(this);
+		}
+
+		public virtual R Accept<R>(MetaDeclarationVisitor<R> vis)
+		{
+			return vis.VisitAttributeMetaDeclarationBlock(this);
 		}
 	}
 
@@ -115,9 +165,14 @@ namespace D_Parser.Dom
 		}
 		public CodeLocation EndLocation	{ get;set; }
 
-		public void Accept(MetaDeclarationVisitor vis)
+		public virtual void Accept(MetaDeclarationVisitor vis)
 		{
-			vis.Visit(this);
+			vis.VisitMetaDeclarationBlock(this);
+		}
+
+		public virtual R Accept<R>(MetaDeclarationVisitor<R> vis)
+		{
+			return vis.VisitMetaDeclarationBlock(this);
 		}
 	}
 }

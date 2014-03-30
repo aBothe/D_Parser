@@ -154,22 +154,22 @@ namespace D_Parser.Formatting
 		}
 		
 		#region Meta blocks
-		public override void Visit(AttributeMetaDeclaration md)
+		/*public override void VisitAttributeMetaDeclaration(AttributeMetaDeclaration md)
 		{
 			base.Visit(md);
 		}
-		
-		public override void Visit(MetaDeclarationBlock metaDeclarationBlock)
+
+		public override void VisitMetaDeclarationBlock(MetaDeclarationBlock metaDeclarationBlock)
 		{
 			base.Visit(metaDeclarationBlock);
 		}
-		
-		public override void Visit(AttributeMetaDeclarationBlock attributeMetaDeclarationBlock)
+
+		public override void VisitAttributeMetaDeclarationBlock(AttributeMetaDeclarationBlock attributeMetaDeclarationBlock)
 		{
 			base.Visit(attributeMetaDeclarationBlock);
 		}
-		
-		public override void Visit(AttributeMetaDeclarationSection attributeMetaDeclarationSection)
+
+		public override void VisitAttributeMetaDeclarationSection(AttributeMetaDeclarationSection attributeMetaDeclarationSection)
 		{
 			base.Visit(attributeMetaDeclarationSection);
 		}
@@ -182,7 +182,7 @@ namespace D_Parser.Formatting
 		public override void Visit(ElseMetaDeclarationBlock elseMetaDeclarationBlock)
 		{
 			base.Visit(elseMetaDeclarationBlock);
-		}
+		}*/
 		#endregion
 		
 		public override void Visit(DEnum n)

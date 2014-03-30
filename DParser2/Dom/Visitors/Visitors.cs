@@ -89,22 +89,24 @@ namespace D_Parser.Dom
 
 	public interface MetaDeclarationVisitor : IVisitor
 	{
-		void Visit(MetaDeclarationBlock metaDeclarationBlock);
-		void Visit(AttributeMetaDeclarationBlock attributeMetaDeclarationBlock);
-		void Visit(AttributeMetaDeclarationSection attributeMetaDeclarationSection);
-		void Visit(ElseMetaDeclarationBlock elseMetaDeclarationBlock);
-		void Visit(ElseMetaDeclaration elseMetaDeclaration);
-		void Visit(AttributeMetaDeclaration attributeMetaDeclaration);
+		void VisitMetaDeclarationBlock(MetaDeclarationBlock m);
+		void VisitAttributeMetaDeclarationBlock(AttributeMetaDeclarationBlock m);
+		void VisitAttributeMetaDeclarationSection(AttributeMetaDeclarationSection m);
+		void VisitElseMetaDeclarationBlock(ElseMetaDeclarationBlock m);
+		void VisitElseMetaDeclarationSection(ElseMetaDeclarationSection m);
+		void VisitElseMetaDeclaration(ElseMetaDeclaration m);
+		void VisitAttributeMetaDeclaration(AttributeMetaDeclaration m);
 	}
 	
 	public interface MetaDeclarationVisitor<out R> : IVisitor
 	{
-		R Visit(MetaDeclarationBlock metaDeclarationBlock);
-		R Visit(AttributeMetaDeclarationBlock attributeMetaDeclarationBlock);
-		R Visit(AttributeMetaDeclarationSection attributeMetaDeclarationSection);
-		R Visit(ElseMetaDeclarationBlock elseMetaDeclarationBlock);
-		R Visit(ElseMetaDeclaration elseMetaDeclaration);
-		R Visit(AttributeMetaDeclaration attributeMetaDeclaration);
+		R VisitMetaDeclarationBlock(MetaDeclarationBlock m);
+		R VisitAttributeMetaDeclarationBlock(AttributeMetaDeclarationBlock m);
+		R VisitAttributeMetaDeclarationSection(AttributeMetaDeclarationSection m);
+		R VisitElseMetaDeclarationBlock(ElseMetaDeclarationBlock m);
+		R VisitElseMetaDeclarationSection(ElseMetaDeclarationSection m);
+		R VisitElseMetaDeclaration(ElseMetaDeclaration m);
+		R VisitAttributeMetaDeclaration(AttributeMetaDeclaration m);
 	}
 
 	public interface TemplateParameterVisitor : IVisitor

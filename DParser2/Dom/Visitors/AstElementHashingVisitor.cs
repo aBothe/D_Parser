@@ -808,32 +808,37 @@ namespace D_Parser.Dom.Visitors
 			return 1001989;
 		}
 
-		public ulong Visit(MetaDeclarationBlock metaDeclarationBlock)
+		public ulong VisitMetaDeclarationBlock(MetaDeclarationBlock m)
 		{
 			return 1002017;
 		}
 
-		public ulong Visit(AttributeMetaDeclarationBlock attributeMetaDeclarationBlock)
+		public ulong VisitAttributeMetaDeclarationBlock(AttributeMetaDeclarationBlock m)
 		{
 			return 1002049;
 		}
 
-		public ulong Visit(AttributeMetaDeclarationSection attributeMetaDeclarationSection)
+		public ulong VisitAttributeMetaDeclarationSection(AttributeMetaDeclarationSection m)
 		{
 			return 1002061;
 		}
 
-		public ulong Visit(ElseMetaDeclarationBlock elseMetaDeclarationBlock)
+		public ulong VisitElseMetaDeclarationBlock(ElseMetaDeclarationBlock m)
 		{
 			return 1002073;
 		}
 
-		public ulong Visit(ElseMetaDeclaration elseMetaDeclaration)
+		public ulong VisitElseMetaDeclarationSection(ElseMetaDeclarationSection m)
+		{
+			return 1002151;
+		}
+
+		public ulong VisitElseMetaDeclaration(ElseMetaDeclaration m)
 		{
 			return 1002077;
 		}
 
-		public ulong Visit(AttributeMetaDeclaration attributeMetaDeclaration)
+		public ulong VisitAttributeMetaDeclaration(AttributeMetaDeclaration m)
 		{
 			return 1002083;
 		}
@@ -867,5 +872,7 @@ namespace D_Parser.Dom.Visitors
 		{
 			return 1002149;
 		}
+
+		// next prime would be 1002173
 	}
 }

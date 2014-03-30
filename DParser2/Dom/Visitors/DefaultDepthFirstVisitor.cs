@@ -972,38 +972,43 @@ namespace D_Parser.Dom
 		#endregion
 
 		#region Meta decl blocks
-		public virtual void VisitMetaBlock(IMetaDeclarationBlock block)
+		public virtual void VisitIMetaBlock(IMetaDeclarationBlock block)
 		{
 
 		}
 
-		public virtual void Visit(MetaDeclarationBlock metaDeclarationBlock)
+		public virtual void VisitMetaDeclarationBlock(MetaDeclarationBlock m)
 		{
-			VisitMetaBlock(metaDeclarationBlock);
+			VisitIMetaBlock(m);
 		}
 
-		public virtual void Visit(AttributeMetaDeclarationBlock attributeMetaDeclarationBlock)
+		public virtual void VisitAttributeMetaDeclarationBlock(AttributeMetaDeclarationBlock m)
 		{
-			Visit((AttributeMetaDeclaration)attributeMetaDeclarationBlock);
-			VisitMetaBlock(attributeMetaDeclarationBlock);
+			VisitAttributeMetaDeclaration(m);
+			VisitIMetaBlock(m);
 		}
 
-		public virtual void Visit(AttributeMetaDeclarationSection attributeMetaDeclarationSection)
+		public virtual void VisitAttributeMetaDeclarationSection(AttributeMetaDeclarationSection m)
 		{
-			Visit((AttributeMetaDeclaration)attributeMetaDeclarationSection);
+			VisitAttributeMetaDeclaration(m);
 		}
 
-		public virtual void Visit(ElseMetaDeclarationBlock elseMetaDeclarationBlock)
+		public virtual void VisitElseMetaDeclarationBlock(ElseMetaDeclarationBlock m)
 		{
-			VisitMetaBlock(elseMetaDeclarationBlock);
+			VisitElseMetaDeclaration(m);
+			VisitIMetaBlock(m);
 		}
 
-		public virtual void Visit(ElseMetaDeclaration elseMetaDeclaration)
+		public virtual void VisitElseMetaDeclaration(ElseMetaDeclaration m)
 		{
 			
 		}
 
-		public virtual void Visit(AttributeMetaDeclaration md)
+		public virtual void VisitElseMetaDeclarationSection(ElseMetaDeclarationSection m) {
+			VisitElseMetaDeclaration(m);
+		}
+
+		public virtual void VisitAttributeMetaDeclaration(AttributeMetaDeclaration md)
 		{
 			if (md.AttributeOrCondition != null)
 				foreach (var attr in md.AttributeOrCondition)
