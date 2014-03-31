@@ -36,8 +36,10 @@ namespace D_Parser.Misc
 					case PlatformID.MacOSX:
 						l.Add("OSX");
 						l.Add("darwin");
+						l.Add ("Posix");
 						break;
 					case PlatformID.Unix:
+						l.Add ("Posix");
 						break;
 				}
 			}
