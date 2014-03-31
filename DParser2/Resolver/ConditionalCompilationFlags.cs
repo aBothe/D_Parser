@@ -2,6 +2,7 @@
 using D_Parser.Completion;
 using D_Parser.Dom;
 using D_Parser.Resolver.ExpressionSemantics;
+using D_Parser.Dom.Statements;
 
 namespace D_Parser.Resolver
 {
@@ -174,6 +175,14 @@ namespace D_Parser.Resolver
 			}
 		}
 
+		public void AddVersionCondition(VersionSpecification vs)
+		{
+			if (vs.SpecifiedId == null)
+				AddVersionCondition(vs.SpecifiedNumber);
+			else
+				AddVersionCondition(vs.SpecifiedId);
+		}
+
 		public void AddVersionCondition(string id)
 		{
 			if (!setVersions.Contains(id))
@@ -184,6 +193,14 @@ namespace D_Parser.Resolver
 		{
 			if (v > versionNumber)
 				versionNumber = v;
+		}
+
+		public void AddDebugCondition(DebugSpecification ds)
+		{
+			if (ds.SpecifiedId == null)
+				AddDebugCondition(ds.SpecifiedDebugLevel);
+			else
+				AddDebugCondition(ds.SpecifiedId);
 		}
 
 		public void AddDebugCondition(string id)

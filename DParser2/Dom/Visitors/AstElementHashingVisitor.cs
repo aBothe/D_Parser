@@ -29,6 +29,8 @@ namespace D_Parser.Dom.Visitors
 				return (sr as IStatement).Accept(Instance);
 			if (sr is ITypeDeclaration)
 				return (sr as ITypeDeclaration).Accept(Instance);
+			if (sr is DAttribute)
+				return (sr as DAttribute).Accept (Instance);
 			return 0;
 		}
 
