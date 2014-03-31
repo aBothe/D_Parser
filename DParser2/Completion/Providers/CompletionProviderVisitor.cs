@@ -208,7 +208,7 @@ namespace D_Parser.Completion
 		{
 			string c;
 			if (a.ContentHash == DTokens.IncompleteIdHash || ((c = a.LiteralContent as string) != null && c.EndsWith(DTokens.IncompleteId))) {
-				prv = new AttributeCompletionProvider (cdgen) { Attribute = a };
+				prv = new AttributeCompletionProvider (a,cdgen);
 				halt = true;
 			}
 			else
@@ -230,7 +230,7 @@ namespace D_Parser.Completion
 			if (a.Arguments != null && 
 				a.Arguments.Length>0 &&
 				IsIncompleteExpression (a.Arguments[a.Arguments.Length-1])) {
-				prv = new AttributeCompletionProvider (cdgen) { Attribute=a };
+				prv = new PragmaCompletionProvider (a,cdgen);
 				halt = true;
 			}
 			else
@@ -254,7 +254,7 @@ namespace D_Parser.Completion
 		{
 			if (vis.VersionIdHash == DTokens.IncompleteIdHash) {
 				halt = true;
-				prv = new AttributeCompletionProvider (cdgen){ Attribute = vis };
+				prv = new VersionSpecificationCompletionProvider (cdgen);
 			}
 			else
 				base.VisitAttribute (vis);
@@ -264,7 +264,7 @@ namespace D_Parser.Completion
 		{
 			if (c.DebugIdHash == DTokens.IncompleteIdHash) {
 				halt = true;
-				prv = new AttributeCompletionProvider(cdgen) { Attribute = c };
+				prv = new DebugSpecificationCompletionProvider(cdgen);
 			}
 			else
 				base.VisitAttribute (c);
@@ -446,6 +446,22 @@ namespace D_Parser.Completion
 			scopedStatement = s;
 			base.Visit(s);
 			scopedStatement = null;
+		}
+
+		public override void Visit (VersionSpecification s)
+		{
+			if (s.SpecifiedId == DTokens.IncompleteId) {
+				prv = new VersionSpecificationCompletionProvider(cdgen);
+				halt = true;
+			}
+		}
+
+		public override void Visit (DebugSpecification s)
+		{
+			if (s.SpecifiedId == DTokens.IncompleteId) {
+				prv = new DebugSpecificationCompletionProvider(cdgen);
+				halt = true;
+			}
 		}
 		#endregion
 

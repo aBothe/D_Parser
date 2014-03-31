@@ -214,29 +214,28 @@ namespace D_Parser.Parser
 						Step();
 						Step();
 
-						if (laKind == Literal)
-						{
-							Step();
+						if (laKind == Literal) {
+							Step ();
 							if (t.LiteralFormat != LiteralFormat.Scalar)
-								SynErr(t.Kind, "Integer literal expected!");
-							try
-							{
+								SynErr (t.Kind, "Integer literal expected!");
+							try {
 								if (vs != null)
-									vs.SpecifiedNumber = Convert.ToInt32(t.LiteralValue);
+									vs.SpecifiedNumber = Convert.ToInt32 (t.LiteralValue);
 								else
-									ds.SpecifiedDebugLevel = Convert.ToInt32(t.LiteralValue);
+									ds.SpecifiedDebugLevel = Convert.ToInt32 (t.LiteralValue);
+							} catch {
 							}
-							catch
-							{
-							}
-						}
-						else if (laKind == Identifier)
-						{
-							Step();
+						} else if (laKind == Identifier) {
+							Step ();
 							if (vs != null)
 								vs.SpecifiedId = t.Value;
 							else
 								ds.SpecifiedId = t.Value;
+						} else if (IsEOF) {
+							if (vs != null)
+								vs.SpecifiedId = DTokens.IncompleteId;
+							else
+								ds.SpecifiedId = DTokens.IncompleteId;
 						}
 						else if (ds == null)
 							Expect(Identifier);
