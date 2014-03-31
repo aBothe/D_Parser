@@ -202,7 +202,7 @@ namespace D_Parser.Dom
 						sb.Append(' ').Append(n.Name);
 
 					var dv = n as DVariable;
-					if (dv.Initializer != null)
+					if (dv != null && dv.Initializer != null)
 						sb.Append("= ").Append(dv.Initializer.ToString());
 
 					sb.Append(", ");
