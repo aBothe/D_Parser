@@ -13,7 +13,7 @@ namespace D_Parser.Resolver
 		public ResolutionOptions ContextDependentOptions = 0;
 		IBlockNode scopedBlock;
 		public CodeLocation Caret { get; protected set; }
-		readonly ConditionalCompilation.ConditionSet declarationCondititons;
+		public readonly ConditionalCompilation.ConditionSet DeclarationCondititons;
 		
 		public IBlockNode ScopedBlock{get{ return scopedBlock; }}
 		#endregion
@@ -21,7 +21,7 @@ namespace D_Parser.Resolver
 		public ContextFrame(ResolutionContext ctxt, IBlockNode b, CodeLocation caret)
 		{
 			this.ctxt = ctxt;
-			declarationCondititons = new ConditionalCompilation.ConditionSet(ctxt.CompilationEnvironment);
+			DeclarationCondititons = new ConditionalCompilation.ConditionSet(ctxt.CompilationEnvironment);
 
 			ctxt.Push(this);
 
@@ -46,7 +46,7 @@ namespace D_Parser.Resolver
 		public void Set(CodeLocation caret)
 		{
 			Caret = caret;
-			ConditionalCompilation.EnumConditions(declarationCondititons, scopedBlock, ctxt, caret); 
+			ConditionalCompilation.EnumConditions(DeclarationCondititons, scopedBlock, ctxt, caret); 
 		}
 
 		public void Set(IBlockNode b)
@@ -54,7 +54,7 @@ namespace D_Parser.Resolver
 			scopedBlock = b;
 			Caret = CodeLocation.Empty;
 
-			ConditionalCompilation.EnumConditions(declarationCondititons, b, ctxt, CodeLocation.Empty);
+			ConditionalCompilation.EnumConditions(DeclarationCondititons, b, ctxt, CodeLocation.Empty);
 		}
 		
 		public void Set(IBlockNode b, CodeLocation caret)
@@ -62,7 +62,7 @@ namespace D_Parser.Resolver
 			scopedBlock = b;
 			Caret = caret;
 			
-			ConditionalCompilation.EnumConditions(declarationCondititons, b, ctxt, caret); 
+			ConditionalCompilation.EnumConditions(DeclarationCondititons, b, ctxt, caret); 
 		}
 		
 		/// <summary>
@@ -70,12 +70,12 @@ namespace D_Parser.Resolver
 		/// </summary>
 		public bool MatchesDeclarationEnvironment(IEnumerable<DAttribute> conditions)
 		{
-			return declarationCondititons.IsMatching(conditions,ctxt);
+			return DeclarationCondititons.IsMatching(conditions,ctxt);
 		}
 		
 		public bool MatchesDeclarationEnvironment(DeclarationCondition dc)
 		{
-			return declarationCondititons.IsMatching(dc,ctxt);
+			return DeclarationCondititons.IsMatching(dc,ctxt);
 		}
 
 		public override string ToString()

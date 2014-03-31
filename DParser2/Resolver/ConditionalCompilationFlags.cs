@@ -17,23 +17,27 @@ namespace D_Parser.Resolver
 	{
 		#region Properties
 		protected List<string> setVersions = new List<string>();
+		public IEnumerable<string> Versions {get{ return setVersions;}}
 		protected int versionNumber = 0;
+		public int VersionNumber{get{return versionNumber;}}
 
 		protected bool debugFlagOverride = false;
 		protected List<string> setDebugVersions = new List<string>();
+		public IEnumerable<string> DebugVersions {get{ return setDebugVersions;}}
 		protected int debugLevel = 0;
+		public int DebugLevel {get{ return debugLevel; }}
 
 
-		protected bool IsVersionSupported(string versionId)
+		public bool IsVersionSupported(string versionId)
 		{ return setVersions.Contains(versionId); }
-		protected bool IsVersionSupported(int versionNumber)
+		public bool IsVersionSupported(int versionNumber)
 		{ return versionNumber >= this.versionNumber || setVersions.Contains(versionNumber.ToString()); }
 
-		protected bool IsDebugIdSet(string id)
+		public bool IsDebugIdSet(string id)
 		{ return setDebugVersions.Contains(id); }
-		protected bool IsDebugLevel(int lvl)
+		public bool IsDebugLevel(int lvl)
 		{ return lvl >= debugLevel; }
-		protected bool IsDebug
+		public bool IsDebug
 		{ get { return debugFlagOverride || debugLevel != 0 || setDebugVersions.Count != 0; } }
 		#endregion
 
