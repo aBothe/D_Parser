@@ -45,8 +45,6 @@ namespace D_Parser.Completion.ToolTips
 
 	public partial class NodeTooltipRepresentationGen
 	{
-		protected readonly StringBuilder sb = new StringBuilder();
-
 		#region Tooltip Body creation
 		/// <summary>
 		/// 
