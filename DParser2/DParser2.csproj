@@ -113,6 +113,7 @@
   <ItemGroup>
     <Compile Include="Completion\AbstractTooltipProvider.cs" />
     <Compile Include="Completion\MethodOverrideCompletionProvider.cs" />
+    <Compile Include="Completion\NodeTooltipRepresentationGen.cs" />
     <Compile Include="Completion\Providers\AttributeCompletionProvider.cs" />
     <Compile Include="Completion\Providers\CtrlSpaceCompletionProvider.cs" />
     <Compile Include="Completion\Providers\ImportStatementCompletionProvider.cs" />
@@ -358,6 +359,7 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
+    <Compile Include="Completion\NodeTooltipRepresentationGen.Headers.cs" />
     <None Include="license.txt" />
     <None Include="Misc\ParseLog.cs" />
     <None Include="Formatting\Indent\DIndentEngine.cs" />
