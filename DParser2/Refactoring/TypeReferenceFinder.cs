@@ -30,6 +30,7 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Resolver.ASTScanner;
 using D_Parser.Parser;
 using D_Parser.Dom.Statements;
+using System;
 
 namespace D_Parser.Refactoring
 {
@@ -106,15 +107,90 @@ namespace D_Parser.Refactoring
 		public override void VisitBlock(DBlockNode block)
 		{
 			// First do meta block evaluation due to conditional compilation checks
-			if (block.MetaBlocks.Count != 0)
-				foreach (var mb in block.MetaBlocks)
-					mb.Accept(this);
+			var en = block.StaticStatements.GetEnumerator ();
+			var metaBlockEnumGotElements = en.MoveNext ();
+			using (PushConditionEnumBlock (block)) {
+				if (block.MetaBlocks.Count != 0)
+					foreach (var mb in block.MetaBlocks) {
+						if (metaBlockEnumGotElements)
+							metaBlockEnumGotElements = ContinueEnumStaticStatements (en, mb.Location);
+						mb.Accept (this);
+					}
 
-			if (block.StaticStatements.Count != 0)
-				foreach (var s in block.StaticStatements)
-					s.Accept(this);
+				if (metaBlockEnumGotElements)
+					ContinueEnumStaticStatements (en, block.EndLocation);
 
-			VisitChildren(block);
+				VisitChildren(block);
+			}
+		}
+
+		public override void VisitChildren (StatementContainingStatement stmt)
+		{
+			using(PushConditionEnumBlock (stmt))
+				base.VisitChildren (stmt);
+		}
+
+		class CustomConditionFlagSet : MutableConditionFlagSet
+		{
+			public INode Block;
+		}
+
+		class ConditionStackPopper : IDisposable
+		{
+			public TypeReferenceFinder f;
+			public void Dispose ()
+			{
+				f.conditionStack.Pop ();
+			}
+		}
+
+		Stack<CustomConditionFlagSet> conditionStack = new Stack<CustomConditionFlagSet>();
+
+		IDisposable PushConditionEnumBlock(IBlockNode bn)
+		{
+			if (conditionStack.Count == 0 || conditionStack.Peek ().Block != bn) {
+				conditionStack.Push (new CustomConditionFlagSet{ Block = bn });
+				return new ConditionStackPopper{ f = this };
+			}
+			return null;
+		}
+
+		IDisposable PushConditionEnumBlock(IStatement s)
+		{
+			INode n;
+			if (s == null || (n=s.ParentNode) == null)
+				return null;
+
+			if (conditionStack.Count == 0 || conditionStack.Peek ().Block != n) {
+				conditionStack.Push (new CustomConditionFlagSet{ Block = n });
+				return new ConditionStackPopper{ f = this };
+			}
+			return null;
+		}
+
+		bool ContinueEnumStaticStatements(IEnumerator<IStatement> en, CodeLocation until)
+		{
+			IStatement cur;
+			while ((cur = en.Current).Location < until) {
+				cur.Accept (this);
+
+				if (!en.MoveNext ())
+					return false;
+			}
+
+			return true;
+		}
+
+		public override void Visit (VersionSpecification s)
+		{
+			if (CheckCondition (s.Attributes) >= 0)
+				conditionStack.Peek ().AddVersionCondition (s);
+		}
+
+		public override void Visit (DebugSpecification s)
+		{
+			if (CheckCondition (s.Attributes) >= 0)
+				conditionStack.Peek ().AddDebugCondition (s);
 		}
 
 		public override void Visit (DClassLike n)
@@ -281,8 +357,24 @@ namespace D_Parser.Refactoring
 				return 0;
 
 			handledConditions.Add(c);
+			bool ret = false;
 
-			return ctxt.CompilationEnvironment.IsMatching(c, null) ? 1 : -1;
+			var backupStack = new Stack<CustomConditionFlagSet> ();
+			INode n = null;
+			CustomConditionFlagSet cc;
+			while (conditionStack.Count != 0 && (n == null || conditionStack.Peek ().Block == n.Parent)) {
+				cc = conditionStack.Pop ();
+				n = cc.Block;
+				backupStack.Push (cc);
+
+				if (!(ret = cc.IsMatching (c, null)))
+					break;
+			}
+
+			while (backupStack.Count != 0)
+				conditionStack.Push (backupStack.Pop ());
+
+			return ret || ctxt.CompilationEnvironment.IsMatching(c, null) ? 1 : -1;
 		}
 	}
 }

@@ -213,23 +213,13 @@ namespace D_Parser.Resolver
 			public override void Visit(VersionSpecification vs)
 			{
 				if (_checkForMatchinSpecConditions(vs))
-				{
-					if (vs.SpecifiedId == null)
-						l.AddVersionCondition(vs.SpecifiedNumber);
-					else
-						l.AddVersionCondition(vs.SpecifiedId);
-				}
+					l.AddVersionCondition (vs);
 			}
 
 			public override void Visit(DebugSpecification ds)
 			{
-				if (_checkForMatchinSpecConditions(ds))
-				{
-					if (ds.SpecifiedId == null)
-						l.AddDebugCondition(ds.SpecifiedDebugLevel);
-					else
-						l.AddDebugCondition(ds.SpecifiedId);
-				}
+				if (_checkForMatchinSpecConditions (ds))
+					l.AddDebugCondition (ds);
 			}
 
 			bool _checkForMatchinSpecConditions(StaticStatement ss)

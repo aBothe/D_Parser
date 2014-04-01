@@ -1,14 +1,13 @@
 ﻿using System.Collections.Generic;
 using D_Parser.Dom;
 using D_Parser.Parser;
+using D_Parser.Resolver;
 
 namespace D_Parser.Completion.Providers
 {
-	class AttributeCompletionProvider : AbstractCompletionProvider
+	class VersionSpecificationCompletionProvider : AbstractCompletionProvider
 	{
-		public DAttribute Attribute;
-
-		public AttributeCompletionProvider(ICompletionDataGenerator gen) : base(gen) { }
+		public VersionSpecificationCompletionProvider(ICompletionDataGenerator gen) : base(gen){}
 
 		private static readonly Dictionary<string, string> VersionCompletionItems = new Dictionary<string, string>
 		{
@@ -66,12 +65,69 @@ namespace D_Parser.Completion.Providers
 			{"all","Always defined; used as the opposite of none"}
 		};
 
+		protected override void BuildCompletionDataInternal (IEditorData Editor, char enteredChar)
+		{
+			var ctxt = ResolutionContext.Create (Editor, false);
+			CodeCompletion.DoTimeoutableCompletionTask (CompletionDataGenerator, ctxt, () => {
+				ctxt.Push(Editor);
+				var cs = ctxt.CurrentContext.DeclarationCondititons;
+				foreach (var v in cs.GlobalFlags.Versions)
+					CompletionDataGenerator.AddTextItem (v, "");
+				foreach (var v in cs.LocalFlags.Versions)
+					CompletionDataGenerator.AddTextItem (v, "");
+			});
+		}	
+	}
+
+	class DebugSpecificationCompletionProvider : AbstractCompletionProvider
+	{
+		public DebugSpecificationCompletionProvider (ICompletionDataGenerator gen) : base (gen){
+		}
+
+		protected override void BuildCompletionDataInternal (IEditorData Editor, char enteredChar)
+		{
+			var ctxt = ResolutionContext.Create (Editor, false);
+			CodeCompletion.DoTimeoutableCompletionTask (CompletionDataGenerator, ctxt, () => {
+				ctxt.Push(Editor);
+				var cs = ctxt.CurrentContext.DeclarationCondititons;
+				foreach (var v in cs.GlobalFlags.DebugVersions)
+					CompletionDataGenerator.AddTextItem (v, "");
+				foreach (var v in cs.LocalFlags.DebugVersions)
+					CompletionDataGenerator.AddTextItem (v, "");
+			});
+		}
+	}
+
+	class PragmaCompletionProvider : AbstractCompletionProvider
+	{
+		readonly PragmaAttribute Attribute;
+
+		public PragmaCompletionProvider(PragmaAttribute attr,ICompletionDataGenerator gen) : base(gen) {
+			Attribute = attr;
+		}
+
 		private static readonly Dictionary<string, string> PragmaAttributeCompletionItems = new Dictionary<string, string>
 		{
 			{"lib","Inserts a directive in the object file to link in"}, 
 			{"msg","Prints a message while compiling"}, 
 			{"startaddress","Puts a directive into the object file saying that the function specified in the first argument will be the start address for the program"}
 		};
+
+		protected override void BuildCompletionDataInternal (IEditorData Editor, char enteredChar)
+		{
+			if (string.IsNullOrEmpty(Attribute.Identifier))
+				foreach (var kv in PragmaAttributeCompletionItems)
+					CompletionDataGenerator.AddTextItem(kv.Key, kv.Value);
+		}
+	}
+
+	class AttributeCompletionProvider : AbstractCompletionProvider
+	{
+		public readonly DAttribute Attribute;
+
+		public AttributeCompletionProvider(DAttribute attr,ICompletionDataGenerator gen) : base(gen) {
+			this.Attribute = attr;
+		}
 
 		private static readonly Dictionary<string, string> ExternAttributeCompletionItems = new Dictionary<string, string>
 		{
@@ -85,29 +141,7 @@ namespace D_Parser.Completion.Providers
 
 		protected override void BuildCompletionDataInternal(IEditorData Editor, char enteredChar)
 		{
-			if (Attribute is VersionCondition)
-			{
-				if (Editor.GlobalVersionIds != null)
-					foreach (var id in Editor.GlobalVersionIds)
-						if(!VersionCompletionItems.ContainsKey(id))
-							CompletionDataGenerator.AddTextItem(id, "");
-				foreach (var kv in VersionCompletionItems)
-					CompletionDataGenerator.AddTextItem(kv.Key, kv.Value);
-			}
-			else if (Attribute is DebugCondition)
-			{
-				if(Editor.GlobalDebugIds != null)
-					foreach (var id in Editor.GlobalDebugIds)
-							CompletionDataGenerator.AddTextItem(id, "");
-			}
-			else if (Attribute is PragmaAttribute)
-			{
-				var p = Attribute as PragmaAttribute;
-				if (string.IsNullOrEmpty(p.Identifier))
-					foreach (var kv in PragmaAttributeCompletionItems)
-						CompletionDataGenerator.AddTextItem(kv.Key, kv.Value);
-			}
-			else if (Attribute is Modifier && ((Modifier)Attribute).Token == DTokens.Extern)
+			if (Attribute is Modifier && ((Modifier)Attribute).Token == DTokens.Extern)
 			{
 				foreach (var kv in ExternAttributeCompletionItems)
 					CompletionDataGenerator.AddTextItem(kv.Key, kv.Value);
