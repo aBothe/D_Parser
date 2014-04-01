@@ -111,7 +111,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Completion\AbstractTooltipProvider.cs" />
     <Compile Include="Completion\MethodOverrideCompletionProvider.cs" />
     <Compile Include="Completion\NodeTooltipRepresentationGen.cs" />
     <Compile Include="Completion\Providers\AttributeCompletionProvider.cs" />
