@@ -37,9 +37,9 @@ namespace D_Parser.Completion.ToolTips
 	[Flags]
 	public enum TooltipSignatureFlags
 	{
-		NoLineBreakedMethodParameters,
-		NoDefaultParams,
-		NoEnsquaredDefaultParams
+		NoLineBreakedMethodParameters = 1<<0,
+		NoDefaultParams = 1<<1,
+		NoEnsquaredDefaultParams = 1<<2,
 	}
 
 	public partial class NodeTooltipRepresentationGen
