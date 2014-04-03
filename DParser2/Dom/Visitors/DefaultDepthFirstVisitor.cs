@@ -300,6 +300,12 @@ namespace D_Parser.Dom
 				foreach (var t in s.ForeachTypeList)
 					if(t != null)
 						t.Accept(this);
+
+			if (s.Aggregate != null)
+				s.Aggregate.Accept(this);
+
+			if (s.UpperAggregate != null)
+				s.UpperAggregate.Accept(this);
 		}
 
 		public virtual void Visit(SwitchStatement s)
