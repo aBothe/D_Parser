@@ -34,8 +34,18 @@ using System.Text;
 
 namespace D_Parser.Completion.ToolTips
 {
+	[Flags]
+	public enum TooltipSignatureFlags
+	{
+		NoLineBreakedMethodParameters,
+		NoDefaultParams,
+		NoEnsquaredDefaultParams
+	}
+
 	public partial class NodeTooltipRepresentationGen
     {
+		public TooltipSignatureFlags SignatureFlags;
+
 		public string GenTooltipSignature(AbstractType t, bool templateParamCompletion = false, int currentMethodParam = -1)
 		{
 			var ds = t as DSymbol;
@@ -137,16 +147,18 @@ namespace D_Parser.Completion.ToolTips
 			{
 				for (int i = 0; i < dm.Parameters.Count; i++)
 				{
-					sb.AppendLine();
-					sb.Append("  ");
+					if((SignatureFlags & TooltipSignatureFlags.NoLineBreakedMethodParameters) == 0)
+						sb.AppendLine().Append("  ");
 
 					var parm = dm.Parameters[i] as DNode;
 
 					var indexBackup = sb.Length;
 
-					var isOpt = parm is DVariable && (parm as DVariable).Initializer != null;
+					var addSqareBrackets = (this.SignatureFlags & TooltipSignatureFlags.NoEnsquaredDefaultParams) == 0;
 
-					if (isOpt)
+					var isOpt = (this.SignatureFlags & TooltipSignatureFlags.NoDefaultParams) == 0 && parm is DVariable && (parm as DVariable).Initializer != null;
+
+					if (isOpt && addSqareBrackets)
 						sb.Append('[');
 
 					//TODO: Show deduced parameters
@@ -161,13 +173,18 @@ namespace D_Parser.Completion.ToolTips
 					}
 
 					if (isOpt)
-						sb.Append(" = ").Append((parm as DVariable).Initializer.ToString()).Append(']');
+					{
+						sb.Append(" = ").Append((parm as DVariable).Initializer.ToString());
+						if(addSqareBrackets)
+							sb.Append(']');
+					}
 
 					sb.Append(',');
 				}
 
 				RemoveLastChar(sb, ',');
-				sb.AppendLine();
+				if((SignatureFlags & TooltipSignatureFlags.NoLineBreakedMethodParameters) == 0)
+					sb.AppendLine();
 			}
 
 			sb.Append(')');
