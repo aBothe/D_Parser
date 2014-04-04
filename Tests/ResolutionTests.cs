@@ -1048,21 +1048,21 @@ int delegate(int b) myDeleg;
 			var x = DParser.ParseExpression("f!(char[5])");
 			var r=ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			var mr = r as MemberSymbol;
-			Assert.IsNotNull(mr);
+			Assert.That(r, Is.TypeOf(typeof(MemberSymbol)));
 
 			var v = mr.DeducedTypes[2].ParameterValue;
-			Assert.IsInstanceOfType(typeof(PrimitiveValue),v);
+			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
 			Assert.AreEqual(5M, ((PrimitiveValue)v).Value);
 
 			x = DParser.ParseExpression("fo!(char[5])");
 			r = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			mr = r as MemberSymbol;
-			Assert.IsNotNull(mr);
+			Assert.That(r, Is.TypeOf(typeof(MemberSymbol)));
 
 			x = DParser.ParseExpression("fo!(immutable(char)[])");
 			r = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			mr = r as MemberSymbol;
-			Assert.IsNotNull(mr);
+			Assert.That(r, Is.TypeOf(typeof(MemberSymbol)));
 
 			x = DParser.ParseExpression("myDeleg");
 			r = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
@@ -3098,7 +3098,42 @@ mixin(""class ""~mxT4!(""myClass"")~"" {}"");"");");
 			Assert.That(t,Is.TypeOf(typeof(ClassType)));
 		}
 		#endregion
-		
+
+		#region Operator Overloads
+		[Test]
+		public void opSlice()
+		{
+			var ctxt = CreateCtxt("A", @"module A;
+
+struct S(T)
+{
+	T opSlice() {}
+	int[] opSlice(int dope);
+	T* opSlice(U)(U x, size_t y); // overloads a[i .. j]
+}
+
+S!int s;
+");
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression("s[]");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
+			Assert.That((t as DerivedDataType).Base, Is.TypeOf(typeof(PrimitiveType)));
+
+			x = DParser.ParseExpression("s[1..3]");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(PointerType)));
+			t = (t as PointerType).Base;
+			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
+			Assert.That((t as DerivedDataType).Base, Is.TypeOf(typeof(PrimitiveType)));
+
+		}
+
+
+		#endregion
+
 		#region Template Mixins
 		[Test]
 		public void TemplateMixins1()

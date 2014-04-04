@@ -1,6 +1,7 @@
 ﻿using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
+using D_Parser.Resolver.ASTScanner;
 using D_Parser.Resolver.ExpressionSemantics.CTFE;
 using D_Parser.Resolver.TypeResolution;
 using System;
@@ -75,10 +76,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		}
 
 
-		AbstractType TryPretendMethodExecution(AbstractType b, ISyntaxRegion typeBase = null)
+		AbstractType TryPretendMethodExecution(AbstractType b, ISyntaxRegion typeBase = null, AbstractType[] args = null)
 		{
-			if(!TryReturnMethodReturnType || 
-				(ctxt.Options & (ResolutionOptions.DontResolveBaseTypes | ResolutionOptions.ReturnMethodReferencesOnly)) != 0)
+			if (!TryReturnMethodReturnType || (ctxt.Options & ResolutionOptions.ReturnMethodReferencesOnly) != 0)
 				return b;
 
 			if (b is AmbiguousType)
@@ -89,7 +89,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				{
 					if (ov is MemberSymbol)
 					{
-						var next = TryPretendMethodExecution_(ov as MemberSymbol);
+						var next = TryPretendMethodExecution_(ov as MemberSymbol, args);
 						if (first == null && next != ov)
 						{
 							first = next;
@@ -105,16 +105,22 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 
 			var mr = b as MemberSymbol;
-			return mr == null ? b : TryPretendMethodExecution_(mr);
+			return mr == null ? b : TryPretendMethodExecution_(mr, args);
 		}
 
-		AbstractType TryPretendMethodExecution_(MemberSymbol mr)
+		AbstractType TryPretendMethodExecution_(MemberSymbol mr, AbstractType[] execargs = null)
 		{
 			if (!(mr.Definition is DMethod))
 				return mr;
 
 			Dictionary<DVariable, AbstractType> args;
-			return FunctionEvaluation.AssignCallArgumentsToIC<AbstractType>(mr, null, null, out args, ctxt) ? mr.Base ?? mr : null;
+			if(!FunctionEvaluation.AssignCallArgumentsToIC<AbstractType>(mr, execargs, null, out args, ctxt))
+				return null;
+
+			if((ctxt.Options & ResolutionOptions.DontResolveBaseTypes) != 0)
+				return mr;
+
+			return mr.Base;
 		}
 
 		void GetRawCallOverloads(ResolutionContext ctxt, IExpression callForeExpression,
@@ -710,6 +716,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return null;
 		}
 
+		static readonly int OpSliceIdHash = "opSlice".GetHashCode();
+
 		public AbstractType Visit(PostfixExpression_Slice x)
 		{
 			var foreExpression = EvalForeExpression(x);
@@ -719,7 +727,33 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (foreExpression is MemberSymbol)
 				foreExpression = DResolver.StripMemberSymbols(foreExpression);
 
-			return foreExpression; // Still of the array's type.
+			var udt = foreExpression as UserDefinedType;
+
+			if (udt == null)
+				return foreExpression;
+
+			AbstractType[] sliceArgs;
+			if (x.FromExpression == null && x.ToExpression == null)
+				sliceArgs = null;
+			else
+			{
+				sliceArgs = new AbstractType[2];
+				if (x.FromExpression != null)
+					sliceArgs[0] = x.FromExpression.Accept(this);
+				if (x.ToExpression != null)
+					sliceArgs[1] = x.ToExpression.Accept(this);
+			}
+
+			var returnedOpSlices = new List<AbstractType>();
+
+			ctxt.CurrentContext.IntroduceTemplateParameterTypes(udt);
+
+			var overloads = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(OpSliceIdHash, AmbiguousType.TryDissolve(foreExpression), ctxt, x, false);
+
+			overloads = TemplateInstanceHandler.DeduceParamsAndFilterOverloads(overloads, sliceArgs, true, ctxt);
+
+			ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(udt);
+			return TryPretendMethodExecution(AmbiguousType.Get(overloads, x), x, sliceArgs) ?? foreExpression;
 		}
 		#endregion
 
