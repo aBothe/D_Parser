@@ -33,19 +33,17 @@ using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Refactoring
 {
-	public class ReferencesFinder : DefaultDepthFirstVisitor
+	public class ReferencesFinder : AbstractResolutionVisitor
 	{
 		#region Properties
-		readonly ResolutionContext ctxt;
 		readonly List<ISyntaxRegion> l = new List<ISyntaxRegion>();
 		readonly INode symbol;
 		readonly int searchHash;
 		#endregion
 
 		#region Constructor / External
-		ReferencesFinder(INode symbol, DModule ast, ResolutionContext ctxt)
+		ReferencesFinder(INode symbol, DModule ast, ResolutionContext ctxt) : base(ctxt)
 		{
-			this.ctxt = ctxt;
 			this.symbol = symbol;
 			searchHash = symbol.NameHash;
 		}
@@ -131,12 +129,7 @@ namespace D_Parser.Refactoring
 		*/
 
 		#region Id filter visit overloads
-		Stack<DSymbol> postfixForeExprAccessStack=new Stack<DSymbol>();
-		DSymbol TryPopPFAStack()
-		{
-			return postfixForeExprAccessStack.Count == 0 ? null : postfixForeExprAccessStack.Pop ();
-		}
-
+		bool resolveAnyway = false;
 		public override void VisitTemplateParameter (TemplateParameter tp)
 		{
 			if (tp.NameHash == searchHash && tp.Representation == symbol)
@@ -145,58 +138,65 @@ namespace D_Parser.Refactoring
 
 		public override void Visit (IdentifierDeclaration id)
 		{
-			var resolvedSymbol = TryPopPFAStack ();
-			if (id.IdHash == searchHash) {
-				if(resolvedSymbol == null)
-					resolvedSymbol = TypeDeclarationResolver.ResolveSingle (id, ctxt) as DSymbol;
-
-				if (resolvedSymbol != null && resolvedSymbol.Definition == symbol) {
-					l.Add (id);
+			if (id.IdHash == searchHash || resolveAnyway) {
+				ctxt.CurrentContext.Set(id.Location);
+				if (TryAdd(TypeDeclarationResolver.ResolveSingle(id, ctxt), id))
 					return;
+			}
+
+			base.Visit (id);
+		}
+
+		bool TryAdd(AbstractType resolvedSymbol, ISyntaxRegion sr)
+		{
+			if (resolvedSymbol != null)
+			{
+				INode n;
+				var aliasTag = resolvedSymbol.Tag as D_Parser.Resolver.TypeResolution.TypeDeclarationResolver.AliasTag;
+				if (aliasTag != null)
+					n = aliasTag.aliasDefinition;
+				else if (resolvedSymbol is DSymbol)
+					n = (resolvedSymbol as DSymbol).Definition;
+				else
+					n = null;
+
+				if (n == symbol)
+				{
+					l.Add(sr);
+					return true;
 				}
 			}
-			base.Visit (id);
+			return false;
 		}
 
 		public override void Visit (IdentifierExpression id)
 		{
-			var resolvedSymbol = TryPopPFAStack ();
-			if (id.IsIdentifier && id.ValueStringHash == searchHash) {
-				if(resolvedSymbol == null)
-					resolvedSymbol = ExpressionTypeEvaluation.EvaluateType(id, ctxt, false) as DSymbol;
-
-				if (resolvedSymbol != null && resolvedSymbol.Definition == symbol) {
-					l.Add (id);
+			if (id.IsIdentifier && id.ValueStringHash == searchHash)
+			{
+				ctxt.CurrentContext.Set(id.Location);
+				if (TryAdd(ExpressionTypeEvaluation.EvaluateType(id, ctxt, false), id))
 					return;
-				}
 			}
-			base.Visit (id);
 		}
 
-		public override void Visit (TemplateInstanceExpression tix)
+		public override void Visit (TemplateInstanceExpression id)
 		{
-			var resolvedSymbol = TryPopPFAStack ();
-			if (tix.TemplateIdHash == searchHash) {
-				if(resolvedSymbol == null)
-					resolvedSymbol = ExpressionTypeEvaluation.EvaluateType(tix, ctxt, false) as DSymbol;
-
-				if (resolvedSymbol != null && resolvedSymbol.Definition == symbol) {
-					l.Add (tix);
+			if (id.TemplateIdHash == searchHash)
+			{
+				ctxt.CurrentContext.Set(id.Location);
+				if (TryAdd(ExpressionTypeEvaluation.EvaluateType(id, ctxt, false), id))
 					return;
-				}
 			}
-			base.Visit (tix);
 		}
 
 		public override void Visit (PostfixExpression_Access acc)
 		{
-			var resolvedSymbol = TryPopPFAStack ();
+			acc.PostfixForeExpression.Accept(this);
 
 			if ((acc.AccessExpression is IdentifierExpression &&
 			    (acc.AccessExpression as IdentifierExpression).ValueStringHash != searchHash) ||
 			    (acc.AccessExpression is TemplateInstanceExpression &&
 			    ((TemplateInstanceExpression)acc.AccessExpression).TemplateIdHash != searchHash)) {
-				acc.PostfixForeExpression.Accept (this);
 				return;
 			} else if (acc.AccessExpression is NewExpression) {
 				var nex = acc.AccessExpression as NewExpression;
@@ -205,28 +205,21 @@ namespace D_Parser.Refactoring
 				    ((IdentifierDeclaration)nex.Type).IdHash != searchHash) ||
 				    (nex.Type is TemplateInstanceExpression &&
 				    ((TemplateInstanceExpression)acc.AccessExpression).TemplateIdHash != searchHash)) {
-					acc.PostfixForeExpression.Accept (this);
-					return;
+ 					return;
 				}
 				// Are there other types to test for?
 			} else {
 				// Are there other types to test for?
-			}
+ 			}
 
-			var s = resolvedSymbol ?? ExpressionTypeEvaluation.EvaluateType(acc, ctxt, false) as DerivedDataType;
-
-			if (s is DSymbol) {
-				if (((DSymbol)s).Definition == symbol)
-					l.Add (acc.AccessExpression);
-			} else if (s == null || !(s.Base is DSymbol)) {
-				acc.PostfixForeExpression.Accept (this);
+			ctxt.CurrentContext.Set(acc.Location);
+			var ov = ExpressionTypeEvaluation.GetAccessedOverloads(acc, ctxt, null, false);
+			if (ov == null)
 				return;
-			}
 
-			// Scan down for other possible symbols
-			if(s.Base is DSymbol)
-				postfixForeExprAccessStack.Push (s.Base as DSymbol);
-			acc.PostfixForeExpression.Accept (this);
+			foreach(var o in ov)
+				if (TryAdd(o, acc.AccessExpression))
+					return;
 		}
 
 		public override void Visit (IsExpression x)
