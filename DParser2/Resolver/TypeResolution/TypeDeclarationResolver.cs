@@ -508,11 +508,23 @@ namespace D_Parser.Resolver.TypeResolution
 			}
 		}
 
+		[ThreadStatic]
+		public static Stack<ISyntaxRegion> aliasDeductionStack = new Stack<ISyntaxRegion>();
+
 		public static AbstractType TryPostDeduceAliasDefinition(AbstractType b, ISyntaxRegion typeBase, ResolutionContext ctxt)
 		{
-			if (b != null && b.Tag is AliasTag && (ctxt.Options & ResolutionOptions.DontResolveAliases) == 0)
+			if (typeBase != null &&
+				b != null && 
+				b.Tag is AliasTag && 
+				(ctxt.Options & ResolutionOptions.DontResolveAliases) == 0)
 			{
-				var bases = b is AmbiguousType ? (b as AmbiguousType).Overloads : new[] { b };
+				if (aliasDeductionStack == null)
+					aliasDeductionStack = new Stack<ISyntaxRegion>();
+				else if (aliasDeductionStack.Contains(typeBase))
+					return b;
+				aliasDeductionStack.Push(typeBase);
+
+				var bases = AmbiguousType.TryDissolve(b);
 
 				//TODO: Declare alias-level context? 
 
@@ -522,10 +534,12 @@ namespace D_Parser.Resolver.TypeResolution
 					foreach (var bas in bases)
 						ResetDeducedSymbols(bas);
 
-					return AmbiguousType.Get(TemplateInstanceHandler.DeduceParamsAndFilterOverloads(bases, typeBase as TemplateInstanceExpression, ctxt, false));
+					b = AmbiguousType.Get(TemplateInstanceHandler.DeduceParamsAndFilterOverloads(bases, typeBase as TemplateInstanceExpression, ctxt, false));
 				}
-				else if (typeBase != null) // SO-prevention
-					return AmbiguousType.Get(TemplateInstanceHandler.DeduceParamsAndFilterOverloads(bases, null, false, ctxt));
+				else 
+					b = AmbiguousType.Get(TemplateInstanceHandler.DeduceParamsAndFilterOverloads(bases, null, false, ctxt));
+
+				aliasDeductionStack.Pop();
 			}
 
 			return b;
