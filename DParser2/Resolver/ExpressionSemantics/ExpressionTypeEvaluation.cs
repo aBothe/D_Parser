@@ -69,7 +69,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			AbstractType[] baseExpression;
 			TemplateInstanceExpression tix;
 
-			GetRawCallOverloads(ctxt, call, out baseExpression, out tix);
+			GetRawCallOverloads(ctxt, call.PostfixForeExpression, out baseExpression, out tix);
 
 			return Evaluation.EvalMethodCall(baseExpression, null, tix, ctxt, call, out callArgs, out delegValue, !ctxt.Options.HasFlag(ResolutionOptions.ReturnMethodReferencesOnly));
 		}
@@ -117,15 +117,15 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return FunctionEvaluation.AssignCallArgumentsToIC<AbstractType>(mr, null, null, out args, ctxt) ? mr.Base ?? mr : null;
 		}
 
-		void GetRawCallOverloads(ResolutionContext ctxt, PostfixExpression_MethodCall call,
+		void GetRawCallOverloads(ResolutionContext ctxt, IExpression callForeExpression,
 			out AbstractType[] baseExpression,
 			out TemplateInstanceExpression tix)
 		{
 			tix = null;
 
-			if (call.PostfixForeExpression is PostfixExpression_Access)
+			if (callForeExpression is PostfixExpression_Access)
 			{
-				var pac = (PostfixExpression_Access)call.PostfixForeExpression;
+				var pac = (PostfixExpression_Access)callForeExpression;
 				tix = pac.AccessExpression as TemplateInstanceExpression;
 
 				baseExpression = Evaluation.EvalPostfixAccessExpression(this, ctxt, pac, null, false, false);
@@ -136,16 +136,16 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				var optBackup = ctxt.CurrentContext.ContextDependentOptions;
 				ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.DontResolveBaseTypes;
 
-				if (call.PostfixForeExpression is TokenExpression)
-					baseExpression = ExpressionTypeEvaluation.GetResolvedConstructorOverloads((TokenExpression)call.PostfixForeExpression, ctxt);
+				if (callForeExpression is TokenExpression)
+					baseExpression = ExpressionTypeEvaluation.GetResolvedConstructorOverloads((TokenExpression)callForeExpression, ctxt);
 				else 
 				{
-					if (call.PostfixForeExpression is TemplateInstanceExpression)
-						baseExpression = ExpressionTypeEvaluation.GetOverloads(tix = (TemplateInstanceExpression)call.PostfixForeExpression, ctxt, null, false);
-					else if (call.PostfixForeExpression is IdentifierExpression)
-						baseExpression = ExpressionTypeEvaluation.GetOverloads(call.PostfixForeExpression as IdentifierExpression, ctxt, deduceParameters: false);
+					if (callForeExpression is TemplateInstanceExpression)
+						baseExpression = ExpressionTypeEvaluation.GetOverloads(tix = (TemplateInstanceExpression)callForeExpression, ctxt, null, false);
+					else if (callForeExpression is IdentifierExpression)
+						baseExpression = ExpressionTypeEvaluation.GetOverloads(callForeExpression as IdentifierExpression, ctxt, deduceParameters: false);
 					else
-						baseExpression = new[] { call.PostfixForeExpression != null ? AbstractType.Get(call.PostfixForeExpression.Accept(this)) : null };
+						baseExpression = new[] { callForeExpression != null ? AbstractType.Get(callForeExpression.Accept(this)) : null };
 				}
 
 				ctxt.CurrentContext.ContextDependentOptions = optBackup;
