@@ -240,6 +240,10 @@ int a;
 
 			Assert.That (@"enum ", Does.Not.Trigger);
 			Assert.That (@"enum { ", Does.Not.Trigger);
+
+			Assert.That(@"void main(", Does.Trigger);
+			Assert.That(@"void main(string[", Does.Trigger);
+			Assert.That(@"void main(string* ", Does.Not.Trigger);
 		}
 
 		[Test]
