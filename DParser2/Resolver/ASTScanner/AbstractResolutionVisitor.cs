@@ -55,7 +55,7 @@ namespace D_Parser.Resolver.ASTScanner
 				base.VisitSubStatements(stmt);
 		}
 
-		public override void VisitBlock (DBlockNode bn)
+		public void PushBlock (DBlockNode bn)
 		{
 			var back = ctxt.ScopedBlock;
 			using(ctxt.Push(bn)) {
@@ -65,24 +65,30 @@ namespace D_Parser.Resolver.ASTScanner
 			}
 		}
 
+		public override void Visit(DEnum n)
+		{
+			PushBlock(n);
+		}
+
+		public override void Visit(DModule bn)
+		{
+			PushBlock(bn);
+		}
+
 		// Only for parsing the base class identifiers!
 		public override void Visit (DClassLike dc)
 		{
-			var back = ctxt.ScopedBlock;
-			using(ctxt.Push(dc)) {
-				if(back != ctxt.ScopedBlock)
-					OnScopedBlockChanged (dc);
-				base.Visit(dc);
-			}
+			PushBlock(dc);
 		}
 
-		public override void Visit (DMethod dm)
+		public override void Visit (DMethod bn)
 		{
 			var back = ctxt.ScopedBlock;
-			using (ctxt.Push(dm)) {
-				if (back != ctxt.ScopedBlock)
-					OnScopedBlockChanged(dm);
-				base.Visit(dm);
+			using (ctxt.Push(bn))
+			{
+				if (ctxt.ScopedBlock != back)
+					OnScopedBlockChanged(bn);
+				base.Visit(bn);
 			}
 		}
 		#endregion
