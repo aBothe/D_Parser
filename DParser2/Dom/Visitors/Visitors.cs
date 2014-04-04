@@ -31,19 +31,19 @@ namespace D_Parser.Dom
 
 	public interface NodeVisitor : IVisitor
 	{
-		void Visit(DEnumValue dEnumValue);
-		void Visit(DVariable dVariable);
-		void Visit(DMethod dMethod);
-		void Visit(DClassLike dClassLike);
-		void Visit(DEnum dEnum);
-		void Visit(DModule dModule);
-		void VisitBlock(DBlockNode dBlockNode);
-		void Visit(TemplateParameter.Node templateParameterNode);
+		void Visit(DEnumValue n);
+		void Visit(DVariable n);
+		void Visit(DMethod n);
+		void Visit(DClassLike n);
+		void Visit(DEnum n);
+		void Visit(DModule n);
+		void VisitBlock(DBlockNode n);
+		void Visit(TemplateParameter.Node n);
 		void Visit(NamedTemplateMixinNode n);
 
-		void VisitAttribute(Modifier attribute);
+		void VisitAttribute(Modifier a);
 		void VisitAttribute(DeprecatedAttribute a);
-		void VisitAttribute(PragmaAttribute pragma);
+		void VisitAttribute(PragmaAttribute a);
 		void VisitAttribute(BuiltInAtAttribute a);
 		void VisitAttribute(UserDeclarationAttribute a);
 		
@@ -52,25 +52,25 @@ namespace D_Parser.Dom
 		void VisitAttribute(StaticIfCondition a);
 		void VisitAttribute(NegatedDeclarationCondition a);
 
-		void Visit(EponymousTemplate ep);
-		void Visit(ModuleAliasNode moduleAliasNode);
-		void Visit(ImportSymbolNode importSymbolNode);
-		void Visit(ImportSymbolAlias importSymbolAlias);
+		void Visit(EponymousTemplate n);
+		void Visit(ModuleAliasNode n);
+		void Visit(ImportSymbolNode n);
+		void Visit(ImportSymbolAlias n);
 	}
 
 	public interface NodeVisitor<out R> : IVisitor<R>
 	{
-		R Visit(DEnumValue dEnumValue);
-		R Visit(DVariable dVariable);
-		R Visit(DMethod dMethod);
-		R Visit(DClassLike dClassLike);
-		R Visit(DEnum dEnum);
-		R Visit(DModule dModule);
-		R Visit(DBlockNode dBlockNode);
-		R Visit(TemplateParameter.Node templateParameterNode);
+		R Visit(DEnumValue n);
+		R Visit(DVariable n);
+		R Visit(DMethod n);
+		R Visit(DClassLike n);
+		R Visit(DEnum n);
+		R Visit(DModule n);
+		R Visit(DBlockNode n);
+		R Visit(TemplateParameter.Node n);
 		R Visit(NamedTemplateMixinNode n);
 
-		R VisitAttribute(Modifier attr);
+		R VisitAttribute(Modifier a);
 		R VisitAttribute(DeprecatedAttribute a);
 		R VisitAttribute(PragmaAttribute attr);
 		R VisitAttribute(BuiltInAtAttribute a);
@@ -81,10 +81,10 @@ namespace D_Parser.Dom
 		R VisitAttribute(StaticIfCondition a);
 		R VisitAttribute(NegatedDeclarationCondition a);
 
-		R Visit(EponymousTemplate ep);
-		R Visit(ModuleAliasNode moduleAliasNode);
-		R Visit(ImportSymbolNode importSymbolNode);
-		R Visit(ImportSymbolAlias importSymbolAlias);
+		R Visit(EponymousTemplate n);
+		R Visit(ModuleAliasNode n);
+		R Visit(ImportSymbolNode n);
+		R Visit(ImportSymbolAlias n);
 	}
 
 	public interface MetaDeclarationVisitor : IVisitor
