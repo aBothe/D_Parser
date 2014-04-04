@@ -268,8 +268,9 @@ namespace D_Parser.Completion
 
 			var overloads = new List<AbstractType>();
 
-			var bases = AmbiguousType.TryDissolve(ExpressionTypeEvaluation.EvaluateType(x.PostfixForeExpression, ctxt));
-
+			var b = ExpressionTypeEvaluation.EvaluateType(x.PostfixForeExpression, ctxt);
+			var bases = AmbiguousType.TryDissolve(b);
+			
 			var ov = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(ExpressionTypeEvaluation.OpSliceIdHash, bases, ctxt, x, false);
 			if (ov != null)
 				overloads.AddRange(ov);
@@ -277,6 +278,50 @@ namespace D_Parser.Completion
 			ov = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(ExpressionTypeEvaluation.OpIndexIdHash, bases, ctxt, x, false);
 			if (ov != null)
 				overloads.AddRange(ov);
+
+			if (overloads.Count == 0)
+			{
+				b = DResolver.StripMemberSymbols(b);
+				var toTypeDecl = new DTypeToTypeDeclVisitor();
+				var aa = b as AssocArrayType;
+				if (aa != null){
+					var retType = aa.ValueType != null ? aa.ValueType.Accept(toTypeDecl) : null;
+					var dm = new DMethod { 
+						Name = "opIndex",
+						Type = retType
+					};
+					dm.Parameters.Add(new DVariable { 
+						Name = "index",
+						Type = aa.KeyType != null ? aa.KeyType.Accept(toTypeDecl) : null 
+					});
+					overloads.Add(new MemberSymbol(dm, aa.ValueType, x));
+
+					if ((aa is ArrayType) && !(aa as ArrayType).IsStaticArray)
+					{
+						dm = new DMethod
+						{
+							Name = "opSlice",
+							Type = retType
+						};
+						overloads.Add(new MemberSymbol(dm, aa.ValueType, x));
+					}
+				}
+				else if (b is PointerType)
+				{
+					b = (b as PointerType).Base;
+					var dm = new DMethod
+					{
+						Name = "opIndex",
+						Type = b != null ? b.Accept(toTypeDecl) : null
+					};
+					dm.Parameters.Add(new DVariable
+					{
+						Name = "index",
+						Type = new IdentifierDeclaration("size_t")
+					});
+					overloads.Add(new MemberSymbol(dm, b, x));
+				}
+			}
 
 			res.ResolvedTypesOrMethods = overloads.ToArray();
 		}
