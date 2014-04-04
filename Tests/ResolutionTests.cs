@@ -3128,10 +3128,38 @@ S!int s;
 			t = (t as PointerType).Base;
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			Assert.That((t as DerivedDataType).Base, Is.TypeOf(typeof(PrimitiveType)));
-
 		}
 
+		[Test]
+		public void opIndex()
+		{
+			var ctxt = CreateCtxt("A", @"module A;
 
+struct S(T)
+{
+	T opIndex(size_t i) {}
+	int[] opIndex(int j,int k);
+	int* opIndex(int j, int k, int l);
+}
+
+S!int s;
+");
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression("s[1]");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
+			Assert.That((t as DerivedDataType).Base, Is.TypeOf(typeof(PrimitiveType)));
+
+			x = DParser.ParseExpression("s[1,2]");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(ArrayType)));
+
+			x = DParser.ParseExpression("s[1,2,3]");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(PointerType)));
+		}
 		#endregion
 
 		#region Template Mixins

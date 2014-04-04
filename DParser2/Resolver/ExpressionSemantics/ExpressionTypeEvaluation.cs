@@ -629,6 +629,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return EvalForeExpression(x);
 		}
 
+		static readonly int OpIndexIdHash = "opIndex".GetHashCode();
+
 		public AbstractType Visit(PostfixExpression_Index x)
 		{
 			var foreExpression = EvalForeExpression(x);
@@ -638,20 +640,42 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (foreExpression is MemberSymbol)
 				foreExpression = DResolver.StripMemberSymbols(foreExpression);
 
-			
+			var udt = foreExpression as UserDefinedType;
 
-			if (foreExpression is TemplateIntermediateType)
+			if (udt != null)
 			{
-				var tit = foreExpression as TemplateIntermediateType;
-				var ch = tit.Definition[DVariable.AliasThisIdentifierHash];
-				if (ch != null)
+				ctxt.CurrentContext.IntroduceTemplateParameterTypes(udt);
+
+				var overloads = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(OpIndexIdHash, AmbiguousType.TryDissolve(foreExpression), ctxt, x, false);
+				if (overloads != null && overloads.Length > 0)
 				{
-					foreach (DVariable aliasThis in ch)
+					var indexArgs = x.Arguments != null ? new AbstractType[x.Arguments.Length] : null;
+					for (int i = 0; i < indexArgs.Length; i++)
+						if(x.Arguments[i] != null)
+							indexArgs[i] = x.Arguments[i].Accept(this);
+
+					overloads = TemplateInstanceHandler.DeduceParamsAndFilterOverloads(overloads, indexArgs, true, ctxt);
+					ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(udt);
+					return TryPretendMethodExecution(AmbiguousType.Get(overloads, x), x, indexArgs);
+				}
+				ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(udt);
+				
+				if (foreExpression is TemplateIntermediateType)
+				{//TODO: Proper resolution of alias this declarations
+					var tit = foreExpression as TemplateIntermediateType;
+					var ch = tit.Definition[DVariable.AliasThisIdentifierHash];
+					if (ch != null)
 					{
-						foreExpression = TypeDeclarationResolver.HandleNodeMatch(aliasThis, ctxt, foreExpression);
-						if (foreExpression != null)
-							break; // HACK: Just omit other alias this' to have a quick run-through
+						foreach (DVariable aliasThis in ch)
+						{
+							foreExpression = TypeDeclarationResolver.HandleNodeMatch(aliasThis, ctxt, foreExpression);
+							if (foreExpression != null)
+								break; // HACK: Just omit other alias this' to have a quick run-through
+						}
 					}
+
+					if (foreExpression == null)
+						return tit;
 				}
 			}
 
@@ -712,7 +736,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				}
 			}
 
-			ctxt.LogError(new ResolutionError(x, "Invalid base type for index expression"));
+			ctxt.LogError(x, "No matching base type for indexing operation");
 			return null;
 		}
 
@@ -723,7 +747,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var foreExpression = EvalForeExpression(x);
 
 			// myArray[0]; myArray[0..5];
-			// opIndex/opSlice ?
 			if (foreExpression is MemberSymbol)
 				foreExpression = DResolver.StripMemberSymbols(foreExpression);
 
@@ -743,8 +766,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				if (x.ToExpression != null)
 					sliceArgs[1] = x.ToExpression.Accept(this);
 			}
-
-			var returnedOpSlices = new List<AbstractType>();
 
 			ctxt.CurrentContext.IntroduceTemplateParameterTypes(udt);
 
