@@ -194,7 +194,7 @@ namespace D_Parser.Resolver.TypeResolution
 		public static AbstractType[] ResolveFurtherTypeIdentifier(int nextIdentifierHash,
 			IEnumerable<AbstractType> resultBases,
 			ResolutionContext ctxt,
-			ISyntaxRegion typeIdObject = null)
+			ISyntaxRegion typeIdObject = null, bool ufcsItem = true)
 		{
 			MemberSymbol statProp;
 			if ((resultBases = DResolver.StripMemberSymbols(resultBases)) == null)
@@ -234,9 +234,9 @@ namespace D_Parser.Resolver.TypeResolution
 
 						// go the opDispatch way if possible - http://dlang.org/operatoroverloading.html#Dispatch
 						if (r.Count == 0 && nextIdentifierHash != OpDispatchResolution.opDispatchId)
-							r.AddRange(OpDispatchResolution.TryResolveFurtherIdViaOpDispatch(ctxt, nextIdentifierHash, udt));
+							r.AddRange(OpDispatchResolution.TryResolveFurtherIdViaOpDispatch(ctxt, nextIdentifierHash, udt, typeIdObject));
 
-						if (r.Count == 0)
+						if (r.Count == 0 && ufcsItem)
 							r.AddRange(UFCSResolver.TryResolveUFCS(b, nextIdentifierHash, ctxt.ScopedBlock != udt.Definition && typeIdObject != null ? typeIdObject.Location : ctxt.ScopedBlock.BlockStartLocation, ctxt, typeIdObject));
 					}
 				}
@@ -258,7 +258,7 @@ namespace D_Parser.Resolver.TypeResolution
 					if (statProp != null)
 						r.Add(statProp);
 
-					if(r.Count == 0) // Only if there hasn't been a result yet?
+					if(r.Count == 0 && ufcsItem) // Only if there hasn't been a result yet?
 						r.AddRange(UFCSResolver.TryResolveUFCS (b, nextIdentifierHash, typeIdObject != null ? typeIdObject.Location : ctxt.ScopedBlock.BlockStartLocation, ctxt, typeIdObject));
 				}
 			}
