@@ -1202,7 +1202,7 @@ namespace D_Parser.Parser
 						cd = new ArrayDecl() { KeyType=null, KeyExpression=fromExpression,ClampsEmpty=false,Location=startLoc };
 				}
 
-				if ((AllowWeakTypeParsing && laKind != CloseSquareBracket) || IsEOF)
+				if ((AllowWeakTypeParsing && laKind != CloseSquareBracket))
 					return null;
 
 				Expect(CloseSquareBracket);
@@ -1262,9 +1262,14 @@ namespace D_Parser.Parser
 				// extern void Cfoo(HANDLE,char**);
 				if (IsParam && laKind != (Identifier))
 				{
-					if ((!(ret.Type is DTokenDeclaration) || 
-						(ret.Type as DTokenDeclaration).Token != DTokens.Incomplete) && IsEOF)
-						ret.NameHash = DTokens.IncompleteIdHash;
+					if(IsEOF)
+					{
+						var tokDecl = ret.Type as DTokenDeclaration;
+						var ad = ret.Type as ArrayDecl;
+						if ((tokDecl == null || tokDecl.Token != DTokens.Incomplete) && // 'T!|' or similar
+							(ad == null || !(ad.KeyExpression is TokenExpression) || (ad.KeyExpression as TokenExpression).Token != DTokens.Incomplete)) // 'string[|'
+							ret.NameHash = DTokens.IncompleteIdHash;
+					}
 					return ret;
 				}
 
