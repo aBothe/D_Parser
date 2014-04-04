@@ -143,11 +143,15 @@ namespace D_Parser.Completion
 		/// <param name="cdgen">Can be null.</param>
 		/// <param name="ctxt"></param>
 		/// <param name="ac"></param>
-		public static void DoTimeoutableCompletionTask(ICompletionDataGenerator cdgen,ResolutionContext ctxt, Action ac)
+		/// <param name="timeout">int.MinValue, if the param shall not be used</param>
+		public static void DoTimeoutableCompletionTask(ICompletionDataGenerator cdgen,ResolutionContext ctxt, Action ac, int timeout = int.MinValue)
 		{
 			ctxt.CancelOperation = false;
 
-			if (CompletionOptions.Instance.CompletionTimeout < 0)
+			if (timeout != int.MinValue)
+				timeout = CompletionOptions.Instance.CompletionTimeout;
+
+			if (timeout < 0)
 			{
 				ac();
 				return;
@@ -155,7 +159,7 @@ namespace D_Parser.Completion
 
 			var task = Task.Factory.StartNew(ac);
 
-			if (!task.Wait(CompletionOptions.Instance.CompletionTimeout))
+			if (!task.Wait(timeout))
 			{
 				ctxt.CancelOperation = true;
 				if(cdgen != null)
