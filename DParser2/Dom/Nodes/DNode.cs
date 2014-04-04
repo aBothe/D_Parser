@@ -124,9 +124,10 @@ namespace D_Parser.Dom
 				if(attr is UserDeclarationAttribute)
 				{
 					var uda = attr as UserDeclarationAttribute;
-					foreach(var x in uda.AttributeExpression){
-						if(h.Contains(x.GetHash())) //FIXME: Only compare the raw & unevaluated expressions
-							return true;
+					if(uda.AttributeExpression != null)
+						foreach(var x in uda.AttributeExpression){
+							if(x != null && h.Contains(x.GetHash())) //FIXME: Only compare the raw & unevaluated expressions
+								return true;
 					}
 				}
 			}
