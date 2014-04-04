@@ -68,6 +68,121 @@ namespace D_Parser.Refactoring
 		}
 		#endregion
 
+		class NodeTypeDeterminer : NodeVisitor<byte>
+		{
+			public byte Visit(DEnumValue n)
+			{
+				return DTokens.Enum;
+			}
+
+			public byte Visit(DVariable n)
+			{
+				return n.IsAlias && !n.IsAliasThis ? DTokens.Alias : (byte)0;
+			}
+
+			public byte Visit(DMethod n)
+			{
+				return 0;
+			}
+
+			public byte Visit(DClassLike n)
+			{
+				return n.ClassType;
+			}
+
+			public byte Visit(DEnum n)
+			{
+				return DTokens.Enum;
+			}
+
+			public byte Visit(DModule n)
+			{
+				return 0;
+			}
+
+			public byte Visit(DBlockNode dBlockNode)
+			{
+				return 0;
+			}
+
+			public byte Visit(TemplateParameter.Node templateParameterNode)
+			{
+				return DTokens.Not;
+			}
+
+			public byte Visit(NamedTemplateMixinNode n)
+			{
+				return DTokens.Template;
+			}
+
+			public byte VisitAttribute(Modifier attr)
+			{
+				throw new NotImplementedException();
+			}
+
+			public byte VisitAttribute(DeprecatedAttribute a)
+			{
+				throw new NotImplementedException();
+			}
+
+			public byte VisitAttribute(PragmaAttribute attr)
+			{
+				throw new NotImplementedException();
+			}
+
+			public byte VisitAttribute(BuiltInAtAttribute a)
+			{
+				throw new NotImplementedException();
+			}
+
+			public byte VisitAttribute(UserDeclarationAttribute a)
+			{
+				throw new NotImplementedException();
+			}
+
+			public byte VisitAttribute(VersionCondition a)
+			{
+				throw new NotImplementedException();
+			}
+
+			public byte VisitAttribute(DebugCondition a)
+			{
+				throw new NotImplementedException();
+			}
+
+			public byte VisitAttribute(StaticIfCondition a)
+			{
+				throw new NotImplementedException();
+			}
+
+			public byte VisitAttribute(NegatedDeclarationCondition a)
+			{
+				throw new NotImplementedException();
+			}
+
+			public byte Visit(EponymousTemplate ep)
+			{
+				return DTokens.Template;
+			}
+
+			public byte Visit(ModuleAliasNode moduleAliasNode)
+			{
+				return DTokens.Alias;
+			}
+
+			public byte Visit(ImportSymbolNode importSymbolNode)
+			{
+				return DTokens.Alias;
+			}
+
+			public byte Visit(ImportSymbolAlias importSymbolAlias)
+			{
+				return DTokens.Alias;
+			}
+		}
+
+		static readonly NodeTypeDeterminer TypeDet = new NodeTypeDeterminer();
+
 		/// <summary>
 		/// Used for caching available types.
 		/// </summary>
@@ -76,24 +191,13 @@ namespace D_Parser.Refactoring
 			Dictionary<int,byte> dd = null;
 			if (ctxt.CancelOperation)
 				return;
-			foreach (var n in ItemEnumeration.EnumScopedBlockChildren(ctxt, MemberFilter.Types | MemberFilter.Enums))
+			foreach (var n in ItemEnumeration.EnumScopedBlockChildren(ctxt, MemberFilter.Types | MemberFilter.Enums | MemberFilter.Variables))
 			{
 				if (n.NameHash != 0) {
 					if (dd == null && !TypeCache.TryGetValue (bn, out dd))
 						TypeCache [bn] = dd = new Dictionary<int,byte> ();
 
-					byte type = 0;
-
-					if (n is DClassLike)
-						type = (n as DClassLike).ClassType;
-					else if (n is DEnum)
-						type = DTokens.Enum;
-					else if (n is TemplateParameter.Node)
-						type = DTokens.Not; // Only needed for highlighting and thus just a convention question
-					else if (n is DVariable)
-						type = DTokens.Alias;
-
-					dd[n.NameHash] = type;
+					dd[n.NameHash] = n.Accept(TypeDet);
 				}
 			}
 		}
