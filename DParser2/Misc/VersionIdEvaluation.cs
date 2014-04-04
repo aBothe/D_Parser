@@ -40,6 +40,7 @@ namespace D_Parser.Misc
 						break;
 					case PlatformID.Unix:
 						l.Add ("Posix");
+						l.Add("linux");
 						break;
 				}
 			}
