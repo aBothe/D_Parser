@@ -33,17 +33,19 @@ using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Refactoring
 {
-	public class ReferencesFinder : AbstractResolutionVisitor
+	public class ReferencesFinder : DefaultDepthFirstVisitor
 	{
 		#region Properties
+		readonly ResolutionContext ctxt;
 		readonly List<ISyntaxRegion> l = new List<ISyntaxRegion>();
 		readonly INode symbol;
 		readonly int searchHash;
 		#endregion
 
 		#region Constructor / External
-		ReferencesFinder(INode symbol, DModule ast, ResolutionContext ctxt) : base(ctxt)
+		ReferencesFinder(INode symbol, DModule ast, ResolutionContext ctxt)
 		{
+			this.ctxt = ctxt;
 			this.symbol = symbol;
 			searchHash = symbol.NameHash;
 		}
