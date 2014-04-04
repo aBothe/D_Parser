@@ -48,6 +48,9 @@ namespace D_Parser.Resolver.TypeResolution
 
 		protected override bool HandleItem (INode n)
 		{
+			if (ctxt.CancelOperation)
+				return true;
+
 			if ((nameFilterHash != 0 && n.NameHash != nameFilterHash) || (!(n is ImportSymbolNode) && !(n.Parent is DModule)))
 				return false;
 			DSymbol ds;

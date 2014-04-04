@@ -148,7 +148,7 @@ namespace D_Parser.Completion
 		{
 			ctxt.CancelOperation = false;
 
-			if (timeout != int.MinValue)
+			if (timeout == int.MinValue)
 				timeout = CompletionOptions.Instance.CompletionTimeout;
 
 			if (timeout < 0)
