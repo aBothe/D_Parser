@@ -2589,6 +2589,7 @@ namespace D_Parser.Parser
 				Step();
 				var ac = new AnonymousClassExpression();
 				ac.NewArguments = newArgs;
+				ac.Location = startLoc;
 
 				// ClassArguments
 				if (laKind == (OpenParenthesis))
@@ -2600,7 +2601,9 @@ namespace D_Parser.Parser
 						ac.ClassArguments = ArgumentList(Scope).ToArray();
 				}
 
-				var anclass = new DClassLike(Class) { IsAnonymousClass=true };
+				var anclass = new DClassLike(Class) { IsAnonymousClass=true,
+					Location = startLoc
+				};
 
 				// BaseClasslist_opt
 				if (laKind == (Colon))
@@ -2616,7 +2619,6 @@ namespace D_Parser.Parser
 
 				ac.AnonymousClass = anclass;
 
-				ac.Location = startLoc;
 				ac.EndLocation = t.EndLocation;
 
 				if (Scope != null)
