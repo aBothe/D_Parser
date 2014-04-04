@@ -310,6 +310,8 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			if (ch != null)
 				foreach (var n in ch)
 				{
+					if (ctxt.CancelOperation)
+						return true;
 					//ContinueHandleStaticStatements (n.Location);
 
 					if (!CanHandleNode (n as DNode, VisibleMembers, isBaseClass, isMixinAst, takeStaticChildrenOnly, publicImports, scopeIsInInheritanceHierarchy))

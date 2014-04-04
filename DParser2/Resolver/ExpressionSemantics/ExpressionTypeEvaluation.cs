@@ -629,7 +629,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return EvalForeExpression(x);
 		}
 
-		static readonly int OpIndexIdHash = "opIndex".GetHashCode();
+		public static readonly int OpIndexIdHash = "opIndex".GetHashCode();
 
 		public AbstractType Visit(PostfixExpression_Index x)
 		{
@@ -740,7 +740,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return null;
 		}
 
-		static readonly int OpSliceIdHash = "opSlice".GetHashCode();
+		public static readonly int OpSliceIdHash = "opSlice".GetHashCode();
 
 		public AbstractType Visit(PostfixExpression_Slice x)
 		{

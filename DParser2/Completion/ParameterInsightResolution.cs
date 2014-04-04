@@ -54,9 +54,20 @@ namespace D_Parser.Completion
 		public int CurrentlyTypedArgumentIndex;
 	}
 
-	public static class ParameterInsightResolution
+	public class ParameterInsightResolution : ExpressionVisitor
 	{
-		
+		public readonly ArgumentsResolutionResult res;
+		public readonly IEditorData Editor;
+		public readonly ResolutionContext ctxt;
+		public readonly IBlockNode curScope;
+
+		private ParameterInsightResolution(IEditorData ed, ResolutionContext c, ArgumentsResolutionResult r, IBlockNode cs) {
+			Editor = ed;
+			ctxt = c;
+			res = r;
+			curScope = cs;
+		}
+
 		/// <summary>
 		/// Reparses the given method's fucntion body until the cursor position,
 		/// searches the last occurring method call or template instantiation,
@@ -105,23 +116,8 @@ namespace D_Parser.Completion
 
 				ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.DontResolveAliases;
 
-				// 1), 2)
-				if (lastParamExpression is PostfixExpression_MethodCall)
-				{
-					res.IsMethodArguments = true;
-					var call = (PostfixExpression_MethodCall)lastParamExpression;
-
-					res.MethodIdentifier = call.PostfixForeExpression;
-					res.ResolvedTypesOrMethods = ExpressionTypeEvaluation.GetUnfilteredMethodOverloads(call.PostfixForeExpression, ctxt, call);
-
-					if (call.Arguments != null)
-						res.CurrentlyTypedArgumentIndex = call.ArgumentCount;
-				}
-				// 3)
-				else if (lastParamExpression is TemplateInstanceExpression)
-					HandleTemplateInstance(lastParamExpression as TemplateInstanceExpression, res, Editor, ctxt, curBlock);
-				else if (lastParamExpression is NewExpression)
-					HandleNewExpression((NewExpression)lastParamExpression, res, Editor, ctxt, curBlock);
+				if (lastParamExpression != null)
+					lastParamExpression.Accept(new ParameterInsightResolution(Editor, ctxt, res, curBlock));				
 			});
 
 			/*
@@ -138,47 +134,6 @@ namespace D_Parser.Completion
 			 */
 
 			return res;
-		}
-
-		static void HandleTemplateInstance(TemplateInstanceExpression tix,
-			ArgumentsResolutionResult res,
-			IEditorData Editor,
-			ResolutionContext ctxt,
-			IBlockNode curBlock,
-			IEnumerable<AbstractType> resultBases = null)
-		{
-			res.IsTemplateInstanceArguments = true;
-
-			res.MethodIdentifier = tix;
-			res.ResolvedTypesOrMethods = ExpressionTypeEvaluation.GetOverloads(tix, ctxt, resultBases, false);
-
-			if (tix.Arguments != null)
-				res.CurrentlyTypedArgumentIndex = tix.Arguments.Length;
-			else
-				res.CurrentlyTypedArgumentIndex = 0;
-		}
-
-		static void HandleNewExpression(NewExpression nex, 
-			ArgumentsResolutionResult res, 
-			IEditorData Editor, 
-			ResolutionContext ctxt,
-			IBlockNode curBlock,
-			IEnumerable<AbstractType> resultBases = null)
-		{
-			res.MethodIdentifier = nex;
-			CalculateCurrentArgument(nex, res, Editor.CaretLocation, ctxt);
-
-			var type = TypeDeclarationResolver.ResolveSingle(nex.Type, ctxt);
-
-			var _ctors = new List<AbstractType>();
-
-			if (type is AmbiguousType)
-				foreach (var t in (type as AmbiguousType).Overloads)
-					HandleNewExpression_Ctor(nex, curBlock, _ctors, t);
-			else
-				HandleNewExpression_Ctor(nex, curBlock, _ctors, type);
-
-			res.ResolvedTypesOrMethods = _ctors.ToArray();
 		}
 
 		private static void HandleNewExpression_Ctor(NewExpression nex, IBlockNode curBlock, List<AbstractType> _ctors, AbstractType t)
@@ -263,5 +218,337 @@ namespace D_Parser.Completion
 				}
 			}*/
 		}
+
+		public void Visit(NewExpression nex)
+		{
+			res.MethodIdentifier = nex;
+			CalculateCurrentArgument(nex, res, Editor.CaretLocation, ctxt);
+
+			var type = TypeDeclarationResolver.ResolveSingle(nex.Type, ctxt);
+
+			var _ctors = new List<AbstractType>();
+
+			if (type is AmbiguousType)
+				foreach (var t in (type as AmbiguousType).Overloads)
+					HandleNewExpression_Ctor(nex, curScope, _ctors, t);
+			else
+				HandleNewExpression_Ctor(nex, curScope, _ctors, type);
+
+			res.ResolvedTypesOrMethods = _ctors.ToArray();
+		}
+
+		public void Visit(PostfixExpression_MethodCall call)
+		{
+			res.IsMethodArguments = true;
+
+			res.MethodIdentifier = call.PostfixForeExpression;
+			res.ResolvedTypesOrMethods = ExpressionTypeEvaluation.GetUnfilteredMethodOverloads(call.PostfixForeExpression, ctxt, call);
+
+			if (call.Arguments != null)
+				res.CurrentlyTypedArgumentIndex = call.ArgumentCount;
+		}
+
+		public void Visit(PostfixExpression_Index x)
+		{
+			HandleIndexSliceExpression(x);
+			if (x.Arguments != null)
+				res.CurrentlyTypedArgumentIndex = x.Arguments.Length;
+		}
+
+		public void Visit(PostfixExpression_Slice x)
+		{//TODO: Omit opIndex overloads if it's obvious, that we don't want them -- a[1.. |
+			HandleIndexSliceExpression(x);
+			res.CurrentlyTypedArgumentIndex = x.ToExpression == null ? 1 : 2;
+		}
+
+		void HandleIndexSliceExpression(PostfixExpression x)
+		{
+			res.IsMethodArguments = true;
+			res.ParsedExpression = x;
+
+			var overloads = new List<AbstractType>();
+
+			var bases = AmbiguousType.TryDissolve(ExpressionTypeEvaluation.EvaluateType(x.PostfixForeExpression, ctxt));
+
+			var ov = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(ExpressionTypeEvaluation.OpSliceIdHash, bases, ctxt, x, false);
+			if (ov != null)
+				overloads.AddRange(ov);
+
+			ov = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(ExpressionTypeEvaluation.OpIndexIdHash, bases, ctxt, x, false);
+			if (ov != null)
+				overloads.AddRange(ov);
+
+			res.ResolvedTypesOrMethods = overloads.ToArray();
+		}
+
+		public void Visit(TemplateInstanceExpression tix)
+		{
+			res.IsTemplateInstanceArguments = true;
+
+			res.MethodIdentifier = tix;
+			res.ResolvedTypesOrMethods = ExpressionTypeEvaluation.GetOverloads(tix, ctxt, null, false);
+
+			if (tix.Arguments != null)
+				res.CurrentlyTypedArgumentIndex = tix.Arguments.Length;
+			else
+				res.CurrentlyTypedArgumentIndex = 0;
+		}
+
+		#region unused
+		public void Visit(Expression x)
+		{
+			
+		}
+
+		public void Visit(AssignExpression x)
+		{
+			
+		}
+
+		public void Visit(ConditionalExpression x)
+		{
+			
+		}
+
+		public void Visit(OrOrExpression x)
+		{
+			
+		}
+
+		public void Visit(AndAndExpression x)
+		{
+			
+		}
+
+		public void Visit(XorExpression x)
+		{
+			
+		}
+
+		public void Visit(OrExpression x)
+		{
+			
+		}
+
+		public void Visit(AndExpression x)
+		{
+			
+		}
+
+		public void Visit(EqualExpression x)
+		{
+			
+		}
+
+		public void Visit(IdentityExpression x)
+		{
+			
+		}
+
+		public void Visit(RelExpression x)
+		{
+			
+		}
+
+		public void Visit(InExpression x)
+		{
+			
+		}
+
+		public void Visit(ShiftExpression x)
+		{
+			
+		}
+
+		public void Visit(AddExpression x)
+		{
+			
+		}
+
+		public void Visit(MulExpression x)
+		{
+			
+		}
+
+		public void Visit(CatExpression x)
+		{
+			
+		}
+
+		public void Visit(PowExpression x)
+		{
+			
+		}
+
+		public void Visit(UnaryExpression_And x)
+		{
+			
+		}
+
+		public void Visit(UnaryExpression_Increment x)
+		{
+			
+		}
+
+		public void Visit(UnaryExpression_Decrement x)
+		{
+			
+		}
+
+		public void Visit(UnaryExpression_Mul x)
+		{
+			
+		}
+
+		public void Visit(UnaryExpression_Add x)
+		{
+			
+		}
+
+		public void Visit(UnaryExpression_Sub x)
+		{
+			
+		}
+
+		public void Visit(UnaryExpression_Not x)
+		{
+			
+		}
+
+		public void Visit(UnaryExpression_Cat x)
+		{
+			
+		}
+
+		public void Visit(UnaryExpression_Type x)
+		{
+			
+		}
+
+		public void Visit(AnonymousClassExpression x)
+		{
+			
+		}
+
+		public void Visit(DeleteExpression x)
+		{
+			
+		}
+
+		public void Visit(CastExpression x)
+		{
+			
+		}
+
+		public void Visit(PostfixExpression_Access x)
+		{
+			
+		}
+
+		public void Visit(PostfixExpression_Increment x)
+		{
+			
+		}
+
+		public void Visit(PostfixExpression_Decrement x)
+		{
+			
+		}
+
+		public void Visit(IdentifierExpression x)
+		{
+			
+		}
+
+		public void Visit(TokenExpression x)
+		{
+			
+		}
+
+		public void Visit(TypeDeclarationExpression x)
+		{
+			
+		}
+
+		public void Visit(ArrayLiteralExpression x)
+		{
+			
+		}
+
+		public void Visit(AssocArrayExpression x)
+		{
+			
+		}
+
+		public void Visit(FunctionLiteral x)
+		{
+			
+		}
+
+		public void Visit(AssertExpression x)
+		{
+			
+		}
+
+		public void Visit(MixinExpression x)
+		{
+			
+		}
+
+		public void Visit(ImportExpression x)
+		{
+			
+		}
+
+		public void Visit(TypeidExpression x)
+		{
+			
+		}
+
+		public void Visit(IsExpression x)
+		{
+			
+		}
+
+		public void Visit(TraitsExpression x)
+		{
+			
+		}
+
+		public void Visit(SurroundingParenthesesExpression x)
+		{
+			
+		}
+
+		public void Visit(VoidInitializer x)
+		{
+			
+		}
+
+		public void Visit(ArrayInitializer x)
+		{
+			
+		}
+
+		public void Visit(StructInitializer x)
+		{
+			
+		}
+
+		public void Visit(StructMemberInitializer structMemberInitializer)
+		{
+			
+		}
+
+		public void Visit(AsmRegisterExpression x)
+		{
+			
+		}
+
+		public void Visit(UnaryExpression_SegmentBase x)
+		{
+
+		}
+		#endregion
 	}
 }

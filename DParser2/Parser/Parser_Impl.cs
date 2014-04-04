@@ -2251,7 +2251,11 @@ namespace D_Parser.Parser
 						HadPointerDeclaration = true;
 
 					if (Lexer.CurrentPeekToken.Kind == OpenSquareBracket)
+					{
 						OverPeekBrackets(OpenSquareBracket);
+						if (Lexer.CurrentPeekToken.Kind == DTokens.EOF) // Due to completion purposes
+							return true;
+					}
 					else Peek();
 
 					if (HadPointerDeclaration && Lexer.CurrentPeekToken.Kind == Literal) // char[a.member*8] abc; // conv.d:3278
@@ -2860,7 +2864,7 @@ namespace D_Parser.Parser
 								};
 							}
 							// [ ArgumentList ]
-							else if (laKind == CloseSquareBracket || laKind == (Comma))
+							else if (laKind == CloseSquareBracket || laKind == (Comma) || IsEOF)
 							{
 								var args = new List<IExpression>();
 								if(firstEx != null)

@@ -725,7 +725,8 @@ namespace D_Parser.Dom
 
 			if (x.Arguments != null)
 				foreach (var arg in x.Arguments)
-					arg.Accept(this);
+					if(arg != null)
+						arg.Accept(this);
 		}
 
 		public virtual void Visit(Expressions.PostfixExpression_Slice x)
