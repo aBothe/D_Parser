@@ -61,7 +61,7 @@ namespace D_Parser.Resolver.ASTScanner
 			using(ctxt.Push(bn)) {
 				 if (ctxt.ScopedBlock != back)
 					OnScopedBlockChanged (bn);
-				 base.VisitBlock(bn);
+				 VisitBlock(bn);
 			}
 		}
 
