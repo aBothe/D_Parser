@@ -562,7 +562,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 						if (s == null)
 							continue;
 
-						if (!caretInsensitive && s.Location >= Caret)
+						if ((!caretInsensitive && s.Location >= Caret) || ctxt.CancelOperation)
 							break;
 
 						if (s.Accept(this))
