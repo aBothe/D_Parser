@@ -336,7 +336,7 @@ namespace D_Parser.Refactoring
 		{
 			//TODO: If there is a type result, try to resolve x (or postfix-access expressions etc.) to find out whether it's overwritten by some local non-type
 			byte type;
-			if (DoPrimaryIdCheck(x.ValueStringHash, out type))
+			if (x.IsIdentifier && DoPrimaryIdCheck(x.ValueStringHash, out type))
 				AddResult(x, type);
 
 			base.Visit (x);
