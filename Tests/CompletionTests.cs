@@ -231,7 +231,8 @@ int a;
 			Assert.That (@"const( ", Does.Trigger);
 
 			Assert.That (@"class ", Does.Not.Trigger);
-			Assert.That (@"class A : ", Does.Trigger);
+			Assert.That(@"class A : ", Does.Trigger);
+			Assert.That(@"class A(T) : ", Does.Trigger);
 			Assert.That (@"class A(T) if(is( ", Does.Trigger);
 			Assert.That (@"class A(T) if(is(int  ", Does.Not.Trigger);
 			//Assert.That (@"class A(", Does.Not.Trigger);

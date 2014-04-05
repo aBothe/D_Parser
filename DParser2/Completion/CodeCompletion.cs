@@ -116,6 +116,10 @@ namespace D_Parser.Completion
 			if (currentScope == null)
 				return null;
 
+			// class asd : |
+			if (currentScope is IBlockNode && (currentScope as IBlockNode).BlockStartLocation > editor.CaretLocation)
+				currentScope = currentScope.Parent as IBlockNode;
+
 			BlockStatement blockStmt;
 			// Always skip lambdas as they're too quirky for accurate scope calculation // ISSUE: May be other anon symbols too?
 			var dm = currentScope as DMethod;

@@ -161,7 +161,7 @@ namespace D_Parser.Parser
 
 			// Immediately break to waste no time if there's nothing to parse
 			if (startOff >= caretOffset)
-				return null;
+				return bn;
 
 			// Get meta block stack so they can be registered while parsing 
 			//var metaDecls = bn.GetMetaBlockStack (startLoc, true, false);
