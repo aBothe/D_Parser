@@ -107,7 +107,9 @@ namespace D_Parser.Dom
 		/// Integer by default.
 		/// </summary>
 		public ITypeDeclaration KeyType = new DTokenDeclaration(DTokens.Int);
-		public bool ClampsEmpty = true;
+		public bool ClampsEmpty { get {
+			return KeyExpression == null && (KeyType == null || (KeyType is DTokenDeclaration && (KeyType as DTokenDeclaration).Token == DTokens.Int));
+		} }
 		public IExpression KeyExpression;
 
 		public bool IsRanged

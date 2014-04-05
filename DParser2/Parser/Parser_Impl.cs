@@ -1177,7 +1177,7 @@ namespace D_Parser.Parser
 				if (keyType != null && laKind == CloseSquareBracket && !(keyType is IdentifierDeclaration))
 				{
 					//HACK: Both new int[size_t] as well as new int[someConstNumber] are legal. So better treat them as expressions.
-					cd = new ArrayDecl() { KeyType = keyType, ClampsEmpty = false, Location = startLoc };
+					cd = new ArrayDecl() { KeyType = keyType, Location = startLoc };
 					Lexer.PopLookAheadBackup();
 				}
 				else
@@ -1192,14 +1192,13 @@ namespace D_Parser.Parser
 						Step();
 						cd = new ArrayDecl() {
 							Location=startLoc,
-							ClampsEmpty=false,
 							KeyType=null,
 							KeyExpression= new PostfixExpression_Slice() { 
 								FromExpression=fromExpression,
 								ToExpression=AssignExpression()}};
 					}
 					else
-						cd = new ArrayDecl() { KeyType=null, KeyExpression=fromExpression,ClampsEmpty=false,Location=startLoc };
+						cd = new ArrayDecl() { KeyType=null, KeyExpression=fromExpression,Location=startLoc };
 				}
 
 				if ((AllowWeakTypeParsing && laKind != CloseSquareBracket))
@@ -1401,7 +1400,6 @@ namespace D_Parser.Parser
 
 				if (laKind != (CloseSquareBracket))
 				{
-					ad.ClampsEmpty = false;
 					ITypeDeclaration keyType=null;
 					Lexer.PushLookAheadBackup();
 					if (!IsAssignExpression())
@@ -2682,7 +2680,6 @@ namespace D_Parser.Parser
 							if (args.Count == 0)
 								break;
 
-							ad.ClampsEmpty = false;
 							ad.KeyType = null;
 							ad.KeyExpression = args [args.Count - 1];
 
