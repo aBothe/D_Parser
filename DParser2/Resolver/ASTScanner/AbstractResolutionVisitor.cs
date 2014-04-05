@@ -78,6 +78,9 @@ namespace D_Parser.Resolver.ASTScanner
 		// Only for parsing the base class identifiers!
 		public override void Visit (DClassLike dc)
 		{
+			foreach (var bc in dc.BaseClasses)
+				bc.Accept(this);
+
 			PushBlock(dc);
 		}
 
