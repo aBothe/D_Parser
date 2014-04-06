@@ -62,7 +62,7 @@ namespace D_Parser.Resolver.TypeResolution
 		/// </summary>
 		public static AbstractType[] ResolveIdentifier(int idHash, ResolutionContext ctxt, ISyntaxRegion idObject, bool ModuleScope = false)
 		{
-			var loc = idObject is ISyntaxRegion ? ((ISyntaxRegion)idObject).Location : CodeLocation.Empty;
+			var loc = idObject is ISyntaxRegion ? ((ISyntaxRegion)idObject).Location : ctxt.CurrentContext.Caret;
 
 			IDisposable disp = null;
 
