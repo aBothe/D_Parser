@@ -192,7 +192,7 @@ namespace D_Parser.Refactoring
 			Dictionary<int,byte> dd = null;
 			if (ctxt.CancelOperation)
 				return;
-			foreach (var n in ItemEnumeration.EnumScopedBlockChildren(ctxt, MemberFilter.Types | MemberFilter.Enums | MemberFilter.Variables))
+			foreach (var n in ItemEnumeration.EnumScopedBlockChildren(ctxt, MemberFilter.Types | MemberFilter.Enums | MemberFilter.TypeParameters | MemberFilter.Variables))
 			{
 				if (n.NameHash != 0) {
 					if (dd == null && !TypeCache.TryGetValue (bn, out dd))
@@ -225,6 +225,7 @@ namespace D_Parser.Refactoring
 				if (metaBlockEnumGotElements)
 					ContinueEnumStaticStatements (en, block.EndLocation);
 
+				base.VisitDNode(block);
 				VisitChildren(block);
 			}
 		}
