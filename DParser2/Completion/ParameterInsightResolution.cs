@@ -268,6 +268,9 @@ namespace D_Parser.Completion
 
 			var overloads = new List<AbstractType>();
 
+			if (x.PostfixForeExpression == null)
+				return;
+
 			var b = ExpressionTypeEvaluation.EvaluateType(x.PostfixForeExpression, ctxt);
 			var bases = AmbiguousType.TryDissolve(b);
 			
