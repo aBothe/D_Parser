@@ -162,6 +162,11 @@ namespace D_Parser.Parser
 		{
 			return new BlockStmtIncrParsing().ParseIncrementally(bs, ed, out isInsideNonCodeSegment);
 		}
+
+		public static IBlockNode UpdateBlockPartly(this BlockStatement bs, string code, int caretOffset, CodeLocation caretLocation, out bool isInsideNonCodeSegment)
+		{
+			return new BlockStmtIncrParsing().ParseIncrementally(bs, code, caretOffset, caretLocation, out isInsideNonCodeSegment);
+		}
 		#endregion
 
 		#region DBlockNode updating
@@ -250,6 +255,11 @@ namespace D_Parser.Parser
 		public static IBlockNode UpdateBlockPartly(this DBlockNode bn, IEditorData ed, out bool isInsideNonCodeSegment)
 		{
 			return new IncrBlockNodeParsing().ParseIncrementally (bn, ed, out isInsideNonCodeSegment);
+		}
+
+		public static IBlockNode UpdateBlockPartly(this DBlockNode bn, string code, int caretOffset, CodeLocation caretLocation, out bool isInsideNonCodeSegment)
+		{
+			return new IncrBlockNodeParsing().ParseIncrementally(bn, code, caretOffset, caretLocation, out isInsideNonCodeSegment);
 		}
 		#endregion
 
