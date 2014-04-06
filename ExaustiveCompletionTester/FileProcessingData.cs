@@ -207,7 +207,11 @@ namespace ExaustiveCompletionTester
 						}
 					}
 
-					var tStr = str.Substring(0, i);
+					string tStr;
+					if (i <= str.Length)
+						tStr = str.Substring(0, i);
+					else
+						tStr = str;
 					var ed = CompletionFacilities.GenEditorData(line, i - lineStart, tStr);
 					var g = new SpecializedDataGen();
 					try
