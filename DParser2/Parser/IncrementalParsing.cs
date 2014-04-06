@@ -34,208 +34,222 @@ namespace D_Parser.Parser
 {
 	public static class IncrementalParsing
 	{
-		#region DMethod updating
-		public static IBlockNode UpdateBlockPartly(this BlockStatement bs, IEditorData ed, out bool isInsideNonCodeSegment)
+		abstract class IncrementalParsingBase<T> where T : ISyntaxRegion
 		{
-			return UpdateBlockPartly (bs, ed.ModuleCode, ed.CaretOffset, ed.CaretLocation, out isInsideNonCodeSegment);
-		}
-
-		public static IBlockNode UpdateBlockPartly(this BlockStatement bs, string code, int caretOffset, CodeLocation caretLocation, out bool isInsideNonCodeSegment)
-		{
-			isInsideNonCodeSegment = false;
-			var finalParentMethod = bs.ParentNode as DMethod;
-			var finalStmtsList = bs._Statements;
-
-			var startLoc = bs.Location;
-			int startStmtIndex;
-			for(startStmtIndex = finalStmtsList.Count-1; startStmtIndex >= 0; startStmtIndex--) {
-				var n = finalStmtsList [startStmtIndex];
-				if (n.EndLocation.Line > 0 && n.EndLocation.Line < caretLocation.Line) {
-					startLoc = --startStmtIndex == -1 ? 
-						bs.Location : finalStmtsList [startStmtIndex].EndLocation;
-					break;
-				}
+			public IBlockNode ParseIncrementally(T sr, IEditorData ed, out bool isInsideNonCodeSegment)
+			{
+				return ParseIncrementally(sr, ed.ModuleCode, ed.CaretOffset, ed.CaretLocation, out isInsideNonCodeSegment);
 			}
 
-			var startOff = startLoc.Line > 1 ? DocumentHelper.GetOffsetByRelativeLocation (code, caretLocation, caretOffset, startLoc) : 0;
+			public IBlockNode ParseIncrementally(T sr, string code, int caretOffset, CodeLocation caretLocation, out bool isInsideNonCodeSegment)
+			{
+				isInsideNonCodeSegment = false;
 
-			if (startOff >= caretOffset)
-				return null;
+				// Get the end location of the declaration that appears before the caret.
+				var startLoc = GetBlockStartLocation(sr);
+				int startStmtIndex;
+				for (startStmtIndex = ChildCount(sr) - 1; startStmtIndex >= 0; startStmtIndex--)
+				{
+					var n = ChildAt(sr,startStmtIndex);
+					if (n.EndLocation.Line > 0 && n.EndLocation.Line < caretLocation.Line)
+					{
+						if(startStmtIndex > 0)
+							startLoc = ChildAt(sr,--startStmtIndex).EndLocation;
+						break;
+					}
+				}
 
-			var tempParentBlock = new DMethod();//new DBlockNode();
-			var tempBlockStmt = new BlockStatement { ParentNode = tempParentBlock };
-			tempParentBlock.Body = tempBlockStmt;
-			tempBlockStmt.Location = startLoc;
-			tempParentBlock.Location = startLoc;
+				var startOff = startLoc.Line > 1 ? DocumentHelper.GetOffsetByRelativeLocation(code, caretLocation, caretOffset, startLoc) - (startLoc.Column == 1 ? 1 : 0) : 0;
 
-			using (var sv = new StringView (code, startOff, caretOffset - startOff))
-			using (var p = DParser.Create(sv)) {
-				p.Lexer.SetInitialLocation (startLoc);
-				p.Step ();
+				// Immediately break to waste no time if there's nothing to parse
+				if (startOff >= caretOffset)
+					return null;
 
-				if(p.laKind == DTokens.OpenCurlyBrace)
+				var t = PrepareParsing(sr,startLoc);
+
+				using (var sv = new StringView(code, startOff, caretOffset - startOff))
+				using (var p = DParser.Create(sv))
+				{
+					p.Lexer.SetInitialLocation(startLoc);
 					p.Step();
 
-				while (!p.IsEOF) {
-
-					if (p.laKind == DTokens.CloseCurlyBrace) {
-						p.Step ();
-						/*if (metaDecls.Count > 0)
-							metaDecls.RemoveAt (metaDecls.Count - 1);*/
-						continue;
-					}
-
-					var stmt = p.Statement (true, false, tempParentBlock, tempBlockStmt);
-					if (stmt != null)
-						tempBlockStmt.Add(stmt);
-					else
+					if (p.laKind == DTokens.OpenCurlyBrace)
 						p.Step();
+
+					while (!p.IsEOF && Parse(t, p)) ;
+
+					if (isInsideNonCodeSegment = p.Lexer.endedWhileBeingInNonCodeSequence)
+						return null;
+
+					return FinishParsing(t, p);
+				}
+			}
+
+			protected abstract T PrepareParsing(T sr,CodeLocation startLoc);
+			protected abstract bool Parse(T tempBlock, DParser p);
+			protected abstract IBlockNode FinishParsing(T tempBlock, DParser p);
+
+			protected abstract int ChildCount(T sr);
+			protected abstract ISyntaxRegion ChildAt(T sr, int i);
+
+			protected virtual CodeLocation GetBlockStartLocation(T sr)
+			{
+				return sr.Location;
+			}
+		}
+
+		#region DMethod updating
+		class BlockStmtIncrParsing : IncrementalParsingBase<BlockStatement>
+		{
+			DMethod tempParentBlock;
+			DMethod finalParentMethod;
+
+			protected override BlockStatement PrepareParsing(BlockStatement bs,CodeLocation startLoc)
+			{
+				finalParentMethod = bs.ParentNode as DMethod;
+
+				tempParentBlock = new DMethod();//new DBlockNode();
+				var tempBlockStmt = new BlockStatement { ParentNode = tempParentBlock };
+				tempParentBlock.Body = tempBlockStmt;
+				tempBlockStmt.Location = startLoc;
+				tempParentBlock.Location = startLoc;
+
+				return tempBlockStmt;
+			}
+
+			protected override bool Parse(BlockStatement tempBlockStmt, DParser p)
+			{
+				if (p.laKind == DTokens.CloseCurlyBrace)
+				{
+					p.Step();
+					/*if (metaDecls.Count > 0)
+						metaDecls.RemoveAt (metaDecls.Count - 1);*/
+					return true;
 				}
 
-				tempBlockStmt.EndLocation = new CodeLocation(p.la.Column+1,p.la.Line);
+				var stmt = p.Statement(true, false, tempParentBlock, tempBlockStmt);
+				if (stmt != null)
+					tempBlockStmt.Add(stmt);
+				else
+					p.Step();
+				return true;
+			}
+
+			protected override IBlockNode FinishParsing(BlockStatement tempBlockStmt, DParser p)
+			{
+				tempBlockStmt.EndLocation = new CodeLocation(p.la.Column + 1, p.la.Line);
 				tempParentBlock.EndLocation = tempBlockStmt.EndLocation;
 
-				if(isInsideNonCodeSegment = p.Lexer.endedWhileBeingInNonCodeSequence)
-					return null;
+				DoubleDeclarationSilencer.RemoveDoubles(finalParentMethod, tempParentBlock);
+
+				tempParentBlock.Parent = finalParentMethod;
+
+				return tempParentBlock;
 			}
 
-			DoubleDeclarationSilencer.RemoveDoubles(finalParentMethod, tempParentBlock);
+			protected override int ChildCount(BlockStatement sr)
+			{
+				return sr._Statements.Count;
+			}
 
-			tempParentBlock.Parent = finalParentMethod;
-			//tempParentBlock.Add(new PseudoStaticStmt { Block = tempBlockStmt, ParentNode = tempParentBlock, Location = tempBlockStmt.Location, EndLocation = tempBlockStmt.EndLocation });
-
-			return tempParentBlock;
+			protected override ISyntaxRegion ChildAt(BlockStatement sr, int i)
+			{
+				return sr._Statements[i];
+			}
 		}
-		/*
-		class PseudoStaticStmt : AbstractStatement,StaticStatement
+
+		public static IBlockNode UpdateBlockPartly(this BlockStatement bs, IEditorData ed, out bool isInsideNonCodeSegment)
 		{
-			public BlockStatement Block;
-
-			public DAttribute[] Attributes
-			{
-				get	{ return null; }
-				set	{}
-			}
-
-			public override R Accept<R>(StatementVisitor<R> vis)
-			{
-				return Block.Accept(vis);
-			}
-
-			public override void Accept(StatementVisitor vis)
-			{
-				Block.Accept(vis);
-			}
-
-			public override string ToCode()
-			{
-				return null;
-			}
-		}*/
+			return new BlockStmtIncrParsing().ParseIncrementally(bs, ed, out isInsideNonCodeSegment);
+		}
 		#endregion
 
 		#region DBlockNode updating
-		public static DBlockNode UpdateBlockPartly(this DBlockNode bn, IEditorData ed, out bool isInsideNonCodeSegment)
+		class IncrBlockNodeParsing : IncrementalParsingBase<DBlockNode>
 		{
-			return UpdateBlockPartly (bn, ed.ModuleCode, ed.CaretOffset, ed.CaretLocation, out isInsideNonCodeSegment);
+			DBlockNode finalParentBlock;
+
+			protected override DBlockNode PrepareParsing(DBlockNode bn, CodeLocation startLoc)
+			{
+				finalParentBlock = bn;
+				var tempBlock = bn is DEnum ? new DEnum() : new DBlockNode();
+				tempBlock.BlockStartLocation = startLoc;
+				return tempBlock;
+			}
+
+			protected override bool Parse(DBlockNode tempBlock, DParser p)
+			{
+				if (p.laKind == DTokens.CloseCurlyBrace)
+				{
+					p.Step();
+					/*if (metaDecls.Count > 0)
+						metaDecls.RemoveAt (metaDecls.Count - 1);*/
+					return true;
+				}
+
+				// Enum bodies
+				if (tempBlock is DEnum)
+				{
+					if (p.laKind == DTokens.Comma)
+							p.Step();
+					var laBackup = p.la;
+					p.EnumValue(tempBlock as DEnum);
+					if (p.la == laBackup)
+						return false;
+				}
+				else // Normal class/module bodies
+				{
+					if (p.laKind == DTokens.Module)
+						tempBlock.Add(p.ModuleDeclaration());
+
+					p.DeclDef(tempBlock);
+				}
+
+				return true;
+			}
+
+			protected override IBlockNode FinishParsing(DBlockNode tempBlock, DParser p)
+			{
+				// Update the actual tempBlock as well as methods/other blocks' end location that just appeared while parsing the code incrementally,
+				// so they are transparent to SearchBlockAt
+				var block = tempBlock as IBlockNode;
+				while (block != null &&
+					(block.EndLocation.Line < 1 || block.EndLocation == p.la.Location))
+				{
+					block.EndLocation = new CodeLocation(p.la.Column + 1, p.la.Line);
+					if (block.Children.Count == 0)
+						break;
+					block = block.Children[block.Count - 1] as IBlockNode;
+				}
+
+				tempBlock.EndLocation = new CodeLocation(p.la.Column + 1, p.la.Line);
+
+				DoubleDeclarationSilencer.RemoveDoubles(finalParentBlock, tempBlock);
+
+				tempBlock.Parent = finalParentBlock;
+
+				return tempBlock;
+			}
+
+			protected override int ChildCount(DBlockNode sr)
+			{
+				return sr.Count;
+			}
+
+			protected override ISyntaxRegion ChildAt(DBlockNode sr, int i)
+			{
+				return sr.Children[i];
+			}
+
+			protected override CodeLocation GetBlockStartLocation(DBlockNode sr)
+			{
+				return sr.BlockStartLocation;
+			}
 		}
 
-		public static DBlockNode UpdateBlockPartly(this DBlockNode bn, string code,
-			int caretOffset, CodeLocation caretLocation, out bool isInsideNonCodeSegment)
+		public static IBlockNode UpdateBlockPartly(this DBlockNode bn, IEditorData ed, out bool isInsideNonCodeSegment)
 		{
-			isInsideNonCodeSegment = false;
-
-			// Get the end location of the declaration that appears before the caret.
-			var startLoc = bn.BlockStartLocation;
-			int startDeclIndex;
-			for(startDeclIndex = bn.Children.Count-1; startDeclIndex >= 0; startDeclIndex--) {
-				var n = bn.Children [startDeclIndex];
-				if (n.EndLocation.Line > 0 && n.EndLocation.Line < caretLocation.Line) {
-					startLoc = --startDeclIndex == -1 ? 
-						bn.BlockStartLocation : bn.Children [startDeclIndex].EndLocation;
-					break;
-				}
-			}
-
-			var startOff = startLoc.Line > 1 ? DocumentHelper.GetOffsetByRelativeLocation (code, caretLocation, caretOffset, startLoc) : 0;
-
-			// Immediately break to waste no time if there's nothing to parse
-			if (startOff >= caretOffset)
-				return bn;
-
-			// Get meta block stack so they can be registered while parsing 
-			//var metaDecls = bn.GetMetaBlockStack (startLoc, true, false);
-
-			// Parse region from start until caret for maximum efficiency
-			var tempBlock = bn is DEnum ? new DEnum() : new DBlockNode();
-			tempBlock.BlockStartLocation = startLoc;
-			
-			try{
-				using (var sv = new StringView (code, startOff, caretOffset - startOff))
-				using (var p = DParser.Create(sv)) {
-					p.Lexer.SetInitialLocation (startLoc);
-					p.Step ();
-
-					if(p.laKind == DTokens.OpenCurlyBrace)
-						p.Step();
-
-					// Enum bodies
-					if(bn is DEnum)
-					{
-						do
-						{
-							if(p.laKind == DTokens.Comma)
-								p.Step();
-							var laBackup = p.la;
-							p.EnumValue(tempBlock as DEnum);
-							if(p.la == laBackup)
-								break;
-						}
-						while(!p.IsEOF);
-					}
-					else // Normal class/module bodies
-					{
-						if(p.laKind == DTokens.Module && bn is DModule)
-							tempBlock.Add(p.ModuleDeclaration());
-
-						while (!p.IsEOF) {
-							// 
-							if (p.laKind == DTokens.CloseCurlyBrace) {
-								p.Step ();
-								/*if (metaDecls.Count > 0)
-									metaDecls.RemoveAt (metaDecls.Count - 1);*/
-								continue;
-							}
-
-							p.DeclDef (tempBlock);
-						}
-					}
-
-					// Update the actual tempBlock as well as methods/other blocks' end location that just appeared while parsing the code incrementally,
-					// so they are transparent to SearchBlockAt
-					var block = tempBlock as IBlockNode;
-					while(block != null && 
-						(block.EndLocation.Line < 1 || block.EndLocation == p.la.Location)){
-						block.EndLocation = new CodeLocation(p.la.Column+1,p.la.Line);
-						if(block.Children.Count == 0)
-							break;
-						block = block.Children[block.Count-1] as IBlockNode;
-					}
-
-					if(isInsideNonCodeSegment = p.Lexer.endedWhileBeingInNonCodeSequence)
-						return null;
-
-					tempBlock.EndLocation = new CodeLocation(p.la.Column + 1, p.la.Line);
-				}
-			}catch(Exception ex) {
-				Console.WriteLine (ex.Message);
-			}
-
-			DoubleDeclarationSilencer.RemoveDoubles(bn, tempBlock);
-
-			tempBlock.Parent = bn;
-
-			return tempBlock;
+			return new IncrBlockNodeParsing().ParseIncrementally (bn, ed, out isInsideNonCodeSegment);
 		}
 		#endregion
 
