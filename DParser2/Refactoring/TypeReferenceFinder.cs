@@ -31,6 +31,7 @@ using D_Parser.Resolver.ASTScanner;
 using D_Parser.Parser;
 using D_Parser.Dom.Statements;
 using System;
+using D_Parser.Completion;
 
 namespace D_Parser.Refactoring
 {
@@ -50,20 +51,20 @@ namespace D_Parser.Refactoring
 			this.invalidConditionalCodeRegions = i;
 		}
 
-		public static Dictionary<int, Dictionary<ISyntaxRegion,byte>> Scan(DModule ast, ResolutionContext ctxt, List<ISyntaxRegion> invalidConditionalCodeRegions = null)
+		public static Dictionary<int, Dictionary<ISyntaxRegion, byte>> Scan(IEditorData ed, List<ISyntaxRegion> invalidConditionalCodeRegions = null, int timeout = int.MinValue)
 		{
-			if (ast == null)
+			if (ed == null || ed.SyntaxTree == null)
 				return new Dictionary<int, Dictionary<ISyntaxRegion,byte>>();
 
-			var typeRefFinder = new TypeReferenceFinder(ctxt, invalidConditionalCodeRegions);
-			
-			// Enum all identifiers
-			ast.Accept (typeRefFinder);
+			var ctxt = ResolutionContext.Create(ed, false);
 
-			// Crawl through all remaining expressions by evaluating their types and check if they're actual type references.
-			/*typeRefFinder.queueCount = typeRefFinder.q.Count;
-			typeRefFinder.ResolveAllIdentifiers();
-			*/
+			// Since it's just about enumerating, not checking types, ignore any conditions
+			ctxt.ContextIndependentOptions |= ResolutionOptions.IgnoreDeclarationConditions;
+
+			var typeRefFinder = new TypeReferenceFinder(ctxt, invalidConditionalCodeRegions);
+
+			CodeCompletion.DoTimeoutableCompletionTask(null, ctxt, () => ed.SyntaxTree.Accept(typeRefFinder), timeout);
+
 			return typeRefFinder.Matches;
 		}
 		#endregion
