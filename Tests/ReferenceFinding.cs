@@ -9,6 +9,7 @@ using D_Parser.Dom;
 using D_Parser.Resolver.ASTScanner;
 using D_Parser.Resolver;
 using D_Parser.Refactoring;
+using D_Parser.Completion;
 
 namespace Tests
 {
@@ -46,8 +47,7 @@ void main()
 		[Test]
 		public void TypeRefFinding()
 		{
-			var pcl = ResolutionTests.CreateDefCtxt(@"module modA;
-
+			var modA = DParser.ParseString(@"module modA;
 class A(T)
 {
 	int n;
@@ -65,10 +65,14 @@ void main()
 }
 ");
 
-			var res = TypeReferenceFinder.Scan(pcl.ParseCache[0]["modA"], pcl);
+			var ed = new EditorData { 
+				SyntaxTree = modA,
+				ParseCache = new D_Parser.Misc.ParseCacheView(new RootPackage[0])
+			};
 
-			//Assert.AreEqual(6, res.TypeMatches.Count);
-			//TODO: Correct variable recognization
+			var res = TypeReferenceFinder.Scan(ed, null, -1);
+
+			Assert.GreaterOrEqual(6, res.Count);
 		}
 	}
 }
