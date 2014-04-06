@@ -1363,6 +1363,40 @@ namespace D_Parser.Dom.Statements
 				[Invalid32Bit]
 				pushfq,
 
+				// SSSE3
+				[Incomplete]
+				psignb,
+				[Incomplete]
+				psignw,
+				[Incomplete]
+				psignd,
+				[Incomplete]
+				pabsb,
+				[Incomplete]
+				pabsw,
+				[Incomplete]
+				pabsd,
+				[Incomplete]
+				palignr,
+				[Incomplete]
+				pshufb,
+				[Incomplete]
+				pmulhrsw,
+				[Incomplete]
+				pmaddubsw,
+				[Incomplete]
+				phsubw,
+				[Incomplete]
+				phsubd,
+				[Incomplete]
+				phsubsw,
+				[Incomplete]
+				phaddw,
+				[Incomplete]
+				phaddd,
+				[Incomplete]
+				phaddsw,
+
 				// SSE 4.1
 				[Incomplete]
 				mpsadbw,
