@@ -27,7 +27,8 @@ namespace Tests
 						alias immutable(wchar)[] wstring;
 						alias immutable(dchar)[] dstring;
 						class Object { string toString(); }
-						alias int size_t;");
+						alias int size_t;
+						class Exception { string msg; }");
 
 		public static ParseCacheView CreateCache(params string[] moduleCodes)
 		{
@@ -517,9 +518,9 @@ struct Foo
 import exc;
 void main(){
 try{}
-catch(Exception ex){
+catch(MyException ex){
 ex;
-}", @"module exc; class Exception { int msg; }");
+}", @"module exc; class MyException { int msg; }");
 			var A = ctxt.ParseCache [0] ["A"];
 			var main = A ["main"].First () as DMethod;
 			var tryStmt = main.Body.SubStatements.ElementAt (0) as TryStatement;
@@ -532,7 +533,32 @@ ex;
 			Assert.That (t, Is.TypeOf (typeof(MemberSymbol)));
 			t = (t as MemberSymbol).Base;
 			Assert.That (t, Is.TypeOf (typeof(ClassType)));
+		}
 
+		[Test]
+		public void TryCatch_ImplicitExVarType()
+		{
+			var ctxt = CreateCtxt ("A", @"module A;
+import exc;
+void main(){
+try{}
+catch(ex){
+ex;
+}");
+			var A = ctxt.ParseCache [0] ["A"];
+			var main = A ["main"].First () as DMethod;
+			var tryStmt = main.Body.SubStatements.ElementAt (0) as TryStatement;
+			var catchStmt = tryStmt.Catches [0];
+
+			var exStmt = (catchStmt.ScopedStatement as BlockStatement).SubStatements.ElementAt (0) as ExpressionStatement;
+			ctxt.Push (main, exStmt.Location);
+			var t = ExpressionTypeEvaluation.EvaluateType (exStmt.Expression, ctxt);
+
+			Assert.That (t, Is.TypeOf (typeof(MemberSymbol)));
+			t = (t as MemberSymbol).Base;
+			Assert.That (t, Is.TypeOf (typeof(ClassType)));
+			var ct = t as ClassType;
+			Assert.That (ct.Definition.Name, Is.EqualTo("Exception"));
 		}
 
 		[Test]

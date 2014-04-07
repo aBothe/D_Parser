@@ -3869,7 +3869,7 @@ namespace D_Parser.Parser
 								if (laKind == CloseParenthesis)
 								{
 									Lexer.RestoreLookAheadBackup();
-									catchVar.Type = new IdentifierDeclaration("Exception");
+									catchVar.Type = new IdentifierDeclaration("Exception") { InnerDeclaration = new IdentifierDeclaration("object") };
 								}
 								else
 									Lexer.PopLookAheadBackup();
