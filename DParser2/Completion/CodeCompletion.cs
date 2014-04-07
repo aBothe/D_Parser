@@ -54,10 +54,10 @@ namespace D_Parser.Completion
 
 			var sr = FindCurrentCaretContext(editor, ref _b, out inNonCode);
 
-			if (inNonCode || _b == null)
+			if (inNonCode)
 				return false;
 
-			if (editor.CaretLocation > _b.EndLocation) {
+			if (_b == null || editor.CaretLocation > _b.EndLocation) {
 				_b = editor.SyntaxTree;
 			}
 
