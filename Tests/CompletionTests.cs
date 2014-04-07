@@ -267,6 +267,22 @@ void main() { Class. }";
 			TestCompletionListContents (ed, wl, bl);
 		}
 
+		[Test]
+		[Ignore]
+		public void CompletionSuggestion()
+		{
+			EditorData ed;
+
+			var s = @"module A; enum myE { } void foo(myE e);
+void main() {
+foo(
+}";
+			ed = GenEditorData (3, 5, s);
+
+			var con = TestCompletionListContents (ed);
+			Assert.That (con.suggestedItem, Is.EqualTo ("myE"));
+		}
+
 		#region Test lowlevel
 		public static class Does
 		{
@@ -445,7 +461,7 @@ void main() { Class. }";
 			ed.CaretOffset = DocumentHelper.LocationToOffset (focusedModuleCode, caretLine, caretPos);
 		}
 
-		public static TestCompletionDataGen TestCompletionListContents(IEditorData ed, INode[] itemWhiteList, INode[] itemBlackList = null, char trigger = '\0')
+		public static TestCompletionDataGen TestCompletionListContents(IEditorData ed, INode[] itemWhiteList = null, INode[] itemBlackList = null, char trigger = '\0')
 		{
 			var gen = new TestCompletionDataGen (itemWhiteList, itemBlackList);
 			Assert.That (CodeCompletion.GenerateCompletionData (ed, gen, trigger), Is.True);
