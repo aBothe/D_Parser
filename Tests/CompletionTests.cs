@@ -338,8 +338,14 @@ void main() { Class. }";
 			public List<INode> remainingWhiteList;
 			public List<INode> whiteList;
 			public List<INode> blackList;
+			public string suggestedItem;
 
 			#region ICompletionDataGenerator implementation
+
+			public void SetSuggestedItem (string item)
+			{
+				suggestedItem = item;
+			}
 
 			public void AddCodeGeneratingNodeItem (INode node, string codeToGenerate)
 			{

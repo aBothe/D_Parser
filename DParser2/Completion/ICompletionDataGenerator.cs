@@ -31,6 +31,8 @@ namespace D_Parser.Completion
 		/// </summary>
 		void AddCodeGeneratingNodeItem(INode node, string codeToGenerate);
 
+		void SetSuggestedItem(string item);
+
 		/// <summary>
 		/// Notifies completion high-levels that the completion has been stopped due to taking too much time.
 		/// After this message has been sent, other completion items may still be added!

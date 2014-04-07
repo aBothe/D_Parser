@@ -20,6 +20,7 @@ namespace ExaustiveCompletionTester
 		{
 			throw new OperationCanceledException();
 		}
+		public void SetSuggestedItem(string item) { }
 	}
 
 }
