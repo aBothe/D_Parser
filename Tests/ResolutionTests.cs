@@ -511,6 +511,31 @@ struct Foo
 		}
 
 		[Test]
+		public void TryCatch()
+		{
+			var ctxt = CreateCtxt ("A", @"module A;
+import exc;
+void main(){
+try{}
+catch(Exception ex){
+ex;
+}", @"module exc; class Exception { int msg; }");
+			var A = ctxt.ParseCache [0] ["A"];
+			var main = A ["main"].First () as DMethod;
+			var tryStmt = main.Body.SubStatements.ElementAt (0) as TryStatement;
+			var catchStmt = tryStmt.Catches [0];
+
+			var exStmt = (catchStmt.ScopedStatement as BlockStatement).SubStatements.ElementAt (0) as ExpressionStatement;
+			ctxt.Push (main, exStmt.Location);
+			var t = ExpressionTypeEvaluation.EvaluateType (exStmt.Expression, ctxt);
+
+			Assert.That (t, Is.TypeOf (typeof(MemberSymbol)));
+			t = (t as MemberSymbol).Base;
+			Assert.That (t, Is.TypeOf (typeof(ClassType)));
+
+		}
+
+		[Test]
 		public void PtrStaticProp()
 		{
 			var ctxt = CreateCtxt("A", @"module A; ubyte[] arr;");
