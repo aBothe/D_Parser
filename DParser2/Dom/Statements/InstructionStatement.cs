@@ -974,7 +974,7 @@ namespace D_Parser.Dom.Statements
 				[Incomplete]
 				prefetcht0,
 				[Incomplete]
-				prefetch1,
+				prefetcht1,
 				[Incomplete]
 				prefetcht2,
 				[Incomplete]
