@@ -106,9 +106,9 @@ namespace D_Parser.Dom
 		/// Used for associative arrays; Contains all declaration parts that are located inside the square brackets.
 		/// Integer by default.
 		/// </summary>
-		public ITypeDeclaration KeyType = new DTokenDeclaration(DTokens.Int);
+		public ITypeDeclaration KeyType;
 		public bool ClampsEmpty { get {
-			return KeyExpression == null && (KeyType == null || (KeyType is DTokenDeclaration && (KeyType as DTokenDeclaration).Token == DTokens.Int));
+			return KeyExpression == null && KeyType == null;
 		} }
 		public IExpression KeyExpression;
 
@@ -117,15 +117,6 @@ namespace D_Parser.Dom
 			get
 			{
 				return KeyExpression is PostfixExpression_Slice;
-			}
-		}
-
-		public bool IsAssociative
-		{
-			get
-			{
-				return KeyType != null && (!(KeyType is DTokenDeclaration) ||
-					!DTokens.IsBasicType_Integral((KeyType as DTokenDeclaration).Token));
 			}
 		}
 

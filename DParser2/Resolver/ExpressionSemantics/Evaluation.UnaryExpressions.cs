@@ -18,6 +18,16 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public ISymbolValue Visit(CastExpression ce)
 		{
+			var toCast = ce.UnaryExpression != null ? ce.UnaryExpression.Accept (this) : null;
+			var targetType = ce.Type != null ? TypeDeclarationResolver.ResolveSingle(ce.Type, ctxt) : null;
+
+			var pv = toCast as PrimitiveValue;
+			var pt = targetType as PrimitiveType;
+			if (pv != null && pt != null) {
+				//TODO: Truncate value bytes if required and/or treat Value/ImaginaryPart in any way!
+				return new PrimitiveValue(pt.TypeToken, pv.Value, ce, pv.ImaginaryPart);
+			}
+
 			// TODO: Convert actual object
 			return null;
 		}

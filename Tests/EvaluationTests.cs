@@ -310,6 +310,23 @@ A a;");
 			Assert.AreEqual(3, vv.Value);
 		}
 
+		[Test]
+		public void TestCastExpression1()
+		{
+			var ctxt = ResolutionTests.CreateCtxt("A",@"module A;");
+			var vp = new StandardValueProvider (ctxt);
+
+			IExpression x;
+			ISymbolValue v;
+
+			x = DParser.ParseExpression ("cast(ubyte)20");
+			v = Evaluation.EvaluateValue (x, vp);
+
+			Assert.That (v, Is.TypeOf (typeof(PrimitiveValue)));
+			Assert.That ((v as PrimitiveValue).BaseTypeToken, Is.EqualTo (DTokens.Ubyte));
+			Assert.That ((v as PrimitiveValue).Value, Is.EqualTo(20M));
+		}
+
 		public static bool EvalIsExpression(string IsExpressionCode, AbstractSymbolValueProvider vp)
 		{
 			var e = DParser.ParseExpression("is("+IsExpressionCode+")");

@@ -302,7 +302,7 @@ namespace D_Parser.Resolver.TypeResolution
 		{
 			keyVal = null;
 			fixedArrayLength = -1;
-			AbstractType keyType = null;
+			AbstractType keyType;
 
 			if (ad.KeyExpression != null)
 			{
@@ -352,10 +352,10 @@ namespace D_Parser.Resolver.TypeResolution
 				}
 				catch { }
 			}
-			else
+			else if(ad.KeyType != null)
 				return ResolveSingle(ad.KeyType, ctxt);
 
-			return keyType;
+			return null;
 		}
 
 		public static AbstractType Resolve(ArrayDecl ad, ResolutionContext ctxt)
@@ -368,9 +368,7 @@ namespace D_Parser.Resolver.TypeResolution
 			ISymbolValue val;
 			keyType = ResolveKey(ad, out fixedArrayLength, out val, ctxt);
 
-			if (keyType == null || (keyType is PrimitiveType &&
-			    ((PrimitiveType)keyType).TypeToken == DTokens.Int)) {
-
+			if (ad.KeyType == null && (ad.KeyExpression == null || fixedArrayLength >= 0)) {
 				if (fixedArrayLength >= 0) {
 					// D Magic: One might access tuple items directly in the pseudo array declaration - so stuff like Tup[0] i; becomes e.g. int i;
 					var dtup = DResolver.StripMemberSymbols (valueType) as DTuple;

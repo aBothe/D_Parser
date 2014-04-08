@@ -266,9 +266,11 @@ namespace D_Parser.Resolver.Templates
 				return false;
 
 			// Handle key type
-			if((arrayDeclToCheckAgainst.KeyType != null || arrayDeclToCheckAgainst.KeyExpression!=null) && argumentArrayType.KeyType == null)
+			var at = argumentArrayType as ArrayType;
+			if((arrayDeclToCheckAgainst.ClampsEmpty == (at == null)) &&
+				(at == null || !at.IsStaticArray || arrayDeclToCheckAgainst.KeyExpression == null))
 				return false;
-			bool result = false;
+			bool result;
 
 			if (arrayDeclToCheckAgainst.KeyExpression != null)
 			{
@@ -288,48 +290,49 @@ namespace D_Parser.Resolver.Templates
 				 * test if it's part of the parameter list
 				 */
 				var id = x_param as IdentifierExpression;
-				if(id!=null && id.IsIdentifier && Contains(id.ValueStringHash))
-				{
+				if (id != null && id.IsIdentifier && Contains (id.ValueStringHash)) {
 					// If an expression (the usual case) has been passed as argument, evaluate its value, otherwise is its type already resolved.
 					ISemantic finalArg = null;
 
-					if (ad_Argument != null && ad_Argument.KeyExpression != null)
-					{
+					if (ad_Argument != null && ad_Argument.KeyExpression != null) {
 						ISymbolValue val = null;
 						int len = -1;
-						finalArg = TypeDeclarationResolver.ResolveKey(ad_Argument, out len, out val, ctxt);
+						finalArg = TypeDeclarationResolver.ResolveKey (ad_Argument, out len, out val, ctxt);
 						if (val != null)
 							finalArg = val;
-					}
-					else
+					} else
 						finalArg = argumentArrayType.KeyType;
 
 					//TODO: Do a type convertability check between the param type and the given argument's type.
 					// The affected parameter must also be a value parameter then, if an expression was given.
 
 					// and handle it as if it was an identifier declaration..
-					result = Set(parameterRef, finalArg, id.ValueStringHash); 
-				}
-				else if (ad_Argument != null && ad_Argument.KeyExpression != null)
-				{
+					result = Set (parameterRef, finalArg, id.ValueStringHash); 
+				} else if (ad_Argument != null && ad_Argument.KeyExpression != null) {
 					// Just test for equality of the argument and parameter expression, e.g. if both param and arg are 123, the result will be true.
-					result = SymbolValueComparer.IsEqual(arrayDeclToCheckAgainst.KeyExpression, ad_Argument.KeyExpression, new StandardValueProvider(ctxt));
-				}
+					result = SymbolValueComparer.IsEqual (arrayDeclToCheckAgainst.KeyExpression, ad_Argument.KeyExpression, new StandardValueProvider (ctxt));
+				} else
+					result = false;
+
+				if (!result)
+					return false;
 			}
 			else if (arrayDeclToCheckAgainst.KeyType != null)
 			{
 				// If the array we're passing to the decl check that is static (i.e. has a constant number as key 'type'),
 				// pass that number instead of type 'int' to the check.
-				var at = argumentArrayType as ArrayType;
 				if (argumentArrayType != null && at != null && at.IsStaticArray)
 					result = HandleDecl(parameterRef, arrayDeclToCheckAgainst.KeyType,
 						new PrimitiveValue(D_Parser.Parser.DTokens.Int, (decimal)at.FixedLength, null)); 
 				else
 					result = HandleDecl(parameterRef, arrayDeclToCheckAgainst.KeyType, argumentArrayType.KeyType);
+
+				if (!result)
+					return false;
 			}
 
 			// Handle inner type
-			return result && HandleDecl(parameterRef,arrayDeclToCheckAgainst.InnerDeclaration, argumentArrayType.Base);
+			return HandleDecl(parameterRef,arrayDeclToCheckAgainst.InnerDeclaration, argumentArrayType.Base);
 		}
 
 		bool HandleDecl(TemplateTypeParameter par, DelegateDeclaration d, DelegateType dr)
