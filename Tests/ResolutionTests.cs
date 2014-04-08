@@ -1452,6 +1452,33 @@ class C(U: A!W, W){ W item; }
 		}
 
 		[Test]
+		public void DefaultTemplateParamType()
+		{
+			var ctxt = CreateCtxt("A", @"module A;
+struct StringNumPair(T = string, U = long){
+    T m_str;
+    U m_num;
+
+    @property size_t len(){
+        return cast(size_t) (m_str.length + m_num.length);
+    }
+}
+");
+			var A = ctxt.ParseCache[0]["A"];
+			var StringNumPair = A["StringNumPair"].First() as DClassLike;
+			var len = StringNumPair["len"].First() as DMethod;
+			ctxt.CurrentContext.Set(len,len.Body.First().Location);
+
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression("T");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
+			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(ArrayType)));
+		}
+
+		[Test]
 		public void TemplateArgAsBasetype()
 		{
 			var ctxt = CreateCtxt("A",@"module A;

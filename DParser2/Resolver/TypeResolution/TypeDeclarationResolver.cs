@@ -874,13 +874,18 @@ namespace D_Parser.Resolver.TypeResolution
 			{
 				TemplateParameterSymbol tpnBase;
 
-				//TODO: Resolve the specialization type
-				//var templateParameterType = TemplateInstanceHandler.ResolveTypeSpecialization(tmp, ctxt);
-
 				if (ctxt.GetTemplateParam(tpn.NameHash, out tpnBase) && tpnBase.Parameter == tpn.TemplateParameter)
 					return tpnBase;
 
-				return new TemplateParameterSymbol(tpn, null, typeBase);
+				AbstractType baseType;
+				//TODO: What if there are like nested default constructs like (T = U*, U = int) ?
+				var ttp = tpn.TemplateParameter as TemplateTypeParameter;
+				if (ttp != null && (ttp.Default != null || ttp.Specialization != null))
+					baseType = TypeDeclarationResolver.ResolveSingle(ttp.Default ?? ttp.Specialization, ctxt);
+				else
+					baseType = null;
+
+				return new TemplateParameterSymbol(tpn, baseType, typeBase);
 			}
 
 			public AbstractType Visit(NamedTemplateMixinNode n)
