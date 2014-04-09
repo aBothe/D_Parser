@@ -880,7 +880,7 @@ namespace D_Parser.Resolver.TypeResolution
 				AbstractType baseType;
 				//TODO: What if there are like nested default constructs like (T = U*, U = int) ?
 				var ttp = tpn.TemplateParameter as TemplateTypeParameter;
-				if (ttp != null && (ttp.Default != null || ttp.Specialization != null))
+				if (CanResolveBase(tpn) && ttp != null && (ttp.Default != null || ttp.Specialization != null))
 					baseType = TypeDeclarationResolver.ResolveSingle(ttp.Default ?? ttp.Specialization, ctxt);
 				else
 					baseType = null;
