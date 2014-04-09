@@ -18,6 +18,9 @@ namespace D_Parser.Resolver
 		/// </summary>
 		public static bool IsEqual(ISemantic r1, ISemantic r2)
 		{
+			if (r1 == r2)
+				return true;
+
 			if (r1 is TemplateParameterSymbol)
 			{
 				var tps1 = r1 as TemplateParameterSymbol;

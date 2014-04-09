@@ -302,55 +302,27 @@ namespace D_Parser.Resolver.TypeResolution
 		{
 			keyVal = null;
 			fixedArrayLength = -1;
-			AbstractType keyType;
 
 			if (ad.KeyExpression != null)
 			{
-				//TODO: Template instance expressions?
-				var id_x = ad.KeyExpression as IdentifierExpression;
-				if (id_x != null && id_x.IsIdentifier)
+				keyVal = Evaluation.EvaluateValue(ad.KeyExpression, ctxt);
+
+				if (keyVal != null)
 				{
-					var id = new IdentifierDeclaration((string)id_x.Value)
+					// It should be mostly a number only that points out how large the final array should be
+					var pv = Evaluation.GetVariableContents(keyVal, new StandardValueProvider(ctxt)) as PrimitiveValue;
+					if (pv != null)
 					{
-						Location = id_x.Location,
-						EndLocation = id_x.EndLocation
-					};
+						fixedArrayLength = System.Convert.ToInt32(pv.Value);
 
-					keyType = TypeDeclarationResolver.ResolveSingle(id, ctxt);
-
-					if (keyType != null)
-					{
-						var tt = keyType as MemberSymbol;
-
-						if (tt == null ||
-							!(tt.Definition is DVariable) ||
-							((DVariable)tt.Definition).Initializer == null)
-							return keyType;
+						if (fixedArrayLength < 0)
+							ctxt.LogError(ad, "Invalid array size: Length value must be greater than 0");
 					}
-				}
-
-				try
-				{
-					keyVal = Evaluation.EvaluateValue(ad.KeyExpression, ctxt);
-
-					if (keyVal != null)
-					{
+					//TODO Is there any other type of value allowed?
+					else
 						// Take the value's type as array key type
-						keyType = keyVal.RepresentedType;
-
-						// It should be mostly a number only that points out how large the final array should be
-						var pv = Evaluation.GetVariableContents(keyVal, new StandardValueProvider(ctxt)) as PrimitiveValue;
-						if (pv != null)
-						{
-							fixedArrayLength = System.Convert.ToInt32(pv.Value);
-
-							if (fixedArrayLength < 0)
-								ctxt.LogError(ad, "Invalid array size: Length value must be greater than 0");
-						}
-						//TODO Is there any other type of value allowed?
-					}
+						return keyVal.RepresentedType;
 				}
-				catch { }
 			}
 			else if(ad.KeyType != null)
 				return ResolveSingle(ad.KeyType, ctxt);

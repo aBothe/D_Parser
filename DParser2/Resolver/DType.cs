@@ -266,7 +266,7 @@ namespace D_Parser.Resolver
 		public readonly bool IsStaticArray;
 
 		public ArrayType(AbstractType ValueType, ISyntaxRegion td)
-			: base(ValueType, new PrimitiveType(DTokens.Int, 0), td) { FixedLength = -1; }
+			: base(ValueType, null, td) { FixedLength = -1; }
 
 		public ArrayType(AbstractType ValueType, int ArrayLength, ISyntaxRegion td)
 			: this(ValueType, td)
@@ -300,11 +300,8 @@ namespace D_Parser.Resolver
 		public bool IsString
 		{
 			get{
-				var kt = DResolver.StripMemberSymbols (KeyType);
-				return (kt == null || (kt is PrimitiveType &&
-					((kt as PrimitiveType).TypeToken == DTokens.Int))) &&
-					(kt = DResolver.StripMemberSymbols (ValueType)) is PrimitiveType &&
-					DTokens.IsBasicType_Character((kt as PrimitiveType).TypeToken);
+				var pt = DResolver.StripMemberSymbols(ValueType) as PrimitiveType;
+				return this is ArrayType && pt != null && DTokens.IsBasicType_Character(pt.TypeToken);
 			}
 		}
 

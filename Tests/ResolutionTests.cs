@@ -685,6 +685,50 @@ double* foo(string s, string ss);
 			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 			Assert.That (t, Is.Null);
 		}
+
+		[Test]
+		public void ArrayTypes()
+		{
+			var ctxt = CreateCtxt("A", @"module A;");
+
+			ITypeDeclaration td;
+			AssocArrayType aa;
+			ArrayType at;
+
+			td = DParser.ParseBasicType("int[int]");
+			aa = TypeDeclarationResolver.ResolveSingle(td, ctxt) as AssocArrayType;
+			Assert.That(aa, Is.Not.TypeOf(typeof(ArrayType)));
+			Assert.That(aa.KeyType, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.That((aa.KeyType as PrimitiveType).TypeToken, Is.EqualTo(DTokens.Int));
+			Assert.That(aa.ValueType, Is.TypeOf(typeof(PrimitiveType)));
+
+			td = DParser.ParseBasicType("int[short]");
+			aa = TypeDeclarationResolver.ResolveSingle(td, ctxt) as AssocArrayType;
+			Assert.That(aa, Is.Not.TypeOf(typeof(ArrayType)));
+			Assert.That(aa.KeyType, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.That((aa.KeyType as PrimitiveType).TypeToken, Is.EqualTo(DTokens.Short));
+			Assert.That(aa.ValueType, Is.TypeOf(typeof(PrimitiveType)));
+
+			td = DParser.ParseBasicType("int[string]");
+			aa = TypeDeclarationResolver.ResolveSingle(td, ctxt) as AssocArrayType;
+			Assert.That(aa, Is.Not.TypeOf(typeof(ArrayType)));
+			Assert.That(aa.KeyType, Is.TypeOf(typeof(ArrayType)));
+			Assert.That((aa.KeyType as ArrayType).IsString);
+			Assert.That(aa.ValueType, Is.TypeOf(typeof(PrimitiveType)));
+			aa = null;
+
+			td = DParser.ParseBasicType("byte[3]");
+			at = TypeDeclarationResolver.ResolveSingle(td, ctxt) as ArrayType;
+			Assert.That(at.FixedLength, Is.EqualTo(3));
+			Assert.That(at.KeyType, Is.Null);
+			Assert.That(at.ValueType, Is.TypeOf(typeof(PrimitiveType)));
+
+			td = DParser.ParseBasicType("byte[6L]");
+			at = TypeDeclarationResolver.ResolveSingle(td, ctxt) as ArrayType;
+			Assert.That(at.FixedLength, Is.EqualTo(6));
+			Assert.That(at.KeyType, Is.Null);
+			Assert.That(at.ValueType, Is.TypeOf(typeof(PrimitiveType)));
+		}
 		
 		[Test]
 		public void ArrayIndexer()
