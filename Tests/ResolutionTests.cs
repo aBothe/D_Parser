@@ -3026,6 +3026,22 @@ struct CL {
 		}
 
 		[Test]
+		public void AliasThisSO()
+		{
+			var ctxt = CreateCtxt ("A", @"module A;
+class Cls
+{
+	alias derp this;
+	alias derp this;
+}
+
+Cls inst;
+");
+			var x = DParser.ParseExpression ("inst.a");
+			ExpressionTypeEvaluation.EvaluateType (x, ctxt);
+		}
+
+		[Test]
 		public void TypeofIntSize()
 		{
 			var ctxt = CreateDefCtxt();

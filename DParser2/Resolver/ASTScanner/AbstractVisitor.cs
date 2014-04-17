@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
@@ -1016,60 +1017,60 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		bool HandleAliasThisDeclarations(TemplateIntermediateType tit, MemberFilter vis)
 		{
 			var ch = tit.Definition [DVariable.AliasThisIdentifierHash];
-			if(ch != null && !ctxt.CancelOperation){
-				foreach (DVariable aliasDef in ch) {
-					if (aliasDef.Type == null || !MatchesCompilationConditions(aliasDef))
-						continue;
+			if (ch == null || ctxt.CancelOperation)
+				return false;
 
-					if (aliasThisDefsBeingParsed == null)
-						aliasThisDefsBeingParsed = new Dictionary<IBlockNode, DVariable>();
+			var aliasDef = ch.FirstOrDefault() as DVariable; // Only allow one alias this to be resolved ever!
+			if (aliasDef == null || aliasDef.Type == null || !MatchesCompilationConditions(aliasDef))
+				return false;
 
-					DVariable alreadyParsedAliasThis;
-					AbstractType aliasedSymbol;
+			if (aliasThisDefsBeingParsed == null)
+				aliasThisDefsBeingParsed = new Dictionary<IBlockNode, DVariable>();
 
-					using (ctxt.Push(tit))
-					{
-						if (!aliasThisDefsBeingParsed.TryGetValue(ctxt.ScopedBlock, out alreadyParsedAliasThis) || alreadyParsedAliasThis != aliasDef)
-						{
-							aliasThisDefsBeingParsed[ctxt.ScopedBlock] = aliasDef;
+			DVariable alreadyParsedAliasThis;
+			AbstractType aliasedSymbol;
 
-							// Resolve the aliased symbol and expect it to be a member symbol(?).
-							//TODO: Check if other cases are allowed as well!
-							aliasedSymbol = DResolver.StripMemberSymbols(TypeDeclarationResolver.ResolveSingle(aliasDef.Type, ctxt));
+			using (ctxt.Push(tit))
+			{
+				if (!aliasThisDefsBeingParsed.TryGetValue(ctxt.ScopedBlock, out alreadyParsedAliasThis) || alreadyParsedAliasThis != aliasDef)
+				{
+					aliasThisDefsBeingParsed[ctxt.ScopedBlock] = aliasDef;
 
-							aliasThisDefsBeingParsed.Remove(ctxt.ScopedBlock);
+					// Resolve the aliased symbol and expect it to be a member symbol(?).
+					//TODO: Check if other cases are allowed as well!
+					aliasedSymbol = DResolver.StripMemberSymbols(TypeDeclarationResolver.ResolveSingle(aliasDef.Type, ctxt));
 
-							if (aliasedSymbol is TemplateParameterSymbol)
-								aliasedSymbol = (aliasedSymbol as TemplateParameterSymbol).Base;
-						}
-						else
-							aliasedSymbol = null;
-					}
+					aliasThisDefsBeingParsed.Remove(ctxt.ScopedBlock);
 
-					
-
-					foreach (var statProp in StaticProperties.ListProperties (aliasedSymbol, ctxt))
-						if (HandleItem (statProp))
-							return true;
-
-					/** TODO: Visit ufcs recommendations and other things that
-					 * become added in e.g. MemberCompletionProvider
-					 */
-
-					var tit_ = aliasedSymbol as TemplateIntermediateType;
-					DSymbol ds;
-					if (tit_ != null)
-					{
-						using (ctxt.Push(tit_))
-							if (DeepScanClass(tit_, vis, true))
-								return true;
-					}
-					// Applies to DEnums
-					else if ((ds = aliasedSymbol as DSymbol) != null && ds.Definition is DBlockNode &&
-						scanChildren(ds.Definition as DBlockNode, vis, resolvedCurScope:ds))
-						return true;
+					if (aliasedSymbol is TemplateParameterSymbol)
+						aliasedSymbol = (aliasedSymbol as TemplateParameterSymbol).Base;
 				}
+				else
+					aliasedSymbol = null;
 			}
+
+			
+
+			foreach (var statProp in StaticProperties.ListProperties (aliasedSymbol, ctxt))
+				if (HandleItem (statProp))
+					return true;
+
+			/** TODO: Visit ufcs recommendations and other things that
+			 * become added in e.g. MemberCompletionProvider
+			 */
+
+			var tit_ = aliasedSymbol as TemplateIntermediateType;
+			DSymbol ds;
+			if (tit_ != null)
+			{
+				using (ctxt.Push(tit_))
+					if (DeepScanClass(tit_, vis, true))
+						return true;
+			}
+			// Applies to DEnums
+			else if ((ds = aliasedSymbol as DSymbol) != null && ds.Definition is DBlockNode &&
+				scanChildren(ds.Definition as DBlockNode, vis, resolvedCurScope:ds))
+				return true;
 
 			return false;
 		}
