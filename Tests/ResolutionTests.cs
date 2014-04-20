@@ -3473,6 +3473,74 @@ void CFoo() {}");
 		}
 
 		[Test]
+		public void AutoImplementHook()
+		{
+			var ctxt = CreateCtxt("A", @"module A;
+import std.typecons;
+struct Parms;
+interface TestAPI
+{
+        string foo(string name);
+        string bar(string lol, int lal, Parms parms);
+}
+
+AutoImplement!(TestAPI, generateEmptyFunction) derp;
+BlackHole!TestAPI yorp;
+		", @"module std.typecons;
+
+template generateEmptyFunction(C, func.../+[BUG 4217]+/)
+{
+    static if (is(ReturnType!(func) == void))
+        enum string generateEmptyFunction = q{
+        };
+    else static if (functionAttributes!(func) & FunctionAttribute.ref_)
+        enum string generateEmptyFunction = q{
+            static typeof(return) dummy;
+            return dummy;
+        };
+    else
+        enum string generateEmptyFunction = q{
+            return typeof(return).init;
+        };
+}
+
+template isAbstractFunction() {}
+
+class AutoImplement(Base, alias how, alias what = isAbstractFunction) : Base
+{
+    private alias AutoImplement_Helper!(
+            ""autoImplement_helper_"", ""Base"", Base, how, what )
+             autoImplement_helper_;
+    mixin(autoImplement_helper_.code);
+}
+
+template BlackHole(Base)
+{
+    alias AutoImplement!(Base, generateEmptyFunction, isAbstractFunction)
+            BlackHole;
+}
+");
+
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression("AutoImplement!(TestAPI, generateEmptyFunction)");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false);
+
+			Assert.That (t, Is.TypeOf (typeof(ClassType)));
+
+			x = DParser.ParseExpression("derp.foo");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false);
+
+			Assert.That (t, Is.TypeOf (typeof(MemberSymbol)));
+
+			x = DParser.ParseExpression("yorp.foo");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false);
+
+			Assert.That (t, Is.TypeOf (typeof(MemberSymbol)));
+		}
+
+		[Test]
 		public void BitfieldsHook()
 		{
 			var ctxt = CreateCtxt("A", @"module A;

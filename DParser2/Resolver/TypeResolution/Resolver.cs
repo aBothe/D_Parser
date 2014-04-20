@@ -296,7 +296,15 @@ namespace D_Parser.Resolver.TypeResolution
 			var tix = instanceDeclaration as TemplateInstanceExpression;
 			if (tix != null && (ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) == 0)
 			{
+				// Pop a context frame as we still need to resolve the template instance expression args in the place where the expression occurs, not the instantiated class' location
+				var backup = ctxt.Pop ();
+				if (ctxt.CurrentContext == null)
+					ctxt.Push (backup);
+
 				var givenTemplateArguments = TemplateInstanceHandler.PreResolveTemplateArgs(tix, ctxt);
+
+				if (ctxt.CurrentContext != backup)
+					ctxt.Push (backup);
 
 				if (!TemplateInstanceHandler.DeduceParams(givenTemplateArguments, false, ctxt, null, dc, deducedTypes))
 				{

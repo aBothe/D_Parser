@@ -29,6 +29,7 @@ namespace D_Parser.Resolver.ResolutionHooks
 
 		static HookRegistry()
 		{
+			AddHook (new autoimplement ());
 			AddHook(new TupleHook());
 			AddHook(new bitfields());
 		}

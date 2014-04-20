@@ -258,7 +258,8 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 						(type == DTokens.Class ||type == DTokens.Interface))
 						udt = DResolver.ResolveClassOrInterface(udt.Definition as DClassLike, ctxt, udt.DeclarationOrExpressionBase);
 
-					udt = udt.Base as UserDefinedType;
+					if(udt != null)
+						udt = udt.Base as UserDefinedType;
 
 					isBase = true;
 				}
