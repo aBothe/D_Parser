@@ -96,11 +96,6 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			if (dm != null && (stmt = dm.GetSubBlockAt(Caret)) != null &&
 				ScanStatementHierarchy(stmt, Caret, VisibleMembers))
 			{
-				if (ScanBlock(dm, Caret, VisibleMembers))
-				{
-					// Error: Locals are shadowing parameters!
-				}
-				
 				return;
 			}
 
