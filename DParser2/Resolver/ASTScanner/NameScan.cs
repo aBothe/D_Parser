@@ -25,7 +25,7 @@ namespace D_Parser.Resolver.ASTScanner
 		{
 			var scan = new NameScan(ctxt, nameHash, idObject);
 
-			if(stackSize++ < 5)
+			if(stackSize++ < 7)
 				scan.IterateThroughScopeLayers(caret);
 			stackSize--;
 

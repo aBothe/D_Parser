@@ -150,7 +150,7 @@ void asdf(int* ni=23) {
 			ctxt.CurrentContext.Set(f, CodeLocation.Empty);
 			t = TypeDeclarationResolver.ResolveIdentifier("ni", ctxt, ((f.Body.SubStatements.First() as IfStatement).ThenStatement as BlockStatement).SubStatements.ElementAt(1));
 			Assert.That((t[0] as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
-			Assert.That(t.Length, Is.EqualTo(2));
+			Assert.That(t.Length, Is.EqualTo(1)); // Was 2; Has been changed to 1 because it's only important to take the 'nearest' declaration that occured before the resolved expression
 
 			t = DResolver.FilterOutByResultPriority(ctxt, t).ToArray();
 			Assert.That(t.Length, Is.EqualTo(1));
