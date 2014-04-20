@@ -303,8 +303,13 @@ namespace D_Parser.Resolver.TypeResolution
 
 				var givenTemplateArguments = TemplateInstanceHandler.PreResolveTemplateArgs(tix, ctxt);
 
-				if (ctxt.CurrentContext != backup)
+				if (ctxt.CurrentContext != backup) {
+					foreach (var kv in ctxt.CurrentContext.DeducedTemplateParameters) {
+						backup.DeducedTemplateParameters [kv.Key] = kv.Value;
+						deducedTypes [kv.Key] = kv.Value;
+					}
 					ctxt.Push (backup);
+				}
 
 				if (!TemplateInstanceHandler.DeduceParams(givenTemplateArguments, false, ctxt, null, dc, deducedTypes))
 				{
@@ -375,7 +380,7 @@ namespace D_Parser.Resolver.TypeResolution
 							continue;
 						}
 
-						var r = TypeDeclarationResolver.ResolveSingle(type, ctxt);
+						var r = DResolver.StripMemberSymbols(TypeDeclarationResolver.ResolveSingle(type, ctxt));
 
 						if (r is ClassType || r is TemplateType)
 						{

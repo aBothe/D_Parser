@@ -3524,17 +3524,23 @@ template BlackHole(Base)
 			IExpression x;
 			AbstractType t;
 
+			x = DParser.ParseExpression("BlackHole!TestAPI");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false);
+
+			Assert.That (t, Is.TypeOf (typeof(ClassType)));
+			Assert.That ((t as ClassType).BaseInterfaces[0], Is.TypeOf(typeof(InterfaceType)));
+
+			x = DParser.ParseExpression("yorp.foo");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false);
+
+			Assert.That (t, Is.TypeOf (typeof(MemberSymbol)));
+
 			x = DParser.ParseExpression("AutoImplement!(TestAPI, generateEmptyFunction)");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false);
 
 			Assert.That (t, Is.TypeOf (typeof(ClassType)));
 
 			x = DParser.ParseExpression("derp.foo");
-			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false);
-
-			Assert.That (t, Is.TypeOf (typeof(MemberSymbol)));
-
-			x = DParser.ParseExpression("yorp.foo");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false);
 
 			Assert.That (t, Is.TypeOf (typeof(MemberSymbol)));

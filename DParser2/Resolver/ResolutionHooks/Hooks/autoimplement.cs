@@ -26,6 +26,7 @@
 using System;
 using System.Collections.Generic;
 using D_Parser.Dom;
+using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Resolver.ResolutionHooks
 {
@@ -42,9 +43,12 @@ namespace D_Parser.Resolver.ResolutionHooks
 				return null;
 
 			returnedNode = cls.Definition;
-			var baseClass = AbstractType.Get(en.Current) as TemplateIntermediateType;
+			var baseClass = DResolver.StripMemberSymbols(AbstractType.Get(en.Current)) as TemplateIntermediateType;
 
-			return baseClass == null ? ds as AbstractType : new ClassType(cls.Definition, ds.DeclarationOrExpressionBase, baseClass, deducedTypes: ds.DeducedTypes);
+			if (baseClass == null)
+				return ds;
+
+			return new ClassType(cls.Definition, ds.DeclarationOrExpressionBase, baseClass as ClassType, baseClass is InterfaceType ? new[] {baseClass as InterfaceType} : null, ds.DeducedTypes);
 		}
 
 		public string HookedSymbol {
