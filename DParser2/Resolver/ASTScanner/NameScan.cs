@@ -1,6 +1,7 @@
 ﻿using D_Parser.Dom;
 using D_Parser.Parser;
 using D_Parser.Resolver.TypeResolution;
+using System;
 using System.Collections.Generic;
 
 namespace D_Parser.Resolver.ASTScanner
@@ -17,11 +18,16 @@ namespace D_Parser.Resolver.ASTScanner
 			this.idObject = idObject;
 		}
 
+		[ThreadStatic]
+		static int stackSize = 0;
+
 		public static List<AbstractType> SearchAndResolve(ResolutionContext ctxt, CodeLocation caret, int nameHash, ISyntaxRegion idObject=null)
 		{
 			var scan = new NameScan(ctxt, nameHash, idObject);
 
-			scan.IterateThroughScopeLayers(caret);
+			if(stackSize++ < 5)
+				scan.IterateThroughScopeLayers(caret);
+			stackSize--;
 
 			return scan.matches_types;
 		}
