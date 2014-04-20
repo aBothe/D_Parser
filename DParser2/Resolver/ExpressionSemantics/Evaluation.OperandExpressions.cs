@@ -369,7 +369,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			r = TryGetValue(rightOp != null ? rightOp.Accept(this) : null);
 			if(r == null)
 			{
-				EvalError(catEx.LeftOperand, "Couldn't be evaluated.");
+				EvalError((catEx ?? x).LeftOperand, "Couldn't be evaluated.");
 				return null;
 			}
 			catQueue.Enqueue(r);
