@@ -12,7 +12,7 @@ namespace D_Parser.Misc
 	{
 		static string[] minimalConfiguration;
 
-		public static string[] GetOSAndCPUVersions()
+		public static string[] GetOSAndCPUVersions(bool guessCPUArch = true)
 		{
 			if(minimalConfiguration != null)
 				return minimalConfiguration;
@@ -48,17 +48,21 @@ namespace D_Parser.Misc
 			// http://www.computerhope.com/unix/uuname.htm
 			
 			// CPU information
-			var cpuArch = Environment.GetEnvironmentVariable("PROCESSOR_ARCHITECTURE");
-			switch (cpuArch) {
-			case "X86":
-				l.Add ("X86");
-				break;
-			case "AMD64":
-				l.Add ("X86_64");
-				break;
-			case "IA64":
-				l.Add ("IA64");
-				break;
+			if (guessCPUArch)
+			{
+				var cpuArch = Environment.GetEnvironmentVariable("PROCESSOR_ARCHITECTURE");
+				switch (cpuArch)
+				{
+					case "X86":
+						l.Add("X86");
+						break;
+					case "AMD64":
+						l.Add("X86_64");
+						break;
+					case "IA64":
+						l.Add("IA64");
+						break;
+				}
 			}
 			//TODO: Other architectures...
 			
@@ -86,7 +90,7 @@ namespace D_Parser.Misc
 		{
 			var l = new List<string>();
 
-			l.AddRange(GetOSAndCPUVersions());
+			l.AddRange(GetOSAndCPUVersions(false));
 
 			// Compiler id
 			if(!string.IsNullOrEmpty(compilerId))
@@ -99,15 +103,23 @@ namespace D_Parser.Misc
 			if(finalCompilerCommandLine.Contains("-D"))
 				l.Add("D_Ddoc");
 
-			if(false /* TODO: Determine x64-version of dmd etc. */)
+			bool is64Bit = finalCompilerCommandLine.Contains("-m64");
+
+			if(is64Bit /* TODO: Determine x64-version of dmd etc. */)
 				l.Add("D_InlineAsm_X86_64");
 			else
 				l.Add("D_InlineAsm_X86");
 
-			if(finalCompilerCommandLine.Contains("-m64"))
+			if (is64Bit)
+			{
 				l.Add("D_LP64");
-			else
+				l.Add("X86_64");
+			}
+			else // TODO: Differentiate for other versions
+			{
 				l.Add("D_X32");
+				l.Add("X86");
+			}
 
 			// D_HardFloat, D_SoftFloat -- how to determine this?
 			l.Add("D_HardFloat");
