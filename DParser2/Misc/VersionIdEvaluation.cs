@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace D_Parser.Misc
 {
@@ -12,7 +13,7 @@ namespace D_Parser.Misc
 	{
 		static string[] minimalConfiguration;
 
-		public static string[] GetOSAndCPUVersions(bool guessCPUArch = true)
+		public static string[] GetOSAndCPUVersions()
 		{
 			if(minimalConfiguration != null)
 				return minimalConfiguration;
@@ -20,6 +21,7 @@ namespace D_Parser.Misc
 			var l = new List<string>();
 
 			l.Add("all");
+			l.Add ("assert");
 
 			// OS
 			bool isWin = Environment.OSVersion.Platform.HasFlag(PlatformID.Win32NT);
@@ -48,21 +50,20 @@ namespace D_Parser.Misc
 			// http://www.computerhope.com/unix/uuname.htm
 			
 			// CPU information
-			if (guessCPUArch)
+			var cpuArch = Environment.GetEnvironmentVariable("PROCESSOR_ARCHITECTURE");
+			switch (cpuArch)
 			{
-				var cpuArch = Environment.GetEnvironmentVariable("PROCESSOR_ARCHITECTURE");
-				switch (cpuArch)
-				{
-					case "X86":
-						l.Add("X86");
-						break;
-					case "AMD64":
-						l.Add("X86_64");
-						break;
-					case "IA64":
-						l.Add("IA64");
-						break;
-				}
+				case "X86":
+					l.Add("D_InlineAsm_X86");
+					l.Add("X86");
+					break;
+				case "AMD64":
+					l.Add("D_InlineAsm_X86_64");
+					l.Add("X86_64");
+					break;
+				case "IA64":
+					l.Add("IA64");
+					break;
 			}
 			//TODO: Other architectures...
 			
@@ -73,6 +74,8 @@ namespace D_Parser.Misc
 
 			return minimalConfiguration = l.ToArray();
 		}
+
+		static readonly Regex versionRegex = new Regex ("version=(?<n>\\w+)", RegexOptions.Compiled | RegexOptions.ExplicitCapture);
 
 		/// <summary>
 		/// See class description.
@@ -90,7 +93,7 @@ namespace D_Parser.Misc
 		{
 			var l = new List<string>();
 
-			l.AddRange(GetOSAndCPUVersions(false));
+			l.AddRange(GetOSAndCPUVersions());
 
 			// Compiler id
 			if(!string.IsNullOrEmpty(compilerId))
@@ -102,28 +105,15 @@ namespace D_Parser.Misc
 				l.Add("D_Coverage");
 			if(finalCompilerCommandLine.Contains("-D"))
 				l.Add("D_Ddoc");
-
-			bool is64Bit = finalCompilerCommandLine.Contains("-m64");
-
-			if(is64Bit /* TODO: Determine x64-version of dmd etc. */)
-				l.Add("D_InlineAsm_X86_64");
-			else
-				l.Add("D_InlineAsm_X86");
-
-			if (is64Bit)
-			{
+				
+			if (finalCompilerCommandLine.Contains("-m64"))
 				l.Add("D_LP64");
-				l.Add("X86_64");
-			}
-			else // TODO: Differentiate for other versions
-			{
+			else
 				l.Add("D_X32");
-				l.Add("X86");
-			}
 
 			// D_HardFloat, D_SoftFloat -- how to determine this?
 			l.Add("D_HardFloat");
-			l.Add("D_SoftFloat");
+			//l.Add("D_SoftFloat");
 
 			if(finalCompilerCommandLine.Contains("-fPIC"))
 				l.Add("D_PIC");
@@ -137,6 +127,12 @@ namespace D_Parser.Misc
 				l.Add("D_NoBOundsChecks");
 			if(finalCompilerCommandLine.Contains("-unittest") || unittests)
 				l.Add("unittest");
+
+			foreach (Match m in versionRegex.Matches(finalCompilerCommandLine)) {
+				var ver = m.Groups ["n"].Value; 
+				if (!string.IsNullOrEmpty (ver) && !l.Contains (ver))
+					l.Add (ver);
+			}
 
 			return l.ToArray();
 		}
