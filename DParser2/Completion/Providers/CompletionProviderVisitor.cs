@@ -54,7 +54,7 @@ namespace D_Parser.Completion
 				if (prv != null)
 					return prv;
 
-				if (explicitlyNoCompletion)
+				if (explicitlyNoCompletion && triggerChar != '\0')
 					return null;
 
 				var vis = MemberFilter.All;
@@ -73,7 +73,6 @@ namespace D_Parser.Completion
 		{
 			this.cdgen = cdg;
 			this.triggerChar = enteredChar;
-			explicitlyNoCompletion = char.IsWhiteSpace (enteredChar);
 		}
 
 		#region Nodes
@@ -132,7 +131,8 @@ namespace D_Parser.Completion
 				VisitDNode(n);
 
 			// auto |
-			if(!halt && n.NameHash == 0 && n.ContainsAttribute (DTokens.Auto)) {
+			if(!halt && n.NameHash == 0 && 
+				(n.ContainsAttribute (DTokens.Auto) || DParser.ContainsStorageClass(n.Attributes) != Modifier.Empty)) {
 				halt = true;
 				explicitlyNoCompletion = true;
 			}
