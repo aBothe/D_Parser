@@ -119,6 +119,7 @@ namespace D_Parser.Completion
 				if (IsIncompleteDeclaration (n.Type)) {
 					prv = new CtrlSpaceCompletionProvider (cdgen, scopedBlock);
 					halt = true;
+					return;
 				}
 			}else if (n.Initializer != null) {
 				initializedNode = n;
