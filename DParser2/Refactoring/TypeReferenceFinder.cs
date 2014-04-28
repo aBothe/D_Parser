@@ -35,6 +35,19 @@ using D_Parser.Completion;
 
 namespace D_Parser.Refactoring
 {
+	public enum TypeReferenceKind : byte
+	{
+		Interface = DTokens.Interface,
+		Enum = DTokens.Enum,
+		EnumValue = DTokens.Else,
+		Template = DTokens.Template,
+		Class = DTokens.Class,
+		Struct = DTokens.Struct,
+		TemplateTypeParameter = DTokens.Not,
+		Variable = DTokens.Void,
+		Alias = DTokens.Alias
+	}
+
 	public class TypeReferenceFinder : AbstractResolutionVisitor
 	{
 		#region Properties
@@ -73,12 +86,12 @@ namespace D_Parser.Refactoring
 		{
 			public byte Visit(DEnumValue n)
 			{
-				return DTokens.Enum;
+				return (byte)TypeReferenceKind.EnumValue;
 			}
 
 			public byte Visit(DVariable n)
 			{
-				return n.IsAlias && !n.IsAliasThis ? DTokens.Alias : (byte)0;
+				return n.IsAlias && !n.IsAliasThis ? (byte)TypeReferenceKind.Alias : (byte)0;
 			}
 
 			public byte Visit(DMethod n)
@@ -93,7 +106,7 @@ namespace D_Parser.Refactoring
 
 			public byte Visit(DEnum n)
 			{
-				return DTokens.Enum;
+				return (byte)TypeReferenceKind.Enum;
 			}
 
 			public byte Visit(DModule n)
@@ -108,12 +121,12 @@ namespace D_Parser.Refactoring
 
 			public byte Visit(TemplateParameter.Node templateParameterNode)
 			{
-				return DTokens.Not;
+				return (byte)TypeReferenceKind.TemplateTypeParameter;
 			}
 
 			public byte Visit(NamedTemplateMixinNode n)
 			{
-				return DTokens.Template;
+				return (byte)TypeReferenceKind.Template;
 			}
 
 			public byte VisitAttribute(Modifier attr)
@@ -163,22 +176,22 @@ namespace D_Parser.Refactoring
 
 			public byte Visit(EponymousTemplate ep)
 			{
-				return DTokens.Template;
+				return (byte)TypeReferenceKind.Template;
 			}
 
 			public byte Visit(ModuleAliasNode moduleAliasNode)
 			{
-				return DTokens.Alias;
+				return (byte)TypeReferenceKind.Alias;
 			}
 
 			public byte Visit(ImportSymbolNode importSymbolNode)
 			{
-				return DTokens.Alias;
+				return (byte)TypeReferenceKind.Alias;
 			}
 
 			public byte Visit(ImportSymbolAlias importSymbolAlias)
 			{
-				return DTokens.Alias;
+				return (byte)TypeReferenceKind.Alias;
 			}
 		}
 
@@ -311,9 +324,22 @@ namespace D_Parser.Refactoring
 			base.Visit (n);
 		}
 
+		public override void Visit (DMethod dm)
+		{
+			base.Visit (dm);
+			Dictionary<int,byte> tc;
+			if (!TypeCache.TryGetValue (dm, out tc))
+				return;
+
+			// Reset locals
+			if (dm.Parameters != null)
+				foreach (var n in dm.Parameters)
+					tc [n.NameHash] = 0;
+		}
+
 		public override void VisitTemplateParameter (TemplateParameter tp)
 		{
-			AddResult (tp, DTokens.Not);
+			AddResult (tp, (byte)TypeReferenceKind.TemplateTypeParameter);
 		}
 
 		public override void Visit (TemplateInstanceExpression x)
