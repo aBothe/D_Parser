@@ -1226,6 +1226,13 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				!MatchesCompilationConditions(dn))
 				return false;
 
+			if (CompletionOptions.Instance.HideDeprecatedNodes && dn.ContainsAttribute(DTokens.Deprecated))
+				return false;
+
+			if (CompletionOptions.Instance.HideDisabledNodes &&
+				dn.ContainsPropertyAttribute(BuiltInAtAttribute.BuiltInAttributes.Disable))
+				return false;
+
 			if((ctxt.Options & ResolutionOptions.IgnoreAllProtectionAttributes) != ResolutionOptions.IgnoreAllProtectionAttributes){
 				if((CanShowMember(dn, ctxt.ScopedBlock) || isBaseClass && !isMixinAst) && ((!takeStaticChildrenOnly && (!publicImports || !isBaseClass)) || IsConstOrStatic(dn)))
 				{
@@ -1251,13 +1258,6 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 		static bool CanShowMember(DNode dn, IBlockNode scope)
 		{
-			if (CompletionOptions.Instance.HideDeprecatedNodes && dn.ContainsAttribute(DTokens.Deprecated))
-				return false;
-
-			if (CompletionOptions.Instance.HideDisabledNodes && 
-				dn.ContainsPropertyAttribute(BuiltInAtAttribute.BuiltInAttributes.Disable))
-				return false;
-
 			// http://dlang.org/attribute.html#ProtectionAttribute
 			if (dn.ContainsAttribute(DTokens.Private))
 				return scope == null || dn.NodeRoot == scope.NodeRoot;

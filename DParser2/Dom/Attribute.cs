@@ -34,6 +34,7 @@ namespace D_Parser.Dom
 	{
 		public enum BuiltInAttributes
 		{
+			None = 0,
 			Disable,
 			System,
 			Safe,

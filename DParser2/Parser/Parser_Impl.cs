@@ -2027,7 +2027,7 @@ namespace D_Parser.Parser
 
 			if (laKind == Identifier)
 			{
-				BuiltInAtAttribute.BuiltInAttributes att = 0;
+				var att = BuiltInAtAttribute.BuiltInAttributes.None;
 				switch (la.Value)
 				{
 					case "safe":
@@ -2047,7 +2047,7 @@ namespace D_Parser.Parser
 						break;
 				}
 
-				if (att != 0)
+				if (att != BuiltInAtAttribute.BuiltInAttributes.None)
 				{
 					Step();
 					return new BuiltInAtAttribute(att) { Location = sl, EndLocation = t.EndLocation };
