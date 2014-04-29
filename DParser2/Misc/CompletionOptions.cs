@@ -24,6 +24,7 @@ namespace D_Parser.Misc
 
 		public bool DisableMixinAnalysis = true;
 		public bool HideDeprecatedNodes = true;
+		public bool HideDisabledNodes = true;
 		/// <summary>
 		/// If false, all ctrl+space-leveled items will get shown in completion either
 		/// </summary>
@@ -53,6 +54,9 @@ namespace D_Parser.Misc
 					case "HideDeprecatedNodes":
 						HideDeprecatedNodes = x.ReadString().ToLower() == "true";
 						break;
+					case "HideDisabledNodes":
+						HideDisabledNodes = x.ReadString().ToLower() == "true";
+						break;
 					case "ShowStructMembersInStructInitOnly":
 						ShowStructMembersInStructInitOnly = x.ReadString().ToLower() == "true";
 						break;
@@ -68,6 +72,7 @@ namespace D_Parser.Misc
 			x.WriteElementString("MixinAnalysis", (!DisableMixinAnalysis).ToString());
 			x.WriteElementString("CompletionSuggestionMode", EnableSuggestionMode.ToString());
 			x.WriteElementString("HideDeprecatedNodes", HideDeprecatedNodes.ToString());
+			x.WriteElementString("HideDisabledNodes", HideDisabledNodes.ToString());
 			x.WriteElementString("ShowStructMembersInStructInitOnly", ShowStructMembersInStructInitOnly.ToString());
 		}
 	}

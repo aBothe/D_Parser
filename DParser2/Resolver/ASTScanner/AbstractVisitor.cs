@@ -1251,7 +1251,11 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 		static bool CanShowMember(DNode dn, IBlockNode scope)
 		{
-			if (dn.ContainsAttribute(DTokens.Deprecated) && CompletionOptions.Instance.HideDeprecatedNodes)
+			if (CompletionOptions.Instance.HideDeprecatedNodes && dn.ContainsAttribute(DTokens.Deprecated))
+				return false;
+
+			if (CompletionOptions.Instance.HideDisabledNodes && 
+				dn.ContainsPropertyAttribute(BuiltInAtAttribute.BuiltInAttributes.Disable))
 				return false;
 
 			// http://dlang.org/attribute.html#ProtectionAttribute
