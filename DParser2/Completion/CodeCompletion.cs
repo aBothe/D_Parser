@@ -61,7 +61,7 @@ namespace D_Parser.Completion
 				_b = editor.SyntaxTree;
 			}
 
-			var complVis = new CompletionProviderVisitor (completionDataGen, triggerChar) { scopedBlock = _b };
+			var complVis = new CompletionProviderVisitor (completionDataGen, editor, triggerChar) { scopedBlock = _b };
 			if (sr is INode)
 				(sr as INode).Accept (complVis);
 			else if (sr is IStatement)

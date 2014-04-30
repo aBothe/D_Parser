@@ -107,6 +107,22 @@ namespace D_Parser.Completion.Providers
 			DTokens.__TIME__,
 		};
 
+		static bool IsBlockKw(byte tk)
+		{
+			switch (tk) {
+				case DTokens.If:
+				case DTokens.Static:
+				case DTokens.Assert:
+				case DTokens.Mixin:
+					return true;
+				default:
+					return DTokens.IsBasicType (tk) ||
+					DTokens.IsClassLike (tk) ||
+					DTokens.IsStorageClass (tk) || DTokens.IsParamModifier (tk) ||
+					DTokens.IsVisibilityModifier (tk);
+			}
+		}
+
 		protected override void BuildCompletionDataInternal(IEditorData Editor, char enteredChar)
 		{
 			MemberCompletionEnumeration.EnumAllAvailableMembers(
@@ -118,17 +134,13 @@ namespace D_Parser.Completion.Providers
 					new ConditionalCompilationFlags(Editor));
 
 			//TODO: Split the keywords into such that are allowed within block statements and non-block statements
-			var bits = new BitArray (DTokens.MaxToken);
+			var bits = new BitArray (DTokens.MaxToken, false);
 			CompletionDataGenerator.Add (DTokens.__EOF__);
 
 			// Insert typable keywords
 			if ((visibleMembers & MemberFilter.BlockKeywords) != 0) {
 				for (byte tk = DTokens.MaxToken - 1; tk > 0; tk--)
-					if (!bits [tk] && (DTokens.IsBasicType (tk) || 
-						DTokens.IsClassLike (tk) || 
-						DTokens.IsStorageClass (tk) || DTokens.IsParamModifier(tk) ||
-						DTokens.IsVisibilityModifier(tk) ||
-						tk == DTokens.Align || tk == DTokens.Pragma)) {
+					if (!bits [tk] && IsBlockKw(tk)) {
 						CompletionDataGenerator.Add (tk);
 						bits [tk] = true;
 					}

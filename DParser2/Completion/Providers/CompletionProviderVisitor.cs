@@ -40,7 +40,8 @@ namespace D_Parser.Completion
 		bool halt; 
 		public IBlockNode scopedBlock;
 		IStatement scopedStatement;
-		MemberFilter shownKeywords;
+		Stack<MemberFilter> shownKeywords = new Stack<MemberFilter>();
+		MemberFilter ShownKeywords {get{return shownKeywords.Count != 0 ? shownKeywords.Peek() : 0;}}
 
 		readonly char triggerChar;
 		bool explicitlyNoCompletion;
@@ -63,20 +64,40 @@ namespace D_Parser.Completion
 				if (!(scopedBlock is DMethod) && !handlesInitializer)
 					vis = MemberFilter.Types | MemberFilter.TypeParameters;
 
-				return prv = new CtrlSpaceCompletionProvider(cdgen,scopedBlock, vis | shownKeywords); 
+				return prv = new CtrlSpaceCompletionProvider(cdgen,scopedBlock, vis | ShownKeywords); 
 			}
 		}
 		AbstractCompletionProvider prv;
 		readonly ICompletionDataGenerator cdgen;
+		readonly IEditorData ed;
 		#endregion
 
-		public CompletionProviderVisitor(ICompletionDataGenerator cdg, char enteredChar = '\0')
+		public CompletionProviderVisitor(ICompletionDataGenerator cdg, IEditorData ed, char enteredChar = '\0')
 		{
+			this.ed = ed;
 			this.cdgen = cdg;
 			this.triggerChar = enteredChar;
 		}
 
 		#region Nodes
+		public override void VisitChildren (IBlockNode block)
+		{
+			if (!halt)
+				shownKeywords.Push (MemberFilter.BlockKeywords);
+
+			var en = block.GetEnumerator ();
+			while (!halt && en.MoveNext ()) {
+				if (en.Current.Location > ed.CaretLocation) {
+					halt = true;
+					return;
+				}
+				en.Current.Accept (this);
+			}
+
+			if (!halt && block.EndLocation < ed.CaretLocation)
+				shownKeywords.Pop ();
+		}
+
 		public override void VisitDNode (DNode n)
 		{
 			if (n.NameHash == DTokens.IncompleteIdHash) {
@@ -177,7 +198,7 @@ namespace D_Parser.Completion
 				} else if (td.InnerDeclaration != null)
 					prv = new MemberCompletionProvider (cdgen, td.InnerDeclaration, scopedBlock);
 				else
-					prv = new CtrlSpaceCompletionProvider (cdgen, scopedBlock, shownKeywords);
+					prv = new CtrlSpaceCompletionProvider (cdgen, scopedBlock, ShownKeywords);
 
 				halt = true;
 			} else
@@ -284,21 +305,27 @@ namespace D_Parser.Completion
 		public override void VisitSubStatements(StatementContainingStatement stmtContainer)
 		{
 			var ss = stmtContainer.SubStatements;
-			if (ss != null)
+			if (ss != null) {
+				if (!halt)
+					shownKeywords.Push (MemberFilter.BlockKeywords | MemberFilter.StatementBlockKeywords);
+
 				foreach (IStatement substatement in ss)
-					if (substatement != null)
-					{
-						substatement.Accept(this);
+					if (substatement != null) {
+						substatement.Accept (this);
 						if (halt)
 							return;
 					}
+
+				if (!halt)
+					shownKeywords.Pop ();
+			}
 		}
 
 		public override void VisitChildren(StatementContainingStatement stmtContainer)
 		{
 			VisitSubStatements(stmtContainer);
-			if(!halt)
-				VisitAbstractStmt(stmtContainer);
+			if (!halt)
+				VisitAbstractStmt (stmtContainer);
 		}
 
 		public override void VisitAbstractStmt (AbstractStatement stmt)
@@ -470,8 +497,12 @@ namespace D_Parser.Completion
 		#region Expressions
 		public override void VisitChildren (ContainerExpression x)
 		{
-			if(!halt)
+			if (!halt) {
+				shownKeywords.Push (MemberFilter.ExpressionKeywords);
 				base.VisitChildren (x);
+				if (!halt)
+					shownKeywords.Pop ();
+			}
 		}
 
 
