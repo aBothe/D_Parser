@@ -5,6 +5,7 @@ using D_Parser.Resolver;
 using D_Parser.Parser;
 using D_Parser.Dom.Expressions;
 using D_Parser.Resolver.TypeResolution;
+using System.Collections;
 
 namespace D_Parser.Completion.Providers
 {
@@ -12,11 +13,13 @@ namespace D_Parser.Completion.Providers
 	{
 		public readonly IBlockNode curBlock;
 		public readonly MemberFilter visibleMembers;
+		public readonly byte[] specialKeywords;
 
-		public CtrlSpaceCompletionProvider(ICompletionDataGenerator cdg, IBlockNode b, MemberFilter vis = MemberFilter.All)
+		public CtrlSpaceCompletionProvider(ICompletionDataGenerator cdg, IBlockNode b, MemberFilter vis = MemberFilter.All ,params byte[] specialKeywords)
 			: base(cdg) { 
 			this.curBlock = b;
 			visibleMembers = vis;
+			this.specialKeywords = specialKeywords;
 		}
 
 		private sealed class LabelVisitor : DefaultDepthFirstVisitor
@@ -44,6 +47,66 @@ namespace D_Parser.Completion.Providers
 			"trusted"
 		};
 
+		static readonly byte[] statementKeywords = new[]{
+			DTokens.If,
+			DTokens.Else,
+			DTokens.While,
+			DTokens.Do,
+			DTokens.For,
+			DTokens.Foreach,
+			DTokens.Foreach_Reverse,
+			DTokens.Switch,
+			DTokens.Case,
+			DTokens.Default,
+			DTokens.Final,
+			DTokens.Continue,
+			DTokens.Break,
+			DTokens.Return,
+			DTokens.Goto,
+			DTokens.With,
+			DTokens.Synchronized,
+			DTokens.Try,
+			DTokens.Catch,
+			DTokens.Finally,
+			DTokens.Scope,
+			DTokens.Throw,
+			DTokens.Asm,
+			DTokens.Pragma,
+			DTokens.Mixin,
+			DTokens.Version,
+			DTokens.Debug,
+			DTokens.Assert,
+			DTokens.Import,
+		};
+
+		static byte[] expressionKeywords = new[]{
+			DTokens.Import,
+			DTokens.Assert,
+			DTokens.Is, DTokens.In,
+			DTokens.Delete,
+			DTokens.Cast,
+			DTokens.New,
+			DTokens.This,
+			DTokens.Super,
+			DTokens.Null,
+			DTokens.True,
+			DTokens.False,
+			DTokens.Function,
+			DTokens.Delegate,
+			DTokens.Mixin,
+			DTokens.Typeid,
+			DTokens.__traits,
+			DTokens.__DATE__,
+			DTokens.__FILE__,
+			DTokens.__LINE__,
+			DTokens.__FUNCTION__,
+			DTokens.__LOCAL_SIZE,
+			DTokens.__MODULE__,
+			DTokens.__PRETTY_FUNCTION__,
+			DTokens.__TIMESTAMP__,
+			DTokens.__TIME__,
+		};
+
 		protected override void BuildCompletionDataInternal(IEditorData Editor, char enteredChar)
 		{
 			MemberCompletionEnumeration.EnumAllAvailableMembers(
@@ -55,13 +118,39 @@ namespace D_Parser.Completion.Providers
 					new ConditionalCompilationFlags(Editor));
 
 			//TODO: Split the keywords into such that are allowed within block statements and non-block statements
+			var bits = new BitArray (DTokens.MaxToken);
+			CompletionDataGenerator.Add (DTokens.__EOF__);
+
 			// Insert typable keywords
-			if ((visibleMembers & MemberFilter.Keywords) != 0)
-			{
-				foreach (var kv in DTokens.Keywords)
-					CompletionDataGenerator.Add(kv.Key);
+			if ((visibleMembers & MemberFilter.BlockKeywords) != 0) {
+				for (byte tk = 1; tk < byte.MaxValue; tk++)
+					if (!bits [tk] && (DTokens.IsBasicType (tk) || 
+						DTokens.IsClassLike (tk) || 
+						DTokens.IsStorageClass (tk) || DTokens.IsParamModifier(tk) ||
+						DTokens.IsVisibilityModifier(tk) ||
+						tk == DTokens.Align || tk == DTokens.Pragma)) {
+						CompletionDataGenerator.Add (tk);
+						bits [tk] = true;
+					}
 			}
-			else if ((visibleMembers & MemberFilter.StructsAndUnions) != 0)
+
+			if ((visibleMembers & MemberFilter.StatementBlockKeywords) != 0) {
+				foreach (var kv in statementKeywords)
+					if (!bits [kv]) {
+						CompletionDataGenerator.Add (kv);
+						bits [kv] = true;
+					}
+			}
+
+			if ((visibleMembers & MemberFilter.ExpressionKeywords) != 0) {
+				foreach (var kv in expressionKeywords)
+					if (!bits [kv]) {
+						CompletionDataGenerator.Add (kv);
+						bits [kv] = true;
+					}
+			}
+
+			if ((visibleMembers & MemberFilter.StructsAndUnions) != 0)
 			{
 				foreach (var kv in DTokens.BasicTypes_Array)
 					CompletionDataGenerator.Add(kv);

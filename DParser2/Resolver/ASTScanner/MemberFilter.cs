@@ -41,16 +41,21 @@ namespace D_Parser.Resolver.ASTScanner
 		Templates = 1 << 5,
 		StructsAndUnions = 1 << 6,
 		Enums = 1 << 7,
-		Keywords = 1 << 8,
+		// 1 << 8 -- see BlockKeywords
 		TypeParameters = 1 << 9,
 		Labels = 1 << 10,
 		x86Registers = 1 << 11,
 		x64Registers = 1 << 12,
 		BuiltInPropertyAttributes = 1 << 13,
 
+		BlockKeywords = 1 << 8, // class, uint, __gshared, [static] if, (body,in,out)
+		StatementBlockKeywords = 1 << 14, // for, if, 
+		ExpressionKeywords = 1 << 15, // __LINE__, true, base, this
+
+
 		Registers = x86Registers | x64Registers,
 		Types = Classes | Interfaces | Templates | StructsAndUnions,
-		All = Variables | Methods | Types | Enums | Keywords | TypeParameters
+		All = Variables | Methods | Types | Enums | TypeParameters
 	}
 }
 

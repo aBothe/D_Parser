@@ -40,6 +40,7 @@ namespace D_Parser.Completion
 		bool halt; 
 		public IBlockNode scopedBlock;
 		IStatement scopedStatement;
+		MemberFilter shownKeywords;
 
 		readonly char triggerChar;
 		bool explicitlyNoCompletion;
@@ -60,9 +61,9 @@ namespace D_Parser.Completion
 				var vis = MemberFilter.All;
 
 				if (!(scopedBlock is DMethod) && !handlesInitializer)
-					vis = MemberFilter.Types | MemberFilter.TypeParameters | MemberFilter.Keywords;
+					vis = MemberFilter.Types | MemberFilter.TypeParameters;
 
-				return prv = new CtrlSpaceCompletionProvider(cdgen,scopedBlock, vis); 
+				return prv = new CtrlSpaceCompletionProvider(cdgen,scopedBlock, vis | shownKeywords); 
 			}
 		}
 		AbstractCompletionProvider prv;
@@ -117,7 +118,7 @@ namespace D_Parser.Completion
 				// alias id = |
 				// NOT alias Type |
 				if (IsIncompleteDeclaration (n.Type)) {
-					prv = new CtrlSpaceCompletionProvider (cdgen, scopedBlock);
+					prv = new CtrlSpaceCompletionProvider (cdgen, scopedBlock, MemberFilter.All | MemberFilter.BlockKeywords);
 					halt = true;
 					return;
 				}
@@ -172,11 +173,11 @@ namespace D_Parser.Completion
 					else
 						vis = MemberFilter.Classes | MemberFilter.Interfaces | MemberFilter.Templates;
 
-					prv = new CtrlSpaceCompletionProvider (cdgen, handledClass, vis);
+					prv = new CtrlSpaceCompletionProvider (cdgen, handledClass, vis | MemberFilter.BlockKeywords);
 				} else if (td.InnerDeclaration != null)
 					prv = new MemberCompletionProvider (cdgen, td.InnerDeclaration, scopedBlock);
 				else
-					prv = new CtrlSpaceCompletionProvider (cdgen, scopedBlock);
+					prv = new CtrlSpaceCompletionProvider (cdgen, scopedBlock, shownKeywords);
 
 				halt = true;
 			} else
@@ -302,7 +303,7 @@ namespace D_Parser.Completion
 
 		public override void VisitAbstractStmt (AbstractStatement stmt)
 		{
-			base.VisitAbstractStmt (stmt);
+			//base.VisitAbstractStmt (stmt);
 		}
 
 		public override void Visit(PostfixExpression_MethodCall x)
@@ -484,7 +485,7 @@ namespace D_Parser.Completion
 				else if (scopedStatement is AsmStatement.RawDataStatement)
 					prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, BaseAsmFlags | MemberFilter.Labels);
 				else if (handlesInitializer)
-					prv = new CtrlSpaceCompletionProvider (cdgen, scopedBlock);
+					prv = new CtrlSpaceCompletionProvider (cdgen, scopedBlock | MemberFilter.ExpressionKeywords);
 			}
 		}
 
