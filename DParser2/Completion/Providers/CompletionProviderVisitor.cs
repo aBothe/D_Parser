@@ -77,6 +77,7 @@ namespace D_Parser.Completion
 			this.ed = ed;
 			this.cdgen = cdg;
 			this.triggerChar = enteredChar;
+			this.shownKeywords.Push(MemberFilter.BlockKeywords);
 		}
 
 		#region Nodes
@@ -94,7 +95,7 @@ namespace D_Parser.Completion
 				en.Current.Accept (this);
 			}
 
-			if (!halt && block.EndLocation < ed.CaretLocation)
+			if (!halt)
 				shownKeywords.Pop ();
 		}
 
@@ -307,8 +308,8 @@ namespace D_Parser.Completion
 			var ss = stmtContainer.SubStatements;
 			if (ss != null) {
 				if (!halt)
-					shownKeywords.Push (MemberFilter.BlockKeywords | MemberFilter.StatementBlockKeywords);
-
+					shownKeywords.Push (MemberFilter.BlockKeywords | MemberFilter.StatementBlockKeywords | MemberFilter.ExpressionKeywords);
+				
 				foreach (IStatement substatement in ss)
 					if (substatement != null) {
 						substatement.Accept (this);
@@ -316,7 +317,7 @@ namespace D_Parser.Completion
 							return;
 					}
 
-				if (!halt)
+				if (!halt && stmtContainer.EndLocation < ed.CaretLocation)
 					shownKeywords.Pop ();
 			}
 		}
@@ -515,7 +516,7 @@ namespace D_Parser.Completion
 					prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, BaseAsmFlags | MemberFilter.x86Registers | MemberFilter.x64Registers | MemberFilter.Labels);
 				else if (scopedStatement is AsmStatement.RawDataStatement)
 					prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, BaseAsmFlags | MemberFilter.Labels);
-				else if (handlesInitializer)
+				else /*if (handlesInitializer)*/ // Why only in initializers?
 					prv = new CtrlSpaceCompletionProvider (cdgen, scopedBlock, MemberFilter.All | MemberFilter.ExpressionKeywords);
 			}
 		}

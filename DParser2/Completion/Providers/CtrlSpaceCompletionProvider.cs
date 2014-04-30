@@ -133,7 +133,6 @@ namespace D_Parser.Completion.Providers
 					visibleMembers,
 					new ConditionalCompilationFlags(Editor));
 
-			//TODO: Split the keywords into such that are allowed within block statements and non-block statements
 			var bits = new BitArray (DTokens.MaxToken, false);
 			CompletionDataGenerator.Add (DTokens.__EOF__);
 
@@ -160,12 +159,6 @@ namespace D_Parser.Completion.Providers
 						CompletionDataGenerator.Add (kv);
 						bits [kv] = true;
 					}
-			}
-
-			if ((visibleMembers & MemberFilter.StructsAndUnions) != 0)
-			{
-				foreach (var kv in DTokens.BasicTypes_Array)
-					CompletionDataGenerator.Add(kv);
 			}
 
 			if ((visibleMembers & MemberFilter.Labels) != 0)
