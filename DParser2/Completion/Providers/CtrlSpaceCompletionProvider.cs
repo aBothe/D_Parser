@@ -123,7 +123,7 @@ namespace D_Parser.Completion.Providers
 
 			// Insert typable keywords
 			if ((visibleMembers & MemberFilter.BlockKeywords) != 0) {
-				for (byte tk = 1; tk < byte.MaxValue; tk++)
+				for (byte tk = DTokens.MaxToken - 1; tk > 0; tk--)
 					if (!bits [tk] && (DTokens.IsBasicType (tk) || 
 						DTokens.IsClassLike (tk) || 
 						DTokens.IsStorageClass (tk) || DTokens.IsParamModifier(tk) ||
