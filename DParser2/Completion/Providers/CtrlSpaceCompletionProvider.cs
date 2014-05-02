@@ -114,6 +114,12 @@ namespace D_Parser.Completion.Providers
 				case DTokens.Static:
 				case DTokens.Assert:
 				case DTokens.Mixin:
+				case DTokens.Import:
+				case DTokens.Module:
+				case DTokens.Unittest:
+				case DTokens.New:
+				case DTokens.Version:
+				case DTokens.Debug:
 					return true;
 				default:
 					return DTokens.IsBasicType (tk) ||
