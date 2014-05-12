@@ -26,7 +26,7 @@ namespace D_Parser.Resolver.Templates
 			: this(owner.TemplateParameters)
 		{}
 
-		public DeducedTypeDictionary(DSymbol ms) : this(ms.ValidSymbol ? ms.Definition.TemplateParameters : null)
+		public DeducedTypeDictionary(DSymbol ms) : this(ms.Definition.TemplateParameters)
 		{
 			if (ms.DeducedTypes != null)
 				foreach (var i in ms.DeducedTypes)
