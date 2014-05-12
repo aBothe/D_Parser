@@ -37,6 +37,16 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			return Variable==null ?"null":Variable.ToString(false);
 		}
+
+
+		public override void Accept(ISymbolValueVisitor vis)
+		{
+			vis.VisitVariableValue(this);
+		}
+		public override R Accept<R>(ISymbolValueVisitor<R> vis)
+		{
+			return vis.VisitVariableValue(this);
+		}
 	}
 
 	/// <summary>

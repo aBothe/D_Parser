@@ -160,6 +160,7 @@
     <Compile Include="Resolver\ExpressionSemantics\ISymbolValue.cs" />
     <Compile Include="Resolver\ExpressionSemantics\ISymbolValueProvider.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.IsExpression.cs" />
+    <Compile Include="Resolver\ExpressionSemantics\ISymbolValueVisitor.cs" />
     <Compile Include="Resolver\ExpressionSemantics\LeftValues.cs" />
     <Compile Include="Resolver\ExpressionSemantics\MathOperationEvaluation.cs" />
     <Compile Include="Resolver\ExpressionSemantics\ExpressionValues.cs" />

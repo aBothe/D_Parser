@@ -66,6 +66,15 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			return Value.ToString() + (ImaginaryPart == 0 ? "" : ("+"+ImaginaryPart.ToString()+"i"));
 		}
+
+		public override void Accept(ISymbolValueVisitor vis)
+		{
+			vis.VisitPrimitiveValue(this);
+		}
+		public override R Accept<R>(ISymbolValueVisitor<R> vis)
+		{
+			return vis.VisitPrimitiveValue(this);
+		}
 	}
 
 	public class VoidValue : PrimitiveValue
@@ -73,6 +82,15 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public VoidValue(IExpression x)
 			: base(DTokens.Void, 0M, x)
 		{ }
+
+		public override void Accept(ISymbolValueVisitor vis)
+		{
+			vis.VisitVoidValue(this);
+		}
+		public override R Accept<R>(ISymbolValueVisitor<R> vis)
+		{
+			return vis.VisitVoidValue(this);
+		}
 	}
 
 	#region Derived data types
@@ -159,6 +177,15 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			return sb.Append(']').ToString();
 		}
+
+		public override void Accept(ISymbolValueVisitor vis)
+		{
+			vis.VisitArrayValue(this);
+		}
+		public override R Accept<R>(ISymbolValueVisitor<R> vis)
+		{
+			return vis.VisitArrayValue(this);
+		}
 	}
 
 	public class AssociativeArrayValue : ExpressionValue
@@ -188,6 +215,15 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 
 			return sb.Append(']').ToString();
+		}
+
+		public override void Accept(ISymbolValueVisitor vis)
+		{
+			vis.VisitAssociativeArrayValue(this);
+		}
+		public override R Accept<R>(ISymbolValueVisitor<R> vis)
+		{
+			return vis.VisitAssociativeArrayValue(this);
 		}
 	}
 
@@ -230,6 +266,15 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			return Definition == null ? "[null delegate]" : Definition.ToCode();
 		}
+
+		public override void Accept(ISymbolValueVisitor vis)
+		{
+			vis.VisitDelegateValue(this);
+		}
+		public override R Accept<R>(ISymbolValueVisitor<R> vis)
+		{
+			return vis.VisitDelegateValue(this);
+		}
 	}
 	#endregion
 
@@ -266,6 +311,15 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public override string ToCode()
 		{
 			return RepresentedType != null ? RepresentedType.ToString() : "null";
+		}
+
+		public override void Accept(ISymbolValueVisitor vis)
+		{
+			vis.VisitTypeValue(this);
+		}
+		public override R Accept<R>(ISymbolValueVisitor<R> vis)
+		{
+			return vis.VisitTypeValue(this);
 		}
 	}
 
@@ -318,6 +372,16 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			return "null";
 		}
+
+
+		public override void Accept(ISymbolValueVisitor vis)
+		{
+			vis.VisitNullValue(this);
+		}
+		public override R Accept<R>(ISymbolValueVisitor<R> vis)
+		{
+			return vis.VisitNullValue(this);
+		}
 	}
 	#endregion
 
@@ -343,6 +407,16 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					s += o.ToCode() + ",";
 
 			return s.TrimEnd(',') + "]";
+		}
+
+
+		public override void Accept(ISymbolValueVisitor vis)
+		{
+			vis.VisitTypeOverloadValue(this);
+		}
+		public override R Accept<R>(ISymbolValueVisitor<R> vis)
+		{
+			return vis.VisitTypeOverloadValue(this);
 		}
 	}
 }

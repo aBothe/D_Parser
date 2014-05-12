@@ -1,11 +1,13 @@
 ﻿using System;
 using D_Parser.Resolver;
+using D_Parser.Dom;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
-	public interface ISymbolValue : IEquatable<ISymbolValue>, ISemantic
+	public interface ISymbolValue : IEquatable<ISymbolValue>, ISemantic, IVisitable<ISymbolValueVisitor>
 	{
 		AbstractType RepresentedType { get; }
+		R Accept<R>(ISymbolValueVisitor<R> v);
 	}
 
 	public abstract class ExpressionValue : ISymbolValue
@@ -39,6 +41,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return null; 
 			}
 		}
+
+		public abstract void Accept(ISymbolValueVisitor vis);
+		public abstract R Accept<R>(ISymbolValueVisitor<R> vis);
 	}
 
 	public class ErrorValue : ISymbolValue
@@ -76,6 +81,16 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 
 			return sb.ToString().TrimEnd();
+		}
+
+		public void Accept(ISymbolValueVisitor vis)
+		{
+			vis.VisitErrorValue(this);
+		}
+
+		public R Accept<R>(ISymbolValueVisitor<R> vis)
+		{
+			return vis.VisitErrorValue(this);
 		}
 	}
 }
