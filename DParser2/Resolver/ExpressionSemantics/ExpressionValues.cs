@@ -26,6 +26,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public PrimitiveValue(bool Value, IExpression Expression)
 			: this(DTokens.Bool, Value ? 1 : 0, Expression) { }
 
+		public PrimitiveValue(decimal Value, PrimitiveType pt, decimal ImaginaryPart = 0M)
+			: base(pt) {
+			this.BaseTypeToken = pt.TypeToken;
+			this.Value = Value;
+			this.ImaginaryPart = ImaginaryPart;
+		}
+
 		public PrimitiveValue(byte BaseTypeToken, decimal Value, IExpression Expression, decimal ImaginaryPart = 0M)
 			: base(new PrimitiveType(BaseTypeToken,0, Expression))
 		{
@@ -366,13 +373,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 	public class NullValue : ReferenceValue
 	{
-		public NullValue() : base(null,null) { }
+		public NullValue(AbstractType baseType = null) : base(baseType is DSymbol ? (baseType as DSymbol).Definition : null, baseType) { }
 
 		public override string ToCode()
 		{
 			return "null";
 		}
-
 
 		public override void Accept(ISymbolValueVisitor vis)
 		{
