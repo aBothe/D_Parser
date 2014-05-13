@@ -34,6 +34,10 @@ namespace D_Parser.Dom.Expressions
 		public override string ToString(bool IncludesBase)
 		{
 			var sb = new StringBuilder();
+
+			if (ModuleScopedIdentifier)
+				sb.Append('.');
+
 			if (IncludesBase && InnerDeclaration != null)
 				sb.Append(InnerDeclaration.ToString()).Append('.');
 
