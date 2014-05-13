@@ -358,6 +358,7 @@ namespace D_Parser.Completion
 			res.IsTemplateInstanceArguments = true;
 
 			res.MethodIdentifier = tix;
+			ctxt.ContextIndependentOptions = ResolutionOptions.NoTemplateParameterDeduction;
 			res.ResolvedTypesOrMethods = ExpressionTypeEvaluation.GetOverloads(tix, ctxt, null, false);
 
 			if (tix.Arguments != null)
