@@ -416,7 +416,17 @@ namespace D_Parser.Resolver
 
 	public abstract class DSymbol : DerivedDataType
 	{
-		public readonly DNode Definition;
+		protected WeakReference definition;
+
+		public DNode Definition { get {
+				return definition.Target as DNode;
+			}
+		}
+
+		public bool ValidSymbol
+		{
+			get{ return definition.IsAlive; }
+		}
 
 		/// <summary>
 		/// Key: Type name
@@ -436,7 +446,7 @@ namespace D_Parser.Resolver
 			if (Node == null)
 				throw new ArgumentNullException ("Node");
 
-			Definition = Node;
+			this.definition = new WeakReference(Node);
 			NameHash = Node.NameHash;
 		}
 
@@ -449,7 +459,7 @@ namespace D_Parser.Resolver
 			if (Node == null)
 				throw new ArgumentNullException ("Node");
 
-			Definition = Node;
+			this.definition = new WeakReference(Node);
 			NameHash = Node.NameHash;
 		}
 	}

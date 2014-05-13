@@ -21,7 +21,31 @@ namespace D_Parser.Completion
 		/// </summary>
 		public object MethodIdentifier;
 
-		public AbstractType[] ResolvedTypesOrMethods;
+		DNode[] nodeStore;
+		AbstractType[] resolvedTypes;
+		public AbstractType[] ResolvedTypesOrMethods
+		{
+			get {
+				return resolvedTypes;
+			}
+			set {
+				resolvedTypes = value;
+				// Avoid the loss of weakly referenced DSymbol definitions.
+				var l = new List<DNode>();
+				if (value != null)
+					foreach (var t in value)
+					{
+						var ds = t as DSymbol;
+						if(ds != null)
+							l.Add(ds.Definition);
+					}
+				nodeStore = l.ToArray();
+			}
+		}
+		public DNode[] ResolvedNodes
+		{
+			get { return nodeStore; }
+		}
 
 		public readonly Dictionary<IExpression, AbstractType> TemplateArguments = new Dictionary<IExpression, AbstractType>();
 		/// <summary>
