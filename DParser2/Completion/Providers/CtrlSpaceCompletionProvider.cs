@@ -110,6 +110,9 @@ namespace D_Parser.Completion.Providers
 		static bool IsBlockKw(byte tk)
 		{
 			switch (tk) {
+				case DTokens.Alias:
+				case DTokens.This: // ctor
+
 				case DTokens.If:
 				case DTokens.Static:
 				case DTokens.Assert:
