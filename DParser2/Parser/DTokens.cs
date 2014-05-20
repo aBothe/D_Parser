@@ -230,7 +230,9 @@ namespace D_Parser.Parser
 		public const string IncompleteId = "<Incomplete>";
 		public static readonly int IncompleteIdHash = IncompleteId.GetHashCode();
 
-		public const byte MaxToken = 185;
+		public const byte Virtual = 185;
+
+		public const byte MaxToken = 186;
         public static BitArray NewSet(params byte[] values)
         {
             BitArray bitArray = new BitArray(MaxToken);
@@ -362,6 +364,7 @@ namespace D_Parser.Parser
 			{ Ushort, "ushort" },
 
 			{ Version, "version" },
+			{ Virtual, "virtual" },
 			{ Void, "void" },
 			{ Volatile, "volatile" },
 
@@ -804,6 +807,7 @@ namespace D_Parser.Parser
 				case Export:
 				case Shared:
 				case Final:
+				case Virtual:
 				case Invariant:
 				case Immutable:
 				case Pure:
