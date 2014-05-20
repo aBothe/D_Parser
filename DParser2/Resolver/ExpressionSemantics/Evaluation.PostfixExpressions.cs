@@ -728,7 +728,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			// Make $ operand available
 			var arrLen_Backup = ValueProvider.CurrentArrayLength;
-			ValueProvider.CurrentArrayLength = ar.Elements.Length;
+			var len = ar.Elements == null ? 0 : ar.Elements.Length;
+			ValueProvider.CurrentArrayLength = len;
 
 			var bound_lower = sl.FromExpression != null ? sl.FromExpression.Accept(this) as PrimitiveValue : null;
 			var bound_upper = sl.ToExpression != null ? sl.ToExpression.Accept(this) as PrimitiveValue : null;
@@ -755,19 +756,19 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			if (lower < 0)
 			{
-				EvalError(sl.FromExpression, "Lower boundary must be greater than 0"); return null;
+				EvalError(sl.FromExpression, "Lower boundary must be greater than 0"); return new NullValue(ar.RepresentedType);
 			}
-			if (lower >= ar.Elements.Length)
+			if (lower >= len && len > 0)
 			{
-				EvalError(sl.FromExpression, "Lower boundary must be smaller than " + ar.Elements.Length); return null;
+				EvalError(sl.FromExpression, "Lower boundary must be smaller than " + len); return new NullValue(ar.RepresentedType);
 			}
 			if (upper < lower)
 			{
-				EvalError(sl.ToExpression, "Upper boundary must be greater than " + lower); return null;
+				EvalError(sl.ToExpression, "Upper boundary must be greater than " + lower); return new NullValue(ar.RepresentedType);
 			}
-			if (upper >= ar.Elements.Length)
+			if (upper >= len)
 			{
-				EvalError(sl.ToExpression, "Upper boundary must be smaller than " + ar.Elements.Length); return null;
+				EvalError(sl.ToExpression, "Upper boundary must be smaller than " + len); return new NullValue(ar.RepresentedType);
 			}
 
 

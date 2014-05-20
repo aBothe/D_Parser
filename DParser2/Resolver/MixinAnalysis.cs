@@ -28,7 +28,8 @@ namespace D_Parser.Resolver
 				 */
 				foreach(var pk in stmtsBeingAnalysed)
 				{
-					if(mx.ParentNode.NodeRoot == pk.ParentNode.NodeRoot)
+					var parentNode = pk.ParentNode;
+					if(parentNode != null && mx.ParentNode.NodeRoot == parentNode.NodeRoot)
 					{
 						if(mx == pk || mx.Location >= pk.Location)
 							return false;
@@ -62,17 +63,11 @@ namespace D_Parser.Resolver
 				if (!CheckAndPushAnalysisStack(mx))
 					return null;
 
-				try // 'try' because there is always a risk of e.g. not having something implemented or having an evaluation exception...
-				{
-					// Evaluate the mixin expression
-					v = Evaluation.EvaluateValue(mx.MixinExpression, ctxt, true);
-					evaluatedVariable = v as VariableValue;
-					if (evaluatedVariable != null)
-						v = Evaluation.EvaluateValue(evaluatedVariable, new StandardValueProvider(ctxt));
-				}
-				catch {
-					v = null;
-				}
+				// Evaluate the mixin expression
+				v = Evaluation.EvaluateValue(mx.MixinExpression, ctxt, true);
+				evaluatedVariable = v as VariableValue;
+				if (evaluatedVariable != null)
+					v = Evaluation.EvaluateValue(evaluatedVariable, new StandardValueProvider(ctxt));
 
 				stmtsBeingAnalysed.Remove(mx);
 			}
