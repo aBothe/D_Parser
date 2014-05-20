@@ -676,7 +676,8 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			#region Mixin
 			public bool VisitMixinStatement(MixinStatement s)
 			{
-				return ctxt.CurrentContext.MatchesDeclarationEnvironment(s.Attributes) &&
+				return !CompletionOptions.Instance.DisableMixinAnalysis &&
+					ctxt.CurrentContext.MatchesDeclarationEnvironment(s.Attributes) &&
 					HandleMixin(s, caretInsensitive, VisibleMembers);
 			}
 
