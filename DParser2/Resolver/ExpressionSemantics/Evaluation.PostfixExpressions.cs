@@ -728,7 +728,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			// Make $ operand available
 			var arrLen_Backup = ValueProvider.CurrentArrayLength;
-			var len = ar.Elements == null ? 0 : ar.Elements.Length;
+			var len = ar.Length;
 			ValueProvider.CurrentArrayLength = len;
 
 			var bound_lower = sl.FromExpression != null ? sl.FromExpression.Accept(this) as PrimitiveValue : null;
@@ -766,11 +766,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			{
 				EvalError(sl.ToExpression, "Upper boundary must be greater than " + lower); return new NullValue(ar.RepresentedType);
 			}
-			if (upper >= len)
+			else if (upper > len)
 			{
 				EvalError(sl.ToExpression, "Upper boundary must be smaller than " + len); return new NullValue(ar.RepresentedType);
 			}
 
+			if (ar.IsString)
+				return new ArrayValue(ar.RepresentedType as ArrayType, ar.StringValue.Substring(lower, upper - lower));
 
 			var rawArraySlice = new ISymbolValue[upper - lower];
 			int j = 0;

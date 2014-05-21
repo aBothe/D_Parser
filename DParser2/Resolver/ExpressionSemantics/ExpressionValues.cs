@@ -120,6 +120,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			get;// { return elements != null ? elements.ToArray() : null; }
 			private set;
 		}
+
+		public int Length
+		{
+			get { return StringValue != null ? StringValue.Length : Elements != null ? Elements.Length : 0; }
+		}
 		#endregion
 
 		#region Ctor

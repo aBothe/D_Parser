@@ -353,7 +353,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			while(catEx != null)
 			{
 				r = TryGetValue(catEx.LeftOperand != null ? catEx.LeftOperand.Accept(this) : null);
-				if(r == null)
+				if(r == null || r is NullValue)
 				{
 					EvalError(catEx.LeftOperand, "Couldn't be evaluated.");
 					return null;
@@ -450,7 +450,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				
 				if(!ResultComparer.IsImplicitlyConvertible(e.RepresentedType, lastArrayType.ValueType, ctxt))
 				{
-					EvalError(x, "Element with type " + e.RepresentedType.ToCode() + " doesn't fit into array with type "+lastArrayType.ToCode(), catQueue.ToArray());
+					EvalError(x, "Element with type " + (e.RepresentedType != null ? e.RepresentedType.ToCode() : "") + " doesn't fit into array with type "+lastArrayType.ToCode(), catQueue.ToArray());
 					return null;
 				}
 				

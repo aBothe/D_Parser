@@ -3206,6 +3206,34 @@ mixin(""template mxT(string n) { enum mxT = n; }"");
 			t = TypeDeclarationResolver.ResolveSingle("myClass", ctxt, null);
 			Assert.That(t, Is.Null);
 		}
+
+		[Test]
+		public void Mixins6()
+		{
+			var ctxt = CreateCtxt("A",@"module A;
+interface IUnknown {}
+
+public template uuid(T, const char[] g) {
+	const char [] uuid =
+		""const IID IID_""~T.stringof~""={ 0x"" ~ g[0..8] ~ "",0x"" ~ g[9..13] ~ "",0x"" ~ g[14..18] ~ "",[0x"" ~ g[19..21] ~ "",0x"" ~ g[21..23] ~ "",0x"" ~ g[24..26] ~ "",0x"" ~ g[26..28] ~ "",0x"" ~ g[28..30] ~ "",0x"" ~ g[30..32] ~ "",0x"" ~ g[32..34] ~ "",0x"" ~ g[34..36] ~ ""]};""
+		""template uuidof(T:""~T.stringof~""){""
+		""    const IID uuidof ={ 0x"" ~ g[0..8] ~ "",0x"" ~ g[9..13] ~ "",0x"" ~ g[14..18] ~ "",[0x"" ~ g[19..21] ~ "",0x"" ~ g[21..23] ~ "",0x"" ~ g[24..26] ~ "",0x"" ~ g[26..28] ~ "",0x"" ~ g[28..30] ~ "",0x"" ~ g[30..32] ~ "",0x"" ~ g[32..34] ~ "",0x"" ~ g[34..36] ~ ""]};""
+		""}"";
+}
+");
+
+			IExpression x;
+			ISymbolValue v;
+
+			x = DParser.ParseExpression(@"uuid!(IUnknown, ""00000000-0000-0000-C000-000000000046"")");
+			(x as TemplateInstanceExpression).Location = new CodeLocation(1, 3);
+			v = D_Parser.Resolver.ExpressionSemantics.Evaluation.EvaluateValue(x, ctxt);
+
+			var av = v as ArrayValue;
+			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+			Assert.That(av.IsString);
+			Assert.That(av.StringValue, Is.EqualTo(@"const IID IID_A.IUnknown={ 0x00000000,0x0000,0x0000,[0xC0,0x00,0x00,0x00,0x00,0x00,0x00,0x46]};template uuidof(T:A.IUnknown){    const IID uuidof ={ 0x00000000,0x0000,0x0000,[0xC0,0x00,0x00,0x00,0x00,0x00,0x00,0x46]};}"));
+		}
 		
 		[Test]
 		public void NestedMixins()

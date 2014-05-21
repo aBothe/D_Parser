@@ -95,7 +95,14 @@ namespace D_Parser.Resolver
 			props.AddProp(new StaticPropertyInfo("sizeof", "Size of a type or variable in bytes", DTokens.Uint)); // Do not define it as size_t due to unnecessary recursive definition as typeof(int.sizeof)
 			props.AddProp(new StaticPropertyInfo("alignof", "Variable offset", DTokens.Uint) { RequireThis = true });
 			props.AddProp(new StaticPropertyInfo("mangleof", "String representing the ‘mangled’ representation of the type", "string"));
-			props.AddProp(new StaticPropertyInfo("stringof", "String representing the source representation of the type", "string"));
+			props.AddProp(new StaticPropertyInfo("stringof", "String representing the source representation of the type", "string") { 
+				ValueGetter = (vp, v) => {
+					var t = AbstractType.Get(v);
+					if(t == null)
+						return new NullValue();
+					return new ArrayValue(Evaluation.GetStringType(vp.ResolutionContext), (t is DSymbol) ? DNode.GetNodePath((t as DSymbol).Definition,true) : t.ToCode());
+				}
+			});
 
 
 
