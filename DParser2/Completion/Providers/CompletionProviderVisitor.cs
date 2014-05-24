@@ -305,10 +305,12 @@ namespace D_Parser.Completion
 		#region Statements
 		public override void VisitSubStatements(StatementContainingStatement stmtContainer)
 		{
+			if (halt)
+				return;
+
 			var ss = stmtContainer.SubStatements;
 			if (ss != null) {
-				if (!halt)
-					shownKeywords.Push (MemberFilter.BlockKeywords | MemberFilter.StatementBlockKeywords | MemberFilter.ExpressionKeywords);
+				shownKeywords.Push (MemberFilter.BlockKeywords | MemberFilter.StatementBlockKeywords | MemberFilter.ExpressionKeywords);
 				
 				foreach (IStatement substatement in ss)
 					if (substatement != null) {
