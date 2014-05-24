@@ -506,7 +506,7 @@ namespace D_Parser.Refactoring
 			while (backupStack.Count != 0)
 				conditionStack.Push (backupStack.Pop ());
 
-			return ret || ctxt.CompilationEnvironment.IsMatching(c, null) ? 1 : -1;
+			return (ret || (!(c is NegatedDeclarationCondition) && ctxt.CompilationEnvironment.IsMatching(c, null))) ? 1 : -1;
 		}
 	}
 }
