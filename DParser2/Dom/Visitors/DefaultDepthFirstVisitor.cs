@@ -265,7 +265,7 @@ namespace D_Parser.Dom
 		{
 			VisitChildren(s);
 
-			if (!halt && s.IfCondition != null)
+			if (s.IfCondition != null)
 				s.IfCondition.Accept(this);
 
 			//TODO: Are the declarations also in the statements?
