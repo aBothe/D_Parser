@@ -421,12 +421,13 @@ namespace D_Parser.Parser
         /// <returns></returns>
 		public static DAttribute ContainsStorageClass(IEnumerable<DAttribute> mods)
         {
-			foreach(var m in mods){
-            	if(m is Modifier && ((m as Modifier).IsStorageClass))
-            		return m;
-            	else if(m is AtAttribute)
-            		return m;
-            }
+			if(mods != null)
+				foreach(var m in mods){
+            		if(m is Modifier && ((m as Modifier).IsStorageClass))
+            			return m;
+            		else if(m is AtAttribute)
+            			return m;
+				}
             return Modifier.Empty;
         }
 
