@@ -80,6 +80,8 @@ namespace D_Parser.Resolver
 
 				return av.StringValue;
 			}
+			else if (v == null)
+				ctxt.MixinCache.Add(new Tuple<string, VariableValue>(null, null), mx);
 			
 			return null;
 		}

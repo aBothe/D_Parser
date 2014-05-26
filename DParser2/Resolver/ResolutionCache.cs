@@ -26,7 +26,7 @@ namespace D_Parser.Resolver
 			static long GetTemplateParamHash(ResolutionContext ctxt)
 			{
 				var tpm = new List<TemplateParameter>();
-				long h = DNode.GetNodePath(ctxt.ScopedBlock,true).GetHashCode();
+				long h = DNode.GetNodePath(Resolver.TypeResolution.DResolver.SearchBlockAt(ctxt.ScopedBlock, ctxt.CurrentContext.Caret),true).GetHashCode();
 				foreach (var tps in ctxt.DeducedTypesInHierarchy)
 					unchecked
 					{
