@@ -61,6 +61,8 @@ namespace D_Parser.Completion
 				case 1:
 					return false;
 				default:
+					if (n.NameHash == D_Parser.Parser.DTokens.IncompleteIdHash)
+						return false;
 					break;
 			}
 
