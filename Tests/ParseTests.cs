@@ -181,6 +181,15 @@ void bar();");
 		}
 
 		[Test]
+		public void LongNumberLiteral()
+		{
+			var mod = DParser.ParseString(@"
+version(9223372036854775807){}
+debug(9223372036854775807){}
+");
+		}
+
+		[Test]
 		public void ObsoleteArrayNotation()
 		{
 			var mod = DParser.ParseString(@"int arr[]; int[] brr;");

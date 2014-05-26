@@ -399,9 +399,21 @@ namespace D_Parser.Parser
 					case Literal:
 						Step ();
 						if (t.LiteralFormat != LiteralFormat.Scalar)
-							SynErr (t.Kind, "Version number must be an integer");
+							SynErr(t.Kind, "Version number must be an integer");
 						else
-							c = new VersionCondition (Convert.ToInt32 (t.LiteralValue)) { IdLocation = t.Location };
+						{
+							int v;
+							try
+							{
+								v = Convert.ToInt32(t.LiteralValue);
+							}
+							catch
+							{
+								SemErr(DTokens.Version, "Can't handle " + t.LiteralValue.ToString() + " as version constraint; taking int.max instead");
+								v = int.MaxValue;
+							}
+							c = new VersionCondition(v) { IdLocation = t.Location };
+						}
 						break;
 					default:
 						if (Expect (Identifier))
@@ -434,9 +446,22 @@ namespace D_Parser.Parser
 					if (laKind == Literal) {
 						Step ();
 						if (t.LiteralFormat != LiteralFormat.Scalar)
-							SynErr (t.Kind, "Debug level must be an integer");
+							SynErr(t.Kind, "Debug level must be an integer");
 						else
-							c = new DebugCondition (Convert.ToInt32 (t.LiteralValue)) { IdLocation = t.Location };
+						{
+							int v;
+							try
+							{
+								v = Convert.ToInt32(t.LiteralValue);
+							}
+							catch
+							{
+								SemErr(DTokens.Debug, "Can't handle " + t.LiteralValue.ToString() + " as debug constraint; taking int.max instead");
+								v = int.MaxValue;
+							}
+
+							c = new DebugCondition(v) { IdLocation = t.Location };
+						}
 					} else if (Expect (Identifier))
 						c = new DebugCondition ((string)t.LiteralValue) { IdLocation = t.Location };
 					else if (IsEOF) {
