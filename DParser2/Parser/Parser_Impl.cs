@@ -3231,6 +3231,8 @@ namespace D_Parser.Parser
 						Step();
 						ise.TypeSpecializationToken = t.Kind;
 					}
+					else if (IsEOF)
+						ise.TypeSpecializationToken = DTokens.Incomplete;
 					else
 						ise.TypeSpecialization = Type();
 

@@ -575,6 +575,11 @@ namespace D_Parser.Completion
 				halt = true;
 				explicitlyNoCompletion = true;
 			}
+			else if (x.TypeSpecializationToken == DTokens.Incomplete)
+			{
+				prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, MemberFilter.Types | MemberFilter.ExpressionKeywords | MemberFilter.StatementBlockKeywords);
+				halt = true;
+			}
 			else
 				base.Visit (x);
 		}
