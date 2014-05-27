@@ -37,7 +37,7 @@ namespace D_Parser.Resolver
 		public ResolutionOptions Options
 		{
 			[DebuggerStepThrough]
-			get { return ContextIndependentOptions | CurrentContext.ContextDependentOptions | (CancelOperation ? (ResolutionOptions.DontResolveBaseTypes | ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.NoTemplateParameterDeduction | ResolutionOptions.DontResolveAliases | ResolutionOptions.IgnoreDeclarationConditions) : 0); }
+			get { return ContextIndependentOptions | (CurrentContext != null ? CurrentContext.ContextDependentOptions : 0) | (CancelOperation ? (ResolutionOptions.DontResolveBaseTypes | ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.NoTemplateParameterDeduction | ResolutionOptions.DontResolveAliases | ResolutionOptions.IgnoreDeclarationConditions) : 0); }
 		}
 
 		internal readonly ResolutionCache<Tuple<string,VariableValue>> MixinCache;
