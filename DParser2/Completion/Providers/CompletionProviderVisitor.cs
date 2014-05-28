@@ -50,6 +50,8 @@ namespace D_Parser.Completion
 		DVariable initializedNode;
 		bool handlesBaseClasses;
 		DClassLike handledClass;
+		public const MemberFilter BlockMemberFilter = MemberFilter.BlockKeywords | MemberFilter.Types | MemberFilter.Enums | MemberFilter.TypeParameters;
+		public const MemberFilter ExprMemberFilter = MemberFilter.ExpressionKeywords | MemberFilter.All;
 
 		public AbstractCompletionProvider GeneratedProvider { 
 			get{
@@ -77,14 +79,14 @@ namespace D_Parser.Completion
 			this.ed = ed;
 			this.cdgen = cdg;
 			this.triggerChar = enteredChar;
-			this.shownKeywords.Push(MemberFilter.BlockKeywords);
+			this.shownKeywords.Push(BlockMemberFilter);
 		}
 
 		#region Nodes
 		public override void VisitChildren (IBlockNode block)
 		{
 			if (!halt)
-				shownKeywords.Push (MemberFilter.BlockKeywords);
+				shownKeywords.Push(BlockMemberFilter);
 
 			var en = block.GetEnumerator ();
 			while (!halt && en.MoveNext ()) {
@@ -310,7 +312,7 @@ namespace D_Parser.Completion
 
 			var ss = stmtContainer.SubStatements;
 			if (ss != null) {
-				shownKeywords.Push (MemberFilter.BlockKeywords | MemberFilter.StatementBlockKeywords | MemberFilter.ExpressionKeywords);
+				shownKeywords.Push (BlockMemberFilter | MemberFilter.StatementBlockKeywords | ExprMemberFilter);
 				
 				foreach (IStatement substatement in ss)
 					if (substatement != null) {
@@ -501,7 +503,7 @@ namespace D_Parser.Completion
 		public override void VisitChildren (ContainerExpression x)
 		{
 			if (!halt) {
-				shownKeywords.Push (MemberFilter.ExpressionKeywords);
+				shownKeywords.Push (ExprMemberFilter);
 				base.VisitChildren (x);
 				if (!halt)
 					shownKeywords.Pop ();
