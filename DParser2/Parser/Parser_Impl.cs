@@ -25,8 +25,8 @@ namespace D_Parser.Parser
 			Step();
 
 			var module = new DModule();
-			module.Location = la.Location;
-			module.BlockStartLocation = la.Location;
+			module.Location = new CodeLocation(1,1);
+			module.BlockStartLocation = new CodeLocation(1, 1);
 			doc = module;
 
 			// Only one module declaration possible!

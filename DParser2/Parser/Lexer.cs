@@ -1790,6 +1790,7 @@ namespace D_Parser.Parser
 				Comments.Add(new Comment(commentType, scCurWord.ToString().Trim(), st.Column < 2, st, new CodeLocation(Col, Line)));
 
 			OnError(Line, Col, String.Format("Reached EOF before the end of a multiline comment"));
+			endedWhileBeingInNonCodeSequence = true;
 		}
 
 		/// <summary>
