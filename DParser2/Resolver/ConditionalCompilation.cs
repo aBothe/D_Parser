@@ -51,7 +51,8 @@ namespace D_Parser.Resolver
 						conditionsBeingChecked.Remove(ng.FirstCondition);
 					}
 					else
-						r = (GlobalFlags.IsMatching(dc,ctxt) && LocalFlags.IsMatching(dc,ctxt));
+						r = ((GlobalFlags == null || GlobalFlags.IsMatching(dc,ctxt)) && 
+							(LocalFlags == null || LocalFlags.IsMatching(dc,ctxt)));
 				}
 				else {
 					if(dc is StaticIfCondition){
