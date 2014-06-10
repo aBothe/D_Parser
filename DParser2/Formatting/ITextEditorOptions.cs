@@ -12,6 +12,8 @@ namespace D_Parser.Formatting
 		int IndentSize {get;}
 		int ContinuationIndent {get;}
 		int LabelIndent {get;}
+
+		bool RemoveTrailingWhitespaces { get; }
 	}
 	
 	public class TextEditorOptions : ITextEditorOptions
@@ -23,6 +25,7 @@ namespace D_Parser.Formatting
 		public int ContinuationIndent {get;set;}
 		public int LabelIndent		{get;set;}
 		public bool KeepAlignmentSpaces { get; set; }
+		public bool RemoveTrailingWhitespaces { get; set; }
 		
 		public static TextEditorOptions Default = new TextEditorOptions{ 
 			EolMarker = Environment.NewLine,
@@ -31,6 +34,7 @@ namespace D_Parser.Formatting
 			IndentSize = 4, 
 			ContinuationIndent = 4, 
 			LabelIndent = 0,
-			KeepAlignmentSpaces = true};
+			KeepAlignmentSpaces = true,
+			RemoveTrailingWhitespaces = false};
 	}
 }
