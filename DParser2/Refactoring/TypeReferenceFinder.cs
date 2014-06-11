@@ -91,7 +91,7 @@ namespace D_Parser.Refactoring
 
 			public byte Visit(DVariable n)
 			{
-				return n.IsAlias && !n.IsAliasThis ? (byte)TypeReferenceKind.Alias : (byte)0;
+				return n.IsAlias && !n.IsAliasThis ? (byte)TypeReferenceKind.Alias : (byte)TypeReferenceKind.Variable;
 			}
 
 			public byte Visit(DMethod n)
