@@ -1122,7 +1122,7 @@ namespace D_Parser.Formatting.Indent
 					if (linebuf.Length > 2 && linebuf.ToString (linebuf.Length - 3, 3) == "els") {
 						var backup = stack.PeekIfElseBackupStack;
 						stack.PeekIfElseBackupStack = null;
-						if (backup != null) {
+						if (backup != null && backup.Count > 0) {
 							keyword = DTokens.Else;
 							inside = Inside.FoldedStatement;
 							stack = backup;
