@@ -59,7 +59,7 @@ namespace D_Parser.Parser
 					}
 				}
 
-				var startOff = startLoc.Line > 1 ? DocumentHelper.GetOffsetByRelativeLocation(code, caretLocation, caretOffset, startLoc) - (startLoc.Column == 1 ? 1 : 0) : 0;
+				var startOff = startLoc.Line > 1 ? DocumentHelper.GetOffsetByRelativeLocation(code, caretLocation, caretOffset, startLoc) : 0;
 
 				// Immediately break to waste no time if there's nothing to parse
 				if (startOff >= caretOffset)
@@ -217,14 +217,15 @@ namespace D_Parser.Parser
 			{
 				// Update the actual tempBlock as well as methods/other blocks' end location that just appeared while parsing the code incrementally,
 				// so they are transparent to SearchBlockAt
-				var block = tempBlock as IBlockNode;
-				while (block != null &&
-					(block.EndLocation.Line < 1 || block.EndLocation == p.la.Location))
+				var n = tempBlock as INode;
+				while (n != null &&
+					(n.EndLocation.Line < 1 || n.EndLocation == p.la.Location))
 				{
-					block.EndLocation = new CodeLocation(p.la.Column + 1, p.la.Line);
-					if (block.Children.Count == 0)
+					n.EndLocation = new CodeLocation(p.la.Column + 1, p.la.Line);
+					var bn = n as IBlockNode;
+					if (bn == null || bn.Children.Count == 0)
 						break;
-					block = block.Children[block.Count - 1] as IBlockNode;
+					n = bn.Children[bn.Count - 1];
 				}
 
 				tempBlock.EndLocation = new CodeLocation(p.la.Column + 1, p.la.Line);
