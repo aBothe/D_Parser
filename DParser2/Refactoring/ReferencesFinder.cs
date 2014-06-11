@@ -30,6 +30,7 @@ using D_Parser.Resolver;
 using D_Parser.Resolver.ASTScanner;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
+using System.Linq;
 
 namespace D_Parser.Refactoring
 {
@@ -83,11 +84,17 @@ namespace D_Parser.Refactoring
 						});
 				}
 
-				f.l.Insert(0, new IdentifierDeclaration(symbol.NameHash)
-					{
-						Location = symbol.NameLocation,
-						EndLocation = new CodeLocation(symbol.NameLocation.Column + symbol.Name.Length,	symbol.NameLocation.Line)
-					});
+				var loc = symbol.NameLocation;
+				bool add = !f.l.AsParallel().Any(
+					(o) =>	(o is TemplateParameter && (o as TemplateParameter).NameLocation == loc) ||
+							(o is INode && (o as INode).NameLocation == loc));
+
+				if(add)
+					f.l.Insert(0, new IdentifierDeclaration(symbol.NameHash)
+						{
+							Location = loc,
+							EndLocation = new CodeLocation(loc.Column + symbol.Name.Length,	loc.Line)
+						});
 			}
 
 			return f.l;
@@ -132,7 +139,8 @@ namespace D_Parser.Refactoring
 		bool resolveAnyway = false;
 		public override void VisitTemplateParameter (TemplateParameter tp)
 		{
-			if (tp.NameHash == searchHash && tp.Representation == symbol)
+			if (tp.NameHash == searchHash && 
+				tp.Representation == symbol)
 				l.Add (tp);
 		}
 

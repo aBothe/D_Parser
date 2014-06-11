@@ -5461,7 +5461,7 @@ namespace D_Parser.Parser
 			}
 
 			var tv = new TemplateValueParameter(dv.NameHash, dv.NameLocation, parent) { 
-				Location=la.Location,
+				Location=startLoc,
 				Type = dv.Type
 			};
 

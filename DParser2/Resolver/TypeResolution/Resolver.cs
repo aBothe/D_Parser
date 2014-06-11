@@ -60,6 +60,18 @@ namespace D_Parser.Resolver.TypeResolution
 					base.Visit(x);
 			}
 
+			public override void VisitTemplateParameter(TemplateParameter tp)
+			{
+				var nl = tp.NameLocation;
+				string name;
+				if (tp.NameHash != 0 &&
+					caret.Line == nl.Line &&
+					caret.Column >= nl.Column &&
+					(name = tp.Name) != null &&
+					caret.Column <= nl.Column + name.Length)
+					IdNearCaret = tp.Representation;
+			}
+
 			public override void VisitDNode(DNode n)
 			{
 				var nl = n.NameLocation;
