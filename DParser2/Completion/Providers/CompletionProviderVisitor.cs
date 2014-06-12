@@ -176,13 +176,30 @@ namespace D_Parser.Completion
 
 		public override void Visit (TemplateValueParameter p)
 		{
-			if (p.Type != null && !IsIncompleteDeclaration(p.Type) && 
-				p.NameHash == DTokens.IncompleteIdHash) {
+			// Don't show on 'struct foo(int |' as well as on 'struct foo(|' 
+			// - if a type is wanted, the user still may press ctrl+space
+			if (p.NameHash == DTokens.IncompleteIdHash)
+			{
 				halt = true;
 				explicitlyNoCompletion = true;
+				return;
 			}
-			else
-				base.Visit (p);
+			
+			VisitTemplateParameter(p);
+
+			if (!halt && p.Type != null)
+				p.Type.Accept(this);
+
+			if (!halt && p.SpecializationExpression != null) //TODO have a special completion case for specialization completion
+				p.SpecializationExpression.Accept(this);
+
+			if (!halt && p.DefaultExpression != null)
+			{
+				handlesInitializer = true;
+				//initializedNode = p.Representation;
+				p.DefaultExpression.Accept(this);
+				handlesInitializer = false;
+			}
 		}
 		#endregion
 
