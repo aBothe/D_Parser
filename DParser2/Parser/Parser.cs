@@ -241,31 +241,62 @@ namespace D_Parser.Parser
         	var attrs = GetCurrentAttributeSet();
         	return attrs.Count == 0 ? null : attrs.ToArray();
         }
-        
+		
         List<DAttribute> GetCurrentAttributeSet()
         {
+			var vis = D_Parser.Dom.Visitors.AstElementHashingVisitor.Instance;
+			var keys = new List<ulong>();
         	var attrs = new List<DAttribute>();
-			foreach (var attr in BlockAttributes.ToArray())
-					attrs.Add(attr);
+			Modifier lastVisModifier = null;
 
-            while (DeclarationAttributes.Count > 0)
-            {
-                var attr = DeclarationAttributes.Pop();
+			ulong key;
+			int i;
 
-				var m = attr as Modifier;
+			foreach (var a in BlockAttributes){
+				// ISSUE: Theoretically, when having two identically written but semantically different UDA attributes, the first one will become overridden.
+				key = a.Accept(vis);
+				if ((i = keys.IndexOf(key)) > -1)
+					attrs[i] = a;
+				else
+				{
+					keys.Add(key);
+					attrs.Add(a);
+				}
+			}
+
+			foreach (var a in DeclarationAttributes)
+			{
+				key = a.Accept(vis);
+				if ((i = keys.IndexOf(key)) > -1)
+					attrs[i] = a;
+				else
+				{
+					keys.Add(key);
+					attrs.Add(a);
+				}
+			}
+			DeclarationAttributes.Clear();
+
+			for (i = 0; i < attrs.Count; i++)
+			{
+				var m = attrs[i] as Modifier;
 				if (m != null)
 				{
 					// If accessor already in attribute array, remove it
 					if (DTokens.IsVisibilityModifier(m.Token))
-						Modifier.CleanupAccessorAttributes(attrs);
-
-					if (!Modifier.ContainsAttribute(attrs, m.Token))
-						attrs.Add(attr);
+					{
+						lastVisModifier = m;
+						// Temporarily remove all vis modifiers and add the last one again
+						attrs.RemoveAt(i);
+						//keys.RemoveAt(i); -- No need to touch keys anymore
+						continue;
+					}
 				}
-				else
-					attrs.Add(attr);
-            }
-            
+			}
+
+			if (lastVisModifier != null)
+				attrs.Insert(0, lastVisModifier);
+
             return attrs;
         }
 
