@@ -142,6 +142,7 @@
     <Compile Include="Formatting\Indent\IndentEngine.cs" />
     <Compile Include="Formatting\Indent\IndentStack.cs" />
     <Compile Include="Formatting\ITextEditorOptions.cs" />
+    <Compile Include="Misc\HashNumbers.cs" />
     <Compile Include="Misc\Mangling\Demangler.cs" />
     <Compile Include="Misc\StringView.cs" />
     <Compile Include="Refactoring\ReferencesFinder.cs" />

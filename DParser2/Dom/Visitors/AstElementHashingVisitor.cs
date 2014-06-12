@@ -5,12 +5,13 @@ using System.Linq;
 using System.Text;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
+using D_Parser.Misc;
 
 namespace D_Parser.Dom.Visitors
 {
 	public class AstElementHashingVisitor : DVisitor<ulong>, IResolvedTypeVisitor<ulong>
 	{
-		static readonly AstElementHashingVisitor Instance = new AstElementHashingVisitor();
+		public static readonly AstElementHashingVisitor Instance = new AstElementHashingVisitor();
 
 		public static ulong Hash(ISemantic s)
 		{
@@ -83,7 +84,7 @@ namespace D_Parser.Dom.Visitors
 
 		public ulong VisitAttribute(Modifier attr)
 		{
-			return 1000151;
+			return 1000151 + Primes.PrimeNumbers[attr.Token] << 32;
 		}
 
 		public ulong VisitAttribute(DeprecatedAttribute a)
@@ -98,12 +99,18 @@ namespace D_Parser.Dom.Visitors
 
 		public ulong VisitAttribute(BuiltInAtAttribute a)
 		{
-			return 1000183;
+			return 1000183 + Misc.Primes.PrimeNumbers[(int)a.Kind] << 32;
 		}
 
 		public ulong VisitAttribute(UserDeclarationAttribute a)
 		{
-			return 1000187;
+			ulong r = 1000187;
+
+			if(a.AttributeExpression != null)
+				for(int i = 0; i < a.AttributeExpression.Length; i++)
+					r += (Primes.PrimeNumbers[i] * a.AttributeExpression[i].Accept(this)) << 32;
+
+			return r;
 		}
 
 		public ulong VisitAttribute(VersionCondition a)
@@ -547,12 +554,12 @@ namespace D_Parser.Dom.Visitors
 
 		public ulong Visit(Expressions.IdentifierExpression x)
 		{
-			return 1001311;
+			return 1001311 + (x.IsIdentifier ? (ulong)x.ValueStringHash << 32 : (ulong)x.Value.GetHashCode());
 		}
 
 		public ulong Visit(Expressions.TokenExpression x)
 		{
-			return 1001321;
+			return 1001321 + Primes.PrimeNumbers[x.Token] << 32;
 		}
 
 		public ulong Visit(Expressions.TypeDeclarationExpression x)
