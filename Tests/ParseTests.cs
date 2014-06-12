@@ -254,7 +254,7 @@ else int C;");
 			Assert.AreEqual(2,a.Attributes.Count);
 			Assert.That (a.ContainsAttribute(DTokens.Private));
 			Assert.AreEqual(0,b.Attributes.Count);
-
+			
 			var A = m["A"].First() as DVariable;
 			var B = m["B"].First() as DVariable;
 			var C = m["C"].First() as DVariable;
@@ -701,8 +701,8 @@ int dbg;
 			var aa = dn ["aa"].First () as DNode;
 			Assert.That (aa is DVariable);
 			Assert.That (aa.Attributes.Count == 2);
-			Assert.That (aa.Attributes [0] == attr2);
-			Assert.That (aa.Attributes[1] == attr);
+			Assert.That (aa.Attributes [1] == attr2);
+			Assert.That (aa.Attributes[0] == attr);
 
 			Assert.That (dn.StaticStatements.Count, Is.EqualTo(3));
 			Assert.That (dn.StaticStatements[1], Is.TypeOf(typeof(DebugSpecification)));

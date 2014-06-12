@@ -287,7 +287,7 @@ namespace D_Parser.Parser
 					{
 						lastVisModifier = m;
 						// Temporarily remove all vis modifiers and add the last one again
-						attrs.RemoveAt(i);
+						attrs.RemoveAt(i--);
 						//keys.RemoveAt(i); -- No need to touch keys anymore
 						continue;
 					}

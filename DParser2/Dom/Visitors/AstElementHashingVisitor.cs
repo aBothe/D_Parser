@@ -6,6 +6,7 @@ using System.Text;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
 using D_Parser.Misc;
+using D_Parser.Resolver.ExpressionSemantics;
 
 namespace D_Parser.Dom.Visitors
 {
@@ -15,27 +16,46 @@ namespace D_Parser.Dom.Visitors
 
 		public static ulong Hash(ISemantic s)
 		{
-			if (s is AbstractType)
-				return (s as AbstractType).Accept(Instance);
-			return 0;
+			return Instance.Accept(s);
 		}
 
 		public static ulong Hash(ISyntaxRegion sr)
 		{
-			if (sr is INode)
-				return (sr as INode).Accept(Instance);
-			if (sr is IExpression)
-				return (sr as IExpression).Accept(Instance);
-			if (sr is IStatement)
-				return (sr as IStatement).Accept(Instance);
-			if (sr is ITypeDeclaration)
-				return (sr as ITypeDeclaration).Accept(Instance);
-			if (sr is DAttribute)
-				return (sr as DAttribute).Accept (Instance);
-			return 0;
+			return Instance.Accept(sr);
 		}
 
 		private AstElementHashingVisitor() { }
+
+		public ulong Accept(ISyntaxRegion sr)
+		{
+			if (sr is INode)
+				return (sr as INode).Accept(this);
+			if (sr is IExpression)
+			{
+				return (ulong)sr.ToString().GetHashCode(); // Temporary bypass
+				//return (sr as IExpression).Accept(this);
+			}
+			if (sr is IStatement)
+				return (sr as IStatement).Accept(this);
+			if (sr is ITypeDeclaration)
+				return (sr as ITypeDeclaration).Accept(this);
+			if (sr is DAttribute)
+				return (sr as DAttribute).Accept(this);
+
+			throw new InvalidOperationException();
+		}
+
+		public ulong Accept(ISemantic s)
+		{
+			if (s is AbstractType)
+				return (s as AbstractType).Accept(this);
+			if (s is ISymbolValue)
+			{
+				return (ulong)s.ToCode().GetHashCode(); // Temp. bypass
+			}
+
+			throw new InvalidOperationException();
+		}
 
 		public ulong Visit(DEnumValue dEnumValue)
 		{
@@ -108,29 +128,29 @@ namespace D_Parser.Dom.Visitors
 
 			if(a.AttributeExpression != null)
 				for(int i = 0; i < a.AttributeExpression.Length; i++)
-					r += (Primes.PrimeNumbers[i] * a.AttributeExpression[i].Accept(this)) << 32;
+					r += (Primes.PrimeNumbers[i] * Accept(a.AttributeExpression[i])) << 32;
 
 			return r;
 		}
 
 		public ulong VisitAttribute(VersionCondition a)
 		{
-			return 1000193;
+			return 1000193 + (ulong)(a.VersionIdHash == 0 ? a.VersionNumber : a.VersionIdHash) << 32;
 		}
 
 		public ulong VisitAttribute(DebugCondition a)
 		{
-			return 1000199;
+			return 1000199 + (ulong)(a.DebugIdHash == 0 ? a.DebugLevel : a.DebugIdHash) << 32;
 		}
 
 		public ulong VisitAttribute(StaticIfCondition a)
 		{
-			return 1000211;
+			return 1000211 + (a.Expression != null ? Accept(a.Expression) << 8 : 0);
 		}
 
 		public ulong VisitAttribute(NegatedDeclarationCondition a)
 		{
-			return 1000213;
+			return 1000213 + Accept(a.FirstCondition) << 1;
 		}
 
 		public ulong Visit(EponymousTemplate ep)
