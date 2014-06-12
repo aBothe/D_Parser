@@ -341,8 +341,6 @@ namespace D_Parser.Parser
 
 		IMetaDeclarationBlock AttributeBlock(DBlockNode module)
 		{
-			int popCount = DeclarationAttributes.Count;
-
 			/*
 			 * If there are attributes given, put their references into the meta block.
 			 * Also, pop them from the declarationAttributes stack on to the block attributes so they will be assigned to all child items later on.
@@ -350,19 +348,45 @@ namespace D_Parser.Parser
 
 			IMetaDeclarationBlock metaDeclBlock;
 
-			if (popCount != 0)
+			if (DeclarationAttributes.Count != 0)
 				metaDeclBlock = new AttributeMetaDeclarationBlock(DeclarationAttributes.ToArray()) { BlockStartLocation = la.Location };
 			else
 				metaDeclBlock = new MetaDeclarationBlock { BlockStartLocation = la.Location };
+
+			var stk_backup = BlockAttributes;
+			BlockAttributes = new Stack<DAttribute>();
+			foreach (var attr in stk_backup)
+			{
+				if (attr is Modifier)
+				{
+					switch ((attr as Modifier).Token)
+					{
+						case DTokens.Virtual:
+						case DTokens.Final:
+							continue;
+					}
+				}
+				else if (attr is BuiltInAtAttribute)
+				{
+					switch ((attr as BuiltInAtAttribute).Kind)
+					{
+						case BuiltInAtAttribute.BuiltInAttributes.Safe:
+						case BuiltInAtAttribute.BuiltInAttributes.System:
+						case BuiltInAtAttribute.BuiltInAttributes.Trusted:
+							continue;
+					}
+				}
+
+				BlockAttributes.Push(attr);
+			}
+
 
 			while (DeclarationAttributes.Count > 0)
 				BlockAttributes.Push(DeclarationAttributes.Pop());
 
 			ClassBody(module, true, false);
 
-			// Pop the previously pushed attributes back off the stack
-			for (int i = popCount; i > 0; i--)
-				BlockAttributes.Pop();
+			BlockAttributes = stk_backup;
 
 			// Store the meta block
 			metaDeclBlock.EndLocation = t.EndLocation;
@@ -4897,8 +4921,7 @@ namespace D_Parser.Parser
 				if (UpdateBoundaries)
 					ret.EndLocation = t.EndLocation;
 
-				if (!KeepBlockAttributes)
-					BlockAttributes = stk_backup;
+				BlockAttributes = stk_backup;
 			}
 			else
 				Expect(Semicolon);
