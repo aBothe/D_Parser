@@ -247,6 +247,11 @@ int a;
 			Assert.That(@"void main(", Does.Trigger);
 			Assert.That(@"void main(string[", Does.Trigger);
 			Assert.That(@"void main(string* ", Does.Not.Trigger);
+
+			Assert.That(@"class A {int b;}
+void main(){
+	Class cl;
+	if(cl.", Does.Trigger);
 		}
 
 		[Test]
