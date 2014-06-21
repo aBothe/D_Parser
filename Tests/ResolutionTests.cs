@@ -3042,6 +3042,29 @@ Cls inst;
 		}
 
 		[Test]
+		public void AliasThisOnNonInstances()
+		{
+			var ctxt = CreateCtxt("A", @"module A;
+struct S1 { int a; }
+struct S2(T) {
+	int b;
+	alias T this;
+}
+
+S2!S1 s;
+");
+
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression("s.a");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That((t as MemberSymbol).Definition, Is.TypeOf(typeof(DVariable)));
+		}
+
+		[Test]
 		public void TypeofIntSize()
 		{
 			var ctxt = CreateDefCtxt();
