@@ -211,6 +211,9 @@ namespace D_Parser.Resolver.TypeResolution
 			{
 				var b = TryPostDeduceAliasDefinition(b_, typeIdObject, ctxt);
 
+				if (b is PointerType)
+					b = (b as DerivedDataType).Base;
+
 				if (b is UserDefinedType)
 				{
 					var udt = b as UserDefinedType;

@@ -369,6 +369,22 @@ class Blah(T){ T b; }");
 		}
 
 		[Test]
+		public void TypePointerInstanceAccessing()
+		{
+			var ctxt = CreateCtxt("A", @"module A;
+class Cl{ int a; }
+Cl* cl;
+");
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression("cl.a");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+		}
+
+		[Test]
 		public void AnonymousClasses()
 		{
 			var ctxt = CreateCtxt("A",@"module A;
