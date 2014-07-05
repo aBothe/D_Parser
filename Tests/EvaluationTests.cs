@@ -729,6 +729,7 @@ template Tmpl(){
 			BoolTrait(ctxt, "compiles, 1,2,3,int,long,std");
 			BoolTrait(ctxt, "compiles, 1,2,3,int,long,3[1]", false);
 			BoolTrait(ctxt, "compiles, 3[1]", false);
+			BoolTrait(ctxt, "compiles, immutable(S44)(3, &i)", false);
 		}
 		
 		void BoolTrait(ResolutionContext ctxt,string traitCode, bool shallReturnTrue = true)
