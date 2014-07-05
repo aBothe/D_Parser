@@ -538,7 +538,7 @@ namespace D_Parser.Completion
 				else if (scopedStatement is AsmStatement.RawDataStatement)
 					prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, BaseAsmFlags | MemberFilter.Labels);
 				else /*if (handlesInitializer)*/ // Why only in initializers?
-					prv = new CtrlSpaceCompletionProvider (cdgen, scopedBlock, MemberFilter.All | MemberFilter.ExpressionKeywords);
+					prv = new CtrlSpaceCompletionProvider (cdgen, scopedBlock, shownKeywords.Count == 0 ? MemberFilter.All | MemberFilter.ExpressionKeywords : shownKeywords.Peek());
 			}
 		}
 
