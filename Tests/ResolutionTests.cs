@@ -369,6 +369,30 @@ class Blah(T){ T b; }");
 		}
 
 		[Test]
+		public void ForeachIteratorType()
+		{
+			var ctxt = CreateCtxt("A", @"module A;
+void foo() { 
+foreach(c; cl) 
+	c.a;
+}
+
+class Cl{ int a; }
+Cl** cl;
+");
+			var A = ctxt.ParseCache[0]["A"];
+			var foo = A["foo"].First() as DMethod;
+			var c_a = ((foo.Body.First() as ForeachStatement).ScopedStatement as ExpressionStatement).Expression;
+			ctxt.CurrentContext.Set(foo, c_a.Location);
+
+			AbstractType t;
+
+			t = ExpressionTypeEvaluation.EvaluateType(c_a, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That((t as DerivedDataType).Base, Is.TypeOf(typeof(PrimitiveType)));
+		}
+
+		[Test]
 		public void TypePointerInstanceAccessing()
 		{
 			var ctxt = CreateCtxt("A", @"module A;

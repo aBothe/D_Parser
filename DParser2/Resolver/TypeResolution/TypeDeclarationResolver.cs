@@ -680,6 +680,8 @@ namespace D_Parser.Resolver.TypeResolution
 
 							return keyIsSearched ? ar.KeyType : ar.ValueType;
 						}
+						else if (aggregateType is PointerType)
+							return keyIsSearched ? (ctxt.ParseCache.SizeT ?? new PrimitiveType(DTokens.Uint)) : (aggregateType as PointerType).Base;
 						else if (aggregateType is UserDefinedType)
 						{
 							var tr = (UserDefinedType)aggregateType;
