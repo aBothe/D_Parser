@@ -108,6 +108,25 @@ foreach(
 		}
 
 		[Test]
+		public void ForeachIteratorCompletion()
+		{
+			var code = @"module A;
+void main() {Cl** ii;
+foreach(i;ii)
+i.
+}
+
+struct Cl { int a; }
+";
+			var ed = GenEditorData(4, 3, code);
+
+			var a = (ed.ParseCache[0]["A"]["Cl"].First() as DClassLike)["a"].First() as DVariable;
+
+			var g = new TestCompletionDataGen(new[]{ a }, null);
+			Assert.That(CodeCompletion.GenerateCompletionData(ed, g, 'a', true), Is.True);
+		}
+
+		[Test]
 		public void AutoCompletion()
 		{
 			var code = @"module A;

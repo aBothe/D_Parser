@@ -372,6 +372,9 @@ namespace D_Parser.Resolver.TypeResolution
 		{
 			var ptrBaseTypes = ResolveSingle(pd.InnerDeclaration, ctxt);
 
+			if (ptrBaseTypes != null)
+				ptrBaseTypes.NonStaticAccess = true;
+
 			return new PointerType(ptrBaseTypes, pd);
 		}
 
@@ -619,7 +622,9 @@ namespace D_Parser.Resolver.TypeResolution
 			{
 				var r = new List<AbstractType>();
 				var curMethod = ctxt.ScopedBlock as DMethod;
-				var curStmt = curMethod != null ? DResolver.SearchStatementDeeplyAt(curMethod.GetSubBlockAt(ctxt.CurrentContext.Caret), ctxt.CurrentContext.Caret) : null;
+				var loc = ctxt.CurrentContext.Caret;
+				loc = new CodeLocation(loc.Column-1, loc.Line); // SearchStmtDeeplyAt only checks '<' EndLocation, we may need to have '<=' though due to completion offsets.
+				var curStmt = curMethod != null ? DResolver.SearchStatementDeeplyAt(curMethod.GetSubBlockAt(ctxt.CurrentContext.Caret), loc) : null;
 
 				if (curStmt == null)
 					return null;
