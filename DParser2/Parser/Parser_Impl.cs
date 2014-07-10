@@ -2274,7 +2274,7 @@ namespace D_Parser.Parser
 							if(IsFunctionAttribute)
 							{
 								OverPeekBrackets(OpenParenthesis);
-								bool isPrimitiveExpr = Lexer.CurrentPeekToken.Kind == Dot;
+								bool isPrimitiveExpr = Lexer.CurrentPeekToken.Kind == Dot || Lexer.CurrentPeekToken.Kind == OpenParenthesis;
 								Peek(1);
 								return isPrimitiveExpr;
 							}

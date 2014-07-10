@@ -96,6 +96,17 @@ void main(){
 		}
 
 		[Test]
+		public void TestSyntaxError6()
+		{
+			var mod = DParser.ParseString(@"module A;
+void main(){
+	assert(!__traits(compiles, immutable(S44)(3, &i)));
+}
+");
+			Assert.That(mod.ParseErrors.Count, Is.EqualTo(0));
+		}
+
+		[Test]
 		public void TestSyntaxError3()
 		{
 			DModule mod;
