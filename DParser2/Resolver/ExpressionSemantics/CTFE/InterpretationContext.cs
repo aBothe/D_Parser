@@ -33,12 +33,27 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 				ISymbolValue v;
 				if (Locals.TryGetValue(variable, out v))
 					return v;
-				throw new CtfeException("Variable "+variable.ToString()+" not set yet!");
+
+				// Assign a default value to the variable
+				var t = TypeResolution.TypeDeclarationResolver.HandleNodeMatch(variable, base.ResolutionContext) as MemberSymbol;
+				if (t != null)
+				{
+					if (t.Base is PrimitiveType)
+						v= new PrimitiveValue(0M, t.Base as PrimitiveType);
+					else
+						v = new NullValue(t.Base);
+				}
+				else
+					v = new NullValue();
+
+				Locals[variable] = v;
+
+				return v;
 			}
 			set
 			{
 				if (variable == null)
-					throw new CtfeException("Can't set non-existent variable");
+					throw new CtfeException("variable must not be null");
 				Locals[variable] = value;
 			}
 		}
