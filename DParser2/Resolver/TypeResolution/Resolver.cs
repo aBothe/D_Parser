@@ -630,6 +630,9 @@ namespace D_Parser.Resolver.TypeResolution
 							newRes.Add (rb);
 							break;
 						}
+						
+						if (ctxt.CurrentContext.ScopedBlock == null)
+							break;
 
 						// If member/type etc. is part of the actual module, omit external symbols
 						if (n.NodeRoot != ctxt.CurrentContext.ScopedBlock.NodeRoot) {
