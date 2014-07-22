@@ -115,9 +115,10 @@ namespace D_Parser.Resolver
 
 			var ret = td;
 
-			while (def != (def = def.Parent as DNode) &&
+			while (def != null && def != (def = def.Parent as DNode) &&
 				def != null && !(def is DModule))
 			{
+				
 				td = td.InnerDeclaration = new IdentifierDeclaration(def.NameHash);
 			}
 
