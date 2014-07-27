@@ -430,6 +430,23 @@ auto n = new class BaseClass {};
 		}
 
 		[Test]
+		public void AnonymousNestedStructs()
+		{
+			var ctxt = CreateCtxt("A",@"module A;
+
+class MyClass { union { string strA; struct { uint numA; uint numB; } } }
+MyClass mc;
+");
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression ("mc.numA");
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+		}
+
+		[Test]
 		public void InMethodDeclScopes()
 		{
 			var ctxt = CreateCtxt("A", @"module A;

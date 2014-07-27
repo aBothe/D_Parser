@@ -311,20 +311,26 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 						return true;
 					//ContinueHandleStaticStatements (n.Location);
 
-					if (!CanHandleNode (n as DNode, VisibleMembers, isBaseClass, isMixinAst, takeStaticChildrenOnly, publicImports, scopeIsInInheritanceHierarchy))
+					if (((n is DEnum || n is DClassLike) && n.NameHash == 0) ||
+						!CanHandleNode (n as DNode, VisibleMembers, isBaseClass, isMixinAst, takeStaticChildrenOnly, publicImports, scopeIsInInheritanceHierarchy))
 						continue;
-
-                    // Add anonymous enums',structs' or unions' items
-					if (((n is DEnum) || (n is DClassLike)) && n.NameHash == 0)
-					{
-						var ch2 = PrefilterSubnodes(n as DBlockNode);
-						if (ch2 != null)
-							foundItems |= HandleItems(ch2);
-						continue;
-					}
 
 					foundItems |= HandleItem(n);
 				}
+
+			// Add anonymous enums',structs' or unions' items (also recursively!)
+			ch = curScope[0];
+			if (ch != null) {
+				foreach (var n in ch) {
+					if (!(n is DEnum || n is DClassLike) ||
+						!CanHandleNode (n as DNode, VisibleMembers, isBaseClass, isMixinAst, takeStaticChildrenOnly, publicImports, scopeIsInInheritanceHierarchy))
+						continue;
+
+					var dontHandleTemplateParamsInNodeScan_persistance = dontHandleTemplateParamsInNodeScan;
+					foundItems |= scanChildren (n as DBlockNode, VisibleMembers, publicImports, isBaseClass, isMixinAst, takeStaticChildrenOnly, scopeIsInInheritanceHierarchy);
+					dontHandleTemplateParamsInNodeScan = dontHandleTemplateParamsInNodeScan_persistance;
+				}
+			}
 
 			if (foundItems) {
 				//ConditionsStack.Pop ();
