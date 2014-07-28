@@ -109,12 +109,13 @@ namespace D_Parser.Parser
 				finalParentMethod = bs.ParentNode as DMethod;
 
 				tempParentBlock = new DMethod();//new DBlockNode();
+				tempParentBlock.Attributes = finalParentMethod.Attributes; // assign given attributes to the temporary block for allowing the completion to check whether static or non-static items may be shown
 				var tempBlockStmt = new BlockStatement { ParentNode = tempParentBlock };
 				tempParentBlock.Body = tempBlockStmt;
 				tempBlockStmt.Location = startLoc;
 				tempParentBlock.Location = startLoc;
 
-				return tempBlockStmt;
+				return tempBlockStmt; 
 			}
 
 			protected override bool Parse(BlockStatement tempBlockStmt, DParser p)
@@ -178,6 +179,7 @@ namespace D_Parser.Parser
 			{
 				finalParentBlock = bn;
 				var tempBlock = bn is DEnum ? new DEnum() : new DBlockNode();
+				tempBlock.Attributes = bn.Attributes;
 				tempBlock.BlockStartLocation = startLoc;
 				return tempBlock;
 			}

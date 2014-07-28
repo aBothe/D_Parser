@@ -209,10 +209,12 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		{
 			bool isBase = false;
 			bool scopeIsInInheritanceHierarchy = udt != null && ctxt.ScopedBlockIsInNodeHierarchy(udt.Definition);
-			bool takeStaticChildrenOnly = ctxt.ScopedBlock is DMethod && (ctxt.ScopedBlock as DMethod).IsStatic;
+			bool takeStaticChildrenOnly = 
+				(udt == null || !udt.NonStaticAccess) && 
+				ctxt.ScopedBlock is DMethod && (ctxt.ScopedBlock as DMethod).IsStatic;
 			
 			// Check if the scoped node's parent is the current class
-			if(takeStaticChildrenOnly)
+			/*if(takeStaticChildrenOnly)
 			{
 				takeStaticChildrenOnly = false;
 				var sc = udt.Definition as IBlockNode;
@@ -225,7 +227,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					}
 					sc = sc.Parent as IBlockNode;
 				}
-			}
+			}*/
 
 			List<TemplateIntermediateType> interfaces = null;
 

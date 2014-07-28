@@ -127,6 +127,23 @@ struct Cl { int a; }
 		}
 
 		[Test]
+		public void NonStaticCompletion1()
+		{
+			var code = @"module A;
+struct SomeStruct {ubyte a; static void read() {
+
+}}
+";
+			var ed = GenEditorData(3, 1, code);
+
+			var SomeStruct = (ed.ParseCache [0] ["A"] ["SomeStruct"].First () as DClassLike);
+			var a = SomeStruct["a"].First() as DVariable;
+			var read = SomeStruct ["read"].First () as DMethod;
+			var g = new TestCompletionDataGen(new[]{ read },new[]{ a });
+			Assert.That(CodeCompletion.GenerateCompletionData(ed, g, '\0', true), Is.True);
+		}
+
+		[Test]
 		public void AutoCompletion()
 		{
 			var code = @"module A;
