@@ -56,7 +56,7 @@ namespace D_Parser.Dom
 		{
 			get
 			{
-				return ContainsAttribute(DTokens.Static);
+				return ContainsAttribute(DTokens.Static, DTokens.__gshared);
 			}
 		}
 		#endregion
