@@ -588,6 +588,7 @@ namespace D_Parser.Parser
 							peek = ReaderPeek();
 							if (peek == '{'/*q{ ... }*/ || peek == '"'/* q"{{ ...}}   }}"*/)
 							{
+								var subFmt = LiteralSubformat.Utf8;
 								x = Col - 1;
 								y = Line;
 								string initDelim = "";
@@ -664,11 +665,12 @@ namespace D_Parser.Parser
 									if (tokenString.EndsWith(endDelim) && (IsQuoted || BracketLevel < 1))
 									{
 										tokenString = tokenString.Remove(tokenString.Length - endDelim.Length);
+										TryReadExplicitStringFormat (out subFmt);
 										break;
 									}
 								}
 
-								return Token(DTokens.Literal, x, y, Col, Line, tokenString, /*tokenString,*/ LiteralFormat.VerbatimStringLiteral);
+								return Token(DTokens.Literal, x, y, Col, Line, tokenString, /*tokenString,*/ LiteralFormat.VerbatimStringLiteral, subFmt);
 							}
 						}
 
@@ -1052,6 +1054,25 @@ namespace D_Parser.Parser
 			}
 		}
 
+		void TryReadExplicitStringFormat(out LiteralSubformat subFmt)
+		{
+			switch ((char)this.ReaderPeek ()) {
+				case 'c':
+					ReaderRead ();
+					break;
+				case 'd':
+					subFmt = LiteralSubformat.Utf32;
+					ReaderRead ();
+					return;
+				case 'w':
+					subFmt = LiteralSubformat.Utf16;
+					ReaderRead ();
+					return;
+			}
+
+			subFmt = LiteralSubformat.Utf8;
+		}
+
 		DToken ReadString(int initialChar)
 		{
 			int x = Col - 1;
@@ -1072,15 +1093,7 @@ namespace D_Parser.Parser
 					doneNormally = true;
 					//originalValue.Append((char)nextChar);
 					// Skip string literals
-					ch = (char)this.ReaderPeek();
-					if (ch == 'c' || ch == 'w' || ch == 'd')
-					{
-						if (ch == 'w')
-							subFmt = LiteralSubformat.Utf16;
-						else if (ch == 'd')
-							subFmt = LiteralSubformat.Utf32;
-						ReaderRead();
-					}
+					TryReadExplicitStringFormat (out subFmt);
 					break;
 				}
 				HandleLineEnd(ch);
@@ -1165,18 +1178,8 @@ namespace D_Parser.Parser
 			}
 
 			// Suffix literal check
-			int pk = ReaderPeek();
-			var subFmt = LiteralSubformat.Utf8;
-			if (pk != -1)
-			{
-				nextChar = (char)pk;
-				if (nextChar == 'c' || nextChar == 'w' || nextChar == 'd')
-				{
-					subFmt = nextChar == 'w' ? LiteralSubformat.Utf16 :
-						nextChar == 'd' ? LiteralSubformat.Utf32 : LiteralSubformat.Utf8;
-					ReaderRead();
-				}
-			}
+			LiteralSubformat subFmt;
+			TryReadExplicitStringFormat (out subFmt);
 
 			return Token(DTokens.Literal, x, y, Col, Line, /*originalValue.ToString(),*/ sb.ToString(), LiteralFormat.VerbatimStringLiteral, subFmt);
 		}

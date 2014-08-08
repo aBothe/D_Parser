@@ -107,6 +107,15 @@ void main(){
 		}
 
 		[Test]
+		public void TestSyntaxError7()
+		{
+			var mod = DParser.ParseString(@"module A;
+auto sourceCode = q{~this(){}}c;
+");
+			Assert.That(mod.ParseErrors.Count, Is.EqualTo(0));
+		}
+
+		[Test]
 		public void TestSyntaxError3()
 		{
 			DModule mod;
