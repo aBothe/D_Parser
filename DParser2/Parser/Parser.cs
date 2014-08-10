@@ -260,7 +260,7 @@ namespace D_Parser.Parser
 				else
 				{
 					keys.Add(key);
-					attrs.Add(a);
+					attrs.Insert(0,a);
 				}
 			}
 
@@ -272,7 +272,7 @@ namespace D_Parser.Parser
 				else
 				{
 					keys.Add(key);
-					attrs.Add(a);
+					attrs.Insert(0,a);
 				}
 			}
 			DeclarationAttributes.Clear();
