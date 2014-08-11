@@ -277,7 +277,7 @@ namespace D_Parser.Parser
 			}
 			DeclarationAttributes.Clear();
 
-			for (i = 0; i < attrs.Count; i++)
+			for (i = attrs.Count - 1; i >= 0; i--)
 			{
 				var m = attrs[i] as Modifier;
 				if (m != null)
@@ -287,7 +287,7 @@ namespace D_Parser.Parser
 					{
 						lastVisModifier = m;
 						// Temporarily remove all vis modifiers and add the last one again
-						attrs.RemoveAt(i--);
+						attrs.RemoveAt(i);
 						//keys.RemoveAt(i); -- No need to touch keys anymore
 						continue;
 					}
