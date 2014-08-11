@@ -27,8 +27,8 @@ namespace D_Parser.Dom.Expressions
 					if (a != null)
 						sb.Append(a.ToString()).Append(',');
 
-			if (sb[sb.Length - 1] != '(')
-				sb.Remove(sb.Length - 2, 1);
+			if (sb[sb.Length - 1] == ',')
+				sb.Remove(sb.Length - 1, 1);
 
 			return sb.Append(')').ToString();
 		}
