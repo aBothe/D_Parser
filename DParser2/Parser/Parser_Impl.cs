@@ -3526,6 +3526,7 @@ namespace D_Parser.Parser
 				(Peek(1).Kind == Assign || Lexer.CurrentPeekToken.Kind == CloseParenthesis)) || // if(a * b * c) is an expression, if(a * b = 123) may be a pointer variable
 				(IsEOF && tp.InnerDeclaration == null))) // if(inst. is an expression, TODO if(int. not
 			{
+				Lexer.PopLookAheadBackup ();
 				var dv = Declarator(tp, false, par.ParentNode) as DVariable;
 				if (dv == null)
 				{

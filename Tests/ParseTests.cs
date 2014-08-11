@@ -746,6 +746,60 @@ int dbg;
 			Assert.That (DocumentHelper.GetOffsetByRelativeLocation (code, new CodeLocation (2, 3), code.Length, new CodeLocation (1, 1)), Is.EqualTo (0));
 		}
 
+		[Test]
+		public void AnonymousClassDef()
+		{
+			var code = @"{if(node.members.any!((Node n) {
+/*if (auto fn = cast(FieldNode)n)	return fn.isInstanceMember;*/
+return false;
+})()) {}}";
+
+			var s = DParser.ParseBlockStatement (code);
+			Assert.That (s, Is.Not.Null);
+
+			//return;
+			code = @"
+void anonClassFoo()
+{
+	size_t embodiedClassCount = void;
+	auto vis2 = new class NodeVisitor
+	{
+		override void visit(ClassNode node)
+		{
+			import std.array;
+			import std.algorithm : any;
+			
+			if (node.members.any!((Node n) {
+				if (auto fn = cast(FieldNode)n)					return fn.isInstanceMember;
+				return false;
+			})())
+			{
+				embodiedClassCount++;
+				embodiedClasses[node.fullName] = true;
+			}
+			else if (auto p = node.baseClass in embodiedClasses)
+			{
+				embodiedClassCount++;
+				embodiedClasses[node.fullName] = *p;
+			}
+		}
+	};
+
+	do
+	{
+		embodiedClassCount = 0;
+		
+		foreach (ref n; nodes)
+			n.visit(vis2);
+	} while (embodiedClassCount);
+}
+";
+
+			var mod = DParser.ParseString (code);
+			Assert.That (mod.ParseErrors.Count, Is.EqualTo (0));
+		}
+
+
 		#region DDoc
 
 		public void DDocMacros()
