@@ -127,8 +127,8 @@ namespace D_Parser.Resolver
 			props.AddProp(new StaticPropertyInfo("min_10_exp", "Minimum int value such that 10^max_10_exp is representable", DTokens.Int));
 			props.AddProp(new StaticPropertyInfo("min_exp", "Minimum int value such that 2^max_exp-1 is representable", DTokens.Int));
 			props.AddProp(new StaticPropertyInfo("min_normal", "Number of decimal digits of precision", DTokens.Int));
-			props.AddProp(new StaticPropertyInfo("re", "Real part") { TypeGetter = help_ReflectType, ResolvedBaseTypeGetter = help_ReflectResolvedType, RequireThis = true });
-			props.AddProp(new StaticPropertyInfo("in", "Imaginary part") { TypeGetter = help_ReflectType, ResolvedBaseTypeGetter = help_ReflectResolvedType, RequireThis = true });
+			props.AddProp(new StaticPropertyInfo("re", "Real part") { TypeGetter = help_ReflectNonComplexType, ResolvedBaseTypeGetter = help_ReflectResolvedNonComplexType, RequireThis = true });
+			props.AddProp(new StaticPropertyInfo("im", "Imaginary part") { TypeGetter = help_ReflectNonComplexType, ResolvedBaseTypeGetter = help_ReflectResolvedNonComplexType, RequireThis = true });
 
 
 
@@ -290,6 +290,44 @@ namespace D_Parser.Resolver
 		#endregion
 
 		#region Static prop resolution meta helpers
+		/// <summary>
+		/// returns float/double/creal when cfloat/cdouble/creal are given
+		/// </summary>
+		/// <returns>The reflect non complex type.</returns>
+		/// <param name="t">T.</param>
+		/// <param name="ctxt">Ctxt.</param>
+		static ITypeDeclaration help_ReflectNonComplexType(AbstractType t, ResolutionContext ctxt)
+		{
+			var pt = t as PrimitiveType;
+			if (pt != null) {
+				switch (pt.TypeToken) {
+					case DTokens.Cfloat:
+						return new DTokenDeclaration (DTokens.Float);
+					case DTokens.Cdouble:
+						return new DTokenDeclaration (DTokens.Double);
+					case DTokens.Creal:
+						return new DTokenDeclaration (DTokens.Real);
+				}
+			}
+			return DTypeToTypeDeclVisitor.GenerateTypeDecl(t);
+		}
+
+		static AbstractType help_ReflectResolvedNonComplexType(AbstractType t, ResolutionContext ctxt)
+		{
+			var pt = t as PrimitiveType;
+			if (pt != null) {
+				switch (pt.TypeToken) {
+					case DTokens.Cfloat:
+						return new PrimitiveType (DTokens.Float);
+					case DTokens.Cdouble:
+						return new PrimitiveType (DTokens.Double);
+					case DTokens.Creal:
+						return new PrimitiveType (DTokens.Real);
+				}
+			}
+			return t;
+		}
+
 		static ITypeDeclaration help_ReflectType(AbstractType t, ResolutionContext ctxt)
 		{
 			return DTypeToTypeDeclVisitor.GenerateTypeDecl(t);
