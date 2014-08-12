@@ -54,15 +54,26 @@ namespace D_Parser.Misc
 			switch (cpuArch)
 			{
 				case "X86":
+					x86:
 					l.Add("D_InlineAsm_X86");
 					l.Add("X86");
 					break;
 				case "AMD64":
+					x64:
 					l.Add("D_InlineAsm_X86_64");
 					l.Add("X86_64");
 					break;
 				case "IA64":
 					l.Add("IA64");
+					break;
+
+				default:
+					if (string.IsNullOrWhiteSpace (cpuArch)) {
+						if (is64BitOS)
+							goto x64;
+						else
+							goto x86;
+					}
 					break;
 			}
 			//TODO: Other architectures...
