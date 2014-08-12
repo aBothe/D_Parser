@@ -290,7 +290,7 @@ namespace D_Parser.Misc
 
 		static void preparationTh ()
 		{
-			while (true) {
+			for(;;) {
 				if (basePathQueue.IsEmpty && !preparationThreadStartEvent.WaitOne (ThreadWaitTimeout))
 					return;
 
@@ -379,7 +379,7 @@ namespace D_Parser.Misc
 
 		static void parseTh ()
 		{
-			while (true) {
+			for(;;) {
 				if (queue.IsEmpty && !parseThreadStartEvent.WaitOne (ThreadWaitTimeout))
 					return;
 
