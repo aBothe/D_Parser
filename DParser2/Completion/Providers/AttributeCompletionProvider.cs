@@ -68,13 +68,18 @@ namespace D_Parser.Completion.Providers
 		protected override void BuildCompletionDataInternal (IEditorData Editor, char enteredChar)
 		{
 			var ctxt = ResolutionContext.Create (Editor, false);
+			foreach (var kv in VersionCompletionItems)
+				CompletionDataGenerator.AddTextItem(kv.Key, kv.Value);
+
 			CodeCompletion.DoTimeoutableCompletionTask (CompletionDataGenerator, ctxt, () => {
 				ctxt.Push(Editor);
 				var cs = ctxt.CurrentContext.DeclarationCondititons;
 				foreach (var v in cs.GlobalFlags.Versions)
-					CompletionDataGenerator.AddTextItem (v, "");
+					if(!VersionCompletionItems.ContainsKey(v))
+						CompletionDataGenerator.AddTextItem (v, "");
 				foreach (var v in cs.LocalFlags.Versions)
-					CompletionDataGenerator.AddTextItem (v, "");
+					if (!VersionCompletionItems.ContainsKey(v))
+						CompletionDataGenerator.AddTextItem (v, "");
 			});
 		}	
 	}
