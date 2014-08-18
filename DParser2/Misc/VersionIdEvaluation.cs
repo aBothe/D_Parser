@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text.RegularExpressions;
 
 namespace D_Parser.Misc
@@ -13,6 +14,49 @@ namespace D_Parser.Misc
 	{
 		static string[] minimalConfiguration;
 
+		// Stolen from http://stackoverflow.com/questions/10138040/how-to-detect-properly-windows-linux-mac-operating-systems
+		public enum Platform
+		{
+			None,
+			Unkown,
+			Windows,
+			Linux,
+			Mac
+		}
+		static Platform _os = Platform.None;
+
+		public static Platform OS
+		{
+			get
+			{
+				if (_os != Platform.None)
+					return _os;
+
+				switch (Environment.OSVersion.Platform)
+				{
+					case PlatformID.Unix:
+						// Well, there are chances MacOSX is reported as Unix instead of MacOSX.
+						// Instead of platform check, we'll do a feature checks (Mac specific root folders)
+						if (Directory.Exists("/Applications")
+							& Directory.Exists("/System")
+							& Directory.Exists("/Users")
+							& Directory.Exists("/Volumes"))
+							_os = Platform.Mac;
+						else
+							_os = Platform.Linux;
+						break;
+					case PlatformID.MacOSX:
+						_os = Platform.Mac;
+						break;
+					default:
+						_os = Platform.Windows;
+						break;
+				}
+
+				return _os;
+			}
+		}
+
 		public static string[] GetOSAndCPUVersions()
 		{
 			if(minimalConfiguration != null)
@@ -24,28 +68,25 @@ namespace D_Parser.Misc
 			l.Add ("assert");
 
 			// OS
-			bool isWin = Environment.OSVersion.Platform.HasFlag(PlatformID.Win32NT);
 			bool is64BitOS = Environment.Is64BitOperatingSystem;
-			
-			if(isWin)
+
+			switch (OS)
 			{
-				l.Add("Windows");
-				l.Add(is64BitOS ? "Win64" : "Win32");
-			}
-			else{
-				switch(Environment.OSVersion.Platform)
-				{
-					case PlatformID.MacOSX:
-						l.Add("OSX");
+				case Platform.Windows:
+					l.Add("Windows");
+					l.Add(is64BitOS ? "Win64" : "Win32");
+					break;
+				case Platform.Linux:
+					l.Add ("Posix");
+					l.Add("linux");
+					break;
+				case Platform.Mac:
+					l.Add("OSX");
 						l.Add("darwin");
 						l.Add ("Posix");
-						break;
-					case PlatformID.Unix:
-						l.Add ("Posix");
-						l.Add("linux");
-						break;
-				}
+					break;
 			}
+			
 			//TODO: Execute uname to retrieve further info of the Posix-OS
 			// http://www.computerhope.com/unix/uuname.htm
 			
