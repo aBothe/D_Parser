@@ -7,8 +7,9 @@ notifications:
 language: c
 
 install:
-  sudo add-apt-repository ppa:directhex/monoxide
-  sudo apt-get install mono-devel mono-gmcs nunit-console
+  - wget http://simendsjo.me/files/abothe/MonoDevelop.x86.Master.tar.xz
+  - sudo tar -xPf MonoDevelop.x86.Master.tar.xz
+ 
 script:
-  - xbuild DParser2.Unittest.sln
-  - nunit-console Tests/bin/Debug/Tests.dll
+  - /opt/mono/bin/xbuild DParser2.Unittest.sln
+  - /opt/mono/bin/nunit-console Tests/bin/Debug/Tests.dll
