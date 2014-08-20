@@ -188,6 +188,13 @@ namespace D_Parser.Dom
 			if(Parameters != null && Parameters.Count != 0)
 				foreach (INode n in Parameters)
 				{
+					var dn = n as DNode;
+					if (dn != null && dn.Attributes != null && dn.Attributes.Count != 0) {
+						sb.Append (dn.AttributeString);
+						if (n.Type != null)
+							sb.Append (' ');
+					}
+
 					if (n.Type != null)
 						sb.Append(n.Type.ToString());
 
