@@ -7,6 +7,7 @@ notifications:
 language: c
 
 install:
+ - sudo add-apt-repository ppa:directhex/monoxide
   - sudo apt-get install mono-devel mono-gmcs nunit-console
 script:
   - xbuild DParser2.Unittest.sln
