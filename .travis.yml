@@ -11,5 +11,6 @@ install:
   - sudo tar -xPf MonoDevelop.x86.Master.tar.xz
  
 script:
-  - /opt/mono/bin/xbuild DParser2.Unittest.sln
-  - /opt/mono/bin/nunit-console Tests/bin/Debug/Tests.dll
+ - export PATH="/opt/mono/bin:$PATH"
+  - /opt/mono/bin/mono /opt/mono/lib/mono/xbuild/12.0/bin/xbuild.exe DParser2.Unittest.sln
+  - /opt/mono/bin/mono --debug /opt/mono/lib/mono/4.5/nunit-console.exe Tests/bin/Debug/Tests.dll
