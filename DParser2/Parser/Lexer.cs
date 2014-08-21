@@ -94,7 +94,7 @@ namespace D_Parser.Parser
 		}
 
 		DToken Token(byte kind, int startLocation_Col, int startLocation_Line, int endLocation_Col, int endLocation_Line,
-			object literalValue,/* string value,*/ LiteralFormat literalFormat = 0, LiteralSubformat literalSubFormat = 0)
+			object literalValue,/* string value,*/ LiteralFormat literalFormat = 0, LiteralSubformat literalSubFormat = 0, string rawCode = null)
 		{
 			var tk = tok();
 			tk.Line = startLocation_Line;
@@ -107,7 +107,7 @@ namespace D_Parser.Parser
 			tk.LiteralFormat = literalFormat;
 			tk.Subformat = literalSubFormat;
 			tk.LiteralValue = literalValue;
-			tk.RawCodeRepresentation = null;
+			tk.RawCodeRepresentation = rawCode;
 			
 			return tk;
 		}
@@ -1103,15 +1103,15 @@ namespace D_Parser.Parser
 					string surrogatePair;
 
 					//originalValue.Append(ReadEscapeSequence(out ch, out surrogatePair));
-					ReadEscapeSequence(out ch, out surrogatePair);
-					if (surrogatePair != null)
+					sb.Append('\\').Append(ReadEscapeSequence(out ch, out surrogatePair));
+					/*if (surrogatePair != null)
 					{
 						sb.Append(surrogatePair);
 					}
 					else
 					{
 						sb.Append(ch);
-					}
+					}*/
 				}
 				else
 				{
@@ -1402,11 +1402,11 @@ namespace D_Parser.Parser
 			}
 			char ch = (char)nextChar;
 			char chValue = ch;
-			//string escapeSequence = String.Empty;
+			string escapeSequence = null;
 			string surrogatePair = null;
 			if (ch == '\\')
 			{
-				/*escapeSequence =*/ ReadEscapeSequence(out chValue, out surrogatePair);
+				escapeSequence = ReadEscapeSequence(out chValue, out surrogatePair);
 				if (surrogatePair != null)
 				{
 					// Although we'll pass back a string as literal value, it's originally handled as char literal!
@@ -1424,7 +1424,7 @@ namespace D_Parser.Parser
 					OnError(y, x, String.Format("Char not terminated"));
 				}
 			}
-			return Token(DTokens.Literal, x, y, Col, Line, string.IsNullOrEmpty(surrogatePair) ? (object)chValue : surrogatePair/*, "'" + ch + escapeSequence + "'"*/, LiteralFormat.CharLiteral);
+			return Token(DTokens.Literal, x, y, Col, Line, string.IsNullOrEmpty(surrogatePair) ? (object)chValue : surrogatePair, LiteralFormat.CharLiteral, LiteralSubformat.Utf16, escapeSequence);
 		}
 
 		DToken ReadOperator(char ch)

@@ -3049,7 +3049,7 @@ namespace D_Parser.Parser
 						return new IdentifierExpression(sb.ToString(), t.LiteralFormat, t.Subformat) { Location = startLoc, EndLocation = t.EndLocation };
 					}
 					//else if (t.LiteralFormat == LiteralFormat.CharLiteral)return new IdentifierExpression(t.LiteralValue) { LiteralFormat=t.LiteralFormat,Location = startLoc, EndLocation = t.EndLocation };
-					return new IdentifierExpression(t.LiteralValue, t.LiteralFormat, t.Subformat) { Location = startLoc, EndLocation = t.EndLocation };
+					return new IdentifierExpression(t.LiteralValue, t.LiteralFormat, t.Subformat, t.RawCodeRepresentation) { Location = startLoc, EndLocation = t.EndLocation };
 				// FunctionLiteral
 				case Delegate:
 				case Function:

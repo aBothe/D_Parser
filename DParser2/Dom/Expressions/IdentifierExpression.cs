@@ -14,6 +14,7 @@ namespace D_Parser.Dom.Expressions
 
 		public readonly object Value;
 		public readonly int ValueStringHash;
+		public readonly int EscapeStringHash;
 
 		public string StringValue { get { return ValueStringHash != 0 ? Strings.TryGet(ValueStringHash) : Value as string; } }
 
@@ -26,11 +27,16 @@ namespace D_Parser.Dom.Expressions
 			Format = LiteralFormat.None;
 		}
 
-		public IdentifierExpression(object Val, LiteralFormat LiteralFormat, LiteralSubformat Subformat = 0)
+		public IdentifierExpression(object Val, LiteralFormat LiteralFormat, LiteralSubformat Subformat = 0, string escapeString = null)
 		{
 			Value = Val;
 			this.Format = LiteralFormat;
 			this.Subformat = Subformat;
+			if (escapeString != null)
+			{
+				Strings.Add(escapeString);
+				EscapeStringHash = escapeString.GetHashCode();
+			}
 		}
 
 		public IdentifierExpression(string Value, LiteralFormat LiteralFormat = LiteralFormat.None, LiteralSubformat Subformat = 0)
@@ -47,7 +53,7 @@ namespace D_Parser.Dom.Expressions
 				switch (Format)
 			{
 				case Parser.LiteralFormat.CharLiteral:
-					return "'" + (Value ?? "") + "'";
+					return "'" + (EscapeStringHash != 0 ? ("\\"+Strings.TryGet(EscapeStringHash)) : Value ?? "") + "'";
 				case Parser.LiteralFormat.StringLiteral:
 					return "\"" + StringValue + "\"";
 				case Parser.LiteralFormat.VerbatimStringLiteral:
