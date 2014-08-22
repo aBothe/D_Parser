@@ -3281,22 +3281,36 @@ namespace D_Parser.Parser
 						goto case Dollar;
 					else if (IsBasicType())
 					{
-						// BasicType . Identifier
 						startLoc = la.Location;
 
 						var bt=BasicType();
 
-						if ((bt is TypeOfDeclaration || bt is MemberFunctionAttributeDecl) && laKind!=Dot)
-							return new TypeDeclarationExpression(bt);
+						switch (laKind)
+						{
+							case DTokens.Dot: // BasicType . Identifier
+								Step();
+								// Things like incomplete 'float.' expressions shall be parseable, too
+								if (Expect(Identifier) || IsEOF)
+									return new PostfixExpression_Access()
+									{
+										PostfixForeExpression = new TypeDeclarationExpression(bt),
+										AccessExpression = IsEOF ? new TokenExpression(Incomplete) as IExpression : new IdentifierExpression(t.Value) { Location = t.Location, EndLocation = t.EndLocation },
+										EndLocation = t.EndLocation
+									};
+								break;
+							case DTokens.OpenParenthesis:
+								Step();
 
-						// Things like incomplete 'float.' expressions shall be parseable, too
-						if (Expect(Dot) && (Expect(Identifier) || IsEOF))
-							return new PostfixExpression_Access()
-							{
-								PostfixForeExpression = new TypeDeclarationExpression(bt),
-								AccessExpression = IsEOF ? new TokenExpression(Incomplete) as IExpression : new IdentifierExpression(t.Value) { Location=t.Location, EndLocation=t.EndLocation },
-								EndLocation = t.EndLocation
-							};
+								var callExp = new PostfixExpression_MethodCall { PostfixForeExpression = new TypeDeclarationExpression(bt) };
+								callExp.Arguments = ArgumentList(Scope).ToArray();
+
+								Expect(DTokens.CloseParenthesis);
+								return callExp;
+							default:
+								if (bt is TypeOfDeclaration || bt is MemberFunctionAttributeDecl)
+									return new TypeDeclarationExpression(bt);
+								break;
+						}
 
 						return null;
 					}

@@ -100,6 +100,17 @@ namespace Tests
 		}
 
 		[Test]
+		public void Test2_066UCSnytax()
+		{
+			var x = DParser.ParseExpression("short(3)");
+			var v = Evaluation.EvaluateValue(x, ResolutionTests.CreateDefCtxt());
+
+			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			Assert.That((v as PrimitiveValue).BaseTypeToken, Is.EqualTo(DTokens.Short));
+			Assert.That((v as PrimitiveValue).Value, Is.EqualTo(3m));
+		}
+
+		[Test]
 		public void TestMathOperations()
 		{
 			TestPrimitive("0", DTokens.Int, 0M);

@@ -192,6 +192,15 @@ void bar();");
 		}
 
 		[Test]
+		public void Test2_066UCSnytax()
+		{
+			var s = "auto b = creal(3+4i);";
+			var mod = DParser.ParseString(s);
+
+			Assert.AreEqual(mod.ParseErrors.Count, 0);
+		}
+
+		[Test]
 		public void TestSyntaxError2()
 		{
 			var s = "class Foo( if(is(T==float) {} class someThingElse {}";

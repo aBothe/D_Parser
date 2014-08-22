@@ -393,6 +393,16 @@ Cl** cl;
 		}
 
 		[Test]
+		public void Test2_066UCSnytax()
+		{
+			var x = DParser.ParseExpression("creal(3)");
+			var t = ExpressionTypeEvaluation.EvaluateType(x, CreateDefCtxt());
+
+			Assert.That(t, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.That((t as PrimitiveType).TypeToken, Is.EqualTo(DTokens.Creal));
+		}
+
+		[Test]
 		public void TypePointerInstanceAccessing()
 		{
 			var ctxt = CreateCtxt("A", @"module A;

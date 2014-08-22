@@ -181,6 +181,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					 */
 					else if (b is TemplateType)
 						methodOverloads.Add(b);
+					else if (b is PrimitiveType) // dmd 2.066: Uniform Construction Syntax. creal(3) is of type creal.
+						methodOverloads.Add(b);
 				}
 
 				scanResults = nextResults.Count == 0 ? null : nextResults.ToArray();
@@ -247,6 +249,24 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						}
 						argTypeFilteredOverloads.Add(new DelegateCallSymbol(dg, call));
 					}
+				}
+				else if (ov is PrimitiveType) // dmd 2.066: Uniform Construction Syntax. creal(3) is of type creal.
+				{
+					if (ValueProvider != null)
+					{
+						if (callArguments == null || callArguments.Count != 1)
+							ValueProvider.LogError(call, "Uniform construction syntax expects exactly one argument");
+						else
+						{
+							var pv = callArguments[0] as PrimitiveValue;
+							if (pv == null)
+								ValueProvider.LogError(call, "Uniform construction syntax expects one built-in scalar value as first argument");
+							else
+								delegateValue = new PrimitiveValue(pv.Value, ov as PrimitiveType, pv.ImaginaryPart);
+						}
+					}
+
+					argTypeFilteredOverloads.Add(ov);
 				}
 			}
 
