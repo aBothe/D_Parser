@@ -3324,6 +3324,30 @@ public template uuid(T, const char[] g) {
 			Assert.That(av.IsString);
 			Assert.That(av.StringValue, Is.EqualTo(@"const IID IID_A.IUnknown={ 0x00000000,0x0000,0x0000,[0xC0,0x00,0x00,0x00,0x00,0x00,0x00,0x46]};template uuidof(T:A.IUnknown){    const IID uuidof ={ 0x00000000,0x0000,0x0000,[0xC0,0x00,0x00,0x00,0x00,0x00,0x00,0x46]};}"));
 		}
+
+		[Test]
+		public void Mixins7()
+		{
+			var ctxt = CreateCtxt("A", @"module A;
+mixin template mix_test() {int a;}
+
+class C {
+enum mix = ""test"";
+mixin( ""mixin mix_"" ~ mix ~ "";"" );
+}
+
+C c;
+");
+			IExpression x;
+			AbstractType t;
+			ISymbolValue v;
+
+			x = DParser.ParseExpression("c.a");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+		}
 		
 		[Test]
 		public void NestedMixins()
