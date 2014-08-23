@@ -17,6 +17,9 @@ namespace D_Parser.Resolver
 		
 		static bool CheckAndPushAnalysisStack(MixinStatement mx)
 		{
+			if (mx == null)
+				return false;
+
 			if(stmtsBeingAnalysed == null)
 				stmtsBeingAnalysed = new List<MixinStatement>();
 			
@@ -29,7 +32,7 @@ namespace D_Parser.Resolver
 				foreach(var pk in stmtsBeingAnalysed)
 				{
 					var parentNode = pk.ParentNode;
-					if(parentNode != null && mx.ParentNode.NodeRoot == parentNode.NodeRoot)
+					if(parentNode != null && mx.ParentNode != null && mx.ParentNode.NodeRoot == parentNode.NodeRoot)
 					{
 						if(mx == pk || mx.Location >= pk.Location)
 							return false;
