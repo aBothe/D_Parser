@@ -5,6 +5,7 @@ using D_Parser.Dom.Statements;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
+using D_Parser.Resolver.ASTScanner;
 
 namespace D_Parser.Completion
 {
@@ -160,45 +161,57 @@ namespace D_Parser.Completion
 			return res;
 		}
 
+		class CtorScan : NameScan
+		{
+			public CtorScan(ISyntaxRegion sr, ResolutionContext ctxt)
+				: base(ctxt, DMethod.ConstructorIdentifierHash, sr)
+			{
+
+			}
+
+			public static bool ScanForConstructors(NewExpression sr, IBlockNode scope, UserDefinedType udt, List<AbstractType> _ctors, out bool explicitCtorFound)
+			{
+				explicitCtorFound = false;
+				var ct = new CtorScan(sr, new ResolutionContext(new Misc.ParseCacheView(new RootPackage[] {}), null, scope));
+				ct.DeepScanClass(udt, MemberFilter.Methods, false);
+
+				_ctors.AddRange(ct.matches_types);
+
+				var rawList = (udt.Definition as DClassLike)[DMethod.ConstructorIdentifierHash];
+				if(rawList != null)
+				{
+					foreach(var n in rawList)
+					{
+						var dm = n as DMethod;
+						if(dm == null || dm.IsStatic || dm.SpecialType != DMethod.MethodType.Constructor)
+							continue;
+
+						explicitCtorFound = true;
+						break;
+					}
+				}
+
+				return ct.matches_types.Count != 0;
+			}
+
+			protected override bool HandleItem(INode n)
+			{
+				var dm = n as DMethod;
+				var ret = dm != null && !dm.IsStatic && dm.SpecialType == DMethod.MethodType.Constructor && 
+					base.HandleItem(n);
+
+				return ret;
+			}
+		}
+
 		private static void HandleNewExpression_Ctor(NewExpression nex, IBlockNode curBlock, List<AbstractType> _ctors, AbstractType t)
 		{
 			var udt = t as TemplateIntermediateType;
 			if (udt is ClassType || udt is StructType)
 			{
-				bool explicitCtorFound = false;
-				var constructors = new List<DMethod>();
-
-				//TODO: Mixed-in ctors? --> Convert to AbstractVisitor/use NameScan
-				foreach (var member in udt.Definition)
-				{
-					var dm = member as DMethod;
-
-					if (dm != null && dm.SpecialType == DMethod.MethodType.Constructor)
-					{
-						explicitCtorFound = true;
-						if (!dm.IsPublic)
-						{
-							var curNode = curBlock;
-							bool pass = false;
-							do
-							{
-								if (curNode == udt.Definition)
-								{
-									pass = true;
-									break;
-								}
-							}
-							while ((curNode = curNode.Parent as IBlockNode) != curNode);
-
-							if (!pass)
-								continue;
-						}
-
-						constructors.Add(dm);
-					}
-				}
-
-				if (constructors.Count == 0)
+				bool explicitCtorFound;
+				
+				if (!CtorScan.ScanForConstructors(nex, curBlock, udt, _ctors, out explicitCtorFound))
 				{
 					if (explicitCtorFound)
 					{
@@ -207,17 +220,13 @@ namespace D_Parser.Completion
 					else
 					{
 						// Introduce default constructor
-						constructors.Add(new DMethod(DMethod.MethodType.Constructor)
+						_ctors.Add(new MemberSymbol(new DMethod(DMethod.MethodType.Constructor)
 						{
 							Description = "Default constructor for " + udt.Name,
 							Parent = udt.Definition
-						});
+						}, udt, nex));
 					}
 				}
-
-				// Wrapp all ctor members in MemberSymbols
-				foreach (var ctor in constructors)
-					_ctors.Add(new MemberSymbol(ctor, t, nex.Type));
 			}
 		}
 
