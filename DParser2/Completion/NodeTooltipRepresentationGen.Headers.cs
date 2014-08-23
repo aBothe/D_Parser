@@ -40,6 +40,7 @@ namespace D_Parser.Completion.ToolTips
 		NoLineBreakedMethodParameters = 1<<0,
 		NoDefaultParams = 1<<1,
 		NoEnsquaredDefaultParams = 1<<2,
+		NoTemplateConstraints = 1<<3,
 	}
 
 	public partial class NodeTooltipRepresentationGen
@@ -188,6 +189,8 @@ namespace D_Parser.Completion.ToolTips
 			}
 
 			sb.Append(')');
+
+			AppendConstraint(dm, sb);
 		}
 
 		void S(DClassLike dc, StringBuilder sb, DeducedTypeDictionary deducedTypes = null)
@@ -209,6 +212,8 @@ namespace D_Parser.Completion.ToolTips
 
 				RemoveLastChar(sb, ',');
 			}
+
+			AppendConstraint(dc, sb);
 		}
 
 		void AttributesTypeAndName(DNode dn, StringBuilder sb,
@@ -224,6 +229,23 @@ namespace D_Parser.Completion.ToolTips
 			sb.Append(dn.Name);
 
 			AppendTemplateParams(dn, sb, highlightTemplateParam, deducedTypes);
+		}
+
+		const int MaxTemplateConstraintExprLength = 200;
+		void AppendConstraint(DNode n, StringBuilder sb)
+		{
+			if (n.TemplateConstraint == null || (SignatureFlags & TooltipSignatureFlags.NoTemplateConstraints) != 0)
+				return;
+
+			if ((SignatureFlags & TooltipSignatureFlags.NoLineBreakedMethodParameters) == 0)
+				sb.AppendLine();
+			else
+				sb.Append(' ');
+			
+			var constr = n.TemplateConstraint.ToString();
+			if (constr.Length > MaxTemplateConstraintExprLength)
+				constr = constr.Substring(0, MaxTemplateConstraintExprLength) + "...";
+			sb.AppendLine(DCodeToMarkup("if(" + constr + ")"));
 		}
 
 		void AppendTemplateParams(DNode dn, StringBuilder sb, int highlightTemplateParam = -1, DeducedTypeDictionary deducedTypes = null)
