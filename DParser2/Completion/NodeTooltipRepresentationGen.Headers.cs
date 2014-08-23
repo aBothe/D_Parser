@@ -174,7 +174,7 @@ namespace D_Parser.Completion.ToolTips
 
 					if (isOpt)
 					{
-						sb.Append(" = ").Append((parm as DVariable).Initializer.ToString());
+						sb.Append(" = ").Append(DCodeToMarkup((parm as DVariable).Initializer.ToString()));
 						if(addSqareBrackets)
 							sb.Append(']');
 					}
