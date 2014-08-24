@@ -105,6 +105,8 @@ namespace D_Parser.Completion.Providers
 			DTokens.__PRETTY_FUNCTION__,
 			DTokens.__TIMESTAMP__,
 			DTokens.__TIME__,
+			DTokens.__VENDOR__,
+			DTokens.__VERSION__,
 		};
 
 		static bool IsBlockKw(byte tk)
