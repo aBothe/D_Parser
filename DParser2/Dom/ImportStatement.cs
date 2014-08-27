@@ -145,10 +145,10 @@ namespace D_Parser.Dom
 		{
 			var sb = new StringBuilder ();
 
-			if (IsPublic)
-				sb.Append ("public ");
-			if (IsStatic)
-				sb.Append ("static ");
+			if (Attributes != null)
+				foreach (var attr in Attributes)
+					sb.Append (attr.ToString()).Append(' ');
+
 			sb.Append ("import ");
 
 			foreach (var imp in Imports)
