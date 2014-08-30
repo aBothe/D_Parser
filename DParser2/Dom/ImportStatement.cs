@@ -141,11 +141,16 @@ namespace D_Parser.Dom
 		public List<Import> Imports = new List<Import>();
 		public ImportBindings ImportBindList;
 
-		public override string ToCode()
+		public override string ToCode ()
+		{
+			return ToCode (true);
+		}
+
+		public string ToCode(bool attributes)
 		{
 			var sb = new StringBuilder ();
 
-			if (Attributes != null)
+			if (attributes && Attributes != null)
 				foreach (var attr in Attributes)
 					sb.Append (attr.ToString()).Append(' ');
 
