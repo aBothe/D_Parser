@@ -219,7 +219,13 @@ namespace D_Parser.Refactoring
 		public override void VisitDNode(DNode n)
 		{
 			if (CheckNode(n))
+			{
+				byte type;
+				if (DoPrimaryIdCheck(n.NameHash, out type))
+					AddResult(n, type);
+
 				base.VisitDNode(n);
+			}
 		}
 
 		public override void VisitBlock(DBlockNode block)
@@ -237,6 +243,10 @@ namespace D_Parser.Refactoring
 
 				if (metaBlockEnumGotElements)
 					ContinueEnumStaticStatements (en, block.EndLocation);
+
+				byte type;
+				if (DoPrimaryIdCheck(block.NameHash, out type))
+					AddResult(block, type);
 
 				base.VisitDNode(block);
 				VisitChildren(block);
@@ -312,16 +322,16 @@ namespace D_Parser.Refactoring
 				conditionStack.Peek ().AddDebugCondition (s);
 		}
 
+		public override void Visit(DEnum n)
+		{
+			if (CheckNode(n))
+				base.Visit(n);
+		}
+
 		public override void Visit (DClassLike n)
 		{
-			if (!CheckNode(n))
-				return;
-
-			byte type;
-			if (DoPrimaryIdCheck (n.NameHash, out type))
-				AddResult (n, type);
-
-			base.Visit (n);
+			if (CheckNode(n))
+				base.Visit (n);
 		}
 
 		public override void Visit (DMethod dm)
