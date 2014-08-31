@@ -66,9 +66,10 @@ namespace TestTool
 			var ccf = new ConditionalCompilationFlags(new[]{ Environment.OSVersion.Platform == PlatformID.Unix ?"Posix":"Windows", "D2" }, 1, true, null, 0);
 
 			Console.WriteLine ("Dump parse errors:");
-
+			int modCount = 0;
 			foreach (var dir in dirs)
 				foreach (var mod in GlobalParseCache.EnumModulesRecursively(dir)) {
+					modCount++;
 					if (mod.ParseErrors.Count > 0) {
 						Console.WriteLine (" "+mod.FileName);
 						Console.WriteLine ("  ("+mod.ModuleName+")");
@@ -79,6 +80,8 @@ namespace TestTool
 						}
 					}
 				}
+
+			Console.WriteLine("{0} modules parsed.", modCount);
 
 			Console.WriteLine();
 			Console.Write("Press any key to continue . . . ");
