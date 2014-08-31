@@ -67,10 +67,10 @@ namespace D_Parser.Refactoring
 			return new CodeLocation(1, 1);
 		}
 
-		public static void GenerateImportStatementForNode(INode n, IEditorData ed, Action<CodeLocation, string> ci)
+		public static void GenerateImportStatementForNode(INode n, IEditorData ed, ITextDocument doc)
 		{
-			var loc = new CodeLocation(0, FindLastImportStatementEndLocation(ed.SyntaxTree, ed.ModuleCode).Line+1);
-			ci(loc, "import " + (n.NodeRoot as DModule).ModuleName + ";" + Environment.NewLine);
+			var off = doc.LocationToOffset(FindLastImportStatementEndLocation(ed.SyntaxTree, ed.ModuleCode).Line + 1, 0);
+			doc.Insert(off, "import " + (n.NodeRoot as DModule).ModuleName + ";" + doc.EolMarker);
 		}
 	}
 }
