@@ -104,8 +104,18 @@ namespace D_Parser.Refactoring
 			// Get the first scope that contains import statements
 			var importsToSort = new List<ImportStatement> ();
 
-			var allAttrs = new List<DAttribute>();
 			var allSharedAttrs = new List<DAttribute>();
+			foreach (var mb in scope.MetaBlocks)
+			{
+				var mba = mb as AttributeMetaDeclaration;
+				if (mba == null)
+					continue;
+				else if(mba is AttributeMetaDeclarationSection)
+					allSharedAttrs.AddRange(mba.AttributeOrCondition);
+				else if (mba is AttributeMetaDeclarationBlock)
+					allSharedAttrs.AddRange(mba.AttributeOrCondition);
+				//TODO: Else-attributes
+			}
 
 			while (scope != null && importsToSort.Count == 0) {
 				foreach (var ss in scope.StaticStatements) {
@@ -113,17 +123,6 @@ namespace D_Parser.Refactoring
 					if (iss != null)
 					{
 						importsToSort.Add(iss);
-						if(iss.Attributes != null)
-							foreach (var attr in iss.Attributes)
-							{
-								if (allAttrs.Contains(attr))
-								{
-									if (!allSharedAttrs.Contains(attr))
-										allSharedAttrs.Add(attr);
-								}
-								else
-									allAttrs.Add(attr);
-							}
 					}
 				}
 			}
