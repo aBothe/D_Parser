@@ -207,7 +207,11 @@ namespace D_Parser.Parser
 				else // Normal class/module bodies
 				{
 					if (p.laKind == DTokens.Module)
+					{
 						tempBlock.Add(p.ModuleDeclaration());
+						if (p.IsEOF)
+							return false;
+					}
 
 					p.DeclDef(tempBlock);
 				}

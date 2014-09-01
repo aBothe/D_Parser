@@ -7,7 +7,7 @@ namespace D_Parser.Completion.Providers
 		
 		protected override void BuildCompletionDataInternal(IEditorData Editor, char enteredChar)
 		{
-			CompletionDataGenerator.AddModule(Editor.SyntaxTree);
+			CompletionDataGenerator.AddModule(Editor.SyntaxTree, Editor.SyntaxTree.ModuleName);
 		}
 	}
 }
