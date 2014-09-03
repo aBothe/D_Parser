@@ -1419,10 +1419,11 @@ namespace D_Parser.Parser
 
 			unchecked
 			{
-				if ((char)ReaderRead() != '\'')
-				{
+				if((char)ReaderPeek() != '\'')
 					OnError(y, x, String.Format("Char not terminated"));
-				}
+
+				char n;
+				while (!((n = (char)ReaderRead ()) == '\'' || n == 0));
 			}
 			return Token(DTokens.Literal, x, y, Col, Line, string.IsNullOrEmpty(surrogatePair) ? (object)chValue : surrogatePair, LiteralFormat.CharLiteral, surrogatePair == null ? LiteralSubformat.Utf8 : LiteralSubformat.Utf16, escapeSequence);
 		}

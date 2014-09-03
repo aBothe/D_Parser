@@ -62,6 +62,20 @@ namespace Tests
 		}
 
 		[Test]
+		public void CharLiteralBug()
+		{
+			string code = "'@@'";
+			var sr = new StringReader (code);
+
+			var lex = new Lexer (sr);
+			lex.NextToken ();
+
+			Assert.That (lex.LexerErrors.Count, Is.EqualTo(1));
+			Assert.That (lex.LookAhead.Kind, Is.EqualTo(DTokens.Literal));
+			Assert.That (lex.LookAhead.LiteralFormat, Is.EqualTo(LiteralFormat.CharLiteral));
+		}
+
+		[Test]
 		public void Unicode1()
 		{
 			var lex = new Lexer (new StringReader ("'ߞ'"));
