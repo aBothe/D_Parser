@@ -4699,7 +4699,7 @@ namespace D_Parser.Parser
 						{
 							Step();
 							if (Expect(Identifier))
-								outer = new PostfixExpression_Access() { AccessExpression = new IdentifierExpression(la.Value), PostfixForeExpression = outer };
+								outer = new PostfixExpression_Access() { AccessExpression = new IdentifierExpression(t.Value), PostfixForeExpression = outer };
 							else
 								outer = new TokenExpression(Incomplete);
 							Step();
