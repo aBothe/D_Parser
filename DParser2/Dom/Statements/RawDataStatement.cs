@@ -38,6 +38,7 @@ namespace D_Parser.Dom.Statements
 					case "di":
 						tp = DataType.DWord;
 						return true;
+					case "dq":
 					case "dl":
 						tp = DataType.QWord;
 						return true;
