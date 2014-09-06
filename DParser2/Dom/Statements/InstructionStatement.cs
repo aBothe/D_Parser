@@ -1225,9 +1225,13 @@ namespace D_Parser.Dom.Statements
 				[Incomplete]
 				subss,
 				[Incomplete]
+				syscall,
+				[Incomplete]
 				sysenter,
 				[Incomplete]
 				sysexit,
+				[Incomplete]
+				sysret,
 				[Incomplete]
 				test,
 				[Incomplete]
