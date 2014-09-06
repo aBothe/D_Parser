@@ -1980,6 +1980,22 @@ namespace D_Parser.Dom.Statements
 				[Incomplete]
 				vfmsubadd231ps,
 
+				// SHA
+				[Incomplete]
+				sha1rnds4,
+				[Incomplete]
+				sha1nexte,
+				[Incomplete]
+				sha1msg1,
+				[Incomplete]
+				sha1msg2,
+				[Incomplete]
+				sha256rnds2,
+				[Incomplete]
+				sha256msg1,
+				[Incomplete]
+				sha256msg2,
+
 				// SSSE3
 				[Incomplete]
 				psignb,
