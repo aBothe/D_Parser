@@ -312,6 +312,8 @@ namespace D_Parser.Dom.Statements
 				[Incomplete]
 				cmpxchg8b, // NOTE: This is mispelled in the spec, which has "cmpxch8b"
 				[Incomplete]
+				cmpxchg16b, // NOTE: Not listed in spec.
+				[Incomplete]
 				cmpxchg,
 				[Incomplete]
 				comisd,
