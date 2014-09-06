@@ -1357,11 +1357,26 @@ namespace D_Parser.Dom.Statements
 				[Incomplete]
 				xsave,
 				[Incomplete]
+				[Invalid32Bit]
+				xsave64,
+				[Incomplete]
+				xsaveopt,
+				[Incomplete]
+				[Invalid32Bit]
+				xsaveopt64,
+				[Incomplete]
 				xrstor,
+				[Incomplete]
+				[Invalid32Bit]
+				xrstor64,
 				[Incomplete]
 				xsetbv,
 				[Incomplete]
 				xgetbv,
+				[Incomplete]
+				vldmxcsr,
+				[Incomplete]
+				vstmxcsr,
 
 				[Incomplete]
 				[Invalid32Bit]
