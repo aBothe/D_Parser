@@ -1915,7 +1915,7 @@ namespace D_Parser.Parser
 				Expect(CloseParenthesis);
 			}
             if(!IsEOF)
-			    inv.Body=BlockStatement();
+			    inv.Body=BlockStatement(inv);
 			inv.EndLocation = t.EndLocation;
 			return inv;
 		}
