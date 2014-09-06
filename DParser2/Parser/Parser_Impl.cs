@@ -4635,7 +4635,10 @@ namespace D_Parser.Parser
 				case Literal:
 					Step();
 					return new IdentifierExpression(t.LiteralValue, t.LiteralFormat, t.Subformat) { Location = t.Location, EndLocation = t.EndLocation };
-				
+				case This:
+					Step();
+					return new TokenExpression(This) { Location = t.Location, EndLocation = t.EndLocation };
+
 				// AsmTypePrefix
 				case DTokens.Byte:
 				case DTokens.Short:
