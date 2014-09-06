@@ -1860,6 +1860,126 @@ namespace D_Parser.Dom.Statements
 				[Invalid32Bit]
 				pushfq,
 
+				// AES
+				[Incomplete]
+				aesenc,
+				[Incomplete]
+				vaesenc,
+				[Incomplete]
+				aesenclast,
+				[Incomplete]
+				vaesenclast,
+				[Incomplete]
+				aesdec,
+				[Incomplete]
+				vaesdec,
+				[Incomplete]
+				aesdeclast,
+				[Incomplete]
+				vaesdeclast,
+				[Incomplete]
+				aesimc,
+				[Incomplete]
+				vaesimc,
+				[Incomplete]
+				aeskeygenassist,
+				[Incomplete]
+				vaeskeygenassist,
+
+				// FSGSBase
+				[Incomplete]
+				rdfsbase,
+				[Incomplete]
+				rdgsbase,
+				[Incomplete]
+				wrfsbase,
+				[Incomplete]
+				wrgsbase,
+
+				// RDRAND
+				[Incomplete]
+				rdrand,
+
+				// FP16C
+				[Incomplete]
+				vcvtph2ps,
+				[Incomplete]
+				vcvtps2ph,
+
+				// FMA
+				[Incomplete]
+				vfmadd132pd,
+				[Incomplete]
+				vfmadd132ps,
+				[Incomplete]
+				vfmadd132sd,
+				[Incomplete]
+				vfmadd132ss,
+				[Incomplete]
+				vfmadd213pd,
+				[Incomplete]
+				vfmadd213ps,
+				[Incomplete]
+				vfmadd213sd,
+				[Incomplete]
+				vfmadd213ss,
+				[Incomplete]
+				vfmadd231pd,
+				[Incomplete]
+				vfmadd231ps,
+				[Incomplete]
+				vfmadd231sd,
+				[Incomplete]
+				vfmadd231ss,
+				[Incomplete]
+				vfmaddsub132pd,
+				[Incomplete]
+				vfmaddsub132ps,
+				[Incomplete]
+				vfmaddsub213pd,
+				[Incomplete]
+				vfmaddsub213ps,
+				[Incomplete]
+				vfmaddsub231pd,
+				[Incomplete]
+				vfmaddsub231ps,
+				[Incomplete]
+				vfmsub132pd,
+				[Incomplete]
+				vfmsub132ps,
+				[Incomplete]
+				vfmsub132sd,
+				[Incomplete]
+				vfmsub132ss,
+				[Incomplete]
+				vfmsub213pd,
+				[Incomplete]
+				vfmsub213ps,
+				[Incomplete]
+				vfmsub213sd,
+				[Incomplete]
+				vfmsub213ss,
+				[Incomplete]
+				vfmsub231pd,
+				[Incomplete]
+				vfmsub231ps,
+				[Incomplete]
+				vfmsub231sd,
+				[Incomplete]
+				vfmsub231ss,
+				[Incomplete]
+				vfmsubadd132pd,
+				[Incomplete]
+				vfmsubadd132ps,
+				[Incomplete]
+				vfmsubadd213pd,
+				[Incomplete]
+				vfmsubadd213ps,
+				[Incomplete]
+				vfmsubadd231pd,
+				[Incomplete]
+				vfmsubadd231ps,
+
 				// SSSE3
 				[Incomplete]
 				psignb,
