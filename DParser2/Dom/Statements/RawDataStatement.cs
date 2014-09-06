@@ -31,6 +31,7 @@ namespace D_Parser.Dom.Statements
 					case "db":
 						tp = DataType.Byte;
 						return true;
+					case "dw":
 					case "ds":
 						tp = DataType.Word;
 						return true;
