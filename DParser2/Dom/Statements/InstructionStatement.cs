@@ -965,6 +965,8 @@ namespace D_Parser.Dom.Statements
 				[Incomplete]
 				popad,
 				[Incomplete]
+				popcnt,
+				[Incomplete]
 				popf,
 				[Incomplete]
 				[Invalid64Bit]
