@@ -1331,6 +1331,8 @@ namespace D_Parser.Dom.Statements
 				[Incomplete]
 				pfrcpit1,
 				[Incomplete]
+				pfrcpit2,
+				[Incomplete]
 				pfrsqit1,
 				[Incomplete]
 				pfrsqrt,
