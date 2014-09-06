@@ -854,6 +854,9 @@ namespace D_Parser.Dom.Statements
 				[Incomplete]
 				movsx,
 				[Incomplete]
+				[Invalid32Bit]
+				movsxd,
+				[Incomplete]
 				movupd,
 				[Incomplete]
 				movups,
