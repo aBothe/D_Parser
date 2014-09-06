@@ -1030,7 +1030,7 @@ namespace D_Parser.Dom.Statements
 				[Incomplete]
 				punpckhqdq,
 				[Incomplete]
-				punckhwd,
+				punpckhwd, // NOTE: Mispelled in documentation.
 				[Incomplete]
 				punpcklbw,
 				[Incomplete]
