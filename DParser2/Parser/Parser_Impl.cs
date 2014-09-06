@@ -281,26 +281,28 @@ namespace D_Parser.Parser
 					module.Add(ass);
 					break;
 				case Mixin:
-					if (Peek(1).Kind == Template)
-						module.Add(TemplateDeclaration(module));
-
-					//TemplateMixin
-					else if (Lexer.CurrentPeekToken.Kind == Identifier)
+					switch(Peek(1).Kind)
 					{
-						var tmx = TemplateMixin(module);
-						if (tmx.MixinId == null)
-							module.Add(tmx);
-						else
-							module.Add(new NamedTemplateMixinNode(tmx));
-					}
+						case Template:
+							module.Add (TemplateDeclaration (module));
+							break;
 
-					//MixinDeclaration
-					else if (Lexer.CurrentPeekToken.Kind == OpenParenthesis)
-						module.Add(MixinDeclaration(module, null));
-					else
-					{
-						Step();
-						SynErr(Identifier);
+						case Dot:
+						case Identifier://TemplateMixin
+							var tmx = TemplateMixin (module);
+							if (tmx.MixinId == null)
+								module.Add (tmx);
+							else
+								module.Add (new NamedTemplateMixinNode (tmx));
+							break;
+
+						case OpenParenthesis:
+							module.Add (MixinDeclaration (module, null));
+							break;
+						default:
+							Step ();
+							SynErr (Identifier);
+							break;
 					}
 					break;
 				case OpenCurlyBrace:

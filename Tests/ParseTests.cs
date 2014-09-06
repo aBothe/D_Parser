@@ -215,6 +215,15 @@ void bar();");
 		}
 
 		[Test]
+		public void SyntaxError_Issue166()
+		{
+			var s = "mixin .mix;";
+			var mod = DParser.ParseString(s);
+
+			Assert.AreEqual(mod.ParseErrors.Count, 0);
+		}
+
+		[Test]
 		public void TestSyntaxError2()
 		{
 			var s = "class Foo( if(is(T==float) {} class someThingElse {}";
