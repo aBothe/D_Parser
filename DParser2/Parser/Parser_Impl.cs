@@ -882,6 +882,11 @@ namespace D_Parser.Parser
 
 					if(Expect(Assign))
 					{
+						// alias fnRtlAllocateHeap = extern(Windows) void* function(void* HeapHandle, uint Flags, size_t Size) nothrow;
+						while(IsAttributeSpecifier)
+							AttributeSpecifier(Scope);
+						ApplyAttributes(dv);
+
 						Lexer.PushLookAheadBackup();
 						var wkTypeParsingBackup = AllowWeakTypeParsing;
 						AllowWeakTypeParsing = true;

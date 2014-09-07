@@ -407,6 +407,15 @@ auto i = a2.get;";
 		}
 
 		[Test]
+		public void SyntaxError_Issue153()
+		{
+			var s = @"alias fnRtlAllocateHeap = extern(Windows) void* function(void* HeapHandle, uint Flags, size_t Size) nothrow;";
+			var mod = DParser.ParseString(s);
+
+			Assert.AreEqual(0, mod.ParseErrors.Count);
+		}
+
+		[Test]
 		public void TestSyntaxError2()
 		{
 			var s = "class Foo( if(is(T==float) {} class someThingElse {}";
