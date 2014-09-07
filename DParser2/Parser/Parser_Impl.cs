@@ -2220,8 +2220,14 @@ namespace D_Parser.Parser
 		
 		bool IsFunctionAttribute
 		{
-			get { return IsMemberFunctionAttribute(laKind) || laKind == At; }
+			get { return IsFunctionAttribute_(laKind); }
 		}
+
+		bool IsFunctionAttribute_(byte kind)
+		{
+			return IsMemberFunctionAttribute(kind) || kind == At;
+		}
+
 
 		void FunctionAttributes(DNode n)
 		{
@@ -3506,8 +3512,9 @@ namespace D_Parser.Parser
 				return k == Comma || k == Identifier || k == CloseSquareBracket || IsBasicType(k) || IsStorageClass(k);
 			}
 
-			// (...) => |
-			return k == GoesTo;
+			// (...) => | 
+			// (...) pure @nothrow => |
+			return k == GoesTo || IsFunctionAttribute_(k);
 		}
 
 		bool IsFunctionLiteral()
@@ -3570,6 +3577,8 @@ namespace D_Parser.Parser
 
 		void LambdaBody(DMethod anonymousMethod)
 		{
+			FunctionAttributes (anonymousMethod);
+
 			if (Expect(GoesTo))
 			{
 				if (laKind == OpenCurlyBrace)

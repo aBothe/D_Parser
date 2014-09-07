@@ -385,6 +385,16 @@ module asdf;";
 		}
 
 		[Test]
+		public void SyntaxError_Issue155()
+		{
+			var s = @"static assert(cast(bool)set.isSet(fd) == cast(bool)(() @trusted => FD_ISSET(fd, fdset))());
+enum dg7761 = (int a) pure => 2 * a;";
+			var mod = DParser.ParseString(s);
+
+			Assert.AreEqual(0, mod.ParseErrors.Count);
+		}
+
+		[Test]
 		public void TestSyntaxError2()
 		{
 			var s = "class Foo( if(is(T==float) {} class someThingElse {}";
