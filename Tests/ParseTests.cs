@@ -342,6 +342,15 @@ static assert(!isBar5832c!(Bar5832!1234));";
 		}
 
 		[Test]
+		public void SyntaxError_Issue158()
+		{
+			var s = @"int array1[3] = [1:1,2,0:3];";
+			var mod = DParser.ParseString(s);
+
+			Assert.AreEqual(mod.ParseErrors.Count, 0);
+		}
+
+		[Test]
 		public void TestSyntaxError2()
 		{
 			var s = "class Foo( if(is(T==float) {} class someThingElse {}";

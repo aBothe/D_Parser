@@ -3395,8 +3395,16 @@ namespace D_Parser.Parser
 					if (laKind == CloseSquareBracket)
 						break;
 
-					var keyExpr = AssignExpression(scope);
-					var valExpr = Expect(Colon) ? (nonInitializer ? AssignExpression(scope) : NonVoidInitializer(scope)) : null;
+					var keyExpr = nonInitializer ? AssignExpression(scope) : NonVoidInitializer(scope);
+					IExpression valExpr;
+					if (laKind == DTokens.Colon) { // http://dlang.org/expression.html#AssocArrayLiteral Spec failure
+						Step ();
+						valExpr = nonInitializer ? AssignExpression (scope) : NonVoidInitializer (scope);
+					}
+					else {
+						valExpr = keyExpr;
+						keyExpr = null; // Key will be deduced by incrementing the first key value ever given in the literal
+					}
 
 					ae.Elements.Add(new KeyValuePair<IExpression,IExpression>(keyExpr,valExpr));
 				}
