@@ -5,7 +5,7 @@ namespace D_Parser.Dom.Statements
 	public class VersionSpecification : AbstractStatement, StaticStatement
 	{
 		public string SpecifiedId;
-		public int SpecifiedNumber;
+		public ulong SpecifiedNumber;
 
 		public override string ToCode()
 		{

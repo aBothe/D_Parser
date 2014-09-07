@@ -220,9 +220,9 @@ namespace D_Parser.Parser
 								SynErr (t.Kind, "Integer literal expected!");
 							try {
 								if (vs != null)
-									vs.SpecifiedNumber = Convert.ToInt32 (t.LiteralValue);
+									vs.SpecifiedNumber = Convert.ToUInt64 (t.LiteralValue);
 								else
-									ds.SpecifiedDebugLevel = Convert.ToInt32 (t.LiteralValue);
+									ds.SpecifiedDebugLevel = Convert.ToUInt64 (t.LiteralValue);
 							} catch {
 							}
 						} else if (laKind == Identifier) {
@@ -428,15 +428,15 @@ namespace D_Parser.Parser
 							SynErr(t.Kind, "Version number must be an integer");
 						else
 						{
-							int v;
+							ulong v;
 							try
 							{
-								v = Convert.ToInt32(t.LiteralValue);
+								v = Convert.ToUInt64(t.LiteralValue);
 							}
 							catch
 							{
-								SemErr(DTokens.Version, "Can't handle " + t.LiteralValue.ToString() + " as version constraint; taking int.max instead");
-								v = int.MaxValue;
+								SemErr(DTokens.Version, "Can't handle " + t.LiteralValue.ToString() + " as version constraint; taking ulong.max instead");
+								v = ulong.MaxValue;
 							}
 							c = new VersionCondition(v) { IdLocation = t.Location };
 						}
@@ -475,15 +475,15 @@ namespace D_Parser.Parser
 							SynErr(t.Kind, "Debug level must be an integer");
 						else
 						{
-							int v;
+							ulong v;
 							try
 							{
-								v = Convert.ToInt32(t.LiteralValue);
+								v = Convert.ToUInt64(t.LiteralValue);
 							}
 							catch
 							{
-								SemErr(DTokens.Debug, "Can't handle " + t.LiteralValue.ToString() + " as debug constraint; taking int.max instead");
-								v = int.MaxValue;
+								SemErr(DTokens.Debug, "Can't handle " + t.LiteralValue.ToString() + " as debug constraint; taking ulong.max instead");
+								v = ulong.MaxValue;
 							}
 
 							c = new DebugCondition(v) { IdLocation = t.Location };

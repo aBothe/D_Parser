@@ -343,7 +343,7 @@ namespace D_Parser.Dom
 
 		public string VersionId { get { return Strings.TryGet(VersionIdHash); } }
 
-		public readonly int VersionNumber;
+		public readonly ulong VersionNumber;
 		public CodeLocation IdLocation;
 
 		public VersionCondition(string versionIdentifier)
@@ -352,7 +352,7 @@ namespace D_Parser.Dom
 			Strings.Add(versionIdentifier); 
 		}
 
-		public VersionCondition(int versionNumber)
+		public VersionCondition(ulong versionNumber)
 		{
 			VersionNumber = versionNumber;
 		}
@@ -385,7 +385,7 @@ namespace D_Parser.Dom
 
 		public string DebugId { get { return Strings.TryGet(DebugIdHash); } }
 
-		public readonly int DebugLevel;
+		public readonly ulong DebugLevel;
 		public CodeLocation IdLocation;
 
 		public DebugCondition()
@@ -398,7 +398,7 @@ namespace D_Parser.Dom
 			Strings.Add(debugIdentifier); 
 		}
 
-		public DebugCondition(int debugLevel)
+		public DebugCondition(ulong debugLevel)
 		{
 			DebugLevel = debugLevel;
 		}

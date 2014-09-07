@@ -15,10 +15,10 @@ namespace D_Parser.Completion
 
 		public virtual ParseCacheView ParseCache { get; set; }
 		
-		public int VersionNumber { get; set; }
+		public ulong VersionNumber { get; set; }
 		public string[] GlobalVersionIds { get; set; }
 		public bool IsDebug {set;get;}
-		public int DebugLevel { get; set; }
+		public ulong DebugLevel { get; set; }
 		public string[] GlobalDebugIds { get; set; }
 		
 		public virtual void ApplyFrom(IEditorData data)
@@ -46,10 +46,10 @@ namespace D_Parser.Completion
 
 		ParseCacheView ParseCache { get; }
 
-		int VersionNumber { get; }
+		ulong VersionNumber { get; }
 		string[] GlobalVersionIds { get; }
 		bool IsDebug{get;}
-		int DebugLevel { get; }
+		ulong DebugLevel { get; }
 		string[] GlobalDebugIds { get; }
 	}
 }

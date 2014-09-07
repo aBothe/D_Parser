@@ -5,7 +5,7 @@ namespace D_Parser.Dom.Statements
 	public class DebugSpecification : AbstractStatement, StaticStatement
 	{
 		public string SpecifiedId;
-		public int SpecifiedDebugLevel;
+		public ulong SpecifiedDebugLevel;
 
 		public override string ToCode()
 		{

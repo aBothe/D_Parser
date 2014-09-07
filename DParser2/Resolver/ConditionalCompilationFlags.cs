@@ -18,24 +18,24 @@ namespace D_Parser.Resolver
 		#region Properties
 		protected List<string> setVersions = new List<string>();
 		public IEnumerable<string> Versions {get{ return setVersions;}}
-		protected int versionNumber = 0;
-		public int VersionNumber{get{return versionNumber;}}
+		protected ulong versionNumber = 0;
+		public ulong VersionNumber{get{return versionNumber;}}
 
 		protected bool debugFlagOverride = false;
 		protected List<string> setDebugVersions = new List<string>();
 		public IEnumerable<string> DebugVersions {get{ return setDebugVersions;}}
-		protected int debugLevel = 0;
-		public int DebugLevel {get{ return debugLevel; }}
+		protected ulong debugLevel = 0;
+		public ulong DebugLevel {get{ return debugLevel; }}
 
 
 		public bool IsVersionSupported(string versionId)
 		{ return setVersions.Contains(versionId); }
-		public bool IsVersionSupported(int versionNumber)
+		public bool IsVersionSupported(ulong versionNumber)
 		{ return versionNumber >= this.versionNumber || setVersions.Contains(versionNumber.ToString()); }
 
 		public bool IsDebugIdSet(string id)
 		{ return setDebugVersions.Contains(id); }
-		public bool IsDebugLevel(int lvl)
+		public bool IsDebugLevel(ulong lvl)
 		{ return lvl >= debugLevel; }
 		public bool IsDebug
 		{ get { return debugFlagOverride || debugLevel != 0 || setDebugVersions.Count != 0; } }
@@ -46,8 +46,8 @@ namespace D_Parser.Resolver
 		public ConditionalCompilationFlags(IEditorData ed)
 			: this(ed.GlobalVersionIds, ed.VersionNumber, ed.IsDebug, ed.GlobalDebugIds, ed.DebugLevel) { }
 
-		public ConditionalCompilationFlags(IEnumerable<string> definedVersionIdentifiers, int versionNumber,
-			bool debug,IEnumerable<string> definedDebugIdentifiers=null, int debugLevel=0)
+		public ConditionalCompilationFlags(IEnumerable<string> definedVersionIdentifiers, ulong versionNumber,
+			bool debug,IEnumerable<string> definedDebugIdentifiers=null, ulong debugLevel=0)
 		{
 			if (definedVersionIdentifiers != null)
 				setVersions.AddRange(definedVersionIdentifiers);
@@ -193,7 +193,7 @@ namespace D_Parser.Resolver
 				setVersions.Add(id);
 		}
 
-		public void AddVersionCondition(int v)
+		public void AddVersionCondition(ulong v)
 		{
 			if (v > versionNumber)
 				versionNumber = v;
@@ -213,7 +213,7 @@ namespace D_Parser.Resolver
 				setDebugVersions.Add(id);
 		}
 
-		public void AddDebugCondition(int lvl)
+		public void AddDebugCondition(ulong lvl)
 		{
 			//if (lvl > debugLevel) -- 
 			debugLevel = lvl;

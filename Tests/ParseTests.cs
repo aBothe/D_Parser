@@ -242,6 +242,16 @@ void bar();");
 		}
 
 		[Test]
+		public void SyntaxError_Issue164()
+		{
+			var s = @"// bug 6584
+version(9223372036854775807){}
+debug(9223372036854775807){}";
+			var mod = DParser.ParseString(s);
+
+			Assert.AreEqual(mod.ParseErrors.Count, 0);
+		}
+
 		public void TestSyntaxError2()
 		{
 			var s = "class Foo( if(is(T==float) {} class someThingElse {}";

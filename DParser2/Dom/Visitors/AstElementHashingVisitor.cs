@@ -135,12 +135,12 @@ namespace D_Parser.Dom.Visitors
 
 		public ulong VisitAttribute(VersionCondition a)
 		{
-			return 1000193 + (ulong)(a.VersionIdHash == 0 ? a.VersionNumber : a.VersionIdHash) << 32;
+			return 1000193 + (a.VersionIdHash == 0 ? a.VersionNumber : (ulong)a.VersionIdHash) << 32;
 		}
 
 		public ulong VisitAttribute(DebugCondition a)
 		{
-			return 1000199 + (ulong)(a.DebugIdHash == 0 ? a.DebugLevel : a.DebugIdHash) << 32;
+			return 1000199 + (a.DebugIdHash == 0 ? a.DebugLevel : (ulong)a.DebugIdHash) << 32;
 		}
 
 		public ulong VisitAttribute(StaticIfCondition a)
