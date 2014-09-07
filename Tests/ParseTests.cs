@@ -298,6 +298,41 @@ mixin template node9026()
 		}
 
 		[Test]
+		public void SyntaxError_Issue160()
+		{
+			var s = @"
+struct Bar5832(alias v) {}
+
+template isBar5832a(T)
+{
+    static if (is(T _ : Bar5832!(v), alias v))
+        enum isBar5832a = true;
+    else
+        enum isBar5832a = false;
+}
+template isBar5832b(T)
+{
+    static if (is(T _ : Bar5832!(v), alias int v))
+        enum isBar5832b = true;
+    else
+        enum isBar5832b = false;
+}
+template isBar5832c(T)
+{
+    static if (is(T _ : Bar5832!(v), alias string v))
+        enum isBar5832c = true;
+    else
+        enum isBar5832c = false;
+}
+static assert( isBar5832a!(Bar5832!1234));
+static assert( isBar5832b!(Bar5832!1234));
+static assert(!isBar5832c!(Bar5832!1234));";
+			var mod = DParser.ParseString(s);
+
+			Assert.AreEqual(mod.ParseErrors.Count, 0);
+		}
+
+		[Test]
 		public void TestSyntaxError2()
 		{
 			var s = "class Foo( if(is(T==float) {} class someThingElse {}";
