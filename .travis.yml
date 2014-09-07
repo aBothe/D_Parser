@@ -9,7 +9,7 @@ language: c
 install:
  - sudo add-apt-repository 'deb http://ppa.launchpad.net/inizan-yannick/mono/ubuntu utopic main' 
  - sudo apt-get update -q 
- - sudo apt-get install mono nunit-console 
+ - sudo apt-get install mono-mcs
  
 script:
   - xbuild DParser2.Unittest.sln
