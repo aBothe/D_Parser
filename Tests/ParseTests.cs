@@ -351,6 +351,18 @@ static assert(!isBar5832c!(Bar5832!1234));";
 		}
 
 		[Test]
+		public void SyntaxError_Issue157()
+		{
+			var s = @"module protection.subpkg.explicit;
+
+package(protection) void commonAncestorFoo();
+package(protection.subpkg) void samePkgFoo();";
+			var mod = DParser.ParseString(s);
+
+			Assert.AreEqual(mod.ParseErrors.Count, 0);
+		}
+
+		[Test]
 		public void TestSyntaxError2()
 		{
 			var s = "class Foo( if(is(T==float) {} class someThingElse {}";

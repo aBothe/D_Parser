@@ -2024,12 +2024,18 @@ namespace D_Parser.Parser
 		private void AttributeSpecifier(IBlockNode scope)
 		{
 			DAttribute attr;
-			if(laKind == At)
+			Modifier m;
+
+			switch (laKind) {
+				case DTokens.At:
 				attr = AtAttribute(scope);
-			else if (laKind == Pragma)
-				 attr=_Pragma();
-			else if(laKind == Deprecated)
-			{
+				break;
+
+				case DTokens.Pragma:
+				attr=_Pragma();
+				break;
+
+				case DTokens.Deprecated:
 				Step();
 				var loc = t.Location;
 				IExpression lc = null;
@@ -2040,16 +2046,14 @@ namespace D_Parser.Parser
 					Expect(CloseParenthesis);
 				}
 				attr = new DeprecatedAttribute(loc, t.EndLocation, lc);
-			}
-			else
-			{
-				var m = new Modifier(laKind, la.Value) { Location = la.Location };
-				attr = m;
-				if (laKind == Extern && Lexer.CurrentPeekToken.Kind == OpenParenthesis)
-				{
-					Step(); // Skip extern
+				break;
+
+				case DTokens.Extern:
+				attr = m = new Modifier (laKind, la.Value) { Location = la.Location };
+				Step ();
+				if (laKind == DTokens.OpenParenthesis) {
 					Step(); // Skip (
-	
+
 					var sb = new StringBuilder ();
 					// Check if EOF and append IncompleteID
 					while (!IsEOF && laKind != CloseParenthesis)
@@ -2064,23 +2068,49 @@ namespace D_Parser.Parser
 						m.LiteralContent = DTokens.IncompleteId;
 					else
 						m.LiteralContent = sb.ToString();
-	
+
 					Expect (CloseParenthesis);
 				}
-				else if (laKind == Align && Lexer.CurrentPeekToken.Kind == OpenParenthesis)
-				{
-					Step();
+
+				m.EndLocation = t.EndLocation;
+				break;
+
+				case DTokens.Align:
+				attr = m = new Modifier (laKind, la.Value) { Location = la.Location };
+				Step ();
+				if (laKind == DTokens.OpenParenthesis) {
 					Step();
 					if (Expect(Literal))
 						m.LiteralContent = new IdentifierExpression(t.LiteralValue, t.LiteralFormat);
-	
+
 					if (!Expect(CloseParenthesis))
 						return;
 				}
-				else
-					Step();
-	
+
 				m.EndLocation = t.EndLocation;
+				break;
+
+				case DTokens.Package:
+				attr = m = new Modifier (laKind, la.Value) { Location = la.Location };
+				Step ();
+
+				if (laKind == OpenParenthesis) {
+					// This isn't documented anywhere. http://dlang.org/attribute.html#ProtectionAttribute
+					//TODO: Semantically handle this.
+					Step ();
+					m.LiteralContent = IdentifierList (); // Reassigns a symbol's package/'namespace' or so
+
+					Expect (DTokens.CloseParenthesis);
+				}
+
+				m.EndLocation = t.EndLocation;
+				break;
+
+				default:
+				attr = m = new Modifier (laKind, la.Value) { Location = la.Location };
+				Step ();
+				m.EndLocation = t.EndLocation;
+				break;
 			}
 
 			//TODO: What about these semicolons after e.g. a pragma? Enlist these attributes anyway in the meta decl list?
