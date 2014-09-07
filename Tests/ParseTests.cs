@@ -363,6 +363,28 @@ package(protection.subpkg) void samePkgFoo();";
 		}
 
 		[Test]
+		public void SyntaxError_Issue156()
+		{
+			var s = @"deprecated(""This module will be removed in future release."")
+module imports.a12567;";
+			var mod = DParser.ParseString(s);
+
+			Assert.AreEqual(mod.ParseErrors.Count, 0);
+		}
+
+		[Test]
+		public void SyntaxError_Issue156_()
+		{
+			var s = @"deprecated(""This module will be removed in future release."")
+module imports.a12567;
+
+module asdf;";
+			var mod = DParser.ParseString(s);
+
+			Assert.AreEqual(mod.ParseErrors.Count, 1);
+		}
+
+		[Test]
 		public void TestSyntaxError2()
 		{
 			var s = "class Foo( if(is(T==float) {} class someThingElse {}";

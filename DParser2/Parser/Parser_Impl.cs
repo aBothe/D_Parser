@@ -29,19 +29,6 @@ namespace D_Parser.Parser
 			module.BlockStartLocation = new CodeLocation(1, 1);
 			doc = module;
 
-			// Only one module declaration possible!
-			if (laKind == (Module))
-			{
-				module.Description = GetComments();
-				module.OptionalModuleStatement= ModuleDeclaration();
-				module.Add(module.OptionalModuleStatement);
-				module.Description += CheckForPostSemicolonComment();
-
-				if (module.OptionalModuleStatement.ModuleName!=null)
-					module.ModuleName = module.OptionalModuleStatement.ModuleName.ToString();
-				module.OptionalModuleStatement.ParentNode = doc;
-			}
-
 			// Now only declarations or other statements are allowed!
 			while (!IsEOF)
 			{
@@ -161,6 +148,29 @@ namespace D_Parser.Parser
 
 			switch (laKind)
 			{
+				case DTokens.Module:
+					var mod = module as DModule;
+
+					var ddoc = GetComments ();
+					var ms = ModuleDeclaration ();
+					ms.ParentNode = module;
+					ddoc += CheckForPostSemicolonComment ();
+
+					if (mod != null) {
+						if (mod.StaticStatements.Count != 0 ||
+						    mod.Children.Count != 0)
+							SynErr (DTokens.Module, "Module declaration must stand at a module's beginning.");
+							
+						mod.OptionalModuleStatement = ms;
+						mod.Description = ddoc;
+
+						if (ms.ModuleName!=null)
+							mod.ModuleName = ms.ModuleName.ToString();
+					} else
+						SynErr (DTokens.Module, "Module statements only allowed in module scope.");
+
+					module.Add (ms);
+					break;
 				case Import:
 					module.Add(ImportDeclaration(module));
 					break;
