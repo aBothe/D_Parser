@@ -286,7 +286,9 @@ namespace D_Parser.Parser
 						case Template:
 							module.Add (TemplateDeclaration (module));
 							break;
-
+						
+						case DTokens.__vector:
+						case DTokens.Typeof:
 						case Dot:
 						case Identifier://TemplateMixin
 							var tmx = TemplateMixin (module);

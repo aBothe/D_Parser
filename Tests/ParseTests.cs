@@ -333,6 +333,15 @@ static assert(!isBar5832c!(Bar5832!1234));";
 		}
 
 		[Test]
+		public void SyntaxError_Issue159()
+		{
+			var s = @"mixin typeof(b).Def!(int);";
+			var mod = DParser.ParseString(s);
+
+			Assert.AreEqual(mod.ParseErrors.Count, 0);
+		}
+
+		[Test]
 		public void TestSyntaxError2()
 		{
 			var s = "class Foo( if(is(T==float) {} class someThingElse {}";
