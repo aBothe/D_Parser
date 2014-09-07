@@ -72,7 +72,7 @@ void main()
 
 			var res = TypeReferenceFinder.Scan(ed, null, -1);
 
-			Assert.GreaterOrEqual(6, res.Count);
+			Assert.That(res.Count, Is.GreaterThan(6));
 		}
 	}
 }
