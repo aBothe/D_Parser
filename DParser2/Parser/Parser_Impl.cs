@@ -467,7 +467,7 @@ namespace D_Parser.Parser
 				}
 
 				if (c == null)
-					c = new VersionCondition ("");
+					c = new VersionCondition (0);
 				break;
 
 			case Debug:
