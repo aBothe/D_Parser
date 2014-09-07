@@ -7,9 +7,10 @@ notifications:
 language: c
 
 install:
-  - wget http://simendsjo.me/files/abothe/MonoDevelop.x86.Master.tar.xz
-  - sudo tar -xPf MonoDevelop.x86.Master.tar.xz
+  - sudo deb http://ppa.launchpad.net/inizan-yannick/mono/ubuntu utopic main 
+   - sudo apt-get update -q
+  - sudo apt-get install mono nunit-console
  
 script:
-  - exec /opt/mono/bin/mono /opt/mono/lib/mono/xbuild/12.0/bin/xbuild.exe DParser2.Unittest.sln
-  - exec /opt/mono/bin/mono --debug /opt/mono/lib/mono/4.5/nunit-console.exe Tests/bin/Debug/Tests.dll
+  - mono /opt/mono/lib/mono/xbuild/12.0/bin/xbuild.exe DParser2.Unittest.sln
+  - mono --debug /opt/mono/lib/mono/4.5/nunit-console.exe Tests/bin/Debug/Tests.dll
