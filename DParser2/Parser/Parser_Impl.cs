@@ -3201,11 +3201,17 @@ namespace D_Parser.Parser
 					return tide;
 				// IsExpression
 				case Is:
-					Step();
-					var ise = new IsExpression() { Location = t.Location };
-					Expect(OpenParenthesis);
+					Step ();
+					var ise = new IsExpression () { Location = t.Location };
+					Expect (OpenParenthesis);
 
-					if ((ise.TestedType = Type()) == null)
+					if (laKind == DTokens.This && Lexer.CurrentPeekToken.Kind != DTokens.Dot) {
+						Step ();
+						ise.TestedType = new DTokenDeclaration (DTokens.This) { Location = t.Location, EndLocation = t.EndLocation };
+					} else
+						ise.TestedType = Type ();
+
+					if (ise.TestedType == null)
 						SynErr(laKind, "In an IsExpression, either a type or an expression is required!");
 
 					if (ise.TestedType != null)

@@ -281,6 +281,23 @@ debug(9223372036854775807){}";
 		}
 
 		[Test]
+		public void SyntaxError_Issue161()
+		{
+			var s = @"
+mixin template node9026()
+{
+    static if (is(this == struct))
+        alias typeof(this)* E;
+    else
+        alias typeof(this) E;
+    E prev, next;
+}";
+			var mod = DParser.ParseString(s);
+
+			Assert.AreEqual(mod.ParseErrors.Count, 0);
+		}
+
+		[Test]
 		public void TestSyntaxError2()
 		{
 			var s = "class Foo( if(is(T==float) {} class someThingElse {}";
