@@ -1292,26 +1292,32 @@ namespace D_Parser.Parser
 			return null;
 		}
 
+		void ParseBasicType2(ref ITypeDeclaration td)
+		{
+			while (IsBasicType2())
+			{
+				if (td == null) 
+					td = BasicType2();
+				else { 
+					var ttd = BasicType2(); 
+					if(ttd!=null)
+						ttd.InnerDeclaration = td; 
+					td = ttd; 
+				}
+			}
+		}
+
 		/// <summary>
 		/// Parses a type declarator
 		/// </summary>
 		/// <returns>A dummy node that contains the return type, the variable name and possible parameters of a function declaration</returns>
 		DNode Declarator(ITypeDeclaration basicType,bool IsParam, INode parent)
 		{
-			DNode ret = new DVariable() { Type=basicType, Location = la.Location, Parent = parent };
+			DNode ret = new DVariable() { Location = la.Location, Parent = parent };
 			ApplyAttributes (ret);
 
-			while (IsBasicType2())
-			{
-				if (ret.Type == null) 
-					ret.Type = BasicType2();
-				else { 
-					var ttd = BasicType2(); 
-					if(ttd!=null)
-						ttd.InnerDeclaration = ret.Type; 
-					ret.Type = ttd; 
-				}
-			}
+			ParseBasicType2 (ref basicType);
+			ret.Type = basicType;
 
 			if (laKind != (OpenParenthesis))
 			{
@@ -5454,20 +5460,25 @@ namespace D_Parser.Parser
 
 				startLoc = t.Location;
 				TemplateAliasParameter al;
+				ITypeDeclaration bt;
 
-				if (laKind == Identifier && (Lexer.CurrentPeekToken.Kind == DTokens.Colon || Lexer.CurrentPeekToken.Kind == DTokens.Assign)) {
-					Step ();
-					al = new TemplateAliasParameter (t.Value, t.Location, parent);
-				}
-				else if(IsEOF)
+				if(IsEOF)
 					al = new TemplateAliasParameter(DTokens.IncompleteIdHash, CodeLocation.Empty, parent);
 				else
 				{
-					// alias BasicType Declarator TemplateAliasParameterSpecialization_opt TemplateAliasParameterDefault_opt
-					var nn = Declarator (BasicType (), false, parent);
-					al = new TemplateAliasParameter (nn.NameHash, nn.NameLocation, parent);
-					al.Type = nn.Type;
-					//TODO: Assign other parts of the declarator? Parameters and such?
+					bt = BasicType ();
+					ParseBasicType2 (ref bt);
+
+					if (laKind == Identifier) {
+						// alias BasicType Declarator TemplateAliasParameterSpecialization_opt TemplateAliasParameterDefault_opt
+						var nn = Declarator (bt, false, parent);
+						al = new TemplateAliasParameter (nn.NameHash, nn.NameLocation, parent);
+						al.Type = nn.Type;
+						//TODO: Assign other parts of the declarator? Parameters and such?
+					} else if (bt is IdentifierDeclaration)
+						al = new TemplateAliasParameter ((bt as IdentifierDeclaration).IdHash, bt.Location, parent);
+					else
+						al = new TemplateAliasParameter (0, CodeLocation.Empty, parent);
 				}
 				al.Location = startLoc;
 
@@ -5521,8 +5532,7 @@ namespace D_Parser.Parser
 
 			// TemplateValueParameter
 			startLoc = la.Location;
-			var bt = BasicType();
-			var dv = Declarator(bt,false, null);
+			var dv = Declarator(BasicType(), false, null);
 
 			if (dv == null) {
 				SynErr (t.Kind, "Declarator expected for parsing template parameter");
