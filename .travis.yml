@@ -7,7 +7,7 @@ notifications:
 language: c
 
 install:
-  - sudo deb http://ppa.launchpad.net/inizan-yannick/mono/ubuntu utopic main 
+  - sudo add-apt-repository http://ppa.launchpad.net/inizan-yannick/mono/ubuntu utopic main 
    - sudo apt-get update -q
   - sudo apt-get install mono nunit-console
  
