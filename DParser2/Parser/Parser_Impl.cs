@@ -894,7 +894,7 @@ namespace D_Parser.Parser
 			}
 
 			// alias BasicType Declarator
-			foreach(var n in Decl(Scope, laKind != Identifier || Lexer.CurrentPeekToken.Kind != OpenParenthesis ? null : new Modifier(DTokens.Alias)))
+			foreach(var n in Decl(Scope, laKind != Identifier || Lexer.CurrentPeekToken.Kind != OpenParenthesis ? null : new Modifier(DTokens.Alias), true))
 			{
 				var dv = n as DVariable;
 				if (dv != null) {
@@ -957,7 +957,7 @@ namespace D_Parser.Parser
 			return dv;
 		}
 
-		IEnumerable<INode> Decl(IBlockNode Scope, DAttribute StorageClass = null)
+		IEnumerable<INode> Decl(IBlockNode Scope, DAttribute StorageClass = null, bool isAlias = false)
 		{
 			var startLocation = la.Location;
 			var initialComment = GetComments();
@@ -976,20 +976,22 @@ namespace D_Parser.Parser
 			}
 			
 			// If there's no explicit type declaration, leave our node's type empty!
-			if ((StorageClass != Modifier.Empty && 
-				laKind == (Identifier) && (DeclarationAttributes.Count > 0 || Lexer.CurrentPeekToken.Kind == OpenParenthesis))) // public auto var=0; // const foo(...) {} 
-			{
-				if (Lexer.CurrentPeekToken.Kind == Assign || Lexer.CurrentPeekToken.Kind ==OpenParenthesis) 
-				{ }
-				else if (Lexer.CurrentPeekToken.Kind == Semicolon)
-				{
-					SemErr(t.Kind, "Initializer expected for auto type, semicolon found!");
+			if ((StorageClass != Modifier.Empty &&
+			    laKind == (Identifier) && (DeclarationAttributes.Count > 0 || Lexer.CurrentPeekToken.Kind == OpenParenthesis))) { // public auto var=0; // const foo(...) {} 
+				if (Lexer.CurrentPeekToken.Kind == Assign || Lexer.CurrentPeekToken.Kind == OpenParenthesis) {
+				} else if (Lexer.CurrentPeekToken.Kind == Semicolon) {
+					SemErr (t.Kind, "Initializer expected for auto type, semicolon found!");
+				} else
+					ttd = BasicType ();
+			} else if (!IsEOF) {
+				// standalone this/super only allowed in alias declarations
+				if (isAlias && (laKind == DTokens.This || laKind == DTokens.Super) && Lexer.CurrentPeekToken.Kind != DTokens.Dot) {
+					ttd = new DTokenDeclaration (laKind) { Location = la.Location, EndLocation = la.EndLocation };
+					Step ();
 				}
 				else
-					ttd = BasicType();
+					ttd = BasicType ();
 			}
-			else if(!IsEOF)
-				ttd = BasicType();
 
 
 			if (IsEOF)
@@ -1097,14 +1099,19 @@ namespace D_Parser.Parser
 
 		bool IsBasicType()
 		{
-			return 
-				IsBasicType(laKind) || 
-				laKind == (Typeof) || 
-				laKind == __vector ||
-				IsFunctionAttribute ||
-				(laKind == (Dot) && Lexer.CurrentPeekToken.Kind == (Identifier)) || 
-				//BasicTypes[Lexer.CurrentPeekToken.Kind] || 
-				laKind == (Identifier);
+			switch (laKind) {
+				case DTokens.Typeof:
+				case DTokens.__vector:
+				case DTokens.Identifier:
+					return true;
+				case DTokens.Dot:
+					return Lexer.CurrentPeekToken.Kind == (Identifier);
+				case DTokens.This:
+				case DTokens.Super:
+					return Lexer.CurrentPeekToken.Kind == DTokens.Dot;
+				default:
+					return IsBasicType (laKind) || IsFunctionAttribute;
+			}
 		}
 
 		/// <summary>
@@ -1499,6 +1506,17 @@ namespace D_Parser.Parser
 		public ITypeDeclaration IdentifierList()
 		{
 			ITypeDeclaration td = null;
+
+			switch (laKind) {
+				case DTokens.This:
+				case DTokens.Super:
+					Step ();
+					td = new DTokenDeclaration (t.Kind) { Location = t.Location, EndLocation = t.EndLocation };
+
+					if (!Expect (DTokens.Dot))
+						return td;
+					break;
+			}
 
 			bool notInit = false;
 			do

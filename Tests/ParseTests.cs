@@ -252,6 +252,26 @@ debug(9223372036854775807){}";
 			Assert.AreEqual(mod.ParseErrors.Count, 0);
 		}
 
+		[Test]
+		public void SyntaxError_Issue163()
+		{
+			var s = @"class B2540 : A2540
+{
+    int b;
+    override super.X foo() { return 1; }
+
+    alias this athis;
+    alias this.b thisb;
+    alias super.a supera;
+    alias super.foo superfoo;
+    alias this.foo thisfoo;
+}";
+			var mod = DParser.ParseString(s);
+
+			Assert.AreEqual(mod.ParseErrors.Count, 0);
+		}
+
+		[Test]
 		public void TestSyntaxError2()
 		{
 			var s = "class Foo( if(is(T==float) {} class someThingElse {}";
