@@ -1323,7 +1323,7 @@ namespace D_Parser.Parser
 						if (c == ';')
 							break;
 
-						if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
+						if (IsIdentifierPart(c))
 							charEntity += c;
 						else
 						{

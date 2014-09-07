@@ -224,6 +224,24 @@ void bar();");
 		}
 
 		[Test]
+		public void SyntaxError_Issue165()
+		{
+			var s = @"void test56()
+{
+    assert('\&sup2;'==178);
+    assert('\&sup3;'==179);
+    assert('\&sup1;'==185);
+    assert('\&frac14;'==188);
+    assert('\&frac12;'==189);
+    assert('\&frac34;'==190);
+    assert('\&there4;'==8756);
+}";
+			var mod = DParser.ParseString(s);
+
+			Assert.AreEqual(mod.ParseErrors.Count, 0);
+		}
+
+		[Test]
 		public void TestSyntaxError2()
 		{
 			var s = "class Foo( if(is(T==float) {} class someThingElse {}";
