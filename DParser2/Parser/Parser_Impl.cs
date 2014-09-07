@@ -5455,14 +5455,21 @@ namespace D_Parser.Parser
 				startLoc = t.Location;
 				TemplateAliasParameter al;
 
-				if(Expect(Identifier))
-					al = new TemplateAliasParameter(t.Value, t.Location, parent);
+				if (laKind == Identifier && (Lexer.CurrentPeekToken.Kind == DTokens.Colon || Lexer.CurrentPeekToken.Kind == DTokens.Assign)) {
+					Step ();
+					al = new TemplateAliasParameter (t.Value, t.Location, parent);
+				}
+				else if(IsEOF)
+					al = new TemplateAliasParameter(DTokens.IncompleteIdHash, CodeLocation.Empty, parent);
 				else
-					al = new TemplateAliasParameter(IsEOF ? DTokens.IncompleteIdHash : 0 , CodeLocation.Empty, parent);
+				{
+					// alias BasicType Declarator TemplateAliasParameterSpecialization_opt TemplateAliasParameterDefault_opt
+					var nn = Declarator (BasicType (), false, parent);
+					al = new TemplateAliasParameter (nn.NameHash, nn.NameLocation, parent);
+					al.Type = nn.Type;
+					//TODO: Assign other parts of the declarator? Parameters and such?
+				}
 				al.Location = startLoc;
-
-				// TODO?:
-				// alias BasicType Declarator TemplateAliasParameterSpecialization_opt TemplateAliasParameterDefault_opt
 
 				// TemplateAliasParameterSpecialization
 				if (laKind == (Colon))

@@ -272,6 +272,15 @@ debug(9223372036854775807){}";
 		}
 
 		[Test]
+		public void SyntaxError_Issue162()
+		{
+			var s = @"int foo19(alias int a)() { return a; }";
+			var mod = DParser.ParseString(s);
+
+			Assert.AreEqual(mod.ParseErrors.Count, 0);
+		}
+
+		[Test]
 		public void TestSyntaxError2()
 		{
 			var s = "class Foo( if(is(T==float) {} class someThingElse {}";
