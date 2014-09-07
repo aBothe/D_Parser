@@ -213,7 +213,13 @@ namespace D_Parser.Dom
 			if(sb[sb.Length-1] == ',')
 				sb.Length--;
 			
-			return sb.Append(')').ToString();
+			sb.Append (')');
+
+			if (Modifiers != null && Modifiers.Length != 0)
+				foreach (var mod in Modifiers)
+					sb.Append (' ').Append(mod.ToString());
+
+			return sb.ToString();
 		}
 
 		public override void Accept(TypeDeclarationVisitor vis)
