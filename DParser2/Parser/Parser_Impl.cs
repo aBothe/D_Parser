@@ -3152,13 +3152,12 @@ namespace D_Parser.Parser
 						FunctionAttributes(fl.AnonymousMethod);
 					}
 
-					if (!IsEOF)
-					{
-						FunctionBody(fl.AnonymousMethod);
-						fl.EndLocation = fl.AnonymousMethod.EndLocation;
-					}
-					else
-						fl.EndLocation = la.Location;
+					FunctionBody(fl.AnonymousMethod);
+
+					if(IsEOF)
+						fl.AnonymousMethod.EndLocation = CodeLocation.Empty;
+
+					fl.EndLocation = fl.AnonymousMethod.EndLocation;
 
 					if (Scope != null && !AllowWeakTypeParsing) // HACK -- not only on AllowWeakTypeParsing! But apparently, this stuff may be parsed twice, so force-skip results of the first attempt although this is a rather stupid solution
 						Scope.Add(fl.AnonymousMethod);
@@ -3579,8 +3578,7 @@ namespace D_Parser.Parser
 
 					var ae = AssignExpression(anonymousMethod);
 
-					// +1 due to SearchRegionAt which is enforcing < on EndLocations and not <=
-					var endLocation = IsEOF ? new CodeLocation(la.EndColumn + 1, la.Line) : t.EndLocation;
+					var endLocation = IsEOF ? CodeLocation.Empty : t.EndLocation;
 
 					anonymousMethod.Body.Add(new ReturnStatement
 					{

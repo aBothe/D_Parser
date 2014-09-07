@@ -81,7 +81,22 @@ namespace D_Parser.Parser
 					if (isInsideNonCodeSegment = p.Lexer.endedWhileBeingInNonCodeSequence)
 						return null;
 
-					return FinishParsing(t, p);
+					var block = FinishParsing (t, p);
+					var newLoc = new CodeLocation (caretLocation.Column + 1, caretLocation.Line);
+					// Update the actual tempBlock as well as methods/other blocks' end location that just appeared while parsing the code incrementally,
+					// so they are transparent to SearchBlockAt
+					var n = block;
+					while (n != null && (n.EndLocation.Line < 1 || n.EndLocation == p.la.Location))
+					{
+						(n as DNode).EndLocation = newLoc;
+						var chCount = n.Count;
+						if (chCount < 1)
+							break;
+						n = n.Children[chCount - 1] as IBlockNode;
+					}
+					AssignEndlocation (t, newLoc);
+
+					return block;
 				}
 			}
 
@@ -91,6 +106,7 @@ namespace D_Parser.Parser
 
 			protected abstract int ChildCount(T sr);
 			protected abstract ISyntaxRegion ChildAt(T sr, int i);
+			protected abstract void AssignEndlocation(T sr, CodeLocation loc);
 
 			protected virtual CodeLocation GetBlockStartLocation(T sr)
 			{
@@ -138,9 +154,6 @@ namespace D_Parser.Parser
 
 			protected override IBlockNode FinishParsing(BlockStatement tempBlockStmt, DParser p)
 			{
-				tempBlockStmt.EndLocation = new CodeLocation(p.la.Column + 1, p.la.Line);
-				tempParentBlock.EndLocation = tempBlockStmt.EndLocation;
-
 				DoubleDeclarationSilencer.RemoveDoubles(finalParentMethod, tempParentBlock);
 
 				tempParentBlock.Parent = finalParentMethod;
@@ -156,6 +169,11 @@ namespace D_Parser.Parser
 			protected override ISyntaxRegion ChildAt(BlockStatement sr, int i)
 			{
 				return sr._Statements[i];
+			}
+
+			protected override void AssignEndlocation (BlockStatement sr, CodeLocation loc)
+			{
+				sr.EndLocation = loc;
 			}
 		}
 
@@ -221,21 +239,6 @@ namespace D_Parser.Parser
 
 			protected override IBlockNode FinishParsing(DBlockNode tempBlock, DParser p)
 			{
-				// Update the actual tempBlock as well as methods/other blocks' end location that just appeared while parsing the code incrementally,
-				// so they are transparent to SearchBlockAt
-				var n = tempBlock as INode;
-				while (n != null &&
-					(n.EndLocation.Line < 1 || n.EndLocation == p.la.Location))
-				{
-					n.EndLocation = new CodeLocation(p.la.Column + 1, p.la.Line);
-					var bn = n as IBlockNode;
-					if (bn == null || bn.Children.Count == 0)
-						break;
-					n = bn.Children[bn.Count - 1];
-				}
-
-				tempBlock.EndLocation = new CodeLocation(p.la.Column + 1, p.la.Line);
-
 				DoubleDeclarationSilencer.RemoveDoubles(finalParentBlock, tempBlock);
 
 				tempBlock.Parent = finalParentBlock;
@@ -256,6 +259,11 @@ namespace D_Parser.Parser
 			protected override CodeLocation GetBlockStartLocation(DBlockNode sr)
 			{
 				return sr.BlockStartLocation;
+			}
+
+			protected override void AssignEndlocation (DBlockNode sr, CodeLocation loc)
+			{
+				sr.EndLocation = loc;
 			}
 		}
 
@@ -281,6 +289,13 @@ namespace D_Parser.Parser
 				originalAst.Accept(rem);
 				rem.secondRun = true;
 				blockToClean.Accept(rem);
+			}
+
+			public override void Visit (DMethod n)
+			{
+				if (n.SpecialType != DMethod.MethodType.AnonymousDelegate &&
+					n.SpecialType != DMethod.MethodType.Lambda)
+					base.Visit (n);
 			}
 
 			public override void VisitDNode(DNode n)
