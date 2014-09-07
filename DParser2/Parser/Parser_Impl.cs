@@ -2834,6 +2834,9 @@ namespace D_Parser.Parser
 		{
 			var ret = new List<IExpression>();
 
+			if (laKind == CloseParenthesis)
+				return ret;
+
 			ret.Add(AssignExpression(Scope));
 
 			while (laKind == (Comma))

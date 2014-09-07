@@ -395,6 +395,18 @@ enum dg7761 = (int a) pure => 2 * a;";
 		}
 
 		[Test]
+		public void SyntaxError_Issue154()
+		{
+			var s = @"
+auto a1 = immutable (Nullable!int)();
+auto a2 = immutable (Nullable!int)(1);
+auto i = a2.get;";
+			var mod = DParser.ParseString(s);
+
+			Assert.AreEqual(0, mod.ParseErrors.Count);
+		}
+
+		[Test]
 		public void TestSyntaxError2()
 		{
 			var s = "class Foo( if(is(T==float) {} class someThingElse {}";
