@@ -12,5 +12,5 @@ install:
   - sudo apt-get install mono nunit-console
  
 script:
-  - mono /opt/mono/lib/mono/xbuild/12.0/bin/xbuild.exe DParser2.Unittest.sln
-  - mono --debug /opt/mono/lib/mono/4.5/nunit-console.exe Tests/bin/Debug/Tests.dll
+  - xbuild DParser2.Unittest.sln
+  - nunit_console Tests/bin/Debug/Tests.dll
