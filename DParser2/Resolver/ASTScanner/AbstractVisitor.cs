@@ -91,7 +91,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 		public virtual void IterateThroughScopeLayers(CodeLocation Caret, MemberFilter VisibleMembers = MemberFilter.All)
 		{
-			var dm = ctxt.ScopedBlock as DMethod;
+			var scopedBlock = DResolver.SearchBlockAt (ctxt.ScopedBlock, Caret);
+
+			var dm = scopedBlock as DMethod;
 			IStatement stmt;
 			if (dm != null && (stmt = dm.GetSubBlockAt(Caret)) != null &&
 				ScanStatementHierarchy(stmt, Caret, VisibleMembers))
@@ -100,7 +102,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			}
 
 			if(ctxt.ScopedBlock != null && 
-			   ScanBlockUpward(ctxt.ScopedBlock, Caret, VisibleMembers))
+				ScanBlockUpward(ctxt.ScopedBlock, Caret, VisibleMembers))
 				return;
 			
 			// Handle available modules/packages

@@ -154,13 +154,8 @@ namespace D_Parser.Parser
                     return null;
             }
             
-            var bt= p.BasicType();
-            while (p.IsBasicType2())
-            {
-                var bt2 = p.BasicType2();
-                bt2.InnerMost = bt;
-                bt = bt2;
-            }
+			var bt= p.BasicType(null);
+			p.ParseBasicType2 (ref bt, p.doc);
             return bt;
         }
 
@@ -198,7 +193,7 @@ namespace D_Parser.Parser
 	            p.ApplyAttributes(n);
 	            p.FunctionAttributes(n);
 	            
-	            n.Type = p.Type();
+	            n.Type = p.Type(null);
 	            
 	            identifierChain = p.IdentifierList();
 	            if(identifierChain is IdentifierDeclaration)

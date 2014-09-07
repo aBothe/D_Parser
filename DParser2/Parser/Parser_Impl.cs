@@ -890,7 +890,7 @@ namespace D_Parser.Parser
 						Lexer.PushLookAheadBackup();
 						var wkTypeParsingBackup = AllowWeakTypeParsing;
 						AllowWeakTypeParsing = true;
-						dv.Type = Type();
+						dv.Type = Type(Scope);
 						AllowWeakTypeParsing = wkTypeParsingBackup;
 						if(!(laKind == Comma || laKind == Semicolon))
 						{
@@ -999,7 +999,7 @@ namespace D_Parser.Parser
 				} else if (Lexer.CurrentPeekToken.Kind == Semicolon) {
 					SemErr (t.Kind, "Initializer expected for auto type, semicolon found!");
 				} else
-					ttd = BasicType ();
+					ttd = BasicType (Scope);
 			} else if (!IsEOF) {
 				// standalone this/super only allowed in alias declarations
 				if (isAlias && (laKind == DTokens.This || laKind == DTokens.Super) && Lexer.CurrentPeekToken.Kind != DTokens.Dot) {
@@ -1007,7 +1007,7 @@ namespace D_Parser.Parser
 					Step ();
 				}
 				else
-					ttd = BasicType ();
+					ttd = BasicType (Scope);
 			}
 
 
@@ -1136,7 +1136,7 @@ namespace D_Parser.Parser
 		/// </summary>
 		public bool AllowWeakTypeParsing = false;
 
-		ITypeDeclaration BasicType()
+		ITypeDeclaration BasicType(IBlockNode scope)
 		{
 			bool isModuleScoped = laKind == Dot;
 			if (isModuleScoped)
@@ -1166,7 +1166,7 @@ namespace D_Parser.Parser
 
 				// e.g. cast(const)
 				if (laKind != CloseParenthesis)
-					md.InnerType = p ? Type() : BasicType();
+					md.InnerType = p ? Type(scope) : BasicType(scope);
 
 				if (p)
 					Expect(CloseParenthesis);
@@ -1180,14 +1180,14 @@ namespace D_Parser.Parser
 
 			if (laKind == (Typeof))
 			{
-				td = TypeOf();
+				td = TypeOf(scope);
 				if (laKind != Dot)
 					return td;
 			}
 
 			else if (laKind == __vector)
 			{
-				td = Vector();
+				td = Vector(scope);
 				if (laKind != Dot)
 					return td;
 			}
@@ -1196,9 +1196,9 @@ namespace D_Parser.Parser
 				return null;
 
 			if (td == null)
-				td = IdentifierList();
+				td = IdentifierList(scope);
 			else
-				td.InnerMost = IdentifierList();
+				td.InnerMost = IdentifierList(scope);
 
 			if(isModuleScoped && td != null)
 			{
@@ -1217,7 +1217,7 @@ namespace D_Parser.Parser
 			return laKind == (Times) || laKind == (OpenSquareBracket) || laKind == (Delegate) || laKind == (Function);
 		}
 
-		ITypeDeclaration BasicType2()
+		ITypeDeclaration BasicType2(IBlockNode scope)
 		{
 			// *
 			if (laKind == (Times))
@@ -1245,7 +1245,7 @@ namespace D_Parser.Parser
 				bool weaktype = AllowWeakTypeParsing;
 				AllowWeakTypeParsing = true;
 
-				var keyType = Type();
+				var keyType = Type(scope);
 
 				AllowWeakTypeParsing = weaktype;
 
@@ -1259,7 +1259,7 @@ namespace D_Parser.Parser
 				{
 					Lexer.RestoreLookAheadBackup();
 
-					var fromExpression = AssignExpression();
+					var fromExpression = AssignExpression(scope);
 
 					// [ AssignExpression .. AssignExpression ]
 					if (laKind == DoubleDot)
@@ -1270,7 +1270,7 @@ namespace D_Parser.Parser
 							KeyType=null,
 							KeyExpression= new PostfixExpression_Slice() { 
 								FromExpression=fromExpression,
-								ToExpression=AssignExpression()}};
+								ToExpression=AssignExpression(scope)}};
 					}
 					else
 						cd = new ArrayDecl() { KeyType=null, KeyExpression=fromExpression,Location=startLoc };
@@ -1309,18 +1309,27 @@ namespace D_Parser.Parser
 			return null;
 		}
 
-		void ParseBasicType2(ref ITypeDeclaration td)
+		void ParseBasicType2(ref ITypeDeclaration td, IBlockNode scope)
 		{
+			if (td == null) {
+				if (!IsBasicType2 ())
+					return;
+
+				td = BasicType2 (scope);
+				if (td == null)
+					return;
+			}
+
 			while (IsBasicType2())
 			{
-				if (td == null) 
-					td = BasicType2();
-				else { 
-					var ttd = BasicType2(); 
-					if(ttd!=null)
-						ttd.InnerDeclaration = td; 
-					td = ttd; 
+				var ttd = BasicType2(scope); 
+				if (ttd != null)
+					ttd.InnerDeclaration = td;
+				else if (AllowWeakTypeParsing) {
+					td = null;
+					return;
 				}
+				td = ttd;
 			}
 		}
 
@@ -1333,7 +1342,7 @@ namespace D_Parser.Parser
 			DNode ret = new DVariable() { Location = la.Location, Parent = parent };
 			ApplyAttributes (ret);
 
-			ParseBasicType2 (ref basicType);
+			ParseBasicType2 (ref basicType, parent as IBlockNode);
 			ret.Type = basicType;
 
 			if (laKind != (OpenParenthesis))
@@ -1412,19 +1421,9 @@ namespace D_Parser.Parser
 			/*			 
 			 * Parse all basictype2's that are following the initial '('
 			 */
-			while (IsBasicType2())
-			{
-				var ttd = BasicType2();
-
-				if (deleg.ReturnType == null) 
-					deleg.ReturnType = ttd;
-				else
-				{
-					if(ttd!=null)
-						ttd.InnerDeclaration = deleg.ReturnType;
-					deleg.ReturnType = ttd;
-				}
-			}
+			ITypeDeclaration retType = null;
+			ParseBasicType2 (ref retType, ret.Parent as IBlockNode);
+			deleg.ReturnType = retType;
 
 			/*			
 			 * Here can be an identifier with some optional DeclaratorSuffixes
@@ -1488,7 +1487,7 @@ namespace D_Parser.Parser
 						var weakType = AllowWeakTypeParsing;
 						AllowWeakTypeParsing = true;
 						
-						keyType= ad.KeyType = Type();
+						keyType= ad.KeyType = Type(dn.Parent as IBlockNode);
 
 						AllowWeakTypeParsing = weakType;
 					}
@@ -1496,7 +1495,7 @@ namespace D_Parser.Parser
 					{
 						Lexer.RestoreLookAheadBackup();
 						keyType = ad.KeyType = null;
-						ad.KeyExpression = AssignExpression();
+						ad.KeyExpression = AssignExpression(dn.Parent as IBlockNode);
 					}
 					else
 						Lexer.PopLookAheadBackup();
@@ -1526,7 +1525,7 @@ namespace D_Parser.Parser
 			FunctionAttributes(ref dn.Attributes);
 		}
 
-		public ITypeDeclaration IdentifierList()
+		public ITypeDeclaration IdentifierList(IBlockNode scope = null)
 		{
 			ITypeDeclaration td = null;
 
@@ -1552,7 +1551,7 @@ namespace D_Parser.Parser
 				ITypeDeclaration ttd;
 
 				if (IsTemplateInstance)
-					ttd = TemplateInstance(null);
+					ttd = TemplateInstance(scope);
 				else if (Expect(Identifier))
 					ttd = new IdentifierDeclaration(t.Value) { Location = t.Location, EndLocation = t.EndLocation };
 				else if (IsEOF)
@@ -1592,13 +1591,13 @@ namespace D_Parser.Parser
 			}
 		}
 
-		public ITypeDeclaration Type()
+		public ITypeDeclaration Type(IBlockNode scope)
 		{
-			var td = BasicType();
+			var td = BasicType(scope);
 
 			if (td != null && IsDeclarator2())
 			{
-				var ttd = Declarator2();
+				var ttd = Declarator2(scope);
 				if (ttd != null)
 					ttd.InnerMost.InnerDeclaration = td;
 				td = ttd;
@@ -1619,13 +1618,13 @@ namespace D_Parser.Parser
 		/// So here I think that a Declarator2 only consists of a couple of BasicType2's and some DeclaratorSuffixes
 		/// </summary>
 		/// <returns></returns>
-		ITypeDeclaration Declarator2()
+		ITypeDeclaration Declarator2(IBlockNode scope = null)
 		{
 			ITypeDeclaration td = null;
 			if (laKind == (OpenParenthesis))
 			{
 				Step();
-				td = Declarator2();
+				td = Declarator2(scope);
 				
 				if (AllowWeakTypeParsing && (td == null||(t.Kind==OpenParenthesis && laKind==CloseParenthesis) /* -- means if an argumentless function call has been made, return null because this would be an expression */|| laKind!=CloseParenthesis))
 					return null;
@@ -1647,16 +1646,7 @@ namespace D_Parser.Parser
 				return td;
 			}
 
-			while (IsBasicType2())
-			{
-				var ttd = BasicType2();
-				if (AllowWeakTypeParsing && ttd == null)
-					return null;
-
-				if(ttd!=null)
-					ttd.InnerDeclaration = td;
-				td = ttd;
-			}
+			ParseBasicType2 (ref td, scope);
 
 			return td;
 		}
@@ -1757,7 +1747,7 @@ namespace D_Parser.Parser
 				attr.Add(new Modifier(Ref));
 			}
 
-			var td = BasicType();
+			var td = BasicType(Scope);
 
 			var ret = Declarator(td,true, Scope);
 			if (ret == null)
@@ -1903,7 +1893,7 @@ namespace D_Parser.Parser
 			}
 		}
 
-		TypeOfDeclaration TypeOf()
+		TypeOfDeclaration TypeOf(IBlockNode scope)
 		{
 			Expect(Typeof);
 			var md = new TypeOfDeclaration { Location = t.Location };
@@ -1916,14 +1906,14 @@ namespace D_Parser.Parser
 					md.Expression = new TokenExpression(Return) { Location = t.Location, EndLocation = t.EndLocation };
 				}
 				else
-					md.Expression = Expression();
+					md.Expression = Expression(scope);
 				Expect(CloseParenthesis);
 			}
 			md.EndLocation = t.EndLocation;
 			return md;
 		}
 
-		VectorDeclaration Vector()
+		VectorDeclaration Vector(IBlockNode scope)
 		{
 			var startLoc = t == null ? new CodeLocation() : t.Location;
 			Expect(__vector);
@@ -1932,9 +1922,9 @@ namespace D_Parser.Parser
 			if (Expect(OpenParenthesis))
 			{
 				if (IsAssignExpression())
-					md.Id = Expression();
+					md.Id = Expression(scope);
 				else
-					md.IdDeclaration = Type();
+					md.IdDeclaration = Type(scope);
 				Expect(CloseParenthesis);
 			}
 
@@ -2113,7 +2103,7 @@ namespace D_Parser.Parser
 					// This isn't documented anywhere. http://dlang.org/attribute.html#ProtectionAttribute
 					//TODO: Semantically handle this.
 					Step ();
-					m.LiteralContent = IdentifierList (); // Reassigns a symbol's package/'namespace' or so
+					m.LiteralContent = IdentifierList (scope); // Reassigns a symbol's package/'namespace' or so
 
 					Expect (DTokens.CloseParenthesis);
 				}
@@ -2658,7 +2648,7 @@ namespace D_Parser.Parser
 					if (Expect(OpenParenthesis))
 					{
 						if (laKind != CloseParenthesis) // Yes, it is possible that a cast() can contain an empty type!
-							ce.Type = Type();
+							ce.Type = Type(Scope);
 						Expect(CloseParenthesis);
 					}
 					ce.UnaryExpression = UnaryExpression(Scope);
@@ -2753,7 +2743,7 @@ namespace D_Parser.Parser
 
 				ac.EndLocation = t.EndLocation;
 
-				if (Scope != null)
+				if (Scope != null && !AllowWeakTypeParsing)
 					Scope.Add(ac.AnonymousClass);
 
 				return ac;
@@ -2762,16 +2752,8 @@ namespace D_Parser.Parser
 			// NewArguments Type
 			else
 			{
-				var nt = BasicType();
-
-				while (IsBasicType2())
-				{
-					var bt=BasicType2();
-					if (bt == null)
-						break;
-					bt.InnerDeclaration = nt;
-					nt = bt;
-				}
+				var nt = BasicType(Scope);
+				ParseBasicType2 (ref nt, Scope);
 
 				var initExpr = new NewExpression()
 				{
@@ -2880,7 +2862,7 @@ namespace D_Parser.Parser
 					Step();
 					var startLoc = t.Location;
 
-					var td = Type();
+					var td = Type(Scope);
 
 					AllowWeakTypeParsing = wkParsing;
 
@@ -3072,9 +3054,9 @@ namespace D_Parser.Parser
 				case New:
 					return NewExpression(Scope);
 				case Typeof:
-					return new TypeDeclarationExpression(TypeOf());
+					return new TypeDeclarationExpression(TypeOf(Scope));
 				case __traits:
-					return TraitsExpression();
+					return TraitsExpression(Scope);
 				// Dollar (== Array length expression)
 				case Dollar:
 					Step();
@@ -3160,9 +3142,9 @@ namespace D_Parser.Parser
 					if (laKind != OpenCurlyBrace) // foo( 1, {bar();} ); -> is a legal delegate
 					{
 						if (!IsFunctionAttribute && Lexer.CurrentPeekToken.Kind == OpenParenthesis)
-							fl.AnonymousMethod.Type = BasicType();
+							fl.AnonymousMethod.Type = BasicType(Scope);
 						else if (laKind != OpenParenthesis && laKind != OpenCurlyBrace)
-							fl.AnonymousMethod.Type = Type();
+							fl.AnonymousMethod.Type = Type(Scope);
 
 						if (laKind == OpenParenthesis)
 							fl.AnonymousMethod.Parameters = Parameters(fl.AnonymousMethod);
@@ -3178,7 +3160,7 @@ namespace D_Parser.Parser
 					else
 						fl.EndLocation = la.Location;
 
-					if (Scope != null)
+					if (Scope != null && !AllowWeakTypeParsing) // HACK -- not only on AllowWeakTypeParsing! But apparently, this stuff may be parsed twice, so force-skip results of the first attempt although this is a rather stupid solution
 						Scope.Add(fl.AnonymousMethod);
 
 					return fl;
@@ -3239,13 +3221,13 @@ namespace D_Parser.Parser
 					{
 						Lexer.PushLookAheadBackup();
 						AllowWeakTypeParsing = true;
-						tide.Type = Type();
+						tide.Type = Type(Scope);
 						AllowWeakTypeParsing = false;
 
 						if (tide.Type == null || laKind != CloseParenthesis)
 						{
 							Lexer.RestoreLookAheadBackup();
-							tide.Expression = AssignExpression();
+							tide.Expression = AssignExpression(Scope);
 						}
 						else
 							Lexer.PopLookAheadBackup();
@@ -3265,7 +3247,7 @@ namespace D_Parser.Parser
 						Step ();
 						ise.TestedType = new DTokenDeclaration (DTokens.This) { Location = t.Location, EndLocation = t.EndLocation };
 					} else
-						ise.TestedType = Type ();
+						ise.TestedType = Type (Scope);
 
 					if (ise.TestedType == null)
 						SynErr(laKind, "In an IsExpression, either a type or an expression is required!");
@@ -3346,7 +3328,7 @@ namespace D_Parser.Parser
 					else if (IsEOF)
 						ise.TypeSpecializationToken = DTokens.Incomplete;
 					else
-						ise.TypeSpecialization = Type();
+						ise.TypeSpecialization = Type(Scope);
 
 					// TemplateParameterList
 					if (laKind == Comma)
@@ -3355,7 +3337,7 @@ namespace D_Parser.Parser
 						do
 						{
 							Step();
-							tempParam.Add(TemplateParameter(null));
+							tempParam.Add(TemplateParameter(Scope as DNode));
 						}
 						while (laKind == Comma);
 						ise.TemplateParameterList = tempParam.ToArray();
@@ -3371,7 +3353,7 @@ namespace D_Parser.Parser
 					{
 						startLoc = la.Location;
 
-						var bt=BasicType();
+						var bt=BasicType(Scope);
 
 						switch (laKind)
 						{
@@ -3577,7 +3559,7 @@ namespace D_Parser.Parser
 			LambdaBody(fl.AnonymousMethod);
 			fl.EndLocation = fl.AnonymousMethod.EndLocation;
 
-			if (Scope != null)
+			if (Scope != null && !AllowWeakTypeParsing)
 				Scope.Add(fl.AnonymousMethod);
 
 			return fl;
@@ -3617,7 +3599,7 @@ namespace D_Parser.Parser
 		#endregion
 
 		#region Statements
-		void IfCondition(IfStatement par)
+		void IfCondition(IfStatement par, IBlockNode scope)
 		{
 			var wkType = AllowWeakTypeParsing;
 			AllowWeakTypeParsing = true;
@@ -3631,7 +3613,7 @@ namespace D_Parser.Parser
 				tp = new DTokenDeclaration(Auto) { Location=t.Location, EndLocation=t.EndLocation };
 			}
 			else
-				tp = Type();
+				tp = Type(scope);
 
 			AllowWeakTypeParsing = wkType;
 
@@ -3651,7 +3633,7 @@ namespace D_Parser.Parser
 				{
 					Step ();
 					dv.Location = tp.Location;
-					dv.Initializer = Expression();
+					dv.Initializer = Expression(scope);
 					dv.EndLocation = t.EndLocation;
 				}
 
@@ -3660,7 +3642,7 @@ namespace D_Parser.Parser
 			}
 				
 			Lexer.RestoreLookAheadBackup();
-			par.IfCondition = Expression();
+			par.IfCondition = Expression(scope);
 		}
 
 		public bool IsStatement
@@ -3740,7 +3722,7 @@ namespace D_Parser.Parser
 
 					Expect(OpenParenthesis);
 					// IfCondition
-					IfCondition(iS);
+					IfCondition(iS, Scope);
 
 					// ThenStatement
 					if(Expect(CloseParenthesis))
@@ -4031,7 +4013,7 @@ namespace D_Parser.Parser
 								var catchVar = new DVariable { Parent = Scope, Location = t.Location };
 
 								Lexer.PushLookAheadBackup();
-								catchVar.Type = BasicType();
+								catchVar.Type = BasicType(Scope);
 								if (laKind == CloseParenthesis)
 								{
 									Lexer.RestoreLookAheadBackup();
@@ -4184,7 +4166,8 @@ namespace D_Parser.Parser
 
 					if (ds.Declarations != null && 
 						ds.Declarations.Length == 1 && 
-						!(ds.Declarations[0] is DVariable))
+						!(ds.Declarations[0] is DVariable) &&
+						!AllowWeakTypeParsing)
 						Scope.Add(ds.Declarations[0]);
 
 					ds.EndLocation = t.EndLocation;
@@ -4287,7 +4270,7 @@ namespace D_Parser.Parser
 				}
 				else
 				{
-					var type = BasicType();
+					var type = BasicType(Scope);
 					
 					var tnode = Declarator(type, false, Scope);
 					if (!(tnode is DVariable))
@@ -5009,7 +4992,7 @@ namespace D_Parser.Parser
 				if (IsProtectionAttribute() && laKind != (Protected))
 					Step();
 
-				var ids=Type();
+				var ids=Type(dc);
 				if (ids != null)
 					ret.Add(ids);
 			}
@@ -5167,7 +5150,7 @@ namespace D_Parser.Parser
 		#endregion
 
 		#region Enums
-		private DEnum EnumDeclaration(INode Parent)
+		private DEnum EnumDeclaration(IBlockNode Parent)
 		{
 			var mye = new DEnum() { Location = t.Location, Description = GetComments(), Parent=Parent };
 
@@ -5186,7 +5169,7 @@ namespace D_Parser.Parser
 			if (laKind == (Colon))
 			{
 				Step();
-				mye.Type = Type();
+				mye.Type = Type(Parent as IBlockNode);
 			}
 
 			if (laKind == OpenCurlyBrace)
@@ -5237,7 +5220,7 @@ namespace D_Parser.Parser
 			}
 			else
 			{
-				ev.Type = Type();
+				ev.Type = Type(mye);
 				if (Expect(Identifier))
 				{
 					ev.Name = t.Value;
@@ -5404,7 +5387,7 @@ namespace D_Parser.Parser
 			{// See Dsymbol *Parser::parseMixin()
 				if (laKind == Typeof)
 				{
-					preQualifier=TypeOf();
+					preQualifier=TypeOf(Scope as IBlockNode);
 				}
 				else if (laKind == __vector)
 				{
@@ -5414,7 +5397,7 @@ namespace D_Parser.Parser
 				Expect(Dot);
 			}
 
-			r.Qualifier= IdentifierList();
+			r.Qualifier= IdentifierList(Scope as IBlockNode);
 			if (r.Qualifier != null)
 				r.Qualifier.InnerMost.InnerDeclaration = preQualifier;
 			else
@@ -5502,6 +5485,7 @@ namespace D_Parser.Parser
 
 		TemplateParameter TemplateParameter(DNode parent)
 		{
+			IBlockNode scope = parent as IBlockNode;
 			CodeLocation startLoc;
 
 			// TemplateThisParameter
@@ -5539,8 +5523,8 @@ namespace D_Parser.Parser
 					al = new TemplateAliasParameter(DTokens.IncompleteIdHash, CodeLocation.Empty, parent);
 				else
 				{
-					bt = BasicType ();
-					ParseBasicType2 (ref bt);
+					bt = BasicType (scope);
+					ParseBasicType2 (ref bt, scope);
 
 					if (laKind == Identifier) {
 						// alias BasicType Declarator TemplateAliasParameterSpecialization_opt TemplateAliasParameterDefault_opt
@@ -5561,11 +5545,11 @@ namespace D_Parser.Parser
 					Step();
 
 					AllowWeakTypeParsing=true;
-					al.SpecializationType = Type();
+					al.SpecializationType = Type(scope);
 					AllowWeakTypeParsing=false;
 
 					if (al.SpecializationType==null)
-						al.SpecializationExpression = ConditionalExpression();
+						al.SpecializationExpression = ConditionalExpression(scope);
 				}
 
 				// TemplateAliasParameterDefault
@@ -5574,9 +5558,9 @@ namespace D_Parser.Parser
 					Step();
 
 					if (IsAssignExpression ())
-						al.DefaultExpression = ConditionalExpression ();
+						al.DefaultExpression = ConditionalExpression (scope);
 					else
-						al.DefaultType = Type ();
+						al.DefaultType = Type (scope);
 				}
 				al.EndLocation = t.EndLocation;
 				return al;
@@ -5591,13 +5575,13 @@ namespace D_Parser.Parser
 				if (laKind == Colon)
 				{
 					Step();
-					tt.Specialization = Type();
+					tt.Specialization = Type(scope);
 				}
 
 				if (laKind == Assign)
 				{
 					Step();
-					tt.Default = Type();
+					tt.Default = Type(scope);
 				}
 				tt.EndLocation = t.EndLocation;
 				return tt;
@@ -5605,7 +5589,7 @@ namespace D_Parser.Parser
 
 			// TemplateValueParameter
 			startLoc = la.Location;
-			var dv = Declarator(BasicType(), false, null);
+			var dv = Declarator(BasicType(scope), false, null);
 
 			if (dv == null) {
 				SynErr (t.Kind, "Declarator expected for parsing template parameter");
@@ -5620,13 +5604,13 @@ namespace D_Parser.Parser
 			if (laKind == (Colon))
 			{
 				Step();
-				tv.SpecializationExpression = ConditionalExpression();
+				tv.SpecializationExpression = ConditionalExpression(scope);
 			}
 
 			if (laKind == (Assign))
 			{
 				Step();
-				tv.DefaultExpression = AssignExpression();
+				tv.DefaultExpression = AssignExpression(scope);
 			}
 			tv.EndLocation = t.EndLocation;
 			return tv;
@@ -5693,7 +5677,7 @@ namespace D_Parser.Parser
 						bool wp = AllowWeakTypeParsing;
 						AllowWeakTypeParsing = true;
 
-						var typeArg = Type();
+						var typeArg = Type(Scope);
 
 						AllowWeakTypeParsing = wp;
 
@@ -5783,7 +5767,7 @@ namespace D_Parser.Parser
 		#endregion
 
 		#region Traits
-		IExpression TraitsExpression()
+		IExpression TraitsExpression(IBlockNode scope)
 		{
 			Expect(__traits);
 			var ce = new TraitsExpression() { Location=t.Location};
@@ -5801,9 +5785,9 @@ namespace D_Parser.Parser
 					Step();
 
 					if (IsAssignExpression())
-						al.Add(new TraitsArgument(AssignExpression()));
+						al.Add(new TraitsArgument(AssignExpression(scope)));
 					else
-						al.Add(new TraitsArgument(Type()));
+						al.Add(new TraitsArgument(Type(scope)));
 				}
 
 				Expect (CloseParenthesis);

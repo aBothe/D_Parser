@@ -2296,6 +2296,25 @@ cl clInst;
 		}
 
 		[Test]
+		public void IfStmtDeclaredSymbols()
+		{
+			var ctxt = CreateDefCtxt (@"module A;
+void foo()
+{
+if(auto n = 1234)
+	n;
+}");
+			var A = ctxt.ParseCache [0] ["A"];
+			var ifStmt = (A ["foo"].First () as DMethod).Body.SubStatements.ElementAt(0) as IfStatement;
+			var nStmt = (ifStmt.ScopedStatement as ExpressionStatement).Expression;
+			ctxt.CurrentContext.Set (nStmt.Location);
+
+			var t = ExpressionTypeEvaluation.EvaluateType (nStmt, ctxt);
+			Assert.That (t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That ((t as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+		}
+
+		[Test]
 		public void AliasedTemplate()
 		{
 			var ctxt = CreateDefCtxt(@"module A;

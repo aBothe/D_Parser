@@ -215,6 +215,25 @@ void bar();");
 		}
 
 		[Test]
+		public void NestedLambdas()
+		{
+			var s = @"module A;
+void foo(){
+if (node.members.any!((Node n) {
+if (auto fn = cast(FieldNode)n)					return fn.isInstanceMember;
+return false;
+}))
+{}
+}";
+			var mod = DParser.ParseString(s);
+
+			Assert.AreEqual(mod.ParseErrors.Count, 0);
+
+			var foo = mod ["foo"].First () as DMethod;
+			Assert.That (foo.Children.Count, Is.EqualTo (1));
+		}
+
+		[Test]
 		public void SyntaxError_Issue166()
 		{
 			var s = "mixin .mix;";
