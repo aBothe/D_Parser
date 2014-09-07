@@ -13,4 +13,4 @@ install:
  
 script:
   - xbuild DParser2.Unittest.sln
-  - nunit_console Tests/bin/Debug/Tests.dll
+  - nunit-console Tests/bin/Debug/Tests.dll
