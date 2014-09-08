@@ -234,6 +234,15 @@ return false;
 		}
 
 		[Test]
+		public void SyntaxError_Issue178()
+		{
+			var s = "static assert(!__traits(compiles, v1 * v2));";
+			var mod = DParser.ParseString(s);
+
+			Assert.AreEqual(mod.ParseErrors.Count, 0);
+		}
+
+		[Test]
 		public void SyntaxError_Issue166()
 		{
 			var s = "mixin .mix;";

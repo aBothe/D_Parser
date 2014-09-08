@@ -5778,15 +5778,29 @@ namespace D_Parser.Parser
 
 				var al = new List<TraitsArgument>();
 
+				var weakTypeParsingBackup = AllowWeakTypeParsing;
+
 				while (laKind == Comma)
 				{
 					Step();
 
-					if (IsAssignExpression())
-						al.Add(new TraitsArgument(AssignExpression(scope)));
-					else
-						al.Add(new TraitsArgument(Type(scope)));
+					Lexer.PushLookAheadBackup ();
+
+					AllowWeakTypeParsing = true;
+					var td = Type (scope);
+					AllowWeakTypeParsing = false;
+
+					if (td != null && (laKind == Comma || laKind == CloseParenthesis || IsEOF)) {
+						Lexer.PopLookAheadBackup ();
+						al.Add (new TraitsArgument(td));
+					}
+
+					Lexer.RestoreLookAheadBackup ();
+
+					al.Add(new TraitsArgument(AssignExpression(scope)));
 				}
+
+				AllowWeakTypeParsing = weakTypeParsingBackup;
 
 				Expect (CloseParenthesis);
 				
