@@ -5793,6 +5793,7 @@ namespace D_Parser.Parser
 					if (td != null && (laKind == Comma || laKind == CloseParenthesis || IsEOF)) {
 						Lexer.PopLookAheadBackup ();
 						al.Add (new TraitsArgument(td));
+						continue;
 					}
 
 					Lexer.RestoreLookAheadBackup ();
