@@ -3568,27 +3568,27 @@ namespace D_Parser.Parser
 		{
 			FunctionAttributes (anonymousMethod);
 
-			if (Expect(GoesTo))
+			if (laKind == OpenCurlyBrace)
 			{
-				if (laKind == OpenCurlyBrace)
-					anonymousMethod.Body = BlockStatement(anonymousMethod);
-				else
+				anonymousMethod.Body = BlockStatement (anonymousMethod);
+				anonymousMethod.EndLocation = anonymousMethod.Body.EndLocation;
+			}
+			else if (Expect(GoesTo))
+			{
+				anonymousMethod.Body = new BlockStatement { Location = t.EndLocation, ParentNode = anonymousMethod };
+
+				var ae = AssignExpression(anonymousMethod);
+
+				var endLocation = IsEOF ? CodeLocation.Empty : t.EndLocation;
+
+				anonymousMethod.Body.Add(new ReturnStatement
 				{
-					anonymousMethod.Body = new BlockStatement { Location = t.EndLocation, ParentNode = anonymousMethod };
+					Location = ae.Location,
+					EndLocation = endLocation,
+					ReturnExpression = ae
+				});
 
-					var ae = AssignExpression(anonymousMethod);
-
-					var endLocation = IsEOF ? CodeLocation.Empty : t.EndLocation;
-
-					anonymousMethod.Body.Add(new ReturnStatement
-					{
-						Location = ae.Location,
-						EndLocation = endLocation,
-						ReturnExpression = ae
-					});
-
-					anonymousMethod.Body.EndLocation = endLocation;
-				}
+				anonymousMethod.Body.EndLocation = endLocation;
 				anonymousMethod.EndLocation = anonymousMethod.Body.EndLocation;
 			}
 			else // (string | -- see IsLambdaExpression()
