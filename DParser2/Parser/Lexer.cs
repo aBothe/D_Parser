@@ -1423,7 +1423,7 @@ namespace D_Parser.Parser
 					OnError(y, x, String.Format("Char not terminated"));
 
 				char n;
-				while (!((n = (char)ReaderRead ()) == '\'' || n == 0));
+				while (!((n = (char)ReaderRead ()) == '\'' || n == -1));
 			}
 			return Token(DTokens.Literal, x, y, Col, Line, string.IsNullOrEmpty(surrogatePair) ? (object)chValue : surrogatePair, LiteralFormat.CharLiteral, surrogatePair == null ? LiteralSubformat.Utf8 : LiteralSubformat.Utf16, escapeSequence);
 		}
