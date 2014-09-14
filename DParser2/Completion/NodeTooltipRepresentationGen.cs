@@ -65,18 +65,14 @@ namespace D_Parser.Completion.ToolTips
 
 				if (!match.Success)
 				{
-					summary = DDocToMarkup(desc).Trim();
+					summary = HandleSummary(desc);
 					return;
 				}
 
 				if (match.Index < 1)
 					summary = null;
 				else
-				{
-					summary = DDocToMarkup(desc.Substring(0, match.Index - 1)).Trim();
-					if (string.IsNullOrWhiteSpace(summary))
-						summary = null;
-				}
+					summary = HandleSummary (desc.Substring (0, match.Index - 1));
 
 				int k = 0;
 				while ((k = match.Index + match.Length) < desc.Length)
@@ -96,6 +92,21 @@ namespace D_Parser.Completion.ToolTips
 			}
 		}
 
+		string HandleSummary(string desc)
+		{
+			var firstParagraphMatch = summaryFirstParagraphFilter.Match (desc);
+
+			if (firstParagraphMatch.Success)
+				desc = DDocToMarkup (desc.Substring (0, firstParagraphMatch.Index - 1));
+			else
+				desc = DDocToMarkup (desc);
+
+			if (string.IsNullOrWhiteSpace (desc))
+				return null;
+
+			return desc.Trim();
+		}
+
 		void AssignToCategories(Dictionary<string, string> cats, string catName, string rawContent)
 		{
 			var n = catName.ToLower(System.Globalization.CultureInfo.InvariantCulture);
@@ -112,6 +123,10 @@ namespace D_Parser.Completion.ToolTips
 				cats[catName] = DDocToMarkup(rawContent);
 			}
 		}
+
+		static System.Text.RegularExpressions.Regex summaryFirstParagraphFilter = new System.Text.RegularExpressions.Regex(
+			@"\n\s*\n",
+			RegexOptions.Compiled | RegexOptions.Multiline);
 
 		static System.Text.RegularExpressions.Regex paramsSectionRegex = new System.Text.RegularExpressions.Regex(
 			@"^\s*(?<name>[\w_]+)\s*=\s*(?<desc>(.|\n(?!\s*[\w_]+\s*=))*)\s*",
