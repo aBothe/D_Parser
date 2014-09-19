@@ -779,9 +779,10 @@ namespace D_Parser.Dom
 			if(x.Elements != null)
 				foreach (var kv in x.Elements)
 				{
-					kv.Key.Accept(this);
-						if(kv.Value!=null)
-							kv.Value.Accept(this);
+					if(kv.Key != null)
+						kv.Key.Accept(this);
+					if(kv.Value!=null)
+						kv.Value.Accept(this);
 				}
 		}
 
