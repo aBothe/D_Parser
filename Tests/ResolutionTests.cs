@@ -894,6 +894,39 @@ auto o = new Obj();
 			Assert.That(mr.Definition, Is.TypeOf(typeof(DMethod)));
 			Assert.AreEqual(mr.Name, "fooC");
 		}
+
+		[Test]
+		public void TestProtectedNestedType()
+		{
+			var pcl = CreateCache(
+				@"module packA.modA;
+				class C { private class B { int a; } }",
+
+				@"module modB;
+				import packA.modA;
+				A ca;
+				class A:C{	
+					B b;
+void foo(ref B bf) {
+	x;
+}
+				}");
+
+			var A = pcl[0]["modB"];
+			var foo = (A ["A"].First () as DClassLike) ["foo"].First () as DMethod;
+			var ctxt = CreateDefCtxt(pcl, foo, foo.Body.SubStatements.ElementAt(0).Location);
+
+			var x = DParser.ParseExpression ("bf");
+
+			var t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
+
+			Assert.That (t, Is.TypeOf(typeof(MemberSymbol)));
+			var ms = t as DSymbol;
+			Assert.That (ms.Base, Is.TypeOf(typeof(ClassType)));
+			ms = ms.Base as DSymbol;
+			Assert.That (ms.Name, Is.EqualTo("B"));
+			Assert.That (ms.NonStaticAccess, Is.True);
+		}
 		
 		[Test]
 		public void Imports2()
@@ -3415,12 +3448,12 @@ S!int s;
 ");
 			IExpression x;
 			AbstractType t;
-
+			/*
 			x = DParser.ParseExpression("s[]");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			Assert.That((t as DerivedDataType).Base, Is.TypeOf(typeof(PrimitiveType)));
-
+			*/
 			x = DParser.ParseExpression("s[1..3]");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(PointerType)));
@@ -3445,12 +3478,12 @@ S!int s;
 ");
 			IExpression x;
 			AbstractType t;
-
+			/*
 			x = DParser.ParseExpression("s[1]");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			Assert.That((t as DerivedDataType).Base, Is.TypeOf(typeof(PrimitiveType)));
-
+			*/
 			x = DParser.ParseExpression("s[1,2]");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(ArrayType)));
