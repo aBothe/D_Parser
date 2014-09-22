@@ -257,11 +257,6 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 			
 		}
 
-		public void Visit(AssertStatement assertStatement)
-		{
-			
-		}
-
 		public void Visit(StatementCondition condition)
 		{
 			

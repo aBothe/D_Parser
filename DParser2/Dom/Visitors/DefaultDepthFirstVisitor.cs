@@ -430,12 +430,14 @@ namespace D_Parser.Dom
 			s.Pragma.Accept(this);
 		}
 
-		public virtual void Visit(Statements.AssertStatement s)
+		public virtual void Visit(Statements.StaticAssertStatement s)
 		{
 			VisitAbstractStmt(s);
 
 			if (s.AssertedExpression != null)
 				s.AssertedExpression.Accept(this);
+            if (s.Message != null)
+                s.Message.Accept(this);
 		}
 
 		public virtual void Visit(StatementCondition s)
@@ -486,11 +488,6 @@ namespace D_Parser.Dom
 		public virtual void Visit(Statements.DebugSpecification s)
 		{
 			VisitAbstractStmt(s);
-		}
-		
-		public virtual void Visit(StaticAssertStatement s)
-		{
-			Visit(s as AssertStatement);
 		}
 		
 		public virtual void VisitMixinStatement(MixinStatement s)

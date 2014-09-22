@@ -161,7 +161,6 @@ namespace D_Parser.Dom
 		void Visit(AsmStatement.RawDataStatement dataStatement);
 		void Visit(AsmStatement.AlignStatement alignStatement);
 		void Visit(PragmaStatement pragmaStatement);
-		void Visit(AssertStatement assertStatement);
 		void Visit(StatementCondition condition);
 		void Visit(VolatileStatement volatileStatement);
 		void Visit(ExpressionStatement expressionStatement);
@@ -205,7 +204,6 @@ namespace D_Parser.Dom
 		R Visit(AsmStatement.RawDataStatement dataStatement);
 		R Visit(AsmStatement.AlignStatement alignStatement);
 		R Visit(PragmaStatement pragmaStatement);
-		R Visit(AssertStatement assertStatement);
 		R Visit(StatementCondition condition);
 		R Visit(VolatileStatement volatileStatement);
 		R Visit(ExpressionStatement expressionStatement);

@@ -270,8 +270,7 @@
     <Compile Include="Dom\Statements\PragmaStatement.cs" />
     <Compile Include="Dom\Statements\MixinStatement.cs" />
     <Compile Include="Dom\Statements\StatementCondition.cs" />
-    <Compile Include="Dom\Statements\AssertStatement.cs" />
-    <Compile Include="Dom\Statements\StaticAsserStatement.cs" />
+    <Compile Include="Dom\Statements\StaticAssertStatement.cs" />
     <Compile Include="Dom\Statements\VolatileStatement.cs" />
     <Compile Include="Dom\Statements\ExpressionStatement.cs" />
     <Compile Include="Dom\Statements\DeclarationStatement.cs" />

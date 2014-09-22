@@ -930,11 +930,6 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				return VisitSubStatements(s);
 			}
 
-			public bool Visit(AssertStatement s)
-			{
-				return VisitExpressionStmt(s);
-			}
-
 			public bool Visit(StatementCondition sc)
 			{
 				if ((ctxt.Options & ResolutionOptions.IgnoreDeclarationConditions) != 0)

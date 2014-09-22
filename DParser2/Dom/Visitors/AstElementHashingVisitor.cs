@@ -323,10 +323,7 @@ namespace D_Parser.Dom.Visitors
 			return 1000667;
 		}
 
-		public ulong Visit(Statements.AssertStatement assertStatement)
-		{
-			return 1000669;
-		}
+        // return 1000669;
 
 		public ulong Visit(Statements.StatementCondition condition)
 		{

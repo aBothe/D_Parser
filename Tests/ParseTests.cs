@@ -233,6 +233,29 @@ return false;
 			Assert.That (foo.Children.Count, Is.EqualTo (1));
 		}
 
+        [Test]
+        public void SyntaxError_Issue175()
+        {
+            var s = @"void test4()
+{    
+     printf(""main() : (-128 >= 0)=%s, (-128 <= 0)=%s\n"", 
+              cast(char*)(-128 >= 0 ? ""true"" : ""false""),
+              cast(char*)(-128 <= 0 ?  ""true"" : ""false""));     
+
+     printf(""main() : (128 >= 0)=%s, (128 <= 0)=%s\n"", 
+              cast(char*)(128 >= 0 ? ""true"" : ""false""),
+              cast(char*)(128 <= 0 ?  ""true"" : ""false""));
+
+     assert((-128 >= 0 ? ""true"" : ""false"") == ""false""),
+     assert((-128 <= 0 ? ""true"" : ""false"") == ""true"");
+     assert((+128 >= 0 ? ""true"" : ""false"") == ""true""),
+     assert((+128 <= 0 ? ""true"" : ""false"") == ""false"");     
+}";
+            var mod = DParser.ParseString(s);
+
+            Assert.AreEqual(mod.ParseErrors.Count, 0);
+        }
+
 		[Test]
 		public void SyntaxError_Issue178()
 		{

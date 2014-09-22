@@ -3143,14 +3143,14 @@ namespace D_Parser.Parser
 					var ce = new AssertExpression() { Location=startLoc};
 
 					var exprs = new List<IExpression>();
-					var assertedExpr = AssignExpression();
+					var assertedExpr = AssignExpression(Scope);
 					if(assertedExpr!=null)
 						exprs.Add(assertedExpr);
 
 					if (laKind == (Comma))
 					{
 						Step();
-						assertedExpr = AssignExpression();
+						assertedExpr = AssignExpression(Scope);
 						if (assertedExpr != null)
 							exprs.Add(assertedExpr);
 					}
@@ -3164,7 +3164,7 @@ namespace D_Parser.Parser
 					var me = new MixinExpression() { Location=t.Location};
 					if (Expect(OpenParenthesis))
 					{
-						me.AssignExpression = AssignExpression();
+						me.AssignExpression = AssignExpression(Scope);
 						Expect(CloseParenthesis);
 					}
 					me.EndLocation = t.EndLocation;
@@ -3175,7 +3175,7 @@ namespace D_Parser.Parser
 					var ie = new ImportExpression() { Location=t.Location};
 					Expect(OpenParenthesis);
 
-					ie.AssignExpression = AssignExpression();
+                    ie.AssignExpression = AssignExpression(Scope);
 
 					Expect(CloseParenthesis);
 					ie.EndLocation = t.EndLocation;
@@ -4094,27 +4094,29 @@ namespace D_Parser.Parser
 							return new DeclarationStatement { Declarations = new[] { new NamedTemplateMixinNode(tmx) }, Parent = Parent };
 					}
 				case Assert:
-					var isStatic = laKind == Static;
-					AssertStatement asS;
-					if (isStatic)
-					{
-						Step();
-						asS = new StaticAssertStatement { Location = la.Location, Parent = Parent };
-					}
-					else
-						asS = new AssertStatement() { Location = la.Location, Parent = Parent };
+                    if (laKind == Static)
+                    {
+                        Step();
+                        var asS = new StaticAssertStatement { Location = la.Location, Parent = Parent };
 
-					Step();
+                        if (Expect(OpenParenthesis))
+                        {
+                            asS.AssertedExpression = AssignExpression(Scope);
+                            if (laKind == Comma)
+                            {
+                                Step();
+                                asS.Message = AssignExpression(Scope);
+                            }
 
-					if (Expect(OpenParenthesis))
-					{
-						asS.AssertedExpression = Expression(Scope);
-						Expect(CloseParenthesis);
-						Expect(Semicolon);
-					}
-					asS.EndLocation = t.EndLocation;
+                            Expect(CloseParenthesis);
+                            Expect(Semicolon);
+                        }
 
-					return asS;
+                        asS.EndLocation = t.EndLocation;
+                        return asS;
+                    }
+                    else
+                        return ExpressionStatement(Scope, Parent);
 				case Volatile:
 					Step();
 					var vs = new VolatileStatement() { Location = t.Location, Parent = Parent };
