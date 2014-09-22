@@ -281,6 +281,15 @@ static assert((s1[10, 10..$, $-4, $..2]-=""x"") == tuple(""[]-="", ""x"", 10, [1
             Assert.That(mod.ParseErrors.Count, Is.EqualTo(0));
 		}
 
+        [Test]
+        public void SyntaxError_Issue173()
+        {
+            var s = @"typeof(s).Foo j;";
+            var mod = DParser.ParseString(s);
+
+            Assert.That(mod.ParseErrors.Count, Is.EqualTo(0));
+        }
+
 		[Test]
 		public void SyntaxError_Issue166()
 		{

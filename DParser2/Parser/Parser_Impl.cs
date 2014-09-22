@@ -1183,6 +1183,7 @@ namespace D_Parser.Parser
 				td = TypeOf(scope);
 				if (laKind != Dot)
 					return td;
+                Step();
 			}
 
 			else if (laKind == __vector)
@@ -1190,15 +1191,20 @@ namespace D_Parser.Parser
 				td = Vector(scope);
 				if (laKind != Dot)
 					return td;
+                Step();
 			}
 
 			if (AllowWeakTypeParsing && laKind != Identifier)
 				return null;
 
-			if (td == null)
-				td = IdentifierList(scope);
-			else
-				td.InnerMost = IdentifierList(scope);
+            if (td == null)
+                td = IdentifierList(scope);
+            else
+            {
+                var td_back = td;
+                td = IdentifierList(scope);
+                td.InnerMost = td_back;
+            }
 
 			if(isModuleScoped && td != null)
 			{
