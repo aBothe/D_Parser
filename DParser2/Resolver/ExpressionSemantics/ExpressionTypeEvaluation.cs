@@ -638,73 +638,72 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			var foreExpression = EvalForeExpression(x);
 
-			if (x.Arguments != null) {
-				int arg_i = -1;
-				foreach (var arg in x.Arguments) {
-					arg_i++;
+			if (x.Arguments == null || x.Arguments.Length == 0)
+				return SliceArray (x, foreExpression, null);
 
-					// myArray[0]; myArray[0..5];
-					// opIndex/opSlice ?
-					if (foreExpression is MemberSymbol)
-						foreExpression = DResolver.StripMemberSymbols (foreExpression);
+			for(int arg_i = 0; foreExpression != null && arg_i < x.Arguments.Length; arg_i++) {
+				var arg = x.Arguments [arg_i];
 
-					if (foreExpression == null)
-						break;
-					else if (foreExpression is UserDefinedType) {
-						var udt = foreExpression as UserDefinedType;
+				// myArray[0]; myArray[0..5];
+				if (foreExpression is MemberSymbol)
+					foreExpression = DResolver.StripMemberSymbols (foreExpression);
 
-						ctxt.CurrentContext.IntroduceTemplateParameterTypes(udt);
+				if (foreExpression == null)
+					break;
 
-						//Search opIndex overloads and try to match them to the given indexing arguments.
-						var overloads = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(OpIndexIdHash, AmbiguousType.TryDissolve(foreExpression), ctxt, x, false);
-						if (overloads != null && overloads.Length > 0)
-						{
-							var indexArgs = new List<AbstractType> ();
-							if(x.Arguments != null)
-								for(int k = arg_i; k < x.Arguments.Length; k++)
-									indexArgs.Add(x.Arguments[k].Expression.Accept(this)); // TODO: Treat slices properly..somehow
-
-							overloads = TemplateInstanceHandler.DeduceParamsAndFilterOverloads(overloads, indexArgs, true, ctxt);
-							ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(udt);
-							foreExpression = DResolver.StripMemberSymbols(TryPretendMethodExecution(AmbiguousType.Get(overloads, x), x, indexArgs.Count != 0 ? indexArgs.ToArray() : null));
-						}
-						else
-							ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(udt);
-
-						if (foreExpression is TemplateIntermediateType)
-						{//TODO: Proper resolution of alias this declarations
-							var tit = foreExpression as TemplateIntermediateType;
-							var ch = tit.Definition[DVariable.AliasThisIdentifierHash];
-							if (ch != null)
-							{
-								foreach (DVariable aliasThis in ch)
-								{
-									foreExpression = DResolver.StripMemberSymbols(TypeDeclarationResolver.HandleNodeMatch(aliasThis, ctxt, foreExpression));
-									if (foreExpression != null)
-										break; // HACK: Just omit other alias this' to have a quick run-through
-								}
-							}
-
-							foreExpression = tit;
-							continue;
-						}
-					}
-
-					if (arg is PostfixExpression_ArrayAccess.SliceArgument)
-						foreExpression = SliceArray (x, foreExpression, arg as PostfixExpression_ArrayAccess.SliceArgument);
-					else
-						foreExpression = AccessArrayAtIndex (x, foreExpression, arg);
-
-					if (foreExpression == null)
-						break;
-				}
+				if (arg is PostfixExpression_ArrayAccess.SliceArgument)
+					foreExpression = SliceArray (x, foreExpression, arg as PostfixExpression_ArrayAccess.SliceArgument);
+				else
+					foreExpression = AccessArrayAtIndex (x, foreExpression, arg,ref arg_i);
 			}
 
 			return foreExpression;
 		}
 
-		public AbstractType AccessArrayAtIndex(PostfixExpression_ArrayAccess x, AbstractType foreExpression, PostfixExpression_ArrayAccess.IndexArgument ix)
+		public AbstractType AccessArrayAtIndex(PostfixExpression_ArrayAccess x, AbstractType foreExpression, PostfixExpression_ArrayAccess.IndexArgument ix,ref int arg_i)
 		{
+			if (foreExpression is TemplateIntermediateType)
+			{
+				//TODO: Wtf is this?
+
+				//TODO: Proper resolution of alias this declarations
+				var tit = foreExpression as TemplateIntermediateType;
+				var ch = tit.Definition[DVariable.AliasThisIdentifierHash];
+				if (ch != null)
+				{
+					foreach (DVariable aliasThis in ch)
+					{
+						foreExpression = DResolver.StripMemberSymbols(TypeDeclarationResolver.HandleNodeMatch(aliasThis, ctxt, foreExpression));
+						if (foreExpression != null)
+							return foreExpression; // HACK: Just omit other alias this' to have a quick run-through
+					}
+				}
+
+				foreExpression = tit;
+			}
+
+			var udt = foreExpression as UserDefinedType;
+
+			if (udt != null) {
+				ctxt.CurrentContext.IntroduceTemplateParameterTypes (udt);
+
+				//Search opIndex overloads and try to match them to the given indexing arguments.
+				var overloads = TypeDeclarationResolver.ResolveFurtherTypeIdentifier (OpIndexIdHash, AmbiguousType.TryDissolve (foreExpression), ctxt, x, false);
+				if (overloads != null && overloads.Length > 0) {
+					var indexArgs = new List<AbstractType> ();
+					if (x.Arguments != null)
+						for (int k = arg_i; k < x.Arguments.Length; k++)
+							indexArgs.Add (x.Arguments [k].Expression.Accept (this)); // TODO: Treat slices properly..somehow
+
+					overloads = TemplateInstanceHandler.DeduceParamsAndFilterOverloads (overloads, indexArgs, true, ctxt);
+					ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals (udt);
+					foreExpression = TryPretendMethodExecution (AmbiguousType.Get (overloads, x), x, indexArgs.Count != 0 ? indexArgs.ToArray () : null);
+					arg_i += indexArgs.Count; //TODO: Only increment by the amount of actually used args for filtering out the respective method overload.
+					return foreExpression;
+				} else
+					ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals (udt);
+			}
+
 			if (foreExpression is AssocArrayType)
 			{
 				var ar = foreExpression as AssocArrayType;
@@ -765,15 +764,18 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		AbstractType SliceArray(PostfixExpression_ArrayAccess x, AbstractType foreExpression, PostfixExpression_ArrayAccess.SliceArgument sl)
 		{
-			var udt = foreExpression as UserDefinedType;
+			var udt = DResolver.StripMemberSymbols(foreExpression) as UserDefinedType;
 
 			if (udt == null)
 				return foreExpression;
 
 			// TODO: Make suitable for multi-dimensional access
-			var sliceArgs = new AbstractType[2];
-			sliceArgs[0] = sl.LowerBoundExpression.Accept(this);
-			sliceArgs[1] = sl.UpperBoundExpression.Accept(this);
+			AbstractType[] sliceArgs;
+
+			if (sl != null)
+				sliceArgs = new[] { sl.LowerBoundExpression.Accept (this), sl.UpperBoundExpression.Accept (this) };
+			else
+				sliceArgs = null;
 
 			ctxt.CurrentContext.IntroduceTemplateParameterTypes(udt);
 
