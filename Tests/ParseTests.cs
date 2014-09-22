@@ -201,8 +201,8 @@ static assert(is(E11554 == enum));
 //* one line
 void bar();");
 
-			Assert.AreEqual(2, mod.Children.Count);
-			Assert.IsInstanceOfType(typeof(DMethod),mod["bar"].First());
+			Assert.That(mod.Children.Count, Is.EqualTo(2));
+            Assert.That(mod["bar"].First(), Is.TypeOf(typeof(DMethod)));
 		}
 
 		[Test]
@@ -211,7 +211,7 @@ void bar();");
 			var s = "auto b = creal(3+4i);";
 			var mod = DParser.ParseString(s);
 
-			Assert.AreEqual(mod.ParseErrors.Count, 0);
+			Assert.That(mod.ParseErrors.Count, Is.EqualTo(0));
 		}
 
 		[Test]
@@ -227,7 +227,7 @@ return false;
 }";
 			var mod = DParser.ParseString(s);
 
-			Assert.AreEqual(mod.ParseErrors.Count, 0);
+			Assert.That(mod.ParseErrors.Count, Is.EqualTo(0));
 
 			var foo = mod ["foo"].First () as DMethod;
 			Assert.That (foo.Children.Count, Is.EqualTo (1));
@@ -253,7 +253,7 @@ return false;
 }";
             var mod = DParser.ParseString(s);
 
-            Assert.AreEqual(mod.ParseErrors.Count, 0);
+            Assert.That(mod.ParseErrors.Count, Is.EqualTo(0));
         }
 
 		[Test]
@@ -262,7 +262,7 @@ return false;
 			var s = "static assert(!__traits(compiles, v1 * v2));";
 			var mod = DParser.ParseString(s);
 
-			Assert.AreEqual(mod.ParseErrors.Count, 0);
+			Assert.That(mod.ParseErrors.Count, Is.EqualTo(0));
 		}
 
 		[Test]
@@ -278,7 +278,7 @@ static assert((s1[20..30, 10]          +=""x"") == tuple(""[]+="", ""x"", [0, 20
 static assert((s1[10, 10..$, $-4, $..2]-=""x"") == tuple(""[]-="", ""x"", 10, [1,10,99], 99-4, [3,99,2]));";
 			var mod = DParser.ParseString(s);
 
-			Assert.AreEqual(mod.ParseErrors.Count, 0);
+            Assert.That(mod.ParseErrors.Count, Is.EqualTo(0));
 		}
 
 		[Test]
@@ -287,7 +287,7 @@ static assert((s1[10, 10..$, $-4, $..2]-=""x"") == tuple(""[]-="", ""x"", 10, [1
 			var s = "mixin .mix;";
 			var mod = DParser.ParseString(s);
 
-			Assert.AreEqual(mod.ParseErrors.Count, 0);
+			Assert.That(mod.ParseErrors.Count, Is.EqualTo(0));
 		}
 
 		[Test]
@@ -305,7 +305,7 @@ static assert((s1[10, 10..$, $-4, $..2]-=""x"") == tuple(""[]-="", ""x"", 10, [1
 }";
 			var mod = DParser.ParseString(s);
 
-			Assert.AreEqual(mod.ParseErrors.Count, 0);
+			Assert.That(mod.ParseErrors.Count, Is.EqualTo(0));
 		}
 
 		[Test]
@@ -316,7 +316,7 @@ version(9223372036854775807){}
 debug(9223372036854775807){}";
 			var mod = DParser.ParseString(s);
 
-			Assert.AreEqual(mod.ParseErrors.Count, 0);
+			Assert.That(mod.ParseErrors.Count, Is.EqualTo(0));
 		}
 
 		[Test]
@@ -335,7 +335,7 @@ debug(9223372036854775807){}";
 }";
 			var mod = DParser.ParseString(s);
 
-			Assert.AreEqual(mod.ParseErrors.Count, 0);
+			Assert.That(mod.ParseErrors.Count, Is.EqualTo(0));
 		}
 
 		[Test]
@@ -344,7 +344,7 @@ debug(9223372036854775807){}";
 			var s = @"int foo19(alias int a)() { return a; }";
 			var mod = DParser.ParseString(s);
 
-			Assert.AreEqual(mod.ParseErrors.Count, 0);
+			Assert.That(mod.ParseErrors.Count, Is.EqualTo(0));
 		}
 
 		[Test]
@@ -361,7 +361,7 @@ mixin template node9026()
 }";
 			var mod = DParser.ParseString(s);
 
-			Assert.AreEqual(mod.ParseErrors.Count, 0);
+			Assert.That(mod.ParseErrors.Count, Is.EqualTo(0));
 		}
 
 		[Test]
@@ -396,7 +396,7 @@ static assert( isBar5832b!(Bar5832!1234));
 static assert(!isBar5832c!(Bar5832!1234));";
 			var mod = DParser.ParseString(s);
 
-			Assert.AreEqual(mod.ParseErrors.Count, 0);
+			Assert.That(mod.ParseErrors.Count, Is.EqualTo(0));
 		}
 
 		[Test]
@@ -405,7 +405,7 @@ static assert(!isBar5832c!(Bar5832!1234));";
 			var s = @"mixin typeof(b).Def!(int);";
 			var mod = DParser.ParseString(s);
 
-			Assert.AreEqual(mod.ParseErrors.Count, 0);
+			Assert.That(mod.ParseErrors.Count, Is.EqualTo(0));
 		}
 
 		[Test]
@@ -414,7 +414,7 @@ static assert(!isBar5832c!(Bar5832!1234));";
 			var s = @"int array1[3] = [1:1,2,0:3];";
 			var mod = DParser.ParseString(s);
 
-			Assert.AreEqual(mod.ParseErrors.Count, 0);
+			Assert.That(mod.ParseErrors.Count, Is.EqualTo(0));
 		}
 
 		[Test]
@@ -426,7 +426,7 @@ package(protection) void commonAncestorFoo();
 package(protection.subpkg) void samePkgFoo();";
 			var mod = DParser.ParseString(s);
 
-			Assert.AreEqual(mod.ParseErrors.Count, 0);
+			Assert.That(mod.ParseErrors.Count, Is.EqualTo(0));
 		}
 
 		[Test]
@@ -436,7 +436,7 @@ package(protection.subpkg) void samePkgFoo();";
 module imports.a12567;";
 			var mod = DParser.ParseString(s);
 
-			Assert.AreEqual(mod.ParseErrors.Count, 0);
+			Assert.That(mod.ParseErrors.Count, Is.EqualTo(0));
 		}
 
 		[Test]
