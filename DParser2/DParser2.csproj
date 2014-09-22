@@ -318,8 +318,6 @@
     <Compile Include="Dom\Expressions\PostfixExpression_Increment.cs" />
     <Compile Include="Dom\Expressions\PostfixExpression_Decrement.cs" />
     <Compile Include="Dom\Expressions\PostfixExpression_MethodCall.cs" />
-    <Compile Include="Dom\Expressions\PostfixExpression_Index.cs" />
-    <Compile Include="Dom\Expressions\PostfixExpression_Slice.cs" />
     <Compile Include="Dom\Expressions\PrimaryExpression.cs" />
     <Compile Include="Dom\Expressions\TemplateInstanceExpression.cs" />
     <Compile Include="Dom\Expressions\IdentifierExpression.cs" />
@@ -357,6 +355,7 @@
     <Compile Include="Formatting\Indent\IDocumentIndentEngine.cs" />
     <Compile Include="Formatting\Indent\IStateMachineIndentEngine.cs" />
     <Compile Include="Resolver\ResolutionHooks\Hooks\autoimplement.cs" />
+    <Compile Include="Dom\Expressions\PostfixExpression_ArrayAccess.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="readme.txt" />

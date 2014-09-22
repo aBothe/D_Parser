@@ -1268,9 +1268,7 @@ namespace D_Parser.Parser
 						cd = new ArrayDecl() {
 							Location=startLoc,
 							KeyType=null,
-							KeyExpression= new PostfixExpression_Slice() { 
-								FromExpression=fromExpression,
-								ToExpression=AssignExpression(scope)}};
+							KeyExpression= new PostfixExpression_ArrayAccess(fromExpression, AssignExpression(scope))};
 					}
 					else
 						cd = new ArrayDecl() { KeyType=null, KeyExpression=fromExpression,Location=startLoc };
@@ -2964,53 +2962,27 @@ namespace D_Parser.Parser
 						break;
 					// IndexExpression | SliceExpression
 					case OpenSquareBracket:
-						Step();
+						Step ();
+						var loc = t.Location;
+						var args = new List<PostfixExpression_ArrayAccess.IndexArgument> ();
 
-						if (laKind != CloseSquareBracket)
-						{
-							var firstEx = AssignExpression(Scope);
-							// [ AssignExpression .. AssignExpression ]
-							if (laKind == DoubleDot)
-							{
-								Step();
-
-								leftExpr = new PostfixExpression_Slice()
-								{
-									FromExpression = firstEx,
-									PostfixForeExpression = leftExpr,
-									ToExpression = AssignExpression(Scope)
-								};
-							}
-							// [ ArgumentList ]
-							else if (laKind == CloseSquareBracket || laKind == (Comma) || IsEOF)
-							{
-								var args = new List<IExpression>();
-								if(firstEx != null)
-									args.Add(firstEx);
-								if (laKind == Comma)
-								{
-									Step();
-									args.AddRange(ArgumentList(Scope));
-								}
-
-								leftExpr = new PostfixExpression_Index()
-								{
-									PostfixForeExpression = leftExpr,
-									Arguments = args.ToArray()
-								};
-							}
-						}
-						else // Empty array literal = SliceExpression
-						{
-							leftExpr = new PostfixExpression_Slice()
-							{
-								PostfixForeExpression=leftExpr
-							};
+						if (laKind != CloseSquareBracket) {
+							do {
+								var firstEx = AssignExpression (Scope);
+								// [ AssignExpression .. AssignExpression ] || ArgumentList
+								if (laKind == DoubleDot) {
+									Step ();
+									args.Add (new PostfixExpression_ArrayAccess.SliceArgument (firstEx, AssignExpression (Scope)));
+								} else
+									args.Add (new PostfixExpression_ArrayAccess.IndexArgument (firstEx));
+							} while(laKind == Comma && Expect (Comma)); //TODO: All these might be collapsed into one expression.
 						}
 
-						Expect(CloseSquareBracket);
-						if(leftExpr is PostfixExpression)
-							((PostfixExpression)leftExpr).EndLocation = t.EndLocation;
+						Expect (CloseSquareBracket);
+						leftExpr = new PostfixExpression_ArrayAccess(args.ToArray()){ 
+							EndLocation = t.EndLocation,
+							PostfixForeExpression = leftExpr
+						};
 						break;
 					default:
 						return leftExpr;
@@ -4614,11 +4586,9 @@ namespace D_Parser.Parser
 			while (laKind == OpenSquareBracket)
 			{
 				Step();
-				var e = new PostfixExpression_Index();
-				e.PostfixForeExpression = left;
-				e.Arguments = new IExpression[] { ParseAsmExpression(Scope, Parent) };
+				left = new PostfixExpression_ArrayAccess(ParseAsmExpression(Scope, Parent)) { PostfixForeExpression = left };
 				Expect(CloseSquareBracket);
-				left = e;
+				(left as PostfixExpression_ArrayAccess).EndLocation = t.EndLocation;
 			}
 			return left;
 		}
@@ -4701,10 +4671,10 @@ namespace D_Parser.Parser
 			switch (laKind)
 			{
 				case OpenSquareBracket:
-					Step();
-					var e = new PostfixExpression_Index() { EndLocation = t.EndLocation };
-					e.Arguments = new IExpression[] { ParseAsmExpression(Scope, Parent) };
-					Expect(CloseSquareBracket);
+					Step ();
+					var e = new PostfixExpression_ArrayAccess (ParseAsmExpression (Scope, Parent));
+					Expect (CloseSquareBracket);
+					e.EndLocation = t.EndLocation;
 					return e;
 				case Dollar:
 					var ins = Parent as AsmStatement.InstructionStatement;

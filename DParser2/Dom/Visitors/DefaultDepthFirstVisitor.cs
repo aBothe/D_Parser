@@ -719,24 +719,17 @@ namespace D_Parser.Dom
 						arg.Accept (this);
 		}
 
-		public virtual void Visit(Expressions.PostfixExpression_Index x)
+		public virtual void Visit(Expressions.PostfixExpression_ArrayAccess x)
 		{
 			VisitPostfixExpression(x);
 
 			if (x.Arguments != null)
 				foreach (var arg in x.Arguments)
-					if(arg != null)
-						arg.Accept(this);
-		}
-
-		public virtual void Visit(Expressions.PostfixExpression_Slice x)
-		{
-			VisitPostfixExpression(x);
-
-			if (x.FromExpression != null)
-				x.FromExpression.Accept(this);
-			if (x.ToExpression != null)
-				x.ToExpression.Accept(this);
+					if (arg != null) {
+						arg.Expression.Accept (this);
+						if (arg is PostfixExpression_ArrayAccess.SliceArgument)
+							(arg as PostfixExpression_ArrayAccess.SliceArgument).UpperBoundExpression.Accept (this);
+					}
 		}
 
 		public virtual void Visit(TemplateInstanceExpression x)

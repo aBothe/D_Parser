@@ -658,10 +658,29 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return null;
 		}
 
-		public ISymbolValue Visit(PostfixExpression_Index x)
+		public ISymbolValue Visit(PostfixExpression_ArrayAccess x)
 		{
 			var foreExpression = EvalForeExpression(x);
 
+			if(x.Arguments != null)
+				foreach (var arg in x.Arguments) {
+					if (arg == null)
+						continue;
+
+					if (arg is PostfixExpression_ArrayAccess.SliceArgument)
+						foreExpression = SliceArray (x, foreExpression, arg as PostfixExpression_ArrayAccess.SliceArgument);
+					else
+						foreExpression = AccessArrayAtIndex (x, foreExpression, arg);
+
+					if (foreExpression == null)
+						return null;
+				}
+
+			return foreExpression;
+		}
+
+		ISymbolValue AccessArrayAtIndex(PostfixExpression_ArrayAccess x, ISymbolValue foreExpression, PostfixExpression_ArrayAccess.IndexArgument ix)
+		{
 			//TODO: Access pointer arrays(?)
 
 			if (foreExpression is ArrayValue) // ArrayValue must be checked first due to inheritance!
@@ -672,13 +691,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				var arrLen_Backup = ValueProvider.CurrentArrayLength;
 				ValueProvider.CurrentArrayLength = av.Elements.Length;
 
-				var n = x.Arguments.Length > 0 && x.Arguments[0] != null ? x.Arguments[0].Accept(this) as PrimitiveValue : null;
+				var n = ix.Expression.Accept(this) as PrimitiveValue;
 
 				ValueProvider.CurrentArrayLength = arrLen_Backup;
 
 				if (n == null)
 				{
-					EvalError(x.Arguments[0], "Returned no value");
+					EvalError(ix.Expression, "Returned no value");
 					return null;
 				}
 
@@ -689,13 +708,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				}
 				catch
 				{
-					EvalError(x.Arguments[0], "Index expression must be of type int");
+					EvalError(ix.Expression, "Index expression must be of type int");
 					return null;
 				}
 
 				if (i < 0 || i > av.Elements.Length)
 				{
-					EvalError(x.Arguments[0], "Index out of range - it must be between 0 and " + av.Elements.Length);
+					EvalError(ix.Expression, "Index out of range - it must be between 0 and " + av.Elements.Length);
 					return null;
 				}
 
@@ -705,11 +724,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			{
 				var aa = (AssociativeArrayValue)foreExpression;
 
-				var key = x.Arguments.Length > 0 && x.Arguments[0] != null ? x.Arguments[0].Accept(this) as PrimitiveValue : null;
+				var key = ix.Expression.Accept(this) as PrimitiveValue;
 
 				if (key == null)
 				{
-					EvalError(x.Arguments[0], "Returned no value");
+					EvalError(ix.Expression, "Returned no value");
 					return null;
 				}
 
@@ -729,21 +748,19 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return null;
 		}
 
-		public ISymbolValue Visit(PostfixExpression_Slice x)
+		ISymbolValue SliceArray(IExpression x,ISymbolValue foreExpression, PostfixExpression_ArrayAccess.SliceArgument sl)
 		{
-			var foreExpression = EvalForeExpression(x);
-
 			if (!(foreExpression is ArrayValue))
 			{
-				EvalError(x.PostfixForeExpression, "Must be an array");
+				EvalError(x, "Must be an array");
 				return null;
 			}
 
 			var ar = (ArrayValue)foreExpression;
-			var sl = (PostfixExpression_Slice)x;
 
 			// If the [ ] form is used, the slice is of the entire array.
-			if (sl.FromExpression == null && sl.ToExpression == null)
+			if (sl.LowerBoundExpression == null && sl.UpperBoundExpression == null)
+				//TODO: Clone it or append an item or so
 				return foreExpression;
 
 			// Make $ operand available
@@ -751,14 +768,15 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var len = ar.Length;
 			ValueProvider.CurrentArrayLength = len;
 
-			var bound_lower = sl.FromExpression != null ? sl.FromExpression.Accept(this) as PrimitiveValue : null;
-			var bound_upper = sl.ToExpression != null ? sl.ToExpression.Accept(this) as PrimitiveValue : null;
+			//TODO: Strip aliases and whatever things may break this
+			var bound_lower = sl.LowerBoundExpression.Accept(this) as PrimitiveValue;
+			var bound_upper = sl.UpperBoundExpression.Accept(this) as PrimitiveValue;
 
 			ValueProvider.CurrentArrayLength = arrLen_Backup;
 
 			if (bound_lower == null || bound_upper == null)
 			{
-				EvalError(bound_lower == null ? sl.FromExpression : sl.ToExpression, "Must be of an integral type");
+				EvalError(bound_lower == null ? sl.LowerBoundExpression : sl.UpperBoundExpression, "Must be of an integral type");
 				return null;
 			}
 
@@ -770,25 +788,25 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 			catch
 			{
-				EvalError(lower != -1 ? sl.FromExpression : sl.ToExpression, "Boundary expression must base an integral type");
+				EvalError(lower != -1 ? sl.LowerBoundExpression : sl.UpperBoundExpression, "Boundary expression must base an integral type");
 				return null;
 			}
 
 			if (lower < 0)
 			{
-				EvalError(sl.FromExpression, "Lower boundary must be greater than 0"); return new NullValue(ar.RepresentedType);
+				EvalError(sl.LowerBoundExpression, "Lower boundary must be greater than 0"); return new NullValue(ar.RepresentedType);
 			}
 			if (lower >= len && len > 0)
 			{
-				EvalError(sl.FromExpression, "Lower boundary must be smaller than " + len); return new NullValue(ar.RepresentedType);
+				EvalError(sl.LowerBoundExpression, "Lower boundary must be smaller than " + len); return new NullValue(ar.RepresentedType);
 			}
 			if (upper < lower)
 			{
-				EvalError(sl.ToExpression, "Upper boundary must be greater than " + lower); return new NullValue(ar.RepresentedType);
+				EvalError(sl.UpperBoundExpression, "Upper boundary must be greater than " + lower); return new NullValue(ar.RepresentedType);
 			}
 			else if (upper > len)
 			{
-				EvalError(sl.ToExpression, "Upper boundary must be smaller than " + len); return new NullValue(ar.RepresentedType);
+				EvalError(sl.UpperBoundExpression, "Upper boundary must be smaller than " + len); return new NullValue(ar.RepresentedType);
 			}
 
 			if (ar.IsString)

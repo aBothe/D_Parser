@@ -888,12 +888,12 @@ namespace D_Parser.Resolver
 	/// </summary>
 	public class ArrayAccessSymbol : DerivedDataType
 	{
-		public ArrayAccessSymbol(PostfixExpression_Index indexExpr, AbstractType arrayValueType):
+		public ArrayAccessSymbol(PostfixExpression_ArrayAccess indexExpr, AbstractType arrayValueType):
 			base(arrayValueType,indexExpr)	{ }
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new ArrayAccessSymbol(DeclarationOrExpressionBase as PostfixExpression_Index, cloneBase && Base != null ? Base.Clone(true) : Base);
+			return new ArrayAccessSymbol(DeclarationOrExpressionBase as PostfixExpression_ArrayAccess, cloneBase && Base != null ? Base.Clone(true) : Base);
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)

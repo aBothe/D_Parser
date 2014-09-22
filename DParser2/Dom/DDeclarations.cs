@@ -112,14 +112,6 @@ namespace D_Parser.Dom
 		} }
 		public IExpression KeyExpression;
 
-		public bool IsRanged
-		{
-			get
-			{
-				return KeyExpression is PostfixExpression_Slice;
-			}
-		}
-
 		/// <summary>
 		/// Alias for InnerDeclaration; contains all declaration parts that are located in front of the square brackets.
 		/// </summary>

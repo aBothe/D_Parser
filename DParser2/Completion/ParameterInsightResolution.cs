@@ -281,21 +281,11 @@ namespace D_Parser.Completion
 				res.CurrentlyTypedArgumentIndex = call.ArgumentCount;
 		}
 
-		public void Visit(PostfixExpression_Index x)
-		{
-			HandleIndexSliceExpression(x);
+		public void Visit(PostfixExpression_ArrayAccess x)
+		{//TODO for Slices: Omit opIndex overloads if it's obvious that we don't want them -- a[1.. |
 			if (x.Arguments != null)
 				res.CurrentlyTypedArgumentIndex = x.Arguments.Length;
-		}
 
-		public void Visit(PostfixExpression_Slice x)
-		{//TODO: Omit opIndex overloads if it's obvious, that we don't want them -- a[1.. |
-			HandleIndexSliceExpression(x);
-			res.CurrentlyTypedArgumentIndex = x.ToExpression == null ? 1 : 2;
-		}
-
-		void HandleIndexSliceExpression(PostfixExpression x)
-		{
 			res.IsMethodArguments = true;
 			res.ParsedExpression = x;
 

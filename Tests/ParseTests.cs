@@ -243,6 +243,22 @@ return false;
 		}
 
 		[Test]
+		public void SyntaxError_Issue177()
+		{
+			var s = @"static assert( s1[20..30, 10]           == tuple("" []"", [0, 20, 30], 10));
+static assert( s1[10, 10..$, $-4, $..2] == tuple("" []"", 10, [1,10,99], 99-4, [3,99,2]));
+static assert(+s1[20..30, 10]           == tuple(""+[]"", [0, 20, 30], 10));
+static assert(-s1[10, 10..$, $-4, $..2] == tuple(""-[]"", 10, [1,10,99], 99-4, [3,99,2]));
+static assert((s1[20..30, 10]           =""x"") == tuple(""[] ="", ""x"", [0, 20, 30], 10));
+static assert((s1[10, 10..$, $-4, $..2] =""x"") == tuple(""[] ="", ""x"", 10, [1,10,99], 99-4, [3,99,2]));
+static assert((s1[20..30, 10]          +=""x"") == tuple(""[]+="", ""x"", [0, 20, 30], 10));
+static assert((s1[10, 10..$, $-4, $..2]-=""x"") == tuple(""[]-="", ""x"", 10, [1,10,99], 99-4, [3,99,2]));";
+			var mod = DParser.ParseString(s);
+
+			Assert.AreEqual(mod.ParseErrors.Count, 0);
+		}
+
+		[Test]
 		public void SyntaxError_Issue166()
 		{
 			var s = "mixin .mix;";

@@ -256,8 +256,7 @@ namespace D_Parser.Dom
 		void Visit(PostfixExpression_Increment x);
 		void Visit(PostfixExpression_Decrement x);
 		void Visit(PostfixExpression_MethodCall x);
-		void Visit(PostfixExpression_Index x);
-		void Visit(PostfixExpression_Slice x);
+		void Visit(PostfixExpression_ArrayAccess x);
 
 		void Visit(TemplateInstanceExpression x);
 		void Visit(IdentifierExpression x);
@@ -322,8 +321,7 @@ namespace D_Parser.Dom
 		R Visit(PostfixExpression_Increment x);
 		R Visit(PostfixExpression_Decrement x);
 		R Visit(PostfixExpression_MethodCall x);
-		R Visit(PostfixExpression_Index x);
-		R Visit(PostfixExpression_Slice x);
+		R Visit(PostfixExpression_ArrayAccess x);
 
 		R Visit(TemplateInstanceExpression x);
 		R Visit(IdentifierExpression x);

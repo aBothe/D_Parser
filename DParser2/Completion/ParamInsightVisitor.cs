@@ -76,14 +76,7 @@ namespace D_Parser.Completion
 			CallExpressionStack.Pop ();
 		}
 
-		public override void Visit(PostfixExpression_Index x)
-		{
-			CallExpressionStack.Push(x);
-			base.Visit(x);
-			CallExpressionStack.Pop();
-		}
-
-		public override void Visit(PostfixExpression_Slice x)
+		public override void Visit(PostfixExpression_ArrayAccess x)
 		{
 			CallExpressionStack.Push(x);
 			base.Visit(x);

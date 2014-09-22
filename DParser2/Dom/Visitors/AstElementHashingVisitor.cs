@@ -557,15 +557,12 @@ namespace D_Parser.Dom.Visitors
 			return 1001267;
 		}
 
-		public ulong Visit(Expressions.PostfixExpression_Index x)
+		public ulong Visit(Expressions.PostfixExpression_ArrayAccess x)
 		{
 			return 1001279;
 		}
 
-		public ulong Visit(Expressions.PostfixExpression_Slice x)
-		{
-			return 1001291;
-		}
+		//TODO: return 1001291; got freed due to obsoletion of postfixexpression_slice
 
 		public ulong Visit(Expressions.TemplateInstanceExpression x)
 		{
