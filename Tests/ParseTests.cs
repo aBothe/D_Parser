@@ -290,6 +290,20 @@ static assert((s1[10, 10..$, $-4, $..2]-=""x"") == tuple(""[]-="", ""x"", 10, [1
             Assert.That(mod.ParseErrors.Count, Is.EqualTo(0));
         }
 
+        [Test]
+        public void SyntaxError_Issue172()
+        {
+            var s = @"
+static assert(!__traits(compiles, immutable Nullable1([1,2,3])));
+static assert( __traits(compiles, immutable Nullable1([1,2,3].idup)));
+static assert(!__traits(compiles,    shared Nullable1([1,2,3])));
+static assert(!__traits(compiles,    shared Nullable1([1,2,3].idup)));
+";
+            var mod = DParser.ParseString(s);
+
+            Assert.That(mod.ParseErrors.Count, Is.EqualTo(0));
+        }
+
 		[Test]
 		public void SyntaxError_Issue166()
 		{
