@@ -674,7 +674,7 @@ namespace D_Parser.Parser
 							}
 						}
 
-						if (Char.IsLetter(ch) || ch == '_' || ch == '\\')
+						if (IsLetter(ch) || ch == '\\')
 						{
 							x = Col - 1; // Col was incremented above, but we want the start of the identifier
 							y = Line;
@@ -717,7 +717,7 @@ namespace D_Parser.Parser
 							}
 							return Token(DTokens.Identifier, x, y, s);
 						}
-						else if (Char.IsDigit(ch))
+						else if (IsDigit(ch))
 							token = ReadDigit(ch, Col - 1);
 						else
 							token = ReadOperator(ch);
@@ -758,9 +758,9 @@ namespace D_Parser.Parser
 					canBeKeyword = false;
 					string surrogatePair;
 					ReadEscapeSequence(out ch, out surrogatePair);
-					if (surrogatePair != null)
+					if (surrogatePair != null && surrogatePair.Length > 0)
 					{
-						if (!char.IsLetterOrDigit(surrogatePair, 0))
+						if (!IsIdentifierPart(surrogatePair[0]))
 						{
 							OnError(Line, Col, "Unicode escape sequences in identifiers cannot be used to represent characters that are invalid in identifiers");
 						}
@@ -1658,7 +1658,7 @@ namespace D_Parser.Parser
 				case '.':
 					// Prevent OverflowException when ReaderPeek returns -1
 					int tmp = ReaderPeek();
-					if (tmp > 0 && Char.IsDigit((char)tmp))
+					if (tmp > 0 && IsDigit((char)tmp))
 						return ReadDigit('.', Col - 1);
 					else if (tmp == (int)'.')
 					{
@@ -1852,9 +1852,12 @@ namespace D_Parser.Parser
 		}
 
 		#region Helpers
-		public static bool IsIdentifierPart(int ch)
+		/// <summary>
+		/// Also accepts underscores!
+		/// </summary>
+		public static bool IsLetter(int ch)
 		{
-			switch(ch)
+			switch (ch)
 			{
 				case 'a':
 				case 'A':
@@ -1909,16 +1912,6 @@ namespace D_Parser.Parser
 				case 'z':
 				case 'Z':
 				case '_':
-				case '0':
-				case '1':
-				case '2':
-				case '3':
-				case '4':
-				case '5':
-				case '6':
-				case '7':
-				case '8':
-				case '9':
 					return true;
 				case ' ':
 				case '@':
@@ -1935,8 +1928,13 @@ namespace D_Parser.Parser
 				case -1:
 					return false;
 				default:
-					return char.IsLetterOrDigit((char)ch); // accept unicode letters
+					return char.IsLetter((char)ch);
 			}
+		}
+
+		public static bool IsIdentifierPart(int ch)
+		{
+			return IsDigit((char)ch) || IsLetter(ch);
 		}
 
 		public static bool IsDigit(char digit)
