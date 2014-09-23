@@ -2981,7 +2981,8 @@ namespace D_Parser.Parser
 									args.Add (new PostfixExpression_ArrayAccess.SliceArgument (firstEx, AssignExpression (Scope)));
 								} else
 									args.Add (new PostfixExpression_ArrayAccess.IndexArgument (firstEx));
-							} while(laKind == Comma && Expect (Comma)); //TODO: All these might be collapsed into one expression.
+							} while(laKind == Comma && Expect (Comma) &&
+								laKind != CloseSquareBracket); // Trailing comma allowed https://github.com/aBothe/D_Parser/issues/170
 						}
 
 						Expect (CloseSquareBracket);
