@@ -585,92 +585,12 @@ namespace D_Parser.Parser
 						}
 						else if (ch == 'q') // Token strings
 						{
-							peek = ReaderPeek();
-							if (peek == '{'/*q{ ... }*/ || peek == '"'/* q"{{ ...}}   }}"*/)
+							switch (ReaderPeek())
 							{
-								var subFmt = LiteralSubformat.Utf8;
-								x = Col - 1;
-								y = Line;
-								string initDelim = "";
-								string endDelim = "";
-								string tokenString = "";
-								initDelim += (char)ReaderRead();
-								bool IsQuoted = false;
-								int BracketLevel = 0; // Only needed if IsQuoted is false
-
-								// Read out initializer
-								if (initDelim == "\"")
-								{
-									IsQuoted = true;
-									initDelim = "";
-
-									int pk = ReaderPeek();
-									ch = (char)pk;
-									if (Char.IsLetterOrDigit(ch)) // q"EOS EOS"
-										while ((next = ReaderRead()) != -1)
-										{
-											ch = (char)next;
-											if (!Char.IsWhiteSpace(ch))
-												initDelim += ch;
-											else
-												break;
-										}
-									else if (ch == '(' || ch == '<' || ch == '[' || ch == '{')
-									{
-										var firstBracket = ch;
-										while ((next = ReaderRead()) != -1)
-										{
-											ch = (char)next;
-											if (ch == firstBracket)
-												initDelim += ch;
-											else
-												break;
-										}
-									}
-								}
-								else if (initDelim == "{")
-									BracketLevel = 1;
-
-								// Build end delimiter
-								endDelim = initDelim.Replace('{', '}').Replace('[', ']').Replace('(', ')').Replace('<', '>');
-								if (IsQuoted) endDelim += "\"";
-
-								// Read tokens
-								bool inSuperComment = false,
-									 inNestedComment = false;
-
-								while ((next = ReaderRead()) != -1)
-								{
-									ch = (char)next;
-
-									tokenString += ch;
-
-									// comments are treated as part of the string inside of tokenized string. curly braces inside the comments are ignored. WEIRD!
-									if (!inSuperComment && tokenString.EndsWith("/+")) inSuperComment = true;
-									else if (inSuperComment && tokenString.EndsWith("+/")) inSuperComment = false;
-									if (!inSuperComment)
-									{
-										if (!inNestedComment && tokenString.EndsWith("/*")) inNestedComment = true;
-										else if (inNestedComment && tokenString.EndsWith("*/")) inNestedComment = false;
-									}
-
-									if (!inNestedComment && !inSuperComment)
-									{
-										if (!IsQuoted && ch == '{')
-											BracketLevel++;
-										if (!IsQuoted && ch == '}')
-											BracketLevel--;
-									}
-
-									if (tokenString.EndsWith(endDelim) && (IsQuoted || BracketLevel < 1))
-									{
-										tokenString = tokenString.Remove(tokenString.Length - endDelim.Length);
-										TryReadExplicitStringFormat (out subFmt);
-										break;
-									}
-								}
-
-								return Token(DTokens.Literal, x, y, Col, Line, tokenString, /*tokenString,*/ LiteralFormat.VerbatimStringLiteral, subFmt);
+								case '{':
+									return ReadTokenStringLiteral_CurlyInit();
+								case '"'/* q"{{ ...}}   }}"*/:
+									return ReadTokenStringLiteral_IdentInit();
 							}
 						}
 
@@ -739,6 +659,187 @@ namespace D_Parser.Parser
 			}
 
 			return Token(DTokens.EOF, Col, Line, 0);
+		}
+
+		DToken ReadTokenStringLiteral_IdentInit()
+		{
+			int x = Col - 1;
+			int y = Line;
+			
+			ReaderRead(); // Skip "
+			var tokenString = new StringBuilder();
+
+			// Parse EOS
+			byte eosToken;
+			int eosTokenCount = 1;
+			byte k;
+
+			string eosIdentifier=null;
+			var eos = new List<byte>();
+
+			var tk = Next();
+			k = tk.Kind;
+			switch (tk.Kind)
+			{
+				case DTokens.Identifier:
+					eosToken = DTokens.Identifier;
+					eosIdentifier = (string)tk.LiteralValue;
+					break;
+				case DTokens.OpenCurlyBrace:
+					eosToken = DTokens.CloseCurlyBrace;
+					break;
+				case DTokens.OpenSquareBracket:
+					eosToken = DTokens.CloseSquareBracket;
+					break;
+				case DTokens.OpenParenthesis:
+					eosToken = DTokens.CloseParenthesis;
+					break;
+				case DTokens.LessThan:
+					eosToken = DTokens.GreaterThan;
+					break;
+					//TODO: << and <<<
+				default:
+					eosToken = DTokens.INVALID;
+					break;
+			}
+
+			if(eosToken != 0 && eosToken != DTokens.Identifier)
+				while ((tk = Next()).Kind == k)
+					eosTokenCount++;
+
+			int readEosTokenCount = 0;
+			DToken backupToken = null;
+			do
+			{
+				TokenStringParsing_AppendToken(tk, tokenString);
+			next:
+				tk = Next();
+
+				if (tk.Kind == eosToken)
+				{
+					if (eosToken == DTokens.Identifier)
+					{
+						if ((string)tk.LiteralValue == eosIdentifier &&
+							ReaderPeek() == (char)'\"')
+						{
+							ReaderRead();
+							break;
+						}
+					}
+					else if (++readEosTokenCount == eosTokenCount)
+					{
+						if (ReaderPeek() == (char)'\"')
+						{
+							ReaderRead();
+							break;
+						}
+					}
+					else
+					{
+						if (backupToken == null)
+							backupToken = tk;
+						else
+							backupToken.next = tk;
+						goto next;
+					}
+				}
+
+				while (backupToken != null)
+				{
+					TokenStringParsing_AppendToken(backupToken, tokenString);
+					backupToken = backupToken.Next;
+				}
+				readEosTokenCount = 0;
+			}
+			while (ReaderPeek() != -1);
+
+			var subFmt = LiteralSubformat.Utf8;
+			TryReadExplicitStringFormat(out subFmt);
+			return Token(DTokens.Literal, x, y, Col, Line, tokenString.ToString().Trim(), LiteralFormat.VerbatimStringLiteral, subFmt);
+		}
+
+		DToken ReadTokenStringLiteral_CurlyInit()
+		{
+			int x = Col - 1;
+			int y = Line;
+
+			ReaderRead(); // Skip {
+			var tokenString = new StringBuilder();
+			int bracketLevel = 1;
+
+			while (bracketLevel > 0 && ReaderPeek() != -1)
+			{
+				var tk = Next();
+				switch (tk.Kind)
+				{
+					case DTokens.OpenCurlyBrace:
+						bracketLevel++;
+						break;
+					case DTokens.CloseCurlyBrace:
+						if (--bracketLevel < 1)
+							continue;
+						break;
+				}
+
+				TokenStringParsing_AppendToken(tk, tokenString);
+			}
+
+			var subFmt = LiteralSubformat.Utf8;
+			TryReadExplicitStringFormat(out subFmt);
+			return Token(DTokens.Literal, x, y, Col, Line, tokenString.ToString().Trim(), LiteralFormat.VerbatimStringLiteral, subFmt);
+		}
+
+		void TokenStringParsing_AppendToken(DToken tk, StringBuilder tokenString)
+		{
+			switch (tk.Kind)
+			{
+				case DTokens.Identifier:
+					tokenString.Append(tk.LiteralValue);
+					break;
+				case DTokens.Literal:
+					switch (tk.LiteralFormat)
+					{
+						case LiteralFormat.CharLiteral:
+							tokenString.Append('\'').Append(tk.LiteralValue).Append('\'');
+							break;
+						case LiteralFormat.None:
+						case LiteralFormat.Scalar:
+						case LiteralFormat.FloatingPoint:
+							tokenString.Append(tk.LiteralValue);
+							break;
+						case LiteralFormat.StringLiteral:
+							tokenString.Append('\"').Append(tk.LiteralValue).Append('\"');
+							break;
+						case LiteralFormat.VerbatimStringLiteral:
+							//TODO: More specific distinguishment between verbatim string types
+							tokenString.Append('`').Append(tk.LiteralValue).Append('`');
+							break;
+					}
+
+					TokenStringParsing_AppendLiteralSubFormat(tk, tokenString);
+					break;
+				default:
+					tokenString.Append(DTokens.GetTokenString(tk.Kind));
+					break;
+			}
+
+			tokenString.Append(' ');
+		}
+
+		void TokenStringParsing_AppendLiteralSubFormat(DToken tk, StringBuilder sb)
+		{
+			switch (tk.Subformat)
+			{
+				case LiteralSubformat.Utf8:
+					break;
+				case LiteralSubformat.Utf16:
+					sb.Append('w');
+					break;
+				case LiteralSubformat.Utf32:
+					sb.Append('d');
+					break;
+					//TODO
+			}
 		}
 
 		string ReadIdent(char ch, out bool canBeKeyword)

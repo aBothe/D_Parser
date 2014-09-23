@@ -304,6 +304,22 @@ static assert(!__traits(compiles,    shared Nullable1([1,2,3].idup)));
             Assert.That(mod.ParseErrors.Count, Is.EqualTo(0));
         }
 
+        [Test]
+        public void SyntaxError_Issue171()
+        {
+            var s = @"
+void foo() { 
+s = q""myID schwing const ref byte myID"";
+s = q{{foo}""}""};
+s = q""(( HURR DURR const token ref uint 'c'  ))"";
+assert(s == ""{foo}\""}\"""");
+}
+";
+            var mod = DParser.ParseString(s);
+
+            Assert.That(mod.ParseErrors.Count, Is.EqualTo(0));
+        }
+
 		[Test]
 		public void SyntaxError_Issue166()
 		{
