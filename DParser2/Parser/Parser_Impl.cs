@@ -2721,10 +2721,9 @@ namespace D_Parser.Parser
 				if (laKind == (OpenParenthesis))
 				{
 					Step();
-					if (laKind == (CloseParenthesis))
-						Step();
-					else
+					if(laKind != DTokens.CloseParenthesis)
 						ac.ClassArguments = ArgumentList(Scope).ToArray();
+					Expect(DTokens.CloseParenthesis);
 				}
 
 				var anclass = new DClassLike(Class) { IsAnonymousClass=true,
@@ -2732,14 +2731,12 @@ namespace D_Parser.Parser
 				};
 
 				// BaseClasslist_opt
-				if (laKind == (Colon))
-				{
-					//TODO : Add base classes to expression
-					BaseClassList(anclass);
+				if (laKind != DTokens.OpenCurlyBrace){
+					BaseClassList(anclass, laKind == Colon);
+					// SuperClass_opt InterfaceClasses_opt
+					if (laKind != OpenCurlyBrace)
+						BaseClassList(anclass,false);
 				}
-				// SuperClass_opt InterfaceClasses_opt
-				else if (laKind != OpenCurlyBrace)
-					BaseClassList(anclass,false);
 
 				ClassBody(anclass);
 
@@ -4958,21 +4955,18 @@ namespace D_Parser.Parser
 		{
 			if (ExpectColon) Expect(Colon);
 
-			var ret = new List<ITypeDeclaration>();
-			dc.BaseClasses = ret;
+			var ret = dc.BaseClasses ?? (dc.BaseClasses = new List<ITypeDeclaration>());
 
-			bool init = true;
-			while (init || laKind == (Comma))
+			do
 			{
-				if (!init) Step();
-				init = false;
-				if (IsProtectionAttribute() && laKind != (Protected))
+				if (IsProtectionAttribute() && laKind != (Protected)) //TODO
 					Step();
 
-				var ids=Type(dc);
+				var ids = Type(dc);
 				if (ids != null)
 					ret.Add(ids);
 			}
+			while (laKind == DTokens.Comma && Expect(DTokens.Comma) && Peek().Kind != DTokens.OpenCurlyBrace);
 		}
 
 		public void ClassBody(DBlockNode ret,bool KeepBlockAttributes=false,bool UpdateBoundaries=true)

@@ -336,6 +336,38 @@ void test52()
 		}
 
 		[Test]
+		public void SyntaxError_Issue168()
+		{
+			var s = @"
+class C7 {
+    public this(){
+    }
+}
+
+interface I7 {
+    void fnc();
+}
+
+void test7()
+{
+    char[][] t;
+    foreach( char[] c; t ){
+        new class( c ) C7, I7 {
+            public this( char[] c ){
+                super();
+            }
+            void fnc(){
+            }
+        };
+    }
+}
+";
+			var mod = DParser.ParseString(s);
+
+			Assert.That(mod.ParseErrors.Count, Is.EqualTo(0));
+		}
+
+		[Test]
 		public void SyntaxError_Issue166()
 		{
 			var s = "mixin .mix;";
