@@ -989,6 +989,7 @@ class C
 static assert(true);
 void foo()
 {
+	static assert(st.a==34);
 	static if(true)
 		writeln();
 }");

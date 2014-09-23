@@ -269,26 +269,8 @@ namespace D_Parser.Parser
 					if (!Modifier.ContainsAttribute(DeclarationAttributes, Static))
 						SynErr(Static, "Static assert statements must be explicitly marked as static");
 
-					var ass = new StaticAssertStatement {
-						Attributes = GetCurrentAttributeSet_Array(),
-						Location = t.Location
-					};
-
-					if (Expect(OpenParenthesis))
-					{
-						ass.AssertedExpression = AssignExpression();
-						if (laKind == (Comma))
-						{
-							Step();
-							ass.Message = AssignExpression();
-						}
-						if (Expect(CloseParenthesis))
-							Expect(Semicolon);
-					}
-
-					ass.EndLocation = t.EndLocation;
-
-					module.Add(ass);
+					module.Add(ParseStaticAssertStatement(module));
+					Expect(Semicolon);
 					break;
 				case Mixin:
 					switch(Peek(1).Kind)
@@ -351,6 +333,31 @@ namespace D_Parser.Parser
 						module.AddRange(decls);
 					break;
 			}
+		}
+
+		StaticAssertStatement ParseStaticAssertStatement(IBlockNode scope)
+		{
+			DeclarationAttributes.Clear();
+
+			var ass = new StaticAssertStatement {
+				Attributes = GetCurrentAttributeSet_Array(),
+				Location = t.Location
+			};
+
+			if (Expect(OpenParenthesis))
+			{
+				ass.AssertedExpression = AssignExpression();
+				if (laKind == (Comma))
+				{
+					Step();
+					ass.Message = AssignExpression();
+				}
+
+				Expect (CloseParenthesis);
+			}
+
+			ass.EndLocation = t.EndLocation;
+			return ass;
 		}
 
 		IMetaDeclarationBlock AttributeBlock(DBlockNode module)
@@ -4098,26 +4105,11 @@ namespace D_Parser.Parser
 							return new DeclarationStatement { Declarations = new[] { new NamedTemplateMixinNode(tmx) }, Parent = Parent };
 					}
 				case Assert:
-                    if (laKind == Static)
+					CheckForStorageClasses(Scope);
+					if (Modifier.ContainsAttribute(DeclarationAttributes, Static))
                     {
                         Step();
-                        var asS = new StaticAssertStatement { Location = la.Location, Parent = Parent };
-
-                        if (Expect(OpenParenthesis))
-                        {
-                            asS.AssertedExpression = AssignExpression(Scope);
-                            if (laKind == Comma)
-                            {
-                                Step();
-                                asS.Message = AssignExpression(Scope);
-                            }
-
-                            Expect(CloseParenthesis);
-                            Expect(Semicolon);
-                        }
-
-                        asS.EndLocation = t.EndLocation;
-                        return asS;
+						return ParseStaticAssertStatement (Scope);
                     }
                     else
                         return ExpressionStatement(Scope, Parent);
