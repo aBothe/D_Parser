@@ -321,6 +321,21 @@ assert(s == ""{foo}\""}\"""");
         }
 
 		[Test]
+		public void SyntaxError_Issue169()
+		{
+			var s = @"
+void test52()
+{
+    size_t vsize = void.sizeof;
+    assert(vsize == 1);
+}
+";
+			var mod = DParser.ParseString(s);
+
+			Assert.That(mod.ParseErrors.Count, Is.EqualTo(0));
+		}
+
+		[Test]
 		public void SyntaxError_Issue166()
 		{
 			var s = "mixin .mix;";

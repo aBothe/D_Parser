@@ -1786,7 +1786,7 @@ namespace D_Parser.Parser
 			Expect(Assign);
 
 			// VoidInitializer
-			if (laKind == Void)
+			if (laKind == Void && Lexer.CurrentPeekToken.Kind != DTokens.Dot)
 			{
 				Step();
 				return new VoidInitializer() { Location=t.Location,EndLocation=t.EndLocation};
