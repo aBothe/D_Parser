@@ -3448,12 +3448,12 @@ S!int s;
 ");
 			IExpression x;
 			AbstractType t;
-			/*
+
 			x = DParser.ParseExpression("s[]");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			Assert.That((t as DerivedDataType).Base, Is.TypeOf(typeof(PrimitiveType)));
-			*/
+
 			x = DParser.ParseExpression("s[1..3]");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(PointerType)));
@@ -3478,12 +3478,12 @@ S!int s;
 ");
 			IExpression x;
 			AbstractType t;
-			/*
+
 			x = DParser.ParseExpression("s[1]");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			Assert.That((t as DerivedDataType).Base, Is.TypeOf(typeof(PrimitiveType)));
-			*/
+
 			x = DParser.ParseExpression("s[1,2]");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(ArrayType)));
