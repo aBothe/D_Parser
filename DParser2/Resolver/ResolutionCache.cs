@@ -1,4 +1,5 @@
 ﻿using D_Parser.Dom;
+using D_Parser.Dom.Visitors;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,32 +9,32 @@ namespace D_Parser.Resolver
 {
 	class ResolutionCache<T>
 	{
-		class CacheEntryDict : Dictionary<long, T> {
+		class CacheEntryDict : Dictionary<ulong, T>	{
 			public T TryGetValue(ResolutionContext ctxt)
 			{
 				T t;
-				Int64 d = GetTemplateParamHash(ctxt);
+				UInt64 d = GetTemplateParamHash(ctxt);
 				TryGetValue(d, out t);
 				return t;
 			}
 
 			public void Add(ResolutionContext ctxt, T t)
 			{
-				Int64 d = GetTemplateParamHash(ctxt);
+				UInt64 d = GetTemplateParamHash(ctxt);
 				this[d] = t;
 			}
 
-			static long GetTemplateParamHash(ResolutionContext ctxt)
+			static ulong GetTemplateParamHash(ResolutionContext ctxt)
 			{
 				var tpm = new List<TemplateParameter>();
-				long h = DNode.GetNodePath(Resolver.TypeResolution.DResolver.SearchBlockAt(ctxt.ScopedBlock, ctxt.CurrentContext.Caret),true).GetHashCode();
+				var h = (ulong)DNode.GetNodePath(Resolver.TypeResolution.DResolver.SearchBlockAt(ctxt.ScopedBlock, ctxt.CurrentContext.Caret), true).GetHashCode();
 				foreach (var tps in ctxt.DeducedTypesInHierarchy)
 					unchecked
 					{
 						if (tps == null || tpm.Contains(tps.Parameter))
 							continue;
 
-						h += tps.Parameter.GetHashCode() + (tps.Base != null ? tps.Base.ToCode(false).GetHashCode() : tps.ParameterValue != null ? tps.ParameterValue.ToCode().GetHashCode() : 0);
+						h += AstElementHashingVisitor.Instance.Accept(tps);
 						tpm.Add(tps.Parameter);
 					}
 				return h;
