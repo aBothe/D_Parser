@@ -4958,7 +4958,7 @@ namespace D_Parser.Parser
 				if (ids != null)
 					ret.Add(ids);
 			}
-			while (laKind == DTokens.Comma && Expect(DTokens.Comma) && Lexer.CurrentPeekToken.Kind != DTokens.OpenCurlyBrace);
+			while (laKind == DTokens.Comma && Expect(DTokens.Comma) && laKind != DTokens.OpenCurlyBrace);
 		}
 
 		public void ClassBody(DBlockNode ret,bool KeepBlockAttributes=false,bool UpdateBoundaries=true)
