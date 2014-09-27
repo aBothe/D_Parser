@@ -349,16 +349,22 @@ namespace D_Parser.Resolver
 		const int maxErrorCount = 20;
 		public void LogError(ResolutionError err)
 		{
-			ResolutionErrors.Add(err);/*
+			ResolutionErrors.Add(err);
+#if DEBUG
+#else
 			if (ResolutionErrors.Count > maxErrorCount && CompletionOptions.Instance.LimitResolutionErrors)
-				throw new TooManyResolutionErrors (ResolutionErrors.ToArray());*/
+				throw new TooManyResolutionErrors (ResolutionErrors.ToArray());
+#endif
 		}
 
 		public void LogError(ISyntaxRegion syntaxObj, string msg)
 		{
-			ResolutionErrors.Add(new ResolutionError(syntaxObj,msg));/*
+			ResolutionErrors.Add(new ResolutionError(syntaxObj,msg));
+#if DEBUG
+#else
 			if (ResolutionErrors.Count > maxErrorCount && CompletionOptions.Instance.LimitResolutionErrors)
-				throw new TooManyResolutionErrors (ResolutionErrors.ToArray());*/
+				throw new TooManyResolutionErrors (ResolutionErrors.ToArray());
+#endif
 		}
 		#endregion
 	}
