@@ -57,42 +57,42 @@ namespace D_Parser.Dom.Visitors
 			throw new InvalidOperationException();
 		}
 
-		public ulong Visit(DEnumValue dEnumValue)
+		public ulong Visit(DEnumValue n)
 		{
 			return 1000003;
 		}
 
-		public ulong Visit(DVariable dVariable)
+		public ulong Visit(DVariable n)
 		{
 			return 1000033;
 		}
 
-		public ulong Visit(DMethod dMethod)
+		public ulong Visit(DMethod n)
 		{
 			return 1000037;
 		}
 
-		public ulong Visit(DClassLike dClassLike)
+		public ulong Visit(DClassLike n)
 		{
 			return 1000039;
 		}
 
-		public ulong Visit(DEnum dEnum)
+		public ulong Visit(DEnum n)
 		{
 			return 1000081;
 		}
 
-		public ulong Visit(DModule dModule)
+		public ulong Visit(DModule n)
 		{
 			return 1000099;
 		}
 
-		public ulong Visit(DBlockNode dBlockNode)
+		public ulong Visit(DBlockNode n)
 		{
 			return 1000117;
 		}
 
-		public ulong Visit(TemplateParameter.Node templateParameterNode)
+		public ulong Visit(TemplateParameter.Node n)
 		{
 			return 1000121;
 		}
@@ -713,7 +713,7 @@ namespace D_Parser.Dom.Visitors
 
 		public ulong VisitPrimitiveType(PrimitiveType t)
 		{
-			return 1001659;
+			return (ulong)(1001659 << 8) + Primes.PrimeNumbers[t.TypeToken];
 		}
 
 		public ulong VisitPointerType(PointerType t)
@@ -796,9 +796,11 @@ namespace D_Parser.Dom.Visitors
 			return 1001933;
 		}
 
-		public ulong VisitTemplateParameterSymbol(TemplateParameterSymbol t)
+		public ulong VisitTemplateParameterSymbol(TemplateParameterSymbol tps)
 		{
-			return 1001941;
+			return 1001941 * ((ulong)tps.Parameter.GetHashCode() +
+							(tps.Base != null ? (ulong)tps.Base.ToCode(false).GetHashCode() : 0) +
+							(tps.ParameterValue != null ? (ulong)tps.ParameterValue.ToCode().GetHashCode() : 0));
 		}
 
 		public ulong VisitArrayAccessSymbol(ArrayAccessSymbol t)
@@ -881,9 +883,9 @@ namespace D_Parser.Dom.Visitors
 			return 1002109;
 		}
 
-		public ulong Visit(TemplateValueParameter templateValueParameter)
+		public ulong Visit(TemplateValueParameter p)
 		{
-			return 1002121;
+			return 1002121 + p.Representation.Accept(this);
 		}
 
 		public ulong Visit(TemplateAliasParameter templateAliasParameter)
