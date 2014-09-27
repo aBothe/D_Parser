@@ -25,10 +25,26 @@ namespace D_Parser.Resolver
 		[ThreadStatic]
 		static List<MixinStatement> stmtsBeingAnalysed;
 		
-		static bool CheckAndPushAnalysisStack(MixinStatement mx)
+
+		class _MixinAnalysisStackClearenceToken : IDisposable
+		{
+			public readonly MixinStatement mx;
+
+			public _MixinAnalysisStackClearenceToken(MixinStatement mx)
+			{
+				this.mx = mx;
+			}
+
+			public void Dispose()
+			{
+				stmtsBeingAnalysed.Remove(mx);
+			}
+		}
+
+		static _MixinAnalysisStackClearenceToken CheckAndPushAnalysisStack(MixinStatement mx)
 		{
 			if (mx == null)
-				return false;
+				return null;
 
 			if(stmtsBeingAnalysed == null)
 				stmtsBeingAnalysed = new List<MixinStatement>();
@@ -36,7 +52,7 @@ namespace D_Parser.Resolver
 			if(stmtsBeingAnalysed.Count != 0)
 			{
 				if(stmtsBeingAnalysed.Count > 5)
-					return false;
+					return null;
 
 				/*
 				 * Only accept mixins that are located somewhere BEFORE the mixin that is the last inserted one in the stack.
@@ -48,7 +64,7 @@ namespace D_Parser.Resolver
 					if(nr == pk.ParentNode.NodeRoot)
 					{
 						if(mx == pk || mx.Location >= pk.Location)
-							return false;
+							return null;
 						break;
 					}
 				}
@@ -56,7 +72,7 @@ namespace D_Parser.Resolver
 			
 			stmtsBeingAnalysed.Add(mx);
 			
-			return true;
+			return new _MixinAnalysisStackClearenceToken(mx);
 		}
 		
 		static ISyntaxRegion GetMixinContent(MixinStatement mx, ResolutionContext ctxt, bool takeStmtCache , out VariableValue evaluatedVariable)
@@ -68,26 +84,27 @@ namespace D_Parser.Resolver
 			MixinCacheItem mixinCacheItem;
 			ISyntaxRegion parsedCode;
 
-			using (ctxt.Push(mx.ParentNode, mx.Location))
+			using (var removalToken = CheckAndPushAnalysisStack(mx))
 			{
-				mixinCacheItem = ctxt.MixinCache.TryGetType(mx);
-				Tuple<VariableValue, ISyntaxRegion> cacheTuple;
-				if (mixinCacheItem != null && mixinCacheItem.TryGetValue(parentNode, out cacheTuple))
-				{
-					evaluatedVariable = cacheTuple.Item1;
-					return cacheTuple.Item2;
-				}
-
-				if (!CheckAndPushAnalysisStack(mx))
+				if (removalToken == null)
 					return null;
 
-				// Evaluate the mixin expression
-				v = Evaluation.EvaluateValue(mx.MixinExpression, ctxt, true);
-				evaluatedVariable = v as VariableValue;
-				if (evaluatedVariable != null)
-					v = Evaluation.EvaluateValue(evaluatedVariable, new StandardValueProvider(ctxt));
+				using (ctxt.Push(mx.ParentNode, mx.Location))
+				{
+					mixinCacheItem = ctxt.MixinCache.TryGetType(mx);
+					Tuple<VariableValue, ISyntaxRegion> cacheTuple;
+					if (mixinCacheItem != null && mixinCacheItem.TryGetValue(parentNode, out cacheTuple))
+					{
+						evaluatedVariable = cacheTuple.Item1;
+						return cacheTuple.Item2;
+					}
 
-				stmtsBeingAnalysed.Remove(mx);
+					// Evaluate the mixin expression
+					v = Evaluation.EvaluateValue(mx.MixinExpression, ctxt, true);
+					evaluatedVariable = v as VariableValue;
+					if (evaluatedVariable != null)
+						v = Evaluation.EvaluateValue(evaluatedVariable, new StandardValueProvider(ctxt));
+				}
 			}
 			
 			// Ensure it's a string literal
