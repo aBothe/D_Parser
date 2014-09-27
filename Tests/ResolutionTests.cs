@@ -3202,6 +3202,55 @@ S2!S1 s;
 		
 		#region Mixins
 		[Test]
+		public void MixinCache()
+		{
+			var ctxt = CreateCtxt ("A", @"module A;
+
+mixin(""int intA;"");
+
+class ClassA
+{
+	mixin(""int intB;"");
+}
+
+class ClassB(T)
+{
+	mixin(""int intC;"");
+}
+
+ClassA ca;
+ClassB!int cb;
+ClassB!bool cc;
+");
+
+			IExpression x, x2;
+			MemberSymbol t,t2;
+
+			x = DParser.ParseExpression ("intA");
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as MemberSymbol;
+			t2 = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as MemberSymbol;
+
+			Assert.That (t.Definition, Is.SameAs(t2.Definition));
+
+			x = DParser.ParseExpression ("ca.intB");
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as MemberSymbol;
+			t2 = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as MemberSymbol;
+
+			Assert.That (t.Definition, Is.SameAs(t2.Definition));
+
+			x = DParser.ParseExpression ("cb.intC");
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as MemberSymbol;
+			t2 = ExpressionTypeEvaluation.EvaluateType (x, ctxt) as MemberSymbol;
+
+			Assert.That (t.Definition, Is.SameAs(t2.Definition));
+
+			x2 = DParser.ParseExpression ("cc.intC");
+			t2 = ExpressionTypeEvaluation.EvaluateType (x2, ctxt) as MemberSymbol;
+
+			Assert.That (t.Definition, Is.Not.SameAs(t2.Definition));
+		}
+
+		[Test]
 		public void Mixins1()
 		{
 			var pcl = ResolutionTests.CreateCache(@"module A;
