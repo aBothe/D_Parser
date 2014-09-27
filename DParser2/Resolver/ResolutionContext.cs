@@ -41,7 +41,7 @@ namespace D_Parser.Resolver
 		}
 
 		internal readonly ResolutionCache<MixinAnalysis.MixinCacheItem> MixinCache;
-		//internal readonly ResolutionCache<AbstractType[]> Cache;
+		internal readonly ResolutionCache<AbstractType> Cache;
 		//internal readonly ResolutionCache<ISymbolValue> ValueCache;
 		public readonly ParseCacheView ParseCache;
 
@@ -94,7 +94,7 @@ namespace D_Parser.Resolver
 		{
 			this.CompilationEnvironment = gFlags;
 			this.ParseCache = parseCache;
-			//Cache = new ResolutionCache<AbstractType[]>(this);
+			Cache = new ResolutionCache<AbstractType>(this);
 			//ValueCache = new ResolutionCache<ISymbolValue>(this);
 			MixinCache = new ResolutionCache<MixinAnalysis.MixinCacheItem>(this);
 		}
@@ -103,7 +103,7 @@ namespace D_Parser.Resolver
 		{
 			this.CompilationEnvironment = gFlags;
 			this.ParseCache = parseCache;
-			//Cache = new ResolutionCache<AbstractType[]>(this);
+			Cache = new ResolutionCache<AbstractType>(this);
 			//ValueCache = new ResolutionCache<ISymbolValue>(this);
 			MixinCache = new ResolutionCache<MixinAnalysis.MixinCacheItem>(this);
 			

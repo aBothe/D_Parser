@@ -60,7 +60,15 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (ctxt.CancelOperation)
 				return new UnknownType(x);
 
-			return x.Accept(new ExpressionTypeEvaluation(ctxt) { TryReturnMethodReturnType = tryReturnMethodReturnType });
+			AbstractType t;
+			if ((t = ctxt.Cache.TryGetType(x)) != null)
+				return t;
+
+			t = x.Accept(new ExpressionTypeEvaluation(ctxt) { TryReturnMethodReturnType = tryReturnMethodReturnType });
+
+			ctxt.Cache.Add(t ?? new UnknownType(x), x);
+
+			return t;
 		}
 		#endregion
 
