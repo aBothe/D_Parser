@@ -32,6 +32,7 @@ using D_Parser.Parser;
 using D_Parser.Dom.Statements;
 using System;
 using D_Parser.Completion;
+using System.Threading;
 
 namespace D_Parser.Refactoring
 {
@@ -64,7 +65,7 @@ namespace D_Parser.Refactoring
 			this.invalidConditionalCodeRegions = i;
 		}
 
-		public static Dictionary<int, Dictionary<ISyntaxRegion, byte>> Scan(IEditorData ed, List<ISyntaxRegion> invalidConditionalCodeRegions = null, int timeout = int.MinValue)
+		public static Dictionary<int, Dictionary<ISyntaxRegion, byte>> Scan(IEditorData ed, CancellationToken cancelToken, List<ISyntaxRegion> invalidConditionalCodeRegions = null)
 		{
 			if (ed == null || ed.SyntaxTree == null)
 				return new Dictionary<int, Dictionary<ISyntaxRegion,byte>>();
@@ -76,7 +77,7 @@ namespace D_Parser.Refactoring
 
 			var typeRefFinder = new TypeReferenceFinder(ctxt, invalidConditionalCodeRegions);
 
-			CodeCompletion.DoTimeoutableCompletionTask(null, ctxt, () => ed.SyntaxTree.Accept(typeRefFinder), timeout);
+			CodeCompletion.DoTimeoutableCompletionTask(null, ctxt, () => ed.SyntaxTree.Accept(typeRefFinder), cancelToken);
 
 			return typeRefFinder.Matches;
 		}

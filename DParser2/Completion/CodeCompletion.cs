@@ -144,6 +144,21 @@ namespace D_Parser.Completion
 			return currentScope;
 		}
 
+		public static void DoTimeoutableCompletionTask(ICompletionDataGenerator cdgen, ResolutionContext ctxt, Action ac, CancellationToken token)
+		{
+			if (token.IsCancellationRequested)
+				return;
+
+			ctxt.CancelOperation = false;
+			token.Register(() => { 
+				ctxt.CancelOperation = true; 
+				if (cdgen != null)
+					cdgen.NotifyTimeout(); 
+			});
+
+			ac();
+		}
+
 		/// <param name="cdgen">Can be null.</param>
 		/// <param name="ctxt"></param>
 		/// <param name="ac"></param>
