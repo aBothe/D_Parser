@@ -61,12 +61,15 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return new UnknownType(x);
 
 			AbstractType t;
-			if ((t = ctxt.Cache.TryGetType(x)) != null)
+			if (tryReturnMethodReturnType && 
+				(t = ctxt.Cache.TryGetType(x)) != null &&
+				!(t.Tag is TypeDeclarationResolver.AliasTag)) // Don't accept aliases because their Tag does/base type might differ from the target alias definition.
 				return t;
 
 			t = x.Accept(new ExpressionTypeEvaluation(ctxt) { TryReturnMethodReturnType = tryReturnMethodReturnType });
 
-			ctxt.Cache.Add(t ?? new UnknownType(x), x);
+			if(tryReturnMethodReturnType)
+				ctxt.Cache.Add(t ?? new UnknownType(x), x);
 
 			return t;
 		}
