@@ -297,17 +297,16 @@ namespace D_Parser.Resolver.TypeResolution
 		{
 			bool isLegitOverload = true;
 
-			var paramEnum = tplNode.TemplateParameters.GetEnumerator();
-
 			var args = givenTemplateArguments ?? new List<ISemantic> ();
 
 			var argEnum = args.GetEnumerator();
-			foreach (var expectedParam in tplNode.TemplateParameters)
-				if (!DeduceParam(ctxt, overload, deducedTypes, argEnum, expectedParam))
-				{
-					isLegitOverload = false;
-					break; // Don't check further params if mismatch has been found
-				}
+			if(tplNode.TemplateParameters != null)
+				foreach (var expectedParam in tplNode.TemplateParameters)
+					if (!DeduceParam(ctxt, overload, deducedTypes, argEnum, expectedParam))
+					{
+						isLegitOverload = false;
+						break; // Don't check further params if mismatch has been found
+					}
 
 			if (!isMethodCall && argEnum.MoveNext())
 			{
