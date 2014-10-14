@@ -155,8 +155,11 @@ namespace D_Parser.Dom
         {
 			var sb = new StringBuilder ();
 				
-			if(Attributes)
-				sb.Append(AttributeString).Append(' ');
+			if (Attributes) {
+				sb.Append (AttributeString);
+				if (sb.Length != 0)
+					sb.Append (' ');
+			}
 
 			sb.Append(base.ToString(Attributes,IncludePath));
 
@@ -165,9 +168,12 @@ namespace D_Parser.Dom
             {
 				sb.Append('(');
 				foreach (var p in TemplateParameters)
-					sb.Append(p.ToString()).Append(',');
+					sb.Append(p.ToString()).Append(", ");
+				if (sb [sb.Length - 1] == ' ')
+					sb.Length--;
 				if (sb [sb.Length - 1] == ',')
 					sb.Length--;
+
 				sb.Append(')');
             }
 

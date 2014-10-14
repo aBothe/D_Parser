@@ -152,8 +152,8 @@ namespace D_Parser.Dom
 		{
 			var s = base.ToString(Attributes, IncludePath) + "(";
 			foreach (var p in Parameters)
-				s += (p is AbstractNode ? (p as AbstractNode).ToString(false) : p.ToString()) + ",";
-			return s.Trim(',') + ")";
+				s += (p is AbstractNode ? (p as AbstractNode).ToString(false) : p.ToString()) + ", ";
+			return s.Trim(',',' ') + ")";
 		}
 
 		public CodeLocation BlockStartLocation
