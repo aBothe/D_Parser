@@ -2197,15 +2197,22 @@ namespace D_Parser.Parser
 		/// <returns></returns>
 		IMetaDeclaration AttributeSpecifier(DBlockNode module, DAttribute previouslyParsedAttribute, bool RequireDeclDef = false)
 		{
+			DAttribute[] attrs;
+
 			if (laKind == Colon)
 			{
 				Step();
 				PushAttribute(previouslyParsedAttribute, true);
 
+				attrs = new DAttribute[1 + DeclarationAttributes.Count];
+				DeclarationAttributes.CopyTo(attrs, 0);
+				DeclarationAttributes.Clear();
+				attrs[attrs.Length - 1] = previouslyParsedAttribute;
+
 				AttributeMetaDeclarationSection metaDecl = null;
 				//TODO: Put all remaining block/decl(?) attributes into the section definition..
 				if(module!=null)
-					module.Add(metaDecl = new AttributeMetaDeclarationSection(previouslyParsedAttribute) { EndLocation = t.EndLocation });
+					module.Add(metaDecl = new AttributeMetaDeclarationSection(attrs) { EndLocation = t.EndLocation });
 				return metaDecl;
 			}
 			else 
@@ -2219,9 +2226,19 @@ namespace D_Parser.Parser
 					module.Add (new DVariable{ Attributes = new List<DAttribute>{ previouslyParsedAttribute } });
 
 				if (RequireDeclDef)
+				{
 					DeclDef(module);
-				return new AttributeMetaDeclaration(previouslyParsedAttribute) { EndLocation = previouslyParsedAttribute.EndLocation };
+
+					attrs = new DAttribute[1 + DeclarationAttributes.Count];
+					DeclarationAttributes.CopyTo(attrs, 0);
+					DeclarationAttributes.Clear();
+					attrs[attrs.Length - 1] = previouslyParsedAttribute;
+
+					return new AttributeMetaDeclaration(attrs) { EndLocation = previouslyParsedAttribute.EndLocation };
+				}
 			}
+
+			return null;
 		}
 		
 		bool IsFunctionAttribute

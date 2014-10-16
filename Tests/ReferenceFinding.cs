@@ -70,7 +70,7 @@ void main()
 				ParseCache = new D_Parser.Misc.ParseCacheView(new RootPackage[0])
 			};
 
-			var res = TypeReferenceFinder.Scan(ed, null, -1);
+			var res = TypeReferenceFinder.Scan(ed, System.Threading.CancellationToken.None, null);
 
 			Assert.That(res.Count, Is.GreaterThan(6));
 		}

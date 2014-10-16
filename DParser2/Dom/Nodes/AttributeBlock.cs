@@ -101,7 +101,7 @@ namespace D_Parser.Dom
 	/// </summary>
 	public class AttributeMetaDeclarationSection : AttributeMetaDeclaration
 	{
-		public AttributeMetaDeclarationSection(DAttribute attr) : base(attr) { }
+		public AttributeMetaDeclarationSection(params DAttribute[] attr) : base(attr) { }
 
 		public override void Accept(MetaDeclarationVisitor vis)
 		{
