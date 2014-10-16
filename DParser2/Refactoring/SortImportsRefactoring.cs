@@ -117,13 +117,11 @@ namespace D_Parser.Refactoring
 				//TODO: Else-attributes
 			}
 
-			while (scope != null && importsToSort.Count == 0) {
-				foreach (var ss in scope.StaticStatements) {
-					var iss = ss as ImportStatement;
-					if (iss != null)
-					{
-						importsToSort.Add(iss);
-					}
+			foreach (var ss in scope.StaticStatements) {
+				var iss = ss as ImportStatement;
+				if (iss != null)
+				{
+					importsToSort.Add(iss);
 				}
 			}
 
