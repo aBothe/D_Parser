@@ -52,7 +52,7 @@ namespace D_Parser.Refactoring
 	public class TypeReferenceFinder : AbstractResolutionVisitor
 	{
 		#region Properties
-		HashSet<DeclarationCondition> handledConditions = new HashSet<DeclarationCondition>();
+		Dictionary<DeclarationCondition,int> handledConditions = new Dictionary<DeclarationCondition,int>();
 		readonly List<ISyntaxRegion> invalidConditionalCodeRegions;
 		readonly Dictionary<IBlockNode, Dictionary<int,byte>> TypeCache = new Dictionary<IBlockNode, Dictionary<int,byte>>();
 		//DModule ast;
@@ -494,12 +494,15 @@ namespace D_Parser.Refactoring
 		/// <returns>-1 if c is not matching, 1 if matching, 0 if unknown (won't invalidate else-case)</returns>
 		int CheckCondition(DeclarationCondition c)
 		{
-			if (c == null || handledConditions.Contains(c) || 
+			if (c == null ||
 				c is StaticIfCondition || 
 				(c is NegatedDeclarationCondition && (c as NegatedDeclarationCondition).FirstCondition is NegatedDeclarationCondition))
 				return 0;
 
-			handledConditions.Add(c);
+			int retCode;
+			if (handledConditions.TryGetValue(c, out retCode))
+				return retCode;
+
 			bool ret = false;
 
 			var backupStack = new Stack<CustomConditionFlagSet> ();
@@ -517,7 +520,9 @@ namespace D_Parser.Refactoring
 			while (backupStack.Count != 0)
 				conditionStack.Push (backupStack.Pop ());
 
-			return (ret || (!(c is NegatedDeclarationCondition) && ctxt.CompilationEnvironment.IsMatching(c, null))) ? 1 : -1;
+			retCode = ((ret || (!(c is NegatedDeclarationCondition) && ctxt.CompilationEnvironment.IsMatching(c, null))) ? 1 : -1);
+			handledConditions[c] = retCode;
+			return retCode;
 		}
 	}
 }
