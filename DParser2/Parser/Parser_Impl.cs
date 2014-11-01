@@ -4297,6 +4297,7 @@ namespace D_Parser.Parser
 		AsmStatement ParseAsmStatement(IBlockNode Scope, IStatement Parent)
 		{
 			Step();
+			AsmStatement.AlignStatement als;
 			var s = new AsmStatement() { Location = t.Location, Parent = Parent };
 
 			Expect(OpenCurlyBrace);
@@ -4307,16 +4308,16 @@ namespace D_Parser.Parser
 				bool retrying = false;
 			Retry:
 				bool noStatement = false;
-				if (laKind == Align)
+				switch(laKind)
 				{
-					var als = new AsmStatement.AlignStatement() { Location = la.Location, Parent = s };
+					case Align:
+					als = new AsmStatement.AlignStatement() { Location = la.Location, Parent = s };
 					Step();
 					als.ValueExpression = Expression(Scope);
 					l.Add(als);
 					Step();
-				}
-				else if (laKind == Identifier)
-				{
+					break;
+					case DTokens.Identifier:
 					var opCode = AsmStatement.InstructionStatement.OpCode.__UNKNOWN__;
 					var dataType = AsmStatement.RawDataStatement.DataType.__UNKNOWN__;
 					if (Peek(1).Kind == Colon)
@@ -4339,7 +4340,7 @@ namespace D_Parser.Parser
 							SynErr(Identifier, "Pause is not supported by dmd's assembler. Use `rep; nop;` instead to achieve the same effect.");
 							break;
 						case "even":
-							var als = new AsmStatement.AlignStatement() { Location = la.Location, Parent = s };
+							als = new AsmStatement.AlignStatement() { Location = la.Location, Parent = s };
 							als.ValueExpression = new IdentifierExpression(2) { Location = la.Location, EndLocation = la.EndLocation };
 							l.Add(als);
 							break;
@@ -4397,9 +4398,11 @@ namespace D_Parser.Parser
 						((AsmStatement.InstructionStatement)parentStatement).Arguments = args.ToArray();
 					else if (parentStatement is AsmStatement.RawDataStatement)
 						((AsmStatement.RawDataStatement)parentStatement).Data = args.ToArray();
-				}
-				else if (laKind != Semicolon)
-				{
+					break;
+					case DTokens.Semicolon:
+						Step();
+						break;
+					default:
 					string val;
 					if (!retrying && Keywords.TryGetValue(laKind, out val))
 					{
@@ -4415,9 +4418,8 @@ namespace D_Parser.Parser
 						SynErr(Identifier);
 						Step();
 					}
+					break;
 				}
-				else
-					Step();
 
 				if (!noStatement)
 					l[l.Count - 1].EndLocation = t.Location;
