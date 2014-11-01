@@ -4402,6 +4402,16 @@ namespace D_Parser.Parser
 					case DTokens.Semicolon:
 						Step();
 						break;
+					case DTokens.Literal:
+						l.Add(new AsmStatement.RawDataStatement { 
+							Location = la.Location, 
+							Data = new[] { ParseAsmPrimaryExpression(Scope, Parent) },
+							EndLocation = t.EndLocation, 
+							Parent = Parent
+						});
+
+						Expect(DTokens.Semicolon);
+						break;
 					default:
 					string val;
 					if (!retrying && Keywords.TryGetValue(laKind, out val))
