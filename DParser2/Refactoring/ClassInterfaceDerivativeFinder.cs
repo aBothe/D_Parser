@@ -38,6 +38,7 @@ namespace D_Parser.Refactoring
 		List<TemplateIntermediateType> results = new List<TemplateIntermediateType>();
 		List<INode> alreadyResolvedClasses = new List<INode>();
 		DClassLike typeNodeToFind;
+		bool isInterface;
 
 		ClassInterfaceDerivativeFinder (ResolutionContext ctxt) : base(ctxt)
 		{
@@ -59,7 +60,10 @@ namespace D_Parser.Refactoring
 
 			var filter = MemberFilter.Classes;
 			if (t is InterfaceType) // -> Only interfaces can inherit interfaces. Interfaces cannot be subclasses of classes.
+			{
 				filter |= MemberFilter.Interfaces;
+				f.isInterface = true;
+			}
 
 			f.IterateThroughScopeLayers (t.Definition.Location, filter);
 
@@ -80,16 +84,35 @@ namespace D_Parser.Refactoring
 			alreadyResolvedClasses.Add (dc);
 
 			// Look for classes/interfaces that match dc (check all dcs to have better performance on ambiguous lastresults),
-			var bt = DResolver.StripMemberSymbols(t.Base) as TemplateIntermediateType;
-			while (bt != null) {
-				var def = bt.Definition;
-				if (def == typeNodeToFind) {
-					if(!results.Contains(t))
-						results.Add (t);
+			if (isInterface)
+			{
+				if(t.BaseInterfaces != null)
+					foreach (var I in t.BaseInterfaces)
+					{
+						if (I.Definition == typeNodeToFind &&
+							!results.Contains(t))
+								results.Add(t);
+
+						if (!alreadyResolvedClasses.Contains(I.Definition))
+							alreadyResolvedClasses.Add(I.Definition);
+					}
+			}
+			else
+			{
+				var bt = DResolver.StripMemberSymbols(t.Base) as TemplateIntermediateType;
+				while (bt != null)
+				{
+					var def = bt.Definition;
+					if (def == typeNodeToFind)
+					{
+						if (!results.Contains(t))
+							results.Add(t);
+					}
+
+					if (!alreadyResolvedClasses.Contains(def))
+						alreadyResolvedClasses.Add(def);
+					bt = DResolver.StripMemberSymbols(bt.Base) as TemplateIntermediateType;
 				}
-				if(!alreadyResolvedClasses.Contains(def))
-					alreadyResolvedClasses.Add (def);
-				bt = DResolver.StripMemberSymbols (bt.Base) as TemplateIntermediateType;
 			}
 
 			return false;
