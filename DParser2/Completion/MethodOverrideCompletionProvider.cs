@@ -105,9 +105,14 @@ namespace D_Parser.Completion.Providers
 				}
 			}
 
-			foreach (var attr in remainingAttributes)
+			foreach (var attr in remainingAttributes) {
+				// Don't take 'abstract' into new method
+				if (attr is Modifier && (attr as Modifier).Token == DTokens.Abstract)
+					continue;
+
 				if (attr.Location < dm.NameLocation)
-					sb.Append(attr.ToString()).Append(' ');
+					sb.Append (attr.ToString ()).Append (' ');
+			}
 
 			// Type
 
