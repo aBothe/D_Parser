@@ -355,6 +355,7 @@
     <Compile Include="Formatting\Indent\IStateMachineIndentEngine.cs" />
     <Compile Include="Resolver\ResolutionHooks\Hooks\autoimplement.cs" />
     <Compile Include="Dom\Expressions\PostfixExpression_ArrayAccess.cs" />
+    <Compile Include="Misc\Logger.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="readme.txt" />

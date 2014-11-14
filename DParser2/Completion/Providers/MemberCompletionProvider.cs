@@ -10,6 +10,7 @@ using D_Parser.Resolver.ASTScanner;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
 using System.Threading.Tasks;
+using System;
 
 namespace D_Parser.Completion.Providers
 {
@@ -34,11 +35,17 @@ namespace D_Parser.Completion.Providers
 			AbstractType t = null;
 			CodeCompletion.DoTimeoutableCompletionTask(CompletionDataGenerator,ctxt,() =>
 			{
-				ctxt.Push(Editor);
-				if (AccessExpression is IExpression)
-					t = ExpressionTypeEvaluation.EvaluateType(AccessExpression as IExpression, ctxt);
-				else if (AccessExpression is ITypeDeclaration)
-					t = TypeDeclarationResolver.ResolveSingle(AccessExpression as ITypeDeclaration, ctxt);
+				try
+				{
+					ctxt.Push(Editor);
+					if (AccessExpression is IExpression)
+						t = ExpressionTypeEvaluation.EvaluateType(AccessExpression as IExpression, ctxt);
+					else if (AccessExpression is ITypeDeclaration)
+						t = TypeDeclarationResolver.ResolveSingle(AccessExpression as ITypeDeclaration, ctxt);
+				}catch(Exception ex)
+				{
+					Logger.LogWarn("Error during member completion", ex);
+				}
 			});
 
 			if (t == null) //TODO: Add after-space list creation when an unbound . (Dot) was entered which means to access the global scope
@@ -51,10 +58,17 @@ namespace D_Parser.Completion.Providers
 		{
 			if (t.NonStaticAccess && CompletionOptions.Instance.ShowUFCSItems)
 				CodeCompletion.DoTimeoutableCompletionTask(null, ctxt, () =>
-				{
-					foreach (var ufcsItem in UFCSResolver.TryResolveUFCS(t, 0, ed.CaretLocation, ctxt))
-						CompletionDataGenerator.Add((ufcsItem as DSymbol).Definition);
-				});
+					{
+						try
+						{
+							foreach (var ufcsItem in UFCSResolver.TryResolveUFCS(t, 0, ed.CaretLocation, ctxt))
+								CompletionDataGenerator.Add((ufcsItem as DSymbol).Definition);
+						}
+						catch(Exception ex)
+						{
+							Logger.LogWarn("Error during ufcs completion resolution", ex);
+						}
+					});
 			StaticProperties.ListProperties(CompletionDataGenerator, ctxt, MemberFilter, t, t.NonStaticAccess);
 		}
 
