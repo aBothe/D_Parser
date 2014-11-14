@@ -2348,6 +2348,40 @@ if(auto n = 1234)
 		}
 
 		[Test]
+		public void IfStmtPseudoVersion()
+		{
+			var ctxt = CreateCtxt ("A",@"module A;
+import B;
+
+static if(enumA):
+
+int a;
+
+static if(enumB):
+
+int b;
+
+", @"module B; 
+enum enumA = true; 
+enum enumB = false;
+");
+
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression ("a");
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
+
+			Assert.That (t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That ((t as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+
+			x = DParser.ParseExpression ("b");
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
+
+			Assert.That (t, Is.Null);
+		}
+
+		[Test]
 		public void AliasedTemplate()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
