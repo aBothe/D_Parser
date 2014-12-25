@@ -1258,6 +1258,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 		static bool IsConstOrStatic(DNode dn)
 		{
+			if (dn is DEnum || dn is DEnumValue)
+				return true;
+
 			var dv = dn as DVariable;
 			return dn != null && (dn.IsStatic || (dv != null && (dv.IsConst || dv.IsAlias))); // Aliases are always static - it only depends on their base types then
 		}
