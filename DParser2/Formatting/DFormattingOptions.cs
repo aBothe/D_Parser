@@ -86,6 +86,8 @@ namespace D_Parser.Formatting
 		public bool IndentSwitchBody = true;
 		public bool IndentCases = true;
 		public GotoLabelIndentStyle LabelIndentStyle = GotoLabelIndentStyle.OneLess;
+		public bool NestedCallIndent = true;
+		public bool KeepArgumentIndentOnSquareBracketOpen = true;
 		
 		public static DFormattingOptions CreateDStandard()
 		{
@@ -104,6 +106,8 @@ namespace D_Parser.Formatting
 				IndentSwitchBody = IndentSwitchBody,
 				LabelIndentStyle = LabelIndentStyle,
 				IndentCases = IndentCases,
+				NestedCallIndent = NestedCallIndent,
+				KeepArgumentIndentOnSquareBracketOpen = KeepArgumentIndentOnSquareBracketOpen,
 			};
 		}
 	}

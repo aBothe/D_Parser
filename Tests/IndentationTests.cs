@@ -7,11 +7,10 @@ namespace Tests
 	[TestFixture]
 	public class IndentationTests
 	{
-		[Ignore]
 		const int TabSize = 4;
 		const string TabToSpaceRepresentation = "    ";
 
-
+		[Ignore]
 		[Test]
 		public void TestIndenter()
 		{
@@ -435,11 +434,35 @@ void main(string[] args)
 		{
 			TestLastLine(@"void foo() {
     tastyDeleg(
+               a(myArray[123,
+                     asd",4+11+2+4);
+
+			TestLastLine(@"void foo() {
+    tastyDeleg(
+               a(myArray[
+                     asd",4+11+2+4);
+
+			TestLastLine(@"void foo() {
+    tastyDeleg(
+               a(
+                 asd",4+11+2);
+
+			TestLastLine(@"void foo() {
+    tastyDeleg(
+               a(1234,
+                 asd",4+11+2);
+
+	TestLastLine(@"void foo() {
+    tastyDeleg(
+               asd",4+11);
+
+			TestLastLine(@"void foo() {
+    tastyDeleg(1234,
                asd",4+11);
 
 			TestLastLine(@"
 tastyDeleg(
-asd",11);
+           asd",11);
 		}
 
 		void TestLastLine(string code, int targetIndent)

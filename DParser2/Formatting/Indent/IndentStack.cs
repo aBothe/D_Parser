@@ -109,10 +109,12 @@ namespace D_Parser.Formatting.Indent
 			var indentBuilder = new StringBuilder ();
 			if ((inside & (Inside.Attribute | Inside.ParenList)) != 0) {
 				if (size > 0 && stack[sp].inside == inside) {
-					while (sp >= 0) {
-						if ((stack[sp].inside & Inside.FoldedOrBlock) != 0)
-							break;
-						sp--;
+					if (!this.ie.Options.NestedCallIndent) {
+						while (sp >= 0) {
+							if ((stack [sp].inside & Inside.FoldedOrBlock) != 0)
+								break;
+							sp--;
+						}
 					}
 					if (sp >= 0) {
 						indentBuilder.Append (stack[sp].indent);
@@ -158,7 +160,8 @@ namespace D_Parser.Formatting.Indent
 				nSpaces = 0;
 			} else if ((inside & (Inside.FoldedOrBlock)) != 0) {
 				while (sp >= 0) {
-					if ((stack[sp].inside & Inside.FoldedBlockOrCase) != 0) { // Optional: Check for Inside.ParenList to align the following lines like the previous line
+					if ((stack [sp].inside & Inside.FoldedBlockOrCase) != 0 ||
+						(ie.Options.KeepArgumentIndentOnSquareBracketOpen && inside == Inside.SquareBracketList && stack[sp].inside == Inside.ParenList)) { // Optional: Check for Inside.ParenList to align the following lines like the previous line
 						indentBuilder.Append (stack[sp].indent);
 						break;
 					}
@@ -169,7 +172,7 @@ namespace D_Parser.Formatting.Indent
 				Inside parent = size > 0 ? stack[size - 1].inside : Inside.Empty;
 				
 				// This is a workaround to make anonymous methods indent nicely
-				if (parent == Inside.ParenList)
+				if (parent == Inside.ParenList && inside != Inside.SquareBracketList)
 					stack[size - 1].indent = indentBuilder.ToString ();
 
 				if (inside == Inside.FoldedStatement) {
