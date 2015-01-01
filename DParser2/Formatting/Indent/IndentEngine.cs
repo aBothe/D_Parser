@@ -701,9 +701,10 @@ namespace D_Parser.Formatting.Indent
 			
 			if ((inside & (Inside.PreProcessor | Inside.StringOrChar | Inside.Comment)) != 0)
 				return;
-			
-			// push a new paren list onto the stack
-			if (firstNonLwsp != -1)
+
+			if (Options.CallArgumentIndent != CallArgumentIndentStyle.AlignToOpenParen)
+				n = 0;
+			else if (firstNonLwsp != -1) // push a new paren list onto the stack
 				n += linebuf.Length - firstNonLwsp;
 			
 			stack.Push (Inside.ParenList, keyword, curLineNr, n);

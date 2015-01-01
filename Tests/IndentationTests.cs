@@ -434,35 +434,35 @@ void main(string[] args)
 		{
 			TestLastLine(@"void foo() {
     tastyDeleg(
-               a(myArray[123,
-                     asd",4+11+2+4);
+        a(myArray[123,
+                asd",TabSize*4);
 
 			TestLastLine(@"void foo() {
     tastyDeleg(
                a(myArray[
-                     asd",4+11+2+4);
+                     asd",TabSize*4);
 
 			TestLastLine(@"void foo() {
     tastyDeleg(
-               a(
-                 asd",4+11+2);
+        a(
+            asd",TabSize*3);
 
 			TestLastLine(@"void foo() {
     tastyDeleg(
-               a(1234,
-                 asd",4+11+2);
+        a(1234,
+            asd",TabSize*3);
 
 	TestLastLine(@"void foo() {
     tastyDeleg(
-               asd",4+11);
+        asd",TabSize*2);
 
 			TestLastLine(@"void foo() {
     tastyDeleg(1234,
-               asd",4+11);
+        asd",TabSize*2);
 
 			TestLastLine(@"
 tastyDeleg(
-           asd",11);
+    asd",TabSize);
 		}
 
 		void TestLastLine(string code, int targetIndent)

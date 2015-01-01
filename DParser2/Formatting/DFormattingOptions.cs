@@ -52,6 +52,12 @@ namespace D_Parser.Formatting
 		NewLine,
 		SameLine
 	}
+
+	public enum CallArgumentIndentStyle
+	{
+		AlignToOpenParen,
+		IndentByOne
+	}
 	
 	public interface DFormattingOptionsFactory
 	{
@@ -86,6 +92,7 @@ namespace D_Parser.Formatting
 		public bool IndentSwitchBody = true;
 		public bool IndentCases = true;
 		public GotoLabelIndentStyle LabelIndentStyle = GotoLabelIndentStyle.OneLess;
+		public CallArgumentIndentStyle CallArgumentIndent = CallArgumentIndentStyle.IndentByOne;
 		public bool NestedCallIndent = true;
 		public bool KeepArgumentIndentOnSquareBracketOpen = true;
 		
