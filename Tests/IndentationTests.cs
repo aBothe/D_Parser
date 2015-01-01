@@ -18,28 +18,28 @@ namespace Tests
 			
 			TestLastLine(@"
 tastyDeleg( (uint a)
-			{
-asd",6);
+    {
+        asd",2*TabSize);
 
 			TestLastLine(@"import
-std", 1);
+	std", TabSize);
 			TestLastLine(@"import std.stdio,
-	std;", 1);
+	std;", TabSize);
 			TestLastLine(@"import std;
 ", 0);
 			TestLastLine(@"import
-", 1);
+	", TabSize);
 			TestLastLine(@"import std;
 import std;
 ", 0);
 			TestLastLine(@"import std.stdio,
-	std.conv;",1);
+	std.conv;",TabSize);
 			TestLastLine(@"import std;
 import
-", 1);
+", TabSize);
 			TestLastLine(@"import std;
 import
-	std;", 1);
+	std;", TabSize);
 
 			TestLastLine(@"
 class A
@@ -47,14 +47,14 @@ class A
 	void foo()
 	{
 	}
-	", 1);
+	", TabSize);
 
 			TestLastLine(@"
 class A
 {
 	private:
 	int a;
-	", 1);
+	", TabSize);
 
 			TestLastLine(@"
 class A
@@ -70,7 +70,7 @@ class A
 	private:
 	int a;
 	public:
-	", 1);
+	", TabSize);
 
 			TestLastLine(@"foo();", 0);
 
@@ -78,47 +78,47 @@ class A
 ", 0);
 
 			TestLastLine(@"foo(
-	);", 1);
+	);", TabSize);
 			TestLastLine(@"foo(
-	a.lol", 1);
+	a.lol", TabSize);
 			TestLastLine(@"foo(
 	a,
-	b", 1);
+	b", TabSize);
 			TestLastLine(@"foo(a,
-	b);", 1);
+	b);", TabSize);
 
 			TestLastLine(@"foo(
-	a)", 1);
+	a)", TabSize);
 			TestLastLine(@"foo(
-	b())", 1);
+	b())", TabSize);
 			TestLastLine(@"foo(
-", 1);
+", TabSize);
 			TestLastLine(@"foo(
-)", 1);
+)", TabSize);
 
 			TestLastLine(@"foo(asdf())
 {", 0);
 			TestLastLine(@"foo(asdf())
-", 1);
+", TabSize);
 			TestLastLine(@"foo(asdf()=b)
-", 1);
+", TabSize);
 			TestLastLine(@"foo(asdf)
-", 1);
+", TabSize);
 			TestLastLine(@"writeln(34,
-	joLol);", 2);
+	joLol);", TabSize);
 			/* TODO
 			TestLastLine(@"writeln,
 	lolSecondExpression();",1);*/
 			TestLastLine(@"std.stdio.
-	writeln(a)", 1);
+	writeln(a)", TabSize);
 			TestLastLine(@"std.stdio.
-	writeln(a);", 1);
+	writeln(a);", TabSize);
 			TestLastLine(@"writeln(
-	a());", 1);
+	a());", TabSize);
 			TestLastLine(@"writeln(""Hello Word!""
-	);", 1);
+	);", TabSize);
 			TestLastLine(@"writeln(
-	(162*2)%315==9);", 1);
+	(162*2)%315==9);", TabSize);
 
 			TestLastLine(@"foo()
 {
@@ -127,11 +127,11 @@ class A
 ", 0);
 			TestLastLine(@"foo()
 {
-	asdf();", 1);
+	asdf();", TabSize);
 			TestLastLine(@"foo()
 {
 	asdf();
-	", 1);
+	", TabSize);
 			TestLastLine(@"foo()
 {
 	asdf;
@@ -144,15 +144,15 @@ class A
 			TestLastLine(@"foo()
 {
 	asdf;
-	asdf;}", 1);
+	asdf;}", TabSize);
 			TestLastLine(@"foo(){
 	a;
-	bar();}", 1);
+	bar();}", TabSize);
 			TestLastLine(@"foo(){
 lol(); ger++;
 } yeah;", 0);
 			TestLastLine(@"foo(){
-	lol(); } foo();", 1);
+	lol(); } foo();", TabSize);
 			TestLastLine(@"foo(){
 	lol(); } foo();
 ", 0);
@@ -160,11 +160,11 @@ lol(); ger++;
 	asdf();
 	if(true){
 		whynot();
-		bar(); }} fooGer();", 2);
+		bar(); }} fooGer();", 2*TabSize);
 
 
 			TestLastLine(@"foo()
-	if(..)", 1);
+	if(..)", TabSize);
 			TestLastLine(@"foo()
 	if(..)
 in", 0);
@@ -182,9 +182,9 @@ out(result){", 0);
 			TestLastLine(@"foo()
 body", 0);
 			TestLastLine(@"void foo(in
-", 1);
+", TabSize);
 			TestLastLine(@"void foo(out
-", 1);
+", TabSize);
 
 
 
@@ -192,62 +192,62 @@ body", 0);
 {
 	b(
 		{
-			nestedFoo();", 3);
+			nestedFoo();", 3*TabSize);
 
 			TestLastLine(@"foo()
 {
 	b({
 		nestedFoo();
 	});
-	", 1);
+	", TabSize);
 
 			TestLastLine(@"foo()
 {
-	bar({asdfCall();});", 1);
+	bar({asdfCall();});", TabSize);
 
 			TestLastLine(@"class A:B
 {", 0);
 			TestLastLine(@"class A:
-", 1);
+", TabSize);
 			TestLastLine(@"class A:B
-", 1);
+", TabSize);
 
 
 			TestLastLine(@"enum A
 {", 0);
 			TestLastLine(@"enum A
 {
-", 1);
+", TabSize);
 			TestLastLine(@"enum A
 {
 	a,
-	", 1);
+	", TabSize);
 			TestLastLine(@"enum A
 {
 a= A+
-B", 2);
+B", 2*TabSize);
 			TestLastLine(@"enum A
 {
 a,
 b=A+B,
-c", 1);
+c", TabSize);
 			TestLastLine(@"enum A
 {
 a,
 b=A+B,
 c,
-", 1);
+", TabSize);
 			TestLastLine(@"enum A
 {
 a,
 b=A*B,
 c,
-d,", 1);
+d,", TabSize);
 			TestLastLine(@"enum A
 {
 a,
 b
-,c", 1);
+,c", TabSize);
 			TestLastLine(@"enum A
 {
 a
@@ -262,36 +262,36 @@ c,
 
 void foo()
 {
-	", 1);
+	", TabSize);
 
 
 			TestLastLine(@"if(a)
 {", 0);
 
 			TestLastLine(@"if(a)
-	a;", 1);
+	a;", TabSize);
 			TestLastLine(@"if(asdf)
-", 1);
+", TabSize);
 			TestLastLine(@"if(asdf())
-", 1);
+", TabSize);
 			TestLastLine(@"if(asdf()==b)
-", 1);
+", TabSize);
 			TestLastLine(@"if(
-", 1);
+", TabSize);
 
 
 			TestLastLine(@"switch(a)
 {
-	case:", 1);
+	case:", TabSize);
 			TestLastLine(@"switch(a)
 {
 	case 3:
-		lol;", 2);
+		lol;", 2*TabSize);
 			TestLastLine(@"switch(a)
 {
 	case 3:
 		lol;
-		", 2);
+		", 2*TabSize);
 
 			TestLastLine(@"switch(a)
 {
@@ -309,27 +309,27 @@ void foo()
 {
 	case 3:
 		lol;
-		asdf;", 2);
+		asdf;", 2*TabSize);
 			TestLastLine(@"switch(a)
 {
 	case 3:
 		lol;
 	case 4:
-		asdf;", 2);
+		asdf;", 2*TabSize);
 			TestLastLine(@"switch(a)
 {
 	case 3:
 		lol;
 	default:
 	case 4:
-		asdf;", 2);
+		asdf;", 2*TabSize);
 
 
 			TestLastLine(@"private:
-	", 1);
+	", TabSize);
 
 			TestLastLine(@"version(Windows):
-	", 1);
+	", TabSize);
 			TestLastLine(@"version(D):", 0);
 
 			TestLastLine(@"
@@ -347,7 +347,7 @@ private foo()
 			TestLastLine(@"
 private:
 	foo()
-	{", 1);
+	{", TabSize);
 
 			TestLastLine(@"
 void main(string[] args)
@@ -360,7 +360,7 @@ void main(string[] args)
 			if(i == 3)
 			{
 				i++;
-				", 4);
+				", 4*TabSize);
 
 			TestLastLine(@"
 void main(string[] args)
@@ -373,7 +373,7 @@ void main(string[] args)
 			if(i == 3)
 			{
 				i++;
-			}", 3);
+			}", 3*TabSize);
 
 			TestLine(@"
 void main(string[] args)
@@ -389,7 +389,7 @@ void main(string[] args)
 			}
 		}
 	}
-}", 12, 3);
+}", 12, 3*TabSize);
 
 			TestLastLine(@"
 void main(string[] args)
@@ -402,7 +402,7 @@ void main(string[] args)
 			if(i == 3)
 			{
 				i++;
-			}}", 3);
+			}}", 3*TabSize);
 
 			TestLastLine(@"
 void main(string[] args)
@@ -415,7 +415,7 @@ void main(string[] args)
 			if(i == 3)
 			{
 				i++;
-				;;", 4);
+				;;", 4*TabSize);
 
 			TestLine(@"import std.stdio;
 void main(string[] args)
@@ -423,7 +423,7 @@ void main(string[] args)
 	writeln();
 	
 }
-", 5, 1);
+", 5, TabSize);
 		}
 
 		/// <summary>
