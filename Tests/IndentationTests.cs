@@ -8,6 +8,10 @@ namespace Tests
 	public class IndentationTests
 	{
 		[Ignore]
+		const int TabSize = 4;
+		const string TabToSpaceRepresentation = "    ";
+
+
 		[Test]
 		public void TestIndenter()
 		{
@@ -423,6 +427,20 @@ void main(string[] args)
 ", 5, 1);
 		}
 
+		/// <summary>
+		/// https://github.com/aBothe/Mono-D/issues/576
+		/// </summary>
+		[Test]
+		public void TestIssue576()
+		{
+			TestLastLine(@"void foo() {
+    tastyDeleg(
+               asd",4+11);
+
+			TestLastLine(@"
+tastyDeleg(
+asd",11);
+		}
 
 		void TestLastLine(string code, int targetIndent)
 		{
@@ -443,7 +461,7 @@ void main(string[] args)
 
 		static int GetLineIndent(string code, int line)
 		{
-			return D_Parser.Formatting.Indent.IndentEngineWrapper.CalculateIndent(code, line).Length;
+			return D_Parser.Formatting.Indent.IndentEngineWrapper.CalculateIndent(code, line).Replace("\t",TabToSpaceRepresentation).Length;
 		}
 
 		static int GetLastLineIndent(string code, bool AddNewLines = false, bool AddSomeFinalCode = false)

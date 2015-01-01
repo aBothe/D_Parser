@@ -991,9 +991,10 @@ namespace D_Parser.Formatting.Indent
 			var after = stack.PeekInside (0);
 			if ((after & Inside.ParenList) == Inside.ParenList && pc == '(') {
 				var kw = stack.PeekKeyword;
-				var line = stack.PeekLineNr (0);
+				var line = stack.PeekLineNr ();
+				var align = stack.PeekAlignSpaces ();
 				stack.Pop ();
-				stack.Push (after, kw, line, 0);
+				stack.Push (after, kw, line, align);
 			}
 		}
 		

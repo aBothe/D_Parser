@@ -255,7 +255,7 @@ namespace D_Parser.Formatting.Indent
 			size = sp;
 		}
 		
-		public Inside PeekInside (int up)
+		public Inside PeekInside (int up = 0)
 		{
 			if (up < 0)
 				throw new ArgumentOutOfRangeException ();
@@ -286,7 +286,7 @@ namespace D_Parser.Formatting.Indent
 			}
 		}
 		
-		public byte GetKeywordInStack (int up)
+		public byte GetKeywordInStack (int up = 0)
 		{
 			if (up < 0)
 				throw new ArgumentOutOfRangeException ();
@@ -297,7 +297,7 @@ namespace D_Parser.Formatting.Indent
 			return stack[size - up - 1].keyword;
 		}
 		
-		public string PeekIndent (int up)
+		public string PeekIndent (int up = 0)
 		{
 			if (up < 0)
 				throw new ArgumentOutOfRangeException ();
@@ -308,7 +308,7 @@ namespace D_Parser.Formatting.Indent
 			return stack[size - up - 1].indent;
 		}
 		
-		public int PeekLineNr (int up)
+		public int PeekLineNr (int up = 0)
 		{
 			if (up < 0)
 				throw new ArgumentOutOfRangeException ();
@@ -317,6 +317,17 @@ namespace D_Parser.Formatting.Indent
 				return -1;
 			
 			return stack[size - up - 1].lineNr;
+		}
+
+		public int PeekAlignSpaces(int up = 0)
+		{
+			if (up < 0)
+				throw new ArgumentOutOfRangeException ();
+
+			if (up >= size)
+				return -1;
+
+			return stack[size - up - 1].nSpaces;
 		}
 	}
 }
