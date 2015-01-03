@@ -107,7 +107,9 @@ namespace D_Parser.Formatting.Indent
 			int n = 0;
 			
 			var indentBuilder = new StringBuilder ();
-			if ((inside & (Inside.Attribute | Inside.ParenList)) != 0) {
+			switch (inside) {
+			case Inside.Attribute:
+			case Inside.ParenList:
 				if (size > 0 && stack[sp].inside == inside) {
 					if (!this.ie.Options.NestedCallIndent) {
 						while (sp >= 0) {
@@ -127,7 +129,7 @@ namespace D_Parser.Formatting.Indent
 							indentBuilder.Append (stack[sp].indent);
 							break;
 						}
-						
+
 						sp--;
 					}
 				}
@@ -136,41 +138,51 @@ namespace D_Parser.Formatting.Indent
 				} else {
 					indentBuilder.Append (' ', nSpaces - n);
 				}
-			} else if ((inside & (Inside.NestedComment | Inside.BlockComment)) != 0) {
+				break;
+
+			case Inside.NestedComment:
+			case Inside.BlockComment:
 				if (size > 0) {
 					indentBuilder.Append (stack[sp].indent);
 					if (stack[sp].lineNr == lineNr)
 						n = stack[sp].nSpaces;
 				}
-				
+
 				indentBuilder.Append (' ', nSpaces - n);
-			} else if (inside == Inside.Case) {
+				break;
+
+			case Inside.Case:
 				while (sp >= 0) {
 					if ((stack[sp].inside & Inside.FoldedOrBlock) != 0) {
 						indentBuilder.Append (stack[sp].indent);
 						break;
 					}
-					
+
 					sp--;
 				}
-				
+
 				if (ie.Options.IndentSwitchBody)
 					indentBuilder.Append ('\t');
-				
+
 				nSpaces = 0;
-			} else if ((inside & (Inside.FoldedOrBlock)) != 0) {
+				break;
+
+
+			case Inside.FoldedStatement:
+			case Inside.Block:
+			case Inside.SquareBracketList: // FoldedOrBlock
 				while (sp >= 0) {
 					if ((stack [sp].inside & Inside.FoldedBlockOrCase) != 0 ||
 						(ie.Options.KeepArgumentIndentOnSquareBracketOpen && inside == Inside.SquareBracketList && stack[sp].inside == Inside.ParenList)) { // Optional: Check for Inside.ParenList to align the following lines like the previous line
 						indentBuilder.Append (stack[sp].indent);
 						break;
 					}
-					
+
 					sp--;
 				}
-				
+
 				Inside parent = size > 0 ? stack[size - 1].inside : Inside.Empty;
-				
+
 				// This is a workaround to make anonymous methods indent nicely
 				if (parent == Inside.ParenList && inside != Inside.SquareBracketList)
 					stack[size - 1].indent = indentBuilder.ToString ();
@@ -181,16 +193,23 @@ namespace D_Parser.Formatting.Indent
 					if (parent != Inside.Case || nSpaces != -1)
 						indentBuilder.Append ('\t');
 				}
-				
+
 				nSpaces = 0;
-			} else if ((inside & (Inside.Shebang | Inside.PreProcessor | Inside.StringOrChar)) != 0) {
-				// if these fold, do not indent
+				break;
+
+			case Inside.Shebang:
+			case Inside.PreProcessor:
+			case Inside.CharLiteral:
+			case Inside.StringLiteral:
+			case Inside.VerbatimString:
+			case Inside.AlternateVerbatimString: // if these fold, do not indent
+
+			case Inside.LineComment: // can't actually fold, but we still want to push it onto the stack
+			case Inside.DocComment:
 				nSpaces = 0;
-			} else if (inside == Inside.LineComment || inside == Inside.DocComment) {
-				// can't actually fold, but we still want to push it onto the stack
-				nSpaces = 0;
-			} else {
-				// not a valid argument?
+				break;
+
+			default:
 				throw new ArgumentOutOfRangeException ();
 			}
 
