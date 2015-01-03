@@ -10,12 +10,16 @@ namespace Tests
 		const int TabSize = 4;
 		const string TabToSpaceRepresentation = "    ";
 
-		[Ignore]
 		[Test]
-		public void TestIndenter()
+		public void Indentation1()
 		{
 			TestLastLine("", 0);
-			
+
+			TestLastLine(@"
+tastyDeleg(
+    {
+        asd",2*TabSize);
+
 			TestLastLine(@"
 tastyDeleg( (uint a)
     {
@@ -106,9 +110,7 @@ class A
 ", TabSize);
 			TestLastLine(@"writeln(34,
 	joLol);", TabSize);
-			/* TODO
-			TestLastLine(@"writeln,
-	lolSecondExpression();",1);*/
+
 			TestLastLine(@"std.stdio.
 	writeln(a)", TabSize);
 			TestLastLine(@"std.stdio.
@@ -161,33 +163,82 @@ lol(); ger++;
 	if(true){
 		whynot();
 		bar(); }} fooGer();", 2*TabSize);
+		}
 
+		[Ignore]
+		[Test]
+		public void IndentationTODO()
+		{
+			TestLastLine(@"writeln,
+	lolSecondExpression();",1);
 
-			TestLastLine(@"foo()
-	if(..)", TabSize);
-			TestLastLine(@"foo()
-	if(..)
-in", 0);
-			TestLastLine(@"foo()
-in", 0);
-			TestLastLine(@"foo()
-out", 0);
-			TestLastLine(@"foo()
-out(result)", 0);
-			TestLastLine(@"foo()
-	if(true)
-out(result)", 0);
-			TestLastLine(@"foo()
-out(result){", 0);
-			TestLastLine(@"foo()
-body", 0);
-			TestLastLine(@"void foo(in
-", TabSize);
-			TestLastLine(@"void foo(out
-", TabSize);
+			TestLastLine(@"private {
+	class A:
+		", 2*TabSize);
 
+			TestLastLine(@"enum A
+{
+	a= A+
+		B", 2*TabSize);
+		}
 
+		[Test]
+		public void SwitchIndentation()
+		{
+			TestLastLine(@"foo() {
+	switch(a)
+	{
+		default:", 2*TabSize);
+			TestLastLine(@"foo() {
+	switch(a)
+	{
+		case asdf:", 2*TabSize);
+			TestLastLine(@"foo() { 
+	switch(a)
+	{
+		case 3:
+			lol;", 3*TabSize);
+			TestLastLine(@"switch(a)
+{
+	case 3:
+		lol;
+		", 2*TabSize);
 
+			TestLastLine(@"switch(a)
+{
+	case 3:
+		lol;
+}", 0);
+
+			TestLastLine(@"switch(a)
+{
+	case 3:
+		lol;
+}
+", 0);
+			TestLastLine(@"switch(a)
+{
+	case 3:
+		lol;
+		asdf;", 2*TabSize);
+			TestLastLine(@"switch(a)
+{
+	case 3:
+		lol;
+	case 4:
+		asdf;", 2*TabSize);
+			TestLastLine(@"switch(a)
+{
+	case 3:
+		lol;
+	default:
+	case 4:
+		asdf;", 2*TabSize);
+		}
+
+		[Test]
+		public void Indentation2()
+		{
 			TestLastLine(@"foo()
 {
 	b(
@@ -207,8 +258,6 @@ body", 0);
 
 			TestLastLine(@"class A:B
 {", 0);
-			TestLastLine(@"class A:
-", TabSize);
 			TestLastLine(@"class A:B
 ", TabSize);
 
@@ -222,10 +271,7 @@ body", 0);
 {
 	a,
 	", TabSize);
-			TestLastLine(@"enum A
-{
-a= A+
-B", 2*TabSize);
+
 			TestLastLine(@"enum A
 {
 a,
@@ -280,56 +326,13 @@ void foo()
 ", TabSize);
 
 
-			TestLastLine(@"switch(a)
-{
-	case:", TabSize);
-			TestLastLine(@"switch(a)
-{
-	case 3:
-		lol;", 2*TabSize);
-			TestLastLine(@"switch(a)
-{
-	case 3:
-		lol;
-		", 2*TabSize);
 
-			TestLastLine(@"switch(a)
-{
-	case 3:
-		lol;
-}", 0);
-
-			TestLastLine(@"switch(a)
-{
-	case 3:
-		lol;
-}
-", 0);
-			TestLastLine(@"switch(a)
-{
-	case 3:
-		lol;
-		asdf;", 2*TabSize);
-			TestLastLine(@"switch(a)
-{
-	case 3:
-		lol;
-	case 4:
-		asdf;", 2*TabSize);
-			TestLastLine(@"switch(a)
-{
-	case 3:
-		lol;
-	default:
-	case 4:
-		asdf;", 2*TabSize);
 
 
 			TestLastLine(@"private:
-	", TabSize);
-
+", 0);
 			TestLastLine(@"version(Windows):
-	", TabSize);
+", 0);
 			TestLastLine(@"version(D):", 0);
 
 			TestLastLine(@"
@@ -346,8 +349,13 @@ private foo()
 
 			TestLastLine(@"
 private:
-	foo()
-	{", TabSize);
+foo()
+{", 0);
+			TestLastLine(@"
+private:
+foo()
+{
+	", TabSize);
 
 			TestLastLine(@"
 void main(string[] args)
@@ -424,6 +432,38 @@ void main(string[] args)
 	
 }
 ", 5, TabSize);
+		}
+
+		[Ignore]
+		[Test]
+		public void TestIndenter()
+		{
+			TestLastLine(@"foo()
+	if(..)", TabSize);
+			TestLastLine(@"foo()
+	if(..)
+in", 0);
+			TestLastLine(@"foo()
+in", 0);
+			TestLastLine(@"foo()
+out", 0);
+			TestLastLine(@"foo()
+out(result)", 0);
+			TestLastLine(@"foo()
+	if(true)
+out(result)", 0);
+			TestLastLine(@"foo()
+out(result){", 0);
+			TestLastLine(@"foo()
+body", 0);
+			TestLastLine(@"void foo(in
+", TabSize);
+			TestLastLine(@"void foo(out
+", TabSize);
+
+
+
+
 		}
 
 		/// <summary>

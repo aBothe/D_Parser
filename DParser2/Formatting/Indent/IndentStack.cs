@@ -173,7 +173,9 @@ namespace D_Parser.Formatting.Indent
 			case Inside.SquareBracketList: // FoldedOrBlock
 				while (sp >= 0) {
 					if ((stack [sp].inside & Inside.FoldedBlockOrCase) != 0 ||
-						(ie.Options.KeepArgumentIndentOnSquareBracketOpen && inside == Inside.SquareBracketList && stack[sp].inside == Inside.ParenList)) { // Optional: Check for Inside.ParenList to align the following lines like the previous line
+						// If there's myFoo( \n { \n, keep the ( indent + 1 tab
+						// If there's myFoo( \n [ \n, keep the ( indent only if ie.Options.KeepArgumentIndentOnSquareBracketOpen says so.
+						((inside != Inside.SquareBracketList || ie.Options.KeepArgumentIndentOnSquareBracketOpen) && stack[sp].inside == Inside.ParenList)) {
 						indentBuilder.Append (stack[sp].indent);
 						break;
 					}
