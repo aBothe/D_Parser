@@ -158,6 +158,20 @@ auto sourceCode = q{~this(){}}c;
 		}
 
 		[Test]
+		public void TestStaticIfSyntaxError()
+		{
+			var mod = DParser.ParseString (@"
+static if (is(ElementType!T == void))
+    static assert(0, ""try wrapping the function to get rid of void[] args"");
+else
+    alias getType = ElementType!T;
+
+void foo() {}
+");
+			Assert.That (mod.ParseErrors.Count, Is.EqualTo (0));
+		}
+
+		[Test]
 		public void TestSyntaxError1()
 		{
 			DModule mod;
