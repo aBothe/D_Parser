@@ -4814,7 +4814,7 @@ namespace D_Parser.Parser
 
 			sc.ScopedStatement = Statement(true, false, Scope, sc);
 
-			if (t.Kind != DTokens.CloseCurlyBrace)
+			if (Lexer.CurrentPeekToken.Kind == DTokens.Else && t.Kind != DTokens.CloseCurlyBrace)
 				Expect (DTokens.Semicolon);
 
 			if(laKind == Else)
