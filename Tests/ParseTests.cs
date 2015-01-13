@@ -151,6 +151,13 @@ auto sourceCode = q{~this(){}}c;
 		}
 
 		[Test]
+		public void TestAsmStorageClasses()
+		{
+			var mod = DParser.ParseString (@"void foo() {  asm @nogc nothrow { naked; } }");
+			Assert.That (mod.ParseErrors.Count, Is.EqualTo (0));
+		}
+
+		[Test]
 		public void TestSyntaxError1()
 		{
 			DModule mod;

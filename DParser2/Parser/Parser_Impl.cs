@@ -4300,6 +4300,9 @@ namespace D_Parser.Parser
 			AsmStatement.AlignStatement als;
 			var s = new AsmStatement() { Location = t.Location, Parent = Parent };
 
+			CheckForStorageClasses (Scope); // allowed since dmd 2.067
+			ApplyAttributes (new DVariable ());
+
 			Expect(OpenCurlyBrace);
 
 			var l = new List<AbstractStatement>();
