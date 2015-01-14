@@ -162,6 +162,20 @@ auto sourceCode = q{~this(){}}c;
 		{
 			var mod = DParser.ParseString (@"
 void foo() {
+static if (is(ElementType!T == void)){
+    static assert(0, ""try wrapping the function to get rid of void[] args"");
+} else
+    alias getType = ElementType!T;
+
+static if (is(ElementType!T == void)){
+    static assert(0, ""try wrapping the function to get rid of void[] args"");
+} else static if(durr) {
+    alias getType = ElementType!T;
+}
+else {
+	wurr();
+}
+
 static if (is(ElementType!T == void))
     static assert(0, ""try wrapping the function to get rid of void[] args"");
 else
