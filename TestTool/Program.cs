@@ -50,9 +50,14 @@ namespace TestTool
 			Console.WriteLine ("Begin parsing...");
 
 			var dirs = Environment.OSVersion.Platform == PlatformID.Unix ? new[] { @"/usr/include/dlang" } : new[] { @"B:\Programs\D\dmd2\src\phobos", @"B:\Programs\D\dmd2\src\druntime\import" };
+			var skipFunctionBodies = false;
+
+
 			var dirsLeft = dirs.Length;
 			var ev=new System.Threading.AutoResetEvent(false);
-			GlobalParseCache.BeginAddOrUpdatePaths(dirs, true, (pc) =>
+
+			if (skipFunctionBodies)	Console.WriteLine ("Skipping method bodies!");
+			GlobalParseCache.BeginAddOrUpdatePaths(dirs, skipFunctionBodies, (pc) =>
 			{
 				Console.WriteLine("{0}/{1}ms", pc.Duration, pc.ParseDuration);
 				ev.Set();

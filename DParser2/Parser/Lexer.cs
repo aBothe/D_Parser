@@ -713,6 +713,15 @@ namespace D_Parser.Parser
 			{
 				TokenStringParsing_AppendToken(tk, tokenString);
 			next:
+				switch(ReaderPeek())
+				{
+				case '\'':
+				case '"':
+				case '`': // TODO r" " missing
+					tokenString.Append((char)ReaderRead());
+					goto next;
+				}
+
 				tk = Next();
 
 				if (tk.Kind == eosToken)

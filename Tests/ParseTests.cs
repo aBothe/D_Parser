@@ -269,6 +269,16 @@ return false;
 		}
 
 		[Test]
+		public void TokenStrings()
+		{
+			var s = @"auto ss = q""[<?xml version=""1.0""?>
+				<title>XML Developer's Guide</title>]"";";
+			var mod = DParser.ParseString(s);
+
+			Assert.That(mod.ParseErrors.Count, Is.EqualTo(0));
+		}
+
+		[Test]
 		public void SyntaxError_Issue186()
 		{
 			var s = @"
