@@ -1122,18 +1122,23 @@ namespace D_Parser.Parser
 
 		bool IsBasicType()
 		{
-			switch (laKind) {
+			return IsBasicType (la);
+		}
+
+		bool IsBasicType(DToken tk)
+		{
+			switch (tk.Kind) {
 				case DTokens.Typeof:
 				case DTokens.__vector:
 				case DTokens.Identifier:
 					return true;
 				case DTokens.Dot:
-					return Lexer.CurrentPeekToken.Kind == (Identifier);
+					return tk.Next.Kind == (Identifier);
 				case DTokens.This:
 				case DTokens.Super:
-					return Lexer.CurrentPeekToken.Kind == DTokens.Dot;
+					return tk.Next.Kind == DTokens.Dot;
 				default:
-					return IsBasicType (laKind) || IsFunctionAttribute;
+					return IsBasicType (tk.Kind) || IsFunctionAttribute_(tk.Kind);
 			}
 		}
 
@@ -2401,7 +2406,12 @@ namespace D_Parser.Parser
 
 					if (Lexer.CurrentPeekToken.Kind == OpenSquareBracket)
 					{
-						OverPeekBrackets(OpenSquareBracket);
+						Peek ();
+						if (IsBasicType (Lexer.CurrentPeekToken) && !(Lexer.CurrentPeekToken.Kind == DTokens.Identifier || Lexer.CurrentPeekToken.Kind == DTokens.Dot)) {
+							Peek (1);
+							return false;
+						}
+						OverPeekBrackets(OpenSquareBracket, true);
 						if (Lexer.CurrentPeekToken.Kind == DTokens.EOF) // Due to completion purposes
 							return true;
 					}
