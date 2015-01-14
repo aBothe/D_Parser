@@ -1133,10 +1133,10 @@ namespace D_Parser.Parser
 				case DTokens.Identifier:
 					return true;
 				case DTokens.Dot:
-					return tk.Next.Kind == (Identifier);
+					return tk.Next != null && tk.Next.Kind == (Identifier);
 				case DTokens.This:
 				case DTokens.Super:
-					return tk.Next.Kind == DTokens.Dot;
+					return tk.Next != null && tk.Next.Kind == DTokens.Dot;
 				default:
 					return IsBasicType (tk.Kind) || IsFunctionAttribute_(tk.Kind);
 			}
