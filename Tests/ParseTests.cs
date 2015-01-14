@@ -268,6 +268,15 @@ return false;
 			Assert.That (foo.Children.Count, Is.EqualTo (1));
 		}
 
+		[Test]
+		public void SyntaxError_Issue185()
+		{
+			var s = "alias Dg13832 = ref int delegate();";
+			var mod = DParser.ParseString(s);
+
+			Assert.That(mod.ParseErrors.Count, Is.EqualTo(0));
+		}
+
         [Test]
         public void SyntaxError_Issue175()
         {
