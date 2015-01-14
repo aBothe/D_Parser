@@ -2299,92 +2299,20 @@ namespace D_Parser.Parser
 			}
 			return ae;
 		}
-
+			
 		/// <summary>
 		/// This function has a very high importance because here we decide whether it's a declaration or assignExpression!
 		/// </summary>
 		public bool IsAssignExpression()
 		{
-			if (IsBasicType())
-			{
-				bool HadPointerDeclaration = false;
+			if (IsStorageClass)
+				return false;
 
-				// uint[]** MyArray;
-				if (!IsBasicType(laKind))
-				{
-					// Skip initial dot
-					if (Peek(laKind == Dot ? 2 :1).Kind != Identifier)
-					{
-						if (laKind == Identifier || laKind == Dot)
-						{
-							// Skip initial identifier list
-							if (Lexer.CurrentPeekToken.Kind == Not)
-							{
-								Peek();
-								if (Lexer.CurrentPeekToken.Kind != Is && Lexer.CurrentPeekToken.Kind != In)
-								{
-									if (Lexer.CurrentPeekToken.Kind == (OpenParenthesis))
-										OverPeekBrackets(OpenParenthesis);
-									else
-										Peek();
+			if (!IsBasicType ())
+				return true;
 
-									if (Lexer.CurrentPeekToken.Kind == EOF) {
-										Peek (1);
-										return true;
-									}
-								}
-							}
-
-							while (Lexer.CurrentPeekToken.Kind == Dot)
-							{
-								Peek();
-
-								if (Lexer.CurrentPeekToken.Kind == Identifier)
-								{
-									Peek();
-
-									if (Lexer.CurrentPeekToken.Kind == Not)
-									{
-										Peek();
-										if (Lexer.CurrentPeekToken.Kind != Is && Lexer.CurrentPeekToken.Kind != In)
-										{
-											if (Lexer.CurrentPeekToken.Kind == (OpenParenthesis))
-												OverPeekBrackets(OpenParenthesis);
-											else 
-												Peek();
-										}
-
-										if (Lexer.CurrentPeekToken.Kind == EOF) {
-											Peek (1);
-											return true;
-										}
-									}
-								}
-								else
-								{
-									/*
-									 * If a non-identifier follows a dot, treat it as expression, not as declaration.
-									 */
-									Peek(1);
-									return true;
-								}
-							}
-						}
-						else if(Lexer.CurrentPeekToken.Kind == OpenParenthesis)
-						{
-							if(IsFunctionAttribute)
-							{
-								OverPeekBrackets(OpenParenthesis);
-								bool isPrimitiveExpr = Lexer.CurrentPeekToken.Kind == Dot || Lexer.CurrentPeekToken.Kind == OpenParenthesis;
-								Peek(1);
-								return isPrimitiveExpr;
-							}
-							else if (laKind == Typeof || laKind == __vector)
-								OverPeekBrackets(OpenParenthesis);
-						}
-					}
-				}
-				else if(Peek(1).Kind != Dot && Peek().Kind!=Identifier)
+			if (DTokens.IsBasicType (laKind)) {
+				if(Lexer.CurrentPeekToken.Kind != Dot && Peek().Kind != Identifier)
 				{
 					/*
 					 * PrimaryExpression allows
@@ -2394,58 +2322,134 @@ namespace D_Parser.Parser
 					Peek(1);
 					return false;
 				}
+			}
+				
+			// uint[]** MyArray;
+			else
+			{
+				// Skip initial dot
+				if (laKind == Dot)
+					Peek ();
 
-				if (Lexer.CurrentPeekToken == null)
-					Peek();
-
-				// Skip basictype2's
-				while (Lexer.CurrentPeekToken.Kind == Times || Lexer.CurrentPeekToken.Kind == OpenSquareBracket)
+				if (Lexer.CurrentPeekToken.Kind != Identifier)
 				{
-					if (Lexer.CurrentPeekToken.Kind == Times)
-						HadPointerDeclaration = true;
-
-					if (Lexer.CurrentPeekToken.Kind == OpenSquareBracket)
+					if (laKind == Identifier || laKind == Dot)
 					{
-						Peek ();
-						if (IsBasicType (Lexer.CurrentPeekToken) && !(Lexer.CurrentPeekToken.Kind == DTokens.Identifier || Lexer.CurrentPeekToken.Kind == DTokens.Dot)) {
-							Peek (1);
-							return false;
+						// Skip initial identifier list
+						if (Lexer.CurrentPeekToken.Kind == Not)
+						{
+							Peek();
+							if (Lexer.CurrentPeekToken.Kind != Is && Lexer.CurrentPeekToken.Kind != In)
+							{
+								if (Lexer.CurrentPeekToken.Kind == (OpenParenthesis))
+									OverPeekBrackets(OpenParenthesis);
+								else
+									Peek();
+
+								if (Lexer.CurrentPeekToken.Kind == EOF) {
+									Peek (1);
+									return true;
+								}
+							}
 						}
-						OverPeekBrackets(OpenSquareBracket, true);
-						if (Lexer.CurrentPeekToken.Kind == DTokens.EOF) // Due to completion purposes
-							return true;
-					}
-					else Peek();
 
-					if (HadPointerDeclaration && Lexer.CurrentPeekToken.Kind == Literal) // char[a.member*8] abc; // conv.d:3278
+						while (Lexer.CurrentPeekToken.Kind == Dot)
+						{
+							Peek();
+
+							if (Lexer.CurrentPeekToken.Kind == Identifier)
+							{
+								Peek();
+
+								if (Lexer.CurrentPeekToken.Kind == Not)
+								{
+									Peek();
+									if (Lexer.CurrentPeekToken.Kind != Is && Lexer.CurrentPeekToken.Kind != In)
+									{
+										if (Lexer.CurrentPeekToken.Kind == (OpenParenthesis))
+											OverPeekBrackets(OpenParenthesis);
+										else 
+											Peek();
+									}
+
+									if (Lexer.CurrentPeekToken.Kind == EOF) {
+										Peek (1);
+										return true;
+									}
+								}
+							}
+							else
+							{
+								/*
+								 * If a non-identifier follows a dot, treat it as expression, not as declaration.
+								 */
+								Peek(1);
+								return true;
+							}
+						}
+					}
+					else if(Lexer.CurrentPeekToken.Kind == OpenParenthesis)
 					{
+						if(IsFunctionAttribute)
+						{
+							OverPeekBrackets(OpenParenthesis);
+							bool isPrimitiveExpr = Lexer.CurrentPeekToken.Kind == Dot || Lexer.CurrentPeekToken.Kind == OpenParenthesis;
+							Peek(1);
+							return isPrimitiveExpr;
+						}
+						else if (laKind == Typeof || laKind == __vector)
+							OverPeekBrackets(OpenParenthesis);
+					}
+				}
+			}
+
+			if (Lexer.CurrentPeekToken == null)
+				Peek();
+
+
+			// Skip basictype2's
+			bool HadPointerDeclaration = false;
+			while (Lexer.CurrentPeekToken.Kind == Times || Lexer.CurrentPeekToken.Kind == OpenSquareBracket)
+			{
+				if (Lexer.CurrentPeekToken.Kind == Times) {
+					HadPointerDeclaration = true;
+					Peek ();
+					if (Lexer.CurrentPeekToken.Kind == Literal) { // char[a.member*8] abc; // conv.d:3278
 						Peek(1);
 						return true;
 					}
 				}
 
-				// And now, after having skipped the basictype and possible trailing basictype2's,
-				// we check for an identifier or delegate declaration to ensure that there's a declaration and not an expression
-				// Addition: If a times token ('*') follows an identifier list, we can assume that we have a declaration and NOT an expression!
-				// Example: *a=b is an expression; a*=b is not possible (and a Multiply-Assign-Expression) - instead something like A* a should be taken...
-				if (HadPointerDeclaration || 
-					Lexer.CurrentPeekToken.Kind == Identifier || 
-					Lexer.CurrentPeekToken.Kind == Delegate || 
-					Lexer.CurrentPeekToken.Kind == Function ||
-
-					// Also assume a declaration if no further token follows
-					Lexer.CurrentPeekToken.Kind==EOF ||
-					Lexer.CurrentPeekToken.Kind==__EOF__)
+				else // if (Lexer.CurrentPeekToken.Kind == OpenSquareBracket)
 				{
-					Peek(1);
-					return false;
+					Peek ();
+					if (IsBasicType (Lexer.CurrentPeekToken) && !(Lexer.CurrentPeekToken.Kind == DTokens.Identifier || Lexer.CurrentPeekToken.Kind == DTokens.Dot)) {
+						Peek (1);
+						return false;
+					}
+					OverPeekBrackets(OpenSquareBracket, true);
+					if (Lexer.CurrentPeekToken.Kind == DTokens.EOF) // Due to completion purposes
+						return true;
 				}
 			}
-			else if (IsStorageClass)
-				return false;
 
-			Peek(1);
-			return true;
+			var pkKind = Lexer.CurrentPeekToken.Kind;
+			Peek (1);
+
+			// And now, after having skipped the basictype and possible trailing basictype2's,
+			// we check for an identifier or delegate declaration to ensure that there's a declaration and not an expression
+			// Addition: If a times token ('*') follows an identifier list, we can assume that we have a declaration and NOT an expression!
+			// Example: *a=b is an expression; a*=b is not possible (and a Multiply-Assign-Expression) - instead something like A* a should be taken...
+			switch (pkKind) {
+			case DTokens.Identifier:
+			case DTokens.Delegate:
+			case DTokens.Function:
+			case DTokens.EOF: // Also assume a declaration if no further token follows
+			case DTokens.__EOF__:
+				return false;
+			default:
+				return !HadPointerDeclaration;
+			}
 		}
 
 		public IExpression AssignExpression(IBlockNode Scope = null)
