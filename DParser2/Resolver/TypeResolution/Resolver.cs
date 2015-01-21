@@ -187,7 +187,7 @@ namespace D_Parser.Resolver.TypeResolution
 				if (ret == null)
 				{
 					resAttempt = NodeResolutionAttempt.RawSymbolLookup;
-					var overloads = TypeDeclarationResolver.HandleNodeMatches(LookupIdRawly(editor, o as ISyntaxRegion), ctxt, null, o);
+					var overloads = TypeDeclarationResolver.HandleNodeMatches(LookupIdRawly(editor.ParseCache, o as ISyntaxRegion), ctxt, null, o);
 					ret = AmbiguousType.Get(overloads, o);
 				}
 
@@ -202,66 +202,121 @@ namespace D_Parser.Resolver.TypeResolution
 			return ret;
 		}
 
-		public static List<DNode> LookupIdRawly(IEditorData ed, ISyntaxRegion o)
+		static void _ExtractIdOutOfTypeDecl(List<int> idParts, ref ITypeDeclaration td)
 		{
-			// Extract a concrete id from that syntax object. (If access expression/nested decl, use the inner-most one)
-			int idHash=0;
-
-			chkAgain:
-			if (o is ITypeDeclaration)
-			{
-				var td = ((ITypeDeclaration)o).InnerMost;
-
+			while (td != null) {
 				if (td is IdentifierDeclaration)
-					idHash = ((IdentifierDeclaration)td).IdHash;
+					idParts.Add(((IdentifierDeclaration)td).IdHash);
 				else if (td is TemplateInstanceExpression)
-					idHash = ((TemplateInstanceExpression)td).TemplateIdHash;
+					idParts.Add(((TemplateInstanceExpression)td).TemplateIdHash);
+				td = td.InnerDeclaration;
 			}
-			else if (o is IExpression)
-			{
-				var x = (IExpression)o;
+		}
 
-				while (x is PostfixExpression)
-					x = ((PostfixExpression)x).PostfixForeExpression;
+		public static List<DNode> LookupIdRawly(Misc.ParseCacheView parseCache, ISyntaxRegion o, DModule currentModule = null)
+		{
+			var idParts = new List<int> ();
 
-				if (x is IdentifierExpression && ((IdentifierExpression)x).IsIdentifier)
-					idHash = ((IdentifierExpression)x).ValueStringHash;
-				else if (x is TemplateInstanceExpression)
-					idHash = ((TemplateInstanceExpression)x).TemplateIdHash;
-				else if (x is NewExpression)
-				{
-					o = ((NewExpression)x).Type;
-					goto chkAgain;
-				}
+			var td = o as ITypeDeclaration;
+			if (td != null) {
+				_ExtractIdOutOfTypeDecl (idParts, ref td);
+				o = td;
+			}
+			else while (o is IExpression) {
+					var x = o as IExpression;
+					var pfa = x as PostfixExpression_Access;
+					if (pfa != null) {
+						x = pfa.AccessExpression;
+						o = pfa.PostfixForeExpression;
+					}
+
+					if (x is IdentifierExpression && ((IdentifierExpression)x).IsIdentifier)
+						idParts.Add (((IdentifierExpression)x).ValueStringHash);
+					else if (x is TemplateInstanceExpression)
+						idParts.Add (((TemplateInstanceExpression)x).TemplateIdHash);
+					else if (x is NewExpression) {
+						td = ((NewExpression)x).Type;
+						_ExtractIdOutOfTypeDecl (idParts, ref td);
+					}
 			}
 
-			if (idHash == 0)
+			if (idParts.Count == 0)
 				return null;
 
-			var l = new List<DNode> ();
+			var id = idParts[idParts.Count-1];
+			idParts.RemoveAt (idParts.Count - 1);
 
-			// Rawly scan through all modules' roots of the parse cache to find that id.
-			foreach(var pc in ed.ParseCache)
-				foreach (var mod in pc)
-				{
-					if (mod.NameHash == idHash)
-						l.Add(mod);
-
-					var ch = mod[idHash];
-					if(ch!=null)
-						foreach (var c in ch)
-						{
-							var dn = c as DNode;
-
-							// TODO: At least check for proper protection attributes properly!
-							if (dn != null && !dn.ContainsAttribute(DTokens.Package, DTokens.Private, DTokens.Protected)) // Can this
-								l.Add(dn);
-						}
-
-					//TODO: Mixins
+			// Try to get a package first
+			var currentPackages = parseCache as IEnumerable<ModulePackage>;
+			var nextPackages = new List<ModulePackage> ();
+			while (currentPackages != null) {
+				foreach (var pack in currentPackages) {
+					var p = pack.GetPackage (id);
+					if(p != null)
+						nextPackages.Add (p);
 				}
 
-			return l;
+				if (nextPackages.Count != 0) {
+					currentPackages = nextPackages;
+					nextPackages = new List<ModulePackage> ();
+					if (idParts.Count > 0) {
+						id = idParts [idParts.Count-1];
+						idParts.RemoveAt (idParts.Count - 1);
+					} else {
+						id = -1;
+						break;
+					}
+				} 
+				else
+					break;
+			}
+
+			if (idParts.Count == 0 && currentModule == null)
+				return null;
+
+			var currentNodes = new List<DNode> ();
+			foreach (var pack in currentPackages) {
+				var mod = pack.GetModule (id);	
+				if(mod != null)
+					currentNodes.Add(mod);
+			}
+			if (currentNodes.Count == 0) {
+				if (currentModule == null)
+					return null;
+				
+				currentNodes.Add (currentModule);
+			} else {
+				id = idParts[idParts.Count-1];
+				idParts.RemoveAt (idParts.Count - 1);
+			}
+
+			var nextNodes = new List<DNode> ();
+			while (currentNodes.Count > 0) {
+				foreach (var n in currentNodes) 
+					if(n is IBlockNode) {
+						var ch = (n as IBlockNode).Children.GetNodes(id);
+						if (ch != null)
+							foreach (var c in ch)
+								if (c is DNode)
+									nextNodes.Add (c as DNode);
+					}
+
+				if (nextNodes.Count != 0) {
+					currentNodes = nextNodes;
+					nextNodes = new List<DNode> ();
+					if (idParts.Count > 0) {
+						id = idParts[idParts.Count-1];
+						idParts.RemoveAt (idParts.Count - 1);
+					} else {
+						id = -1;
+						break;
+					}
+				} 
+				else
+					break;
+			}
+
+			return currentNodes;
 		}
 
 		static readonly int ObjectNameHash = "Object".GetHashCode();
