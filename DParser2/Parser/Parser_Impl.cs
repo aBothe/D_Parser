@@ -191,7 +191,6 @@ namespace D_Parser.Parser
 					ApplyAttributes(dbs);
 					dbs.Location = t.Location;
 					FunctionBody(dbs);
-					dbs.EndLocation = t.EndLocation;
 					module.Add(dbs);
 					break;
 				/*
@@ -312,7 +311,6 @@ namespace D_Parser.Parser
 
 					dm.Parameters = Parameters(dm);
 					FunctionBody(dm);
-					dm.EndLocation = t.EndLocation;
 					module.Add(dm);
 					break;
 				case Delete:
@@ -324,7 +322,6 @@ namespace D_Parser.Parser
 
 					ddm.Parameters = Parameters(ddm);
 					FunctionBody(ddm);
-					ddm.EndLocation = t.EndLocation;
 					module.Add(ddm);
 					break;
 				default:
@@ -1787,7 +1784,8 @@ namespace D_Parser.Parser
 				if (dv!=null)
 					dv.Initializer = defInit;
 			}
-			ret.EndLocation = t.EndLocation;
+
+			ret.EndLocation = IsEOF ? la.EndLocation : t.EndLocation;
 
 			return ret;
 		}
@@ -5320,7 +5318,7 @@ namespace D_Parser.Parser
 			}
 
 			BlockAttributes = stk_Backup;
-			par.EndLocation = par.Body != null ? par.Body.EndLocation : t.EndLocation;
+			par.EndLocation = IsEOF && t.Kind != DTokens.CloseCurlyBrace ? la.Location : par.Body != null ? par.Body.EndLocation : t.EndLocation;
 		}
 		#endregion
 
