@@ -133,12 +133,12 @@ namespace D_Parser.Dom
 			set;
 		}
 
-		public virtual void Accept(MetaDeclarationVisitor vis)
+		public override void Accept(MetaDeclarationVisitor vis)
 		{
 			vis.VisitAttributeMetaDeclarationBlock(this);
 		}
 
-		public virtual R Accept<R>(MetaDeclarationVisitor<R> vis)
+		public override R Accept<R>(MetaDeclarationVisitor<R> vis)
 		{
 			return vis.VisitAttributeMetaDeclarationBlock(this);
 		}
