@@ -228,7 +228,8 @@ namespace D_Parser.Resolver.TypeResolution
 					if (pfa != null) {
 						x = pfa.AccessExpression;
 						o = pfa.PostfixForeExpression;
-					}
+					} else
+						o = null;
 
 					if (x is IdentifierExpression && ((IdentifierExpression)x).IsIdentifier)
 						idParts.Add (((IdentifierExpression)x).ValueStringHash);
