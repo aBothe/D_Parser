@@ -827,6 +827,7 @@ namespace D_Parser.Parser
 		{
 			switch (token)
 			{
+				case Return:
 				case In:
 				case Out:
 				case InOut:
