@@ -758,6 +758,7 @@ namespace D_Parser.Parser
 		{
 			switch (token)
 			{
+				case Return:
 				case Const:
 				case Immutable:
 				case Shared:

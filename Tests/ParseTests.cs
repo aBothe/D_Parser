@@ -279,6 +279,17 @@ return false;
 		}
 
 		[Test]
+		public void SyntaxError_Issue188()
+		{
+			var s = @"
+ref int foo(return ref int a) { return a; }
+ref myclass mufunc () return  { }";
+			var mod = DParser.ParseString(s);
+
+			Assert.That(mod.ParseErrors.Count, Is.EqualTo(0));
+		}
+
+		[Test]
 		public void SyntaxError_Issue186()
 		{
 			var s = @"
