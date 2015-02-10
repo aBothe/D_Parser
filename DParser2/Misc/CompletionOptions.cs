@@ -11,7 +11,7 @@ namespace D_Parser.Misc
 		/// <summary>
 		/// Time a completion request has until it quits silently. Milliseconds. -1 for inifinite time.
 		/// </summary>
-		public int CompletionTimeout = 200;
+		public int CompletionTimeout = 100;
 
 		public bool EnableSuggestionMode = true;
 
