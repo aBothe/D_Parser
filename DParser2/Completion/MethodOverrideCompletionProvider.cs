@@ -32,7 +32,11 @@ namespace D_Parser.Completion.Providers
 			if (dc == null || dc.ClassType != DTokens.Class)
 				return;
 
-			var classType = DResolver.ResolveClassOrInterface(dc, ResolutionContext.Create(Editor, true), null) as TemplateIntermediateType;
+			TemplateIntermediateType classType = null;
+			var ctxt = ResolutionContext.Create (Editor, true);
+
+			CodeCompletion.DoTimeoutableCompletionTask(null, ctxt, ()=>
+				classType = DResolver.ResolveClassOrInterface(dc, ctxt, null) as TemplateIntermediateType);
 
 			if (classType == null)
 				return;

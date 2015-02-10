@@ -162,7 +162,7 @@ namespace D_Parser.Completion
 		/// <param name="cdgen">Can be null.</param>
 		/// <param name="ctxt"></param>
 		/// <param name="ac"></param>
-		/// <param name="timeout">int.MinValue, if the param shall not be used</param>
+		/// <param name="timeout">if int.MinValue, this value will be made the default CompletionTimeout.</param>
 		public static void DoTimeoutableCompletionTask(ICompletionDataGenerator cdgen,ResolutionContext ctxt, Action ac, int timeout = int.MinValue)
 		{
 			ctxt.CancelOperation = false;
