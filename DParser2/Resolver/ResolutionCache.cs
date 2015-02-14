@@ -9,34 +9,33 @@ namespace D_Parser.Resolver
 {
 	class ResolutionCache<T>
 	{
-		class CacheEntryDict : Dictionary<ulong, T>	{
+		class CacheEntryDict : Dictionary<long, T>	{
 			public T TryGetValue(ResolutionContext ctxt)
 			{
 				T t;
-				UInt64 d = GetTemplateParamHash(ctxt);
+				Int64 d = GetTemplateParamHash(ctxt);
 				TryGetValue(d, out t);
 				return t;
 			}
 
 			public void Add(ResolutionContext ctxt, T t)
 			{
-				UInt64 d = GetTemplateParamHash(ctxt);
+				Int64 d = GetTemplateParamHash(ctxt);
 				this[d] = t;
 			}
 
-			static ulong GetTemplateParamHash(ResolutionContext ctxt)
+			static long GetTemplateParamHash(ResolutionContext ctxt)
 			{
 				var tpm = new List<TemplateParameter>();
-				var h = (ulong)DNode.GetNodePath(Resolver.TypeResolution.DResolver.SearchBlockAt(ctxt.ScopedBlock, ctxt.CurrentContext.Caret), true).GetHashCode();
+				var h = (long)DNode.GetNodePath(Resolver.TypeResolution.DResolver.SearchBlockAt(ctxt.ScopedBlock, ctxt.CurrentContext.Caret), true).GetHashCode();
 				foreach (var tps in ctxt.DeducedTypesInHierarchy)
-					unchecked
-					{
-						if (tps == null || tpm.Contains(tps.Parameter))
-							continue;
+				{
+					if (tps == null || tpm.Contains(tps.Parameter))
+						continue;
 
-						h += AstElementHashingVisitor.Instance.Accept(tps);
-						tpm.Add(tps.Parameter);
-					}
+					h = unchecked(31 * h + AstElementHashingVisitor.Instance.Accept(tps));
+					tpm.Add(tps.Parameter);
+				}
 				return h;
 			}
 		}

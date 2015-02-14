@@ -15,13 +15,13 @@ namespace D_Parser.Resolver.ExpressionSemantics.Caching
 			/// <summary>
 			/// The hashes of the argument values.
 			/// </summary>
-			public ulong[] argumentValueHashes;
+			public long[] argumentValueHashes;
 			
 			public ISymbolValue val;
 		}
 		
 		#region Properties
-		Dictionary<ulong, List<EvEntry>> cache = new Dictionary<ulong, List<EvEntry>>();
+		Dictionary<long, List<EvEntry>> cache = new Dictionary<long, List<EvEntry>>();
 		
 		#endregion
 		
@@ -29,7 +29,7 @@ namespace D_Parser.Resolver.ExpressionSemantics.Caching
 		ISymbolValue TryGetValue(IExpression x, params ISymbolValue[] argumentValues)
 		{
 			List<EvEntry> entries;
-			if(!cache.TryGetValue(x.GetHash(), out entries))
+			if(!cache.TryGetValue(x.Accept(D_Parser.Dom.Visitors.AstElementHashingVisitor.Instance), out entries))
 				return null;
 			
 			var parameters = GetParameters(x);
@@ -46,13 +46,13 @@ namespace D_Parser.Resolver.ExpressionSemantics.Caching
 			if(argumentValues == null || argumentValues.Length == 0)
 				return null;
 			
-			//var argHashes = new ulong[argumentValues.Length];
-			var valHashes = new ulong[argumentValues.Length];
+			//var argHashes = new long[argumentValues.Length];
+			var valHashes = new long[argumentValues.Length];
 			
 			for(int i = argumentValues.Length; i!=0;i--)
 			{
 				//argHashes[i] = parameters[i].GetHash();
-				valHashes[i] = (ulong)argumentValues[i].GetHashCode();
+				valHashes[i] = D_Parser.Dom.Visitors.AstElementHashingVisitor.Hash(argumentValues[i]);
 			}
 			
 			foreach(var e in entries)

@@ -240,11 +240,11 @@ namespace D_Parser.Parser
         List<DAttribute> GetCurrentAttributeSet()
         {
 			var vis = D_Parser.Dom.Visitors.AstElementHashingVisitor.Instance;
-			var keys = new List<ulong>();
+			var keys = new List<long>();
         	var attrs = new List<DAttribute>();
 			Modifier lastVisModifier = null;
 
-			ulong key;
+			long key;
 			int i;
 
 			foreach (var a in BlockAttributes){

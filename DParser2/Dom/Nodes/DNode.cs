@@ -116,9 +116,10 @@ namespace D_Parser.Dom
 		{
 			if(Attributes != null && userDefinedAttributeExpression != null)
 			{
-				var h = new List<ulong>(userDefinedAttributeExpression.Length);
+				var hashVisitor = D_Parser.Dom.Visitors.AstElementHashingVisitor.Instance;
+				var h = new List<long>(userDefinedAttributeExpression.Length);
 				for(int i = userDefinedAttributeExpression.Length -1; i >= 0; i--)
-					h.Add(userDefinedAttributeExpression[i].GetHash());
+					h.Add(userDefinedAttributeExpression[i].Accept(hashVisitor));
 				
 				foreach(var attr in Attributes)
 				if(attr is UserDeclarationAttribute)
@@ -126,7 +127,7 @@ namespace D_Parser.Dom
 					var uda = attr as UserDeclarationAttribute;
 					if(uda.AttributeExpression != null)
 						foreach(var x in uda.AttributeExpression){
-							if(x != null && h.Contains(x.GetHash())) //FIXME: Only compare the raw & unevaluated expressions
+							if(x != null && h.Contains(x.Accept(hashVisitor))) //FIXME: Only compare the raw & unevaluated expressions
 								return true;
 					}
 				}
