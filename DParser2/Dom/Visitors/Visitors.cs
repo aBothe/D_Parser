@@ -112,105 +112,105 @@ namespace D_Parser.Dom
 	public interface TemplateParameterVisitor : IVisitor
 	{
 		void VisitTemplateParameter (TemplateParameter tp);
-		void Visit(TemplateTypeParameter templateTypeParameter);
-		void Visit(TemplateThisParameter templateThisParameter);
-		void Visit(TemplateValueParameter templateValueParameter);
-		void Visit(TemplateAliasParameter templateAliasParameter);
-		void Visit(TemplateTupleParameter templateTupleParameter);
+		void Visit(TemplateTypeParameter tp);
+		void Visit(TemplateThisParameter tp);
+		void Visit(TemplateValueParameter tp);
+		void Visit(TemplateAliasParameter tp);
+		void Visit(TemplateTupleParameter tp);
 	}
 
 	public interface TemplateParameterVisitor<out R> : IVisitor<R>
 	{
 		R VisitTemplateParameter (TemplateParameter tp);
-		R Visit(TemplateTypeParameter templateTypeParameter);
-		R Visit(TemplateThisParameter templateThisParameter);
-		R Visit(TemplateValueParameter templateValueParameter);
-		R Visit(TemplateAliasParameter templateAliasParameter);
-		R Visit(TemplateTupleParameter templateTupleParameter);
+		R Visit(TemplateTypeParameter tp);
+		R Visit(TemplateThisParameter tp);
+		R Visit(TemplateValueParameter tp);
+		R Visit(TemplateAliasParameter tp);
+		R Visit(TemplateTupleParameter tp);
 	}
 
 	public interface StatementVisitor : IVisitor
 	{
-		void Visit(ModuleStatement moduleStatement);
-		void Visit(ImportStatement importStatement);
-		void VisitImport (ImportStatement.Import import);
-		void VisitImport (ImportStatement.ImportBinding importBinding);
-		void VisitImport (ImportStatement.ImportBindings bindings);
-		void Visit(BlockStatement blockStatement);
-		void Visit(LabeledStatement labeledStatement);
-		void Visit(IfStatement ifStatement);
-		void Visit(WhileStatement whileStatement);
-		void Visit(ForStatement forStatement);
-		void Visit(ForeachStatement foreachStatement);
-		void Visit(SwitchStatement switchStatement);
-		void Visit(SwitchStatement.CaseStatement caseStatement);
-		void Visit(SwitchStatement.DefaultStatement defaultStatement);
-		void Visit(ContinueStatement continueStatement);
-		void Visit(BreakStatement breakStatement);
-		void Visit(ReturnStatement returnStatement);
-		void Visit(GotoStatement gotoStatement);
-		void Visit(WithStatement withStatement);
-		void Visit(SynchronizedStatement synchronizedStatement);
-		void Visit(TryStatement tryStatement);
-		void Visit(TryStatement.CatchStatement catchStatement);
-		void Visit(TryStatement.FinallyStatement finallyStatement);
-		void Visit(ThrowStatement throwStatement);
-		void Visit(ScopeGuardStatement scopeGuardStatement);
-		void Visit(AsmStatement asmStatement);
-		void Visit(AsmStatement.InstructionStatement instrStatement);
-		void Visit(AsmStatement.RawDataStatement dataStatement);
-		void Visit(AsmStatement.AlignStatement alignStatement);
-		void Visit(PragmaStatement pragmaStatement);
-		void Visit(StatementCondition condition);
-		void Visit(VolatileStatement volatileStatement);
-		void Visit(ExpressionStatement expressionStatement);
-		void Visit(DeclarationStatement declarationStatement);
-		void Visit(TemplateMixin templateMixin);
-		void Visit(DebugSpecification versionSpecification);
-		void Visit(VersionSpecification versionSpecification);
+		void Visit(ModuleStatement s);
+		void Visit(ImportStatement s);
+		void VisitImport (ImportStatement.Import s);
+		void VisitImport (ImportStatement.ImportBinding s);
+		void VisitImport (ImportStatement.ImportBindings s);
+		void Visit(BlockStatement s);
+		void Visit(LabeledStatement s);
+		void Visit(IfStatement s);
+		void Visit(WhileStatement s);
+		void Visit(ForStatement s);
+		void Visit(ForeachStatement s);
+		void Visit(SwitchStatement s);
+		void Visit(SwitchStatement.CaseStatement s);
+		void Visit(SwitchStatement.DefaultStatement s);
+		void Visit(ContinueStatement s);
+		void Visit(BreakStatement s);
+		void Visit(ReturnStatement s);
+		void Visit(GotoStatement s);
+		void Visit(WithStatement s);
+		void Visit(SynchronizedStatement s);
+		void Visit(TryStatement s);
+		void Visit(TryStatement.CatchStatement s);
+		void Visit(TryStatement.FinallyStatement s);
+		void Visit(ThrowStatement s);
+		void Visit(ScopeGuardStatement s);
+		void Visit(AsmStatement s);
+		void Visit(AsmStatement.InstructionStatement s);
+		void Visit(AsmStatement.RawDataStatement s);
+		void Visit(AsmStatement.AlignStatement s);
+		void Visit(PragmaStatement s);
+		void Visit(StatementCondition s);
+		void Visit(VolatileStatement s);
+		void Visit(ExpressionStatement s);
+		void Visit(DeclarationStatement s);
+		void Visit(TemplateMixin s);
+		void Visit(DebugSpecification s);
+		void Visit(VersionSpecification s);
 		void Visit(StaticAssertStatement s);
 		void VisitMixinStatement(MixinStatement s);
 	}
 
 	public interface StatementVisitor<out R> : IVisitor<R>
 	{
-		R Visit(ModuleStatement moduleStatement);
-		R Visit(ImportStatement importStatement);
-		R VisitImport (ImportStatement.Import import);
-		R VisitImport (ImportStatement.ImportBinding importBinding);
-		R VisitImport (ImportStatement.ImportBindings bindings);
-		R Visit(BlockStatement blockStatement);
-		R Visit(LabeledStatement labeledStatement);
-		R Visit(IfStatement ifStatement);
-		R Visit(WhileStatement whileStatement);
-		R Visit(ForStatement forStatement);
-		R Visit(ForeachStatement foreachStatement);
-		R Visit(SwitchStatement switchStatement);
-		R Visit(SwitchStatement.CaseStatement caseStatement);
-		R Visit(SwitchStatement.DefaultStatement defaultStatement);
-		R Visit(ContinueStatement continueStatement);
-		R Visit(BreakStatement breakStatement);
-		R Visit(ReturnStatement returnStatement);
-		R Visit(GotoStatement gotoStatement);
-		R Visit(WithStatement withStatement);
-		R Visit(SynchronizedStatement synchronizedStatement);
-		R Visit(TryStatement tryStatement);
-		R Visit(TryStatement.CatchStatement catchStatement);
-		R Visit(TryStatement.FinallyStatement finallyStatement);
-		R Visit(ThrowStatement throwStatement);
-		R Visit(ScopeGuardStatement scopeGuardStatement);
-		R Visit(AsmStatement asmStatement);
-		R Visit(AsmStatement.InstructionStatement instrStatement);
-		R Visit(AsmStatement.RawDataStatement dataStatement);
-		R Visit(AsmStatement.AlignStatement alignStatement);
-		R Visit(PragmaStatement pragmaStatement);
-		R Visit(StatementCondition condition);
-		R Visit(VolatileStatement volatileStatement);
-		R Visit(ExpressionStatement expressionStatement);
-		R Visit(DeclarationStatement declarationStatement);
-		R Visit(TemplateMixin templateMixin);
-		R Visit(DebugSpecification versionSpecification);
-		R Visit(VersionSpecification versionSpecification);
+		R Visit(ModuleStatement s);
+		R Visit(ImportStatement s);
+		R VisitImport (ImportStatement.Import s);
+		R VisitImport (ImportStatement.ImportBinding s);
+		R VisitImport (ImportStatement.ImportBindings s);
+		R Visit(BlockStatement s);
+		R Visit(LabeledStatement s);
+		R Visit(IfStatement s);
+		R Visit(WhileStatement s);
+		R Visit(ForStatement s);
+		R Visit(ForeachStatement s);
+		R Visit(SwitchStatement s);
+		R Visit(SwitchStatement.CaseStatement s);
+		R Visit(SwitchStatement.DefaultStatement s);
+		R Visit(ContinueStatement s);
+		R Visit(BreakStatement s);
+		R Visit(ReturnStatement s);
+		R Visit(GotoStatement s);
+		R Visit(WithStatement s);
+		R Visit(SynchronizedStatement s);
+		R Visit(TryStatement s);
+		R Visit(TryStatement.CatchStatement s);
+		R Visit(TryStatement.FinallyStatement s);
+		R Visit(ThrowStatement s);
+		R Visit(ScopeGuardStatement s);
+		R Visit(AsmStatement s);
+		R Visit(AsmStatement.InstructionStatement s);
+		R Visit(AsmStatement.RawDataStatement s);
+		R Visit(AsmStatement.AlignStatement s);
+		R Visit(PragmaStatement s);
+		R Visit(StatementCondition s);
+		R Visit(VolatileStatement s);
+		R Visit(ExpressionStatement s);
+		R Visit(DeclarationStatement s);
+		R Visit(TemplateMixin s);
+		R Visit(DebugSpecification s);
+		R Visit(VersionSpecification s);
 		R Visit(StaticAssertStatement s);
 		R VisitMixinStatement(MixinStatement s);
 	}
@@ -274,7 +274,7 @@ namespace D_Parser.Dom
 		void Visit(VoidInitializer x);
 		void Visit(ArrayInitializer x);
 		void Visit(StructInitializer x);
-		void Visit(StructMemberInitializer structMemberInitializer);
+		void Visit(StructMemberInitializer x);
 
 		void Visit(AsmRegisterExpression x);
 		void Visit(UnaryExpression_SegmentBase x);
@@ -339,7 +339,7 @@ namespace D_Parser.Dom
 		R Visit(VoidInitializer x);
 		R Visit(ArrayInitializer x);
 		R Visit(StructInitializer x);
-		R Visit(StructMemberInitializer structMemberInitializer);
+		R Visit(StructMemberInitializer x);
 
 		R Visit(AsmRegisterExpression x);
 		R Visit(UnaryExpression_SegmentBase x);
@@ -347,33 +347,33 @@ namespace D_Parser.Dom
 
 	public interface TypeDeclarationVisitor : IVisitor
 	{
-		void Visit(IdentifierDeclaration identifierDeclaration);
-		void Visit(DTokenDeclaration dTokenDeclaration);
-		void Visit(ArrayDecl arrayDecl);
-		void Visit(DelegateDeclaration delegateDeclaration);
-		void Visit(PointerDecl pointerDecl);
-		void Visit(MemberFunctionAttributeDecl memberFunctionAttributeDecl);
-		void Visit(TypeOfDeclaration typeOfDeclaration);
-		void Visit(VectorDeclaration vectorDeclaration);
-		void Visit(VarArgDecl varArgDecl);
+		void Visit(IdentifierDeclaration td);
+		void Visit(DTokenDeclaration td);
+		void Visit(ArrayDecl td);
+		void Visit(DelegateDeclaration td);
+		void Visit(PointerDecl td);
+		void Visit(MemberFunctionAttributeDecl td);
+		void Visit(TypeOfDeclaration td);
+		void Visit(VectorDeclaration td);
+		void Visit(VarArgDecl td);
 
-		void Visit(ITemplateParameterDeclaration iTemplateParameterDeclaration);
+		void Visit(ITemplateParameterDeclaration td);
 
-		void Visit(TemplateInstanceExpression templateInstanceExpression);
+		void Visit(TemplateInstanceExpression td);
 	}
 
 	public interface TypeDeclarationVisitor<out R> : IVisitor<R>
 	{
-		R Visit(IdentifierDeclaration identifierDeclaration);
-		R Visit(DTokenDeclaration dTokenDeclaration);
-		R Visit(ArrayDecl arrayDecl);
-		R Visit(DelegateDeclaration delegateDeclaration);
-		R Visit(PointerDecl pointerDecl);
-		R Visit(MemberFunctionAttributeDecl memberFunctionAttributeDecl);
-		R Visit(TypeOfDeclaration typeOfDeclaration);
-		R Visit(VectorDeclaration vectorDeclaration);
-		R Visit(VarArgDecl varArgDecl);
-		R Visit(ITemplateParameterDeclaration iTemplateParameterDeclaration);
-		R Visit(TemplateInstanceExpression templateInstanceExpression);
+		R Visit(IdentifierDeclaration td);
+		R Visit(DTokenDeclaration td);
+		R Visit(ArrayDecl td);
+		R Visit(DelegateDeclaration td);
+		R Visit(PointerDecl td);
+		R Visit(MemberFunctionAttributeDecl td);
+		R Visit(TypeOfDeclaration td);
+		R Visit(VectorDeclaration td);
+		R Visit(VarArgDecl td);
+		R Visit(ITemplateParameterDeclaration td);
+		R Visit(TemplateInstanceExpression td);
 	}
 }
