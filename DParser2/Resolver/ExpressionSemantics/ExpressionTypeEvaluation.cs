@@ -69,7 +69,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			t = x.Accept(new ExpressionTypeEvaluation(ctxt) { TryReturnMethodReturnType = tryReturnMethodReturnType });
 
-			if(!(t is TemplateParameterSymbol) || ctxt.DeducedTypesInHierarchy.Any((tps)=> tps.Parameter == (t as TemplateParameterSymbol).Parameter)) // Don't allow caching parameters that affect the caching context.
+			if(!(t is TemplateParameterSymbol) || !ctxt.DeducedTypesInHierarchy.Any((tps)=> tps.Parameter == (t as TemplateParameterSymbol).Parameter)) // Don't allow caching parameters that affect the caching context.
 				ctxt.Cache.Add(t ?? new UnknownType(x), x, cacheHashBias);
 
 			return t;
