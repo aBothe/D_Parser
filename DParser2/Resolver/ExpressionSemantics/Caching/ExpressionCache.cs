@@ -69,7 +69,7 @@ namespace D_Parser.Resolver.ExpressionSemantics.Caching
 			return null;
 		}
 		
-		IExpression[] GetParameters(IExpression x)
+		static IExpression[] GetParameters(IExpression x)
 		{
 			if(x is ContainerExpression)
 			{
