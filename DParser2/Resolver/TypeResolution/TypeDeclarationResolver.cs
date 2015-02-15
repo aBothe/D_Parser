@@ -8,6 +8,7 @@ using D_Parser.Parser;
 using D_Parser.Resolver.ASTScanner;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.Templates;
+using System.Collections.ObjectModel;
 
 namespace D_Parser.Resolver.TypeResolution
 {
@@ -222,17 +223,17 @@ namespace D_Parser.Resolver.TypeResolution
 					{
 						r.AddRange(SingleNodeNameScan.SearchChildrenAndResolve(ctxt, udt, nextIdentifierHash, typeIdObject));
 
-						List<TemplateParameterSymbol> dedTypes = null;
+						ReadOnlyCollection<TemplateParameterSymbol> dedTypes = null;
 						foreach (var t in r)
 						{
 							var ds = t as DSymbol;
 							if (ds != null && ds.DeducedTypes == null)
 							{
 								if (dedTypes == null)
-									dedTypes = ctxt.DeducedTypesInHierarchy;
+									dedTypes = new ReadOnlyCollection<TemplateParameterSymbol>(new List<TemplateParameterSymbol>(ctxt.DeducedTypesInHierarchy));
 
 								if(dedTypes.Count != 0)
-									ds.DeducedTypes = new System.Collections.ObjectModel.ReadOnlyCollection<TemplateParameterSymbol>(dedTypes);
+									ds.DeducedTypes = dedTypes;
 							}
 						}
 
