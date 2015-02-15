@@ -114,7 +114,6 @@
     <Compile Include="Resolver\ConditionalCompilation.cs" />
     <Compile Include="Resolver\DTypeToCodeVisitor.cs" />
     <Compile Include="Resolver\DTypeToTypeDeclVisitor.cs" />
-    <Compile Include="Resolver\ExpressionSemantics\Caching\ExpressionCache.cs" />
     <Compile Include="Resolver\ExpressionSemantics\CTFE\FunctionEvaluation.cs" />
     <Compile Include="Resolver\ExpressionSemantics\CTFE\InterpretationContext.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.Identifiers.cs" />
@@ -139,7 +138,6 @@
     <Compile Include="Resolver\ISemantic.cs" />
     <Compile Include="Resolver\IResolvedTypeVisitor.cs" />
     <Compile Include="Resolver\MixinAnalysis.cs" />
-    <Compile Include="Resolver\ResolutionCache.cs" />
     <Compile Include="Resolver\ResolutionError.cs" />
     <Compile Include="Resolver\ResolutionHooks\Hooks\bitfields.cs" />
     <Compile Include="Resolver\ResolutionHooks\Hooks\Tuple.cs" />
@@ -319,6 +317,8 @@
     <Compile Include="Resolver\ResolutionHooks\Hooks\autoimplement.cs" />
     <Compile Include="Dom\Expressions\PostfixExpression_ArrayAccess.cs" />
     <Compile Include="Misc\Logger.cs" />
+    <Compile Include="Resolver\Caching\ResolutionCache.cs" />
+    <Compile Include="Resolver\Caching\ExpressionCache.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="readme.txt" />
@@ -341,4 +341,7 @@
   -->
   <ItemGroup />
   <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Resolver\Caching\" />
+  </ItemGroup>
 </Project>

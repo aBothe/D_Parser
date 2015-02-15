@@ -79,20 +79,5 @@ namespace D_Parser.Resolver.ExpressionSemantics.Caching
 			return null;
 		}
 		#endregion
-		
-		#region Basic I/O
-		static ExpressionCache _inst;
-		public static ExpressionCache Instance
-		{
-			get{
-				return _inst ?? (_inst = new ExpressionCache());
-			}
-		}
-		
-		public void Clear()
-		{
-			cache.Clear();
-		}
-		#endregion
 	}
 }
