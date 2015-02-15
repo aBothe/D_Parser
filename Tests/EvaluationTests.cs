@@ -473,11 +473,12 @@ post;
 		[Test]
 		public void HashingTests()
 		{
+			testHash ("2","-2",true);
 			testHash("is(typeof(TTT))");
 			testHash("['a':123, 'b':456]","['a':123,'b':456]"); //TODO: Is it acceptable to build dictionaries' hashes by ignoring the order?
 		}
 		
-		void testHash(string expressionCode, string eqExpressionCode = null)
+		void testHash(string expressionCode, string eqExpressionCode = null, bool notEq = false)
 		{
 			var x = DParser.ParseExpression(expressionCode);
 			var x2 = eqExpressionCode == null ? x : DParser.ParseExpression(eqExpressionCode);
@@ -486,7 +487,18 @@ post;
 			var h1 = x.Accept(hashVis);
 			var h2 = x2.Accept(hashVis);
 			
-			Assert.That(h1, Is.EqualTo(h2));
+			Assert.That(h1, notEq ? Is.Not.EqualTo(h2) : Is.EqualTo(h2));
+		}
+
+		[Test]
+		public void HashingTest1()
+		{
+			var hashVis = D_Parser.Dom.Visitors.AstElementHashingVisitor.Instance;
+			var vp = new StandardValueProvider (ResolutionTests.CreateCtxt ("A", "module A;"));
+			var v1 = Evaluation.EvaluateValue (DParser.ParseExpression ("123"), vp);
+			var v2 = Evaluation.EvaluateValue (DParser.ParseExpression ("-123"), vp);
+
+			Assert.That (v1.Accept(hashVis), Is.Not.EqualTo(v2.Accept(hashVis)));
 		}
 
 		[Test]
