@@ -242,16 +242,16 @@ namespace D_Parser.Resolver
 			}
 		}
 
-		public List<TemplateParameterSymbol> DeducedTypesInHierarchy
+		public IEnumerable<TemplateParameterSymbol> DeducedTypesInHierarchy
 		{
 			get
 			{
-				var dedTypes = new List<TemplateParameterSymbol>();
 				var stk = new Stack<ContextFrame>();
 
 				while (stack.Count != 0)
 				{
-					dedTypes.AddRange(stack.Peek().DeducedTemplateParameters.Values);
+					foreach(var kv in stack.Peek().DeducedTemplateParameters)
+						yield return kv.Value;
 
 					if (!PrevContextIsInSameHierarchy)
 						break;
@@ -261,7 +261,6 @@ namespace D_Parser.Resolver
 
 				while (stk.Count != 0)
 					stack.Push(stk.Pop());
-				return dedTypes;
 			}
 		}
 
