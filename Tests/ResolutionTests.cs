@@ -1430,13 +1430,24 @@ mixin(def!(-1,""bar""));
 			});
 			using (ctxt.Push(defS))
 			{
+				ex = DParser.ParseExpression ("i");
+				val = Evaluation.EvaluateValue (ex, ctxt);
+				Assert.That (val, Is.TypeOf(typeof(PrimitiveValue)));
+				Assert.That ((val as PrimitiveValue).Value, Is.EqualTo(2m));
+
+				ex = DParser.ParseExpression ("mxTemp!(-i)");
+				val = Evaluation.EvaluateValue (ex, ctxt);
+				Assert.That(val, Is.TypeOf(typeof(ArrayValue)));
+				Assert.That((val as ArrayValue).IsString,Is.True);
+				Assert.That((val as ArrayValue).StringValue, Is.EqualTo("int"));
+
 				ex = DParser.ParseExpression("mxTemp!(-i) ~ \" \"~name~\";\"");
 				val = Evaluation.EvaluateValue(ex, ctxt);
+				Assert.That(val, Is.TypeOf(typeof(ArrayValue)));
+				Assert.That((val as ArrayValue).IsString,Is.True);
+				Assert.That((val as ArrayValue).StringValue, Is.EqualTo("int someVar;"));
 			}
 
-			Assert.That(val, Is.TypeOf(typeof(ArrayValue)));
-			Assert.That((val as ArrayValue).IsString,Is.True);
-			Assert.That((val as ArrayValue).StringValue, Is.EqualTo("int someVar;"));
 
 			ex = DParser.ParseExpression ("def2!5");
 			val = Evaluation.EvaluateValue (ex, ctxt);
