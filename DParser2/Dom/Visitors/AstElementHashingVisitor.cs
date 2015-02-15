@@ -188,7 +188,8 @@ namespace D_Parser.Dom.Visitors
 
 		public long Visit(TemplateParameter.Node n)
 		{
-			return unchecked(1000121 * n.TemplateParameter.Accept(this));
+			// 1000121
+			return TemplateParameter.Accept(this);
 		}
 
 		public long Visit(NamedTemplateMixinNode n)
@@ -1160,32 +1161,61 @@ namespace D_Parser.Dom.Visitors
 
 		public long VisitTemplateParameter(TemplateParameter tp)
 		{
-			return 1002091;
+			const long prime = 1002091;
+			long h = 1;
+
+			Hash (ref h, prime, tp.NameHash);
+
+			return h;
 		}
 
-		public long Visit(TemplateTypeParameter templateTypeParameter)
+		public long Visit(TemplateTypeParameter tp)
 		{
-			return 1002101;
+			const long prime = 1002101;
+			var h = VisitTemplateParameter (tp);
+
+			Hash (ref h, prime, tp.Specialization);
+			Hash (ref h, prime, tp.Default);
+
+			return h;
 		}
 
-		public long Visit(TemplateThisParameter templateThisParameter)
+		public long Visit(TemplateThisParameter tp)
 		{
-			return 1002109;
+			const long prime = 1002109;
+			var h = VisitTemplateParameter (tp);
+
+			Hash (ref h, prime, tp.FollowParameter != null ? tp.FollowParameter.Accept (this) : 0);
+
+			return h;
 		}
 
-		public long Visit(TemplateValueParameter p)
+		public long Visit(TemplateValueParameter tp)
 		{
-			return 1002121 + p.Representation.Accept(this);
+			const long prime = 1002121;
+			var h = VisitTemplateParameter (tp);
+
+			Hash (ref h, prime, tp.DefaultExpression);
+			Hash (ref h, prime, tp.SpecializationExpression);
+			Hash (ref h, prime, tp.Type);
+
+			return h;
 		}
 
-		public long Visit(TemplateAliasParameter templateAliasParameter)
+		public long Visit(TemplateAliasParameter tp)
 		{
-			return 1002143;
+			const long prime = 1002143;
+			var h = VisitTemplateParameter (tp);
+
+			Hash (ref h, prime, tp.SpecializationType);
+			Hash (ref h, prime, tp.DefaultType);
+
+			return h;
 		}
 
-		public long Visit(TemplateTupleParameter templateTupleParameter)
+		public long Visit(TemplateTupleParameter tp)
 		{
-			return 1002149;
+			return 1002149 * VisitTemplateParameter(tp);
 		}
 
 		// next prime would be 1002173
