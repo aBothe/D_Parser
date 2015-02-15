@@ -481,8 +481,10 @@ post;
 		{
 			var x = DParser.ParseExpression(expressionCode);
 			var x2 = eqExpressionCode == null ? x : DParser.ParseExpression(eqExpressionCode);
-			var h1 = x.GetHash();
-			var h2 = x2.GetHash();
+			var hashVis = D_Parser.Dom.Visitors.AstElementHashingVisitor.Instance;
+
+			var h1 = x.Accept(hashVis);
+			var h2 = x2.Accept(hashVis);
 			
 			Assert.That(h1, Is.EqualTo(h2));
 		}
