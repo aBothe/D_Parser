@@ -72,7 +72,7 @@ namespace D_Parser.Dom.Visitors
 			return h;
 		}
 
-		void HashEnum<T>(ref long h, long prime, IEnumerable<T> l, Func<T, long> visPred, bool mindOrder = false)
+		static void HashEnum<T>(ref long h, long prime, IEnumerable<T> l, Func<T, long> visPred, bool mindOrder = false)
 		{
 			long len = 0;
 			if (l != null) {
@@ -101,6 +101,7 @@ namespace D_Parser.Dom.Visitors
 
 		static 
 		void Hash(ref long h, long prime, bool o)			{		Hash (ref h, prime, o ? 3L : 0);						}
+		static
 		void Hash(ref long h, long prime, object o)			{		Hash (ref h, prime, (o != null ? o.GetHashCode() : 0));	}
 		void Hash(ref long h, long prime, ISyntaxRegion o)	{		Hash (ref h, prime, (o != null ? Accept (o) : 0));		}
 		void Hash(ref long h, long prime, TemplateParameter o)	{	Hash (ref h, prime, (o != null ? o.Accept(this) : 0));	}
