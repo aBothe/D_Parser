@@ -72,24 +72,35 @@ namespace D_Parser.Dom.Visitors
 			return h;
 		}
 
-		void HashEnum<T>(ref long h, IEnumerable<T> l, bool mindOrder = false) where T:ISyntaxRegion
+		void HashEnum<T>(ref long h, long prime, IEnumerable<T> l, Func<T, long> visPred, bool mindOrder = false)
 		{
 			long len = 0;
 			if (l != null) {
 				foreach (var i in l) {
 					if (mindOrder)
 						Hash (ref h, prime, len);
-					Hash (ref h, prime, (ISyntaxRegion)i);
+					Hash (ref h, prime, visPred(i));
 					len++;
 				}
 			}
 			Hash (ref h, prime, len);
 		}
 
+		void HashEnum(ref long h, IEnumerable<ISyntaxRegion> l, bool mindOrder = false)
+		{
+			HashEnum (ref h, prime, l, (o) => Accept (o), mindOrder);
+		}
+
+		void HashEnum(ref long h, long prime, IEnumerable<AbstractType> l, bool mindOrder = false)
+		{
+			HashEnum (ref h, prime, l, (o) => o.Accept(this), mindOrder);
+		}
+
 		#region Hashing fundamentals
 		static void Hash(ref long h, long prime, long v)	{	h = unchecked(prime * h + v);	}
 
 		static 
+		void Hash(ref long h, long prime, bool o)			{		Hash (ref h, prime, o ? 3L : 0);						}
 		void Hash(ref long h, long prime, object o)			{		Hash (ref h, prime, (o != null ? o.GetHashCode() : 0));	}
 		void Hash(ref long h, long prime, ISyntaxRegion o)	{		Hash (ref h, prime, (o != null ? Accept (o) : 0));		}
 		void Hash(ref long h, long prime, TemplateParameter o)	{	Hash (ref h, prime, (o != null ? o.Accept(this) : 0));	}
@@ -97,6 +108,8 @@ namespace D_Parser.Dom.Visitors
 		void Hash(ref long h, long prime, INode o)			{		Hash (ref h, prime, (o != null ? o.Accept(this) : 0));	}
 		void Hash(ref long h, long prime, ITypeDeclaration o){		Hash (ref h, prime, (o != null ? o.Accept(this) : 0));	}
 		void Hash(ref long h, long prime, IExpression o)	{		Hash (ref h, prime, (o != null ? o.Accept(this) : 0));	}
+		//void Hash(ref long h, long prime, ISymbolValue o)	{		Hash (ref h, prime, (o != null ? o.Accept(this) : 0));	}
+		void Hash(ref long h, long prime, AbstractType o)	{		Hash (ref h, prime, (o != null ? o.Accept(this) : 0));	}
 		#endregion
 
 
@@ -122,8 +135,8 @@ namespace D_Parser.Dom.Visitors
 			long h = 100019 * VisitDNode (n);
 
 			Hash (ref h, prime, n.Initializer);
-			Hash (ref h, prime, n.IsAlias ? 1L : 0L);
-			Hash (ref h, prime, n.IsAliasThis ? 1L : 0L);
+			Hash (ref h, prime, n.IsAlias);
+			Hash (ref h, prime, n.IsAliasThis);
 
 			return h;
 		}
@@ -157,7 +170,7 @@ namespace D_Parser.Dom.Visitors
 			var h = VisitBlockNode (n);
 			const long prime = 1000039;
 
-			Hash(ref h, prime, n.IsAnonymousClass ? 1L : 0L);
+			Hash(ref h, prime, n.IsAnonymousClass);
 			HashEnum (ref h, n.BaseClasses);
 			Hash (ref h, prime, n.ClassType);
 
@@ -189,7 +202,7 @@ namespace D_Parser.Dom.Visitors
 		public long Visit(TemplateParameter.Node n)
 		{
 			// 1000121
-			return TemplateParameter.Accept(this);
+			return n.TemplateParameter.Accept(this);
 		}
 
 		public long Visit(NamedTemplateMixinNode n)
@@ -559,7 +572,7 @@ namespace D_Parser.Dom.Visitors
 			const long prime = 1000969;
 			var h = VisitOpBasedExpression (x, prime);
 
-			Hash (ref h, prime, x.Not ? 2 : 1);
+			Hash (ref h, prime, x.Not);
 
 			return h;
 		}
@@ -785,7 +798,7 @@ namespace D_Parser.Dom.Visitors
 			long h = 1;
 			const long prime = 1001311;
 
-			Hash (ref h, prime, x.IsIdentifier ? 1L : 0L);
+			Hash (ref h, prime, x.IsIdentifier);
 			Hash (ref h, prime, x.ValueStringHash);
 			Hash (ref h, prime, x.Value);
 
@@ -849,7 +862,7 @@ namespace D_Parser.Dom.Visitors
 
 			Hash (ref h, prime, x.TestedType);
 			Hash (ref h, prime, x.TypeAliasIdentifierHash);
-			Hash (ref h, prime, x.EqualityTest ? 2L : 1L);
+			Hash (ref h, prime, x.EqualityTest);
 			Hash (ref h, prime, x.TypeSpecialization);
 			Hash (ref h, prime, x.TypeSpecializationToken);
 			HashEnum (ref h, x.TemplateParameterList);
@@ -911,7 +924,7 @@ namespace D_Parser.Dom.Visitors
 			const long prime = 1001531;
 			var h = VisitTypeDeclaration (td, prime);
 
-			Hash (ref h, prime, td.ModuleScoped ? 2L : 1L);
+			Hash (ref h, prime, td.ModuleScoped);
 			Hash (ref h, prime, td.IdHash);
 
 			return h;
@@ -943,7 +956,7 @@ namespace D_Parser.Dom.Visitors
 			const long prime = 1001563;
 			var h = VisitTypeDeclaration (td, prime);
 
-			Hash (ref h, prime, td.IsFunction ? 2L : 1L);
+			Hash (ref h, prime, td.IsFunction);
 			HashEnum (ref h, td.Parameters, true);
 			HashEnum (ref h, td.Modifiers);
 
@@ -1002,126 +1015,226 @@ namespace D_Parser.Dom.Visitors
 			return h;
 		}
 
+
+
+
+
+
+
+		static long VisitAbstractType (AbstractType t, long prime){
+			long h = 1;
+
+			Hash (ref h, prime, t.NonStaticAccess);
+			Hash (ref h, prime, t.Modifier);
+
+			return h;
+		}
+
+
 		public long VisitPrimitiveType(PrimitiveType t)
 		{
-			return (long)(1001659 << 8) + Primes.PrimeNumbers[t.TypeToken];
+			const long prime = 1001659;
+			var h = VisitAbstractType(t, prime);
+
+			Hash (ref h, prime, t.TypeToken);
+
+			return h;
+		}
+
+		long VisitDerivedType(DerivedDataType t, long prime)
+		{
+			var h = VisitAbstractType (t, prime);
+
+			Hash (ref h, prime, t.Base);
+
+			return h;
 		}
 
 		public long VisitPointerType(PointerType t)
 		{
-			return 1001669;
+			return VisitDerivedType (t, 1001669);
 		}
 
 		public long VisitArrayType(ArrayType t)
 		{
-			return 1001683;
+			const long prime = 1001683;
+			var h = VisitAssocArrayType (t);
+
+			Hash (ref h, prime, t.FixedLength);
+
+			return h;
 		}
 
 		public long VisitAssocArrayType(AssocArrayType t)
 		{
-			return 1001687;
+			const long prime = 1001687;
+			var h = VisitDerivedType (t, prime);
+
+			Hash (ref h, prime, t.KeyType);
+
+			return h;
 		}
 
 		public long VisitDelegateCallSymbol(DelegateCallSymbol t)
 		{
-			return 1001713;
+			const long prime = 1001713;
+			var h = VisitDerivedType (t, prime);
+
+			Hash (ref h, prime, t.Delegate);
+
+			return h;
 		}
 
 		public long VisitDelegateType(DelegateType t)
 		{
-			return 1001723;
+			const long prime = 1001723;
+			var h = VisitDerivedType (t, prime);
+
+			Hash (ref h, prime, t.IsFunction);
+			HashEnum (ref h, prime, t.Parameters);
+
+			return h;
 		}
 
 		public long VisitAliasedType(AliasedType t)
 		{
-			return 1001743;
+			return VisitMemberSymbol(t, 1001743);
+		}
+
+		long VisitDSymbol(DSymbol t, long prime)
+		{
+			var h = VisitDerivedType (t, prime);
+
+			Hash (ref h, prime, t.Definition);
+			HashEnum (ref h, prime, t.DeducedTypes);
+
+			return h;
+		}
+
+		long VisitUserDefinedType(UserDefinedType udt, long prime)
+		{
+			return VisitDSymbol (udt, prime);
+		}
+
+		long VisitTemplateIntermediaryType(TemplateIntermediateType tit, long prime)
+		{
+			var h = VisitUserDefinedType (tit, prime);
+
+			HashEnum (ref h, prime, tit.BaseInterfaces);
+
+			return h;
 		}
 
 		public long VisitEnumType(EnumType t)
 		{
-			return 1001783;
+			return VisitUserDefinedType (t, 1001783);
 		}
 
 		public long VisitStructType(StructType t)
 		{
-			return 1001797;
+			return VisitTemplateIntermediaryType (t, 1001797);
 		}
 
 		public long VisitUnionType(UnionType t)
 		{
-			return 1001801;
+			return VisitTemplateIntermediaryType (t, 1001801);
 		}
 
 		public long VisitClassType(ClassType t)
 		{
-			return 1001807;
+			return VisitTemplateIntermediaryType (t, 1001807);
 		}
 
 		public long VisitInterfaceType(InterfaceType t)
 		{
-			return 1001809;
+			return VisitTemplateIntermediaryType (t, 1001809);
 		}
 
 		public long VisitTemplateType(TemplateType t)
 		{
-			return 1001821;
+			return VisitTemplateIntermediaryType (t, 1001821);
 		}
 
 		public long VisitMixinTemplateType(MixinTemplateType t)
 		{
-			return 1001831;
+			return VisitTemplateIntermediaryType (t, 1001831);
 		}
 
 		public long VisitEponymousTemplateType(EponymousTemplateType t)
 		{
-			return 1001839;
+			return VisitUserDefinedType (t, 1001839);
 		}
 
 		public long VisitStaticProperty(StaticProperty t)
 		{
-			return 1001911;
+			return VisitMemberSymbol(t, 1001911);
 		}
 
 		public long VisitMemberSymbol(MemberSymbol t)
 		{
-			return 1001933;
+			return VisitDSymbol (t, 1001933);
+		}
+
+		long VisitMemberSymbol(MemberSymbol t, long prime)
+		{
+			return VisitDSymbol (t, prime);
 		}
 
 		public long VisitTemplateParameterSymbol(TemplateParameterSymbol tps)
 		{
-			return 1001941 * ((long)tps.Parameter.GetHashCode() +
-							(tps.Base != null ? (long)tps.Base.ToCode(false).GetHashCode() : 0) +
-							(tps.ParameterValue != null ? (long)tps.ParameterValue.ToCode().GetHashCode() : 0));
+			const long prime = 1001941;
+			var h = VisitMemberSymbol (tps);
+
+			Hash (ref h, prime, tps.Parameter);
+			Hash (ref h, prime, tps.ParameterValue);
+			Hash (ref h, prime, tps.IsKnowinglyUndetermined);
+
+			return h;
 		}
 
 		public long VisitArrayAccessSymbol(ArrayAccessSymbol t)
 		{
-			return 1001947;
+			return VisitDerivedType(t, 1001947);
 		}
 
 		public long VisitModuleSymbol(ModuleSymbol t)
 		{
-			return 1001953;
+			return VisitDSymbol(t, 1001953);
 		}
 
 		public long VisitPackageSymbol(PackageSymbol t)
 		{
-			return 1001977;
+			const long prime = 1001977;
+			var h = VisitAbstractType (t, prime);
+
+			Hash (ref h, prime, t.Package.Path);
+
+			return h;
 		}
 
 		public long VisitDTuple(DTuple t)
 		{
-			return 1001981;
+			const long prime = 1001981;
+			var h = VisitAbstractType (t, prime);
+
+			HashEnum (ref h, prime, t.Items, (o) => Accept (o), true);
+
+			return h;
 		}
 
 		public long VisitUnknownType(UnknownType t)
 		{
-			return 1001983;
+			return VisitAbstractType(t, 1001983);
 		}
 
 		public long VisitAmbigousType(AmbiguousType t)
 		{
-			return 1001989;
+			const long prime = 1001989;
+			var h = VisitAbstractType (t, prime);
+
+			HashEnum (ref h, prime, t.Overloads);
+
+			return h;
 		}
 
 		public long VisitMetaDeclarationBlock(MetaDeclarationBlock m)
@@ -1185,7 +1298,7 @@ namespace D_Parser.Dom.Visitors
 			const long prime = 1002109;
 			var h = VisitTemplateParameter (tp);
 
-			Hash (ref h, prime, tp.FollowParameter != null ? tp.FollowParameter.Accept (this) : 0);
+			Hash (ref h, prime, tp.FollowParameter);
 
 			return h;
 		}
