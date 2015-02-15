@@ -10,17 +10,17 @@ namespace D_Parser.Resolver
 	class ResolutionCache<T>
 	{
 		class CacheEntryDict : Dictionary<long, T>	{
-			public T TryGetValue(ResolutionContext ctxt)
+			public T TryGetValue(ResolutionContext ctxt, long hashBias)
 			{
 				T t;
-				Int64 d = GetTemplateParamHash(ctxt);
+				Int64 d = unchecked(GetTemplateParamHash(ctxt) + hashBias);
 				TryGetValue(d, out t);
 				return t;
 			}
 
-			public void Add(ResolutionContext ctxt, T t)
+			public void Add(ResolutionContext ctxt, T t, long hashBias)
 			{
-				Int64 d = GetTemplateParamHash(ctxt);
+				Int64 d = unchecked(GetTemplateParamHash(ctxt) + hashBias);
 				this[d] = t;
 			}
 
@@ -48,13 +48,13 @@ namespace D_Parser.Resolver
 			this.ctxt = ctxt;
 		}
 
-		public T TryGetType(ISyntaxRegion sr)
+		public T TryGetType(ISyntaxRegion sr, long hashBias = 0)
 		{
 			CacheEntryDict ce;
-			return sr != null && cache.TryGetValue(sr, out ce) ? ce.TryGetValue(ctxt) : default(T);
+			return sr != null && cache.TryGetValue(sr, out ce) ? ce.TryGetValue(ctxt, hashBias) : default(T);
 		}
 
-		public void Add(T t, ISyntaxRegion sr)
+		public void Add(T t, ISyntaxRegion sr, long hashBias = 0)
 		{
 			if (t == null || sr == null)
 				return;
@@ -63,7 +63,7 @@ namespace D_Parser.Resolver
 			if (!cache.TryGetValue(sr, out ce))
 				cache[sr] = ce = new CacheEntryDict();
 
-			ce.Add(ctxt, t);
+			ce.Add(ctxt, t, hashBias);
 		}
 	}
 }

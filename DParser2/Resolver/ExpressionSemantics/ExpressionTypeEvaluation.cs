@@ -60,16 +60,16 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (ctxt.CancelOperation)
 				return new UnknownType(x);
 
+			long cacheHashBias = tryReturnMethodReturnType ? 31 : 0;
+
 			AbstractType t;
-			if (//tryReturnMethodReturnType &&
-				(t = ctxt.Cache.TryGetType (x)) != null &&
+			if ((t = ctxt.Cache.TryGetType (x, cacheHashBias)) != null &&
 				!(t.Tag is TypeDeclarationResolver.AliasTag)) // Don't accept aliases because their Tag does/base type might differ from the target alias definition.
 				return t;
 
 			t = x.Accept(new ExpressionTypeEvaluation(ctxt) { TryReturnMethodReturnType = tryReturnMethodReturnType });
 
-			//if(tryReturnMethodReturnType) -- don't restrict this due to performance reasons.
-				ctxt.Cache.Add(t ?? new UnknownType(x), x);
+			ctxt.Cache.Add(t ?? new UnknownType(x), x, cacheHashBias);
 
 			return t;
 		}
