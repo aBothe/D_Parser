@@ -113,7 +113,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					return tps.ParameterValue;
 			}
 			
-			using(vp.ResolutionContext.Push(v.Member))
+			using(vp.ResolutionContext.Push(v.RepresentedType))
 				return vp[v.Variable] ?? v;
 		}
 

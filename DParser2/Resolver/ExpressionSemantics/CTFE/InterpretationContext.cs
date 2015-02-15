@@ -41,7 +41,7 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 					if (t.Base is PrimitiveType)
 						v= new PrimitiveValue(0M, t.Base as PrimitiveType);
 					else
-						v = new NullValue(t.Base);
+						v = new NullValue(t.Base as DSymbol);
 				}
 				else
 					v = new NullValue();

@@ -34,7 +34,7 @@ namespace D_Parser.Resolver
 					if (tps == null || tpm.Contains(tps.Parameter))
 						continue;
 
-					h += hashVis.Accept(tps);
+					h += tps.Accept(hashVis);
 					tpm.Add(tps.Parameter);
 				}
 				return h;

@@ -294,12 +294,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 	public abstract class InstanceValue : ReferenceValue
 	{
-		public readonly DClassLike Definition;
+		public DClassLike Definition{ get{ return ReferencedNode as DClassLike; }}
+
 		public Dictionary<DVariable, ISymbolValue> Members = new Dictionary<DVariable, ISymbolValue>();
 		public Dictionary<DVariable, AbstractType> MemberTypes = new Dictionary<DVariable, AbstractType>();
 
-		protected InstanceValue(DClassLike Class, AbstractType ClassType)
-			: base(Class, ClassType)
+		protected InstanceValue(TemplateIntermediateType ClassType)
+			: base(ClassType)
 		{
 
 		}
@@ -337,11 +338,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 	public abstract class ReferenceValue : ExpressionValue
 	{
-		INode referencedNode;
+		public virtual DNode ReferencedNode {get{ return RepresentedType != null ? (base.RepresentedType as DSymbol).Definition : null; }}
+		public new DSymbol RepresentedType {get{ return base.RepresentedType as DSymbol; }}
+		public AbstractType BaseType { get{ return RepresentedType != null ? RepresentedType.Base : null; } }
 
-		protected ReferenceValue(INode Node, AbstractType type) : base(type)
-		{
-		}
+		public ReferenceValue(DSymbol symbol) : base(symbol) {}
 	}
 	/*
 	public class AliasValue : ExpressionValue
@@ -378,7 +379,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 	public class NullValue : ReferenceValue
 	{
-		public NullValue(AbstractType baseType = null) : base(baseType is DSymbol ? (baseType as DSymbol).Definition : null, baseType) { }
+		public NullValue(AbstractType baseType = null) : base(baseType as DSymbol) { }
 
 		public override string ToCode()
 		{

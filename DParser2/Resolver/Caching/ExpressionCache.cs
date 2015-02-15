@@ -28,8 +28,9 @@ namespace D_Parser.Resolver.ExpressionSemantics.Caching
 		#region Querying
 		ISymbolValue TryGetValue(IExpression x, params ISymbolValue[] argumentValues)
 		{
+			var hashVis = D_Parser.Dom.Visitors.AstElementHashingVisitor.Instance;
 			List<EvEntry> entries;
-			if(!cache.TryGetValue(x.Accept(D_Parser.Dom.Visitors.AstElementHashingVisitor.Instance), out entries))
+			if(!cache.TryGetValue(x.Accept(hashVis), out entries))
 				return null;
 			
 			var parameters = GetParameters(x);
@@ -52,7 +53,7 @@ namespace D_Parser.Resolver.ExpressionSemantics.Caching
 			for(int i = argumentValues.Length; i!=0;i--)
 			{
 				//argHashes[i] = parameters[i].GetHash();
-				valHashes[i] = D_Parser.Dom.Visitors.AstElementHashingVisitor.Hash(argumentValues[i]);
+				valHashes[i] = argumentValues[i] != null ? argumentValues[i].Accept(hashVis) : 0;
 			}
 			
 			foreach(var e in entries)

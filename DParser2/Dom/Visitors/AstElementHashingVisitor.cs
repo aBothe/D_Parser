@@ -10,58 +10,15 @@ using D_Parser.Resolver.ExpressionSemantics;
 
 namespace D_Parser.Dom.Visitors
 {
-	public class AstElementHashingVisitor : DVisitor<long>, IResolvedTypeVisitor<long>
+	public class AstElementHashingVisitor : DVisitor<long>, IResolvedTypeVisitor<long>, ISymbolValueVisitor<long>
 	{
 		#region Properties
 		const long prime = 31;
 		public static readonly AstElementHashingVisitor Instance = new AstElementHashingVisitor();
 		#endregion
 
-		#region IO
-		public static long Hash(ISemantic s)
-		{
-			return Instance.Accept(s);
-		}
-
-		public static long Hash(ISyntaxRegion sr)
-		{
-			return Instance.Accept(sr);
-		}
-
+		#region Constructor
 		private AstElementHashingVisitor() { }
-
-		public long Accept(ISyntaxRegion sr)
-		{
-			if (sr is INode)
-				return (sr as INode).Accept(this);
-			if (sr is IExpression)
-			{
-				return (long)sr.ToString().GetHashCode(); // Temporary bypass
-				//return (sr as IExpression).Accept(this);
-			}
-			if (sr is IStatement)
-				return (sr as IStatement).Accept(this);
-			if (sr is ITypeDeclaration)
-				return (sr as ITypeDeclaration).Accept(this);
-			if (sr is DAttribute)
-				return (sr as DAttribute).Accept(this);
-			if (sr is TemplateParameter)
-				return (sr as TemplateParameter).Accept (this);
-
-			throw new InvalidOperationException();
-		}
-
-		public long Accept(ISemantic s)
-		{
-			if (s is AbstractType)
-				return (s as AbstractType).Accept(this);
-			if (s is ISymbolValue)
-			{
-				return (long)s.ToCode().GetHashCode(); // Temp. bypass
-			}
-
-			throw new InvalidOperationException();
-		}
 		#endregion
 
 		#region Hashing fundamentals
@@ -79,15 +36,15 @@ namespace D_Parser.Dom.Visitors
 			Hash (ref h, prime, len);
 		}
 
-		void HashEnum(ref long h, IEnumerable<ISyntaxRegion> l, bool mindOrder = false)
-		{
-			HashEnum (ref h, prime, l, (o) => Accept (o), mindOrder);
-		}
+		void HashEnum(ref long h, long prime, IEnumerable<IExpression> l, bool mindOrder = false)		{			HashEnum (ref h, prime, l, (o) => o.Accept(this), mindOrder);	}
+		void HashEnum(ref long h, long prime, IEnumerable<INode> l, bool mindOrder = false)				{			HashEnum (ref h, prime, l, (o) => o.Accept(this), mindOrder);	}
+		void HashEnum(ref long h, long prime, IEnumerable<DAttribute> l, bool mindOrder = false)		{			HashEnum (ref h, prime, l, (o) => o.Accept(this), mindOrder);	}
+		void HashEnum(ref long h, long prime, IEnumerable<IStatement> l, bool mindOrder = false)		{			HashEnum (ref h, prime, l, (o) => o.Accept(this), mindOrder);	}
+		void HashEnum(ref long h, long prime, IEnumerable<TemplateParameter> l, bool mindOrder = false)	{			HashEnum (ref h, prime, l, (o) => o.Accept(this), mindOrder);	}
+		void HashEnum(ref long h, long prime, IEnumerable<ITypeDeclaration> l, bool mindOrder = false)	{			HashEnum (ref h, prime, l, (o) => o.Accept(this), mindOrder);	}
 
-		void HashEnum(ref long h, long prime, IEnumerable<AbstractType> l, bool mindOrder = false)
-		{
-			HashEnum (ref h, prime, l, (o) => o.Accept(this), mindOrder);
-		}
+		void HashEnum(ref long h, long prime, IEnumerable<AbstractType> l, bool mindOrder = false)	{	HashEnum (ref h, prime, l, (o) => o.Accept(this), mindOrder);	}
+		void HashEnum(ref long h, long prime, IEnumerable<ISymbolValue> l, bool mindOrder = false)	{	HashEnum (ref h, prime, l, (o) => o.Accept(this), mindOrder);	}
 
 		static void Hash(ref long h, long prime, long v)	{	h = unchecked(prime * h + v);	}
 
@@ -95,13 +52,12 @@ namespace D_Parser.Dom.Visitors
 		void Hash(ref long h, long prime, bool o)			{		Hash (ref h, prime, o ? 3L : 0);						}
 		static
 		void Hash(ref long h, long prime, object o)			{		Hash (ref h, prime, (o != null ? o.GetHashCode() : 0));	}
-		void Hash(ref long h, long prime, ISyntaxRegion o)	{		Hash (ref h, prime, (o != null ? Accept (o) : 0));		}
 		void Hash(ref long h, long prime, TemplateParameter o)	{	Hash (ref h, prime, (o != null ? o.Accept(this) : 0));	}
 		void Hash(ref long h, long prime, IStatement o)		{		Hash (ref h, prime, (o != null ? o.Accept(this) : 0));	}
 		void Hash(ref long h, long prime, INode o)			{		Hash (ref h, prime, (o != null ? o.Accept(this) : 0));	}
 		void Hash(ref long h, long prime, ITypeDeclaration o){		Hash (ref h, prime, (o != null ? o.Accept(this) : 0));	}
 		void Hash(ref long h, long prime, IExpression o)	{		Hash (ref h, prime, (o != null ? o.Accept(this) : 0));	}
-		//void Hash(ref long h, long prime, ISymbolValue o)	{		Hash (ref h, prime, (o != null ? o.Accept(this) : 0));	}
+		void Hash(ref long h, long prime, ISymbolValue o)	{		Hash (ref h, prime, (o != null ? o.Accept(this) : 0));	}
 		void Hash(ref long h, long prime, AbstractType o)	{		Hash (ref h, prime, (o != null ? o.Accept(this) : 0));	}
 		#endregion
 
@@ -122,9 +78,9 @@ namespace D_Parser.Dom.Visitors
 		{
 			long h = VisitAbstractNode(n);
 
-			HashEnum (ref h, n.TemplateParameters);
+			HashEnum (ref h, prime, n.TemplateParameters);
 			Hash (ref h, prime, n.TemplateConstraint);
-			HashEnum (ref h, n.Attributes);
+			HashEnum (ref h, prime, n.Attributes);
 
 			return h;
 		}				
@@ -151,7 +107,7 @@ namespace D_Parser.Dom.Visitors
 			const long prime = 1000037;
 
 			Hash (ref h, prime, (long)n.SpecialType);
-			HashEnum (ref h, n.Parameters);
+			HashEnum (ref h, prime, n.Parameters);
 
 			// Don't care about its definition yet
 
@@ -163,8 +119,8 @@ namespace D_Parser.Dom.Visitors
 			var h = VisitDNode (n);
 			const long prime = 1000117;
 
-			HashEnum (ref h, n.Children);
-			HashEnum (ref h, n.StaticStatements);
+			HashEnum (ref h, prime, n.Children);
+			HashEnum (ref h, prime, n.StaticStatements);
 
 			return h;
 		}
@@ -175,7 +131,7 @@ namespace D_Parser.Dom.Visitors
 			const long prime = 1000039;
 
 			Hash(ref h, prime, n.IsAnonymousClass);
-			HashEnum (ref h, n.BaseClasses);
+			HashEnum (ref h, prime, n.BaseClasses);
 			Hash (ref h, prime, n.ClassType);
 
 			return h;
@@ -279,9 +235,10 @@ namespace D_Parser.Dom.Visitors
 
 		public long VisitAttribute(UserDeclarationAttribute a)
 		{
-			long r = 1000187;
+			const long prime = 1000187;
+			long r = 1;
 
-			HashEnum (ref r, a.AttributeExpression);
+			HashEnum (ref r, prime, a.AttributeExpression);
 
 			return r;
 		}
@@ -308,7 +265,7 @@ namespace D_Parser.Dom.Visitors
 
 		public long VisitAttribute(NegatedDeclarationCondition a)
 		{
-			return unchecked(1000213 * Accept(a.FirstCondition));
+			return unchecked(1000213 * a.FirstCondition.Accept(this));
 		}
 		#endregion
 
@@ -514,8 +471,9 @@ namespace D_Parser.Dom.Visitors
 		#region Expressions
 		public long Visit(Expressions.Expression x)
 		{
-			long h = 1000847;
-			HashEnum (ref h, x.Expressions, true);
+			const long prime = 1000847;
+			long h = prime;
+			HashEnum (ref h, prime, x.Expressions, true);
 			return h;
 		}
 
@@ -684,8 +642,8 @@ namespace D_Parser.Dom.Visitors
 			const long prime = 1001159;
 
 			Hash (ref h, prime, x.Type);
-			HashEnum (ref h, x.Arguments);
-			HashEnum (ref h, x.NewArguments);
+			HashEnum (ref h, prime, x.Arguments);
+			HashEnum (ref h, prime, x.NewArguments);
 
 			return h;
 		}
@@ -695,8 +653,8 @@ namespace D_Parser.Dom.Visitors
 			long h = 1;
 			const long prime = 1001173;
 
-			HashEnum (ref h, x.ClassArguments);
-			HashEnum (ref h, x.NewArguments);
+			HashEnum (ref h, prime, x.ClassArguments);
+			HashEnum (ref h, prime, x.NewArguments);
 			Hash (ref h, prime, x.AnonymousClass);
 
 			return h;
@@ -759,7 +717,7 @@ namespace D_Parser.Dom.Visitors
 			const long prime = 1001267;
 			var h = VisitPostfixExpression (x, prime);
 
-			HashEnum (ref h, x.Arguments, true);
+			HashEnum (ref h, prime, x.Arguments, true);
 
 			return h;
 		}
@@ -792,7 +750,7 @@ namespace D_Parser.Dom.Visitors
 
 			Hash (ref h, prime, x.Identifier);
 			Hash (ref h, prime, x.TemplateIdHash);
-			HashEnum (ref h, x.Arguments, true);
+			HashEnum (ref h, prime, x.Arguments, true);
 
 			return h;
 		}
@@ -824,7 +782,7 @@ namespace D_Parser.Dom.Visitors
 			const long prime = 1001327;
 			long h = prime;
 
-			HashEnum (ref h, x.Elements, true);
+			HashEnum (ref h, prime, x.Elements, true);
 
 			return h;
 		}
@@ -869,7 +827,7 @@ namespace D_Parser.Dom.Visitors
 			Hash (ref h, prime, x.EqualityTest);
 			Hash (ref h, prime, x.TypeSpecialization);
 			Hash (ref h, prime, x.TypeSpecializationToken);
-			HashEnum (ref h, x.TemplateParameterList);
+			HashEnum (ref h, prime, x.TemplateParameterList);
 
 			return h;
 		}
@@ -970,8 +928,8 @@ namespace D_Parser.Dom.Visitors
 			var h = VisitTypeDeclaration (td, prime);
 
 			Hash (ref h, prime, td.IsFunction);
-			HashEnum (ref h, td.Parameters, true);
-			HashEnum (ref h, td.Modifiers);
+			HashEnum (ref h, prime, td.Parameters, true);
+			HashEnum (ref h, prime, td.Modifiers);
 
 			return h;
 		}
@@ -1226,7 +1184,8 @@ namespace D_Parser.Dom.Visitors
 			const long prime = 1001981;
 			var h = VisitAbstractType (t, prime);
 
-			HashEnum (ref h, prime, t.Items, (o) => Accept (o), true);
+			HashEnum (ref h, prime, t.Items, 
+				(o) => o is ISymbolValue ? (o as ISymbolValue).Accept(this) : o is AbstractType ? (o as AbstractType).Accept(this) : 0, true);
 
 			return h;
 		}
@@ -1345,6 +1304,103 @@ namespace D_Parser.Dom.Visitors
 		}
 		#endregion
 
-		// next prime would be 1002173
+		#region SymbolValues
+
+		public long VisitErrorValue (ErrorValue v)
+		{
+			const long prime = 1002173;
+			return prime;
+		}
+
+		long VisitExpressionValue(ExpressionValue v, long prime)
+		{
+			long h = 1;
+			Hash (ref h, prime, v.RepresentedType);
+			return h;
+		}
+
+		public long VisitPrimitiveValue (PrimitiveValue v)
+		{
+			const long prime = 1002191;
+			var h = VisitExpressionValue (v, prime);
+
+			Hash (ref h, prime, v.Value);
+			Hash (ref h, prime, v.ImaginaryPart);
+
+			return h;
+		}
+
+		public long VisitVoidValue (VoidValue v)
+		{
+			return VisitExpressionValue (v, 1002227);
+		}
+
+		public long VisitArrayValue (ArrayValue v)
+		{
+			const long prime = 1002241;
+			var h = VisitExpressionValue (v, prime);
+
+			Hash (ref h, prime, v.StringValue);
+			Hash (ref h, prime, v.StringFormat);
+			HashEnum (ref h, prime, v.Elements);
+
+			return h;
+		}
+
+		public long VisitAssociativeArrayValue (AssociativeArrayValue v)
+		{
+			const long prime = 1002247;
+			var h = VisitExpressionValue (v, prime);
+
+			HashEnum (ref h, prime, v.Elements, (kv) => 
+					((kv.Key != null ? kv.Key.Accept(this) : 0) ^ 
+					(kv.Value != null ? kv.Value.Accept(this) : 0))
+			);
+
+			return h;
+		}
+
+		public long VisitDelegateValue (DelegateValue v)
+		{
+			const long prime = 1002257;
+			var h = VisitExpressionValue (v, prime);
+
+			Hash (ref h, prime, v.Definition);
+			Hash (ref h, prime, v.IsFunction);
+
+			return h;
+		}
+
+		public long VisitNullValue (NullValue v)
+		{
+			return VisitExpressionValue (v, 1002259);
+		}
+
+		public long VisitTypeOverloadValue (InternalOverloadValue v)
+		{
+			const long prime = 1002263;
+			var h = VisitExpressionValue (v, prime);
+
+			HashEnum (ref h, prime, v.Overloads);
+
+			return h;
+		}
+
+		long VisitReferenceValue(ReferenceValue v, long prime)
+		{
+			return VisitExpressionValue(v, prime); 
+		}
+
+		public long VisitVariableValue (VariableValue v)
+		{
+			return VisitReferenceValue(v, 1002289);
+		}
+
+		public long VisitTypeValue (TypeValue v)
+		{
+			return VisitExpressionValue (v, 1002299);
+		}
+
+		#endregion
 	}
 }

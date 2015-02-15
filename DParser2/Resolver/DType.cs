@@ -70,8 +70,6 @@ namespace D_Parser.Resolver
 			//FIXME: What to do with the other overloads?
 			if (s is InternalOverloadValue)
 				return new AmbiguousType((s as InternalOverloadValue).Overloads);
-			if (s is VariableValue)
-				return (s as VariableValue).Member;
 			if (s is ISymbolValue)
 				return (s as ISymbolValue).RepresentedType;
 			

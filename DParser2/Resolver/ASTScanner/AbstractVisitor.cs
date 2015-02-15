@@ -709,14 +709,14 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 						return false;
 
 					if(vv != null)
-						ctxt.CurrentContext.IntroduceTemplateParameterTypes(vv.Member);
+						ctxt.CurrentContext.IntroduceTemplateParameterTypes(vv.RepresentedType);
 
 					// take ast.Endlocation because the cursor must be beyond the actual mixin expression 
 					// - and therewith _after_ each declaration
 					var res = v.scanChildren(ast, vis, isMixinAst: true);
 
 					if (vv != null)
-						ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(vv.Member);
+						ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(vv.RepresentedType);
 
 					return res;
 				}
@@ -729,12 +729,12 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					if (bs != null)
 					{
 						if (vv != null)
-							ctxt.CurrentContext.IntroduceTemplateParameterTypes(vv.Member);
+							ctxt.CurrentContext.IntroduceTemplateParameterTypes(vv.RepresentedType);
 
 						var res = v.ScanStatementHierarchy(bs, CodeLocation.Empty, vis);
 
 						if (vv != null)
-							ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(vv.Member);
+							ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(vv.RepresentedType);
 
 						return res;
 					}

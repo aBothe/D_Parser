@@ -6,9 +6,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	/// <summary>
 	/// An expression value that is allowed to have a new value assigned to as in 'a = b;'
 	/// </summary>
-	public abstract class LValue : ExpressionValue
+	public abstract class LValue : ReferenceValue
 	{
-		protected LValue(AbstractType nodeType) : base(nodeType) { }
+		protected LValue(MemberSymbol nodeType) : base(nodeType) { }
 
 		public abstract void Set(AbstractSymbolValueProvider vp, ISymbolValue value);
 	}
@@ -19,23 +19,19 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	/// </summary>
 	public class VariableValue : LValue
 	{
-		public readonly MemberSymbol Member;
-		public readonly DVariable Variable;
+		public DVariable Variable {get{ return ReferencedNode as DVariable; }}
 
-		public VariableValue(MemberSymbol mr) : base(mr.Base)
-		{
-			this.Member = mr;
-			this.Variable = mr.Definition as DVariable;
-		}
+		public VariableValue(MemberSymbol mr) : base(mr)
+		{ }
 
 		public override void Set(AbstractSymbolValueProvider vp, ISymbolValue value)
 		{
-			vp[Variable] = value;
+			vp[ReferencedNode as DVariable] = value;
 		}
 
 		public override string ToCode()
 		{
-			return Variable==null ?"null":Variable.ToString(false);
+			return ReferencedNode == null ? "null" : ReferencedNode.ToString(false);
 		}
 
 
