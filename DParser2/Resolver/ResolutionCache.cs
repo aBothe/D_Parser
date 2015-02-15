@@ -27,13 +27,14 @@ namespace D_Parser.Resolver
 			static long GetTemplateParamHash(ResolutionContext ctxt)
 			{
 				var tpm = new List<TemplateParameter>();
-				var h = (long)DNode.GetNodePath(Resolver.TypeResolution.DResolver.SearchBlockAt(ctxt.ScopedBlock, ctxt.CurrentContext.Caret), true).GetHashCode();
+				var hashVis = AstElementHashingVisitor.Instance;
+				var h = ctxt.ScopedBlock == null ? 1 : Resolver.TypeResolution.DResolver.SearchBlockAt(ctxt.ScopedBlock, ctxt.CurrentContext.Caret).Accept(hashVis);
 				foreach (var tps in ctxt.DeducedTypesInHierarchy)
 				{
 					if (tps == null || tpm.Contains(tps.Parameter))
 						continue;
 
-					h = unchecked(31 * h + AstElementHashingVisitor.Instance.Accept(tps));
+					h += hashVis.Accept(tps);
 					tpm.Add(tps.Parameter);
 				}
 				return h;
