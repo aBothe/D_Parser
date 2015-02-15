@@ -864,7 +864,7 @@ namespace D_Parser.Dom.Visitors
 
 		public long Visit(Expressions.AsmRegisterExpression x)
 		{
-			return 1001501;
+			return 1001501 * x.Register.GetHashCode();
 		}
 
 		long VisitSimpleUnaryExpression(SimpleUnaryExpression x, long prime)
