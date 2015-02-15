@@ -62,45 +62,51 @@ namespace D_Parser.Dom.Visitors
 
 		long VisitAbstractNode(AbstractNode n)
 		{
-			unchecked{
-				long h = 1;
+			long h = 1;
 
-				// h = prime * h + n.Location.GetHashCode (); // Ignore physical occurrence
-				h = prime * h + (n.Type != null ? n.Type.Accept (this) : 0);
-				h = prime * h + (n.NameHash ^ (n.NameHash>>32));
-				h = prime * h + DNode.GetNodePath (n, false).GetHashCode ();
+			// h = prime * h + n.Location.GetHashCode (); // Ignore physical occurrence
+			Hash (ref h, prime, n.Type);
+			Hash (ref h, prime, n.NameHash);
+			Hash (ref h, prime, DNode.GetNodePath (n, false).GetHashCode ());
 
-				return h;
-			}
+			return h;
 		}
 
 		void HashEnum<T>(ref long h, IEnumerable<T> l, bool mindOrder = false) where T:ISyntaxRegion
 		{
-			unchecked{
-				h *= prime;
-				if (l != null) {
-					int len = 0;
-					foreach (var i in l) {
-						if (mindOrder)
-							h = prime * h + len;
-						h = prime * h + Accept (i);
-						len++;
-					}
-
-					h = prime * h + len;
+			long len = 0;
+			if (l != null) {
+				foreach (var i in l) {
+					if (mindOrder)
+						Hash (ref h, prime, len);
+					Hash (ref h, prime, (ISyntaxRegion)i);
+					len++;
 				}
 			}
+			Hash (ref h, prime, len);
 		}
+
+		#region Hashing fundamentals
+		static void Hash(ref long h, long prime, long v)	{	h = unchecked(prime * h + v);	}
+
+		static 
+		void Hash(ref long h, long prime, object o)			{		Hash (ref h, prime, (o != null ? o.GetHashCode() : 0));	}
+		void Hash(ref long h, long prime, ISyntaxRegion o)	{		Hash (ref h, prime, (o != null ? Accept (o) : 0));		}
+		void Hash(ref long h, long prime, TemplateParameter o)	{	Hash (ref h, prime, (o != null ? o.Accept(this) : 0));	}
+		void Hash(ref long h, long prime, IStatement o)		{		Hash (ref h, prime, (o != null ? o.Accept(this) : 0));	}
+		void Hash(ref long h, long prime, INode o)			{		Hash (ref h, prime, (o != null ? o.Accept(this) : 0));	}
+		void Hash(ref long h, long prime, ITypeDeclaration o){		Hash (ref h, prime, (o != null ? o.Accept(this) : 0));	}
+		void Hash(ref long h, long prime, IExpression o)	{		Hash (ref h, prime, (o != null ? o.Accept(this) : 0));	}
+		#endregion
+
 
 		long VisitDNode(DNode n)
 		{
 			long h = VisitAbstractNode(n);
 
-			unchecked{
-				HashEnum (ref h, n.TemplateParameters);
-				h = prime * h + (n.TemplateConstraint != null ? n.TemplateConstraint.Accept (this) : 0);
-				HashEnum (ref h, n.Attributes);
-			}
+			HashEnum (ref h, n.TemplateParameters);
+			Hash (ref h, prime, n.TemplateConstraint);
+			HashEnum (ref h, n.Attributes);
 
 			return h;
 		}
@@ -115,11 +121,9 @@ namespace D_Parser.Dom.Visitors
 		{
 			long h = 100019 * VisitDNode (n);
 
-			unchecked{
-				h = prime * h + (n.Initializer != null ? n.Initializer.Accept (this) : 0);
-				h = prime * h + (n.IsAlias ? 1 : 0);
-				h = prime * h + (n.IsAliasThis ? 1 : 0);
-			}
+			Hash (ref h, prime, n.Initializer);
+			Hash (ref h, prime, n.IsAlias ? 1L : 0L);
+			Hash (ref h, prime, n.IsAliasThis ? 1L : 0L);
 
 			return h;
 		}
@@ -129,12 +133,10 @@ namespace D_Parser.Dom.Visitors
 			long h = VisitDNode (n);
 			const long prime = 1000037;
 
-			unchecked{
-				h = prime * h + (long)n.SpecialType;
-				HashEnum (ref h, n.Parameters);
+			Hash (ref h, prime, (long)n.SpecialType);
+			HashEnum (ref h, n.Parameters);
 
-				// Don't care about its definition yet
-			}
+			// Don't care about its definition yet
 
 			return h;
 		}
@@ -144,10 +146,8 @@ namespace D_Parser.Dom.Visitors
 			var h = VisitDNode (n);
 			const long prime = 1000117;
 
-			unchecked{
-				HashEnum (ref h, n.Children);
-				HashEnum (ref h, n.StaticStatements);
-			}
+			HashEnum (ref h, n.Children);
+			HashEnum (ref h, n.StaticStatements);
 
 			return h;
 		}
@@ -157,11 +157,9 @@ namespace D_Parser.Dom.Visitors
 			var h = VisitBlockNode (n);
 			const long prime = 1000039;
 
-			unchecked{
-				h = prime * h + (n.IsAnonymousClass ? 1 : 0);
-				HashEnum (ref h, n.BaseClasses);
-				h = prime * h + n.ClassType;
-			}
+			Hash(ref h, prime, n.IsAnonymousClass ? 1L : 0L);
+			HashEnum (ref h, n.BaseClasses);
+			Hash (ref h, prime, n.ClassType);
 
 			return h;
 		}
@@ -176,16 +174,9 @@ namespace D_Parser.Dom.Visitors
 			var h = VisitBlockNode (n);
 			const long prime = 1000099;
 
-			unchecked{
-				h *= prime;
-				if (n.ModuleName != null)
-					h += n.ModuleName.GetHashCode ();
-				h *= prime;
-				if (n.FileName != null)
-					h += n.FileName.GetHashCode ();
-
-				h = prime * h + (n.OptionalModuleStatement != null ? n.OptionalModuleStatement.Accept (this) : 0);
-			}
+			Hash (ref h, prime, n.ModuleName);
+			Hash (ref h, prime, n.FileName);
+			Hash (ref h, prime, n.OptionalModuleStatement);
 
 			return h;
 		}
@@ -207,7 +198,13 @@ namespace D_Parser.Dom.Visitors
 
 		public long VisitAttribute(Modifier attr)
 		{
-			return unchecked(1000151 * attr.Token * (attr.ContentHash == 0 ? (attr.LiteralContent != null ? attr.LiteralContent.GetHashCode() : 1) : attr.ContentHash));
+			const long prime = 1000151;
+			long h = 1;
+
+			Hash (ref h, prime, attr.Token);
+			Hash (ref h, prime, attr.LiteralContent);
+
+			return h;
 		}
 
 		public long VisitAttribute(DeprecatedAttribute a)
@@ -246,7 +243,12 @@ namespace D_Parser.Dom.Visitors
 
 		public long VisitAttribute(StaticIfCondition a)
 		{
-			return 1000211 + (a.Expression != null ? a.Expression.Accept(this) : 0);
+			const long prime = 1000211;
+			long h = 1;
+
+			Hash (ref h, prime, a.Expression);
+
+			return h;
 		}
 
 		public long VisitAttribute(NegatedDeclarationCondition a)
@@ -264,9 +266,7 @@ namespace D_Parser.Dom.Visitors
 			long h = Visit ((ImportSymbolNode)n);
 			const long prime = 1000249;
 
-			unchecked{
-				h = prime * h + (n.Import != null ? n.Import.Accept (this) : 0);			
-			}
+			Hash(ref h, prime, n.Import != null ? n.Import.Accept (this) : 0);
 
 			return h;
 		}
@@ -276,9 +276,7 @@ namespace D_Parser.Dom.Visitors
 			long h = Visit ((DVariable)n);
 			const long prime = 1000253;
 
-			unchecked{
-				h = prime * h + (n.ImportStatement != null ? n.ImportStatement.Accept (this) : 0);			
-			}
+			Hash(ref h, prime, n.ImportStatement != null ? n.ImportStatement.Accept (this) : 0);
 
 			return h;
 		}
@@ -288,9 +286,7 @@ namespace D_Parser.Dom.Visitors
 			long h = Visit ((ImportSymbolNode)n);
 			const long prime = 1000273;
 
-			unchecked{
-				h = prime * h + (n.ImportBinding != null ? n.ImportBinding.Accept (this) : 0);			
-			}
+			Hash(ref h, prime, n.ImportBinding != null ? n.ImportBinding.Accept (this) : 0);
 
 			return h;
 		}
@@ -494,205 +490,291 @@ namespace D_Parser.Dom.Visitors
 
 		public long Visit(Expressions.Expression x)
 		{
-			return 1000847;
+			long h = 1000847;
+			HashEnum (ref h, x.Expressions, true);
+			return h;
 		}
 
-		long VisitOpBasedExpression(OperatorBasedExpression op)
+		long VisitOpBasedExpression(OperatorBasedExpression op, long prime)
 		{
-			long hashCode = prime;
-			unchecked
-			{
-				if (op.LeftOperand != null)
-					hashCode += prime * op.LeftOperand.Accept(this);
-				hashCode += prime * hashCode + op.OperatorToken;
-				hashCode = prime * hashCode + (op.RightOperand != null ? op.RightOperand.Accept (this) : 0);
-			}
+			long hashCode = 1;
+
+			Hash (ref hashCode, prime, op.LeftOperand);
+			Hash (ref hashCode, prime, op.RightOperand);
+			Hash (ref hashCode, prime, op.OperatorToken);
+
 			return hashCode;
 		}
 
 		public long Visit(Expressions.AssignExpression x)
 		{
-			return 1000849;
+			return VisitOpBasedExpression (x, 1000849);
 		}
 
 		public long Visit(Expressions.ConditionalExpression x)
 		{
-			return 1000859;
+			long h = 1;
+			const long prime = 1000859;
+
+			Hash (ref h, prime, x.OrOrExpression);
+			Hash (ref h, prime, x.TrueCaseExpression);
+			Hash (ref h, prime, x.FalseCaseExpression);
+
+			return h;
 		}
 
 		public long Visit(Expressions.OrOrExpression x)
 		{
-			return 1000861;
+			return VisitOpBasedExpression(x, 1000861);
 		}
 
 		public long Visit(Expressions.AndAndExpression x)
 		{
-			return 1000889;
+			return VisitOpBasedExpression(x, 1000889);
 		}
 
 		public long Visit(Expressions.XorExpression x)
 		{
-			return 1000907;
+			return VisitOpBasedExpression(x, 1000907);
 		}
 
 		public long Visit(Expressions.OrExpression x)
 		{
-			return 1000919;
+			return VisitOpBasedExpression(x, 1000919);
 		}
 
 		public long Visit(Expressions.AndExpression x)
 		{
-			return 1000921;
+			return VisitOpBasedExpression(x, 1000921);
 		}
 
 		public long Visit(Expressions.EqualExpression x)
 		{
-			return 1000931;
+			return VisitOpBasedExpression(x, 1000931);
 		}
 
 		public long Visit(Expressions.IdentityExpression x)
 		{
-			return 1000969;
+			const long prime = 1000969;
+			var h = VisitOpBasedExpression (x, prime);
+
+			Hash (ref h, prime, x.Not ? 2 : 1);
+
+			return h;
 		}
 
 		public long Visit(Expressions.RelExpression x)
 		{
-			return 1000973;
+			return VisitOpBasedExpression(x, 1000973);
 		}
 
 		public long Visit(Expressions.InExpression x)
 		{
-			return 1000981 + (x.Not ? 1 : 0);
+			const long prime = 1000981;
+			var h = VisitOpBasedExpression (x, prime);
+
+			Hash (ref h, prime, x.Not ? 2 : 1);
+
+			return h;
 		}
 
 		public long Visit(Expressions.ShiftExpression x)
 		{
-			return 1000999;
+			return VisitOpBasedExpression(x, 1000999);
 		}
 
 		public long Visit(Expressions.AddExpression x)
 		{
-			return 1001003;
+			return VisitOpBasedExpression(x, 1001003);
 		}
 
 		public long Visit(Expressions.MulExpression x)
 		{
-			return 1001017;
+			return VisitOpBasedExpression(x, 1001017);
 		}
 
 		public long Visit(Expressions.CatExpression x)
 		{
-			return 1001023;
+			return VisitOpBasedExpression(x, 1001023);
 		}
 
 		public long Visit(Expressions.PowExpression x)
 		{
-			return 1001027;
+			return VisitOpBasedExpression(x, 1001027);
 		}
 
 		public long Visit(Expressions.UnaryExpression_And x)
 		{
-			return 1001041;
+			return VisitSimpleUnaryExpression(x, 1001041);
 		}
 
 		public long Visit(Expressions.UnaryExpression_Increment x)
 		{
-			return 1001069;
+			return VisitSimpleUnaryExpression(x, 1001069);
 		}
 
 		public long Visit(Expressions.UnaryExpression_Decrement x)
 		{
-			return 1001081;
+			return VisitSimpleUnaryExpression(x, 1001081);
 		}
 
 		public long Visit(Expressions.UnaryExpression_Mul x)
 		{
-			return 1001087;
+			return VisitSimpleUnaryExpression(x, 1001087);
 		}
 
 		public long Visit(Expressions.UnaryExpression_Add x)
 		{
-			return 1001089;
+			return VisitSimpleUnaryExpression(x, 1001089);
 		}
 
 		public long Visit(Expressions.UnaryExpression_Sub x)
 		{
-			return 1001093;
+			return VisitSimpleUnaryExpression(x, 1001093);
 		}
 
 		public long Visit(Expressions.UnaryExpression_Not x)
 		{
-			return 1001107;
+			return VisitSimpleUnaryExpression(x, 1001107);
 		}
 
 		public long Visit(Expressions.UnaryExpression_Cat x)
 		{
-			return 1001123;
+			return VisitSimpleUnaryExpression(x, 1001123);
 		}
 
 		public long Visit(Expressions.UnaryExpression_Type x)
 		{
-			return 1001153;
+			long h = 1;
+			const long prime = 1001153;
+
+			Hash (ref h, prime, x.Type);
+			Hash (ref h, prime, x.AccessIdentifierHash);
+
+			return h;
 		}
 
 		public long Visit(Expressions.NewExpression x)
 		{
-			return 1001159;
+			long h = 1;
+			const long prime = 1001159;
+
+			Hash (ref h, prime, x.Type);
+			HashEnum (ref h, x.Arguments);
+			HashEnum (ref h, x.NewArguments);
+
+			return h;
 		}
 
 		public long Visit(Expressions.AnonymousClassExpression x)
 		{
-			return 1001173;
+			long h = 1;
+			const long prime = 1001173;
+
+			HashEnum (ref h, x.ClassArguments);
+			HashEnum (ref h, x.NewArguments);
+			Hash (ref h, prime, x.AnonymousClass);
+
+			return h;
 		}
 
 		public long Visit(Expressions.DeleteExpression x)
 		{
-			return 1001177;
+			return VisitSimpleUnaryExpression(x, 1001177);
 		}
 
 		public long Visit(Expressions.CastExpression x)
 		{
-			return 1001191;
+			const long prime = 1001191;
+			long h = 1;
+
+			Hash (ref h, prime, x.Type);
+			Hash (ref h, prime, x.UnaryExpression);
+
+			unchecked{
+				h *= prime;
+				if (x.CastParamTokens != null && x.CastParamTokens.Length != 0) {
+					h += x.CastParamTokens.Length;
+					foreach (var tk in x.CastParamTokens) {
+						h = prime * h + tk;
+					}
+				}
+			}
+
+			return h;
+		}
+
+		long VisitPostfixExpression (Expressions.PostfixExpression x, long prime){
+			long h = 1;
+			Hash (ref h, prime, x.PostfixForeExpression);
+			return h;
 		}
 
 		public long Visit(Expressions.PostfixExpression_Access x)
 		{
-			return 1001197;
+			const long prime = 1001197;
+			var h = VisitPostfixExpression (x, prime);
+
+			Hash (ref h, prime, x.AccessExpression);
+
+			return h;
 		}
 
 		public long Visit(Expressions.PostfixExpression_Increment x)
 		{
-			return 1001219;
+			return VisitPostfixExpression(x, 1001219);
 		}
 
 		public long Visit(Expressions.PostfixExpression_Decrement x)
 		{
-			return 1001237;
+			return VisitPostfixExpression(x, 1001237);
 		}
 
 		public long Visit(Expressions.PostfixExpression_MethodCall x)
 		{
-			return 1001267;
+			const long prime = 1001267;
+			var h = VisitPostfixExpression (x, prime);
+
+			HashEnum (ref h, x.Arguments, true);
+
+			return h;
 		}
 
 		public long Visit(Expressions.PostfixExpression_ArrayAccess x)
 		{
-			return 1001279;
+			const long prime = 1001279;
+			var h = VisitPostfixExpression (x, prime);
+
+			h *= prime;
+			if (x.Arguments != null && x.Arguments.Length != 0) {
+				h += x.Arguments.Length;
+
+				foreach (var arg in x.Arguments) {
+					Hash (ref h, prime, arg.Expression);
+					if (arg is PostfixExpression_ArrayAccess.SliceArgument)
+						Hash (ref h, prime, (arg as PostfixExpression_ArrayAccess.SliceArgument).UpperBoundExpression);
+				}
+			}
+
+			return h;
 		}
 
 		//TODO: return 1001291; got freed due to obsoletion of postfixexpression_slice
+		long VisitTypeDeclaration(ITypeDeclaration td, long prime)
+		{
+			long h = 1;
+			Hash (ref h, prime, td.InnerDeclaration);
+			return h;
+		}
 
 		public long Visit(Expressions.TemplateInstanceExpression x)
 		{
-			long h = x.InnerDeclaration != null ? x.InnerDeclaration.Accept(this) : 1;
 			const long prime = 1001303;
+			var h = VisitTypeDeclaration (x, prime);
 
-			unchecked
-			{
-				h = prime * h + (x.Identifier != null ? x.Identifier.GetHashCode () : 0);
-				h = prime * h + x.TemplateIdHash;
-				HashEnum (ref h, x.Arguments, true);
-			}
+			Hash (ref h, prime, x.Identifier);
+			Hash (ref h, prime, x.TemplateIdHash);
+			HashEnum (ref h, x.Arguments, true);
 
 			return h;
 		}
@@ -702,11 +784,9 @@ namespace D_Parser.Dom.Visitors
 			long h = 1;
 			const long prime = 1001311;
 
-			unchecked{
-				h = prime * h + (x.IsIdentifier ? 1 : 0);
-				h = prime * h + x.ValueStringHash;
-				h = prime * h + (x.Value != null ? x.Value.GetHashCode () : 0);
-			}
+			Hash (ref h, prime, x.IsIdentifier ? 1L : 0L);
+			Hash (ref h, prime, x.ValueStringHash);
+			Hash (ref h, prime, x.Value);
 
 			return h;
 		}
@@ -718,12 +798,17 @@ namespace D_Parser.Dom.Visitors
 
 		public long Visit(Expressions.TypeDeclarationExpression x)
 		{
-			return 1001323;
+			return 1001323 + x.Declaration.Accept(this);
 		}
 
 		public long Visit(Expressions.ArrayLiteralExpression x)
 		{
-			return 1001327;
+			const long prime = 1001327;
+			long h = prime;
+
+			HashEnum (ref h, x.Elements, true);
+
+			return h;
 		}
 
 		public long Visit(Expressions.AssocArrayExpression x)
@@ -758,7 +843,17 @@ namespace D_Parser.Dom.Visitors
 
 		public long Visit(Expressions.IsExpression x)
 		{
-			return 1001401;
+			const long prime = 1001401;
+			long h = 1;
+
+			Hash (ref h, prime, x.TestedType);
+			Hash (ref h, prime, x.TypeAliasIdentifierHash);
+			Hash (ref h, prime, x.EqualityTest ? 2L : 1L);
+			Hash (ref h, prime, x.TypeSpecialization);
+			Hash (ref h, prime, x.TypeSpecializationToken);
+			HashEnum (ref h, x.TemplateParameterList);
+
+			return h;
 		}
 
 		public long Visit(Expressions.TraitsExpression x)
@@ -796,67 +891,114 @@ namespace D_Parser.Dom.Visitors
 			return 1001501;
 		}
 
+		long VisitSimpleUnaryExpression(SimpleUnaryExpression x, long prime)
+		{
+			long h = 1;
+			Hash (ref h, prime, x.UnaryExpression);
+			Hash (ref h, prime, x.ForeToken);
+			return h;
+		}
+
 		public long Visit(Expressions.UnaryExpression_SegmentBase x)
 		{
+			//TODO
 			return 1001527;
 		}
 
-		public long Visit(IdentifierDeclaration identifierDeclaration)
+		public long Visit(IdentifierDeclaration td)
 		{
-			long h = 1;
 			const long prime = 1001531;
+			var h = VisitTypeDeclaration (td, prime);
 
-			unchecked{
-				h = prime * h + (identifierDeclaration.ModuleScoped ? 2 : 1);
-				h = prime * h + identifierDeclaration.IdHash;
-			}
+			Hash (ref h, prime, td.ModuleScoped ? 2L : 1L);
+			Hash (ref h, prime, td.IdHash);
 
 			return h;
 		}
 
-		public long Visit(DTokenDeclaration dTokenDeclaration)
+		public long Visit(DTokenDeclaration td)
 		{
-			return 1001549 + dTokenDeclaration.Token;
+			const long prime = 1001549;
+			var h = VisitTypeDeclaration (td, prime);
+
+			Hash (ref h, prime, (long)td.Token);
+
+			return h;
 		}
 
-		public long Visit(ArrayDecl arrayDecl)
+		public long Visit(ArrayDecl td)
 		{
-			return 1001551;
+			const long prime = 1001551;
+			var h = VisitTypeDeclaration (td, prime);
+
+			Hash (ref h, prime, td.KeyType);
+			Hash (ref h, prime, td.KeyExpression);
+
+			return h;
 		}
 
-		public long Visit(DelegateDeclaration delegateDeclaration)
+		public long Visit(DelegateDeclaration td)
 		{
-			return 1001563;
+			const long prime = 1001563;
+			var h = VisitTypeDeclaration (td, prime);
+
+			Hash (ref h, prime, td.IsFunction ? 2L : 1L);
+			HashEnum (ref h, td.Parameters, true);
+			HashEnum (ref h, td.Modifiers);
+
+			return h;
 		}
 
-		public long Visit(PointerDecl pointerDecl)
+		public long Visit(PointerDecl td)
 		{
-			return 1001569;
+			return VisitTypeDeclaration(td, 1001569);
 		}
 
-		public long Visit(MemberFunctionAttributeDecl memberFunctionAttributeDecl)
+		public long Visit(MemberFunctionAttributeDecl td)
 		{
-			return 1001587;
+			const long prime = 1001587;
+			var h = VisitTypeDeclaration (td, prime);
+
+			Hash (ref h, prime, td.Modifier);
+			Hash (ref h, prime, td.InnerType);
+
+			return h;
 		}
 
-		public long Visit(TypeOfDeclaration typeOfDeclaration)
+		public long Visit(TypeOfDeclaration td)
 		{
-			return 1001593;
+			const long prime = 1001593;
+			var h = VisitTypeDeclaration (td, prime);
+
+			Hash (ref h, prime, td.Expression);
+
+			return h;
 		}
 
-		public long Visit(VectorDeclaration vectorDeclaration)
+		public long Visit(VectorDeclaration td)
 		{
-			return 1001621;
+			const long prime = 1001621;
+			var h = VisitTypeDeclaration (td, prime);
+
+			Hash (ref h, prime, td.Id);
+			Hash (ref h, prime, td.IdDeclaration);
+
+			return h;
 		}
 
-		public long Visit(VarArgDecl varArgDecl)
+		public long Visit(VarArgDecl td)
 		{
-			return 1001629;
+			return VisitTypeDeclaration(td, 1001629);
 		}
 
-		public long Visit(ITemplateParameterDeclaration iTemplateParameterDeclaration)
+		public long Visit(ITemplateParameterDeclaration td)
 		{
-			return 1001639;
+			const long prime = 1001639;
+			var h = VisitTypeDeclaration(td, prime);
+
+			Hash (ref h, prime, td.TemplateParameter);
+
+			return h;
 		}
 
 		public long VisitPrimitiveType(PrimitiveType t)
