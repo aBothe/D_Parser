@@ -12,9 +12,12 @@ namespace D_Parser.Dom.Visitors
 {
 	public class AstElementHashingVisitor : DVisitor<long>, IResolvedTypeVisitor<long>
 	{
+		#region Properties
 		const long prime = 31;
 		public static readonly AstElementHashingVisitor Instance = new AstElementHashingVisitor();
+		#endregion
 
+		#region IO
 		public static long Hash(ISemantic s)
 		{
 			return Instance.Accept(s);
@@ -59,19 +62,9 @@ namespace D_Parser.Dom.Visitors
 
 			throw new InvalidOperationException();
 		}
+		#endregion
 
-		long VisitAbstractNode(AbstractNode n)
-		{
-			long h = 1;
-
-			// h = prime * h + n.Location.GetHashCode (); // Ignore physical occurrence
-			Hash (ref h, prime, n.Type);
-			Hash (ref h, prime, n.NameHash);
-			Hash (ref h, prime, DNode.GetNodePath (n, false).GetHashCode ());
-
-			return h;
-		}
-
+		#region Hashing fundamentals
 		static void HashEnum<T>(ref long h, long prime, IEnumerable<T> l, Func<T, long> visPred, bool mindOrder = false)
 		{
 			long len = 0;
@@ -96,7 +89,6 @@ namespace D_Parser.Dom.Visitors
 			HashEnum (ref h, prime, l, (o) => o.Accept(this), mindOrder);
 		}
 
-		#region Hashing fundamentals
 		static void Hash(ref long h, long prime, long v)	{	h = unchecked(prime * h + v);	}
 
 		static 
@@ -113,6 +105,18 @@ namespace D_Parser.Dom.Visitors
 		void Hash(ref long h, long prime, AbstractType o)	{		Hash (ref h, prime, (o != null ? o.Accept(this) : 0));	}
 		#endregion
 
+		#region Nodes
+		long VisitAbstractNode(AbstractNode n)
+		{
+			long h = 1;
+
+			// h = prime * h + n.Location.GetHashCode (); // Ignore physical occurrence
+			Hash (ref h, prime, n.Type);
+			Hash (ref h, prime, n.NameHash);
+			Hash (ref h, prime, DNode.GetNodePath (n, false).GetHashCode ());
+
+			return h;
+		}
 
 		long VisitDNode(DNode n)
 		{
@@ -123,8 +127,7 @@ namespace D_Parser.Dom.Visitors
 			HashEnum (ref h, n.Attributes);
 
 			return h;
-		}
-				
+		}				
 
 		public long Visit(DEnumValue n)
 		{
@@ -211,6 +214,43 @@ namespace D_Parser.Dom.Visitors
 			return unchecked(1000133 * n.Mixin.Accept(this));
 		}
 
+		public long Visit(EponymousTemplate ep)
+		{
+			return unchecked(1000231 * Visit((DVariable)ep));
+		}
+
+		public long Visit(ModuleAliasNode n)
+		{
+			long h = Visit ((ImportSymbolNode)n);
+			const long prime = 1000249;
+
+			Hash(ref h, prime, n.Import != null ? n.Import.Accept (this) : 0);
+
+			return h;
+		}
+
+		public long Visit(ImportSymbolNode n)
+		{
+			long h = Visit ((DVariable)n);
+			const long prime = 1000253;
+
+			Hash(ref h, prime, n.ImportStatement != null ? n.ImportStatement.Accept (this) : 0);
+
+			return h;
+		}
+
+		public long Visit(ImportSymbolAlias n)
+		{
+			long h = Visit ((ImportSymbolNode)n);
+			const long prime = 1000273;
+
+			Hash(ref h, prime, n.ImportBinding != null ? n.ImportBinding.Accept (this) : 0);
+
+			return h;
+		}
+		#endregion
+
+		#region Attributes
 		public long VisitAttribute(Modifier attr)
 		{
 			const long prime = 1000151;
@@ -270,42 +310,9 @@ namespace D_Parser.Dom.Visitors
 		{
 			return unchecked(1000213 * Accept(a.FirstCondition));
 		}
+		#endregion
 
-		public long Visit(EponymousTemplate ep)
-		{
-			return unchecked(1000231 * Visit((DVariable)ep));
-		}
-
-		public long Visit(ModuleAliasNode n)
-		{
-			long h = Visit ((ImportSymbolNode)n);
-			const long prime = 1000249;
-
-			Hash(ref h, prime, n.Import != null ? n.Import.Accept (this) : 0);
-
-			return h;
-		}
-
-		public long Visit(ImportSymbolNode n)
-		{
-			long h = Visit ((DVariable)n);
-			const long prime = 1000253;
-
-			Hash(ref h, prime, n.ImportStatement != null ? n.ImportStatement.Accept (this) : 0);
-
-			return h;
-		}
-
-		public long Visit(ImportSymbolAlias n)
-		{
-			long h = Visit ((ImportSymbolNode)n);
-			const long prime = 1000273;
-
-			Hash(ref h, prime, n.ImportBinding != null ? n.ImportBinding.Accept (this) : 0);
-
-			return h;
-		}
-
+		#region Statements
 		public long Visit(ModuleStatement moduleStatement)
 		{
 			return 1000289;
@@ -502,7 +509,9 @@ namespace D_Parser.Dom.Visitors
 		{
 			return 1000829;
 		}
+		#endregion
 
+		#region Expressions
 		public long Visit(Expressions.Expression x)
 		{
 			long h = 1000847;
@@ -775,12 +784,6 @@ namespace D_Parser.Dom.Visitors
 		}
 
 		//TODO: return 1001291; got freed due to obsoletion of postfixexpression_slice
-		long VisitTypeDeclaration(ITypeDeclaration td, long prime)
-		{
-			long h = 1;
-			Hash (ref h, prime, td.InnerDeclaration);
-			return h;
-		}
 
 		public long Visit(Expressions.TemplateInstanceExpression x)
 		{
@@ -919,6 +922,15 @@ namespace D_Parser.Dom.Visitors
 			//TODO
 			return 1001527;
 		}
+		#endregion
+
+		#region TypeDeclarations
+		long VisitTypeDeclaration(ITypeDeclaration td, long prime)
+		{
+			long h = 1;
+			Hash (ref h, prime, td.InnerDeclaration);
+			return h;
+		}
 
 		public long Visit(IdentifierDeclaration td)
 		{
@@ -1015,13 +1027,9 @@ namespace D_Parser.Dom.Visitors
 
 			return h;
 		}
+		#endregion
 
-
-
-
-
-
-
+		#region Resolved Types
 		static long VisitAbstractType (AbstractType t, long prime){
 			long h = 1;
 
@@ -1237,7 +1245,9 @@ namespace D_Parser.Dom.Visitors
 
 			return h;
 		}
+		#endregion
 
+		#region Metablocks
 		public long VisitMetaDeclarationBlock(MetaDeclarationBlock m)
 		{
 			return 1002017;
@@ -1272,7 +1282,9 @@ namespace D_Parser.Dom.Visitors
 		{
 			return 1002083;
 		}
+		#endregion
 
+		#region Template parameters
 		public long VisitTemplateParameter(TemplateParameter tp)
 		{
 			const long prime = 1002091;
@@ -1331,6 +1343,7 @@ namespace D_Parser.Dom.Visitors
 		{
 			return 1002149 * VisitTemplateParameter(tp);
 		}
+		#endregion
 
 		// next prime would be 1002173
 	}
