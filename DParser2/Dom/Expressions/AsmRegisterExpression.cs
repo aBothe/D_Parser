@@ -17,11 +17,6 @@ namespace D_Parser.Dom.Expressions
 			return Register;
 		}
 
-		public ulong GetHash()
-		{
-			return (ulong)Register.GetHashCode();
-		}
-
 		public static readonly Dictionary<string, string> x86RegisterTable = new Dictionary<string, string>
 		{
 			{ "AL", "" },

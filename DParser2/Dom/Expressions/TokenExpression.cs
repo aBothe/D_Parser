@@ -42,14 +42,6 @@ namespace D_Parser.Dom.Expressions
 		{
 			return vis.Visit(this);
 		}
-
-		public ulong GetHash()
-		{
-			unchecked
-			{
-				return 1000000007 * (ulong)Token;
-			}
-		}
 	}
 }
 

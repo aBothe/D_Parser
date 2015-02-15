@@ -91,20 +91,6 @@ namespace D_Parser.Dom.Expressions
 		{
 			return vis.Visit(this);
 		}
-
-		public ulong GetHash()
-		{
-			ulong hashCode = 0uL;
-			unchecked
-			{
-				hashCode += 1000000007uL * (ModuleScoped ? 2uL : 1uL);
-				if (Value != null)
-					hashCode += 1000000009 * (ulong)Value.GetHashCode();
-				hashCode += 1000000021 * (ulong)Format;
-				hashCode += 1000000033 * (ulong)Subformat;
-			}
-			return hashCode;
-		}
 	}
 }
 

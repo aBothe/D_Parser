@@ -85,19 +85,6 @@ namespace D_Parser.Dom.Expressions
 		{
 			return vis.Visit(this);
 		}
-
-		public ulong GetHash()
-		{
-			ulong hashCode = 0uL;
-			unchecked
-			{
-				hashCode += 1000000007 * (ulong)LiteralToken;
-				hashCode += 1000000009uL * (IsLambda ? 2uL : 1uL);
-				if (AnonymousMethod != null) //TODO: Hash entire method bodies?
-					hashCode += 1000000021 * (ulong)AnonymousMethod.GetHashCode();
-			}
-			return hashCode;
-		}
 	}
 }
 
