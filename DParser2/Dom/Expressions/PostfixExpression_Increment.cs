@@ -24,16 +24,6 @@ namespace D_Parser.Dom.Expressions
 		{
 			return vis.Visit(this);
 		}
-
-		public override ulong GetHash()
-		{
-			var hashCode = base.GetHash();
-			unchecked
-			{
-				hashCode += 1000000021;
-			}
-			return hashCode;
-		}
 	}
 }
 

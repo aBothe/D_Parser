@@ -69,22 +69,6 @@ namespace D_Parser.Dom.Expressions
 		{
 			return vis.Visit(this);
 		}
-
-		public ulong GetHash()
-		{
-			ulong hashCode = 0uL;
-			unchecked
-			{
-				if (UnaryExpression != null)
-					hashCode += 1000000007 * UnaryExpression.GetHash();
-				if (Type != null)
-					hashCode += 1000000009 * Type.GetHash();
-				if (CastParamTokens != null && CastParamTokens.Length != 0)
-					for (int i = CastParamTokens.Length; i != 0;)
-						hashCode += 1000000021 * (ulong)i * (ulong)CastParamTokens[--i];
-			}
-			return hashCode;
-		}
 	}
 }
 

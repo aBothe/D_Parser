@@ -41,17 +41,6 @@ namespace D_Parser.Dom.Expressions
 		{
 			return vis.Visit(this);
 		}
-
-		public ulong GetHash()
-		{
-			ulong hashCode = DTokens.OpenParenthesis;
-			unchecked
-			{
-				if (Expression != null)
-					hashCode += 1000000007 * Expression.GetHash();
-			}
-			return hashCode;
-		}
 	}
 }
 

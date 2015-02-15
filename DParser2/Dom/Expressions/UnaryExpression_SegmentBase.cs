@@ -14,12 +14,6 @@ namespace D_Parser.Dom.Expressions
 			return RegisterExpression.ToString() + ":" + UnaryExpression.ToString();
 		}
 
-		public override ulong GetHash()
-		{
-			// TODO: Determine the right way to do this.
-			return RegisterExpression.GetHash() ^ UnaryExpression.GetHash();
-		}
-
 		public override CodeLocation Location
 		{
 			get { return RegisterExpression.Location; }

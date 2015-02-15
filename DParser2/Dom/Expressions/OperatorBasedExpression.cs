@@ -34,20 +34,6 @@ namespace D_Parser.Dom.Expressions
 		public abstract void Accept(ExpressionVisitor v);
 
 		public abstract R Accept<R>(ExpressionVisitor<R> v);
-
-		public virtual ulong GetHash()
-		{
-			ulong hashCode = 0uL;
-			unchecked
-			{
-				if (LeftOperand != null)
-					hashCode += 1000000007 * LeftOperand.GetHash();
-				if (RightOperand != null)
-					hashCode += 1000000009 * RightOperand.GetHash();
-				hashCode += 1000000021 * (ulong)OperatorToken;
-			}
-			return hashCode;
-		}
 	}
 }
 

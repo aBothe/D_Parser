@@ -50,17 +50,6 @@ namespace D_Parser.Dom.Expressions
 		{
 			return vis.Visit(this);
 		}
-
-		public override ulong GetHash()
-		{
-			ulong hashCode = base.GetHash();
-			unchecked
-			{
-				if (AccessExpression != null)
-					hashCode += 1000000009 * AccessExpression.GetHash();
-			}
-			return hashCode;
-		}
 	}
 }
 

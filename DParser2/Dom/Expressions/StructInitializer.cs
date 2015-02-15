@@ -45,18 +45,6 @@ namespace D_Parser.Dom.Expressions
 		{
 			return vis.Visit(this);
 		}
-
-		public override ulong GetHash()
-		{
-			ulong hashCode = AbstractInitializerHash + DTokens.Struct + DTokens.OpenCurlyBrace;
-			unchecked
-			{
-				if (MemberInitializers != null)
-					for (int i = MemberInitializers.Length; i != 0;)
-						hashCode += 1000000007 * (ulong)i * MemberInitializers[--i].GetHash();
-			}
-			return hashCode;
-		}
 	}
 }
 

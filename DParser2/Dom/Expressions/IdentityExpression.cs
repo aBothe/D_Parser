@@ -30,14 +30,6 @@ namespace D_Parser.Dom.Expressions
 		{
 			return vis.Visit(this);
 		}
-
-		public override ulong GetHash()
-		{
-			unchecked
-			{
-				return base.GetHash() + 1000000007uL * (Not ? 2uL : 1uL);
-			}
-		}
 	}
 }
 

@@ -33,19 +33,6 @@ namespace D_Parser.Dom.Expressions
 			get;
 			set;
 		}
-
-		public ulong GetHash()
-		{
-			ulong hashCode = 0uL;
-			unchecked
-			{
-				if (Type != null)
-					hashCode += 1000000007 * Type.GetHash();
-				if (AssignExpression != null)
-					hashCode += 1000000009 * AssignExpression.GetHash();
-			}
-			return hashCode;
-		}
 	}
 }
 

@@ -95,27 +95,6 @@ namespace D_Parser.Dom.Expressions
 		{
 			return vis.Visit(this);
 		}
-
-		public ulong GetHash()
-		{
-			ulong hashCode = DTokens.Is;
-			unchecked
-			{
-				if (TestedType != null)
-					hashCode += 1000000007 * TestedType.GetHash();
-				hashCode += 1000000009 * (ulong)TypeAliasIdentifierHash;
-				if (ptp != null)//TODO: Create hash functions of template type parameters
-					hashCode += 1000000021 * (ulong)ptp.ToString().GetHashCode();
-				hashCode += 1000000033uL * (EqualityTest ? 2uL : 1uL);
-				if (TypeSpecialization != null)
-					hashCode += 1000000087 * TypeSpecialization.GetHash();
-				hashCode += 1000000093 * (ulong)TypeSpecializationToken;
-				if (TemplateParameterList != null)
-					for (int i = TemplateParameterList.Length; i != 0;)
-						hashCode += 1000000097 * (ulong)(i * TemplateParameterList[--i].ToString().GetHashCode());
-			}
-			return hashCode;
-		}
 	}
 }
 

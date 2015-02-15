@@ -64,18 +64,6 @@ namespace D_Parser.Dom.Expressions
 		{
 			return vis.Visit(this);
 		}
-
-		public override ulong GetHash()
-		{
-			var hashCode = base.GetHash();
-			unchecked
-			{
-				if (Arguments != null)
-					for (ulong i = (ulong)Arguments.Length; i != 0;)
-						hashCode += 1000000038 * i * Arguments[(int)--i].GetHash();
-			}
-			return hashCode;
-		}
 	}
 }
 

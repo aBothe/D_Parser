@@ -40,18 +40,6 @@ namespace D_Parser.Dom.Expressions
 		{
 			return vis.Visit(this);
 		}
-
-		public ulong GetHash()
-		{
-			ulong hashCode = AbstractVariableInitializer.AbstractInitializerHash;
-			unchecked
-			{
-				hashCode += 1000000007 * (ulong)MemberNameHash;
-				if (Value != null)
-					hashCode += 1000000009 * Value.GetHash();
-			}
-			return hashCode;
-		}
 	}
 }
 

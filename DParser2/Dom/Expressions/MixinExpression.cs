@@ -38,17 +38,6 @@ namespace D_Parser.Dom.Expressions
 		{
 			return vis.Visit(this);
 		}
-
-		public ulong GetHash()
-		{
-			ulong hashCode = DTokens.Mixin;
-			unchecked
-			{
-				if (AssignExpression != null)
-					hashCode += 1000000007 * AssignExpression.GetHash();
-			}
-			return hashCode;
-		}
 	}
 }
 

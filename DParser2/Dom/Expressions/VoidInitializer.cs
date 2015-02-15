@@ -18,11 +18,6 @@ namespace D_Parser.Dom.Expressions
 		{
 			return vis.Visit(this);
 		}
-
-		public override ulong GetHash()
-		{
-			return AbstractInitializerHash + DTokens.Void;
-		}
 	}
 }
 

@@ -18,8 +18,6 @@ namespace D_Parser.Dom
 		string ToString(bool IncludesBase);
 
 		R Accept<R>(TypeDeclarationVisitor<R> vis);
-		
-		ulong GetHash();
 	}
 	
 	public abstract class AbstractTypeDeclaration : ITypeDeclaration
@@ -101,10 +99,5 @@ namespace D_Parser.Dom
 	
 		public abstract void Accept(TypeDeclarationVisitor vis);
 		public abstract R Accept<R>(TypeDeclarationVisitor<R> vis);
-		
-		public virtual ulong GetHash()
-		{
-			return (ulong)ToString().GetHashCode();
-		}
 	}
 }

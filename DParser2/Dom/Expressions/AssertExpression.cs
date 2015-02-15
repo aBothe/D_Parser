@@ -42,18 +42,6 @@ namespace D_Parser.Dom.Expressions
 		{
 			return vis.Visit(this);
 		}
-
-		public ulong GetHash()
-		{
-			ulong hashCode = 0uL;
-			unchecked
-			{
-				if (AssignExpressions != null)
-					for (int i = AssignExpressions.Length; i != 0;)
-						hashCode += 1000000007 * (ulong)i * AssignExpressions[i--].GetHash();
-			}
-			return hashCode;
-		}
 	}
 }
 

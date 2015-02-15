@@ -44,21 +44,6 @@ namespace D_Parser.Dom.Expressions
 		{
 			return vis.Visit(this);
 		}
-
-		public ulong GetHash()
-		{
-			ulong hashCode = 0uL;
-			unchecked
-			{
-				if (OrOrExpression != null)
-					hashCode += 1000000007 * OrOrExpression.GetHash();
-				if (TrueCaseExpression != null)
-					hashCode += 1000000009 * TrueCaseExpression.GetHash();
-				if (FalseCaseExpression != null)
-					hashCode += 1000000021 * FalseCaseExpression.GetHash();
-			}
-			return hashCode;
-		}
 	}
 }
 

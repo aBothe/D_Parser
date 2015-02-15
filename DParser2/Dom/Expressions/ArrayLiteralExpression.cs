@@ -61,18 +61,6 @@ namespace D_Parser.Dom.Expressions
 		{
 			return vis.Visit(this);
 		}
-
-		public ulong GetHash()
-		{
-			ulong hashCode = DTokens.OpenSquareBracket; // because it's like an Expression
-			unchecked
-			{
-				if (Elements != null)
-					for (int i = Elements.Count; i != 0;)
-						hashCode += 1000000007 * (ulong)i * Elements[--i].GetHash();
-			}
-			return hashCode;
-		}
 	}
 }
 
