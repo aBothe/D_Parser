@@ -18,14 +18,10 @@ namespace D_Parser.Resolver
 		public IBlockNode ScopedBlock{get{ return scopedBlock; }}
 		#endregion
 		
-		public ContextFrame(ResolutionContext ctxt, IBlockNode b, CodeLocation caret)
+		public ContextFrame(ResolutionContext ctxt)
 		{
 			this.ctxt = ctxt;
 			DeclarationCondititons = new ConditionalCompilation.ConditionSet(ctxt.CompilationEnvironment);
-
-			ctxt.Push(this);
-
-			Set(b, caret);
 		}
 		
 		public void IntroduceTemplateParameterTypes(DSymbol tir)

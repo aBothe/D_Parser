@@ -21,7 +21,7 @@ namespace D_Parser.Resolver
 		}
 	}
 
-	public class ResolutionContext
+	public sealed class ResolutionContext
 	{
 		#region Properties
 		/// <summary>
@@ -29,7 +29,16 @@ namespace D_Parser.Resolver
 		/// Used by BuildConditionSet() as global flags for ConditionSet instances.
 		/// </summary>
 		public readonly ConditionalCompilationFlags CompilationEnvironment;
-		protected readonly List<ContextFrame> stack = new List<ContextFrame>();
+		readonly List<ContextFrame> stack = new List<ContextFrame>();
+		/// <summary>
+		/// Note: Enumerates from top to first scope, so vice-versa the usual direction.
+		/// </summary>
+		public IEnumerable<ContextFrame> ContextStack {
+			get{ 
+				for (var i = stack.Count - 1; i >= 0; i--)
+					yield return stack [i];
+			}
+		}
 		public ResolutionOptions ContextIndependentOptions = ResolutionOptions.Default;
 		public readonly List<ResolutionError> ResolutionErrors = new List<ResolutionError>();
 		public bool CancelOperation;
@@ -106,8 +115,8 @@ namespace D_Parser.Resolver
 			Cache = new ResolutionCache<AbstractType>(this);
 			//ValueCache = new ResolutionCache<ISymbolValue>(this);
 			MixinCache = new ResolutionCache<MixinAnalysis.MixinCacheItem>(this);
-			
-			new ContextFrame(this, bn, caret);
+
+			PushNewScope (bn, caret);
 		}
 		#endregion
 
@@ -134,14 +143,10 @@ namespace D_Parser.Resolver
 #endif
 		
 		#region ContextFrame stacking
-		public ContextFrame Pop()
+		public void Pop()
 		{
-			if (stack.Count > 0) {
-				var i = stack [stack.Count - 1];
+			if (stack.Count > 0)
 				stack.RemoveAt(stack.Count-1);
-				return i;
-			}
-			return null;
 		}
 
 		class PopDisposable : IDisposable
@@ -216,24 +221,15 @@ namespace D_Parser.Resolver
 
 		void PushNewScope(IBlockNode scope, CodeLocation caret)
 		{
-			new ContextFrame(this, scope, caret);
+			var cf = new ContextFrame(this);
+			Push(cf);
+
+			cf.Set(scope, caret);
 		}
 
 		void PushNewScope(IBlockNode scope)
 		{
-			new ContextFrame(this, scope, scope.BlockStartLocation);
-		}
-
-		
-		/// <summary>
-		/// Returns true if the the context that is stacked below the current context represents the parent item of the current block scope
-		/// </summary>
-		public bool PrevContextIsInSameHierarchy
-		{
-			get
-			{
-				return stack.Count >= 2 && CurrentContext.ScopedBlock != null && CurrentContext.ScopedBlock.Parent == stack [stack.Count - 2].ScopedBlock;
-			}
+			PushNewScope(scope, scope.BlockStartLocation);
 		}
 
 		public IEnumerable<TemplateParameterSymbol> DeducedTypesInHierarchy

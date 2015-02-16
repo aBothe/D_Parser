@@ -768,30 +768,26 @@ namespace D_Parser.Resolver.TypeResolution
 			/// <summary>
 			/// Add 'superior' template parameters to the current symbol because 
 			/// the parameters might be re-used in the nested class.
+			/// Only pays attention to those parameter symbols that are located in the current resolution scope's AST hierarchy.
 			/// </summary>
-			List<TemplateParameterSymbol> GetInvisibleTypeParameters(DNode n)
+			IEnumerable<TemplateParameterSymbol> GetInvisibleTypeParameters(DNode n)
 			{
-				var invisibleTypeParams = new List<TemplateParameterSymbol>();
+				ContextFrame prev = null;
+				foreach (var cf in ctxt.ContextStack) {
+					// Only stay in the same AST hierarchy
+					if (prev != null && cf.ScopedBlock != null && cf.ScopedBlock.Parent != prev.ScopedBlock)
+						yield break;
+					prev = cf;
 
-				var tStk = new Stack<ContextFrame>();
-				do
-				{
-					var curCtxt = ctxt.Pop();
-					tStk.Push(curCtxt);
-					foreach (var kv in curCtxt.DeducedTemplateParameters)
-						if (!n.ContainsTemplateParameter(kv.Value.Parameter))
-							invisibleTypeParams.Add(kv.Value);
+					foreach (var kv in cf.DeducedTemplateParameters)
+						if (!n.ContainsTemplateParameter (kv.Value.Parameter))
+							yield return kv.Value;
 				}
-				while (ctxt.PrevContextIsInSameHierarchy);
-				while (tStk.Count != 0)
-					ctxt.Push(tStk.Pop());
-
-				return invisibleTypeParams;
 			}
 
 			public AbstractType Visit(EponymousTemplate ep)
 			{
-				return new EponymousTemplateType(ep, GetInvisibleTypeParameters(ep).AsReadOnly(), typeBase);
+				return new EponymousTemplateType(ep, new ReadOnlyCollection<TemplateParameterSymbol>(new List<TemplateParameterSymbol>(GetInvisibleTypeParameters(ep))), typeBase);
 			}
 
 			public AbstractType Visit(DMethod m)
@@ -813,7 +809,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 					case DTokens.Interface:
 					case DTokens.Class:
-						return DResolver.ResolveClassOrInterface(dc, ctxt, typeBase, false, invisibleTypeParams);
+					return DResolver.ResolveClassOrInterface(dc, ctxt, typeBase, false, invisibleTypeParams.ToList());
 
 					case DTokens.Template:
 						if (dc.ContainsAttribute(DTokens.Mixin))

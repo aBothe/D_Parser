@@ -365,7 +365,9 @@ namespace D_Parser.Resolver.TypeResolution
 			if (tix != null && (ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) == 0)
 			{
 				// Pop a context frame as we still need to resolve the template instance expression args in the place where the expression occurs, not the instantiated class' location
-				var backup = ctxt.Pop ();
+				var backup = ctxt.CurrentContext;
+				ctxt.Pop ();
+
 				if (ctxt.CurrentContext == null)
 					ctxt.Push (backup);
 

@@ -729,7 +729,7 @@ namespace D_Parser.Resolver
 			AbstractType baseType, InterfaceType[] baseInterfaces,
 			IEnumerable<TemplateParameterSymbol> deducedTypes)
 			: this(dc,td, baseType,baseInterfaces,
-			deducedTypes != null ? new ReadOnlyCollection<TemplateParameterSymbol>(deducedTypes.ToArray()) : null)
+			deducedTypes != null ? new ReadOnlyCollection<TemplateParameterSymbol>(new List<TemplateParameterSymbol>(deducedTypes)) : null)
 		{ }
 	}
 
