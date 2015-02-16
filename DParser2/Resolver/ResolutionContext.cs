@@ -29,7 +29,7 @@ namespace D_Parser.Resolver
 		/// Used by BuildConditionSet() as global flags for ConditionSet instances.
 		/// </summary>
 		public readonly ConditionalCompilationFlags CompilationEnvironment;
-		protected readonly Stack<ContextFrame> stack = new Stack<ContextFrame>();
+		protected readonly List<ContextFrame> stack = new List<ContextFrame>();
 		public ResolutionOptions ContextIndependentOptions = ResolutionOptions.Default;
 		public readonly List<ResolutionError> ResolutionErrors = new List<ResolutionError>();
 		public bool CancelOperation;
@@ -58,7 +58,7 @@ namespace D_Parser.Resolver
 		public ContextFrame CurrentContext
 		{
 			get {
-				return stack.Count > 0 ? stack.Peek() : null;
+				return stack.Count > 0 ? stack[stack.Count-1] : null;
 			}
 		}
 		#endregion
@@ -136,8 +136,11 @@ namespace D_Parser.Resolver
 		#region ContextFrame stacking
 		public ContextFrame Pop()
 		{
-			if(stack.Count>0)
-				return stack.Pop();
+			if (stack.Count > 0) {
+				var i = stack [stack.Count - 1];
+				stack.RemoveAt(stack.Count-1);
+				return i;
+			}
 			return null;
 		}
 
@@ -208,7 +211,7 @@ namespace D_Parser.Resolver
 		
 		public void Push(ContextFrame frm)
 		{
-			stack.Push(frm);
+			stack.Add(frm);
 		}
 
 		void PushNewScope(IBlockNode scope, CodeLocation caret)
@@ -229,16 +232,7 @@ namespace D_Parser.Resolver
 		{
 			get
 			{
-				if (stack.Count < 2)
-					return false;
-
-				var cur = stack.Pop();
-
-				bool IsParent = cur.ScopedBlock!= null && cur.ScopedBlock.Parent == stack.Peek().ScopedBlock;
-
-				stack.Push(cur);
-				return IsParent;
-
+				return stack.Count >= 2 && CurrentContext.ScopedBlock != null && CurrentContext.ScopedBlock.Parent == stack [stack.Count - 2].ScopedBlock;
 			}
 		}
 
@@ -246,54 +240,23 @@ namespace D_Parser.Resolver
 		{
 			get
 			{
-				var stk = new Stack<ContextFrame>();
-
-				while (stack.Count != 0)
-				{
-					foreach(var kv in stack.Peek().DeducedTemplateParameters)
+				for (var i = stack.Count - 1; i >= 0; i--)
+					foreach (var kv in stack[i].DeducedTemplateParameters)
 						yield return kv.Value;
-
-					if (!PrevContextIsInSameHierarchy)
-						break;
-
-					stk.Push(stack.Pop());
-				}
-
-				while (stk.Count != 0)
-					stack.Push(stk.Pop());
 			}
 		}
 
 		public bool GetTemplateParam(int idHash, out TemplateParameterSymbol tps)
 		{
-			tps = null;
-			Stack<ContextFrame> backup = null;
-			bool ret = false;
-
-			while (stack.Count != 0) {
-				var cur = stack.Peek ();
-
-				foreach (var kv in cur.DeducedTemplateParameters)
+			for (var i = stack.Count - 1; i >= 0; i--)
+				foreach (var kv in stack[i].DeducedTemplateParameters)
 					if (kv.Key.NameHash == idHash) {
 						tps = kv.Value;
-						ret = true;
-						break;
+						return true;
 					}
 
-				if (backup == null)
-					backup = new Stack<ContextFrame> ();
-
-				backup.Push(stack.Pop ());
-
-				if (cur.ScopedBlock == null || stack.Count == 0 || cur.ScopedBlock.Parent != stack.Peek ().ScopedBlock)
-					break;
-			}
-
-			if(backup != null)
-				while (backup.Count != 0)
-					stack.Push (backup.Pop ());
-
-			return ret;
+			tps = null;
+			return false;
 		}
 
 		/// <summary>
