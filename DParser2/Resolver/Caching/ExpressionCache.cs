@@ -1,84 +1,57 @@
 ﻿using System;
 using System.Collections.Generic;
 using D_Parser.Dom.Expressions;
+using D_Parser.Resolver.ExpressionSemantics;
 
-namespace D_Parser.Resolver.ExpressionSemantics.Caching
+namespace D_Parser.Resolver
 {
-	public class ExpressionCache
+	class ExpressionCache
 	{
-		struct EvEntry
-		{
-			/// <summary>
-			/// The hashes of the argument expressions
-			/// </summary>
-			//public ulong[] argumentHashes;
-			/// <summary>
-			/// The hashes of the argument values.
-			/// </summary>
-			public long[] argumentValueHashes;
-			
-			public ISymbolValue val;
-		}
-		
 		#region Properties
-		Dictionary<long, List<EvEntry>> cache = new Dictionary<long, List<EvEntry>>();
-		
+		readonly ResolutionCache<ISymbolValue> cache;
 		#endregion
-		
-		#region Querying
-		ISymbolValue TryGetValue(IExpression x, params ISymbolValue[] argumentValues)
+
+		public ExpressionCache(ResolutionContext ctxt)
 		{
+			cache = new ResolutionCache<ISymbolValue> (ctxt);
+		}
+
+		#region Querying
+
+		public ISymbolValue TryGetValue (IExpression x, params ISymbolValue[] argumentValues)
+		{
+			if (x == null)
+				return null;
+			
 			var hashVis = D_Parser.Dom.Visitors.AstElementHashingVisitor.Instance;
-			List<EvEntry> entries;
-			if(!cache.TryGetValue(x.Accept(hashVis), out entries))
-				return null;
-			
-			var parameters = GetParameters(x);
-			
-			// If the expression is not depending on other expressions return the only expression cached so far.
-			if((parameters == null || parameters.Length == 0) && 
-			   (argumentValues == null || argumentValues.Length == 0))
-			{
-				if(entries.Count == 1)
-					return entries[0].val;
-				return null;
-			}
-			
-			if(argumentValues == null || argumentValues.Length == 0)
-				return null;
-			
-			//var argHashes = new long[argumentValues.Length];
-			var valHashes = new long[argumentValues.Length];
-			
-			for(int i = argumentValues.Length; i!=0;i--)
-			{
-				//argHashes[i] = parameters[i].GetHash();
-				valHashes[i] = argumentValues[i] != null ? argumentValues[i].Accept(hashVis) : 0;
-			}
-			
-			foreach(var e in entries)
-			{
-				for(int i = argumentValues.Length; i!=0; i--)
-				{
-					if(e.argumentValueHashes[i] != valHashes[i])
-						goto cont;
+
+			long hash = 0;
+
+			foreach (var arg in argumentValues)
+				unchecked {
+					hash += arg.Accept (hashVis);	
 				}
 				
-			cont: continue;
-			}
-			
-			return null;
+			return cache.TryGetType (x, hash);
 		}
-		
-		static IExpression[] GetParameters(IExpression x)
+
+		public void Add (IExpression x, ISymbolValue v, params ISymbolValue[] argumentValues)
 		{
-			if(x is ContainerExpression)
-			{
-				return (x as ContainerExpression).SubExpressions;
-			}
+			if (x == null || v == null)
+				return;
 			
-			return null;
+			var hashVis = D_Parser.Dom.Visitors.AstElementHashingVisitor.Instance;
+
+			long hash = 0;
+
+			foreach (var arg in argumentValues)
+				unchecked {
+					hash += arg.Accept (hashVis);	
+				}
+
+			cache.Add (v, x, hash);
 		}
+
 		#endregion
 	}
 }
