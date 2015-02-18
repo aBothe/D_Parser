@@ -29,7 +29,7 @@ namespace D_Parser.Dom.Visitors
 				foreach (var i in l) {
 					if (mindOrder)
 						Hash (ref h, prime, len);
-					Hash (ref h, prime, visPred(i));
+					Hash (ref h, prime, i != null ? visPred(i) : 0);
 					len++;
 				}
 			}
