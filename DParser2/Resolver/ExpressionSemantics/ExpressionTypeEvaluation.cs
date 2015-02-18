@@ -175,7 +175,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public static AbstractType[] GetUnfilteredMethodOverloads(IExpression foreExpression, ResolutionContext ctxt, IExpression supExpression = null)
 		{
-			AbstractType[] overloads;
+			IEnumerable<AbstractType> overloads;
 
 			if (foreExpression is TemplateInstanceExpression)
 				overloads = GetOverloads(foreExpression as TemplateInstanceExpression, ctxt, null);
@@ -186,20 +186,15 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			else if (foreExpression is TokenExpression)
 				overloads = GetResolvedConstructorOverloads((TokenExpression)foreExpression, ctxt);
 			else
-				overloads = new[] { EvaluateType(foreExpression, ctxt, false) };
+				overloads = AmbiguousType.TryDissolve(EvaluateType(foreExpression, ctxt, false));
 
 			var l = new List<AbstractType>();
 			bool staticOnly = true;
 
 			if(overloads != null)
-				foreach (var ov in overloads)
-				{
-					if (ov is AmbiguousType)
-						foreach (var o in (ov as AmbiguousType).Overloads)
-							GetUnfilteredMethodOverloads_Helper(foreExpression, ctxt, supExpression, l, ref staticOnly, o);
-					else
+				foreach (var amb in overloads)
+					foreach(var ov in AmbiguousType.TryDissolve(amb))
 						GetUnfilteredMethodOverloads_Helper(foreExpression, ctxt, supExpression, l, ref staticOnly, ov);
-				}
 
 			return l.ToArray();
 		}
