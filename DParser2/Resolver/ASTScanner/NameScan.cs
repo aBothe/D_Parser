@@ -11,6 +11,8 @@ namespace D_Parser.Resolver.ASTScanner
 		protected readonly int filterHash;
 		protected readonly ISyntaxRegion idObject;
 		protected readonly List<AbstractType> matches_types = new List<AbstractType>();
+		protected bool stopEnumeration = false;
+		protected override bool StopEnumerationOnNextScope { get { return stopEnumeration; } }
 		
 		protected NameScan(ResolutionContext ctxt, int filterHash, ISyntaxRegion idObject) : base(ctxt)
 		{
@@ -75,24 +77,22 @@ namespace D_Parser.Resolver.ASTScanner
 			return null;
 		}
 
-		protected override bool HandleItem(INode n)
+		protected override void HandleItem(INode n)
 		{
             if (n != null && n.NameHash == filterHash)
             {
 				var res = TypeDeclarationResolver.HandleNodeMatch(n, ctxt, TemporaryResolvedNodeParent, idObject);
 				if(res != null)
             		matches_types.Add(res);
-            	return true;
+				stopEnumeration = true;
             }
-
-            return false;
 		}
 		
-		protected override bool HandleItem(PackageSymbol pack)
+		protected override void HandleItem(PackageSymbol pack)
 		{
 			// Packages were filtered in PrefilterSubnodes already..so just add & return
 			matches_types.Add(pack);
-			return true;
+			stopEnumeration = true;
 		}
 	}
 	

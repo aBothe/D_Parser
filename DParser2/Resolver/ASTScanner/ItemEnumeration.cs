@@ -54,22 +54,17 @@ namespace D_Parser.Resolver.ASTScanner
 
 		List<INode> Nodes = new List<INode> ();
 
-		protected override bool HandleItem (INode n)
+		protected override void HandleItem (INode n)
 		{
 			Nodes.Add (n);
-			return false;
 		}
 
-		protected override bool HandleItems (IEnumerable<INode> nodes)
+		protected override void HandleItems (IEnumerable<INode> nodes)
 		{
 			Nodes.AddRange (nodes);
-			return false;
 		}
 
-		protected override bool HandleItem (PackageSymbol pack)
-		{
-			return false;
-		}
+		protected override void HandleItem (PackageSymbol pack) { }
 	}
 }
 

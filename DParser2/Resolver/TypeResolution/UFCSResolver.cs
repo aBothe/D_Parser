@@ -46,13 +46,14 @@ namespace D_Parser.Resolver.TypeResolution
 			return true;
 		}
 
-		protected override bool HandleItem (INode n)
+		protected override void HandleItem (INode n)
 		{
 			if (ctxt.CancelOperation)
-				return true;
+				return;
 
 			if ((nameFilterHash != 0 && n.NameHash != nameFilterHash) || (!(n is ImportSymbolNode) && !(n.Parent is DModule)))
-				return false;
+				return;
+			
 			DSymbol ds;
 			DVariable dv;
 			var dc = n as DClassLike;
@@ -85,8 +86,6 @@ namespace D_Parser.Resolver.TypeResolution
 					// Perhaps other types may occur here as well - but which remain then to be added?
 				}
 			}
-
-			return false;
 		}
 
 		void HandleMethod(DMethod dm, MemberSymbol alreadyResolvedMethod = null)
@@ -107,10 +106,7 @@ namespace D_Parser.Resolver.TypeResolution
 			}
 		}
 
-		protected override bool HandleItem (PackageSymbol pack)
-		{
-			return false;
-		}
+		protected override void HandleItem (PackageSymbol pack) { }
 
 		public override IEnumerable<INode> PrefilterSubnodes(IBlockNode bn)
 		{

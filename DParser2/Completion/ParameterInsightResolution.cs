@@ -194,13 +194,11 @@ namespace D_Parser.Completion
 				return ct.matches_types.Count != 0;
 			}
 
-			protected override bool HandleItem(INode n)
+			protected override void HandleItem(INode n)
 			{
 				var dm = n as DMethod;
-				var ret = dm != null && !dm.IsStatic && dm.SpecialType == DMethod.MethodType.Constructor && 
+				if(dm != null && !dm.IsStatic && dm.SpecialType == DMethod.MethodType.Constructor)
 					base.HandleItem(n);
-
-				return ret;
 			}
 		}
 

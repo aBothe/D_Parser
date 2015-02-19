@@ -52,17 +52,17 @@ namespace D_Parser.Completion
 			scan.ScanBlock(block, CodeLocation.Empty, vis, publicImports);
 		}
 		
-		protected override bool HandleItem(INode n)
+		protected override void HandleItem(INode n)
 		{
 			switch (n.NameHash)
 			{
 				case -1:
 				case 0:
 				case 1:
-					return false;
+					return;
 				default:
 					if (n.NameHash == D_Parser.Parser.DTokens.IncompleteIdHash)
-						return false;
+						return;
 					break;
 			}
 
@@ -76,13 +76,11 @@ namespace D_Parser.Completion
 				else
 					gen.Add(n);
 			}
-			return false;
 		}
 		
-		protected override bool HandleItem(PackageSymbol pack)
+		protected override void HandleItem(PackageSymbol pack)
 		{
 			gen.AddPackage(pack.Package.Name);
-			return false;
 		}
 	}
 }

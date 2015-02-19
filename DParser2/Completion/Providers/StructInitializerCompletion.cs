@@ -61,18 +61,13 @@ namespace D_Parser.Completion.Providers
 					IterateThroughScopeLayers(CodeLocation.Empty, MemberFilter.All);
 			}
 
-			protected override bool HandleItem(INode n)
+			protected override void HandleItem(INode n)
 			{
 				if (!alreadyTakenNames.Contains(n.NameHash))
 					gen.Add(n);
-
-				return false;
 			}
 
-			protected override bool HandleItem(PackageSymbol pack)
-			{
-				return false;
-			}
+			protected override void HandleItem(PackageSymbol pack) { }
 		}
 	}
 }
