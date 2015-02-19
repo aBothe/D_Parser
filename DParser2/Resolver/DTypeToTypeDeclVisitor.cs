@@ -89,7 +89,7 @@ namespace D_Parser.Resolver
 			var def = t.Definition;
 			ITypeDeclaration td = new IdentifierDeclaration(def != null ? def.NameHash : 0);
 
-			if (def != null && t.DeducedTypes != null && def.TemplateParameters != null)
+			if (def != null && t.HasDeducedTypes && def.TemplateParameters != null)
 			{
 				var args = new List<IExpression>();
 				foreach (var tp in def.TemplateParameters)

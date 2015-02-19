@@ -426,12 +426,27 @@ namespace D_Parser.Resolver
 			get{ return definition.IsAlive; }
 		}
 
-		/// <summary>
-		/// Key: Type name
-		/// Value: Corresponding type
-		/// </summary>
-		public ReadOnlyCollection<TemplateParameterSymbol> DeducedTypes;
+		public ReadOnlyCollection<TemplateParameterSymbol> DeducedTypes {
+			get;
+			private set;
+		}
+		public bool HasDeducedTypes {get{ return DeducedTypes.Count != 0; }}
 
+		public void SetDeducedTypes(IEnumerable<TemplateParameterSymbol> s)
+		{
+			if (s == null) {
+				DeducedTypes = new ReadOnlyCollection<TemplateParameterSymbol>(new List<TemplateParameterSymbol>(0));
+				return;
+			}
+
+			var l = new List<TemplateParameterSymbol> ();
+
+			foreach (var tps in s)
+				if (tps != null)
+					l.Add (tps);
+
+			DeducedTypes = new ReadOnlyCollection<TemplateParameterSymbol> (l);
+		}
 
 		public readonly int NameHash;
 		public string Name {get{return Strings.TryGet (NameHash);}}
@@ -439,9 +454,8 @@ namespace D_Parser.Resolver
 		protected DSymbol(DNode Node, AbstractType BaseType, IEnumerable<TemplateParameterSymbol> deducedTypes, ISyntaxRegion td)
 			: base(BaseType, td)
 		{
-			if(deducedTypes!=null)
-				this.DeducedTypes = new ReadOnlyCollection<TemplateParameterSymbol>(deducedTypes.ToList());
-
+			SetDeducedTypes (deducedTypes);
+			
 			if (Node == null)
 				throw new ArgumentNullException ("Node");
 

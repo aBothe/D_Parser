@@ -223,17 +223,17 @@ namespace D_Parser.Resolver.TypeResolution
 					{
 						r.AddRange(SingleNodeNameScan.SearchChildrenAndResolve(ctxt, udt, nextIdentifierHash, typeIdObject));
 
-						ReadOnlyCollection<TemplateParameterSymbol> dedTypes = null;
+						TemplateParameterSymbol[] dedTypes = null;
 						foreach (var t in r)
 						{
 							var ds = t as DSymbol;
-							if (ds != null && ds.DeducedTypes == null)
+							if (ds != null && !ds.HasDeducedTypes)
 							{
 								if (dedTypes == null)
-									dedTypes = new ReadOnlyCollection<TemplateParameterSymbol>(new List<TemplateParameterSymbol>(ctxt.DeducedTypesInHierarchy));
+									dedTypes = ctxt.DeducedTypesInHierarchy.ToArray();
 
-								if(dedTypes.Count != 0)
-									ds.DeducedTypes = dedTypes;
+								if(dedTypes.Length != 0)
+									ds.SetDeducedTypes(dedTypes);
 							}
 						}
 
@@ -466,8 +466,7 @@ namespace D_Parser.Resolver.TypeResolution
 		{
 			var ds = b as DSymbol;
 			if (ds != null && 
-				ds.DeducedTypes != null && 
-				ds.DeducedTypes.Count != 0 &&
+				ds.HasDeducedTypes &&
 				ds.Definition.TemplateParameters != null)
 			{
 				var remainingTemplateSymbols = new List<TemplateParameterSymbol>(ds.DeducedTypes);
@@ -485,8 +484,7 @@ namespace D_Parser.Resolver.TypeResolution
 					}
 				}
 
-				ds.DeducedTypes = remainingTemplateSymbols.Count > 0 ? 
-					new System.Collections.ObjectModel.ReadOnlyCollection<TemplateParameterSymbol>(remainingTemplateSymbols) : null;
+				ds.SetDeducedTypes(remainingTemplateSymbols);
 			}
 		}
 

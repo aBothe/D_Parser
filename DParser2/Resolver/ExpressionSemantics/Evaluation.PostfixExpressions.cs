@@ -362,7 +362,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 				if (deducedTypeDict.AllParamatersSatisfied)
 				{
-					ms.DeducedTypes = deducedTypeDict.ToReadonly();
+					ms.SetDeducedTypes(deducedTypeDict);
 					var bt = TypeDeclarationResolver.GetMethodReturnType(dm, ctxt) ?? ms.Base;
 
 					if (eval || !returnBaseTypeOnly)

@@ -184,7 +184,7 @@ namespace D_Parser.Resolver.TypeResolution
 						var newDeducedTypes = new DeducedTypeDictionary(ds);
 						foreach (var tps in template.DeducedTypes)
 							newDeducedTypes[tps.Parameter] = tps;
-						ds.DeducedTypes = newDeducedTypes.ToReadonly();
+						ds.SetDeducedTypes(newDeducedTypes);
 					}
 					ch.Tag = template.Tag;
 				}
@@ -279,11 +279,11 @@ namespace D_Parser.Resolver.TypeResolution
 					filteredOverloads.Add(o);
 				else if (DeduceParams(givenTemplateArguments, isMethodCall, ctxt, overload, tplNode, deducedTypes))
 				{
-					overload.DeducedTypes = deducedTypes.ToReadonly(); // Assign calculated types to final result
+					overload.SetDeducedTypes(deducedTypes); // Assign calculated types to final result
 					filteredOverloads.Add(o);
 				}
 				else
-					overload.DeducedTypes = null;
+					overload.SetDeducedTypes(null);
 			}
 			return filteredOverloads;
 		}

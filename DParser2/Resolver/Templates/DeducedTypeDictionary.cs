@@ -6,7 +6,7 @@ using System.Collections.ObjectModel;
 
 namespace D_Parser.Resolver.Templates
 {
-	public class DeducedTypeDictionary : Dictionary<TemplateParameter,TemplateParameterSymbol>	{
+	public class DeducedTypeDictionary : Dictionary<TemplateParameter,TemplateParameterSymbol>, IEnumerable<TemplateParameterSymbol>	{
 
 		public readonly TemplateParameter[] ExpectedParameters;
 
@@ -28,15 +28,9 @@ namespace D_Parser.Resolver.Templates
 
 		public DeducedTypeDictionary(DSymbol ms) : this(ms.ValidSymbol ? ms.Definition.TemplateParameters : null)
 		{
-			if (ms.DeducedTypes != null)
-				foreach (var i in ms.DeducedTypes)
-					if(i != null)
-						this [i.Parameter] = i;
-		}
-
-		public ReadOnlyCollection<TemplateParameterSymbol> ToReadonly()
-		{
-			return new ReadOnlyCollection<TemplateParameterSymbol>(this.Values.ToList());
+			foreach (var i in ms.DeducedTypes)
+				if(i != null && i != ms)
+					this [i.Parameter] = i;
 		}
 
 		public bool AllParamatersSatisfied
@@ -59,6 +53,16 @@ namespace D_Parser.Resolver.Templates
 				sb.Append (kv.Key.Name).Append (": ").Append(kv.Value != null ? kv.Value.ToString() : "-").Append(',');
 
 			return sb.ToString ();
+		}
+
+		IEnumerator<TemplateParameterSymbol> IEnumerable<TemplateParameterSymbol>.GetEnumerator ()
+		{
+			return Values.GetEnumerator();
+		}
+
+		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator ()
+		{
+			return Values.GetEnumerator ();
 		}
 	}
 }

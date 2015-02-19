@@ -402,8 +402,8 @@ namespace D_Parser.Resolver.TypeResolution
 				// The Object class has no further base class;
 				// Normal class instances have the object as base class;
 				// Interfaces must not have any default base class/interface
-				return isClass ? new ClassType(dc, instanceDeclaration, dc.NameHash != ObjectNameHash ? ctxt.ParseCache.ObjectClassResult : null, null, deducedTypes.Count != 0 ? deducedTypes.ToReadonly() : null) :
-					new InterfaceType(dc, instanceDeclaration, null, deducedTypes.Count != 0 ? deducedTypes.ToReadonly() : null) as TemplateIntermediateType;
+				return isClass ? new ClassType(dc, instanceDeclaration, dc.NameHash != ObjectNameHash ? ctxt.ParseCache.ObjectClassResult : null, null, deducedTypes) :
+					new InterfaceType(dc, instanceDeclaration, null, deducedTypes) as TemplateIntermediateType;
 			}
 
 
@@ -490,9 +490,9 @@ namespace D_Parser.Resolver.TypeResolution
 			#endregion
 
 			if (isClass)
-				return new ClassType(dc, instanceDeclaration, baseClass, interfaces.Count == 0 ? null : interfaces.ToArray(), deducedTypes.Count != 0 ? deducedTypes.ToReadonly() : null);
+				return new ClassType(dc, instanceDeclaration, baseClass, interfaces.Count == 0 ? null : interfaces.ToArray(), deducedTypes);
 
-			return new InterfaceType(dc, instanceDeclaration, interfaces.Count == 0 ? null : interfaces.ToArray(), deducedTypes.Count != 0 ? deducedTypes.ToReadonly() : null);
+			return new InterfaceType(dc, instanceDeclaration, interfaces.Count == 0 ? null : interfaces.ToArray(), deducedTypes);
 		}
 
 		/// <summary>

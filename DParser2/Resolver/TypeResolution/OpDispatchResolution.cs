@@ -65,8 +65,7 @@ namespace D_Parser.Resolver.TypeResolution
 					dn.TemplateParameters[0] is TemplateValueParameter)
 				{
 					//TODO: Test parameter types for being a string value
-					o.DeducedTypes = new System.Collections.ObjectModel.ReadOnlyCollection<TemplateParameterSymbol> ( 
-						new[]{ new TemplateParameterSymbol(dn.TemplateParameters[0], av) } );
+					o.SetDeducedTypes(new[]{ new TemplateParameterSymbol(dn.TemplateParameters[0], av) });
 					yield return o;
 				}
 			}

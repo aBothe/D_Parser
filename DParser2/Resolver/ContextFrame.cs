@@ -26,7 +26,7 @@ namespace D_Parser.Resolver
 		
 		public void IntroduceTemplateParameterTypes(DSymbol tir)
 		{
-			if(tir!=null && tir.DeducedTypes != null)
+			if(tir!=null)
 				foreach (var dt in tir.DeducedTypes)
 					if(dt != null)
 						DeducedTemplateParameters[dt.Parameter] = dt;
@@ -34,7 +34,7 @@ namespace D_Parser.Resolver
 
 		public void RemoveParamTypesFromPreferredLocals(DSymbol tir)
 		{
-			if (tir != null && tir.DeducedTypes != null)
+			if (tir != null)
 				foreach (var dt in tir.DeducedTypes)
 					DeducedTemplateParameters.Remove(dt.Parameter);
 		}

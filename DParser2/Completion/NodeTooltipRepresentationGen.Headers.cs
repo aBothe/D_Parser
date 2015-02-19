@@ -56,7 +56,7 @@ namespace D_Parser.Completion.ToolTips
 					return GenTooltipSignature(ds.Base, false, currentMethodParam);
 
 				var aliasedSymbol = ds.Tag as D_Parser.Resolver.TypeResolution.TypeDeclarationResolver.AliasTag;
-				return GenTooltipSignature(aliasedSymbol == null || currentMethodParam >= 0 ? ds.Definition : aliasedSymbol.aliasDefinition, templateParamCompletion, currentMethodParam, DTypeToTypeDeclVisitor.GenerateTypeDecl(ds.Base), ds.DeducedTypes != null ? new DeducedTypeDictionary(ds) : null);
+				return GenTooltipSignature(aliasedSymbol == null || currentMethodParam >= 0 ? ds.Definition : aliasedSymbol.aliasDefinition, templateParamCompletion, currentMethodParam, DTypeToTypeDeclVisitor.GenerateTypeDecl(ds.Base), new DeducedTypeDictionary(ds));
 			}
 
 			if (t is PackageSymbol)
