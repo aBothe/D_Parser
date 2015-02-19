@@ -436,18 +436,6 @@ namespace D_Parser.Resolver
 		public readonly int NameHash;
 		public string Name {get{return Strings.TryGet (NameHash);}}
 
-		protected DSymbol(DNode Node, AbstractType BaseType, ReadOnlyCollection<TemplateParameterSymbol> deducedTypes, ISyntaxRegion td)
-			: base(BaseType, td)
-		{
-			this.DeducedTypes = deducedTypes;
-
-			if (Node == null)
-				throw new ArgumentNullException ("Node");
-
-			this.definition = new WeakReference(Node);
-			NameHash = Node.NameHash;
-		}
-
 		protected DSymbol(DNode Node, AbstractType BaseType, IEnumerable<TemplateParameterSymbol> deducedTypes, ISyntaxRegion td)
 			: base(BaseType, td)
 		{
@@ -465,19 +453,14 @@ namespace D_Parser.Resolver
 	#region User-defined types
 	public abstract class UserDefinedType : DSymbol
 	{
-		protected UserDefinedType(DNode Node, AbstractType baseType, ReadOnlyCollection<TemplateParameterSymbol> deducedTypes, ISyntaxRegion td) : base(Node, baseType, deducedTypes, td) { }
+		protected UserDefinedType(DNode Node, AbstractType baseType, IEnumerable<TemplateParameterSymbol> deducedTypes, ISyntaxRegion td) : base(Node, baseType, deducedTypes, td) { }
 	}
 
 	public class AliasedType : MemberSymbol
 	{
 		public new DVariable Definition { get { return base.Definition as DVariable; } }
 
-		public AliasedType(DVariable AliasDefinition, AbstractType Type, ISyntaxRegion td, ReadOnlyCollection<TemplateParameterSymbol> deducedTypes=null)
-			: base(AliasDefinition,Type, td, deducedTypes) {
-				if (Type != null)
-					Type.NonStaticAccess = false;
-		}
-		public AliasedType(DVariable AliasDefinition, AbstractType Type, ISyntaxRegion td, IEnumerable<TemplateParameterSymbol> deducedTypes)
+		public AliasedType(DVariable AliasDefinition, AbstractType Type, ISyntaxRegion td, IEnumerable<TemplateParameterSymbol> deducedTypes = null)
 			: base(AliasDefinition, Type, td, deducedTypes) {
 				if (Type != null)
 					Type.NonStaticAccess = false;
@@ -590,12 +573,6 @@ namespace D_Parser.Resolver
 	public class ClassType : TemplateIntermediateType
 	{
 		public ClassType(DClassLike dc, ISyntaxRegion td, 
-			TemplateIntermediateType baseType, InterfaceType[] baseInterfaces,
-			ReadOnlyCollection<TemplateParameterSymbol> deducedTypes)
-			: base(dc, td, baseType, baseInterfaces, deducedTypes)
-		{}
-
-		public ClassType(DClassLike dc, ISyntaxRegion td, 
 			TemplateIntermediateType baseType, InterfaceType[] baseInterfaces = null,
 			IEnumerable<TemplateParameterSymbol> deducedTypes = null)
 			: base(dc, td, baseType, baseInterfaces, deducedTypes)
@@ -628,12 +605,7 @@ namespace D_Parser.Resolver
 			InterfaceType[] baseInterfaces=null,
 			IEnumerable<TemplateParameterSymbol> deducedTypes = null) 
 			: base(dc, td, null, baseInterfaces, deducedTypes) {}
-
-		public InterfaceType(DClassLike dc, ISyntaxRegion td,
-			InterfaceType[] baseInterfaces,
-			ReadOnlyCollection<TemplateParameterSymbol> deducedTypes)
-			: base(dc, td, null, baseInterfaces, deducedTypes) { }
-
+		
 		public override AbstractType Clone(bool cloneBase)
 		{
 			return new InterfaceType(Definition, DeclarationOrExpressionBase, BaseInterfaces, DeducedTypes);
@@ -672,7 +644,6 @@ namespace D_Parser.Resolver
 		}
 
 		public TemplateType(DClassLike dc, ISyntaxRegion td, IEnumerable<TemplateParameterSymbol> inheritedTypeParams = null) : base(dc, td, null, null, inheritedTypeParams) { }
-		public TemplateType(DClassLike dc, ISyntaxRegion td, ReadOnlyCollection<TemplateParameterSymbol> inheritedTypeParams = null) : base(dc, td, null, null, inheritedTypeParams) { }
 
 		public override AbstractType Clone(bool cloneBase)
 		{
@@ -693,7 +664,6 @@ namespace D_Parser.Resolver
 	public class MixinTemplateType : TemplateType
 	{
 		public MixinTemplateType(DClassLike dc, ISyntaxRegion td, IEnumerable<TemplateParameterSymbol> inheritedTypeParams = null) : base(dc, td, inheritedTypeParams) { }
-		public MixinTemplateType(DClassLike dc, ISyntaxRegion td, ReadOnlyCollection<TemplateParameterSymbol> inheritedTypeParams = null) : base(dc, td, inheritedTypeParams) { }
 
 		public override AbstractType Clone(bool cloneBase)
 		{
@@ -718,19 +688,12 @@ namespace D_Parser.Resolver
 		public readonly InterfaceType[] BaseInterfaces;
 
 		public TemplateIntermediateType(DClassLike dc, ISyntaxRegion td, 
-			AbstractType baseType = null, InterfaceType[] baseInterfaces = null,
-			ReadOnlyCollection<TemplateParameterSymbol> deducedTypes = null)
+			AbstractType baseType, InterfaceType[] baseInterfaces,
+			IEnumerable<TemplateParameterSymbol> deducedTypes)
 			: base(dc, baseType, deducedTypes, td)
 		{
 			this.BaseInterfaces = baseInterfaces;
 		}
-
-		public TemplateIntermediateType(DClassLike dc, ISyntaxRegion td, 
-			AbstractType baseType, InterfaceType[] baseInterfaces,
-			IEnumerable<TemplateParameterSymbol> deducedTypes)
-			: this(dc,td, baseType,baseInterfaces,
-			deducedTypes != null ? new ReadOnlyCollection<TemplateParameterSymbol>(new List<TemplateParameterSymbol>(deducedTypes)) : null)
-		{ }
 	}
 
 	public class EponymousTemplateType : UserDefinedType
@@ -738,7 +701,7 @@ namespace D_Parser.Resolver
 		public new EponymousTemplate Definition { get { return base.Definition as EponymousTemplate; } }
 
 		public EponymousTemplateType(EponymousTemplate ep,
-			ReadOnlyCollection<TemplateParameterSymbol> deducedTypes = null, ISyntaxRegion td = null) : base(ep, null, deducedTypes, td) { }
+			IEnumerable<TemplateParameterSymbol> deducedTypes = null, ISyntaxRegion td = null) : base(ep, null, deducedTypes, td) { }
 
 		public override string ToString ()
 		{
@@ -793,15 +756,8 @@ namespace D_Parser.Resolver
 
 	public class MemberSymbol : DSymbol
 	{
-		public MemberSymbol(DNode member, AbstractType memberType, ISyntaxRegion td,
-			ReadOnlyCollection<TemplateParameterSymbol> deducedTypes = null)
-			: base(member, memberType, deducedTypes, td) {
-				if (memberType != null)
-					memberType.NonStaticAccess = true;
-		}
-
-		public MemberSymbol(DNode member, AbstractType memberType, ISyntaxRegion td,
-			IEnumerable<TemplateParameterSymbol> deducedTypes)
+		public MemberSymbol(DNode member, AbstractType memberType, ISyntaxRegion td = null,
+			IEnumerable<TemplateParameterSymbol> deducedTypes = null)
 			: base(member, memberType, deducedTypes, td) {
 				if (memberType != null)
 					memberType.NonStaticAccess = true;
