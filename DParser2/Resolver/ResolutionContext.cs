@@ -41,12 +41,13 @@ namespace D_Parser.Resolver
 		}
 		public ResolutionOptions ContextIndependentOptions = ResolutionOptions.Default;
 		public readonly List<ResolutionError> ResolutionErrors = new List<ResolutionError>();
-		public bool CancelOperation;
+
+		public CancellationToken CancellationToken { get; set; }
 
 		public ResolutionOptions Options
 		{
 			[DebuggerStepThrough]
-			get { return ContextIndependentOptions | (CurrentContext != null ? CurrentContext.ContextDependentOptions : 0) | (CancelOperation ? (ResolutionOptions.DontResolveBaseTypes | ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.NoTemplateParameterDeduction | ResolutionOptions.DontResolveAliases | ResolutionOptions.IgnoreDeclarationConditions) : 0); }
+			get { return ContextIndependentOptions | (CurrentContext != null ? CurrentContext.ContextDependentOptions : 0) | (CancellationToken.IsCancellationRequested ? (ResolutionOptions.DontResolveBaseTypes | ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.NoTemplateParameterDeduction | ResolutionOptions.DontResolveAliases | ResolutionOptions.IgnoreDeclarationConditions) : 0); }
 		}
 
 		internal readonly ResolutionCache<MixinAnalysis.MixinCacheItem> MixinCache;
@@ -309,7 +310,6 @@ namespace D_Parser.Resolver
 		{
 			ResolutionErrors.Add(err);
 			if (ResolutionErrors.Count > maxErrorCount && CompletionOptions.Instance.LimitResolutionErrors) {
-				CancelOperation = true;
 #if DEBUG
 				throw new TooManyResolutionErrors (ResolutionErrors.ToArray ());
 #endif
@@ -320,7 +320,6 @@ namespace D_Parser.Resolver
 		{
 			ResolutionErrors.Add(new ResolutionError(syntaxObj,msg));
 			if (ResolutionErrors.Count > maxErrorCount && CompletionOptions.Instance.LimitResolutionErrors) {
-				CancelOperation = true;
 #if DEBUG
 				throw new TooManyResolutionErrors (ResolutionErrors.ToArray ());
 #endif

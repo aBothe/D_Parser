@@ -204,7 +204,7 @@ namespace D_Parser.Refactoring
 		protected override void OnScopedBlockChanged (IBlockNode bn)
 		{
 			Dictionary<int,byte> dd = null;
-			if (ctxt.CancelOperation)
+			if (ctxt.CancellationToken.IsCancellationRequested)
 				return;
 			foreach (var n in ItemEnumeration.EnumScopedBlockChildren(ctxt, MemberFilter.Types | MemberFilter.Enums | MemberFilter.TypeParameters | MemberFilter.Variables))
 			{

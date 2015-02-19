@@ -33,7 +33,7 @@ namespace D_Parser.Resolver
 			
 			public bool IsMatching(DeclarationCondition dc, ResolutionContext ctxt)
 			{
-				if (ctxt.CancelOperation)
+				if (ctxt.CancellationToken.IsCancellationRequested)
 					return true;
 				var r = true;
 

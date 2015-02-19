@@ -55,7 +55,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// </summary>
 		public static ISymbolValue EvaluateValue (IExpression x, ResolutionContext ctxt, bool lazyVariableValueEvaluation = false)
 		{
-			if (ctxt.CancelOperation)
+			if (ctxt.CancellationToken.IsCancellationRequested)
 				return new TypeValue(new UnknownType(x));
 
 			var vp = new StandardValueProvider (ctxt);
@@ -77,7 +77,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			ISymbolValue v;
 			if (vp.ResolutionContext != null)
 			{
-				if(vp.ResolutionContext.CancelOperation)
+				if(vp.ResolutionContext.CancellationToken.IsCancellationRequested)
 					return new TypeValue(new UnknownType(x));
 				/*
 				if (vp is StandardValueProvider) // only for read-only/immutable expression value states
@@ -103,7 +103,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		
 		public static ISymbolValue EvaluateValue(VariableValue v, AbstractSymbolValueProvider vp)
 		{
-			if (vp.ResolutionContext != null && vp.ResolutionContext.CancelOperation)
+			if (vp.ResolutionContext != null && vp.ResolutionContext.CancellationToken.IsCancellationRequested)
 				return v;
 
 			if(v.RepresentedType is TemplateParameterSymbol)

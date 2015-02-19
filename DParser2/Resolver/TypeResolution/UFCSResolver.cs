@@ -48,7 +48,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 		protected override void HandleItem (INode n)
 		{
-			if (ctxt.CancelOperation)
+			if (ctxt.CancellationToken.IsCancellationRequested)
 				return;
 
 			if ((nameFilterHash != 0 && n.NameHash != nameFilterHash) || (!(n is ImportSymbolNode) && !(n.Parent is DModule)))

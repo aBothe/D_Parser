@@ -57,7 +57,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (x == null)
 				return null;
 
-			if (ctxt.CancelOperation)
+			if (ctxt.CancellationToken.IsCancellationRequested)
 				return new UnknownType(x);
 
 			long cacheHashBias = tryReturnMethodReturnType ? 31 : 0;

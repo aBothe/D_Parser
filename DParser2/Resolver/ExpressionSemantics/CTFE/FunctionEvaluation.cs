@@ -86,7 +86,7 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 
 		public static ISymbolValue Execute(MemberSymbol method, Dictionary<DVariable, ISymbolValue> arguments, AbstractSymbolValueProvider vp)
 		{
-			if (vp.ResolutionContext.CancelOperation)
+			if (vp.ResolutionContext.CancellationToken.IsCancellationRequested)
 				return null;
 
 			var dm = method.Definition as DMethod;
@@ -146,7 +146,7 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 		{
 			foreach (var stmt in blockStatement)
 			{
-				if (returnedValue != null || vp.ResolutionContext.CancelOperation)
+				if (returnedValue != null || vp.ResolutionContext.CancellationToken.IsCancellationRequested)
 					break;
 				stmt.Accept(this);
 			}

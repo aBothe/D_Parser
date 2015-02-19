@@ -9,6 +9,7 @@ using D_Parser.Misc;
 using D_Parser.Parser;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
+using System.Threading.Tasks;
 
 namespace D_Parser.Resolver.ASTScanner
 {
@@ -142,7 +143,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				ScanBlock (curScope, Caret, VisibleMembers);
 
 				curScope = curScope.Parent as IBlockNode;
-			} while (!StopEnumerationOnNextScope && curScope != null && !ctxt.CancelOperation);
+			} while (!StopEnumerationOnNextScope && curScope != null && !ctxt.CancellationToken.IsCancellationRequested);
 		}
 
 		protected void ScanBlock(IBlockNode curScope, CodeLocation Caret, MemberFilter VisibleMembers, bool publicImportsOnly = false)
@@ -313,7 +314,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			if (ch != null)
 				foreach (var n in ch)
 				{
-					if (ctxt.CancelOperation)
+					if (ctxt.CancellationToken.IsCancellationRequested)
 						return;
 
 					if (IsAnonEnumOrClass(n) ||
@@ -575,7 +576,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 						if (s == null)
 							continue;
 
-						if ((!caretInsensitive && s.Location >= Caret) || ctxt.CancelOperation)
+						if ((!caretInsensitive && s.Location >= Caret) || ctxt.CancellationToken.IsCancellationRequested)
 							break;
 
 						if (s.Accept(this))
@@ -1029,7 +1030,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		void HandleAliasThisDeclarations(TemplateIntermediateType tit, MemberFilter vis)
 		{
 			var ch = tit.Definition [DVariable.AliasThisIdentifierHash];
-			if (ch == null || ctxt.CancelOperation)
+			if (ch == null || ctxt.CancellationToken.IsCancellationRequested)
 				return;
 
 			var aliasDef = ch.FirstOrDefault() as DVariable; // Only allow one alias this to be resolved ever!

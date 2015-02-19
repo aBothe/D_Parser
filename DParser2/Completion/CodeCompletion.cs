@@ -149,9 +149,8 @@ namespace D_Parser.Completion
 			if (token.IsCancellationRequested)
 				return;
 
-			ctxt.CancelOperation = false;
-			token.Register(() => { 
-				ctxt.CancelOperation = true; 
+			ctxt.CancellationToken = token;
+			token.Register(() => {
 				if (cdgen != null)
 					cdgen.NotifyTimeout(); 
 			});
@@ -165,7 +164,8 @@ namespace D_Parser.Completion
 		/// <param name="timeout">if int.MinValue, this value will be made the default CompletionTimeout.</param>
 		public static void DoTimeoutableCompletionTask(ICompletionDataGenerator cdgen,ResolutionContext ctxt, Action ac, int timeout = int.MinValue)
 		{
-			ctxt.CancelOperation = false;
+			var cts = new CancellationTokenSource ();
+			ctxt.CancellationToken = cts.Token;
 
 			if (timeout == int.MinValue)
 				timeout = CompletionOptions.Instance.CompletionTimeout;
@@ -180,7 +180,7 @@ namespace D_Parser.Completion
 
 			if (!task.Wait(timeout))
 			{
-				ctxt.CancelOperation = true;
+				cts.Cancel ();
 				if(cdgen != null)
 					cdgen.NotifyTimeout();
 				task.Wait();
