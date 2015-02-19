@@ -1150,7 +1150,7 @@ namespace D_Parser.Dom.Visitors
 		public long VisitTemplateParameterSymbol(TemplateParameterSymbol tps)
 		{
 			const long prime = 1001941;
-			var h = VisitMemberSymbol (tps);
+			var h = VisitMemberSymbol (tps, prime);
 
 			Hash (ref h, prime, tps.Parameter);
 			Hash (ref h, prime, tps.ParameterValue);
