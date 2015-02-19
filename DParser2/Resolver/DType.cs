@@ -442,7 +442,7 @@ namespace D_Parser.Resolver
 			var l = new List<TemplateParameterSymbol> ();
 
 			foreach (var tps in s)
-				if (tps != null)
+				if (tps != null && tps != this && tps.Base != this)
 					l.Add (tps);
 
 			DeducedTypes = new ReadOnlyCollection<TemplateParameterSymbol> (l);
