@@ -81,7 +81,7 @@ namespace D_Parser.Resolver.ASTScanner
 		{
             if (n != null && n.NameHash == filterHash)
             {
-				var res = TypeDeclarationResolver.HandleNodeMatch(n, ctxt, TemporaryResolvedNodeParent, idObject);
+				var res = TypeDeclarationResolver.HandleNodeMatch(n, ctxt, TemporaryResolvedNodeParent.Value, idObject);
 				if(res != null)
             		matches_types.Add(res);
 				stopEnumeration = true;

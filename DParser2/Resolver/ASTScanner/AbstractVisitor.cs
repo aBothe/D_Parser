@@ -16,16 +16,11 @@ namespace D_Parser.Resolver.ASTScanner
 	public abstract class AbstractVisitor
 	{
 		#region Properties
-		public static DVariable __ctfe;
+		public static readonly DVariable __ctfe;
 		Dictionary<string, List<string>> scannedModules = new Dictionary<string, List<string>>();
-		WeakReference tempResolvedNodeParent = new WeakReference(null);
-		protected DSymbol TemporaryResolvedNodeParent
-		{
-			get { return tempResolvedNodeParent.Target as DSymbol; }
-			set { tempResolvedNodeParent.Target = value; }
-		}
+		protected ThreadLocal<DSymbol> TemporaryResolvedNodeParent = new ThreadLocal<DSymbol>();
 
-		static ImportStatement.Import _objectImport = new ImportStatement.Import
+		static readonly ImportStatement.Import _objectImport = new ImportStatement.Import
 		{
 			ModuleIdentifier = new IdentifierDeclaration("object")
 		};
@@ -308,7 +303,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		                            bool scopeIsInInheritanceHierarchy =false, 
 									DSymbol resolvedCurScope = null)
 		{
-			TemporaryResolvedNodeParent = resolvedCurScope;
+			TemporaryResolvedNodeParent.Value = resolvedCurScope;
 
 			var ch = PrefilterSubnodes(curScope);
 			if (ch != null)
@@ -624,13 +619,14 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 				var moduleName = imp.ModuleIdentifier.ToString();
 
-				List<string> seenModules = null;
-
-				if (!v.scannedModules.TryGetValue(thisModuleName, out seenModules))
-					seenModules = v.scannedModules[thisModuleName] = new List<string>();
-				else if (seenModules.Contains(moduleName))
-					return false;
-				seenModules.Add(moduleName);
+				List<string> seenModules;
+				lock (v.scannedModules) {
+					if (!v.scannedModules.TryGetValue (thisModuleName, out seenModules))
+						seenModules = v.scannedModules [thisModuleName] = new List<string> ();
+					else if (seenModules.Contains (moduleName))
+						return false;
+					seenModules.Add (moduleName);
+				}
 
 				var scAst = ctxt.ScopedBlock == null ? null : ctxt.ScopedBlock.NodeRoot as DModule;
 				if (ctxt.ParseCache != null)
