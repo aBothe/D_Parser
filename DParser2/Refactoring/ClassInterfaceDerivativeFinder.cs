@@ -70,7 +70,6 @@ namespace D_Parser.Refactoring
 			return f.results; // return them.
 		}
 
-		protected override bool HandleItem (INode n)
 		protected override void HandleItem (INode n)
 		{
 			// Find all class+interface definitions

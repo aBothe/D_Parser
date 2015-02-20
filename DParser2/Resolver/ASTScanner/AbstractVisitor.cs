@@ -10,6 +10,7 @@ using D_Parser.Parser;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace D_Parser.Resolver.ASTScanner
 {
@@ -28,6 +29,7 @@ namespace D_Parser.Resolver.ASTScanner
 		protected readonly ResolutionContext ctxt;
 
 		Stack<ConditionsFrame> ConditionsStack;// = new Stack<ConditionsFrame>();
+		protected virtual bool StopEnumerationOnNextScope {get{ return false; }}
 		#endregion
 
 		#region Constructor
