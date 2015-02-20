@@ -38,7 +38,7 @@ namespace D_Parser.Resolver.ASTScanner
 		{
 			var en = new ItemEnumeration (ctxt);
 
-			en.ScanBlock(ctxt.ScopedBlock, ctxt.ScopedBlock.EndLocation, VisibleMembers);
+			en.ScanBlock(ctxt.ScopedBlock, ctxt.ScopedBlock.EndLocation, new ItemCheckParameters(VisibleMembers));
 
 			return en.Nodes;
 		}
@@ -47,7 +47,7 @@ namespace D_Parser.Resolver.ASTScanner
 		{
 			var en = new ItemEnumeration(ctxt);
 
-			en.DeepScanClass(ds, VisibleMembers);
+			en.DeepScanClass(ds, new ItemCheckParameters(VisibleMembers));
 
 			return en.Nodes;
 		}
@@ -58,13 +58,6 @@ namespace D_Parser.Resolver.ASTScanner
 		{
 			Nodes.Add (n);
 		}
-
-		protected override void HandleItems (IEnumerable<INode> nodes)
-		{
-			Nodes.AddRange (nodes);
-		}
-
-		protected override void HandleItem (PackageSymbol pack) { }
 	}
 }
 

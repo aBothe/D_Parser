@@ -173,7 +173,7 @@ namespace D_Parser.Completion
 			{
 				explicitCtorFound = false;
 				var ct = new CtorScan(sr, new ResolutionContext(new Misc.ParseCacheView(new RootPackage[] {}), null, scope));
-				ct.DeepScanClass(udt, MemberFilter.Methods, false);
+				ct.DeepScanClass(udt, new ItemCheckParameters(MemberFilter.Methods), false);
 
 				_ctors.AddRange(ct.matches_types);
 
@@ -194,11 +194,10 @@ namespace D_Parser.Completion
 				return ct.matches_types.Count != 0;
 			}
 
-			protected override void HandleItem(INode n)
+			protected override bool PreCheckItem (INode n)
 			{
 				var dm = n as DMethod;
-				if(dm != null && !dm.IsStatic && dm.SpecialType == DMethod.MethodType.Constructor)
-					base.HandleItem(n);
+				return dm != null && !dm.IsStatic && dm.SpecialType == DMethod.MethodType.Constructor && base.PreCheckItem(n);
 			}
 		}
 

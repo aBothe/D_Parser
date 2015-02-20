@@ -49,6 +49,7 @@ namespace D_Parser.Completion.Providers
 		{
 			readonly List<int> alreadyTakenNames;
 			readonly ICompletionDataGenerator gen;
+
 			public StructVis(TemplateIntermediateType structType,List<int> tkn,ICompletionDataGenerator gen,ResolutionContext ctxt)
 				: base(ctxt)
 			{
@@ -56,18 +57,20 @@ namespace D_Parser.Completion.Providers
 				this.gen = gen;
 
 				if (CompletionOptions.Instance.ShowStructMembersInStructInitOnly)
-					this.DeepScanClass(structType, MemberFilter.Variables, false);
+					this.DeepScanClass(structType, new ItemCheckParameters(MemberFilter.Variables), false);
 				else
 					IterateThroughScopeLayers(CodeLocation.Empty, MemberFilter.All);
 			}
 
-			protected override void HandleItem(INode n)
+			protected override bool PreCheckItem (INode n)
 			{
-				if (!alreadyTakenNames.Contains(n.NameHash))
-					gen.Add(n);
+				return !alreadyTakenNames.Contains (n.NameHash);
 			}
 
-			protected override void HandleItem(PackageSymbol pack) { }
+			protected override void HandleItem(INode n)
+			{
+				gen.Add(n);
+			}
 		}
 	}
 }

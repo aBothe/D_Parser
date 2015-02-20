@@ -70,14 +70,16 @@ namespace D_Parser.Refactoring
 			return f.results; // return them.
 		}
 
-		protected override void HandleItem (INode n)
+		protected override bool PreCheckItem (INode n)
 		{
 			// Find all class+interface definitions
 			var dc = n as DClassLike;
-			if (dc == null || 
-				dc.BaseClasses == null || dc.BaseClasses.Count < 0 || 
-				alreadyResolvedClasses.Contains(dc))
-				return;
+			return !(dc == null || dc.BaseClasses == null || dc.BaseClasses.Count == 0 || alreadyResolvedClasses.Contains (dc));
+		}
+
+		protected override void HandleItem (INode n)
+		{
+			var dc = n as DClassLike;
 				
 			// resolve immediate base classes/interfaces; Rely on dc being either a class or an interface, nothing else.
 			var t = DResolver.ResolveClassOrInterface (dc,ctxt, null);
@@ -115,8 +117,6 @@ namespace D_Parser.Refactoring
 				}
 			}
 		}
-
-		protected override void HandleItem (PackageSymbol pack) { }
 	}
 }
 

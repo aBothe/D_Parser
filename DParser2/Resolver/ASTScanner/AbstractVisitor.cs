@@ -19,7 +19,6 @@ namespace D_Parser.Resolver.ASTScanner
 		#region Properties
 		public static readonly DVariable __ctfe;
 		Dictionary<string, List<string>> scannedModules = new Dictionary<string, List<string>>();
-		protected ThreadLocal<DSymbol> TemporaryResolvedNodeParent = new ThreadLocal<DSymbol>();
 
 		static readonly ImportStatement.Import _objectImport = new ImportStatement.Import
 		{
@@ -72,33 +71,50 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			return mods.Length != 0 ? mods : null;
 		}
 
+		protected virtual void HandleItem (INode n) { }
+
 		/// <summary>
 		/// Return true if search shall stop(!), false if search shall go on
 		/// </summary>
-		protected abstract void HandleItem(INode n);
+		protected virtual void HandleItem(INode n, ItemCheckParameters parms) { HandleItem(n); }
 		
-		protected abstract void HandleItem(PackageSymbol pack);
+		protected virtual void HandleItem(PackageSymbol pack) { }
 
-		protected virtual void HandleItems(IEnumerable<INode> nodes)
+		void HandleItems(IEnumerable<INode> nodes, ItemCheckParameters parms)
 		{
 			foreach (var n in nodes)
-				HandleItem (n);
+				HandleItemInternal (n, parms);
+		}
+
+		protected virtual bool PreCheckItem(INode n) { return true; }
+
+		void HandleItemInternal(INode n, ItemCheckParameters parms)
+		{
+			if (n == null || !PreCheckItem (n))
+				return;
+
+			if (!CanHandleNode (n as DNode, parms))
+				return;
+
+			HandleItem (n, parms);
 		}
 
 		public virtual void IterateThroughScopeLayers(CodeLocation Caret, MemberFilter VisibleMembers = MemberFilter.All)
 		{
+			var parms = new ItemCheckParameters(VisibleMembers);
+
 			var scopedBlock = DResolver.SearchBlockAt (ctxt.ScopedBlock, Caret);
 
 			var dm = scopedBlock as DMethod;
 			IStatement stmt;
 			if (dm != null && (stmt = dm.GetSubBlockAt(Caret)) != null &&
-				ScanStatementHierarchy(stmt, Caret, VisibleMembers))
+				ScanStatementHierarchy(stmt, Caret, parms))
 			{
 				return;
 			}
 
 			if (ctxt.ScopedBlock != null) {
-				ScanBlockUpward (ctxt.ScopedBlock, Caret, VisibleMembers);
+				ScanBlockUpward (ctxt.ScopedBlock, Caret, parms);
 				if(StopEnumerationOnNextScope)
 					return;
 			}
@@ -124,34 +140,33 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					
 					if(mods != null)
 					{
-						HandleItems(mods);
+						HandleItems(mods, parms);
 					}
 				}
 
 			// On the root level, handle __ctfe variable
-			if (CanAddMemberOfType (VisibleMembers, __ctfe))
-				HandleItem (__ctfe);
+			HandleItemInternal (__ctfe, parms);
 		}
 		
-		void ScanBlockUpward(IBlockNode curScope, CodeLocation Caret, MemberFilter VisibleMembers)
+		void ScanBlockUpward(IBlockNode curScope, CodeLocation Caret, ItemCheckParameters parms)
 		{
 			// 2)
 			do {
-				ScanBlock (curScope, Caret, VisibleMembers);
+				ScanBlock (curScope, Caret, parms);
 
 				curScope = curScope.Parent as IBlockNode;
 			} while (!StopEnumerationOnNextScope && curScope != null && !ctxt.CancellationToken.IsCancellationRequested);
 		}
 
-		protected void ScanBlock(IBlockNode curScope, CodeLocation Caret, MemberFilter VisibleMembers, bool publicImportsOnly = false)
+		protected void ScanBlock(IBlockNode curScope, CodeLocation Caret, ItemCheckParameters parms)
 		{
-			SearchAttributesForIsExprDecls (curScope, Caret, VisibleMembers);
+			SearchAttributesForIsExprDecls (curScope, Caret, parms);
 			if(StopEnumerationOnNextScope)
 				return;
 
 			if (curScope is DClassLike)
 			{
-				DeepScanClass(new ClassType(curScope as DClassLike, null,null), VisibleMembers);
+				DeepScanClass(new ClassType(curScope as DClassLike, null,null), parms);
 			}
 			else if (curScope is DMethod)
 			{
@@ -159,7 +174,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 				// Add 'out' variable if typing in the out test block currently
 				if (dm.OutResultVariable != null && dm.Out != null && dm.GetSubBlockAt(Caret) == dm.Out)
-					HandleItem(new DVariable
+					HandleItemInternal(new DVariable
 					{ // Create pseudo variable
 						NameHash = dm.OutResultVariable.IdHash,
 						NameLocation = dm.OutResultVariable.Location,
@@ -167,19 +182,16 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 						Parent = dm,
 						Location = dm.OutResultVariable.Location,
 						EndLocation = dm.OutResultVariable.EndLocation
-					});
+					}, parms);
 
-				if ((VisibleMembers & MemberFilter.Variables) == MemberFilter.Variables)
-					HandleItems(dm.Parameters);
+				HandleItems(dm.Parameters, parms);
 
 				if (dm.TemplateParameters != null)
-					HandleItems(dm.TemplateParameterNodes as IEnumerable<DNode>);
+					HandleItems(dm.TemplateParameterNodes, parms);
 
 				// The method's declaration children are handled above already via BlockStatement.GetItemHierarchy().
 				// except AdditionalChildren:
-				foreach (var ch in dm.Children)
-					if (CanAddMemberOfType(VisibleMembers, ch))
-						HandleItem(ch);
+				HandleItems(dm.Children, parms);
 
 				// If the method is a nested method,
 				// this method won't be 'linked' to the parent statement tree directly - 
@@ -190,20 +202,19 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 					// Search for the deepest statement scope and add all declarations done in the entire hierarchy
 					if (nestedBlock != null)
-						ScanStatementHierarchy(nestedBlock, Caret, VisibleMembers);
+						ScanStatementHierarchy(nestedBlock, Caret, parms);
 				}
 			}
 			else
-				scanChildren(curScope as DBlockNode, VisibleMembers, publicImportsOnly);
+				scanChildren(curScope as DBlockNode, new ItemCheckParameters(parms));
 		}
 		
-		protected void DeepScanClass(UserDefinedType udt, MemberFilter vis, bool resolveBaseClassIfRequired = true)
+		protected void DeepScanClass(UserDefinedType udt, ItemCheckParameters parms, bool resolveBaseClassIfRequired = true)
 		{
-			bool isBase = false;
-			bool scopeIsInInheritanceHierarchy = udt != null && ctxt.ScopedBlockIsInNodeHierarchy(udt.Definition);
-			bool takeStaticChildrenOnly = 
-				(udt == null || !udt.NonStaticAccess) && 
-				ctxt.ScopedBlock is DMethod && (ctxt.ScopedBlock as DMethod).IsStatic;
+			parms = new ItemCheckParameters (parms) {
+				scopeIsInInheritanceHierarchy = udt != null && ctxt.ScopedBlockIsInNodeHierarchy(udt.Definition),
+				takeStaticChildrenOnly = (udt == null || !udt.NonStaticAccess) && ctxt.ScopedBlock is DMethod && (ctxt.ScopedBlock as DMethod).IsStatic
+			};
 			
 			// Check if the scoped node's parent is the current class
 			/*if(takeStaticChildrenOnly)
@@ -225,7 +236,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 			while(udt!= null)
 			{
-				scanChildren (udt.Definition as DBlockNode, vis, false, isBase, false, takeStaticChildrenOnly, scopeIsInInheritanceHierarchy, udt);
+				parms.resolvedCurScope = udt;
+
+				scanChildren (udt.Definition as DBlockNode, parms);
 				if (StopEnumerationOnNextScope)
 					return;
 
@@ -234,7 +247,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					var type = tit.Definition.ClassType;
 
 					if (type == DTokens.Struct || type == DTokens.Class || type == DTokens.Template) {
-						HandleAliasThisDeclarations (tit, vis);
+						HandleAliasThisDeclarations (tit, parms);
 						if(StopEnumerationOnNextScope)
 							return;
 					}
@@ -253,18 +266,22 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					if(udt != null)
 						udt = udt.Base as UserDefinedType;
 
-					isBase = true;
+					parms.isBaseClass = true;
 				}
 				else
 					break;
 			}
 
-			if (interfaces != null)
+			if (interfaces != null) {
+				parms.isBaseClass = true;
+
 				foreach (var I in interfaces) {
-					scanChildren (I.Definition, vis, false, true, false, takeStaticChildrenOnly, scopeIsInInheritanceHierarchy);
-					if(StopEnumerationOnNextScope)
+					parms.resolvedCurScope = I;
+					scanChildren (I.Definition, parms);
+					if (StopEnumerationOnNextScope)
 						return;
 				}
+			}
 		}
 
 		static void EnlistInterfaceHierarchy(List<TemplateIntermediateType> l, InterfaceType t)
@@ -280,45 +297,64 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					EnlistInterfaceHierarchy(l, nested);
 		}
 
-		/// <summary>
-		/// Temporary flag that is used for telling scanChildren() not to handle template parameters.
-		/// Used to prevent the insertion of a template mixin's parameter set into the completion list etc.
-		/// </summary>
-		bool dontHandleTemplateParamsInNodeScan = false;
-
 		static bool IsAnonEnumOrClass(INode n)
 		{
 			return (n is DEnum || n is DClassLike) && (n as DNode).IsAnonymous;
 		}
 
-		public virtual bool SupportsParallelHandling
+		protected struct ItemCheckParameters
 		{
-			get{ return false; }
+			public ItemCheckParameters(ItemCheckParameters essentialThingsToCopy)
+			{
+				VisibleMembers = essentialThingsToCopy.VisibleMembers;
+				resolvedCurScope = essentialThingsToCopy.resolvedCurScope;
+				dontHandleTemplateParamsInNodeScan = essentialThingsToCopy.dontHandleTemplateParamsInNodeScan;
+
+				publicImportsOnly = false;
+				isBaseClass = false;
+				isMixinAst = false;
+				takeStaticChildrenOnly = false;
+				scopeIsInInheritanceHierarchy = false;
+			}
+
+			public ItemCheckParameters(MemberFilter vis) { 
+				VisibleMembers = vis;
+				publicImportsOnly = false;
+				isBaseClass = false;
+				isMixinAst = false;
+				takeStaticChildrenOnly = false;
+				scopeIsInInheritanceHierarchy = false;
+				resolvedCurScope = null;
+				dontHandleTemplateParamsInNodeScan = false;
+			}
+
+			public MemberFilter VisibleMembers;
+			public bool publicImportsOnly;
+			public bool isBaseClass;
+			public bool isMixinAst;
+			public bool takeStaticChildrenOnly;
+			public bool scopeIsInInheritanceHierarchy; 
+			public DSymbol resolvedCurScope;
+
+			/// <summary>
+			/// Temporary flag that is used for telling scanChildren() not to handle template parameters.
+			/// Used to prevent the insertion of a template mixin's parameter set into the completion list etc.
+			/// </summary>
+			public bool dontHandleTemplateParamsInNodeScan;
 		}
 
-		void scanChildren(DBlockNode curScope, 
-									MemberFilter VisibleMembers,
-									bool publicImports = false,
-									bool isBaseClass = false,
-									bool isMixinAst = false,
-									bool takeStaticChildrenOnly = false,
-		                            bool scopeIsInInheritanceHierarchy =false, 
-									DSymbol resolvedCurScope = null)
+		void scanChildren(DBlockNode curScope, ItemCheckParameters parms)
 		{
-			TemporaryResolvedNodeParent.Value = resolvedCurScope;
-
 			var ch = PrefilterSubnodes(curScope);
 			if (ch != null)
-				foreach (var n in ch)
-				{
+				foreach (var n in ch) {
 					if (ctxt.CancellationToken.IsCancellationRequested)
 						return;
 
-					if (IsAnonEnumOrClass(n) ||
-						!CanHandleNode (n as DNode, VisibleMembers, isBaseClass, isMixinAst, takeStaticChildrenOnly, publicImports, scopeIsInInheritanceHierarchy))
+					if (IsAnonEnumOrClass (n))
 						continue;
 
-					HandleItem(n);
+					HandleItemInternal (n, parms);
 				}
 
 			// Add anonymous enums',structs' or unions' items (also recursively!)
@@ -326,28 +362,26 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			if (ch != null) {
 				foreach (var n in ch) {
 					if (!IsAnonEnumOrClass(n) ||
-						!CanHandleNode (n as DNode, VisibleMembers, isBaseClass, isMixinAst, takeStaticChildrenOnly, publicImports, scopeIsInInheritanceHierarchy))
+						!CanHandleNode (n as DNode, parms))
 						continue;
-
-					var dontHandleTemplateParamsInNodeScan_persistance = dontHandleTemplateParamsInNodeScan;
-					scanChildren (n as DBlockNode, VisibleMembers, publicImports, isBaseClass, isMixinAst, takeStaticChildrenOnly, scopeIsInInheritanceHierarchy);
-					dontHandleTemplateParamsInNodeScan = dontHandleTemplateParamsInNodeScan_persistance;
+					
+					scanChildren (n as DBlockNode, parms);
 				}
 			}
 
 			if (StopEnumerationOnNextScope)
 				return;
 
-			if (!dontHandleTemplateParamsInNodeScan)
+			if (!parms.dontHandleTemplateParamsInNodeScan)
 			{
-				if (curScope.TemplateParameters != null && (VisibleMembers & MemberFilter.TypeParameters) != 0)
+				if (curScope.TemplateParameters != null && (parms.VisibleMembers & MemberFilter.TypeParameters) != 0)
 				{
 					var t = ctxt.ScopedBlock;
 					while (t != null)
 					{
 						if (t == curScope)
 						{
-							HandleItems (curScope.TemplateParameterNodes as IEnumerable<INode>);
+							HandleItems (curScope.TemplateParameterNodes as IEnumerable<INode>, parms);
 
 							if (StopEnumerationOnNextScope)
 								return;
@@ -358,16 +392,15 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				}
 			}
 			else
-				dontHandleTemplateParamsInNodeScan = false;
+				parms.dontHandleTemplateParamsInNodeScan = false;
 
 			var ss = new StatementHandler(this)
 			{
-				handlePublicImportsOnly = publicImports,
+				parms = parms,
 				caretInsensitive = true,
-				VisibleMembers = VisibleMembers
 			};
 
-			using(ctxt.Push(resolvedCurScope))
+			using(ctxt.Push(parms.resolvedCurScope))
 				curScope.Accept(ss);
 		}
 
@@ -376,18 +409,17 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		/// (If CodeLocation.Empty given, this parameter will be ignored)
 		/// </summary>
 		/// <returns>True if scan shall stop, false if not</returns>
-		bool ScanStatementHierarchy(IStatement Statement, CodeLocation Caret, MemberFilter VisibleMembers)
+		bool ScanStatementHierarchy(IStatement Statement, CodeLocation Caret, ItemCheckParameters parms)
 		{
-			return Statement != null && Statement.Accept(new StatementHandler(this) { Caret = Caret, caretInsensitive = Caret.IsEmpty, VisibleMembers = VisibleMembers });
+			return Statement != null && Statement.Accept(new StatementHandler(this) { Caret = Caret, caretInsensitive = Caret.IsEmpty, parms = parms });
 		}
 
 		class StatementHandler : StatementVisitor<bool>, NodeVisitor<bool>
 		{
 			#region Properties
-			public bool handlePublicImportsOnly;
+			public ItemCheckParameters parms;
 			public bool caretInsensitive;
 			public CodeLocation Caret;
-			public MemberFilter VisibleMembers;
 			ResolutionContext ctxt { get { return v.ctxt; } }
 
 			readonly AbstractVisitor v;
@@ -425,7 +457,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			public bool Visit(DModule dbn)
 			{
 				// Every module imports 'object' implicitly
-				var ret = !handlePublicImportsOnly && _objectImport.Accept(this);
+				var ret = !parms.publicImportsOnly && _objectImport.Accept(this);
 				
 				ret |= Visit(dbn as DBlockNode);
 
@@ -460,7 +492,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				if (dv.Initializer != null &&
 					(caretInsensitive || (dv.Initializer.Location > Caret && dv.Initializer.EndLocation < Caret)))
 				{
-					v.HandleExpression (dv.Initializer, VisibleMembers);
+					v.HandleExpression (dv.Initializer, parms);
 
 					if (v.StopEnumerationOnNextScope)
 						return true;
@@ -474,7 +506,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				if (!(caretInsensitive || Caret >= decl.Location))
 					return false;
 
-				v.HandleItem(decl);
+				v.HandleItemInternal(decl, parms);
 				return v.StopEnumerationOnNextScope;
 			}
 
@@ -552,7 +584,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				if (Statement.Location < Caret && Statement.EndLocation >= Caret && Statement.SubExpressions != null)
 					foreach (var x in Statement.SubExpressions)
 						if (x != null && x.Location < Caret && x.EndLocation >= Caret) {
-							v.HandleExpression (x, VisibleMembers);
+							v.HandleExpression (x, parms);
 							if (v.StopEnumerationOnNextScope)
 								return true;
 						}
@@ -586,7 +618,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 			public bool Visit(ImportStatement impStmt)
 			{
-				if ((handlePublicImportsOnly && impStmt != null && !impStmt.IsPublic) ||
+				if ((parms.publicImportsOnly && impStmt != null && !impStmt.IsPublic) ||
 					!ctxt.CurrentContext.MatchesDeclarationEnvironment(impStmt.Attributes))
 					return false;
 
@@ -594,7 +626,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				 * Mainly used for selective imports/import module aliases
 				 */
 				foreach (var decl in impStmt.PseudoAliases) {
-					v.HandleItem (decl);
+					v.HandleItemInternal (decl, parms);
 					if (v.StopEnumerationOnNextScope) //TODO: Handle visibility?
 						return true;
 				}
@@ -638,7 +670,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 							continue;
 
 						//ctxt.PushNewScope(module);
-						v.scanChildren(module, VisibleMembers, true);
+						v.scanChildren(module, new ItemCheckParameters(parms) { publicImportsOnly = true });
 						if (v.StopEnumerationOnNextScope)
 						{
 							//ctxt.Pop();
@@ -657,7 +689,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				if (!ctxt.CurrentContext.MatchesDeclarationEnvironment (s.Attributes))
 					return false;
 
-				HandleUnnamedTemplateMixin(s, caretInsensitive, VisibleMembers);
+				HandleUnnamedTemplateMixin(s, caretInsensitive, parms);
 				return v.StopEnumerationOnNextScope;
 			}
 			
@@ -665,7 +697,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			static List<TemplateMixin> templateMixinsBeingAnalyzed;
 			
 			// http://dlang.org/template-mixin.html#TemplateMixin
-			void HandleUnnamedTemplateMixin(TemplateMixin tmx, bool treatAsDeclBlock, MemberFilter vis)
+			void HandleUnnamedTemplateMixin(TemplateMixin tmx, bool treatAsDeclBlock, ItemCheckParameters parms)
 			{
 				if (CompletionOptions.Instance.DisableMixinAnalysis)
 					return;
@@ -683,8 +715,8 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					ctxt.LogError(tmx.Qualifier, "Mixin qualifier must resolve to a mixin template declaration.");
 				else using (ctxt.Push(tmxTemplate))
 				{
-					v.dontHandleTemplateParamsInNodeScan = true;
-					v.DeepScanClass(tmxTemplate, vis);
+					parms.dontHandleTemplateParamsInNodeScan = true;
+					v.DeepScanClass(tmxTemplate, parms);
 				}
 
 				templateMixinsBeingAnalyzed.Remove(tmx);
@@ -696,14 +728,14 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			{
 				return !CompletionOptions.Instance.DisableMixinAnalysis &&
 					ctxt.CurrentContext.MatchesDeclarationEnvironment(s.Attributes) &&
-					HandleMixin(s, caretInsensitive, VisibleMembers);
+					HandleMixin(s, caretInsensitive, parms);
 			}
 
 			/// <summary>
 			/// Evaluates the literal given as expression and tries to parse it as a string.
 			/// Important: Assumes all its compilation conditions to be checked already!
 			/// </summary>
-			bool HandleMixin(MixinStatement mx, bool parseDeclDefs, MemberFilter vis)
+			bool HandleMixin(MixinStatement mx, bool parseDeclDefs, ItemCheckParameters parms)
 			{
 				if (CompletionOptions.Instance.DisableMixinAnalysis)
 					return false;
@@ -721,7 +753,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 					// take ast.Endlocation because the cursor must be beyond the actual mixin expression 
 					// - and therewith _after_ each declaration
-					v.scanChildren(ast, vis, isMixinAst: true);
+					v.scanChildren(ast, new ItemCheckParameters(parms) { isMixinAst = true });
 
 					if (vv != null)
 						ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(vv.RepresentedType);
@@ -737,7 +769,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 						if (vv != null)
 							ctxt.CurrentContext.IntroduceTemplateParameterTypes(vv.RepresentedType);
 
-						v.ScanStatementHierarchy(bs, CodeLocation.Empty, vis);
+						v.ScanStatementHierarchy(bs, CodeLocation.Empty, parms);
 
 						if (vv != null)
 							ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(vv.RepresentedType);
@@ -889,7 +921,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 				if ((r = DResolver.StripMemberSymbols(r)) is TemplateIntermediateType)
 				{
-					v.DeepScanClass (r as TemplateIntermediateType, VisibleMembers);
+					v.DeepScanClass (r as TemplateIntermediateType, parms);
 					if(v.StopEnumerationOnNextScope)
 						return true;
 				}
@@ -951,7 +983,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					return false;
 
 				if (sc.Condition is StaticIfCondition && sc.Location < Caret && sc.EndLocation >= Caret) {
-					v.HandleExpression ((sc.Condition as StaticIfCondition).Expression, VisibleMembers);
+					v.HandleExpression ((sc.Condition as StaticIfCondition).Expression, parms);
 					if(v.StopEnumerationOnNextScope)
 						return true;
 				}
@@ -1025,7 +1057,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		[ThreadStatic]
 		static Dictionary<IBlockNode, DVariable> aliasThisDefsBeingParsed;
 
-		void HandleAliasThisDeclarations(TemplateIntermediateType tit, MemberFilter vis)
+		void HandleAliasThisDeclarations(TemplateIntermediateType tit, ItemCheckParameters parms)
 		{
 			var ch = tit.Definition [DVariable.AliasThisIdentifierHash];
 			if (ch == null || ctxt.CancellationToken.IsCancellationRequested)
@@ -1063,7 +1095,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			
 
 			foreach (var statProp in StaticProperties.ListProperties (aliasedSymbol, ctxt)){
-				HandleItem (statProp);
+				HandleItemInternal (statProp, parms);
 				if(StopEnumerationOnNextScope)
 					return;
 			}
@@ -1074,14 +1106,15 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 			var tit_ = aliasedSymbol as TemplateIntermediateType;
 			DSymbol ds;
-			if (tit_ != null)
-			{
+			if (tit_ != null) {
 				using (ctxt.Push (tit_))
-					DeepScanClass (tit_, vis, true);
+					DeepScanClass (tit_, parms, true);
 			}
 			// Applies to DEnums
-			else if ((ds = aliasedSymbol as DSymbol) != null && ds.Definition is DBlockNode)
-				scanChildren(ds.Definition as DBlockNode, vis, resolvedCurScope:ds);
+			else if ((ds = aliasedSymbol as DSymbol) != null && ds.Definition is DBlockNode) {
+				parms.resolvedCurScope = ds;
+				scanChildren (ds.Definition as DBlockNode, parms);
+			}
 		}
 
 		#region Declaration conditions & Static statements
@@ -1161,7 +1194,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 		#region Is-Expression/in-expression declarations
 
-		void SearchAttributesForIsExprDecls(IBlockNode block, CodeLocation caret, MemberFilter vis)
+		void SearchAttributesForIsExprDecls(IBlockNode block, CodeLocation caret, ItemCheckParameters parms)
 		{
 			var dblock = block as DBlockNode;
 			if (dblock != null)
@@ -1170,7 +1203,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					if (mbl is AttributeMetaDeclaration)
 						foreach (var attr in (mbl as AttributeMetaDeclaration).AttributeOrCondition)
 							if (attr is StaticIfCondition) {
-								HandleExpression ((attr as StaticIfCondition).Expression, vis);
+								HandleExpression ((attr as StaticIfCondition).Expression, parms);
 								if (StopEnumerationOnNextScope)
 									return;
 							}
@@ -1181,7 +1214,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			if (n != null && n.Attributes != null && n.Attributes.Count != 0)
 				foreach (var attr in n.Attributes)
 					if (attr is StaticIfCondition) {
-						HandleExpression ((attr as StaticIfCondition).Expression, vis);
+						HandleExpression ((attr as StaticIfCondition).Expression, parms);
 						if (StopEnumerationOnNextScope)
 							return;
 					}
@@ -1190,16 +1223,18 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		class IsExprVisitor : DefaultDepthFirstVisitor
 		{
 			AbstractVisitor v;
+			ItemCheckParameters parms;
 
-			public IsExprVisitor(AbstractVisitor v)
+			public IsExprVisitor(AbstractVisitor v, ItemCheckParameters parms)
 			{
 				this.v = v;
+				this.parms = parms;
 			}
 
 			public override void Visit(IsExpression x)
 			{
 				if (x.TypeAliasIdentifierHash != 0)
-					v.HandleItem(x.ArtificialFirstSpecParam.Representation);
+					v.HandleItemInternal(x.ArtificialFirstSpecParam.Representation, parms);
 			}
 		}
 
@@ -1208,21 +1243,21 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		/// </summary>
 		/// <param name="x"></param>
 		/// <param name="vis"></param>
-		void HandleExpression(IExpression x, MemberFilter vis)
+		void HandleExpression(IExpression x, ItemCheckParameters parms)
 		{
 			if (x == null)
 				return;
 
-			x.Accept(new IsExprVisitor(this));
+			x.Accept(new IsExprVisitor(this, parms));
 		}
 
 		#endregion
 
 		#region Handle-ability checks for Nodes
-		bool CanHandleNode(DNode dn, MemberFilter VisibleMembers, bool isBaseClass, bool isMixinAst, bool takeStaticChildrenOnly, bool publicImports, bool scopeIsInInheritanceHierarchy)
+		bool CanHandleNode(DNode dn, ItemCheckParameters parms)
 		{
 			if (dn == null || 
-				!CanAddMemberOfType (VisibleMembers, dn) || 
+				!CanAddMemberOfType (parms.VisibleMembers, dn) || 
 				!MatchesCompilationConditions(dn))
 				return false;
 
@@ -1234,9 +1269,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				return false;
 
 			if((ctxt.Options & ResolutionOptions.IgnoreAllProtectionAttributes) != ResolutionOptions.IgnoreAllProtectionAttributes){
-				if((CanShowMember(dn, ctxt.ScopedBlock) || isBaseClass && !isMixinAst) && ((!takeStaticChildrenOnly && (!publicImports || !isBaseClass)) || IsConstOrStatic(dn)))
+				if((CanShowMember(dn, ctxt.ScopedBlock) || parms.isBaseClass && !parms.isMixinAst) && ((!parms.takeStaticChildrenOnly && (!parms.publicImportsOnly || !parms.isBaseClass)) || IsConstOrStatic(dn)))
 				{
-					if (!(CheckForProtectedAttribute (dn, ctxt.ScopedBlock) || scopeIsInInheritanceHierarchy))
+					if (!(CheckForProtectedAttribute (dn, ctxt.ScopedBlock) || parms.scopeIsInInheritanceHierarchy))
 						return false;
 				}
 				else
@@ -1290,11 +1325,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		{
 			if (n is DMethod)
 				return n.NameHash != 0 && ((vis & MemberFilter.Methods) == MemberFilter.Methods);
-
 			else if (n is NamedTemplateMixinNode)
 				return (vis & (MemberFilter.Variables | MemberFilter.Types)) != 0;
-			else if (n is DVariable)
-			{
+			else if (n is DVariable) {
 				var d = n as DVariable;
 
 				if (d.IsAliasThis)
@@ -1303,34 +1336,27 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				// Only add aliases if at least types,methods or variables shall be shown.
 				if (d.IsAlias)
 					return
-						vis.HasFlag(MemberFilter.Methods) ||
-						vis.HasFlag(MemberFilter.Types) ||
-						vis.HasFlag(MemberFilter.Variables);
+						vis.HasFlag (MemberFilter.Methods) ||
+					vis.HasFlag (MemberFilter.Types) ||
+					vis.HasFlag (MemberFilter.Variables);
 
 				return (vis & MemberFilter.Variables) == MemberFilter.Variables;
-			}
-
-			else if (n is DClassLike)
-			{
+			} else if (n is DClassLike) {
 				var dc = n as DClassLike;
-				switch (dc.ClassType)
-				{
-					case DTokens.Class:
-						return (vis & MemberFilter.Classes) != 0;
-					case DTokens.Interface:
-						return (vis & MemberFilter.Interfaces) != 0;
-					case DTokens.Template:
-						return (vis & MemberFilter.Templates) != 0;
-					case DTokens.Struct:
-					case DTokens.Union:
-						return dc.IsAnonymous ?
+				switch (dc.ClassType) {
+				case DTokens.Class:
+					return (vis & MemberFilter.Classes) != 0;
+				case DTokens.Interface:
+					return (vis & MemberFilter.Interfaces) != 0;
+				case DTokens.Template:
+					return (vis & MemberFilter.Templates) != 0;
+				case DTokens.Struct:
+				case DTokens.Union:
+					return dc.IsAnonymous ?
 							(vis & MemberFilter.Variables) != 0 : 
 							(vis & MemberFilter.StructsAndUnions) != 0;
 				}
-			}
-
-			else if (n is DEnum)
-			{
+			} else if (n is DEnum) {
 				var d = n as DEnum;
 
 				// Only show enums if a) they're named and enums are allowed or b) variables are allowed
@@ -1339,7 +1365,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					(vis & MemberFilter.Enums) != 0;
 			}
 
-			return false;
+			return true;
 		}
 		#endregion
 

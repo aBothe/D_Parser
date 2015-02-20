@@ -58,40 +58,42 @@ namespace D_Parser.Resolver.ASTScanner
 			return null;
 		}
 		
-		public override IEnumerable<INode> PrefilterSubnodes(IBlockNode bn)
+		public override IEnumerable<INode> PrefilterSubnodes (IBlockNode bn)
 		{
-			return bn.Children.GetNodes(filterHash);
+			return bn.Children.GetNodes (filterHash);
 		}
-		
-		public override IEnumerable<DModule> PrefilterSubnodes(ModulePackage pack, out ModulePackage[] subPackages)
+
+		public override IEnumerable<DModule> PrefilterSubnodes (ModulePackage pack, out ModulePackage[] subPackages)
 		{
-			var subPack = pack.GetPackage(filterHash);
-			if(subPack != null)
+			var subPack = pack.GetPackage (filterHash);
+			if (subPack != null)
 				subPackages = new[]{ subPack };
 			else
 				subPackages = null;
 			
-			var ast = pack.GetModule(filterHash);
-			if(ast != null)
-				return new[]{ast};
+			var ast = pack.GetModule (filterHash);
+			if (ast != null)
+				return new[]{ ast };
 			return null;
 		}
 
-		protected override void HandleItem(INode n)
+		protected override bool PreCheckItem (INode n)
 		{
-            if (n != null && n.NameHash == filterHash)
-            {
-				var res = TypeDeclarationResolver.HandleNodeMatch(n, ctxt, TemporaryResolvedNodeParent.Value, idObject);
-				if(res != null)
-            		matches_types.Add(res);
-				stopEnumeration = true;
-            }
+			return n.NameHash == filterHash;
 		}
-		
-		protected override void HandleItem(PackageSymbol pack)
+
+		protected override void HandleItem (INode n, ItemCheckParameters icp)
+		{
+			var res = TypeDeclarationResolver.HandleNodeMatch (n, ctxt, icp.resolvedCurScope, idObject);
+			if (res != null)
+				matches_types.Add (res);
+			stopEnumeration = true;
+		}
+
+		protected override void HandleItem (PackageSymbol pack)
 		{
 			// Packages were filtered in PrefilterSubnodes already..so just add & return
-			matches_types.Add(pack);
+			matches_types.Add (pack);
 			stopEnumeration = true;
 		}
 	}
@@ -130,11 +132,12 @@ namespace D_Parser.Resolver.ASTScanner
 		public static List<AbstractType> SearchChildrenAndResolve(ResolutionContext ctxt, DSymbol t, int nameHash, ISyntaxRegion idObject = null)
 		{
 			var scan = new SingleNodeNameScan(ctxt, nameHash, idObject);
+			var parms = new ItemCheckParameters(MemberFilter.All);
 
 			if (t is TemplateIntermediateType)
-				scan.DeepScanClass(t as UserDefinedType, MemberFilter.All);
+				scan.DeepScanClass(t as UserDefinedType, parms);
 			else if (t.Definition is IBlockNode)
-				scan.ScanBlock(t.Definition as IBlockNode, CodeLocation.Empty, MemberFilter.All);
+				scan.ScanBlock(t.Definition as IBlockNode, CodeLocation.Empty, parms);
 
 			return scan.matches_types;
 		}

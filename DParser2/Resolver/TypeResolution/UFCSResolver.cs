@@ -46,14 +46,25 @@ namespace D_Parser.Resolver.TypeResolution
 			return true;
 		}
 
-		protected override void HandleItem (INode n)
+		protected override bool PreCheckItem (INode n)
 		{
 			if (ctxt.CancellationToken.IsCancellationRequested)
-				return;
+				return false;
 
 			if ((nameFilterHash != 0 && n.NameHash != nameFilterHash) || (!(n is ImportSymbolNode) && !(n.Parent is DModule)))
-				return;
-			
+				return false;
+
+			if (n is DClassLike)
+				return (n as DClassLike).ClassType == DTokens.Template;
+
+			if (n is DVariable)
+				return (n as DVariable).IsAlias;
+
+			return n is DMethod;
+		}
+
+		protected override void HandleItem (INode n)
+		{
 			DSymbol ds;
 			DVariable dv;
 			var dc = n as DClassLike;
@@ -105,8 +116,6 @@ namespace D_Parser.Resolver.TypeResolution
 				}
 			}
 		}
-
-		protected override void HandleItem (PackageSymbol pack) { }
 
 		public override IEnumerable<INode> PrefilterSubnodes(IBlockNode bn)
 		{

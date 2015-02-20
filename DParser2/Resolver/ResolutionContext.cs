@@ -39,7 +39,13 @@ namespace D_Parser.Resolver
 					yield return stack [i];
 			}
 		}
-		public ResolutionOptions ContextIndependentOptions = ResolutionOptions.Default;
+
+		readonly ThreadLocal<ResolutionOptions> contextIndependentOptions = new ThreadLocal<ResolutionOptions> (() => ResolutionOptions.Default);
+		public ResolutionOptions ContextIndependentOptions { 
+			get{ return contextIndependentOptions.Value; } 
+			set{ contextIndependentOptions.Value = value; }
+		}
+
 		public readonly List<ResolutionError> ResolutionErrors = new List<ResolutionError>();
 
 		public CancellationToken CancellationToken { get; set; }
@@ -308,7 +314,8 @@ namespace D_Parser.Resolver
 		const int maxErrorCount = 20;
 		public void LogError(ResolutionError err)
 		{
-			ResolutionErrors.Add(err);
+			lock(ResolutionErrors)
+				ResolutionErrors.Add(err);
 			if (ResolutionErrors.Count > maxErrorCount && CompletionOptions.Instance.LimitResolutionErrors) {
 #if DEBUG
 				throw new TooManyResolutionErrors (ResolutionErrors.ToArray ());
@@ -318,12 +325,7 @@ namespace D_Parser.Resolver
 
 		public void LogError(ISyntaxRegion syntaxObj, string msg)
 		{
-			ResolutionErrors.Add(new ResolutionError(syntaxObj,msg));
-			if (ResolutionErrors.Count > maxErrorCount && CompletionOptions.Instance.LimitResolutionErrors) {
-#if DEBUG
-				throw new TooManyResolutionErrors (ResolutionErrors.ToArray ());
-#endif
-			}
+			LogError(new ResolutionError(syntaxObj, msg));
 		}
 		#endregion
 	}

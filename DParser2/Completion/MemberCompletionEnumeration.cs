@@ -41,7 +41,7 @@ namespace D_Parser.Completion
 
 			var scan = new MemberCompletionEnumeration(ctxt, cdgen) { isVarInst = udt.NonStaticAccess };
 
-			scan.DeepScanClass(udt, vis);
+			scan.DeepScanClass(udt, new ItemCheckParameters(vis));
 		}
 		
 		public static void EnumChildren(ICompletionDataGenerator cdgen,ResolutionContext ctxt, IBlockNode block, bool isVarInstance,
@@ -49,33 +49,33 @@ namespace D_Parser.Completion
 		{
 			var scan = new MemberCompletionEnumeration(ctxt, cdgen) { isVarInst = isVarInstance };
 
-			scan.ScanBlock(block, CodeLocation.Empty, vis, publicImports);
+			scan.ScanBlock(block, CodeLocation.Empty, new ItemCheckParameters(vis){ publicImportsOnly = publicImports });
+		}
+
+		protected override bool PreCheckItem (INode n)
+		{
+			switch (n.NameHash)
+			{
+			case -1:
+			case 0:
+			case 1:
+				return false;
+			default:
+				if (n.NameHash == D_Parser.Parser.DTokens.IncompleteIdHash)
+					return false;
+				break;
+			}
+
+			var dv = n as DVariable;
+			return isVarInst || !(n is DMethod || dv != null || n is TemplateParameter.Node) ||	(n as DNode).IsStatic || n is DEnumValue ||	(dv != null && (dv.IsConst || dv.IsAlias));
 		}
 		
 		protected override void HandleItem(INode n)
 		{
-			switch (n.NameHash)
-			{
-				case -1:
-				case 0:
-				case 1:
-					return;
-				default:
-					if (n.NameHash == D_Parser.Parser.DTokens.IncompleteIdHash)
-						return;
-					break;
-			}
-
-			var dv = n as DVariable;
-			if(isVarInst || !(n is DMethod || dv != null || n is TemplateParameter.Node) || 
-			   (n as DNode).IsStatic || n is DEnumValue ||
-			   (dv != null && (dv.IsConst || dv.IsAlias)))
-			{
-				if(n is DModule)
-					gen.AddModule(n as DModule);
-				else
-					gen.Add(n);
-			}
+			if(n is DModule)
+				gen.AddModule(n as DModule);
+			else
+				gen.Add(n);
 		}
 		
 		protected override void HandleItem(PackageSymbol pack)
