@@ -796,6 +796,22 @@ double* foo(string s, string ss);
 			Assert.That(at.KeyType, Is.Null);
 			Assert.That(at.ValueType, Is.TypeOf(typeof(PrimitiveType)));
 		}
+
+		class IsDefinition : NUnit.Framework.Constraints.Constraint
+		{
+			readonly INode n;
+
+			public IsDefinition(INode expectedDefinition) { n = expectedDefinition; }
+
+			public override bool Matches (object actual)
+			{
+				return actual == n || (actual is DSymbol && (actual as DSymbol).Definition == n);
+			}
+			public override void WriteDescriptionTo (NUnit.Framework.Constraints.MessageWriter writer)
+			{
+				
+			}
+		}
 		
 		[Test]
 		public void ArrayIndexer()
@@ -808,25 +824,45 @@ class Obj
 
 auto arr = new Obj[];
 auto o = new Obj();
+Obj[][] oo;
 ");
 			
 			var ctxt = CreateDefCtxt(pcl, pcl[0]["A"]);
-			
-			var ex = DParser.ParseExpression("arr[0]");
-			var t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
-			
+			var myProp = CompletionTests.GetNode (null, "Obj.myProp", ref ctxt);
+			var myPropConstraint = new IsDefinition (myProp);
+
+			IExpression ex;
+			AbstractType t;
+
+			ex = DParser.ParseExpression("oo[0][0]");
+			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(ArrayAccessSymbol)));
+
+			ex = DParser.ParseExpression("oo[0][0].myProp");
+			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That (t, myPropConstraint);
+			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+
+			ex = DParser.ParseExpression("arr[0]");
+			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
+
 			Assert.That(t, Is.TypeOf(typeof(ArrayAccessSymbol)));
 			
 			ex = DParser.ParseExpression("arr[0].myProp");
 			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That (t, myPropConstraint);
 			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 			
 			ex = DParser.ParseExpression("o.myProp");
 			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That (t, myPropConstraint);
 			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 		}
 

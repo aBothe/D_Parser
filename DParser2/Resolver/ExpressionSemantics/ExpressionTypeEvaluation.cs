@@ -652,8 +652,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				var arg = x.Arguments [arg_i];
 
 				// myArray[0]; myArray[0..5];
-				if (foreExpression is MemberSymbol)
-					foreExpression = DResolver.StripMemberSymbols (foreExpression);
+				foreExpression = DResolver.StripMemberSymbols (foreExpression);
 
 				if (foreExpression == null)
 					break;
