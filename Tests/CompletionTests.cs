@@ -291,6 +291,29 @@ void main(){
 		}
 
 		[Test]
+		public void ArrayAccessCompletion()
+		{
+			EditorData ed;
+			ResolutionContext ctxt = null;
+			INode[] wl;
+			INode[] bl;
+
+			var s = @"module A;
+class C { int f; }
+void main() { C[][] o;
+o[0][0].
+
+}";
+
+			ed = GenEditorData (4, 1, s);
+
+			wl = new[]{ GetNode(ed, "A.C.f", ref ctxt) };
+			bl = null;
+
+			TestCompletionListContents (ed, wl, bl);
+		}
+
+		[Test]
 		public void StaticMemberCompletion()
 		{
 			EditorData ed;
