@@ -1267,7 +1267,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				return false;
 
 			if((ctxt.Options & ResolutionOptions.IgnoreAllProtectionAttributes) != ResolutionOptions.IgnoreAllProtectionAttributes){
-				if((CanShowMember(dn, ctxt.ScopedBlock) || parms.isBaseClass && !parms.isMixinAst) && ((!parms.takeStaticChildrenOnly && (!parms.publicImportsOnly || !parms.isBaseClass)) || IsConstOrStatic(dn)))
+				if((CanShowMember(dn, ctxt.ScopedBlock) || (parms.isBaseClass && !parms.isMixinAst)) && ((!parms.takeStaticChildrenOnly && (!parms.publicImportsOnly || !parms.isBaseClass)) || IsConstOrStatic(dn)))
 				{
 					if (!(CheckForProtectedAttribute (dn, ctxt.ScopedBlock) || parms.scopeIsInInheritanceHierarchy))
 						return false;
