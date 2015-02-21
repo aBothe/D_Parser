@@ -307,7 +307,7 @@ o[0][0].
 
 			ed = GenEditorData (4, 1, s);
 
-			wl = new[]{ GetNode(ed, "A.C.f", ref ctxt) };
+			wl = new[]{ (ed.ParseCache[0]["A"]["C"].First() as DClassLike).Children["f"].First() };
 			bl = null;
 
 			TestCompletionListContents (ed, wl, bl);
