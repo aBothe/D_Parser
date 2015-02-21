@@ -294,9 +294,7 @@ void main(){
 		public void ArrayAccessCompletion()
 		{
 			EditorData ed;
-			ResolutionContext ctxt = null;
 			INode[] wl;
-			INode[] bl;
 
 			var s = @"module A;
 class C { int f; }
@@ -305,12 +303,11 @@ o[0][0].
 
 }";
 
-			ed = GenEditorData (4, 1, s);
+			ed = GenEditorData (5, 1, s);
 
 			wl = new[]{ (ed.ParseCache[0]["A"]["C"].First() as DClassLike).Children["f"].First() };
-			bl = null;
 
-			TestCompletionListContents (ed, wl, bl);
+			TestCompletionListContents (ed, wl, null);
 		}
 
 		[Test]
