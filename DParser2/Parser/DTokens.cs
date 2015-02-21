@@ -841,28 +841,6 @@ namespace D_Parser.Parser
 			}
 		}
 
-		public static bool IsRelationalOperator(byte token)
-		{
-			switch (token)
-			{
-				case LessThan:
-				case LessEqual:
-				case GreaterThan:
-				case GreaterEqual:
-				case Unordered:
-				case LessOrGreater:
-				case LessEqualOrGreater:
-				case UnorderedOrGreater:
-				case UnorderedGreaterOrEqual:
-				case UnorderedOrLess:
-				case UnorderedLessOrEqual:
-				case UnorderedOrEqual:
-					return true;
-				default:
-					return false;
-			}
-		}
-
 		public static bool IsStorageClass(byte token)
 		{
 			switch (token)

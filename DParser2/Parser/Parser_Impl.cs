@@ -2551,29 +2551,55 @@ namespace D_Parser.Parser
 			// TODO: Make this into a switch.
 			var left = ShiftExpression(Scope);
 
-			OperatorBasedExpression ae = null;
+			OperatorBasedExpression ae;
 
-			// Equality Expressions
-			if (laKind == Equal || laKind == NotEqual)
-				ae = new EqualExpression(laKind == NotEqual);
+			switch (laKind) {
+			case DTokens.Equal:
+			case DTokens.NotEqual:
+				ae = new EqualExpression (laKind == NotEqual);
+				break;
 
-			// Relational Expressions
-			else if (IsRelationalOperator(laKind))
-				ae = new RelExpression(laKind);
+			case DTokens.LessThan:
+			case DTokens.LessEqual:
+			case DTokens.GreaterThan:
+			case DTokens.GreaterEqual:
+			case DTokens.Unordered:
+			case DTokens.LessOrGreater:
+			case DTokens.LessEqualOrGreater:
+			case DTokens.UnorderedOrGreater:
+			case DTokens.UnorderedGreaterOrEqual:
+			case DTokens.UnorderedOrLess:
+			case DTokens.UnorderedLessOrEqual:
+			case DTokens.UnorderedOrEqual:
+				ae = new RelExpression (laKind);
+				break;
 
-			// Identity Expressions
-			else if (laKind == Is || (laKind == Not && Peek(1).Kind == Is))
-				ae = new IdentityExpression(laKind == Not);
+			case DTokens.Is:
+				ae = new IdentityExpression (false);
+				break;
 
-			// In Expressions
-			else if (laKind == In || (laKind == Not && Peek(1).Kind == In))
-				ae = new InExpression(laKind == Not);
+			case DTokens.In:
+				ae = new InExpression (false);
+				break;
 
-			else return left;
+			case Not:
+				switch (Peek (1).Kind) {
+				case DTokens.Is:
+					ae = new IdentityExpression (false);
+					Step ();
+					break;
+				case DTokens.In:
+					ae = new InExpression (true);
+					Step ();
+					break;
+				default:
+					return left;
+				}
+				break;
 
-			// Skip possible !-Token
-			if (laKind == Not)
-				Step();
+			default:
+				return left;
+			}
 
 			// Skip operator
 			Step();
