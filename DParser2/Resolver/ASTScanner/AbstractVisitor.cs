@@ -1256,9 +1256,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		#region Handle-ability checks for Nodes
 		bool CanHandleNode(DNode dn, ItemCheckParameters parms)
 		{
-			if (dn == null || 
-				!CanAddMemberOfType (parms.VisibleMembers, dn) || 
-				!MatchesCompilationConditions(dn))
+			if (dn == null || !CanAddMemberOfType (parms.VisibleMembers, dn))
 				return false;
 
 			if (CompletionOptions.Instance.HideDeprecatedNodes && dn.ContainsAttribute(DTokens.Deprecated))
@@ -1282,7 +1280,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			if (dm3 != null && !(dm3.SpecialType == DMethod.MethodType.Normal || dm3.SpecialType == DMethod.MethodType.Delegate || dm3.NameHash != 0))
 				return false;
 
-			return true;
+			return MatchesCompilationConditions(dn);
 		}
 
 		static bool IsConstOrStatic(DNode dn)
