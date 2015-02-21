@@ -150,12 +150,11 @@ namespace D_Parser.Completion
 				return;
 
 			ctxt.CancellationToken = token;
-			token.Register(() => {
-				if (cdgen != null)
-					cdgen.NotifyTimeout(); 
-			});
 
 			ac();
+
+			if (token.IsCancellationRequested)
+				cdgen.NotifyTimeout ();
 		}
 
 		/// <param name="cdgen">Can be null.</param>
@@ -170,21 +169,13 @@ namespace D_Parser.Completion
 			if (timeout == int.MinValue)
 				timeout = CompletionOptions.Instance.CompletionTimeout;
 
-			if (timeout < 0)
-			{
-				ac();
-				return;
-			}
+			if (timeout > 0)
+				cts.CancelAfter (timeout);
 
-			var task = Task.Factory.StartNew(ac);
+			ac ();
 
-			if (!task.Wait(timeout))
-			{
-				cts.Cancel ();
-				if(cdgen != null)
-					cdgen.NotifyTimeout();
-				task.Wait();
-			}
+			if (cts.IsCancellationRequested)
+				cdgen.NotifyTimeout ();
 		}
 	}
 }
