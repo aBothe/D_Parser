@@ -669,15 +669,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 						if (module == null || (scAst != null && module.FileName == scAst.FileName && module.FileName != null))
 							continue;
 
-						//ctxt.PushNewScope(module);
 						v.scanChildren(module, new ItemCheckParameters(parms) { publicImportsOnly = true });
 						if (v.StopEnumerationOnNextScope)
-						{
-							//ctxt.Pop();
 							return true;
-						}
-
-						//ctxt.Pop();
 					}
 				return false;
 			}
