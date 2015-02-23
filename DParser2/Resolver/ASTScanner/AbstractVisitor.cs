@@ -1067,25 +1067,22 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			DVariable alreadyParsedAliasThis;
 			AbstractType aliasedSymbol;
 
-			using (ctxt.Push(tit))
+			if (!aliasThisDefsBeingParsed.TryGetValue(tit.Definition, out alreadyParsedAliasThis) || alreadyParsedAliasThis != aliasDef)
 			{
-				if (!aliasThisDefsBeingParsed.TryGetValue(ctxt.ScopedBlock, out alreadyParsedAliasThis) || alreadyParsedAliasThis != aliasDef)
-				{
-					aliasThisDefsBeingParsed[ctxt.ScopedBlock] = aliasDef;
+				aliasThisDefsBeingParsed[tit.Definition] = aliasDef;
 
-					// Resolve the aliased symbol and expect it to be a member symbol(?).
-					//TODO: Check if other cases are allowed as well!
+				// Resolve the aliased symbol and expect it to be a member symbol(?).
+				//TODO: Check if other cases are allowed as well!
+				using(ctxt.Push(tit))
 					aliasedSymbol = DResolver.StripMemberSymbols(TypeDeclarationResolver.ResolveSingle(aliasDef.Type, ctxt));
 
-					aliasThisDefsBeingParsed.Remove(ctxt.ScopedBlock);
+				aliasThisDefsBeingParsed.Remove(tit.Definition);
 
-					if (aliasedSymbol is TemplateParameterSymbol)
-						aliasedSymbol = (aliasedSymbol as TemplateParameterSymbol).Base;
-				}
-				else
-					aliasedSymbol = null;
+				if (aliasedSymbol is TemplateParameterSymbol)
+					aliasedSymbol = (aliasedSymbol as TemplateParameterSymbol).Base;
 			}
-
+			else
+				aliasedSymbol = null;
 			
 
 			foreach (var statProp in StaticProperties.ListProperties (aliasedSymbol, ctxt)){
