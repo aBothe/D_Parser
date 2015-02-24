@@ -22,6 +22,7 @@ namespace Tests
 	[TestFixture]
 	public class ResolutionTests
 	{
+		#region Helpers
 		public static DModule objMod = DParser.ParseString(@"module object;
 						alias immutable(char)[] string;
 						alias immutable(wchar)[] wstring;
@@ -81,6 +82,58 @@ namespace Tests
 			return CreateDefCtxt (pcl, mod);
 		}
 
+		public static T N<T>(ResolutionContext ctxt, string path) where T : DNode
+		{
+			return GetChildNode<T> (ctxt, path);
+		}
+
+		public static T GetChildNode<T>(ResolutionContext ctxt, string path) where T : DNode
+		{
+			DModule mod = null;
+
+			int dotIndex = -1;
+			while ((dotIndex = path.IndexOf ('.', dotIndex + 1)) > 0) {
+				mod = ctxt.ParseCache.LookupModuleName (path.Substring (0, dotIndex)).First();
+				if (mod != null)
+					break;
+			}
+
+			if (dotIndex == -1 && mod == null)
+				return ctxt.ParseCache.LookupModuleName (path).First() as T;
+
+			if (mod == null)
+				throw new ArgumentException ("Invalid module name");
+
+			return (T)GetChildNode (mod, path.Substring(dotIndex+1));
+		}
+
+		public static T N<T>(IBlockNode parent, string path) where T : INode
+		{
+			return (T)GetChildNode (parent, path);
+		}
+
+		public static T GetChildNode<T>(IBlockNode parent, string path) where T : INode
+		{
+			return (T)GetChildNode (parent, path);
+		}
+
+		public static INode GetChildNode(IBlockNode parent, string path)
+		{
+			var childNameIndex = path.IndexOf (".");
+			var childName = childNameIndex < 0 ? path : path.Substring (0, childNameIndex);
+
+			var child = parent [childName].First ();
+
+			if (childNameIndex < 0)
+				return child;
+
+			if (!(child is IBlockNode))
+				throw new ArgumentException ("Invalid path");
+
+			return GetChildNode(child as IBlockNode, path.Substring(childNameIndex+1));
+		}
+		#endregion
+
 		[Test]
 		public void BasicResolution0()
 		{
@@ -135,18 +188,16 @@ void asdf(int* ni=23) {
 			Assert.That(t.Length, Is.EqualTo(2));
 
 			ctxt.ResolutionErrors.Clear();
-			var mod = pcl[0]["modE"];
-			ctxt.CurrentContext.Set(mod, CodeLocation.Empty);
+			ctxt.CurrentContext.Set(N<DModule>(ctxt,"modE"), CodeLocation.Empty);
 			t = TypeDeclarationResolver.ResolveIdentifier("U", ctxt, null);
 			Assert.That(t.Length, Is.EqualTo(2));
 
-			ctxt.CurrentContext.Set((mod["N"].First() as DClassLike)["foo"].First() as DMethod, CodeLocation.Empty);
+			ctxt.CurrentContext.Set(N<DMethod>(ctxt, "modE.N.foo"), CodeLocation.Empty);
 			t = TypeDeclarationResolver.ResolveIdentifier("X",ctxt,null);
 			Assert.That(t.Length, Is.EqualTo(1));
 			Assert.That(t[0], Is.TypeOf(typeof(ClassType)));
 
-			mod = pcl[0]["modF"];
-			var f = mod["asdf"].First() as DMethod;
+			var f = N<DMethod>(ctxt, "modF.asdf");
 			ctxt.CurrentContext.Set(f, CodeLocation.Empty);
 			t = TypeDeclarationResolver.ResolveIdentifier("ni", ctxt, ((f.Body.SubStatements.First() as IfStatement).ThenStatement as BlockStatement).SubStatements.ElementAt(1));
 			Assert.That((t[0] as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
@@ -159,7 +210,7 @@ void asdf(int* ni=23) {
 		[Test]
 		public void BasicResolution()
 		{
-			var pcl = CreateCache(@"module modA;
+			var ctxt = CreateCtxt("modA",@"module modA;
 import B;
 class foo : baseFoo {
 	
@@ -172,9 +223,6 @@ class baseFoo
 	private static int heyHo = 234;
 }");
 
-			var modA = pcl[0]["modA"];
-			var ctxt = CreateDefCtxt(pcl, modA);
-
 			var t = TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration("foo"), ctxt);
 			Assert.That(t, Is.TypeOf(typeof(ClassType)));
 			Assert.AreEqual("foo", (t as ClassType).Name);
@@ -182,7 +230,7 @@ class baseFoo
 			t = TypeDeclarationResolver.ResolveSingle("privConst", ctxt, null);
 			Assert.That(t, Is.Null);
 			
-			ctxt.CurrentContext.Set(modA["foo"].First() as IBlockNode);
+			ctxt.CurrentContext.Set(N<DClassLike>(ctxt, "modA.foo"));
 			t = TypeDeclarationResolver.ResolveSingle("heyHo", ctxt, null);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 		}
@@ -269,7 +317,7 @@ void foo()
 			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.Null);
 			
-			ctxt.CurrentContext.Set((pcl[0]["A"]["cl"].First() as DClassLike)["bar"].First() as DMethod);
+			ctxt.CurrentContext.Set(N<DMethod>(ctxt, "A.cl.bar"));
 			
 			ex = DParser.ParseExpression("statVar");
 			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
@@ -800,13 +848,26 @@ double* foo(string s, string ss);
 		class IsDefinition : NUnit.Framework.Constraints.Constraint
 		{
 			readonly INode n;
+			object act;
 
 			public IsDefinition(INode expectedDefinition) { n = expectedDefinition; }
 
 			public override bool Matches (object actual)
 			{
+				act = actual;
 				return actual == n || (actual is DSymbol && (actual as DSymbol).Definition == n);
 			}
+
+			public override void WriteActualValueTo (NUnit.Framework.Constraints.MessageWriter writer)
+			{
+				
+			}
+
+			public override void WriteMessageTo (NUnit.Framework.Constraints.MessageWriter writer)
+			{
+				writer.DisplayDifferences (n, act);
+			}
+
 			public override void WriteDescriptionTo (NUnit.Framework.Constraints.MessageWriter writer)
 			{
 				
@@ -1046,9 +1107,95 @@ void main()
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 		}
 
+		public static IStatement S(DMethod dm, params int[] path)
+		{
+			IStatement stmt = null;
+			StatementContainingStatement scs = dm.Body;
+
+			foreach (var elementAt in path) {
+				if (scs == null)
+					throw new InvalidDataException ();
+				
+				stmt = scs.SubStatements.ElementAt (elementAt);
+				scs = stmt as StatementContainingStatement;
+			}
+
+			return stmt;
+		}
+
+		[Test]
+		public void WithStmt()
+		{
+			var ctxt = CreateCtxt ("A", @"module A;
+class C(T) { int c; T tc; }
+class B(D) {
+int a;
+D da;
+
+void afoo(){
+int local;
+C!(char[]) mc;
+with(mc){
+	x;
+}
+}
+}
+");
+			var C = N<DClassLike> (ctxt, "A.C");
+			var C_c = N<DVariable>(C, "c");
+			var C_tc = N<DVariable>(C, "tc");
+
+			var B = N<DClassLike>(ctxt,"A.B");
+			var B_a = N<DVariable>(B, "a");
+			var B_da = N<DVariable> (B, "da");
+
+			var afoo = N<DMethod> (B, "afoo");
+			var local = (S (afoo, 0) as DeclarationStatement).Declarations [0] as DVariable;
+			var xstmt = S(afoo, 2, 0, 0);
+
+			ctxt.CurrentContext.Set (afoo, xstmt.Location);
+
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression ("tc");
+			(x as IdentifierExpression).Location = xstmt.Location;
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
+
+			Assert.That (t, new IsDefinition (C_tc));
+			Assert.That ((t as DerivedDataType).Base, Is.TypeOf(typeof(TemplateParameterSymbol)));
+			Assert.That (((t as DerivedDataType).Base as DerivedDataType).Base, Is.TypeOf(typeof(ArrayType)));
+
+			x = DParser.ParseExpression ("c");
+			(x as IdentifierExpression).Location = xstmt.Location;
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
+
+			Assert.That (t, new IsDefinition (C_c));
+			Assert.That ((t as DerivedDataType).Base, Is.TypeOf(typeof(PrimitiveType)));
+
+			x = DParser.ParseExpression ("da");
+			(x as IdentifierExpression).Location = xstmt.Location;
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
+
+			Assert.That (t, new IsDefinition (B_da));
+
+			x = DParser.ParseExpression ("a");
+			(x as IdentifierExpression).Location = xstmt.Location;
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
+
+			Assert.That (t, new IsDefinition (B_a));
+
+			x = DParser.ParseExpression ("local");
+			(x as IdentifierExpression).Location = xstmt.Location;
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
+
+			Assert.That (t, new IsDefinition (local));
+		}
+
 		[Test]
 		public void TestParamDeduction1()
 		{
+			
 			var pcl=CreateCache(@"module modA;
 
 //void foo(T:MyClass!E,E)(T t) {}
