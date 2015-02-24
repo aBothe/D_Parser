@@ -76,7 +76,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		/// <summary>
 		/// Return true if search shall stop(!), false if search shall go on
 		/// </summary>
-		protected virtual void HandleItem(INode n, ItemCheckParameters parms) { HandleItem(n); }
+		protected virtual void HandleItem(INode n, AbstractType resolvedCurrentScope) { HandleItem(n); }
 		
 		protected virtual void HandleItem(PackageSymbol pack) { }
 
@@ -93,10 +93,11 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			if (n == null || !PreCheckItem (n))
 				return;
 
-			if (!CanHandleNode (n as DNode, parms))
+			if (!CanHandleNode (n as DNode, parms, false))
 				return;
 
-			HandleItem (n, parms);
+			if(MatchesCompilationConditions(n as DNode))
+				HandleItem (n, parms.resolvedCurScope);
 		}
 
 		public virtual void IterateThroughScopeLayers(CodeLocation Caret, MemberFilter VisibleMembers = MemberFilter.All)
@@ -913,9 +914,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 				ctxt.CurrentContext.Set(ctxt.ScopedBlock,back);
 
-				if ((r = DResolver.StripMemberSymbols(r)) is TemplateIntermediateType)
+				if ((r = DResolver.StripMemberSymbols(r)) is UserDefinedType)
 				{
-					v.DeepScanClass (r as TemplateIntermediateType, parms);
+					v.DeepScanClass (r as UserDefinedType, parms);
 					if(v.StopEnumerationOnNextScope)
 						return true;
 				}
@@ -1245,7 +1246,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		#endregion
 
 		#region Handle-ability checks for Nodes
-		bool CanHandleNode(DNode dn, ItemCheckParameters parms)
+		bool CanHandleNode(DNode dn, ItemCheckParameters parms, bool checkCompilationConditions = true)
 		{
 			if (dn == null || !CanAddMemberOfType (parms.VisibleMembers, dn))
 				return false;
@@ -1271,7 +1272,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			if (dm3 != null && !(dm3.SpecialType == DMethod.MethodType.Normal || dm3.SpecialType == DMethod.MethodType.Delegate || dm3.NameHash != 0))
 				return false;
 
-			return MatchesCompilationConditions(dn);
+			return !checkCompilationConditions || MatchesCompilationConditions(dn);
 		}
 
 		static bool IsConstOrStatic(DNode dn)

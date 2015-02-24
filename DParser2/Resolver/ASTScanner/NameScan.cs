@@ -82,9 +82,9 @@ namespace D_Parser.Resolver.ASTScanner
 			return n.NameHash == filterHash;
 		}
 
-		protected override void HandleItem (INode n, ItemCheckParameters icp)
+		protected override void HandleItem (INode n, AbstractType resolvedCurrentScope)
 		{
-			var res = TypeDeclarationResolver.HandleNodeMatch (n, ctxt, icp.resolvedCurScope, idObject);
+			var res = TypeDeclarationResolver.HandleNodeMatch (n, ctxt, resolvedCurrentScope, idObject);
 			if (res != null)
 				matches_types.Add (res);
 			stopEnumeration = true;
