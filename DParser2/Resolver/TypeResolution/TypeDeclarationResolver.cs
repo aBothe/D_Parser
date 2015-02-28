@@ -495,7 +495,7 @@ namespace D_Parser.Resolver.TypeResolution
 		{
 			if (typeBase != null &&
 				b != null && 
-				b.Tag is AliasTag && 
+				b.Tag<AliasTag>(AliasTag.Id) != null && 
 				(ctxt.Options & ResolutionOptions.DontResolveAliases) == 0)
 			{
 				if (aliasDeductionStack == null)
@@ -527,6 +527,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 		public class AliasTag
 		{
+			public const string Id = "AliasTag";
 			public DVariable aliasDefinition;
 			public ISyntaxRegion typeBase;
 		}
@@ -580,7 +581,7 @@ namespace D_Parser.Resolver.TypeResolution
 				if (bt == null)
 					return new AliasedType(v, null, typeBase);
 
-				bt.Tag = new AliasTag { aliasDefinition = v, typeBase = typeBase };
+				bt.Tag(AliasTag.Id, new AliasTag { aliasDefinition = v, typeBase = typeBase });
 				return bt;
 			}
 

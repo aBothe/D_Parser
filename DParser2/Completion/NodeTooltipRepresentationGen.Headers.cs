@@ -31,6 +31,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Completion.ToolTips
 {
@@ -55,7 +56,7 @@ namespace D_Parser.Completion.ToolTips
 				if (currentMethodParam >= 0 && !templateParamCompletion && ds.Definition is DVariable && ds.Base != null)
 					return GenTooltipSignature(ds.Base, false, currentMethodParam);
 
-				var aliasedSymbol = ds.Tag as D_Parser.Resolver.TypeResolution.TypeDeclarationResolver.AliasTag;
+				var aliasedSymbol = ds.Tag<TypeDeclarationResolver.AliasTag>(TypeDeclarationResolver.AliasTag.Id);
 				return GenTooltipSignature(aliasedSymbol == null || currentMethodParam >= 0 ? ds.Definition : aliasedSymbol.aliasDefinition, templateParamCompletion, currentMethodParam, DTypeToTypeDeclVisitor.GenerateTypeDecl(ds.Base), new DeducedTypeDictionary(ds));
 			}
 

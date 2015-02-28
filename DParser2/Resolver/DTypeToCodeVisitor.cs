@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Resolver
 {
@@ -32,7 +33,7 @@ namespace D_Parser.Resolver
 
 			if (pretty)
 			{
-				var aliasTag = t.Tag as TypeResolution.TypeDeclarationResolver.AliasTag;
+				var aliasTag = t.Tag<TypeDeclarationResolver.AliasTag>(TypeDeclarationResolver.AliasTag.Id);
 				if (aliasTag != null)
 					sb.Append(aliasTag.typeBase != null ? aliasTag.typeBase.ToString() : aliasTag.aliasDefinition.ToString(false, false)).Append('=');
 			}

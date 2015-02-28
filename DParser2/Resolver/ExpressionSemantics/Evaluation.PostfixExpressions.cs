@@ -365,8 +365,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					ms.SetDeducedTypes(deducedTypeDict);
 					var bt = TypeDeclarationResolver.GetMethodReturnType(dm, ctxt) ?? ms.Base;
 
-					if (eval || !returnBaseTypeOnly)
-						bt = new MemberSymbol(dm, bt, ms.DeclarationOrExpressionBase, ms.DeducedTypes) { Tag = ms.Tag };
+					if (eval || !returnBaseTypeOnly) {
+						bt = new MemberSymbol (dm, bt, ms.DeducedTypes) { Modifier = ms.Modifier };
+						bt.AssignTagsFrom (ms);
+					}
 
 					if (dm.TemplateParameters == null || dm.TemplateParameters.Length == 0)
 						untemplatedMethod = bt; //ISSUE: Have another state that indicates an ambiguous non-templated method matching.

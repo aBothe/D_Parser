@@ -160,7 +160,7 @@ namespace D_Parser.Refactoring
 			if (resolvedSymbol != null)
 			{
 				INode n;
-				var aliasTag = resolvedSymbol.Tag as D_Parser.Resolver.TypeResolution.TypeDeclarationResolver.AliasTag;
+				var aliasTag = resolvedSymbol.Tag<TypeDeclarationResolver.AliasTag>(TypeDeclarationResolver.AliasTag.Id);
 				if (aliasTag != null)
 					n = aliasTag.aliasDefinition;
 				else if (resolvedSymbol is DSymbol)

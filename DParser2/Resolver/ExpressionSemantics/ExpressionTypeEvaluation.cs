@@ -64,7 +64,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			AbstractType t;
 			if ((t = ctxt.Cache.TryGetType (x, cacheHashBias)) != null &&
-				!(t.Tag is TypeDeclarationResolver.AliasTag)) // Don't accept aliases because their Tag does/base type might differ from the target alias definition.
+				(t.Tag<TypeDeclarationResolver.AliasTag>(TypeDeclarationResolver.AliasTag.Id) == null)) // Don't accept aliases because their Tag does/base type might differ from the target alias definition.
 				return t;
 
 			t = x.Accept(new ExpressionTypeEvaluation(ctxt) { TryReturnMethodReturnType = tryReturnMethodReturnType });

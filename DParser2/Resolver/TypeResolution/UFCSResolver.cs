@@ -30,12 +30,13 @@ namespace D_Parser.Resolver.TypeResolution
 
 		class UfcsTag
 		{
+			public const string Id = "UfcsTag";
 			public ISemantic firstArgument;
 		}
 
 		public static bool IsUfcsResult(AbstractType t, out ISemantic firstArgument)
 		{
-			var o = t.Tag as UfcsTag;
+			var o = t.Tag<UfcsTag>(UfcsTag.Id);
 
 			if (o == null) {
 				firstArgument = null;
@@ -71,7 +72,7 @@ namespace D_Parser.Resolver.TypeResolution
 			if (dc != null && dc.ClassType == DTokens.Template) {
 				if (sr is TemplateInstanceExpression || nameFilterHash == 0) {
 					var templ = TypeDeclarationResolver.HandleNodeMatch (dc, ctxt, null, sr);
-					templ.Tag = new UfcsTag{ firstArgument=firstArgument };
+					templ.Tag(UfcsTag.Id, new UfcsTag{ firstArgument=firstArgument });
 					matches.Add (templ);
 				}
 			}
@@ -90,7 +91,7 @@ namespace D_Parser.Resolver.TypeResolution
 					{
 						if (sr is TemplateInstanceExpression || nameFilterHash == 0)
 						{
-							ds.Tag = new UfcsTag { firstArgument = firstArgument };
+							ds.Tag(UfcsTag.Id, new UfcsTag { firstArgument = firstArgument });
 							matches.Add(ds);
 						}
 					}
@@ -110,7 +111,7 @@ namespace D_Parser.Resolver.TypeResolution
 					if (ResultComparer.IsImplicitlyConvertible(firstArgument, t, ctxt))
 					{
 						var res = alreadyResolvedMethod ?? TypeDeclarationResolver.HandleNodeMatch(dm, ctxt, typeBase: sr);
-						res.Tag = new UfcsTag { firstArgument = firstArgument };
+						res.Tag(UfcsTag.Id, new UfcsTag { firstArgument = firstArgument });
 						matches.Add(res);
 					}
 				}

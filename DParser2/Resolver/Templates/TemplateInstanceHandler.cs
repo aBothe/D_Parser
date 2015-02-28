@@ -186,7 +186,7 @@ namespace D_Parser.Resolver.TypeResolution
 							newDeducedTypes[tps.Parameter] = tps;
 						ds.SetDeducedTypes(newDeducedTypes);
 					}
-					ch.Tag = template.Tag;
+					ch.AssignTagsFrom(template);
 				}
 
 			return matchingChild;
@@ -210,7 +210,7 @@ namespace D_Parser.Resolver.TypeResolution
 				TypeDeclarationResolver.ResolveSingle(def.Type, ctxt) :
 				ExpressionTypeEvaluation.EvaluateType(def.Initializer, ctxt), null, ept.DeducedTypes); //ept; //ExpressionTypeEvaluation.EvaluateType (ept.Definition.Initializer, ctxt);
 
-			deducedType.Tag = ept.Tag; // Currently requried for proper UFCS resolution - sustain ept's Tag
+			deducedType.AssignTagsFrom(ept); // Currently requried for proper UFCS resolution - sustain ept's Tags
 
 			// Undo context-related changes
 			ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(ept);
@@ -233,6 +233,8 @@ namespace D_Parser.Resolver.TypeResolution
 
 			foreach (var o in rawOverloadList)
 			{
+				TypeDeclarationResolver.AliasTag aliasTag;
+
 				var overload = o as DSymbol;
 				while (overload is TemplateParameterSymbol)
 					overload = overload.Base as DSymbol;
@@ -242,8 +244,8 @@ namespace D_Parser.Resolver.TypeResolution
 						filteredOverloads.Add(o);
 					continue;
 				}
-				else if (overload.Tag is TypeDeclarationResolver.AliasTag && 
-					(hasTemplateArgsPassed || !(overload.DeclarationOrExpressionBase is TemplateInstanceExpression)))
+				else if ((aliasTag = overload.Tag<TypeDeclarationResolver.AliasTag>(TypeDeclarationResolver.AliasTag.Id)) != null && 
+					(hasTemplateArgsPassed || aliasTag.typeBase is TemplateInstanceExpression)) //  || !(overload.DeclarationOrExpressionBase is TemplateInstanceExpression) TODO: Test
 					TypeDeclarationResolver.ResetDeducedSymbols(overload);
 
 				var tplNode = overload.Definition;

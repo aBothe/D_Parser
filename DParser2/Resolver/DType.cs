@@ -14,8 +14,27 @@ namespace D_Parser.Resolver
 	public abstract class AbstractType : ISemantic, IVisitable<IResolvedTypeVisitor>
 	{
 		#region Properties
-		public object Tag;
-		public ISyntaxRegion DeclarationOrExpressionBase;
+		Dictionary<string, object> tags;
+		public void Tag(string id, object tag) {
+			if (tags == null)
+				tags = new Dictionary<string, object> ();
+			tags [id] = tag;
+		}
+		public T Tag<T>(string id) where T : class{
+			object o;
+			if (tags == null || !tags.TryGetValue (id, out o))
+				return default(T);
+			return (T)o;
+		}
+
+		public void AssignTagsFrom(AbstractType t)
+		{
+			if (t.tags == null)
+				tags = null;
+			else
+				tags = new Dictionary<string, object> (t.tags);
+		}
+
 		public virtual bool NonStaticAccess { get; set; }
 
 		protected byte modifier;

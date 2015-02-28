@@ -22,7 +22,7 @@ namespace D_Parser.Resolver
 			if (t == null)
 				return null;
 
-			var aliasTag = t.Tag as TypeDeclarationResolver.AliasTag;
+			var aliasTag = t.Tag<TypeDeclarationResolver.AliasTag>(TypeDeclarationResolver.AliasTag.Id);
 			if (aliasTag != null)
 			{
 				return new IdentifierDeclaration(aliasTag.aliasDefinition.NameHash);
