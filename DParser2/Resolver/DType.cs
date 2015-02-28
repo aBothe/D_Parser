@@ -76,6 +76,23 @@ namespace D_Parser.Resolver
 			return s as AbstractType;
 		}
 
+		public static AbstractType[] Get<R>(IEnumerable<R> at)
+			where R : class,ISemantic
+		{
+			var l = new List<AbstractType>();
+
+			if (at != null)
+				foreach (var t in at)
+				{
+					if (t is AbstractType)
+						l.Add(t as AbstractType);
+					else if (t is ISymbolValue)
+						l.Add(((ISymbolValue)t).RepresentedType);
+				}
+
+			return l.ToArray();
+		}
+
 		public abstract AbstractType Clone(bool cloneBase);
 
 		public abstract void Accept(IResolvedTypeVisitor vis);

@@ -513,7 +513,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 				var vs = EvalPostfixAccessExpression(this, ctxt, pac, null, false, false);
 
-				baseExpression = TypeDeclarationResolver.Convert(vs);
+				baseExpression = AbstractType.Get(vs);
 			}
 			else
 			{
