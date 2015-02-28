@@ -15,7 +15,7 @@ namespace Tests
 	{
 		public static AbstractType GetType(string name, ResolutionContext ctxt)
 		{
-			return TypeDeclarationResolver.ResolveIdentifier(name, ctxt, null)[0] as AbstractType;
+			return TypeDeclarationResolver.ResolveIdentifier(name.GetHashCode(), ctxt, null)[0];
 		}
 
 		[Test]
@@ -126,7 +126,7 @@ int[] p=[1,2,3,4,5];
 			{
 				var foo_firstArg = TypeDeclarationResolver.ResolveSingle(foo.Parameters[0].Type, ctxt);
 
-				var p = TypeDeclarationResolver.ResolveIdentifier("p", ctxt, null)[0] as MemberSymbol;
+				var p = GetType("p", ctxt) as MemberSymbol;
 
 				Assert.IsTrue(ResultComparer.IsImplicitlyConvertible(p, foo_firstArg, ctxt));
 			}

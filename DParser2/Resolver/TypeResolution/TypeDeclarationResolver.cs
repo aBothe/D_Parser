@@ -14,11 +14,6 @@ namespace D_Parser.Resolver.TypeResolution
 {
 	public static class TypeDeclarationResolver
 	{
-		public static AbstractType[] ResolveIdentifier(string id, ResolutionContext ctxt, ISyntaxRegion idObject, bool ModuleScope = false)
-		{
-			return ResolveIdentifier (id.GetHashCode (), ctxt, idObject, ModuleScope);
-		}
-
 		/// <summary>
 		/// Resolves an identifier and returns the definition + its base type.
 		/// Does not deduce any template parameters or nor filters out unfitting template specifications!
@@ -90,14 +85,6 @@ namespace D_Parser.Resolver.TypeResolution
 				res.Add(Evaluation.GetStringType (ctxt, LiteralSubformat.Utf32));
 
 			return res.ToArray();
-		}
-
-		/// <summary>
-		/// See <see cref="ResolveIdentifier"/>
-		/// </summary>
-		public static AbstractType ResolveSingle(string id, ResolutionContext ctxt, ISyntaxRegion idObject, bool ModuleScope = false)
-		{
-			return AmbiguousType.Get(ResolveIdentifier(id, ctxt, idObject, ModuleScope));
 		}
 
 		/// <summary>

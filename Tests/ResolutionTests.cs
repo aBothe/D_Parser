@@ -132,6 +132,21 @@ namespace Tests
 
 			return GetChildNode(child as IBlockNode, path.Substring(childNameIndex+1));
 		}
+
+		public static AbstractType[] R (string id, ResolutionContext ctxt)
+		{
+			return TypeDeclarationResolver.ResolveIdentifier (id.GetHashCode (), ctxt, null);
+		}
+
+		public static AbstractType RS (string id, ResolutionContext ctxt)
+		{
+			return AmbiguousType.Get(TypeDeclarationResolver.ResolveIdentifier (id.GetHashCode (), ctxt, null));
+		}
+
+		public static AbstractType RS (ITypeDeclaration id, ResolutionContext ctxt)
+		{
+			return TypeDeclarationResolver.ResolveSingle (id , ctxt);
+		}
 		#endregion
 
 		[Test]
@@ -174,32 +189,32 @@ void asdf(int* ni=23) {
 
 			var ctxt = CreateDefCtxt(pcl, pcl[0]["modA"]);
 
-			var t = TypeDeclarationResolver.ResolveIdentifier("T", ctxt, null);
+			var t = R("T", ctxt);
 			Assert.That(t.Length, Is.EqualTo(1));
 			Assert.That((t[0] as DSymbol).Definition.Parent, Is.SameAs(pcl[0]["modC"]));
 
 			ctxt.CurrentContext.Set(pcl[0]["modC"],CodeLocation.Empty);
-			t = TypeDeclarationResolver.ResolveIdentifier("T", ctxt, null);
+			t = R("T", ctxt);
 			Assert.That(t.Length, Is.EqualTo(1));
 			Assert.That((t[0] as DSymbol).Definition.Parent, Is.SameAs(pcl[0]["modC"]));
 
 			ctxt.CurrentContext.Set(pcl[0]["modB"], CodeLocation.Empty);
-			t = TypeDeclarationResolver.ResolveIdentifier("T", ctxt, null);
+			t = R("T", ctxt);
 			Assert.That(t.Length, Is.EqualTo(2));
 
 			ctxt.ResolutionErrors.Clear();
 			ctxt.CurrentContext.Set(N<DModule>(ctxt,"modE"), CodeLocation.Empty);
-			t = TypeDeclarationResolver.ResolveIdentifier("U", ctxt, null);
+			t = R("U", ctxt);
 			Assert.That(t.Length, Is.EqualTo(2));
 
 			ctxt.CurrentContext.Set(N<DMethod>(ctxt, "modE.N.foo"), CodeLocation.Empty);
-			t = TypeDeclarationResolver.ResolveIdentifier("X",ctxt,null);
+			t = R("X",ctxt);
 			Assert.That(t.Length, Is.EqualTo(1));
 			Assert.That(t[0], Is.TypeOf(typeof(ClassType)));
 
 			var f = N<DMethod>(ctxt, "modF.asdf");
-			ctxt.CurrentContext.Set(f, CodeLocation.Empty);
-			t = TypeDeclarationResolver.ResolveIdentifier("ni", ctxt, ((f.Body.SubStatements.First() as IfStatement).ThenStatement as BlockStatement).SubStatements.ElementAt(1));
+			ctxt.CurrentContext.Set(f, S(f, 0, 0, 1).Location);
+			t = R("ni", ctxt);
 			Assert.That((t[0] as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 			Assert.That(t.Length, Is.EqualTo(1)); // Was 2; Has been changed to 1 because it's only important to take the 'nearest' declaration that occured before the resolved expression
 
@@ -223,15 +238,15 @@ class baseFoo
 	private static int heyHo = 234;
 }");
 
-			var t = TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration("foo"), ctxt);
+			var t = RS("foo", ctxt);
 			Assert.That(t, Is.TypeOf(typeof(ClassType)));
 			Assert.AreEqual("foo", (t as ClassType).Name);
 			
-			t = TypeDeclarationResolver.ResolveSingle("privConst", ctxt, null);
+			t = RS("privConst", ctxt);
 			Assert.That(t, Is.Null);
 			
 			ctxt.CurrentContext.Set(N<DClassLike>(ctxt, "modA.foo"));
-			t = TypeDeclarationResolver.ResolveSingle("heyHo", ctxt, null);
+			t = RS("heyHo", ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 		}
 		
@@ -417,7 +432,7 @@ class Blah(T){ T b; }");
 			var pcl = CreateCache(@"module modA;");
 			var ctxt = CreateDefCtxt(pcl, pcl[0]["modA"]);
 
-			var ts = TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration("string"), ctxt);
+			var ts = RS("string", ctxt);
 			Assert.That(ts, Is.TypeOf(typeof(ArrayType)));
 
 			var x = DParser.ParseExpression(@"(new Object).toString()");
@@ -584,7 +599,7 @@ void main()
 			AbstractType t;
 			ITypeDeclaration td;
 
-			t = TypeDeclarationResolver.ResolveSingle(pixFormat.Type, ctxt);
+			t = RS(pixFormat.Type, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(StructType)));
 		}
 
@@ -820,21 +835,21 @@ double* foo(string s, string ss);
 			ArrayType at;
 
 			td = DParser.ParseBasicType("int[int]");
-			aa = TypeDeclarationResolver.ResolveSingle(td, ctxt) as AssocArrayType;
+			aa = RS(td, ctxt) as AssocArrayType;
 			Assert.That(aa, Is.Not.TypeOf(typeof(ArrayType)));
 			Assert.That(aa.KeyType, Is.TypeOf(typeof(PrimitiveType)));
 			Assert.That((aa.KeyType as PrimitiveType).TypeToken, Is.EqualTo(DTokens.Int));
 			Assert.That(aa.ValueType, Is.TypeOf(typeof(PrimitiveType)));
 
 			td = DParser.ParseBasicType("int[short]");
-			aa = TypeDeclarationResolver.ResolveSingle(td, ctxt) as AssocArrayType;
+			aa = RS(td, ctxt) as AssocArrayType;
 			Assert.That(aa, Is.Not.TypeOf(typeof(ArrayType)));
 			Assert.That(aa.KeyType, Is.TypeOf(typeof(PrimitiveType)));
 			Assert.That((aa.KeyType as PrimitiveType).TypeToken, Is.EqualTo(DTokens.Short));
 			Assert.That(aa.ValueType, Is.TypeOf(typeof(PrimitiveType)));
 
 			td = DParser.ParseBasicType("int[string]");
-			aa = TypeDeclarationResolver.ResolveSingle(td, ctxt) as AssocArrayType;
+			aa = RS(td, ctxt) as AssocArrayType;
 			Assert.That(aa, Is.Not.TypeOf(typeof(ArrayType)));
 			Assert.That(aa.KeyType, Is.TypeOf(typeof(ArrayType)));
 			Assert.That((aa.KeyType as ArrayType).IsString);
@@ -842,13 +857,13 @@ double* foo(string s, string ss);
 			aa = null;
 
 			td = DParser.ParseBasicType("byte[3]");
-			at = TypeDeclarationResolver.ResolveSingle(td, ctxt) as ArrayType;
+			at = RS(td, ctxt) as ArrayType;
 			Assert.That(at.FixedLength, Is.EqualTo(3));
 			Assert.That(at.KeyType, Is.Null);
 			Assert.That(at.ValueType, Is.TypeOf(typeof(PrimitiveType)));
 
 			td = DParser.ParseBasicType("byte[6L]");
-			at = TypeDeclarationResolver.ResolveSingle(td, ctxt) as ArrayType;
+			at = RS(td, ctxt) as ArrayType;
 			Assert.That(at.FixedLength, Is.EqualTo(6));
 			Assert.That(at.KeyType, Is.Null);
 			Assert.That(at.ValueType, Is.TypeOf(typeof(PrimitiveType)));
@@ -951,10 +966,10 @@ Obj[][] oo;
 			ch ["libweb"].FileName = Path.Combine("libweb","package.d");
 			ch ["test"].FileName = Path.Combine("test.d");
 
-			var t = TypeDeclarationResolver.ResolveSingle ("runServer", ctxt, null);
+			var t = RS ("runServer", ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			
-			t = TypeDeclarationResolver.ResolveSingle ("runClient", ctxt, null);
+			t = RS ("runClient", ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 		}
 
@@ -1042,11 +1057,11 @@ void foo(ref B bf) {
 			
 			var ctxt = CreateDefCtxt(pcl, pcl[0]["A"]);
 			
-			var t = TypeDeclarationResolver.ResolveIdentifier("foo",ctxt,null);
+			var t = R("foo",ctxt);
 			Assert.That(t.Length, Is.EqualTo(0));
 			
 			ctxt.CurrentContext.Set(pcl[0]["E"]);
-			t = TypeDeclarationResolver.ResolveIdentifier("foo",ctxt,null);
+			t = R("foo",ctxt);
 			Assert.That(t.Length, Is.EqualTo(1));
 		}
 
@@ -1064,7 +1079,7 @@ class Class{
 
 			ctxt.CurrentContext.Set (Class);
 
-			var t = TypeDeclarationResolver.ResolveSingle ("b", ctxt, null);
+			var t = RS ("b", ctxt);
 			Assert.That (t, Is.TypeOf (typeof(ModuleSymbol)));
 			Assert.That ((t as ModuleSymbol).Definition, Is.SameAs (B));
 		}
@@ -1111,7 +1126,7 @@ void main()
 			
 			DToken tk;
 			var id = DParser.ParseBasicType("A.aFoo", out tk);
-			var t = TypeDeclarationResolver.ResolveSingle(id, ctxt);
+			var t = RS(id, ctxt);
 			
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 		}
@@ -1511,7 +1526,7 @@ class Client : IClient!(Params, ConcreteRegistry){}");
 			ctxt.CurrentContext.Set(mod);
 			DToken opt=null;
 			var tix = DParser.ParseBasicType("IClient!(Params,ConcreteRegistry)",out opt);
-			res = TypeDeclarationResolver.ResolveSingle(tix, ctxt);
+			res = RS(tix, ctxt);
 
 			Assert.IsInstanceOfType(typeof(ClassType),res);
 		}
@@ -1787,7 +1802,7 @@ class C(U: A!W, W){ W item; }
 			AbstractType t;
 
 			td = DParser.ParseBasicType("C!(A!int)");
-			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
+			t = RS(td, ctxt);
 
 			Assert.That(t, Is.TypeOf(typeof(ClassType)));
 			var ct = t as ClassType;
@@ -1797,7 +1812,7 @@ class C(U: A!W, W){ W item; }
 			Assert.That(ct.DeducedTypes[1].Base, Is.TypeOf(typeof(PrimitiveType)));
 
 			td = DParser.ParseBasicType("C!(A!string)");
-			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
+			t = RS(td, ctxt);
 
 			Assert.That(t, Is.TypeOf(typeof(ClassType)));
 			ct = t as ClassType;
@@ -1943,11 +1958,11 @@ class Too(T:float)
 			
 			DToken tk;
 			var ty = DParser.ParseBasicType("Too",out tk);
-			t = TypeDeclarationResolver.ResolveSingle(ty,ctxt);
+			t = RS(ty,ctxt);
 			Assert.That(t, Is.Null);
 			
 			ty = DParser.ParseBasicType("Too!int",out tk);
-			t = TypeDeclarationResolver.ResolveSingle(ty,ctxt);
+			t = RS(ty,ctxt);
 			Assert.That(t, Is.TypeOf(typeof(ClassType)));
 		}
 		
@@ -2269,7 +2284,7 @@ template Baz(B)
 			DToken tk;
 			var td = DParser.ParseBasicType("Foo!int",out tk);
 
-			var s = TypeDeclarationResolver.ResolveSingle(td, ctxt);
+			var s = RS(td, ctxt);
 			
 			Assert.IsInstanceOfType(typeof(MemberSymbol),s);
 
@@ -2282,11 +2297,11 @@ template Baz(B)
 			var pt = (PrimitiveType)tps.Base;
 			Assert.AreEqual(DTokens.Int, pt.TypeToken);
 			
-			s = TypeDeclarationResolver.ResolveSingle(DParser.ParseBasicType("Bar!int",out tk),ctxt);
+			s = RS(DParser.ParseBasicType("Bar!int",out tk),ctxt);
 			
 			Assert.That(((DSymbol)s).Base, Is.TypeOf(typeof(PointerType)));
 			
-			s = TypeDeclarationResolver.ResolveSingle(DParser.ParseBasicType("Baz!int",out tk),ctxt);
+			s = RS(DParser.ParseBasicType("Baz!int",out tk),ctxt);
 			
 			Assert.That(((DSymbol)s).Base, Is.TypeOf(typeof(PointerType)));
 		}
@@ -2436,7 +2451,7 @@ void main() {
 			Assert.That ((v as PrimitiveValue).Value, Is.EqualTo(8m));
 
 			td = DParser.ParseBasicType("D.foo");
-			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
+			t = RS(td, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 		}
@@ -2482,14 +2497,14 @@ version(C)
 			var ctxt = CreateDefCtxt(pcl, pcl[0]["m"]);
 
 			// Test basic version-dependent resolution
-			var ms = TypeDeclarationResolver.ResolveIdentifier("f", ctxt, null);
+			var ms = R("f", ctxt);
 			Assert.AreEqual(1, ms.Length);
 			var m = ms[0] as MemberSymbol;
 			Assert.IsNotNull(m);
 
 			Assert.That(m.Base, Is.TypeOf(typeof(PointerType)));
 
-			ms = TypeDeclarationResolver.ResolveIdentifier("d", ctxt, null);
+			ms = R("d", ctxt);
 			Assert.AreEqual(1, ms.Length);
 			m = ms[0] as MemberSymbol;
 			Assert.IsNotNull(m);
@@ -2497,17 +2512,17 @@ version(C)
 			Assert.That(m.Base, Is.TypeOf(typeof(PointerType)));
 
 			ctxt.CurrentContext.Set(ctxt.ScopedBlock.EndLocation);
-			ms = TypeDeclarationResolver.ResolveIdentifier("a", ctxt, null);
+			ms = R("a", ctxt);
 			Assert.AreEqual(1, ms.Length);
 			m = ms[0] as MemberSymbol;
 			Assert.IsNotNull(m);
 
 			Assert.That(m.Base, Is.TypeOf(typeof(PointerType)));
 
-			ms = TypeDeclarationResolver.ResolveIdentifier("pubB", ctxt, null);
+			ms = R("pubB", ctxt);
 			Assert.AreEqual(1, ms.Length);
 
-			ms = TypeDeclarationResolver.ResolveIdentifier("pubC", ctxt, null);
+			ms = R("pubC", ctxt);
 			Assert.AreEqual(0, ms.Length);
 		}
 
@@ -2761,19 +2776,19 @@ debug(4)
 			var subst = foo.Body.SubStatements as List<IStatement>;
 			var ctxt = CreateDefCtxt(pcl, foo, foo.Body);
 
-			var x = TypeDeclarationResolver.ResolveIdentifier("x", ctxt, null);
+			var x = R("x", ctxt);
 			Assert.AreEqual(1, x.Length);
 
-			x = TypeDeclarationResolver.ResolveIdentifier("y",ctxt,null);
+			x = R("y",ctxt);
 			Assert.AreEqual(0, x.Length);
 
-			x = TypeDeclarationResolver.ResolveIdentifier("z", ctxt, null);
+			x = R("z", ctxt);
 			Assert.AreEqual(1, x.Length);
 
-			x = TypeDeclarationResolver.ResolveIdentifier("z2", ctxt, null);
+			x = R("z2", ctxt);
 			Assert.AreEqual(1, x.Length);
 
-			x = TypeDeclarationResolver.ResolveIdentifier("z3", ctxt, null);
+			x = R("z3", ctxt);
 			Assert.AreEqual(0, x.Length);
 
 			IStatement ss;
@@ -2795,24 +2810,24 @@ debug(4)
 			x2 = ExpressionTypeEvaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
 			Assert.That(x2, Is.TypeOf(typeof(MemberSymbol)));
 
-			x = TypeDeclarationResolver.ResolveIdentifier("dbg_a", ctxt, null);
+			x = R("dbg_a", ctxt);
 			Assert.AreEqual(1, x.Length);
 
 			ctxt.CurrentContext.Set(m.EndLocation);
 
-			x = TypeDeclarationResolver.ResolveIdentifier("dbg_b", ctxt, null);
+			x = R("dbg_b", ctxt);
 			Assert.AreEqual(1, x.Length);
 
-			x = TypeDeclarationResolver.ResolveIdentifier("dbg_c", ctxt, null);
+			x = R("dbg_c", ctxt);
 			Assert.AreEqual(0, x.Length);
 
-			x = TypeDeclarationResolver.ResolveIdentifier("dbg_d", ctxt, null);
+			x = R("dbg_d", ctxt);
 			Assert.AreEqual(1, x.Length);
 
-			x = TypeDeclarationResolver.ResolveIdentifier("dbg_e", ctxt, null);
+			x = R("dbg_e", ctxt);
 			Assert.AreEqual(1, x.Length);
 
-			x = TypeDeclarationResolver.ResolveIdentifier("dbg_f", ctxt, null);
+			x = R("dbg_f", ctxt);
 			Assert.AreEqual(0, x.Length);
 		}
 
@@ -2865,37 +2880,37 @@ void main()
 			var mod = pcl[0]["m"];
 			var ctxt = CreateDefCtxt(pcl, mod, mod.EndLocation);
 
-			var x = TypeDeclarationResolver.ResolveIdentifier("a", ctxt,null);
+			var x = R("a", ctxt);
 			Assert.AreEqual(1, x.Length);
 
-			x = TypeDeclarationResolver.ResolveIdentifier("b", ctxt, null);
+			x = R("b", ctxt);
 			Assert.AreEqual(0, x.Length);
 
-			x = TypeDeclarationResolver.ResolveIdentifier("c", ctxt, null);
+			x = R("c", ctxt);
 			Assert.AreEqual(0, x.Length);
 
-			x = TypeDeclarationResolver.ResolveIdentifier("dbgX", ctxt, null);
+			x = R("dbgX", ctxt);
 			Assert.AreEqual(1, x.Length);
 
-			x = TypeDeclarationResolver.ResolveIdentifier("dbgY", ctxt, null);
+			x = R("dbgY", ctxt);
 			Assert.AreEqual(0, x.Length);
 
 			ctxt.CurrentContext.Set(mod = pcl[0]["B"], mod.EndLocation);
 
-			x = TypeDeclarationResolver.ResolveIdentifier("dbg", ctxt, null);
+			x = R("dbg", ctxt);
 			Assert.AreEqual(1, x.Length);
 
-			x = TypeDeclarationResolver.ResolveIdentifier("noDbg", ctxt, null);
+			x = R("noDbg", ctxt);
 			Assert.AreEqual(0, x.Length);
 
-			x = TypeDeclarationResolver.ResolveIdentifier("a", ctxt, null);
+			x = R("a", ctxt);
 			Assert.AreEqual(1, x.Length);
 
-			x = TypeDeclarationResolver.ResolveIdentifier("b", ctxt, null);
+			x = R("b", ctxt);
 			Assert.AreEqual(0, x.Length);
 
 			DToken tk;
-			var t = TypeDeclarationResolver.ResolveSingle(DParser.ParseBasicType("T!int",out tk),ctxt);
+			var t = RS(DParser.ParseBasicType("T!int",out tk),ctxt);
 
 			Assert.That(t,Is.TypeOf(typeof(MemberSymbol)));
 			t = ((MemberSymbol)t).Base;
@@ -2966,24 +2981,24 @@ int xx3;
 			ctxt.CurrentContext.Set(A["vy"].First().Location);
 
 			AbstractType t;
-			t = TypeDeclarationResolver.ResolveSingle("vy", ctxt, null);
+			t = RS("vy", ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 
-			t = TypeDeclarationResolver.ResolveSingle("vx", ctxt, null);
+			t = RS("vx", ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 
 
 			ctxt.CurrentContext.Set(A["xx2"].First().Location);
 
-			t = TypeDeclarationResolver.ResolveSingle("xa", ctxt, null);
+			t = RS("xa", ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 
-			t = TypeDeclarationResolver.ResolveSingle("xb", ctxt, null);
+			t = RS("xb", ctxt);
 			Assert.That(t, Is.Null);
 
 			ctxt.CurrentContext.Set(A["xx3"].First().Location);
 
-			t = TypeDeclarationResolver.ResolveSingle("xu", ctxt, null);
+			t = RS("xu", ctxt);
 			Assert.That(t, Is.Null);
 		}
 		
@@ -3019,10 +3034,10 @@ else
 			
 			var ctxt = CreateDefCtxt(pcl, A, null);
 			
-			var x = TypeDeclarationResolver.ResolveIdentifier("a", ctxt, null);
+			var x = R("a", ctxt);
 			Assert.AreEqual(1, x.Length);
 			
-			x = TypeDeclarationResolver.ResolveIdentifier("b",ctxt,null);
+			x = R("b",ctxt);
 			Assert.AreEqual(0, x.Length);
 			
 			var v = Evaluation.EvaluateValue(DParser.ParseExpression("Templ!int"), ctxt, true);
@@ -3032,13 +3047,13 @@ else
 			var pv = (PrimitiveValue)v;
 			Assert.AreEqual(1m, pv.Value);
 			
-			x = TypeDeclarationResolver.ResolveIdentifier("c", ctxt, null);
+			x = R("c", ctxt);
 			Assert.AreEqual(1, x.Length);
 			
-			x = TypeDeclarationResolver.ResolveIdentifier("d", ctxt, null);
+			x = R("d", ctxt);
 			Assert.AreEqual(0, x.Length);
 			
-			x = TypeDeclarationResolver.ResolveIdentifier("e", ctxt, null);
+			x = R("e", ctxt);
 			Assert.AreEqual(1, x.Length);
 		}
 		
@@ -3064,10 +3079,10 @@ class imp{}");
 			var B = (DModule)pcl[0]["B"];
 			var ctxt = CreateDefCtxt(pcl, B["bar"].First() as DMethod);
 			
-			var x = TypeDeclarationResolver.ResolveIdentifier("imp",ctxt, null);
+			var x = R("imp",ctxt);
 			Assert.That(x.Length, Is.EqualTo(0));
 			
-			x = TypeDeclarationResolver.ResolveIdentifier("cl",ctxt,null);
+			x = R("cl",ctxt);
 			Assert.That(x.Length, Is.EqualTo(1));
 		}
 		
@@ -3083,7 +3098,7 @@ class aa(T) if(is(T==int)) {}");
 			var A = pcl[0]["A"];
 			var ctxt = CreateDefCtxt(pcl, A);
 			
-			var x = TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration("cl"),ctxt,true);
+			var x = TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration("cl"),ctxt);
 			Assert.That(x, Is.Null);
 			
 			var ex = DParser.ParseAssignExpression("cl!int");
@@ -3164,7 +3179,7 @@ unittest
 			ctxt.CurrentContext.Set(Tmpl);
 
 			td = DParser.ParseBasicType("inst");
-			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
+			t = RS(td, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			t = (t as MemberSymbol).Base;
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
@@ -3172,7 +3187,7 @@ unittest
 			ctxt.CurrentContext.Set(A);
 
 			td = DParser.ParseBasicType("Unqual!ImmIntArr");
-			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
+			t = RS(td, ctxt);
 
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			at = (t as TemplateParameterSymbol).Base as ArrayType;
@@ -3185,7 +3200,7 @@ unittest
 			ctxt.CurrentContext.DeducedTemplateParameters.Clear();
 
 			td = DParser.ParseBasicType("Unqual!int");
-			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
+			t = RS(td, ctxt);
 
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
@@ -3193,7 +3208,7 @@ unittest
 			ctxt.CurrentContext.DeducedTemplateParameters.Clear();
 
 			td = DParser.ParseBasicType("Unqual!(const(int))");
-			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
+			t = RS(td, ctxt);
 
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			pt = (t as TemplateParameterSymbol).Base as PrimitiveType;
@@ -3203,7 +3218,7 @@ unittest
 			ctxt.CurrentContext.DeducedTemplateParameters.Clear();
 
 			td = DParser.ParseBasicType("Unqual!(inout(int))");
-			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
+			t = RS(td, ctxt);
 
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			pt = (t as TemplateParameterSymbol).Base as PrimitiveType;
@@ -3213,7 +3228,7 @@ unittest
 			ctxt.CurrentContext.DeducedTemplateParameters.Clear();
 
 			td = DParser.ParseBasicType("Unqual!(immutable(int))");
-			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
+			t = RS(td, ctxt);
 
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			pt = (t as TemplateParameterSymbol).Base as PrimitiveType;
@@ -3223,7 +3238,7 @@ unittest
 			ctxt.CurrentContext.DeducedTemplateParameters.Clear();
 
 			td = DParser.ParseBasicType("Unqual!(shared(int))");
-			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
+			t = RS(td, ctxt);
 
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			pt = (t as TemplateParameterSymbol).Base as PrimitiveType;
@@ -3233,7 +3248,7 @@ unittest
 			ctxt.CurrentContext.DeducedTemplateParameters.Clear();
 
 			td = DParser.ParseBasicType("Unqual!(const(shared(int)))");
-			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
+			t = RS(td, ctxt);
 
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			pt = (t as TemplateParameterSymbol).Base as PrimitiveType;
@@ -3243,7 +3258,7 @@ unittest
 			ctxt.CurrentContext.DeducedTemplateParameters.Clear();
 
 			td = DParser.ParseBasicType("Unqual!(shared const int)");
-			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
+			t = RS(td, ctxt);
 
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			pt = (t as TemplateParameterSymbol).Base as PrimitiveType;
@@ -3429,7 +3444,7 @@ S2!S1 s;
 			DToken tk;
 
 			td = DParser.ParseBasicType ("typeof(int.sizeof)", out tk);
-			t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
+			t = RS(td, ctxt);
 
 			Assert.That (t, Is.TypeOf(typeof(PrimitiveType)));
 			Assert.That ((t as PrimitiveType).TypeToken, Is.EqualTo(DTokens.Uint));
@@ -3503,38 +3518,38 @@ import A;",
 			
 			var ctxt = ResolutionTests.CreateDefCtxt(pcl, pcl[0]["A"]);
 			
-			var x = TypeDeclarationResolver.ResolveIdentifier("x", ctxt, null);
+			var x = R("x", ctxt);
 			Assert.That(x.Length, Is.EqualTo(1));
 			
-			x = TypeDeclarationResolver.ResolveIdentifier("y", ctxt, null);
+			x = R("y", ctxt);
 			Assert.That(x.Length, Is.EqualTo(1));
 			
 			ctxt.CurrentContext.Set(pcl[0]["pack.B"]);
 			
-			x = TypeDeclarationResolver.ResolveIdentifier("x", ctxt, null);
+			x = R("x", ctxt);
 			Assert.That(x.Length, Is.EqualTo(1));
 			
-			x = TypeDeclarationResolver.ResolveIdentifier("privAA", ctxt, null);
+			x = R("privAA", ctxt);
 			Assert.That(x.Length, Is.EqualTo(0));
 			
-			x = TypeDeclarationResolver.ResolveIdentifier("privA", ctxt, null);
+			x = R("privA", ctxt);
 			Assert.That(x.Length, Is.EqualTo(0));
 			
-			x = TypeDeclarationResolver.ResolveIdentifier("packAA", ctxt, null);
+			x = R("packAA", ctxt);
 			Assert.That(x.Length, Is.EqualTo(0));
 			
-			x = TypeDeclarationResolver.ResolveIdentifier("packA", ctxt, null);
+			x = R("packA", ctxt);
 			Assert.That(x.Length, Is.EqualTo(0));
 			
 			ctxt.CurrentContext.Set(pcl[0]["C"]);
 			
-			x = TypeDeclarationResolver.ResolveIdentifier("privA", ctxt, null);
+			x = R("privA", ctxt);
 			Assert.That(x.Length, Is.EqualTo(0));
 			
-			x = TypeDeclarationResolver.ResolveIdentifier("packAA", ctxt, null);
+			x = R("packAA", ctxt);
 			Assert.That(x.Length, Is.EqualTo(1));
 			
-			x = TypeDeclarationResolver.ResolveIdentifier("packA", ctxt, null);
+			x = R("packA", ctxt);
 			Assert.That(x.Length, Is.EqualTo(1));
 		}
 		
@@ -3556,12 +3571,12 @@ void main()
 			var A = pcl[0]["A"];
 			var main = A["main"].First() as DMethod;
 			var stmt = main.Body.SubStatements.ElementAt(1);
-			var ctxt = ResolutionTests.CreateDefCtxt(pcl, main, main.Body);
+			var ctxt = ResolutionTests.CreateDefCtxt(pcl, main, stmt);
 			
-			var x = TypeDeclarationResolver.ResolveIdentifier("x", ctxt, stmt);
+			var x = R("x", ctxt);
 			Assert.That(x.Length, Is.EqualTo(1));
 			
-			x = TypeDeclarationResolver.ResolveIdentifier("y", ctxt, stmt);
+			x = R("y", ctxt);
 			Assert.That(x.Length, Is.EqualTo(0));
 		}
 		
@@ -3600,14 +3615,14 @@ class cl
 			var B =pcl[0]["B"];
 			var ctxt = ResolutionTests.CreateDefCtxt(pcl, B);
 			
-			var t = TypeDeclarationResolver.ResolveSingle("CFoo", ctxt, null);
+			var t = RS("CFoo", ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That((t as MemberSymbol).Definition, Is.TypeOf(typeof(DMethod)));
 			
 			var bar = (B["cl"].First() as DClassLike)["bar"].First() as DMethod;
 			ctxt.CurrentContext.Set(bar, bar.Body.Location);
 			
-			t = TypeDeclarationResolver.ResolveSingle("CFoo", ctxt, null);
+			t = RS("CFoo", ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That((t as MemberSymbol).Definition, Is.TypeOf(typeof(DMethod)));
 		}
@@ -3625,12 +3640,12 @@ mixin(""template mxT(string n) { enum mxT = n; }"");
 			
 			var ctxt = ResolutionTests.CreateDefCtxt(pcl, pcl[0]["A"]);
 			
-			var t = TypeDeclarationResolver.ResolveSingle("myClass", ctxt, null);
+			var t = RS("myClass", ctxt);
 			Assert.That(t, Is.TypeOf(typeof(ClassType)));
 			
 			ctxt.CurrentContext.Set(pcl[0]["B"]);
 			
-			t = TypeDeclarationResolver.ResolveSingle("myClass", ctxt, null);
+			t = RS("myClass", ctxt);
 			Assert.That(t, Is.Null);
 		}
 
@@ -3699,19 +3714,19 @@ mixin(""class ""~mxT4!(""myClass"")~"" {}"");"");");
 			
 			var ctxt = CreateDefCtxt(pcl, pcl[0]["A"]);
 			
-			var t = TypeDeclarationResolver.ResolveSingle("mxT1",ctxt,null);
+			var t = RS("mxT1",ctxt);
 			Assert.That(t,Is.TypeOf(typeof(TemplateType)));
 			
-			t = TypeDeclarationResolver.ResolveSingle("mxT2",ctxt,null);
+			t = RS("mxT2",ctxt);
 			Assert.That(t,Is.TypeOf(typeof(TemplateType)));
 			
-			t = TypeDeclarationResolver.ResolveSingle("mxT3",ctxt,null);
+			t = RS("mxT3",ctxt);
 			Assert.That(t,Is.TypeOf(typeof(TemplateType)));
 			
-			t = TypeDeclarationResolver.ResolveSingle("mxT4",ctxt,null);
+			t = RS("mxT4",ctxt);
 			Assert.That(t,Is.TypeOf(typeof(TemplateType)));
 			
-			t = TypeDeclarationResolver.ResolveSingle("myClass",ctxt,null);
+			t = RS("myClass",ctxt);
 			Assert.That(t,Is.TypeOf(typeof(ClassType)));
 		}
 		#endregion
@@ -3916,12 +3931,12 @@ void foo() {
 			
 			foo = (A["Singleton"].First() as DClassLike)["singletonBar"].First() as DMethod;
 			ctxt.CurrentContext.Set(foo, foo.Body.Location);
-			t = TypeDeclarationResolver.ResolveSingle("I",ctxt,null);
+			t = RS("I",ctxt);
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			
 			foo = (A["clA"].First() as DClassLike)["clFoo"].First() as DMethod;
 			ctxt.CurrentContext.Set(foo, foo.Body.Location);
-			t = TypeDeclarationResolver.ResolveSingle("I",ctxt,null);
+			t = RS("I",ctxt);
 			Assert.That(t, Is.Null);
 		}
 		
@@ -3939,14 +3954,14 @@ void CFoo() {}");
 			var B =pcl[0]["B"];
 			var ctxt = ResolutionTests.CreateDefCtxt(pcl, B);
 			
-			var t = TypeDeclarationResolver.ResolveSingle("CFoo", ctxt, null);
+			var t = RS("CFoo", ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That((t as MemberSymbol).Definition, Is.TypeOf(typeof(DMethod)));
 			
 			var bar = (B["cl"].First() as DClassLike)["bar"].First() as DMethod;
 			ctxt.CurrentContext.Set(bar, bar.Body.Location);
 			
-			t = TypeDeclarationResolver.ResolveSingle("CFoo", ctxt, null);
+			t = RS("CFoo", ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That((t as MemberSymbol).Definition, Is.TypeOf(typeof(DMethod)));
 		}

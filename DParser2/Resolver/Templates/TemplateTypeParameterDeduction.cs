@@ -200,7 +200,7 @@ namespace D_Parser.Resolver.Templates
 			var optBackup = ctxt.CurrentContext.ContextDependentOptions;
 			ctxt.CurrentContext.ContextDependentOptions = ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.DontResolveBaseTypes;
 
-			var initialResults = TypeDeclarationResolver.ResolveIdentifier(tix.TemplateIdHash, ctxt, tix);
+			var initialResults = ExpressionTypeEvaluation.GetOverloads(tix, ctxt, null, false);
 
 			var l = new List<DNode>();
 			foreach (var res in initialResults)
