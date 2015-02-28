@@ -82,13 +82,13 @@ namespace D_Parser.Resolver.ResolutionHooks
 
 				var tupleName = "Types";
 				tp = new TemplateTypeParameter(tupleName, CodeLocation.Empty, tupleStruct);
-				ded[tp] = new TemplateParameterSymbol(tp, new DTuple(null, typeList));
+				ded[tp] = new TemplateParameterSymbol(tp, new DTuple(typeList));
 
 				tupleStruct.Add(new DVariable { NameHash = DVariable.AliasThisIdentifierHash, IsAlias = true, IsAliasThis = true, Type = new IdentifierDeclaration(tupleName) });
 			}
 
 			n = tupleStruct;
-			return new StructType(tupleStruct, ds.DeclarationOrExpressionBase, ded.Count != 0 ? ded.Values : null);
+			return new StructType(tupleStruct, ded.Count != 0 ? ded.Values : null);
 
 			//TODO: Ensure renaming and other AST-based things run properly
 		}

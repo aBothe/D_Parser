@@ -67,19 +67,23 @@ namespace Tests
 
 			Assert.AreEqual(av.StringValue, content);
 
-			Assert.IsInstanceOfType(typeof(ArrayType),av.RepresentedType);
+			Assert.That(av.RepresentedType, Is.TypeOf(typeof(ArrayType)));
 			var ar = (ArrayType)av.RepresentedType;
+
+			Assert.That (ar.ValueType, Is.TypeOf (typeof(PrimitiveType)));
+			var pt = ar.ValueType as PrimitiveType;
+			Assert.That (pt.Modifier, Is.EqualTo (DTokens.Immutable));
 
 			switch (id.Subformat)
 			{
 				case LiteralSubformat.Utf8:
-					Assert.AreEqual(ar.DeclarationOrExpressionBase.ToString(),"immutable(char)[]");
+					Assert.AreEqual(DTokens.Char, pt.TypeToken);
 					break;
 				case LiteralSubformat.Utf16:
-					Assert.AreEqual(ar.DeclarationOrExpressionBase.ToString(), "immutable(wchar)[]");
+					Assert.AreEqual(DTokens.Wchar, pt.TypeToken);
 					break;
 				case LiteralSubformat.Utf32:
-					Assert.AreEqual(ar.DeclarationOrExpressionBase.ToString(), "immutable(dchar)[]");
+					Assert.AreEqual(DTokens.Dchar, pt.TypeToken);
 					break;
 				default:
 					Assert.Fail();

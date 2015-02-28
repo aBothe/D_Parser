@@ -79,7 +79,7 @@ namespace D_Parser.Dom
 			{
 				if (m.Name == "Object" && m is DClassLike)
 				{
-					ObjectClassResult = new ClassType(ObjectClass = (DClassLike)m, new IdentifierDeclaration("Object"), null);
+					ObjectClassResult = new ClassType(ObjectClass = (DClassLike)m, null);
 					break;
 				}
 				else if (m.Name == "size_t")

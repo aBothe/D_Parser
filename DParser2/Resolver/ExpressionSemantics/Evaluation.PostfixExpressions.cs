@@ -243,9 +243,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						if (dg.Base == null)
 						{
 							if (dg.IsFunctionLiteral)
-								dg = new DelegateType(bt, dg.DeclarationOrExpressionBase as FunctionLiteral, dg.Parameters);
+								dg = new DelegateType(bt, dg.delegateTypeBase as FunctionLiteral, dg.Parameters);
 							else
-								dg = new DelegateType(bt, dg.DeclarationOrExpressionBase as DelegateDeclaration, dg.Parameters);
+								dg = new DelegateType(bt, dg.delegateTypeBase as DelegateDeclaration, dg.Parameters);
 						}
 						argTypeFilteredOverloads.Add(new DelegateCallSymbol(dg, call));
 					}
@@ -275,7 +275,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return untemplatedMethodResult;
 			#endregion
 
-			return AmbiguousType.Get(argTypeFilteredOverloads, tix);
+			return AmbiguousType.Get(argTypeFilteredOverloads);
 		}
 
 		static void HandleDMethodOverload(ResolutionContext ctxt, bool eval, ISymbolValue baseValue, List<ISemantic> callArguments, bool returnBaseTypeOnly, List<AbstractType> argTypeFilteredOverloads, ref bool hasHandledUfcsResultBefore, 
@@ -397,7 +397,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			{
 				// If it's just wanted to pass back the delegate's return type, skip the remaining parts of this method.
 				//EvalError(dg.DeclarationOrExpressionBase as IExpression, "TODO", dg);
-				ValueProvider.LogError(dg.DeclarationOrExpressionBase, "Ctfe not implemented yet");
+				ValueProvider.LogError(dg.delegateTypeBase, "Ctfe not implemented yet");
 				return null;
 			}
 		}
@@ -488,7 +488,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				var argsToTake = new ISemantic[argCountToHandle];
 				callArguments.CopyTo(currentArg, argsToTake, 0, argsToTake.Length);
 				currentArg += argsToTake.Length;
-				var tt = new DTuple(null, argsToTake);
+				var tt = new DTuple(argsToTake);
 				tps = new TemplateParameterSymbol(tpar, tt);
 
 				//   and set the actual template tuple parameter deduction
@@ -622,7 +622,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			// If evaluation active and the access expression is stand-alone, return a single item only.
 			if (EvalAndFilterOverloads && ValueProvider != null)
-				return new[] { (R)new Evaluation(ValueProvider).TryDoCTFEOrGetValueRefs(AmbiguousType.Get(overloads, acc.AccessExpression), acc.AccessExpression) };
+				return new[] { (R)new Evaluation(ValueProvider).TryDoCTFEOrGetValueRefs(AmbiguousType.Get(overloads), acc.AccessExpression) };
 
 			return overloads as R[];
 		}

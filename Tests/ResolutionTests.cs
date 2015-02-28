@@ -368,11 +368,14 @@ struct Thing(T)
 alias Thing!(int) IntThing;");
 			
 			var ctxt = CreateDefCtxt(pcl, pcl[0]["A"]);
-			
-			var ex = DParser.ParseExpression("Thing!int");
-			var t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
+
+			IExpression ex;
+			AbstractType t;
+
+			ex = DParser.ParseExpression("Thing!int");
+			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(StructType)));
-			
+
 			ex = DParser.ParseExpression("IntThing");
 			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(StructType)));
@@ -1423,19 +1426,25 @@ int delegate(int b) myDeleg;
 ");
 			ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
 
-			var x = DParser.ParseExpression("f!(char[5])");
-			var r=ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			var mr = r as MemberSymbol;
+			IExpression x;
+			AbstractType r;
+			MemberSymbol mr;
+
+			x = DParser.ParseExpression("fo!(char[5])");
+			r = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+			mr = r as MemberSymbol;
+			Assert.That(r, Is.TypeOf(typeof(MemberSymbol)));
+
+			x = DParser.ParseExpression("f!(char[5])");
+			r=ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+			mr = r as MemberSymbol;
 			Assert.That(r, Is.TypeOf(typeof(MemberSymbol)));
 
 			var v = mr.DeducedTypes[2].ParameterValue;
 			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
 			Assert.AreEqual(5M, ((PrimitiveValue)v).Value);
 
-			x = DParser.ParseExpression("fo!(char[5])");
-			r = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			mr = r as MemberSymbol;
-			Assert.That(r, Is.TypeOf(typeof(MemberSymbol)));
+
 
 			x = DParser.ParseExpression("fo!(immutable(char)[])");
 			r = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
@@ -1607,8 +1616,8 @@ mixin(def!(-1,""bar""));
 			Assert.That((val as ArrayValue).StringValue, Is.EqualTo("bool someVar;"));
 
 			var def = ctxt.ParseCache [0] ["A"]["def"].First () as DClassLike;
-			var defS = new TemplateType (def, null, new[]{ 
-				new TemplateParameterSymbol(def.TemplateParameters[0], new PrimitiveValue(DTokens.Int, 2, null)), 
+			var defS = new TemplateType (def, new[]{ 
+				new TemplateParameterSymbol(def.TemplateParameters[0], new PrimitiveValue(2)), 
 				new TemplateParameterSymbol(def.TemplateParameters[1], new ArrayValue(Evaluation.GetStringType(ctxt), "someVar")) 
 			});
 			using (ctxt.Push(defS))
@@ -3278,7 +3287,7 @@ Namespace.UserId uid;
 		{
 			var ctxt = CreateCtxt ("A", @"module A;");
 
-			var constChar = new PointerType (new PrimitiveType(DTokens.Char, DTokens.Const), null);
+			var constChar = new PointerType (new PrimitiveType(DTokens.Char, DTokens.Const));
 
 			IExpression x;
 			AbstractType t;

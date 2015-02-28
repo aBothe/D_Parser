@@ -45,14 +45,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				var ch = fmt == LiteralSubformat.Utf32 ? DTokens.Dchar :
 					fmt == LiteralSubformat.Utf16 ? DTokens.Wchar : DTokens.Char;
 
-				_t = new ArrayType(new PrimitiveType(ch, DTokens.Immutable),
-					new ArrayDecl
-					{
-						ValueType = new MemberFunctionAttributeDecl(DTokens.Immutable)
-						{
-							InnerType = new DTokenDeclaration(ch)
-						}
-					});
+				_t = new ArrayType(new PrimitiveType(ch, DTokens.Immutable));
 			}
 
 			return _t;
@@ -131,7 +124,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				case DTokens.Dollar:
 					// It's only allowed if the evaluation stack contains an array value
 					if (ValueProvider.CurrentArrayLength != -1)
-						return new PrimitiveValue(DTokens.Int, ValueProvider.CurrentArrayLength, x);
+						return new PrimitiveValue(ValueProvider.CurrentArrayLength);
 					else
 					{
 						EvalError(x, "Dollar not allowed here!");
@@ -139,13 +132,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					}
 
 				case DTokens.True:
-					return new PrimitiveValue(DTokens.Bool, 1, x);
+					return new PrimitiveValue(true);
 				case DTokens.False:
-					return new PrimitiveValue(DTokens.Bool, 0, x);
+					return new PrimitiveValue(false);
 				case DTokens.__FILE__:
 					return new ArrayValue(GetStringType(), (ctxt.ScopedBlock.NodeRoot as DModule).FileName);
 				case DTokens.__LINE__:
-					return new PrimitiveValue(DTokens.Int, x.Location.Line, x);
+					return new PrimitiveValue(x.Location.Line);
 				case DTokens.__MODULE__:
 					return new ArrayValue(GetStringType(), (ctxt.ScopedBlock.NodeRoot as DModule).ModuleName);
 				case DTokens.__FUNCTION__:
@@ -235,8 +228,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public ISymbolValue Visit(ImportExpression x)
 		{
-			var strType = GetStringType();
-
 			var cnst = resolveConstOnly;
 			resolveConstOnly = true;
 			var v = x.AssignExpression != null ? x.AssignExpression.Accept(this) as ArrayValue : null;
@@ -278,8 +269,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			foreach (var ev in elements)
 				if (ev != null && (baseType = ev.RepresentedType) != null)
 					break;
-
-			return new ArrayValue(new ArrayType(baseType, arr), elements.ToArray());
+			
+			return new ArrayValue(new ArrayType(baseType), elements.ToArray());
 		}
 
 		public ISymbolValue Visit(AssocArrayExpression aa)
@@ -294,7 +285,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				elements.Add(new KeyValuePair<ISymbolValue, ISymbolValue>(keyVal, valVal));
 			}
 
-			return new AssociativeArrayValue(new AssocArrayType(elements[0].Value.RepresentedType, elements[0].Key.RepresentedType, aa), elements);
+			return new AssociativeArrayValue(new AssocArrayType(elements[0].Value.RepresentedType, elements[0].Key.RepresentedType), elements);
 		}
 
 		public ISymbolValue Visit(FunctionLiteral x)
@@ -324,7 +315,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public ISymbolValue Visit(VoidInitializer x)
 		{
-			return new PrimitiveValue(DTokens.Void, decimal.Zero, x);
+			return new VoidValue();
 		}
 
 		public ISymbolValue Visit(ArrayInitializer x)

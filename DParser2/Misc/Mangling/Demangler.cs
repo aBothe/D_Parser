@@ -21,6 +21,7 @@ namespace D_Parser.Misc.Mangling
 	{
 		StringReader r;
 		StringBuilder sb = new StringBuilder();
+		ResolutionContext ctxt;
 
 		public static ITypeDeclaration DemangleQualifier(string mangledString)
 		{
@@ -52,7 +53,7 @@ namespace D_Parser.Misc.Mangling
 		public static AbstractType DemangleAndResolve(string mangledString, ResolutionContext ctxt, out ITypeDeclaration qualifier)
 		{
 			bool isCFunction;
-			Demangler.Demangle(mangledString, out qualifier, out isCFunction);
+			Demangler.Demangle(mangledString, ctxt, out qualifier, out isCFunction);
 			
 			// Seek for C functions | Functions that have no direct module association (e.g. _Dmain)
 			if(qualifier is IdentifierDeclaration && qualifier.InnerDeclaration == null)
@@ -80,7 +81,7 @@ namespace D_Parser.Misc.Mangling
 			return resSym;
 		}
 		
-		public static AbstractType Demangle(string mangledString, out ITypeDeclaration qualifier, out bool isCFunction)
+		public static AbstractType Demangle(string mangledString, ResolutionContext ctxt, out ITypeDeclaration qualifier, out bool isCFunction)
 		{
 			if(string.IsNullOrEmpty(mangledString))
 				throw new ArgumentException("input string must not be null or empty!");
@@ -101,7 +102,7 @@ namespace D_Parser.Misc.Mangling
 			//TODO: What about C functions that start with 'D'?
 			isCFunction = false;
 			
-			var dmng = new Demangler(mangledString);
+			var dmng = new Demangler(mangledString) { ctxt = ctxt };
 			
 			return dmng.MangledName(out qualifier);
 		}
@@ -282,16 +283,16 @@ namespace D_Parser.Misc.Mangling
 					}
 					break;
 				case 'A':
-					return new ArrayType(Type(), null);
+					return new ArrayType(Type());
 				case 'G':
 					var len = (int)Number();
-					return new ArrayType(Type(), len, null);
+					return new ArrayType(Type(), len);
 				case 'H':
 					var keyType = Type();
 					t = Type();
-					return new AssocArrayType(t, keyType, null);
+					return new AssocArrayType(t, keyType);
 				case 'P':
-					return new PointerType(Type(), null);
+					return new PointerType(Type());
 				case 'F':
 				case 'U':
 				case 'W':
@@ -304,7 +305,13 @@ namespace D_Parser.Misc.Mangling
 					
 					var dm = new DMethod(){ Parameters = pars.Keys.ToList(), Attributes = attrs };
 					return new MemberSymbol(dm, ret, null);
+				case 'C':
+				case 'S':
+				case 'E':
+				case 'T':
 				case 'I':
+				return TypeDeclarationResolver.ResolveSingle (QualifiedName (), ctxt);
+				/*
 					return new MemberSymbol(null,null, QualifiedName());
 				case 'C':
 					return new ClassType(new DClassLike(DTokens.Class), QualifiedName(), null);
@@ -314,7 +321,7 @@ namespace D_Parser.Misc.Mangling
 					return new EnumType(new DEnum(), null, QualifiedName());
 				case 'T':
 					return new AliasedType(null, null, QualifiedName());
-				case 'D':
+				*/case 'D':
 					Function(out ret, out attrs, out pars, type);
 					var dgArgs = new List<AbstractType>();
 					
@@ -355,7 +362,7 @@ namespace D_Parser.Misc.Mangling
 						Argument(ref c, out items[i]);
 					}
 					
-					return new DTuple(null, items);
+					return new DTuple(items);
 			}
 			
 			return null;

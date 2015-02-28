@@ -36,7 +36,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				}
 			}
 
-			return new PrimitiveValue(DTokens.Bool, retTrue?1:0, isExpression);
+			return new PrimitiveValue(retTrue);
 		}
 
 		private bool evalIsExpression_WithAliases(IsExpression isExpression, AbstractType typeToCheck)
@@ -146,8 +146,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						var isFun = false;
 						var dgr = (DelegateType)typeToCheck;
 						if (!dgr.IsFunctionLiteral)
-							r = isExpression.TypeSpecializationToken == (
-								(isFun = ((DelegateDeclaration)dgr.DeclarationOrExpressionBase).IsFunction) ? DTokens.Function : DTokens.Delegate);
+							r = isExpression.TypeSpecializationToken == ((isFun = dgr.IsFunction) ? DTokens.Function : DTokens.Delegate);
 						// Must be a delegate otherwise
 						else
 							isFun = !(r = isExpression.TypeSpecializationToken == DTokens.Delegate);
@@ -191,7 +190,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							if (udt.BaseInterfaces != null && udt.BaseInterfaces.Length != 0)
 								l.AddRange(udt.BaseInterfaces);
 
-							res = new DTuple(isExpression, l);
+							res = new DTuple(l);
 						}
 					}
 					break;

@@ -35,7 +35,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						ignoreErrors = false;
 					}
 					ctxt.ContextIndependentOptions = optionsBackup;
-					return new PrimitiveValue(ret, te);
+					return new PrimitiveValue(ret);
 					
 					
 				case "identifier":
@@ -69,7 +69,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					
 					ctxt.ContextIndependentOptions = optionsBackup;
 					
-					return new TypeValue(new DTuple(te, vs));
+					return new TypeValue(new DTuple(vs));
 					
 					
 				case "getProtection":
@@ -137,7 +137,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						}
 					}
 					
-					return new PrimitiveValue(ret, te);
+					return new PrimitiveValue(ret);
 					
 				case "compiles":
 					ret = false;
@@ -152,7 +152,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						}
 					}
 						
-					return new PrimitiveValue(ret, te);
+					return new PrimitiveValue(ret);
 			}
 			
 			#region isXYZ-traits
@@ -270,7 +270,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				}
 					
 				ctxt.ContextIndependentOptions = optionsBackup;
-				return new PrimitiveValue(ret, te);
+				return new PrimitiveValue(ret);
 			}
 			else
 			{

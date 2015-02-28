@@ -140,7 +140,7 @@ namespace D_Parser.Resolver
 			ValueGetter = 
 				(vp, v) => {
 					var av = v as ArrayValue;
-					return new PrimitiveValue(DTokens.Int, av.Elements != null ? av.Elements.Length : 0, null, 0m); 
+					return new PrimitiveValue(av.Elements != null ? av.Elements.Length : 0); 
 				}});
 
 			props.AddProp(new StaticPropertyInfo("dup", "Create a dynamic array of the same size and copy the contents of the array into it.") { TypeGetter = help_ReflectType, ResolvedBaseTypeGetter = help_ReflectResolvedType, RequireThis = true });
@@ -148,7 +148,7 @@ namespace D_Parser.Resolver
 			props.AddProp(new StaticPropertyInfo("reverse", "Reverses in place the order of the elements in the array. Returns the array.") { TypeGetter = help_ReflectType, ResolvedBaseTypeGetter = help_ReflectResolvedType, RequireThis = true });
 			props.AddProp(new StaticPropertyInfo("sort", "Sorts in place the order of the elements in the array. Returns the array.") { TypeGetter = help_ReflectType, ResolvedBaseTypeGetter = help_ReflectResolvedType, RequireThis = true });
 			props.AddProp(new StaticPropertyInfo("ptr", "Returns pointer to the array") {
-				ResolvedBaseTypeGetter = (t, ctxt) => new PointerType((t as DerivedDataType).Base, t.DeclarationOrExpressionBase),
+				ResolvedBaseTypeGetter = (t, ctxt) => new PointerType((t as DerivedDataType).Base),
 				TypeGetter = (t, ctxt) => new PointerDecl(DTypeToTypeDeclVisitor.GenerateTypeDecl((t as DerivedDataType).Base)), 
 				RequireThis = true 
 			});
@@ -216,7 +216,7 @@ namespace D_Parser.Resolver
 					var tt = v as DTuple;
 					if (tt == null && v is TypeValue)
 						tt = (v as TypeValue).RepresentedType as DTuple;
-					return tt != null ? new PrimitiveValue(DTokens.Int, tt.Items == null ? 0m : (decimal)tt.Items.Length, null, 0m) : null; 
+					return tt != null ? new PrimitiveValue(tt.Items == null ? 0 : tt.Items.Length) : null; 
 				} });
 
 
@@ -282,7 +282,7 @@ namespace D_Parser.Resolver
 							tupleItems.Add(mt);
 					}
 
-					return new DTuple(t.DeclarationOrExpressionBase, tupleItems);
+					return new DTuple(tupleItems);
 				}
 			});
 

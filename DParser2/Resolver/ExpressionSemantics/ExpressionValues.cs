@@ -12,6 +12,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	public class PrimitiveValue : ExpressionValue
 	{
 		public readonly byte BaseTypeToken;
+		public readonly byte Modifier;
 
 		/// <summary>
 		/// To make math operations etc. more efficient, use the largest available structure to store scalar values.
@@ -23,19 +24,26 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// </summary>
 		public readonly decimal ImaginaryPart;
 
-		public PrimitiveValue(bool Value, IExpression Expression)
-			: this(DTokens.Bool, Value ? 1 : 0, Expression) { }
+		public PrimitiveValue(bool Value)
+			: this(DTokens.Bool, Value ? 1 : 0) {
+		}
+
+		public PrimitiveValue(int Value)
+			: this (DTokens.Int, (decimal)Value) {
+		}
 
 		public PrimitiveValue(decimal Value, PrimitiveType pt, decimal ImaginaryPart = 0M)
 			: base(pt) {
+			this.Modifier = pt.Modifier;
 			this.BaseTypeToken = pt.TypeToken;
 			this.Value = Value;
 			this.ImaginaryPart = ImaginaryPart;
 		}
 
-		public PrimitiveValue(byte BaseTypeToken, decimal Value, IExpression Expression, decimal ImaginaryPart = 0M)
-			: base(new PrimitiveType(BaseTypeToken,0, Expression))
+		public PrimitiveValue(byte BaseTypeToken, decimal Value, decimal ImaginaryPart = 0M, byte BaseTypeModifier = 0)
+			: base(new PrimitiveType(BaseTypeToken, BaseTypeModifier))
 		{
+			this.Modifier = BaseTypeModifier;
 			this.BaseTypeToken = BaseTypeToken;
 			this.Value = Value;
 			this.ImaginaryPart = ImaginaryPart;
@@ -44,17 +52,18 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// <summary>
 		/// NaN constructor
 		/// </summary>
-		private PrimitiveValue(byte baseType,IExpression x)
-			: base(new PrimitiveType(baseType, 0, x))
+		private PrimitiveValue(byte baseType, byte mod)
+			: base(new PrimitiveType(baseType, mod))
 		{
+			Modifier = mod;
 			IsNaN = true;
 		}
 
 		public readonly bool IsNaN;
 
-		public static PrimitiveValue CreateNaNValue(IExpression x, byte baseType = DTokens.Float)
+		public static PrimitiveValue CreateNaNValue(byte baseType = DTokens.Float, byte baseTypeMod = 0)
 		{
-			return new PrimitiveValue(baseType, x);
+			return new PrimitiveValue(baseType, baseTypeMod);
 		}
 
 		public override string ToCode()
@@ -86,8 +95,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 	public class VoidValue : PrimitiveValue
 	{
-		public VoidValue(IExpression x)
-			: base(DTokens.Void, 0M, x)
+		public VoidValue()
+			: base(DTokens.Void, 0M)
 		{ }
 
 		public override void Accept(ISymbolValueVisitor vis)
@@ -128,21 +137,22 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		#endregion
 
 		#region Ctor
+		public ArrayValue(IdentifierExpression stringLiteral, ResolutionContext ctxtToResolveStringType = null) 
+			: base(Evaluation.GetStringType(ctxtToResolveStringType, stringLiteral.Subformat))
+		{
+			StringValue = stringLiteral.StringValue;
+			StringFormat = stringLiteral.Subformat;
+		}
+
 		/// <summary>
 		/// String constructor.
 		/// Given result stores both type and idenfitierexpression whose Value is used as content
 		/// </summary>
-		public ArrayValue(ArrayType stringLiteralResult, IdentifierExpression stringLiteral = null)
+		public ArrayValue(ArrayType stringLiteralResult, IdentifierExpression stringLiteral)
 			: base(stringLiteralResult)
 		{
-			StringFormat = LiteralSubformat.Utf8;
-			if (stringLiteralResult.DeclarationOrExpressionBase is IdentifierExpression)
-			{
-				StringFormat = ((IdentifierExpression)stringLiteralResult.DeclarationOrExpressionBase).Subformat;
-				StringValue = ((IdentifierExpression)stringLiteralResult.DeclarationOrExpressionBase).StringValue;
-			}
-			else
-				StringValue = stringLiteral.StringValue;
+			StringValue = stringLiteral.StringValue;
+			StringFormat = stringLiteral.Subformat;
 		}
 
 		/// <summary>
@@ -256,7 +266,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					var dg = (DelegateType)Definition;
 
 					if (dg.IsFunctionLiteral)
-						return ((FunctionLiteral)dg.DeclarationOrExpressionBase).AnonymousMethod;
+						return ((FunctionLiteral)dg.delegateTypeBase).AnonymousMethod;
 				}
 				return Definition is DSymbol ? ((DSymbol)Definition).Definition as DMethod : null;
 			}

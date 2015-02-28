@@ -323,7 +323,7 @@ namespace D_Parser.Resolver
 			}
 		}
 
-		public void LogError(ISyntaxRegion syntaxObj, string msg)
+		public void LogError(object syntaxObj, string msg)
 		{
 			LogError(new ResolutionError(syntaxObj, msg));
 		}

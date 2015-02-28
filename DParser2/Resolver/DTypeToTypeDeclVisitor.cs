@@ -33,7 +33,7 @@ namespace D_Parser.Resolver
 			if(t.Modifier != 0)
 				td = new MemberFunctionAttributeDecl(t.Modifier) { InnerType = td };
 
-			return td ?? t.DeclarationOrExpressionBase as ITypeDeclaration;
+			return td;
 		}
 
 		public ITypeDeclaration VisitPrimitiveType(PrimitiveType t)
@@ -185,19 +185,12 @@ namespace D_Parser.Resolver
 			if (t.Base != null)
 				return AcceptType(t.Base);
 
-			return (t.DeclarationOrExpressionBase as ITypeDeclaration ?? new IdentifierDeclaration(t.Parameter.NameHash));
+			return new IdentifierDeclaration(t.Parameter.NameHash);
 		}
 
 		public ITypeDeclaration VisitArrayAccessSymbol(ArrayAccessSymbol t)
 		{
-			var ad = new ArrayDecl { ValueType = AcceptType(t.Base) };
-
-			if (t.DeclarationOrExpressionBase is IExpression)
-				ad.KeyExpression = t.DeclarationOrExpressionBase as IExpression;
-			else
-				ad.KeyType = t.DeclarationOrExpressionBase as ITypeDeclaration;
-
-			return ad;
+			return new ArrayDecl { ValueType = AcceptType(t.Base), KeyExpression = t.indexExpression };
 		}
 
 		public ITypeDeclaration VisitModuleSymbol(ModuleSymbol t)

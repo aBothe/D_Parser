@@ -94,7 +94,7 @@ namespace D_Parser.Resolver.ResolutionHooks
 			}
 
 			n = tupleStruct;
-			return new TemplateType(tupleStruct, ds.DeclarationOrExpressionBase, ded.Count != 0 ? ded.Values : null);
+			return new TemplateType(tupleStruct, ded.Count != 0 ? ded.Values : null);
 		}
 	}
 }

@@ -177,7 +177,7 @@ namespace D_Parser.Resolver.TypeResolution
 					ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.NoTemplateParameterDeduction | ResolutionOptions.DontResolveAliases;
 
 					if (o is IdentifierExpression)
-						ret = AmbiguousType.Get(ExpressionTypeEvaluation.GetOverloads(o as IdentifierExpression, ctxt, deduceParameters: false), o);
+						ret = AmbiguousType.Get(ExpressionTypeEvaluation.GetOverloads(o as IdentifierExpression, ctxt, deduceParameters: false));
 					else if (o is ITypeDeclaration)
 						ret = TypeDeclarationResolver.ResolveSingle(o as ITypeDeclaration, ctxt);
 					else if (o is IExpression)
@@ -188,16 +188,13 @@ namespace D_Parser.Resolver.TypeResolution
 				{
 					resAttempt = NodeResolutionAttempt.RawSymbolLookup;
 					var overloads = TypeDeclarationResolver.HandleNodeMatches(LookupIdRawly(editor.ParseCache, o as ISyntaxRegion), ctxt, null, o);
-					ret = AmbiguousType.Get(overloads, o);
+					ret = AmbiguousType.Get(overloads);
 				}
 
 				ctxt.CurrentContext.ContextDependentOptions = optionBackup;
 			});
 
 			resolutionAttempt = resAttempt;
-
-			if (ret != null)
-				ret.DeclarationOrExpressionBase = o;
 
 			return ret;
 		}
@@ -353,7 +350,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 			if (bcStack > 6 || (instanceDeclaration != null && parsedClassInstanceDecls.Contains(instanceDeclaration)))
 			{
-				return isClass ? new ClassType(dc, instanceDeclaration, null) as TemplateIntermediateType : new InterfaceType(dc, instanceDeclaration);
+				return isClass ? new ClassType(dc, null) as TemplateIntermediateType : new InterfaceType(dc);
 			}
 
 			if (instanceDeclaration != null)
@@ -402,8 +399,8 @@ namespace D_Parser.Resolver.TypeResolution
 				// The Object class has no further base class;
 				// Normal class instances have the object as base class;
 				// Interfaces must not have any default base class/interface
-				return isClass ? new ClassType(dc, instanceDeclaration, dc.NameHash != ObjectNameHash ? ctxt.ParseCache.ObjectClassResult : null, null, deducedTypes) :
-					new InterfaceType(dc, instanceDeclaration, null, deducedTypes) as TemplateIntermediateType;
+				return isClass ? new ClassType(dc, dc.NameHash != ObjectNameHash ? ctxt.ParseCache.ObjectClassResult : null, null, deducedTypes) :
+					new InterfaceType(dc, null, deducedTypes) as TemplateIntermediateType;
 			}
 
 
@@ -490,9 +487,9 @@ namespace D_Parser.Resolver.TypeResolution
 			#endregion
 
 			if (isClass)
-				return new ClassType(dc, instanceDeclaration, baseClass, interfaces.Count == 0 ? null : interfaces.ToArray(), deducedTypes);
+				return new ClassType(dc, baseClass, interfaces.Count == 0 ? null : interfaces.ToArray(), deducedTypes);
 
-			return new InterfaceType(dc, instanceDeclaration, interfaces.Count == 0 ? null : interfaces.ToArray(), deducedTypes);
+			return new InterfaceType(dc, interfaces.Count == 0 ? null : interfaces.ToArray(), deducedTypes);
 		}
 
 		/// <summary>
@@ -730,7 +727,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 			if (keepAliases)
 			{
-				var aliasTag = t.Tag as TypeResolution.TypeDeclarationResolver.AliasTag;
+				var aliasTag = t.Tag<TypeDeclarationResolver.AliasTag>(TypeDeclarationResolver.AliasTag.Id);
 				if (aliasTag != null && 
 					(!(aliasTag.aliasDefinition is ImportSymbolAlias) || // Only if the import symbol alias definition was selected, go to its base
 					(aliasTag.typeBase != null && aliasTag.aliasDefinition.NameLocation != aliasTag.typeBase.Location)))

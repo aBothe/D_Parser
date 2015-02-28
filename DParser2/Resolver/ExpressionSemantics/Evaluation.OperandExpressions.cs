@@ -113,10 +113,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				// If the left operand is false, then the right operand is evaluated. 
 				// If the result type of the OrOrExpression is bool then the result 
 				// of the expression is the right operand converted to type bool.
-				return new PrimitiveValue(!(IsFalseZeroOrNull(l) && IsFalseZeroOrNull(r)), x);
+				return new PrimitiveValue(!(IsFalseZeroOrNull(l) && IsFalseZeroOrNull(r)));
 			}
 			else if (x is AndAndExpression)
-				return new PrimitiveValue(!IsFalseZeroOrNull(l) && !IsFalseZeroOrNull(r), x);
+				return new PrimitiveValue(!IsFalseZeroOrNull(l) && !IsFalseZeroOrNull(r));
 			else if (x is IdentityExpression)
 			{
 				// http://dlang.org/expression.html#IdentityExpression
@@ -171,7 +171,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							break;
 					}
 
-					return new PrimitiveValue(relationIsTrue, op);
+					return new PrimitiveValue(relationIsTrue);
 				}, false);
 			}
 
@@ -192,7 +192,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			var isEq = SymbolValueComparer.IsEqual(l, r);
 
-			return new PrimitiveValue(x.OperatorToken == DTokens.Equal ? isEq : !isEq, x);
+			return new PrimitiveValue(x.OperatorToken == DTokens.Equal ? isEq : !isEq);
 		}
 
 		/// <summary>
@@ -327,12 +327,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					switch (op.OperatorToken)
 					{
 						case DTokens.Plus:
-							return new PrimitiveValue(a.BaseTypeToken, a.Value + b.Value, x, a.ImaginaryPart + b.ImaginaryPart);
+							return new PrimitiveValue(a.BaseTypeToken, a.Value + b.Value, a.ImaginaryPart + b.ImaginaryPart, a.Modifier);
 						case DTokens.Minus:
-							return new PrimitiveValue(a.BaseTypeToken, a.Value - b.Value, x, a.ImaginaryPart - b.ImaginaryPart);
+							return new PrimitiveValue(a.BaseTypeToken, a.Value - b.Value, a.ImaginaryPart - b.ImaginaryPart, a.Modifier);
 					}
 
-					EvalError(x, "Invalid token for add/sub expression", new[]{l,r});
+					EvalError(op, "Invalid token for add/sub expression", new[]{l,r});
 					return null;
 				});
 			
@@ -503,7 +503,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					//EvalError(x, "Invalid token for multiplication expression (*,/,% only)");
 			}
 
-			return new PrimitiveValue(a.BaseTypeToken, v, x, im);
+			return new PrimitiveValue(a.BaseTypeToken, v, im);
 		}
 
 		bool EnsureIntegralType(IExpression x,PrimitiveValue v)
@@ -515,7 +515,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return true;
 		}
 
-		delegate decimal MathOp(PrimitiveValue x, PrimitiveValue y) ;
+		delegate decimal MathOp(PrimitiveValue x, PrimitiveValue y);
 		delegate PrimitiveValue MathOp2(PrimitiveValue x, PrimitiveValue y, OperatorBasedExpression op);
 
 		/// <summary>
@@ -538,9 +538,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			{
 				// If one 
 				if (pl.IsNaN || pr.IsNaN)
-					return PrimitiveValue.CreateNaNValue(x, pl.IsNaN ? pl.BaseTypeToken : pr.BaseTypeToken);
+					return PrimitiveValue.CreateNaNValue(pl.IsNaN ? pl.BaseTypeToken : pr.BaseTypeToken, pl.IsNaN ? pl.Modifier : pr.Modifier);
 
-				return new PrimitiveValue(pl.BaseTypeToken, m(pl, pr), x);
+				return new PrimitiveValue(pl.BaseTypeToken, m(pl, pr), 0M, pl.Modifier);
 			}
 
 			return null;
@@ -560,7 +560,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (pl != null && pr != null)
 			{
 				if (UnorderedCheck && (pl.IsNaN || pr.IsNaN))
-					return PrimitiveValue.CreateNaNValue(x, pl.IsNaN ? pl.BaseTypeToken : pr.BaseTypeToken);
+					return PrimitiveValue.CreateNaNValue(pl.IsNaN ? pl.BaseTypeToken : pr.BaseTypeToken, pl.IsNaN ? pl.Modifier : pr.Modifier);
 
 				return m(pl, pr, x);
 			}

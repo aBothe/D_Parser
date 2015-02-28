@@ -221,7 +221,7 @@ namespace D_Parser.Completion
 						{
 							Description = "Default constructor for " + udt.Name,
 							Parent = udt.Definition
-						}, udt, nex));
+						}, udt));
 					}
 				}
 			}
@@ -317,7 +317,7 @@ namespace D_Parser.Completion
 						Name = "index",
 						Type = aa.KeyType != null ? aa.KeyType.Accept(toTypeDecl) : null 
 					});
-					overloads.Add(new MemberSymbol(dm, aa.ValueType, x));
+					overloads.Add(new MemberSymbol(dm, aa.ValueType));
 
 					if ((aa is ArrayType) && !(aa as ArrayType).IsStaticArray)
 					{
@@ -326,7 +326,7 @@ namespace D_Parser.Completion
 							Name = "opSlice",
 							Type = retType
 						};
-						overloads.Add(new MemberSymbol(dm, aa.ValueType, x));
+						overloads.Add(new MemberSymbol(dm, aa.ValueType));
 					}
 				}
 				else if (b is PointerType)
@@ -342,7 +342,7 @@ namespace D_Parser.Completion
 						Name = "index",
 						Type = new IdentifierDeclaration("size_t")
 					});
-					overloads.Add(new MemberSymbol(dm, b, x));
+					overloads.Add(new MemberSymbol(dm, b));
 				}
 			}
 

@@ -74,7 +74,7 @@ namespace D_Parser.Resolver
 
 		public void VisitDelegateCallSymbol(DelegateCallSymbol t)
 		{
-			sb.Append(t.DeclarationOrExpressionBase.ToString());
+			sb.Append(t.ToString());
 		}
 
 		public void VisitDelegateType(DelegateType t)
@@ -172,9 +172,10 @@ namespace D_Parser.Resolver
 		public void VisitArrayAccessSymbol(ArrayAccessSymbol t)
 		{
 			AcceptType(t.Base);
+			
 			sb.Append('[');
-			if (t.DeclarationOrExpressionBase != null)
-				sb.Append(t.DeclarationOrExpressionBase.ToString());
+			if (t.indexExpression != null)
+				sb.Append(t.indexExpression.ToString());
 			sb.Append(']');
 		}
 

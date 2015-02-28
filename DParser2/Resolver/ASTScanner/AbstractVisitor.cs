@@ -100,7 +100,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				HandleItem (n, parms.resolvedCurScope);
 		}
 
-		public virtual void IterateThroughScopeLayers(CodeLocation Caret, MemberFilter VisibleMembers = MemberFilter.All)
+		public void IterateThroughScopeLayers(CodeLocation Caret, MemberFilter VisibleMembers = MemberFilter.All)
 		{
 			var parms = new ItemCheckParameters(VisibleMembers);
 
@@ -134,7 +134,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 							if(nameStubs.Contains(pack.Name))
 								continue;
 							
-							HandleItem(new PackageSymbol(pack, null));
+							HandleItem(new PackageSymbol(pack));
 							nameStubs.Add(pack.Name);
 						}
 					}
@@ -262,7 +262,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 					if(resolveBaseClassIfRequired && udt.Base == null && 
 						(type == DTokens.Class ||type == DTokens.Interface))
-						udt = DResolver.ResolveClassOrInterface(udt.Definition as DClassLike, ctxt, udt.DeclarationOrExpressionBase);
+						udt = DResolver.ResolveClassOrInterface(udt.Definition as DClassLike, ctxt, null);
 
 					if(udt != null)
 						udt = udt.Base as UserDefinedType;
@@ -788,11 +788,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 				AbstractType t;
 				t = TypeDeclarationResolver.ResolveSingle(tmx.Qualifier, ctxt);
-				// Deadly important: To prevent mem leaks, all references from the result to the TemplateMixin must be erased!
-				// Elsewise there remains one reference from the dict value to the key - and won't get free'd THOUGH we can't access it anymore
-				if (t != null)
-					t.DeclarationOrExpressionBase = null;
-
+				
 				if (pushOnAnalysisStack)
 					templateMixinsBeingAnalyzed.Remove(tmx);
 

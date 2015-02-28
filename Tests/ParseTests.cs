@@ -1139,8 +1139,10 @@ void foo()
 		public void Demangling()
 		{
 			ITypeDeclaration q;
+			var ctxt = ResolutionTests.CreateCtxt ("std.stdio", @"module std.stdio;
+			void writeln() {}");
 			bool isCFun;
-			var t = Demangler.Demangle("_D3std5stdio35__T7writelnTC3std6stream4FileTAAyaZ7writelnFC3std6stream4FileAAyaZv", out q, out isCFun);
+			var t = Demangler.Demangle("_D3std5stdio35__T7writelnTC3std6stream4FileTAAyaZ7writelnFC3std6stream4FileAAyaZv", ctxt, out q, out isCFun);
 
 			Assert.IsFalse (isCFun);
 		}

@@ -103,7 +103,7 @@ namespace D_Parser.Resolver.Templates
 					else
 						l.Add(arg);				
 
-			return Set(p, new DTuple(p, l.Count == 0 ? null : l), 0);
+			return Set(p, new DTuple(l.Count == 0 ? null : l), 0);
 		}
 
 		/// <summary>

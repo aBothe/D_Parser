@@ -7,10 +7,10 @@ namespace D_Parser.Resolver
 {
 	public class ResolutionError
 	{
-		public readonly ISyntaxRegion SyntacticalContext;
+		public readonly object SyntacticalContext;
 		public readonly string Message;
 
-		public ResolutionError(ISyntaxRegion syntacticalObj, string message)
+		public ResolutionError(object syntacticalObj, string message)
 		{
 			this.SyntacticalContext = syntacticalObj;
 			this.Message = message;
@@ -55,7 +55,7 @@ namespace D_Parser.Resolver
 		public readonly AbstractType[] ComparedOverloads;
 
 		public AmbigousSpecializationError(AbstractType[] comparedOverloads)
-			: base(comparedOverloads[comparedOverloads.Length - 1].DeclarationOrExpressionBase, "Could not distinguish a most specialized overload. Both overloads seem to be equal.")
+			: base(comparedOverloads[comparedOverloads.Length - 1], "Could not distinguish a most specialized overload. Both overloads seem to be equal.")
 		{
 			this.ComparedOverloads = comparedOverloads;
 		}

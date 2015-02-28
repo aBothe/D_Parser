@@ -79,13 +79,10 @@ namespace D_Parser.Completion.Providers
 
 		public void VisitPointerType(PointerType pt)
 		{
-			if (pt.Base != null &&
-				!(pt.Base is PrimitiveType && pt.Base.DeclarationOrExpressionBase is PointerDecl))
-			{
-				pt.Base.Accept(this);
-			}
-			else
+			if(pt.Base is PrimitiveType)
 				GenUfcsAndStaticProperties(pt);
+			else if (pt.Base != null)
+				pt.Base.Accept(this);
 		}
 
 		public void VisitArrayType(ArrayType at)

@@ -495,7 +495,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public AbstractType Visit(UnaryExpression_And x)
 		{
-			return new PointerType(x.UnaryExpression.Accept(this), x);
+			return new PointerType(x.UnaryExpression.Accept(this));
 		}
 
 		public AbstractType Visit(DeleteExpression x)
@@ -597,7 +597,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			//TODO: Determine argument types and filter out ctor overloads.
 			var kvFirst = ctors.First();
-			finalCtor = new MemberSymbol(kvFirst.Key, kvFirst.Value, nex);
+			finalCtor = new MemberSymbol(kvFirst.Key, kvFirst.Value);
 
 
 
@@ -607,9 +607,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var resolvedCtors = new List<AbstractType>();
 
 			foreach(var kv in ctors)
-				resolvedCtors.Add(new MemberSymbol(kv.Key, kv.Value, nex));
+				resolvedCtors.Add(new MemberSymbol(kv.Key, kv.Value));
 
-			return TryPretendMethodExecution(AmbiguousType.Get(resolvedCtors, nex), nex);
+			return TryPretendMethodExecution(AmbiguousType.Get(resolvedCtors), nex);
 		}
 		#endregion
 
@@ -703,7 +703,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 					overloads = TemplateInstanceHandler.DeduceParamsAndFilterOverloads (overloads, indexArgs, true, ctxt);
 					ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals (udt);
-					foreExpression = TryPretendMethodExecution (AmbiguousType.Get (overloads, x), x, indexArgs.Count != 0 ? indexArgs.ToArray () : null);
+					foreExpression = TryPretendMethodExecution (AmbiguousType.Get (overloads), x, indexArgs.Count != 0 ? indexArgs.ToArray () : null);
 					arg_i += indexArgs.Count; //TODO: Only increment by the amount of actually used args for filtering out the respective method overload.
 					return foreExpression;
 				} else
@@ -745,7 +745,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 				if (tt.Items == null)
 				{
-					ctxt.LogError(tt.DeclarationOrExpressionBase, "No items in Type tuple");
+					ctxt.LogError(tt, "No items in Type tuple");
 				}
 				else if (idx == null || !DTokens.IsBasicType_Integral(idx.BaseTypeToken))
 				{
@@ -790,20 +790,20 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			overloads = TemplateInstanceHandler.DeduceParamsAndFilterOverloads(overloads, sliceArgs, true, ctxt);
 
 			ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(udt);
-			return TryPretendMethodExecution(AmbiguousType.Get(overloads, x), x, sliceArgs) ?? foreExpression;
+			return TryPretendMethodExecution(AmbiguousType.Get(overloads), x, sliceArgs) ?? foreExpression;
 		}
 		#endregion
 
 		#region Identifier primitives
 		public AbstractType Visit(TemplateInstanceExpression tix)
 		{
-			return TryPretendMethodExecution(AmbiguousType.Get(GetOverloads(tix, ctxt), tix));
+			return TryPretendMethodExecution(AmbiguousType.Get(GetOverloads(tix, ctxt)));
 		}
 
 		public AbstractType Visit(IdentifierExpression id)
 		{
 			if (id.IsIdentifier)
-				return TryPretendMethodExecution(AmbiguousType.Get(GetOverloads(id, ctxt),id));
+				return TryPretendMethodExecution(AmbiguousType.Get(GetOverloads(id, ctxt)));
 
 			byte tt;
 			switch (id.Format)
@@ -813,7 +813,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						id.Subformat == LiteralSubformat.Utf16 ? DTokens.Wchar :
 						DTokens.Char;
 
-					return new PrimitiveType(tk, 0, id) { NonStaticAccess = true };
+					return new PrimitiveType(tk, 0) { NonStaticAccess = true };
 
 				case LiteralFormat.FloatingPoint | LiteralFormat.Scalar:
 					var im = id.Subformat.HasFlag(LiteralSubformat.Imaginary);
@@ -825,7 +825,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					else if (id.Subformat.HasFlag(LiteralSubformat.Real))
 						tt = im ? DTokens.Ireal : DTokens.Real;
 
-					return new PrimitiveType(tt, 0, id) { NonStaticAccess = true };
+					return new PrimitiveType(tt, 0) { NonStaticAccess = true };
 
 				case LiteralFormat.Scalar:
 					var unsigned = id.Subformat.HasFlag(LiteralSubformat.Unsigned);
@@ -835,7 +835,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					else
 						tt = unsigned ? DTokens.Uint : DTokens.Int;
 
-					return new PrimitiveType(tt, 0, id) { NonStaticAccess = true };
+					return new PrimitiveType(tt, 0) { NonStaticAccess = true };
 
 				case Parser.LiteralFormat.StringLiteral:
 				case Parser.LiteralFormat.VerbatimStringLiteral:
@@ -938,12 +938,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 					if (classDef is DClassLike)
 					{
-						var tr = DResolver.ResolveClassOrInterface(classDef as DClassLike, ctxt, null, true);
+						var tr = DResolver.ResolveClassOrInterface(classDef as DClassLike, ctxt, x, true);
 
 						if (tr.Base != null)
 						{
 							// Important: Overwrite type decl base with 'super' token
-							tr.Base.DeclarationOrExpressionBase = x;
 							tr.Base.NonStaticAccess = true;
 							return tr.Base;
 						}
@@ -991,7 +990,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				// Simply resolve the first element's type and take it as the array's value type
 				var valueType = arr.Elements[0] != null ? AbstractType.Get(arr.Elements[0].Accept(this)) : null;
 
-				return new ArrayType(valueType, arr);
+				return new ArrayType(valueType);
 			}
 
 			ctxt.LogError(arr, "Array literal must contain at least one element.");
@@ -1008,7 +1007,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				var keyType = firstElement != null ? AbstractType.Get(firstElement.Accept(this)) : null;
 				var valueType = firstElementValue != null ? AbstractType.Get(firstElementValue.Accept(this)) : null;
 
-				return new AssocArrayType(valueType, keyType, aa);
+				return new AssocArrayType(valueType, keyType);
 			}
 
 			return null;
@@ -1024,7 +1023,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public AbstractType Visit(AssertExpression x)
 		{
-			return new PrimitiveType(DTokens.Void, 0, x);
+			return new PrimitiveType(DTokens.Void, 0);
 		}
 
 		public AbstractType Visit(MixinExpression x)
@@ -1136,7 +1135,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 					ctxt.ContextIndependentOptions = optionsBackup;
 
-					return new DTuple(te, vs);
+					return new DTuple(vs);
 
 
 				case "getProtection":

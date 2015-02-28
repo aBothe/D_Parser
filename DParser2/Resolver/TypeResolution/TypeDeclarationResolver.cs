@@ -19,7 +19,7 @@ namespace D_Parser.Resolver.TypeResolution
 			var tk = (token as DTokenDeclaration).Token;
 
 			if (DTokens.IsBasicType(tk))
-				return new PrimitiveType(tk, 0, token);
+				return new PrimitiveType(tk, 0);
 
 			return null;
 		}
@@ -83,7 +83,7 @@ namespace D_Parser.Resolver.TypeResolution
 					return new[] { dedTemplateParam };
 			}
 
-			List<AbstractType> res = null;
+			List<AbstractType> res;
 
 			//var t = ctxt.Cache.TryGetType(idObject);
 			bool hasBaseValue = true;
@@ -100,18 +100,10 @@ namespace D_Parser.Resolver.TypeResolution
 				}
 			}*/
 
-			if (hasBaseValue || (ctxt.Options & ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.DontResolveBaseTypes) != 0)
-			{
-				var newRes = NameScan.SearchAndResolve(ctxt, loc, idHash, idObject);
-				if (newRes.Count > 0)
-				{/*
-					if (idObject != null)
-						ctxt.Cache.Add(newRes.ToArray(), idObject);*/
-					res = newRes;
-				}
-				else if (res == null)
-					res = new List<AbstractType>();
-			}
+			if (hasBaseValue || (ctxt.Options & ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.DontResolveBaseTypes) != 0) {
+				res = NameScan.SearchAndResolve (ctxt, loc, idHash, idObject);
+			} else
+				res = null;
 
 			if (disp != null)
 			{
@@ -143,7 +135,7 @@ namespace D_Parser.Resolver.TypeResolution
 		/// </summary>
 		public static AbstractType ResolveSingle(string id, ResolutionContext ctxt, ISyntaxRegion idObject, bool ModuleScope = false)
 		{
-			return AmbiguousType.Get(ResolveIdentifier(id, ctxt, idObject, ModuleScope), idObject);
+			return AmbiguousType.Get(ResolveIdentifier(id, ctxt, idObject, ModuleScope));
 		}
 
 		/// <summary>
@@ -151,7 +143,7 @@ namespace D_Parser.Resolver.TypeResolution
 		/// </summary>
 		public static AbstractType ResolveSingle(IdentifierDeclaration id, ResolutionContext ctxt, AbstractType[] resultBases = null, bool filterForTemplateArgs = true)
 		{
-			return AmbiguousType.Get(Resolve(id, ctxt, resultBases, filterForTemplateArgs), id);
+			return AmbiguousType.Get(Resolve(id, ctxt, resultBases, filterForTemplateArgs));
 		}
 
 		public static AbstractType[] Resolve(IdentifierDeclaration id, ResolutionContext ctxt, AbstractType[] resultBases = null, bool filterForTemplateArgs = true)
@@ -255,9 +247,9 @@ namespace D_Parser.Resolver.TypeResolution
 
 					var accessedModule = pack.GetModule(nextIdentifierHash);
 					if (accessedModule != null)
-						r.Add(new ModuleSymbol(accessedModule as DModule, typeIdObject as ISyntaxRegion, b as PackageSymbol));
+						r.Add(new ModuleSymbol(accessedModule as DModule, b as PackageSymbol));
 					else if ((pack = pack.GetPackage(nextIdentifierHash)) != null)
-						r.Add(new PackageSymbol(pack, typeIdObject as ISyntaxRegion));
+						r.Add(new PackageSymbol(pack));
 				}
 				else if (b is ModuleSymbol)
 					r.AddRange(SingleNodeNameScan.SearchChildrenAndResolve(ctxt, b as ModuleSymbol, nextIdentifierHash, typeIdObject));
@@ -300,8 +292,11 @@ namespace D_Parser.Resolver.TypeResolution
 			{
 				var ret = ResolveSingle(attrDecl.InnerType, ctxt);
 
-				if(ret != null)
-					ret.Modifier = attrDecl.Modifier;
+				if (ret == null)
+					return null;// new UnknownType(attrDecl);
+				
+				ret.Modifier = attrDecl.Modifier;
+
 				return ret;
 			}
 			return null;
@@ -354,7 +349,7 @@ namespace D_Parser.Resolver.TypeResolution
 					// D Magic: One might access tuple items directly in the pseudo array declaration - so stuff like Tup[0] i; becomes e.g. int i;
 					var dtup = DResolver.StripMemberSymbols (valueType) as DTuple;
 					if (dtup == null)
-						return new ArrayType (valueType, fixedArrayLength, ad);
+						return new ArrayType (valueType, fixedArrayLength);
 
 					if (dtup.Items != null && fixedArrayLength < dtup.Items.Length)
 						return AbstractType.Get(dtup.Items [fixedArrayLength]);
@@ -363,10 +358,10 @@ namespace D_Parser.Resolver.TypeResolution
 						return null;
 					}
 				}
-				return new ArrayType (valueType, ad);
+				return new ArrayType (valueType);
 			}
 
-			return new AssocArrayType(valueType, keyType, ad);
+			return new AssocArrayType(valueType, keyType);
 		}
 
 		public static PointerType Resolve(PointerDecl pd, ResolutionContext ctxt)
@@ -376,7 +371,7 @@ namespace D_Parser.Resolver.TypeResolution
 			if (ptrBaseTypes != null)
 				ptrBaseTypes.NonStaticAccess = true;
 
-			return new PointerType(ptrBaseTypes, pd);
+			return new PointerType(ptrBaseTypes);
 		}
 
 		public static DelegateType Resolve(DelegateDeclaration dg, ResolutionContext ctxt)
@@ -548,7 +543,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 			public AbstractType Visit(DEnumValue n)
 			{
-				return new MemberSymbol(n, resultBase ?? HandleNodeMatch(n.Parent, ctxt), typeBase);
+				return new MemberSymbol(n, resultBase ?? HandleNodeMatch(n.Parent, ctxt));
 			}
 
 			AbstractType VisitAliasDefinition(DVariable v)
@@ -558,7 +553,7 @@ namespace D_Parser.Resolver.TypeResolution
 				// Ignore explicitly set resolution restrictions - aliases must be resolved!
 				if (!CanResolveBase(v) &&
 					(ctxt.Options & ResolutionOptions.DontResolveBaseTypes) == 0)
-					return new AliasedType(v, null, typeBase);
+					return new AliasedType(v, null);
 
 				// Is it really that easy?
 				var optBackup = ctxt.CurrentContext.ContextDependentOptions;
@@ -579,7 +574,7 @@ namespace D_Parser.Resolver.TypeResolution
 					bt = GetForeachIteratorType(v);
 
 				if (bt == null)
-					return new AliasedType(v, null, typeBase);
+					return new AliasedType(v, null);
 
 				bt.Tag(AliasTag.Id, new AliasTag { aliasDefinition = v, typeBase = typeBase });
 				return bt;
@@ -606,7 +601,7 @@ namespace D_Parser.Resolver.TypeResolution
 				else
 					bt = null;
 
-				return new MemberSymbol(variable, bt, typeBase);
+				return new MemberSymbol(variable, bt);
 			}
 
 			/// <summary>
@@ -757,7 +752,7 @@ namespace D_Parser.Resolver.TypeResolution
 							#endregion
 						}
 
-						return AmbiguousType.Get(r, typeBase);
+						return AmbiguousType.Get(r);
 					}
 				}
 
@@ -786,12 +781,12 @@ namespace D_Parser.Resolver.TypeResolution
 
 			public AbstractType Visit(EponymousTemplate ep)
 			{
-				return new EponymousTemplateType(ep, new ReadOnlyCollection<TemplateParameterSymbol>(new List<TemplateParameterSymbol>(GetInvisibleTypeParameters(ep))), typeBase);
+				return new EponymousTemplateType(ep, new ReadOnlyCollection<TemplateParameterSymbol>(new List<TemplateParameterSymbol>(GetInvisibleTypeParameters(ep))));
 			}
 
 			public AbstractType Visit(DMethod m)
 			{
-				return new MemberSymbol(m, CanResolveBase(m) ? GetMethodReturnType(m, ctxt) : null, typeBase, GetInvisibleTypeParameters(m));
+				return new MemberSymbol(m, CanResolveBase(m) ? GetMethodReturnType(m, ctxt) : null, GetInvisibleTypeParameters(m));
 			}
 
 			public AbstractType Visit(DClassLike dc)
@@ -801,10 +796,10 @@ namespace D_Parser.Resolver.TypeResolution
 				switch (dc.ClassType)
 				{
 					case DTokens.Struct:
-						return new StructType(dc, typeBase, invisibleTypeParams);
+						return new StructType(dc, invisibleTypeParams);
 
 					case DTokens.Union:
-						return new UnionType(dc, typeBase, invisibleTypeParams);
+						return new UnionType(dc, invisibleTypeParams);
 
 					case DTokens.Interface:
 					case DTokens.Class:
@@ -812,8 +807,8 @@ namespace D_Parser.Resolver.TypeResolution
 
 					case DTokens.Template:
 						if (dc.ContainsAttribute(DTokens.Mixin))
-							return new MixinTemplateType(dc, typeBase, invisibleTypeParams);
-						return new TemplateType(dc, typeBase, invisibleTypeParams);
+							return new MixinTemplateType(dc, invisibleTypeParams);
+						return new TemplateType(dc, invisibleTypeParams);
 
 					default:
 						ctxt.LogError(new NothingFoundError(dc, "Unknown type (" + DTokens.GetTokenString(dc.ClassType) + ")"));
@@ -833,7 +828,7 @@ namespace D_Parser.Resolver.TypeResolution
 						bt = TypeDeclarationResolver.ResolveSingle(de.Type, ctxt);
 				}
 
-				return new EnumType(de, bt, typeBase);
+				return new EnumType(de, bt);
 			}
 
 			public AbstractType Visit(DModule mod)
@@ -842,10 +837,10 @@ namespace D_Parser.Resolver.TypeResolution
 				{
 					var pack = ctxt.ParseCache.LookupPackage(typeBase.ToString()).FirstOrDefault();
 					if (pack != null)
-						return new PackageSymbol(pack, typeBase);
+						return new PackageSymbol(pack);
 				}
 				
-				return new ModuleSymbol(mod, typeBase);
+				return new ModuleSymbol(mod);
 			}
 
 			public AbstractType Visit(DBlockNode dBlockNode)
@@ -868,7 +863,7 @@ namespace D_Parser.Resolver.TypeResolution
 				else
 					baseType = null;
 
-				return new TemplateParameterSymbol(tpn, baseType, typeBase);
+				return new TemplateParameterSymbol(tpn, baseType);
 			}
 
 			public AbstractType Visit(NamedTemplateMixinNode n)
@@ -897,16 +892,16 @@ namespace D_Parser.Resolver.TypeResolution
 						{
 							var m__ = new List<ISemantic>();
 							foreach (var mod in mods)
-								m__.Add(new ModuleSymbol(mod, importSymbolNode.Type));
+								m__.Add(new ModuleSymbol(mod));
 							ctxt.LogError(new AmbiguityError(importSymbolNode.Type, m__));
 						}
-					var bt = mods.Count != 0 ? (AbstractType)new ModuleSymbol(mods[0], td) : null;
+					var bt = mods.Count != 0 ? (AbstractType)new ModuleSymbol(mods[0]) : null;
 					//TODO: Is this correct behaviour?
 					if (!modAlias)
 					{
 						bt = AmbiguousType.Get(ResolveFurtherTypeIdentifier(importSymbolNode.Type.ToString(false), new[] { bt }, ctxt, importSymbolNode.Type));
 					}
-					ret = new AliasedType(importSymbolNode, bt, importSymbolNode.Type);
+					ret = new AliasedType(importSymbolNode, bt);
 				}
 				return ret;
 			}
@@ -1055,9 +1050,9 @@ namespace D_Parser.Resolver.TypeResolution
 				return null;
 
 			if (dg.IsFunctionLiteral)
-				return GetMethodReturnType(((FunctionLiteral)dg.DeclarationOrExpressionBase).AnonymousMethod, ctxt);
+				return GetMethodReturnType(((FunctionLiteral)dg.delegateTypeBase).AnonymousMethod, ctxt);
 			
-			return ResolveSingle(((DelegateDeclaration)dg.DeclarationOrExpressionBase).ReturnType, ctxt);
+			return ResolveSingle(((DelegateDeclaration)dg.delegateTypeBase).ReturnType, ctxt);
 		}
 
 		public static AbstractType GetMethodReturnType(DMethod method, ResolutionContext ctxt)

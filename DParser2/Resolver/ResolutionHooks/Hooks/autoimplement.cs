@@ -48,7 +48,7 @@ namespace D_Parser.Resolver.ResolutionHooks
 			if (baseClass == null)
 				return ds;
 
-			return new ClassType(cls.Definition, ds.DeclarationOrExpressionBase, baseClass as ClassType, baseClass is InterfaceType ? new[] {baseClass as InterfaceType} : null, ds.DeducedTypes);
+			return new ClassType(cls.Definition, baseClass as ClassType, baseClass is InterfaceType ? new[] {baseClass as InterfaceType} : null, ds.DeducedTypes);
 		}
 
 		public string HookedSymbol {

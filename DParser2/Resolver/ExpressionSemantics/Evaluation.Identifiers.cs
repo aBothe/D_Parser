@@ -228,7 +228,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var ImplicitlyExecute = this.ImplicitlyExecute;
 			this.ImplicitlyExecute = true;
 
-			return TryDoCTFEOrGetValueRefs(AmbiguousType.Get(ExpressionTypeEvaluation.GetOverloads(tix, ctxt), tix), tix, ImplicitlyExecute);
+			return TryDoCTFEOrGetValueRefs(AmbiguousType.Get(ExpressionTypeEvaluation.GetOverloads(tix, ctxt)), tix, ImplicitlyExecute);
 		}
 
 		public ISymbolValue Visit(IdentifierExpression id)
@@ -257,7 +257,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						id.Subformat == LiteralSubformat.Utf16 ? DTokens.Wchar :
 						DTokens.Char;
 
-					return new PrimitiveValue(tk, Convert.ToDecimal((int)(char)id.Value), id);
+					return new PrimitiveValue(tk, Convert.ToDecimal((int)(char)id.Value));
 
 				case LiteralFormat.FloatingPoint | LiteralFormat.Scalar:
 					var im = id.Subformat.HasFlag(LiteralSubformat.Imaginary);
@@ -271,7 +271,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 					var v = Convert.ToDecimal(id.Value);
 
-					return new PrimitiveValue(tt, im ? 0 : v, id, im ? v : 0);
+					return new PrimitiveValue(tt, im ? 0 : v, im ? v : 0);
 
 				case LiteralFormat.Scalar:
 					var unsigned = id.Subformat.HasFlag(LiteralSubformat.Unsigned);
@@ -281,7 +281,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					else
 						tt = unsigned ? DTokens.Uint : DTokens.Int;
 
-					return new PrimitiveValue(tt, Convert.ToDecimal(id.Value), id);
+					return new PrimitiveValue(tt, Convert.ToDecimal(id.Value));
 
 				case Parser.LiteralFormat.StringLiteral:
 				case Parser.LiteralFormat.VerbatimStringLiteral:

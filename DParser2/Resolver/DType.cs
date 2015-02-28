@@ -48,10 +48,10 @@ namespace D_Parser.Resolver
 			{
 				if (modifier != 0)
 					return modifier;
-
+				/*
 				if (DeclarationOrExpressionBase is MemberFunctionAttributeDecl)
 					return ((MemberFunctionAttributeDecl)DeclarationOrExpressionBase).Modifier;
-
+				*/
 				return 0;
 			}
 			set
@@ -63,10 +63,6 @@ namespace D_Parser.Resolver
 
 		#region Constructor/Init
 		protected AbstractType() { }
-		protected AbstractType(ISyntaxRegion DeclarationOrExpressionBase)
-		{
-			this.DeclarationOrExpressionBase = DeclarationOrExpressionBase;
-		}
 		#endregion
 
 		public override string ToString()
@@ -104,7 +100,9 @@ namespace D_Parser.Resolver
 	#region Special types
 	public class UnknownType : AbstractType
 	{
-		public UnknownType(ISyntaxRegion typeBase) : base(typeBase) {
+		public readonly ISyntaxRegion BaseExpression;
+		public UnknownType(ISyntaxRegion BaseExpression) {
+			this.BaseExpression = BaseExpression;
 		}
 
 		public override void Accept (IResolvedTypeVisitor vis)
@@ -119,7 +117,7 @@ namespace D_Parser.Resolver
 
 		public override AbstractType Clone (bool cloneBase)
 		{
-			return new UnknownType (DeclarationOrExpressionBase);
+			return new UnknownType (BaseExpression);
 		}
 	}
 
@@ -141,7 +139,7 @@ namespace D_Parser.Resolver
 			}
 		}
 
-		public static AbstractType Get(IEnumerable<AbstractType> types, ISyntaxRegion typeBase = null)
+		public static AbstractType Get(IEnumerable<AbstractType> types)
 		{
 			if (types == null)
 				return null;
@@ -153,7 +151,7 @@ namespace D_Parser.Resolver
 				return first;
 			en.Dispose();
 
-			return new AmbiguousType(types, typeBase);
+			return new AmbiguousType(types);
 		}
 
 		public static IEnumerable<AbstractType> TryDissolve(AbstractType t)
@@ -177,18 +175,20 @@ namespace D_Parser.Resolver
 			}
 			set
 			{
-				foreach (var ov in Overloads)
+				foreach (var ov in Overloads) {
 					ov.Modifier = value;
+					DResolver.StripMemberSymbols (ov).Modifier = value;
+				}
+
 				base.Modifier = value;
 			}
 		}
 
-		public AmbiguousType(IEnumerable<AbstractType> o, ISyntaxRegion typeBase = null)
+		public AmbiguousType(IEnumerable<AbstractType> o)
 		{
 			if (o == null)
 				throw new ArgumentNullException("o");
 
-			DeclarationOrExpressionBase = typeBase;
 			var l = new List<AbstractType>();
 			foreach (var ov in o)
 				if (ov != null)
@@ -198,7 +198,7 @@ namespace D_Parser.Resolver
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new AmbiguousType(Overloads, DeclarationOrExpressionBase);
+			return new AmbiguousType(Overloads);
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -218,13 +218,6 @@ namespace D_Parser.Resolver
 		public readonly byte TypeToken;
 
 		public PrimitiveType(byte TypeToken, byte Modifier = 0)
-		{
-			this.TypeToken = TypeToken;
-			this.modifier = Modifier;
-		}
-
-		public PrimitiveType(byte TypeToken, byte Modifier, ISyntaxRegion td)
-			: base(td)
 		{
 			this.TypeToken = TypeToken;
 			this.modifier = Modifier;
@@ -251,7 +244,7 @@ namespace D_Parser.Resolver
 	{
 		public readonly AbstractType Base;
 
-		protected DerivedDataType(AbstractType Base, ISyntaxRegion td) : base(td)
+		protected DerivedDataType(AbstractType Base)
 		{
 			this.Base = Base;
 		}
@@ -259,11 +252,11 @@ namespace D_Parser.Resolver
 
 	public class PointerType : DerivedDataType
 	{
-		public PointerType(AbstractType Base, ISyntaxRegion td) : base(Base, td) { }
+		public PointerType(AbstractType Base) : base(Base) { }
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new PointerType(cloneBase && Base != null ? Base.Clone(true) : Base, base.DeclarationOrExpressionBase);
+			return new PointerType(cloneBase && Base != null ? Base.Clone(true) : Base);
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -282,11 +275,11 @@ namespace D_Parser.Resolver
 		public readonly int FixedLength;
 		public readonly bool IsStaticArray;
 
-		public ArrayType(AbstractType ValueType, ISyntaxRegion td)
-			: base(ValueType, null, td) { FixedLength = -1; }
+		public ArrayType(AbstractType ValueType)
+			: base(ValueType, null) { FixedLength = -1; }
 
-		public ArrayType(AbstractType ValueType, int ArrayLength, ISyntaxRegion td)
-			: this(ValueType, td)
+		public ArrayType(AbstractType ValueType, int ArrayLength)
+			: base(ValueType, null)
 		{
 			FixedLength = ArrayLength;
 			IsStaticArray = ArrayLength >= 0;
@@ -295,8 +288,9 @@ namespace D_Parser.Resolver
 		public override AbstractType Clone(bool cloneBase)
 		{
 			if(IsStaticArray)
-				return new ArrayType(cloneBase && Base != null ? Base.Clone(true) : Base, base.DeclarationOrExpressionBase);
-			return new ArrayType(cloneBase && Base != null ? Base.Clone(true) : Base, FixedLength, base.DeclarationOrExpressionBase);
+				return new ArrayType(cloneBase && Base != null ? Base.Clone(true) : Base);
+			
+			return new ArrayType(cloneBase && Base != null ? Base.Clone(true) : Base, FixedLength);
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -327,8 +321,8 @@ namespace D_Parser.Resolver
 		/// </summary>
 		public AbstractType ValueType { get { return Base; } }
 
-		public AssocArrayType(AbstractType ValueType, AbstractType KeyType, ISyntaxRegion td)
-			: base(ValueType, td)
+		public AssocArrayType(AbstractType ValueType, AbstractType KeyType)
+			: base(ValueType)
 		{
 			if (ValueType != null)
 				ValueType.NonStaticAccess = true;
@@ -337,7 +331,7 @@ namespace D_Parser.Resolver
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new AssocArrayType(cloneBase && Base != null ? Base.Clone(true) : Base, cloneBase && KeyType != null ? KeyType.Clone(true) : KeyType, base.DeclarationOrExpressionBase);
+			return new AssocArrayType(cloneBase && Base != null ? Base.Clone(true) : Base, cloneBase && KeyType != null ? KeyType.Clone(true) : KeyType);
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -358,15 +352,17 @@ namespace D_Parser.Resolver
 	public class DelegateCallSymbol : DerivedDataType
 	{
 		public readonly DelegateType Delegate;
+		internal readonly PostfixExpression_MethodCall callExpression;
 
-		public DelegateCallSymbol (DelegateType dg, ISyntaxRegion callExpression) : base (dg.Base, callExpression)
+		public DelegateCallSymbol (DelegateType dg, PostfixExpression_MethodCall callExpression) : base (dg.Base)
 		{
 			this.Delegate = dg;
+			this.callExpression = callExpression;
 		}
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new DelegateCallSymbol(cloneBase && Delegate != null ? Delegate.Clone(true) as DelegateType : Delegate, base.DeclarationOrExpressionBase);
+			return new DelegateCallSymbol(cloneBase && Delegate != null ? Delegate.Clone(true) as DelegateType : Delegate, callExpression);
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -383,11 +379,14 @@ namespace D_Parser.Resolver
 	public class DelegateType : DerivedDataType
 	{
 		public readonly bool IsFunction;
-		public bool IsFunctionLiteral { get { return DeclarationOrExpressionBase is FunctionLiteral; } }
+		public readonly ISyntaxRegion delegateTypeBase;
+		public bool IsFunctionLiteral { get { return delegateTypeBase is FunctionLiteral; } }
 		public AbstractType[] Parameters { get; set; }
 
-		public DelegateType(AbstractType ReturnType,DelegateDeclaration Declaration, IEnumerable<AbstractType> Parameters = null) : base(ReturnType, Declaration)
+		public DelegateType(AbstractType ReturnType,DelegateDeclaration Declaration, IEnumerable<AbstractType> Parameters = null) : base(ReturnType)
 		{
+			delegateTypeBase = Declaration;
+
 			this.IsFunction = Declaration.IsFunction;
 			if (ReturnType != null)
 				ReturnType.NonStaticAccess = true;
@@ -399,8 +398,9 @@ namespace D_Parser.Resolver
 		}
 
 		public DelegateType(AbstractType ReturnType, FunctionLiteral Literal, IEnumerable<AbstractType> Parameters)
-			: base(ReturnType, Literal)
+			: base(ReturnType)
 		{
+			delegateTypeBase = Literal;
 			this.IsFunction = Literal.LiteralToken == DTokens.Function;
 			if (ReturnType != null)
 				ReturnType.NonStaticAccess = true;
@@ -416,7 +416,10 @@ namespace D_Parser.Resolver
 		public override AbstractType Clone(bool cloneBase)
 		{
 			//TODO: Clone parameters
-			return new DelegateType(cloneBase && Base != null ? Base.Clone(true) : Base, base.DeclarationOrExpressionBase as DelegateDeclaration, Parameters);
+			if (IsFunctionLiteral)
+				return new DelegateType (cloneBase && Base != null ? Base.Clone (true) : Base, delegateTypeBase as FunctionLiteral, Parameters);
+			
+			return new DelegateType(cloneBase && Base != null ? Base.Clone(true) : Base, delegateTypeBase as DelegateDeclaration, Parameters);
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -470,8 +473,8 @@ namespace D_Parser.Resolver
 		public readonly int NameHash;
 		public string Name {get{return Strings.TryGet (NameHash);}}
 
-		protected DSymbol(DNode Node, AbstractType BaseType, IEnumerable<TemplateParameterSymbol> deducedTypes, ISyntaxRegion td)
-			: base(BaseType, td)
+		protected DSymbol(DNode Node, AbstractType BaseType, IEnumerable<TemplateParameterSymbol> deducedTypes)
+			: base(BaseType)
 		{
 			SetDeducedTypes (deducedTypes);
 			
@@ -486,15 +489,15 @@ namespace D_Parser.Resolver
 	#region User-defined types
 	public abstract class UserDefinedType : DSymbol
 	{
-		protected UserDefinedType(DNode Node, AbstractType baseType, IEnumerable<TemplateParameterSymbol> deducedTypes, ISyntaxRegion td) : base(Node, baseType, deducedTypes, td) { }
+		protected UserDefinedType(DNode Node, AbstractType baseType, IEnumerable<TemplateParameterSymbol> deducedTypes) : base(Node, baseType, deducedTypes) { }
 	}
 
 	public class AliasedType : MemberSymbol
 	{
 		public new DVariable Definition { get { return base.Definition as DVariable; } }
 
-		public AliasedType(DVariable AliasDefinition, AbstractType Type, ISyntaxRegion td, IEnumerable<TemplateParameterSymbol> deducedTypes = null)
-			: base(AliasDefinition, Type, td, deducedTypes) {
+		public AliasedType(DVariable AliasDefinition, AbstractType Type, IEnumerable<TemplateParameterSymbol> deducedTypes = null)
+			: base(AliasDefinition, Type, deducedTypes) {
 				if (Type != null)
 					Type.NonStaticAccess = false;
 		}
@@ -506,7 +509,7 @@ namespace D_Parser.Resolver
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new AliasedType(Definition, cloneBase && Base != null ? Base.Clone(true) : Base, DeclarationOrExpressionBase, DeducedTypes);
+			return new AliasedType(Definition, cloneBase && Base != null ? Base.Clone(true) : Base, DeducedTypes) { Modifier = Modifier };
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -529,8 +532,8 @@ namespace D_Parser.Resolver
 			set { }
 		}
 
-		public EnumType(DEnum Enum, AbstractType BaseType, ISyntaxRegion td) : base(Enum, BaseType, null, td) { }
-		public EnumType(DEnum Enum, ISyntaxRegion td) : base(Enum, new PrimitiveType(DTokens.Int, 0), null, td) { }
+		public EnumType(DEnum Enum, AbstractType BaseType) : base(Enum, BaseType, null) { }
+		public EnumType(DEnum Enum) : base(Enum, new PrimitiveType(DTokens.Int, DTokens.Enum), null) { }
 
 		public override string ToString()
 		{
@@ -539,7 +542,7 @@ namespace D_Parser.Resolver
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new EnumType(Definition, cloneBase && Base != null ? Base.Clone(true) : Base, DeclarationOrExpressionBase);
+			return new EnumType(Definition, cloneBase && Base != null ? Base.Clone(true) : Base) { Modifier = Modifier };
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -555,7 +558,7 @@ namespace D_Parser.Resolver
 
 	public class StructType : TemplateIntermediateType
 	{
-		public StructType(DClassLike dc, ISyntaxRegion td, IEnumerable<TemplateParameterSymbol> deducedTypes = null) : base(dc, td, null, null, deducedTypes) { }
+		public StructType(DClassLike dc, IEnumerable<TemplateParameterSymbol> deducedTypes = null) : base(dc, null, null, deducedTypes) { }
 
 		public override string ToString()
 		{
@@ -564,7 +567,7 @@ namespace D_Parser.Resolver
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new StructType(Definition, DeclarationOrExpressionBase, DeducedTypes);
+			return new StructType(Definition, DeducedTypes) { Modifier = Modifier };
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -580,7 +583,7 @@ namespace D_Parser.Resolver
 
 	public class UnionType : TemplateIntermediateType
 	{
-		public UnionType(DClassLike dc, ISyntaxRegion td, IEnumerable<TemplateParameterSymbol> deducedTypes = null) : base(dc, td, null, null, deducedTypes) { }
+		public UnionType(DClassLike dc, IEnumerable<TemplateParameterSymbol> deducedTypes = null) : base(dc, null, null, deducedTypes) { }
 
 		public override string ToString()
 		{
@@ -589,7 +592,7 @@ namespace D_Parser.Resolver
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new UnionType(Definition, DeclarationOrExpressionBase, DeducedTypes);
+			return new UnionType(Definition, DeducedTypes) { Modifier = Modifier };
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -605,10 +608,10 @@ namespace D_Parser.Resolver
 
 	public class ClassType : TemplateIntermediateType
 	{
-		public ClassType(DClassLike dc, ISyntaxRegion td, 
+		public ClassType(DClassLike dc, 
 			TemplateIntermediateType baseType, InterfaceType[] baseInterfaces = null,
 			IEnumerable<TemplateParameterSymbol> deducedTypes = null)
-			: base(dc, td, baseType, baseInterfaces, deducedTypes)
+			: base(dc, baseType, baseInterfaces, deducedTypes)
 		{}
 
 		public override string ToString()
@@ -618,7 +621,7 @@ namespace D_Parser.Resolver
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new ClassType(Definition, DeclarationOrExpressionBase, cloneBase && Base != null ? Base.Clone(true) as TemplateIntermediateType : Base as TemplateIntermediateType, BaseInterfaces, DeducedTypes);
+			return new ClassType(Definition, cloneBase && Base != null ? Base.Clone(true) as TemplateIntermediateType : Base as TemplateIntermediateType, BaseInterfaces, DeducedTypes) { Modifier = Modifier };
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -634,14 +637,14 @@ namespace D_Parser.Resolver
 
 	public class InterfaceType : TemplateIntermediateType
 	{
-		public InterfaceType(DClassLike dc, ISyntaxRegion td, 
+		public InterfaceType(DClassLike dc, 
 			InterfaceType[] baseInterfaces=null,
 			IEnumerable<TemplateParameterSymbol> deducedTypes = null) 
-			: base(dc, td, null, baseInterfaces, deducedTypes) {}
+			: base(dc, null, baseInterfaces, deducedTypes) {}
 		
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new InterfaceType(Definition, DeclarationOrExpressionBase, BaseInterfaces, DeducedTypes);
+			return new InterfaceType(Definition, BaseInterfaces, DeducedTypes) { Modifier = Modifier };
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -676,11 +679,11 @@ namespace D_Parser.Resolver
 			}
 		}
 
-		public TemplateType(DClassLike dc, ISyntaxRegion td, IEnumerable<TemplateParameterSymbol> inheritedTypeParams = null) : base(dc, td, null, null, inheritedTypeParams) { }
+		public TemplateType(DClassLike dc, IEnumerable<TemplateParameterSymbol> inheritedTypeParams = null) : base(dc, null, null, inheritedTypeParams) { }
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new TemplateType(Definition, DeclarationOrExpressionBase, DeducedTypes);
+			return new TemplateType(Definition, DeducedTypes) { Modifier = Modifier };
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -696,11 +699,11 @@ namespace D_Parser.Resolver
 	
 	public class MixinTemplateType : TemplateType
 	{
-		public MixinTemplateType(DClassLike dc, ISyntaxRegion td, IEnumerable<TemplateParameterSymbol> inheritedTypeParams = null) : base(dc, td, inheritedTypeParams) { }
+		public MixinTemplateType(DClassLike dc, IEnumerable<TemplateParameterSymbol> inheritedTypeParams = null) : base(dc, inheritedTypeParams) { }
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new MixinTemplateType(Definition, DeclarationOrExpressionBase, DeducedTypes);
+			return new MixinTemplateType(Definition, DeducedTypes) { Modifier = Modifier };
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -716,14 +719,15 @@ namespace D_Parser.Resolver
 
 	public abstract class TemplateIntermediateType : UserDefinedType
 	{
+		public ISyntaxRegion instanciationSyntax;
 		public new DClassLike Definition { get { return base.Definition as DClassLike; } }
 
 		public readonly InterfaceType[] BaseInterfaces;
 
-		public TemplateIntermediateType(DClassLike dc, ISyntaxRegion td, 
+		public TemplateIntermediateType(DClassLike dc, 
 			AbstractType baseType, InterfaceType[] baseInterfaces,
 			IEnumerable<TemplateParameterSymbol> deducedTypes)
-			: base(dc, baseType, deducedTypes, td)
+			: base(dc, baseType, deducedTypes)
 		{
 			this.BaseInterfaces = baseInterfaces;
 		}
@@ -733,8 +737,7 @@ namespace D_Parser.Resolver
 	{
 		public new EponymousTemplate Definition { get { return base.Definition as EponymousTemplate; } }
 
-		public EponymousTemplateType(EponymousTemplate ep,
-			IEnumerable<TemplateParameterSymbol> deducedTypes = null, ISyntaxRegion td = null) : base(ep, null, deducedTypes, td) { }
+		public EponymousTemplateType(EponymousTemplate ep, IEnumerable<TemplateParameterSymbol> deducedTypes = null) : base(ep, null, deducedTypes) { }
 
 		public override string ToString ()
 		{
@@ -743,7 +746,7 @@ namespace D_Parser.Resolver
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new EponymousTemplateType(Definition, DeducedTypes, DeclarationOrExpressionBase);
+			return new EponymousTemplateType(Definition, DeducedTypes);
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -789,16 +792,16 @@ namespace D_Parser.Resolver
 
 	public class MemberSymbol : DSymbol
 	{
-		public MemberSymbol(DNode member, AbstractType memberType, ISyntaxRegion td = null,
+		public MemberSymbol(DNode member, AbstractType memberType = null,
 			IEnumerable<TemplateParameterSymbol> deducedTypes = null)
-			: base(member, memberType, deducedTypes, td) {
+			: base(member, memberType, deducedTypes) {
 				if (memberType != null)
 					memberType.NonStaticAccess = true;
 		}
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new MemberSymbol(Definition, cloneBase && Base != null ? Base.Clone(true) : Base, DeclarationOrExpressionBase , DeducedTypes);
+			return new MemberSymbol(Definition, cloneBase && Base != null ? Base.Clone(true) : Base, DeducedTypes) { Modifier = Modifier };
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -821,16 +824,16 @@ namespace D_Parser.Resolver
 		public readonly ISymbolValue ParameterValue;
 		public bool IsKnowinglyUndetermined;
 
-		public TemplateParameterSymbol(TemplateParameter.Node tpn, ISemantic typeOrValue, ISyntaxRegion paramIdentifier = null)
-			: base(tpn, AbstractType.Get(typeOrValue), paramIdentifier)
+		public TemplateParameterSymbol(TemplateParameter.Node tpn, ISemantic typeOrValue)
+			: base(tpn, AbstractType.Get(typeOrValue))
 		{
 			IsKnowinglyUndetermined = TemplateInstanceHandler.IsNonFinalArgument(typeOrValue);
 			this.Parameter = tpn.TemplateParameter;
 			this.ParameterValue = typeOrValue as ISymbolValue;
 		}
 
-		public TemplateParameterSymbol(TemplateParameter tpn, ISemantic typeOrValue, ISyntaxRegion paramIdentifier = null)
-			: base(tpn != null ? tpn.Representation : null, AbstractType.Get(typeOrValue), paramIdentifier)
+		public TemplateParameterSymbol(TemplateParameter tpn, ISemantic typeOrValue)
+			: base(tpn != null ? tpn.Representation : null, AbstractType.Get(typeOrValue))
 		{
 			IsKnowinglyUndetermined = TemplateInstanceHandler.IsNonFinalArgument(typeOrValue);
 			this.Parameter = tpn;
@@ -855,7 +858,7 @@ namespace D_Parser.Resolver
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new TemplateParameterSymbol(Parameter, ParameterValue ?? (cloneBase && Base != null ? Base.Clone(true) : Base) as ISemantic, DeclarationOrExpressionBase);
+			return new TemplateParameterSymbol(Parameter, ParameterValue ?? (cloneBase && Base != null ? Base.Clone(true) : Base) as ISemantic) { Modifier = Modifier };
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -875,12 +878,14 @@ namespace D_Parser.Resolver
 	/// </summary>
 	public class ArrayAccessSymbol : DerivedDataType
 	{
+		public readonly PostfixExpression_ArrayAccess indexExpression;
+
 		public ArrayAccessSymbol(PostfixExpression_ArrayAccess indexExpr, AbstractType arrayValueType):
-			base(arrayValueType,indexExpr)	{ }
+		base(arrayValueType)	{ this.indexExpression = indexExpr; }
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new ArrayAccessSymbol(DeclarationOrExpressionBase as PostfixExpression_ArrayAccess, cloneBase && Base != null ? Base.Clone(true) : Base);
+			return new ArrayAccessSymbol(indexExpression, cloneBase && Base != null ? Base.Clone(true) : Base);
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -903,7 +908,7 @@ namespace D_Parser.Resolver
 			set	{}
 		}
 
-		public ModuleSymbol(DModule mod, ISyntaxRegion td, PackageSymbol packageBase = null) : base(mod, packageBase, (IEnumerable<TemplateParameterSymbol>)null, td) {	}
+		public ModuleSymbol(DModule mod, PackageSymbol packageBase = null) : base(mod, packageBase, (IEnumerable<TemplateParameterSymbol>)null) {	}
 
 		public override string ToString()
 		{
@@ -912,7 +917,7 @@ namespace D_Parser.Resolver
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new ModuleSymbol(Definition, DeclarationOrExpressionBase, cloneBase && Base != null ? Base.Clone(true) as PackageSymbol : Base as PackageSymbol);
+			return new ModuleSymbol(Definition, cloneBase && Base != null ? Base.Clone(true) as PackageSymbol : Base as PackageSymbol) { Modifier = Modifier };
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -930,7 +935,7 @@ namespace D_Parser.Resolver
 	{
 		public readonly ModulePackage Package;
 
-		public PackageSymbol(ModulePackage pack,ISyntaxRegion td) : base(td) {
+		public PackageSymbol(ModulePackage pack) {
 			this.Package = pack;
 		}
 
@@ -941,7 +946,7 @@ namespace D_Parser.Resolver
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new PackageSymbol(Package, DeclarationOrExpressionBase);
+			return new PackageSymbol(Package) { Modifier = Modifier };
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -963,7 +968,7 @@ namespace D_Parser.Resolver
 	{
 		public readonly ISemantic[] Items;
 
-		public DTuple(ISyntaxRegion td,IEnumerable<ISemantic> items) : base(td)
+		public DTuple(IEnumerable<ISemantic> items)
 		{
 			if (items is ISemantic[])
 				Items = (ISemantic[])items;
@@ -988,7 +993,7 @@ namespace D_Parser.Resolver
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new DTuple(DeclarationOrExpressionBase, Items);
+			return new DTuple(Items) { Modifier = Modifier };
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)

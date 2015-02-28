@@ -131,15 +131,9 @@ namespace D_Parser.Resolver.Templates
 			var r_ = r as DSymbol;
 			while (r_ != null)
 			{
-				if (r_.DeclarationOrExpressionBase is TemplateInstanceExpression)
-				{
-					var tit = r_ as TemplateIntermediateType;
-					if (tit != null && CheckForTixIdentifierEquality(paramTix_TemplateMatchPossibilities, tit.Definition))
-					{
-						tixBasedArgumentType = tit;
-						break;
-					}
-				}
+				tixBasedArgumentType = r_ as TemplateIntermediateType;
+				if (tixBasedArgumentType != null && CheckForTixIdentifierEquality(paramTix_TemplateMatchPossibilities, tixBasedArgumentType.Definition))
+					break;
 
 				r_ = r_.Base as DSymbol;
 			}
@@ -148,7 +142,7 @@ namespace D_Parser.Resolver.Templates
 			 * This part is very tricky:
 			 * I still dunno what is allowed over here--
 			 * 
-			 * class Foo(T:Bar!E[],E) {}
+			 * class Foo(T:Bar!E[],E) {} // (when deducing, parameter=T; tix=Bar!E[]; r=DerivateBar-ClassType
 			 * ...
 			 * Foo!(Bar!string[]) f; -- E will be 'string' then
 			 * 
@@ -157,7 +151,7 @@ namespace D_Parser.Resolver.Templates
 			 */
 			if (tixBasedArgumentType != null)
 			{
-				var argEnum_given = ((TemplateInstanceExpression)tixBasedArgumentType.DeclarationOrExpressionBase).Arguments.GetEnumerator();
+				var argEnum_given = tixBasedArgumentType.Definition.TemplateParameters.GetEnumerator ();
 
 				foreach (var p in tix.Arguments)
 				{
@@ -170,9 +164,9 @@ namespace D_Parser.Resolver.Templates
 					if (param_Expected == null)
 						return false;
 
-					var result_Given = ExpressionTypeEvaluation.EvaluateType(argEnum_given.Current as IExpression, ctxt);
+					var result_Given = tixBasedArgumentType.DeducedTypes.FirstOrDefault ((tps) => tps.Parameter == argEnum_given.Current);
 
-					if (result_Given == null || !HandleDecl(parameter, param_Expected, result_Given))
+					if (result_Given == null || result_Given.Base == null || !HandleDecl(parameter, param_Expected, result_Given.Base))
 						return false;
 				}
 
@@ -241,6 +235,9 @@ namespace D_Parser.Resolver.Templates
 
 		static ITypeDeclaration ConvertToTypeDeclarationRoughly(IExpression p)
 		{
+			while(p is SurroundingParenthesesExpression)
+				p = ((SurroundingParenthesesExpression)p).Expression;
+
 			var id = p as IdentifierExpression;
 			if (id != null)
 			{
@@ -270,18 +267,16 @@ namespace D_Parser.Resolver.Templates
 			if((arrayDeclToCheckAgainst.ClampsEmpty == (at == null)) &&
 				(at == null || !at.IsStaticArray || arrayDeclToCheckAgainst.KeyExpression == null))
 				return false;
-			bool result;
+			
+			bool result = true;
 
 			if (arrayDeclToCheckAgainst.KeyExpression != null)
 			{
-				// Remove all surrounding parentheses from the expression
 				var x_param = arrayDeclToCheckAgainst.KeyExpression;
 
 				while(x_param is SurroundingParenthesesExpression)
 					x_param = ((SurroundingParenthesesExpression)x_param).Expression;
-
-				var ad_Argument = argumentArrayType.DeclarationOrExpressionBase as ArrayDecl;
-
+				
 				/*
 				 * This might be critical:
 				 * the [n] part in class myClass(T:char[n], int n) {}
@@ -290,32 +285,21 @@ namespace D_Parser.Resolver.Templates
 				 * test if it's part of the parameter list
 				 */
 				var id = x_param as IdentifierExpression;
-				if (id != null && id.IsIdentifier && Contains (id.ValueStringHash)) {
+				if (id != null && id.IsIdentifier && Contains (id.ValueStringHash)) { // Match int[5] into T[n],n - after deduction, n will be 5
+					
 					// If an expression (the usual case) has been passed as argument, evaluate its value, otherwise is its type already resolved.
-					ISemantic finalArg = null;
-
-					if (ad_Argument != null && ad_Argument.KeyExpression != null) {
-						ISymbolValue val = null;
-						int len = -1;
-						finalArg = TypeDeclarationResolver.ResolveKey (ad_Argument, out len, out val, ctxt);
-						if (val != null)
-							finalArg = val;
-					} else
-						finalArg = argumentArrayType.KeyType;
+					var finalArg = argumentArrayType is ArrayType ? (ISemantic)new PrimitiveValue ((argumentArrayType as ArrayType).FixedLength) : argumentArrayType.KeyType;
 
 					//TODO: Do a type convertability check between the param type and the given argument's type.
 					// The affected parameter must also be a value parameter then, if an expression was given.
 
 					// and handle it as if it was an identifier declaration..
 					result = Set (parameterRef, finalArg, id.ValueStringHash); 
-				} else if (ad_Argument != null && ad_Argument.KeyExpression != null) {
+				} else if (argumentArrayType is ArrayType) { // Match int[5] into T[5]
 					// Just test for equality of the argument and parameter expression, e.g. if both param and arg are 123, the result will be true.
-					result = SymbolValueComparer.IsEqual (arrayDeclToCheckAgainst.KeyExpression, ad_Argument.KeyExpression, new StandardValueProvider (ctxt));
+					result = SymbolValueComparer.IsEqual (Evaluation.EvaluateValue (arrayDeclToCheckAgainst.KeyExpression, ctxt), new PrimitiveValue ((argumentArrayType as ArrayType).FixedLength));
 				} else
 					result = false;
-
-				if (!result)
-					return false;
 			}
 			else if (arrayDeclToCheckAgainst.KeyType != null)
 			{
@@ -323,16 +307,13 @@ namespace D_Parser.Resolver.Templates
 				// pass that number instead of type 'int' to the check.
 				if (argumentArrayType != null && at != null && at.IsStaticArray)
 					result = HandleDecl(parameterRef, arrayDeclToCheckAgainst.KeyType,
-						new PrimitiveValue(D_Parser.Parser.DTokens.Int, (decimal)at.FixedLength, null)); 
+						new PrimitiveValue(at.FixedLength)); 
 				else
 					result = HandleDecl(parameterRef, arrayDeclToCheckAgainst.KeyType, argumentArrayType.KeyType);
-
-				if (!result)
-					return false;
 			}
 
 			// Handle inner type
-			return HandleDecl(parameterRef,arrayDeclToCheckAgainst.InnerDeclaration, argumentArrayType.Base);
+			return result && HandleDecl(parameterRef,arrayDeclToCheckAgainst.InnerDeclaration, argumentArrayType.Base);
 		}
 
 		bool HandleDecl(TemplateTypeParameter par, DelegateDeclaration d, DelegateType dr)
@@ -341,7 +322,7 @@ namespace D_Parser.Resolver.Templates
 			if(dr==null || dr.IsFunctionLiteral)
 				return false;
 
-			var dr_decl = (DelegateDeclaration)dr.DeclarationOrExpressionBase;
+			var dr_decl = (DelegateDeclaration)dr.delegateTypeBase;
 
 			// Compare return types
 			if(	d.IsFunction == dr_decl.IsFunction &&
@@ -404,9 +385,7 @@ namespace D_Parser.Resolver.Templates
 
 		bool HandleDecl(TemplateTypeParameter parameter, PointerDecl p, PointerType r)
 		{
-			return r != null && 
-				r.DeclarationOrExpressionBase is PointerDecl && 
-				HandleDecl(parameter, p.InnerDeclaration, r.Base);
+			return r != null && HandleDecl(parameter, p.InnerDeclaration, r.Base);
 		}
 
 		bool HandleDecl(TemplateTypeParameter p, MemberFunctionAttributeDecl m, AbstractType r)
@@ -424,13 +403,14 @@ namespace D_Parser.Resolver.Templates
 			{
 				var aa = r as AssocArrayType;
 				var clonedValueType = aa.Modifier != r.Modifier ? aa.ValueType.Clone(false) : aa.ValueType;
+
 				clonedValueType.Modifier = r.Modifier;
 
 				var at = aa as ArrayType;
 				if (at != null)
-					newR = at.IsStaticArray ? new ArrayType(clonedValueType, at.FixedLength, r.DeclarationOrExpressionBase) : new ArrayType(clonedValueType, r.DeclarationOrExpressionBase);
+					newR = at.IsStaticArray ? new ArrayType(clonedValueType, at.FixedLength) : new ArrayType(clonedValueType);
 				else
-					newR = new AssocArrayType(clonedValueType, aa.KeyType, r.DeclarationOrExpressionBase);
+					newR = new AssocArrayType(clonedValueType, aa.KeyType);
 			}
 			else
 			{
@@ -456,7 +436,8 @@ namespace D_Parser.Resolver.Templates
 
 		bool HandleDecl(VectorDeclaration v, AbstractType r)
 		{
-			if (r.DeclarationOrExpressionBase is VectorDeclaration)
+			throw new System.NotImplementedException (); //TODO: Reimplement typedeclarationresolver as proper Visitor.
+			/*if (r.DeclarationOrExpressionBase is VectorDeclaration)
 			{
 				var v_res = ExpressionTypeEvaluation.EvaluateType(v.Id, ctxt);
 				var r_res = ExpressionTypeEvaluation.EvaluateType(((VectorDeclaration)r.DeclarationOrExpressionBase).Id, ctxt);
@@ -465,7 +446,7 @@ namespace D_Parser.Resolver.Templates
 					return false;
 				else
 					return ResultComparer.IsImplicitlyConvertible(r_res, v_res);
-			}
+			}*/
 			return false;
 		}
 	}

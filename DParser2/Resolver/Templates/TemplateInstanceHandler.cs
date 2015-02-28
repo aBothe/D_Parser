@@ -173,7 +173,7 @@ namespace D_Parser.Resolver.TypeResolution
 		static AbstractType[] TryGetImplicitProperty(TemplateType template, ResolutionContext ctxt)
 		{
 			// Get actual overloads
-			var matchingChild = TypeDeclarationResolver.ResolveFurtherTypeIdentifier( template.NameHash, new[]{ template }, ctxt, template.DeclarationOrExpressionBase, false);
+			var matchingChild = TypeDeclarationResolver.ResolveFurtherTypeIdentifier( template.NameHash, new[]{ template }, ctxt, null, false);
 
 			if (matchingChild != null) // Currently requried for proper UFCS resolution - sustain template's Tag
 				foreach (var ch in matchingChild)
@@ -208,7 +208,7 @@ namespace D_Parser.Resolver.TypeResolution
 			var def = ept.Definition;
 			deducedType = new MemberSymbol(def, def.Type != null ? 
 				TypeDeclarationResolver.ResolveSingle(def.Type, ctxt) :
-				ExpressionTypeEvaluation.EvaluateType(def.Initializer, ctxt), null, ept.DeducedTypes); //ept; //ExpressionTypeEvaluation.EvaluateType (ept.Definition.Initializer, ctxt);
+				ExpressionTypeEvaluation.EvaluateType(def.Initializer, ctxt), ept.DeducedTypes); //ept; //ExpressionTypeEvaluation.EvaluateType (ept.Definition.Initializer, ctxt);
 
 			deducedType.AssignTagsFrom(ept); // Currently requried for proper UFCS resolution - sustain ept's Tags
 
@@ -331,7 +331,7 @@ namespace D_Parser.Resolver.TypeResolution
 				// Get the type of the type of 'this' - so of the result that is the overload's base
 				var t = DResolver.StripMemberSymbols(overload.Base);
 
-				if (t == null || t.DeclarationOrExpressionBase == null)
+				if (t == null)
 					return false;
 
 				//TODO: Still not sure if it's ok to pass a type result to it 
