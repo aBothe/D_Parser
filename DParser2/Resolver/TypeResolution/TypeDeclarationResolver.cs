@@ -291,8 +291,29 @@ namespace D_Parser.Resolver.TypeResolution
 				AbstractType keyType = null;
 				int fixedArrayLength = -1;
 
-				ISymbolValue val;
-				keyType = ResolveKey(ad, out fixedArrayLength, out val, ctxt);
+				if (ad.KeyExpression != null)
+				{
+					var val = Evaluation.EvaluateValue(ad.KeyExpression, ctxt);
+
+					if (val != null)
+					{
+						// It should be mostly a number only that points out how large the final array should be
+						var pv = Evaluation.GetVariableContents(val, new StandardValueProvider(ctxt)) as PrimitiveValue;
+						if (pv != null)
+						{
+							fixedArrayLength = System.Convert.ToInt32(pv.Value);
+
+							if (fixedArrayLength < 0)
+								ctxt.LogError(ad, "Invalid array size: Length value must be greater than 0");
+						}
+						//TODO Is there any other type of value allowed?
+						else
+							// Take the value's type as array key type
+							keyType = val.RepresentedType;
+					}
+				}
+				else if(ad.KeyType != null)
+					keyType = ResolveSingle(ad.KeyType, ctxt);
 
 				if (ad.KeyType == null && (ad.KeyExpression == null || fixedArrayLength >= 0)) {
 					if (fixedArrayLength >= 0) {
@@ -397,49 +418,10 @@ namespace D_Parser.Resolver.TypeResolution
 			}
 		}
 
-
-		public static AbstractType ResolveKey(ArrayDecl ad, out int fixedArrayLength, out ISymbolValue keyVal, ResolutionContext ctxt)
-		{
-			keyVal = null;
-			fixedArrayLength = -1;
-
-			if (ad.KeyExpression != null)
-			{
-				keyVal = Evaluation.EvaluateValue(ad.KeyExpression, ctxt);
-
-				if (keyVal != null)
-				{
-					// It should be mostly a number only that points out how large the final array should be
-					var pv = Evaluation.GetVariableContents(keyVal, new StandardValueProvider(ctxt)) as PrimitiveValue;
-					if (pv != null)
-					{
-						fixedArrayLength = System.Convert.ToInt32(pv.Value);
-
-						if (fixedArrayLength < 0)
-							ctxt.LogError(ad, "Invalid array size: Length value must be greater than 0");
-					}
-					//TODO Is there any other type of value allowed?
-					else
-						// Take the value's type as array key type
-						return keyVal.RepresentedType;
-				}
-			}
-			else if(ad.KeyType != null)
-				return ResolveSingle(ad.KeyType, ctxt);
-
-			return null;
-		}
-
-
 		public static AbstractType ResolveSingle(ITypeDeclaration declaration, ResolutionContext ctxt, bool filterTemplates = true)
 		{
 			return declaration == null ? null : declaration.Accept (new SingleResolverVisitor (ctxt, filterTemplates));
 		}
-
-
-
-
-
 
 
 		#region Intermediate methods
