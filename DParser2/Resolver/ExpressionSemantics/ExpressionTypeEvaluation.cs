@@ -516,19 +516,15 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public AbstractType Visit(NewExpression nex)
 		{
 			// http://www.d-programming-language.org/expression.html#NewExpression
-			AbstractType[] possibleTypes;
 
-			if (nex.Type is IdentifierDeclaration)
-				possibleTypes = TypeDeclarationResolver.Resolve((IdentifierDeclaration)nex.Type, ctxt, filterForTemplateArgs: false);
-			else
-				possibleTypes = TypeDeclarationResolver.Resolve(nex.Type, ctxt);
+			var possibleTypes = TypeDeclarationResolver.ResolveSingle(nex.Type, ctxt, !(nex.Type is IdentifierDeclaration));
 
 			var ctors = new Dictionary<DMethod, TemplateIntermediateType>();
 			
 			if (possibleTypes == null)
 				return null;
 
-			foreach (var t in possibleTypes)
+			foreach (var t in AmbiguousType.TryDissolve(possibleTypes))
 			{
 				var ct = t as TemplateIntermediateType;
 				if (ct != null &&
@@ -841,21 +837,16 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 		}
 
-		public AbstractType[] GetOverloads(TemplateInstanceExpression tix, IEnumerable<AbstractType> resultBases = null, bool deduceParameters = true)
+		public static AbstractType[] GetOverloads(TemplateInstanceExpression tix, ResolutionContext ctxt, AbstractType resultBases = null, bool deduceParameters = true)
 		{
-			return GetOverloads(tix, ctxt, resultBases, deduceParameters);
-		}
-
-		public static AbstractType[] GetOverloads(TemplateInstanceExpression tix, ResolutionContext ctxt, IEnumerable<AbstractType> resultBases = null, bool deduceParameters = true)
-		{
-			if (resultBases == null && tix.InnerDeclaration != null)
-				resultBases = TypeDeclarationResolver.Resolve(tix.InnerDeclaration, ctxt);
+			if (resultBases == null)
+				resultBases = TypeDeclarationResolver.ResolveSingle(tix.InnerDeclaration, ctxt);
 
 			AbstractType[] res;
 			if (resultBases == null)
 				res = TypeDeclarationResolver.ResolveIdentifier(tix.TemplateIdHash, ctxt, tix, tix.ModuleScopedIdentifier);
 			else
-				res = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(tix.TemplateIdHash, resultBases, ctxt, tix);
+				res = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(tix.TemplateIdHash, AmbiguousType.TryDissolve(resultBases), ctxt, tix);
 
 			res = (ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) == 0 && deduceParameters ?
 				TemplateInstanceHandler.DeduceParamsAndFilterOverloads(res, tix, ctxt) : res;

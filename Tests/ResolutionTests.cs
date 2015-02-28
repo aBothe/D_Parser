@@ -2269,9 +2269,7 @@ template Baz(B)
 			DToken tk;
 			var td = DParser.ParseBasicType("Foo!int",out tk);
 
-			var s_ = TypeDeclarationResolver.Resolve(td, ctxt);
-			Assert.AreEqual(1,s_.Length);
-			var s = s_[0];
+			var s = TypeDeclarationResolver.ResolveSingle(td, ctxt);
 			
 			Assert.IsInstanceOfType(typeof(MemberSymbol),s);
 
@@ -2284,15 +2282,11 @@ template Baz(B)
 			var pt = (PrimitiveType)tps.Base;
 			Assert.AreEqual(DTokens.Int, pt.TypeToken);
 			
-			s_ = TypeDeclarationResolver.Resolve(DParser.ParseBasicType("Bar!int",out tk),ctxt);
-			Assert.That(s_.Length, Is.EqualTo(1));
-			s = s_[0];
+			s = TypeDeclarationResolver.ResolveSingle(DParser.ParseBasicType("Bar!int",out tk),ctxt);
 			
 			Assert.That(((DSymbol)s).Base, Is.TypeOf(typeof(PointerType)));
 			
-			s_ = TypeDeclarationResolver.Resolve(DParser.ParseBasicType("Baz!int",out tk),ctxt);
-			Assert.That(s_.Length, Is.EqualTo(1));
-			s = s_[0];
+			s = TypeDeclarationResolver.ResolveSingle(DParser.ParseBasicType("Baz!int",out tk),ctxt);
 			
 			Assert.That(((DSymbol)s).Base, Is.TypeOf(typeof(PointerType)));
 		}
@@ -2901,9 +2895,8 @@ void main()
 			Assert.AreEqual(0, x.Length);
 
 			DToken tk;
-			x = TypeDeclarationResolver.Resolve(DParser.ParseBasicType("T!int",out tk),ctxt);
-			Assert.AreEqual(1, x.Length);
-			var t = x[0];
+			var t = TypeDeclarationResolver.ResolveSingle(DParser.ParseBasicType("T!int",out tk),ctxt);
+
 			Assert.That(t,Is.TypeOf(typeof(MemberSymbol)));
 			t = ((MemberSymbol)t).Base;
 			Assert.That(t,Is.TypeOf(typeof(ArrayType)));
@@ -3090,7 +3083,7 @@ class aa(T) if(is(T==int)) {}");
 			var A = pcl[0]["A"];
 			var ctxt = CreateDefCtxt(pcl, A);
 			
-			var x = TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration("cl"),ctxt,null,true);
+			var x = TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration("cl"),ctxt,true);
 			Assert.That(x, Is.Null);
 			
 			var ex = DParser.ParseAssignExpression("cl!int");

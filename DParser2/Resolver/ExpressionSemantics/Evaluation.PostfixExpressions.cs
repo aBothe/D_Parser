@@ -585,7 +585,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 				var tix = (TemplateInstanceExpression)acc.AccessExpression;
 				// Do not deduce and filter if superior expression is a method call since call arguments' types also count as template arguments!
-				overloads = ExpressionTypeEvaluation.GetOverloads(tix, ctxt, new[] { AbstractType.Get(baseExpression) }, EvalAndFilterOverloads);
+				overloads = ExpressionTypeEvaluation.GetOverloads(tix, ctxt, AbstractType.Get(baseExpression), EvalAndFilterOverloads);
 
 				if (!ResolveImmediateBaseType)
 					ctxt.CurrentContext.ContextDependentOptions = optBackup;

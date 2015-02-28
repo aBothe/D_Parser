@@ -14,16 +14,6 @@ namespace D_Parser.Resolver.TypeResolution
 {
 	public static class TypeDeclarationResolver
 	{
-		public static PrimitiveType Resolve(DTokenDeclaration token)
-		{
-			var tk = (token as DTokenDeclaration).Token;
-
-			if (DTokens.IsBasicType(tk))
-				return new PrimitiveType(tk, 0);
-
-			return null;
-		}
-
 		public static ISemantic[] Convert(IEnumerable<AbstractType> at)
 		{
 			var l = new List<ISemantic>();
@@ -154,9 +144,9 @@ namespace D_Parser.Resolver.TypeResolution
 				res = ResolveIdentifier(id.IdHash, ctxt, id, id.ModuleScoped);
 			else
 			{
-				var rbases = Resolve(id.InnerDeclaration, ctxt);
+				var rbases = AmbiguousType.TryDissolve(ResolveSingle(id.InnerDeclaration, ctxt));
 
-				if (rbases == null || rbases.Length == 0)
+				if (rbases == null)
 					return null;
 
 				res = ResolveFurtherTypeIdentifier(id.IdHash, rbases, ctxt, id);
@@ -267,40 +257,146 @@ namespace D_Parser.Resolver.TypeResolution
 			return r.Count == 0 ? null : r.ToArray();
 		}
 
-		public static AbstractType Resolve(TypeOfDeclaration typeOf, ResolutionContext ctxt)
+		class SingleResolverVisitor : TypeDeclarationVisitor<AbstractType>
 		{
-			// typeof(return)
-			if (typeOf.Expression is TokenExpression && (typeOf.Expression as TokenExpression).Token == DTokens.Return)
+			readonly ResolutionContext ctxt;
+			bool filterTemplates;
+
+			public SingleResolverVisitor(ResolutionContext ctxt, bool filterTemplates)
 			{
-				var m = HandleNodeMatch(ctxt.ScopedBlock, ctxt, null, typeOf);
-				if (m != null)
-					return m;
-			}
-			// typeOf(myInt)  =>  int
-			else if (typeOf.Expression != null)
-			{
-				var wantedTypes = ExpressionTypeEvaluation.EvaluateType(typeOf.Expression, ctxt);
-				return DResolver.StripMemberSymbols(wantedTypes);
+				this.filterTemplates = filterTemplates;
+				this.ctxt = ctxt;
 			}
 
-			return null;
-		}
-
-		public static AbstractType Resolve(MemberFunctionAttributeDecl attrDecl, ResolutionContext ctxt)
-		{
-			if (attrDecl != null)
+			public AbstractType Visit (IdentifierDeclaration id)
 			{
-				var ret = ResolveSingle(attrDecl.InnerType, ctxt);
+				return ResolveSingle(id, ctxt, filterTemplates);
+			}
+
+			public AbstractType Visit (DTokenDeclaration td)
+			{
+				var tk = td.Token;
+
+				if (DTokens.IsBasicType(tk))
+					return new PrimitiveType(tk, 0);
+
+				return null;
+			}
+
+			public AbstractType Visit (ArrayDecl ad)
+			{
+				filterTemplates = true;
+				var valueType = ad.ValueType != null ? ad.ValueType.Accept(this) : null;
+
+				AbstractType keyType = null;
+				int fixedArrayLength = -1;
+
+				ISymbolValue val;
+				keyType = ResolveKey(ad, out fixedArrayLength, out val, ctxt);
+
+				if (ad.KeyType == null && (ad.KeyExpression == null || fixedArrayLength >= 0)) {
+					if (fixedArrayLength >= 0) {
+						// D Magic: One might access tuple items directly in the pseudo array declaration - so stuff like Tup[0] i; becomes e.g. int i;
+						var dtup = DResolver.StripMemberSymbols (valueType) as DTuple;
+						if (dtup == null)
+							return new ArrayType (valueType, fixedArrayLength);
+
+						if (dtup.Items != null && fixedArrayLength < dtup.Items.Length)
+							return AbstractType.Get(dtup.Items [fixedArrayLength]);
+						else {
+							ctxt.LogError (ad, "TypeTuple only consists of " + (dtup.Items != null ? dtup.Items.Length : 0) + " items. Can't access item at index " + fixedArrayLength);
+							return null;
+						}
+					}
+					return new ArrayType (valueType);
+				}
+
+				return new AssocArrayType(valueType, keyType);
+			}
+
+			public AbstractType Visit (DelegateDeclaration dg)
+			{
+				filterTemplates = true;
+				var returnTypes = ResolveSingle(dg.ReturnType, ctxt);
+
+				List<AbstractType> paramTypes=null;
+				if(dg.Parameters!=null && 
+					dg.Parameters.Count != 0)
+				{	
+					paramTypes = new List<AbstractType>();
+					foreach(var par in dg.Parameters)
+						paramTypes.Add(ResolveSingle(par.Type, ctxt));
+				}
+
+				return new DelegateType(returnTypes, dg, paramTypes);
+			}
+
+			public AbstractType Visit (PointerDecl td)
+			{
+				filterTemplates = true;
+				var ptrBaseTypes = td.InnerDeclaration.Accept(this);
+
+				if (ptrBaseTypes != null)
+					ptrBaseTypes.NonStaticAccess = true;
+
+				return new PointerType(ptrBaseTypes);
+			}
+
+			public AbstractType Visit (MemberFunctionAttributeDecl td)
+			{
+				filterTemplates = true;
+				if (td.InnerType == null)
+					return null;
+				
+				var ret = td.InnerType.Accept(this);
 
 				if (ret == null)
 					return null;// new UnknownType(attrDecl);
-				
-				ret.Modifier = attrDecl.Modifier;
+
+				ret.Modifier = td.Modifier;
 
 				return ret;
 			}
-			return null;
+
+			public AbstractType Visit (TypeOfDeclaration typeOf)
+			{
+				filterTemplates = true;
+				// typeof(return)
+				if (typeOf.Expression is TokenExpression && (typeOf.Expression as TokenExpression).Token == DTokens.Return)
+				{
+					return HandleNodeMatch(ctxt.ScopedBlock, ctxt, null, typeOf);
+				}
+				// typeOf(myInt)  =>  int
+				else if (typeOf.Expression != null)
+				{
+					var wantedTypes = ExpressionTypeEvaluation.EvaluateType(typeOf.Expression, ctxt);
+					return DResolver.StripMemberSymbols(wantedTypes);
+				}
+
+				return null;
+			}
+
+			public AbstractType Visit (VectorDeclaration td)
+			{
+				filterTemplates = true;
+				return null;
+			}
+
+			public AbstractType Visit (VarArgDecl td)
+			{
+				filterTemplates = true;
+				return null;
+			}
+
+			public AbstractType Visit (TemplateInstanceExpression td)
+			{
+				if (filterTemplates)
+					return ExpressionTypeEvaluation.EvaluateType (td, ctxt);
+				else
+					return AmbiguousType.Get (ExpressionTypeEvaluation.GetOverloads (td, ctxt));
+			}
 		}
+
 
 		public static AbstractType ResolveKey(ArrayDecl ad, out int fixedArrayLength, out ISymbolValue keyVal, ResolutionContext ctxt)
 		{
@@ -334,97 +430,10 @@ namespace D_Parser.Resolver.TypeResolution
 			return null;
 		}
 
-		public static AbstractType Resolve(ArrayDecl ad, ResolutionContext ctxt)
+
+		public static AbstractType ResolveSingle(ITypeDeclaration declaration, ResolutionContext ctxt, bool filterTemplates = true)
 		{
-			var valueType = ResolveSingle(ad.ValueType, ctxt);
-
-			AbstractType keyType = null;
-			int fixedArrayLength = -1;
-
-			ISymbolValue val;
-			keyType = ResolveKey(ad, out fixedArrayLength, out val, ctxt);
-
-			if (ad.KeyType == null && (ad.KeyExpression == null || fixedArrayLength >= 0)) {
-				if (fixedArrayLength >= 0) {
-					// D Magic: One might access tuple items directly in the pseudo array declaration - so stuff like Tup[0] i; becomes e.g. int i;
-					var dtup = DResolver.StripMemberSymbols (valueType) as DTuple;
-					if (dtup == null)
-						return new ArrayType (valueType, fixedArrayLength);
-
-					if (dtup.Items != null && fixedArrayLength < dtup.Items.Length)
-						return AbstractType.Get(dtup.Items [fixedArrayLength]);
-					else {
-						ctxt.LogError (ad, "TypeTuple only consists of " + (dtup.Items != null ? dtup.Items.Length : 0) + " items. Can't access item at index " + fixedArrayLength);
-						return null;
-					}
-				}
-				return new ArrayType (valueType);
-			}
-
-			return new AssocArrayType(valueType, keyType);
-		}
-
-		public static PointerType Resolve(PointerDecl pd, ResolutionContext ctxt)
-		{
-			var ptrBaseTypes = ResolveSingle(pd.InnerDeclaration, ctxt);
-
-			if (ptrBaseTypes != null)
-				ptrBaseTypes.NonStaticAccess = true;
-
-			return new PointerType(ptrBaseTypes);
-		}
-
-		public static DelegateType Resolve(DelegateDeclaration dg, ResolutionContext ctxt)
-		{
-			var returnTypes = ResolveSingle(dg.ReturnType, ctxt);
-
-			List<AbstractType> paramTypes=null;
-			if(dg.Parameters!=null && 
-				dg.Parameters.Count != 0)
-			{	
-				paramTypes = new List<AbstractType>();
-				foreach(var par in dg.Parameters)
-					paramTypes.Add(ResolveSingle(par.Type, ctxt));
-			}
-			return new DelegateType(returnTypes, dg, paramTypes);
-		}
-
-		public static AbstractType ResolveSingle(ITypeDeclaration declaration, ResolutionContext ctxt)
-		{
-			if (declaration is IdentifierDeclaration)
-				return ResolveSingle(declaration as IdentifierDeclaration, ctxt);
-			else if (declaration is TemplateInstanceExpression)
-				return ExpressionTypeEvaluation.EvaluateType(declaration as TemplateInstanceExpression, ctxt);
-
-			AbstractType t = null;
-
-			if (declaration is DTokenDeclaration)
-				t = Resolve(declaration as DTokenDeclaration);
-			else if (declaration is TypeOfDeclaration)
-				t = Resolve(declaration as TypeOfDeclaration, ctxt);
-			else if (declaration is MemberFunctionAttributeDecl)
-				t = Resolve(declaration as MemberFunctionAttributeDecl, ctxt);
-			else if (declaration is ArrayDecl)
-				t = Resolve(declaration as ArrayDecl, ctxt);
-			else if (declaration is PointerDecl)
-				t = Resolve(declaration as PointerDecl, ctxt);
-			else if (declaration is DelegateDeclaration)
-				t = Resolve(declaration as DelegateDeclaration, ctxt);
-
-			//TODO: VarArgDeclaration
-			return t;
-		}
-
-		public static AbstractType[] Resolve(ITypeDeclaration declaration, ResolutionContext ctxt)
-		{
-			if (declaration is IdentifierDeclaration)
-				return Resolve((IdentifierDeclaration)declaration, ctxt);
-			else if (declaration is TemplateInstanceExpression)
-				return ExpressionTypeEvaluation.GetOverloads((TemplateInstanceExpression)declaration, ctxt);
-
-			var t = ResolveSingle(declaration, ctxt);
-
-			return t == null ? null : new[] { t };
+			return declaration == null ? null : declaration.Accept (new SingleResolverVisitor (ctxt, filterTemplates));
 		}
 
 
@@ -724,10 +733,10 @@ namespace D_Parser.Resolver.TypeResolution
 									if (dg == null || dg.Parameters.Count != fe.ForeachTypeList.Length)
 										continue;
 
-									var paramType = Resolve(dg.Parameters[iteratorIndex].Type, ctxt);
+									var paramType = ResolveSingle(dg.Parameters[iteratorIndex].Type, ctxt);
 
-									if (paramType != null && paramType.Length > 0)
-										r.Add(paramType[0]);
+									if (paramType != null)
+										r.Add(paramType);
 								}
 							#endregion
 						}

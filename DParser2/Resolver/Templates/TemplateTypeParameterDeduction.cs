@@ -426,7 +426,7 @@ namespace D_Parser.Resolver.Templates
 		{
 			// Can I enter some template parameter referencing id into a typeof specialization!?
 			// class Foo(T:typeof(1)) {} ?
-			var t_res = TypeDeclarationResolver.Resolve(t,ctxt);
+			var t_res = TypeDeclarationResolver.ResolveSingle(t,ctxt);
 
 			if (t_res == null)
 				return false;
