@@ -135,12 +135,12 @@ namespace Tests
 
 		public static AbstractType[] R (string id, ResolutionContext ctxt)
 		{
-			return ExpressionTypeEvaluation.GetOverloads (new IdentifierExpression (id), ctxt, null, false);
+			return ExpressionTypeEvaluation.GetOverloads (new IdentifierExpression (id), ctxt, null, false) ?? new AbstractType[0];
 		}
 
 		public static AbstractType RS (string id, ResolutionContext ctxt)
 		{
-			return AmbiguousType.Get(ExpressionTypeEvaluation.GetOverloads (new IdentifierExpression (id), ctxt, null, false));
+			return AmbiguousType.Get(ExpressionTypeEvaluation.GetOverloads (new IdentifierDeclaration (id), ctxt, null, false));
 		}
 
 		public static AbstractType RS (ITypeDeclaration id, ResolutionContext ctxt)
@@ -213,8 +213,8 @@ void asdf(int* ni=23) {
 			Assert.That(t[0], Is.TypeOf(typeof(ClassType)));
 
 			var f = N<DMethod>(ctxt, "modF.asdf");
-			ctxt.CurrentContext.Set(f, S(f, 0, 0, 1).Location);
-			t = R("ni", ctxt);
+			ctxt.CurrentContext.Set(f);
+			t = ExpressionTypeEvaluation.GetOverloads(new IdentifierExpression("ni"){Location = S(f, 0, 0, 1).Location}, ctxt);
 			Assert.That((t[0] as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 			Assert.That(t.Length, Is.EqualTo(1)); // Was 2; Has been changed to 1 because it's only important to take the 'nearest' declaration that occured before the resolved expression
 
@@ -3573,11 +3573,11 @@ void main()
 			var stmt = main.Body.SubStatements.ElementAt(1);
 			var ctxt = ResolutionTests.CreateDefCtxt(pcl, main, stmt);
 			
-			var x = R("x", ctxt);
-			Assert.That(x.Length, Is.EqualTo(1));
+			var t = RS((ITypeDeclaration)new IdentifierDeclaration("x"){Location = stmt.Location}, ctxt);
+			Assert.That (t, Is.TypeOf(typeof(MemberSymbol)));
 			
-			x = R("y", ctxt);
-			Assert.That(x.Length, Is.EqualTo(0));
+			t = RS((ITypeDeclaration)new IdentifierDeclaration("y"){Location = stmt.Location}, ctxt);
+			Assert.That(t, Is.Null);
 		}
 		
 		[Test]
