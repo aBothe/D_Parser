@@ -25,7 +25,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 						// Might be a simple symbol without any applied template arguments that is then passed to an template alias parameter
 						if (res == null && tde.Declaration is IdentifierDeclaration)
-							res = TypeDeclarationResolver.ResolveSingle(tde.Declaration as IdentifierDeclaration, ctxt, null, false);
+							res = TypeDeclarationResolver.ResolveSingle(tde.Declaration, ctxt, false);
 
 						var amb = res as AmbiguousType;
 						if (amb != null)

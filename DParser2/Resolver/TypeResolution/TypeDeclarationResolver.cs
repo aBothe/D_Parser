@@ -100,14 +100,6 @@ namespace D_Parser.Resolver.TypeResolution
 			return AmbiguousType.Get(ResolveIdentifier(id, ctxt, idObject, ModuleScope));
 		}
 
-		public static AbstractType[] ResolveFurtherTypeIdentifier(string nextIdentifier,
-		                                                          IEnumerable<AbstractType> resultBases,
-		                                                          ResolutionContext ctxt,
-			ISyntaxRegion typeIdObject = null)
-		{
-			return ResolveFurtherTypeIdentifier (nextIdentifier.GetHashCode (), resultBases, ctxt, typeIdObject);
-		}
-
 		/// <summary>
 		/// Used for searching further identifier list parts.
 		/// 
@@ -804,7 +796,7 @@ namespace D_Parser.Resolver.TypeResolution
 					//TODO: Is this correct behaviour?
 					if (!modAlias)
 					{
-						bt = AmbiguousType.Get(ResolveFurtherTypeIdentifier(importSymbolNode.Type.ToString(false), new[] { bt }, ctxt, importSymbolNode.Type));
+						bt = AmbiguousType.Get(ResolveFurtherTypeIdentifier(importSymbolNode.Type.ToString(false).GetHashCode(), new[] { bt }, ctxt, importSymbolNode.Type));
 					}
 					ret = new AliasedType(importSymbolNode, bt);
 				}
