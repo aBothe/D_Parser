@@ -268,7 +268,7 @@ namespace D_Parser.Resolver.TypeResolution
 		[ThreadStatic]
 		static Dictionary<INode, int> stackCalls;
 
-		public static void ResetDeducedSymbols(AbstractType b)
+		internal static void ResetDeducedSymbols(AbstractType b)
 		{
 			var ds = b as DSymbol;
 			if (ds != null && 
@@ -295,9 +295,9 @@ namespace D_Parser.Resolver.TypeResolution
 		}
 
 		[ThreadStatic]
-		public static Stack<ISyntaxRegion> aliasDeductionStack = new Stack<ISyntaxRegion>();
+		static Stack<ISyntaxRegion> aliasDeductionStack = new Stack<ISyntaxRegion>();
 
-		public static AbstractType TryPostDeduceAliasDefinition(AbstractType b, ISyntaxRegion typeBase, ResolutionContext ctxt)
+		internal static AbstractType TryPostDeduceAliasDefinition(AbstractType b, ISyntaxRegion typeBase, ResolutionContext ctxt)
 		{
 			if (typeBase != null &&
 				b != null && 
@@ -338,7 +338,7 @@ namespace D_Parser.Resolver.TypeResolution
 			public ISyntaxRegion typeBase;
 		}
 
-		public class NodeMatchHandleVisitor : NodeVisitor<AbstractType>
+		public sealed class NodeMatchHandleVisitor : NodeVisitor<AbstractType>
 		{
 			public ResolutionContext ctxt;
 			public bool CanResolveBase(INode m)
