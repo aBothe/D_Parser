@@ -962,11 +962,6 @@ namespace D_Parser.Dom
 		{
 			VisitInner(td);
 		}
-
-		public virtual void Visit(ITemplateParameterDeclaration td)
-		{
-			td.TemplateParameter.Accept(this);
-		}
 		#endregion
 
 		#region Meta decl blocks

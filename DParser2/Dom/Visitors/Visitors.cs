@@ -357,8 +357,6 @@ namespace D_Parser.Dom
 		void Visit(VectorDeclaration td);
 		void Visit(VarArgDecl td);
 
-		void Visit(ITemplateParameterDeclaration td);
-
 		void Visit(TemplateInstanceExpression td);
 	}
 
@@ -373,7 +371,6 @@ namespace D_Parser.Dom
 		R Visit(TypeOfDeclaration td);
 		R Visit(VectorDeclaration td);
 		R Visit(VarArgDecl td);
-		R Visit(ITemplateParameterDeclaration td);
 		R Visit(TemplateInstanceExpression td);
 	}
 }

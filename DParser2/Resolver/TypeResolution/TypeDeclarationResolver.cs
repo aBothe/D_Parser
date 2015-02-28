@@ -412,26 +412,6 @@ namespace D_Parser.Resolver.TypeResolution
 				t = Resolve(declaration as DelegateDeclaration, ctxt);
 
 			//TODO: VarArgDeclaration
-			else if (declaration is ITemplateParameterDeclaration)
-			{
-				var tpd = declaration as ITemplateParameterDeclaration;
-
-				var templateParameter = tpd.TemplateParameter;
-
-				//TODO: Is this correct handling?
-				while (templateParameter is TemplateThisParameter)
-					templateParameter = (templateParameter as TemplateThisParameter).FollowParameter;
-
-				if (tpd.TemplateParameter is TemplateValueParameter)
-				{
-					// Return a member result -- it's a static variable
-				}
-				else
-				{
-					// Return a type result?
-				}
-			}
-
 			return t;
 		}
 

@@ -93,31 +93,6 @@ namespace D_Parser.Dom
 		}
 	}
 
-	/// <summary>
-	/// void foo(U) (U u) {
-	///		u. -- now the type of u is needed. A ITemplateParameterDeclaration will be returned which holds U.
-	/// }
-	/// </summary>
-	public sealed class ITemplateParameterDeclaration : AbstractTypeDeclaration
-	{
-		public TemplateParameter TemplateParameter;
-
-		public override string ToString(bool IncludesBase)
-		{
-			return TemplateParameter.ToString();
-		}
-
-		public override void Accept(TypeDeclarationVisitor vis)
-		{
-			vis.Visit(this);
-		}
-
-		public override R Accept<R>(TypeDeclarationVisitor<R> vis)
-		{
-			return vis.Visit(this);
-		}
-	}
-
 	public sealed class TemplateTypeParameter : TemplateParameter
 	{
 		public ITypeDeclaration Specialization;

@@ -976,15 +976,7 @@ namespace D_Parser.Dom.Visitors
 			return VisitTypeDeclaration(td, 1001629);
 		}
 
-		public long Visit(ITemplateParameterDeclaration td)
-		{
-			const long prime = 1001639;
-			var h = VisitTypeDeclaration(td, prime);
-
-			Hash (ref h, prime, td.TemplateParameter);
-
-			return h;
-		}
+		// const long prime = 1001639;
 		#endregion
 
 		#region Resolved Types
