@@ -128,44 +128,6 @@ namespace D_Parser.Resolver.TypeResolution
 			return AmbiguousType.Get(ResolveIdentifier(id, ctxt, idObject, ModuleScope));
 		}
 
-		/// <summary>
-		/// See <see cref="Resolve"/>
-		/// </summary>
-		public static AbstractType ResolveSingle(IdentifierDeclaration id, ResolutionContext ctxt, bool filterForTemplateArgs = true)
-		{
-			return AmbiguousType.Get(Resolve(id, ctxt, filterForTemplateArgs));
-		}
-
-		public static AbstractType[] Resolve(IdentifierDeclaration id, ResolutionContext ctxt, bool filterForTemplateArgs = true)
-		{
-			AbstractType[] res;
-
-			if (id.InnerDeclaration == null)
-				res = ResolveIdentifier(id.IdHash, ctxt, id, id.ModuleScoped);
-			else
-			{
-				var rbases = AmbiguousType.TryDissolve(ResolveSingle(id.InnerDeclaration, ctxt));
-
-				if (rbases == null)
-					return null;
-
-				res = ResolveFurtherTypeIdentifier(id.IdHash, rbases, ctxt, id);
-			}
-
-			if (filterForTemplateArgs && (ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) == 0)
-			{
-				var l_ = new List<AbstractType>();
-
-				if (res != null)
-					foreach (var s in res)
-						l_.Add(s);
-
-				return TemplateInstanceHandler.DeduceParamsAndFilterOverloads(l_, null, false, ctxt);
-			}
-			else
-				return res;
-		}
-
 		public static AbstractType[] ResolveFurtherTypeIdentifier(string nextIdentifier,
 		                                                          IEnumerable<AbstractType> resultBases,
 		                                                          ResolutionContext ctxt,
@@ -270,7 +232,27 @@ namespace D_Parser.Resolver.TypeResolution
 
 			public AbstractType Visit (IdentifierDeclaration id)
 			{
-				return ResolveSingle(id, ctxt, filterTemplates);
+				var filterTempls = filterTemplates;
+				filterTemplates = true;
+				AbstractType[] res;
+
+				if (id.InnerDeclaration == null)
+					res = ResolveIdentifier(id.IdHash, ctxt, id, id.ModuleScoped);
+				else
+					res = ResolveFurtherTypeIdentifier(id.IdHash, AmbiguousType.TryDissolve(id.InnerDeclaration.Accept(this)), ctxt, id);
+
+				if (filterTempls && (ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) == 0)
+				{
+					var l_ = new List<AbstractType>();
+
+					if (res != null)
+						foreach (var s in res)
+							l_.Add(s);
+
+					return AmbiguousType.Get(TemplateInstanceHandler.DeduceParamsAndFilterOverloads(l_, null, false, ctxt));
+				}
+				else
+					return AmbiguousType.Get(res);
 			}
 
 			public AbstractType Visit (DTokenDeclaration td)
