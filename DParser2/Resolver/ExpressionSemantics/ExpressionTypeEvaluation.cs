@@ -682,7 +682,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				ctxt.CurrentContext.IntroduceTemplateParameterTypes (udt);
 
 				//Search opIndex overloads and try to match them to the given indexing arguments.
-				var overloads = TypeDeclarationResolver.ResolveFurtherTypeIdentifier (OpIndexIdHash, AmbiguousType.TryDissolve (foreExpression), ctxt, x, false);
+				var overloads = TypeDeclarationResolver.ResolveFurtherTypeIdentifier (OpIndexIdHash, foreExpression, ctxt, x, false);
 				if (overloads != null && overloads.Length > 0) {
 					var indexArgs = new List<AbstractType> ();
 					if (x.Arguments != null)
@@ -773,7 +773,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			ctxt.CurrentContext.IntroduceTemplateParameterTypes(udt);
 
-			var overloads = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(OpSliceIdHash, AmbiguousType.TryDissolve(foreExpression), ctxt, x, false);
+			var overloads = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(OpSliceIdHash, foreExpression, ctxt, x, false);
 
 			overloads = TemplateInstanceHandler.DeduceParamsAndFilterOverloads(overloads, sliceArgs, true, ctxt);
 
@@ -921,7 +921,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (resultBases == null)
 				res = ResolveIdentifier(id.IdHash, ctxt, id, id.ModuleScoped);
 			else
-				res = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(id.IdHash, AmbiguousType.TryDissolve(resultBases), ctxt, id);
+				res = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(id.IdHash, resultBases, ctxt, id);
 
 			var f = DResolver.FilterOutByResultPriority(ctxt, res);
 

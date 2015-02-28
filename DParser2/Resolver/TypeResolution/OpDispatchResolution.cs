@@ -51,7 +51,7 @@ namespace D_Parser.Resolver.TypeResolution
 			using (ctxt.Push(b))
 			{
 				ctxt.CurrentContext.ContextDependentOptions = opt; // Mainly required for not resolving opDispatch's return type, as this will be performed later on in higher levels
-				overloads = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(opDispatchId, new[] { b }, ctxt, typeBase, false);
+				overloads = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(opDispatchId, b, ctxt, typeBase, false);
 			}
 
 			if (overloads == null || overloads.Length < 0)

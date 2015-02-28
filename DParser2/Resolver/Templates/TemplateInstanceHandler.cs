@@ -173,7 +173,7 @@ namespace D_Parser.Resolver.TypeResolution
 		static AbstractType[] TryGetImplicitProperty(TemplateType template, ResolutionContext ctxt)
 		{
 			// Get actual overloads
-			var matchingChild = TypeDeclarationResolver.ResolveFurtherTypeIdentifier( template.NameHash, new[]{ template }, ctxt, null, false);
+			var matchingChild = TypeDeclarationResolver.ResolveFurtherTypeIdentifier( template.NameHash, template, ctxt, null, false);
 
 			if (matchingChild != null) // Currently requried for proper UFCS resolution - sustain template's Tag
 				foreach (var ch in matchingChild)

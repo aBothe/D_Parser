@@ -20,7 +20,7 @@ namespace D_Parser.Resolver.TypeResolution
 		/// a.b -- nextIdentifier would be 'b' whereas <param name="resultBases">resultBases</param> contained the resolution result for 'a'
 		/// </summary>
 		public static AbstractType[] ResolveFurtherTypeIdentifier(int nextIdentifierHash,
-			IEnumerable<AbstractType> resultBases,
+			AbstractType resultBases,
 			ResolutionContext ctxt,
 			ISyntaxRegion typeIdObject = null, bool ufcsItem = true)
 		{
@@ -30,7 +30,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 			var r = new List<AbstractType>();
 
-			foreach(var b_ in resultBases)
+			foreach(var b_ in AmbiguousType.TryDissolve(resultBases))
 			{
 				var b = TryPostDeduceAliasDefinition(b_, typeIdObject, ctxt);
 
@@ -710,7 +710,7 @@ namespace D_Parser.Resolver.TypeResolution
 					//TODO: Is this correct behaviour?
 					if (!modAlias)
 					{
-						bt = AmbiguousType.Get(ResolveFurtherTypeIdentifier(importSymbolNode.Type.ToString(false).GetHashCode(), new[] { bt }, ctxt, importSymbolNode.Type));
+						bt = AmbiguousType.Get(ResolveFurtherTypeIdentifier(importSymbolNode.Type.ToString(false).GetHashCode(), bt, ctxt, importSymbolNode.Type));
 					}
 					ret = new AliasedType(importSymbolNode, bt);
 				}

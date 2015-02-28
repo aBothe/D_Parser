@@ -292,13 +292,12 @@ namespace D_Parser.Completion
 				return;
 
 			var b = ExpressionTypeEvaluation.EvaluateType(x.PostfixForeExpression, ctxt);
-			var bases = AmbiguousType.TryDissolve(b);
-			
-			var ov = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(ExpressionTypeEvaluation.OpSliceIdHash, bases, ctxt, x, false);
+
+			var ov = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(ExpressionTypeEvaluation.OpSliceIdHash, b, ctxt, x, false);
 			if (ov != null)
 				overloads.AddRange(ov);
 
-			ov = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(ExpressionTypeEvaluation.OpIndexIdHash, bases, ctxt, x, false);
+			ov = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(ExpressionTypeEvaluation.OpIndexIdHash, b, ctxt, x, false);
 			if (ov != null)
 				overloads.AddRange(ov);
 
