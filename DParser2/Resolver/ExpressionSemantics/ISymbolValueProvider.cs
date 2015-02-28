@@ -128,7 +128,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public override DVariable GetLocal(string LocalName, IdentifierExpression id=null)
 		{
-			var res = TypeDeclarationResolver.ResolveIdentifier(LocalName.GetHashCode(), ResolutionContext, id);
+			var res = ExpressionTypeEvaluation.GetOverloads(id ?? new IdentifierExpression(LocalName), ResolutionContext, null, false);
 
 			if (res == null || res.Length == 0)
 				return null;

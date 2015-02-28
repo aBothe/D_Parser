@@ -7,6 +7,8 @@ using D_Parser.Resolver;
 using D_Parser.Resolver.TypeResolution;
 using D_Parser.Parser;
 using D_Parser.Dom;
+using D_Parser.Dom.Expressions;
+using D_Parser.Resolver.ExpressionSemantics;
 
 namespace Tests
 {
@@ -15,7 +17,7 @@ namespace Tests
 	{
 		public static AbstractType GetType(string name, ResolutionContext ctxt)
 		{
-			return TypeDeclarationResolver.ResolveIdentifier(name.GetHashCode(), ctxt, null)[0];
+			return ExpressionTypeEvaluation.GetOverloads(new IdentifierExpression(name), ctxt, null, false)[0];
 		}
 
 		[Test]

@@ -135,12 +135,12 @@ namespace Tests
 
 		public static AbstractType[] R (string id, ResolutionContext ctxt)
 		{
-			return TypeDeclarationResolver.ResolveIdentifier (id.GetHashCode (), ctxt, null);
+			return ExpressionTypeEvaluation.GetOverloads (new IdentifierExpression (id), ctxt, null, false);
 		}
 
 		public static AbstractType RS (string id, ResolutionContext ctxt)
 		{
-			return AmbiguousType.Get(TypeDeclarationResolver.ResolveIdentifier (id.GetHashCode (), ctxt, null));
+			return AmbiguousType.Get(ExpressionTypeEvaluation.GetOverloads (new IdentifierExpression (id), ctxt, null, false));
 		}
 
 		public static AbstractType RS (ITypeDeclaration id, ResolutionContext ctxt)

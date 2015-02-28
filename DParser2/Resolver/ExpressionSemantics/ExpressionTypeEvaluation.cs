@@ -835,6 +835,83 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 		}
 
+		/// <summary>
+		/// Resolves an identifier and returns the definition + its base type.
+		/// Does not deduce any template parameters or nor filters out unfitting template specifications!
+		/// </summary>
+		static AbstractType[] ResolveIdentifier(int idHash, ResolutionContext ctxt, ISyntaxRegion idObject, bool ModuleScope = false)
+		{
+			var loc = idObject is ISyntaxRegion ? ((ISyntaxRegion)idObject).Location : ctxt.CurrentContext.Caret;
+
+			IDisposable disp = null;
+
+			if (ModuleScope)
+			{
+				var ded = ctxt.CurrentContext.DeducedTemplateParameters;
+				disp = ctxt.Push(ctxt.ScopedBlock.NodeRoot as DModule);
+				foreach (var kv in ded)
+					ctxt.CurrentContext.DeducedTemplateParameters.Add(kv.Key, kv.Value);
+			}
+
+			// If there are symbols that must be preferred, take them instead of scanning the ast
+			else
+			{
+				TemplateParameterSymbol dedTemplateParam;
+				if (ctxt.GetTemplateParam(idHash, out dedTemplateParam))
+					return new[] { dedTemplateParam };
+			}
+
+			List<AbstractType> res;
+
+			//var t = ctxt.Cache.TryGetType(idObject);
+			bool hasBaseValue = true;
+			/*if (t != null)
+			{
+				res = new List<AbstractType>(t.Length);
+				foreach (var t_ in t)
+				{
+					if(hasBaseValue)
+						foreach(var t__ in AmbiguousType.TryDissolve(t_))
+							if(!(hasBaseValue = (t__ is DerivedDataType) && (t__ as DerivedDataType).Base != null))
+								break;
+					res.Add(t_);
+				}
+			}*/
+
+			if (hasBaseValue || (ctxt.Options & ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.DontResolveBaseTypes) != 0) {
+				res = NameScan.SearchAndResolve (ctxt, loc, idHash, idObject);
+			} else
+				res = null;
+
+			if (disp != null)
+			{
+				disp.Dispose();
+				disp = null;
+			}
+
+			if (res.Count != 0)
+			{
+				if (idObject is IdentifierExpression || idObject is IdentifierDeclaration)
+					for (var i = res.Count; i > 0; )
+						res[--i] = TypeDeclarationResolver.TryPostDeduceAliasDefinition(res[i], idObject, ctxt);
+				return res.ToArray();
+			}
+
+			// Support some very basic static typing if no phobos is given atm
+			if (idHash == Evaluation.stringTypeHash)
+				res.Add(Evaluation.GetStringType (ctxt));
+			else if(idHash == Evaluation.wstringTypeHash)
+				res.Add(Evaluation.GetStringType (ctxt, LiteralSubformat.Utf16));
+			else if(idHash == Evaluation.dstringTypeHash)
+				res.Add(Evaluation.GetStringType (ctxt, LiteralSubformat.Utf32));
+
+			return res.ToArray();
+		}
+
+
+		/// <summary>
+		/// Resolves id and optionally filters out overloads by template deduction.
+		/// </summary>
 		public static AbstractType[] GetOverloads(IntermediateIdType id, ResolutionContext ctxt, AbstractType resultBases = null, bool deduceParameters = true)
 		{
 			if (resultBases == null && id is ITypeDeclaration)
@@ -842,7 +919,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			AbstractType[] res;
 			if (resultBases == null)
-				res = TypeDeclarationResolver.ResolveIdentifier(id.IdHash, ctxt, id, id.ModuleScoped);
+				res = ResolveIdentifier(id.IdHash, ctxt, id, id.ModuleScoped);
 			else
 				res = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(id.IdHash, AmbiguousType.TryDissolve(resultBases), ctxt, id);
 
