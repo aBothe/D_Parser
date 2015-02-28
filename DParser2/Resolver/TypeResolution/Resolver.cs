@@ -143,9 +143,11 @@ namespace D_Parser.Resolver.TypeResolution
 			RawSymbolLookup
 		}
 
-		public static AbstractType ResolveTypeLoosely(IEditorData editor, out NodeResolutionAttempt resolutionAttempt, ResolutionContext ctxt = null)
+		public static AbstractType ResolveTypeLoosely(IEditorData editor, out NodeResolutionAttempt resolutionAttempt, out ISyntaxRegion sr, ResolutionContext ctxt = null)
 		{
 			var o = GetScopedCodeObject(editor);
+			sr = o;
+
 			if (ctxt == null)
 				ctxt = ResolutionContext.Create(editor, false);
 
