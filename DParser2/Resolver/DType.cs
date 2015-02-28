@@ -37,27 +37,12 @@ namespace D_Parser.Resolver
 
 		public virtual bool NonStaticAccess { get; set; }
 
-		protected byte modifier;
-
 		/// <summary>
 		/// e.g. const, immutable
 		/// </summary>
-		public virtual byte Modifier
-		{
-			get
-			{
-				if (modifier != 0)
-					return modifier;
-				/*
-				if (DeclarationOrExpressionBase is MemberFunctionAttributeDecl)
-					return ((MemberFunctionAttributeDecl)DeclarationOrExpressionBase).Modifier;
-				*/
-				return 0;
-			}
-			set
-			{
-				modifier = value;
-			}
+		public virtual byte Modifier {
+			get;
+			set;
 		}
 		#endregion
 
@@ -220,12 +205,12 @@ namespace D_Parser.Resolver
 		public PrimitiveType(byte TypeToken, byte Modifier = 0)
 		{
 			this.TypeToken = TypeToken;
-			this.modifier = Modifier;
+			this.Modifier = Modifier;
 		}
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new PrimitiveType(TypeToken, modifier);
+			return new PrimitiveType(TypeToken, Modifier);
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
