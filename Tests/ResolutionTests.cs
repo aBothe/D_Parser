@@ -365,12 +365,18 @@ struct Thing(T)
 	public T property;
 }
 
-alias Thing!(int) IntThing;");
+alias Thing!(int) IntThing;
+alias Thing SomeThing;
+");
 			
 			var ctxt = CreateDefCtxt(pcl, pcl[0]["A"]);
 
 			IExpression ex;
 			AbstractType t;
+
+			ex = DParser.ParseExpression("SomeThing!int");
+			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(StructType)));
 
 			ex = DParser.ParseExpression("Thing!int");
 			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);

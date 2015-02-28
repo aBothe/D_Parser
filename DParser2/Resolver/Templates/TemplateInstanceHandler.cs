@@ -245,7 +245,7 @@ namespace D_Parser.Resolver.TypeResolution
 					continue;
 				}
 				else if ((aliasTag = overload.Tag<TypeDeclarationResolver.AliasTag>(TypeDeclarationResolver.AliasTag.Id)) != null && 
-					(hasTemplateArgsPassed || aliasTag.typeBase is TemplateInstanceExpression)) //  || !(overload.DeclarationOrExpressionBase is TemplateInstanceExpression) TODO: Test
+					(hasTemplateArgsPassed || !(aliasTag.aliasDefinition.Type is TemplateInstanceExpression)))
 					TypeDeclarationResolver.ResetDeducedSymbols(overload);
 
 				var tplNode = overload.Definition;
