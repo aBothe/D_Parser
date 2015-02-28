@@ -510,13 +510,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (uat.Type == null)
 				return null;
 
-			var types = TypeDeclarationResolver.Resolve(uat.Type, ctxt);
-			ctxt.CheckForSingleResult(types, uat.Type);
-
-			if (types != null && types.Length != 0)
-				return TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration(uat.AccessIdentifierHash) { EndLocation = uat.EndLocation }, ctxt, types);
-
-			return null;
+			return TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration(uat.AccessIdentifierHash) { EndLocation = uat.EndLocation, InnerDeclaration = uat.Type }, ctxt);
 		}
 
 		public AbstractType Visit(NewExpression nex)

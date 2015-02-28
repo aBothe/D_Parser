@@ -141,20 +141,20 @@ namespace D_Parser.Resolver.TypeResolution
 		/// <summary>
 		/// See <see cref="Resolve"/>
 		/// </summary>
-		public static AbstractType ResolveSingle(IdentifierDeclaration id, ResolutionContext ctxt, AbstractType[] resultBases = null, bool filterForTemplateArgs = true)
+		public static AbstractType ResolveSingle(IdentifierDeclaration id, ResolutionContext ctxt, bool filterForTemplateArgs = true)
 		{
-			return AmbiguousType.Get(Resolve(id, ctxt, resultBases, filterForTemplateArgs));
+			return AmbiguousType.Get(Resolve(id, ctxt, filterForTemplateArgs));
 		}
 
-		public static AbstractType[] Resolve(IdentifierDeclaration id, ResolutionContext ctxt, AbstractType[] resultBases = null, bool filterForTemplateArgs = true)
+		public static AbstractType[] Resolve(IdentifierDeclaration id, ResolutionContext ctxt, bool filterForTemplateArgs = true)
 		{
 			AbstractType[] res;
 
-			if (id.InnerDeclaration == null && resultBases == null)
+			if (id.InnerDeclaration == null)
 				res = ResolveIdentifier(id.IdHash, ctxt, id, id.ModuleScoped);
 			else
 			{
-				var rbases = resultBases ?? Resolve(id.InnerDeclaration, ctxt);
+				var rbases = Resolve(id.InnerDeclaration, ctxt);
 
 				if (rbases == null || rbases.Length == 0)
 					return null;
