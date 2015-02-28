@@ -3,13 +3,23 @@ using System.Text;
 
 namespace D_Parser.Dom.Expressions
 {
-	public class TemplateInstanceExpression : AbstractTypeDeclaration,PrimaryExpression,ContainerExpression
+	public class TemplateInstanceExpression : AbstractTypeDeclaration,PrimaryExpression,ContainerExpression, IntermediateIdType
 	{
+		public bool ModuleScoped {
+			get;
+			set;
+		}
+
+		public int IdHash {
+			get {
+				return TemplateIdHash;
+			}
+		}
+
 		public readonly int TemplateIdHash;
 
 		public string TemplateId { get { return Strings.TryGet(TemplateIdHash); } }
 
-		public bool ModuleScopedIdentifier;
 		public readonly ITypeDeclaration Identifier;
 		public IExpression[] Arguments;
 
@@ -20,11 +30,11 @@ namespace D_Parser.Dom.Expressions
 			var curtd = id;
 			while (curtd != null)
 			{
-				if (curtd is IdentifierDeclaration)
+				if (curtd is IntermediateIdType)
 				{
-					var i = curtd as IdentifierDeclaration;
+					var i = curtd as IntermediateIdType;
 					TemplateIdHash = i.IdHash;
-					ModuleScopedIdentifier = i.ModuleScoped;
+					ModuleScoped = i.ModuleScoped;
 					break;
 				}
 				curtd = curtd.InnerDeclaration;
@@ -35,7 +45,7 @@ namespace D_Parser.Dom.Expressions
 		{
 			var sb = new StringBuilder();
 
-			if (ModuleScopedIdentifier)
+			if (ModuleScoped)
 				sb.Append('.');
 
 			if (IncludesBase && InnerDeclaration != null)

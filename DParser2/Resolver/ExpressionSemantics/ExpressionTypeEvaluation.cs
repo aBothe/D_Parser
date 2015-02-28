@@ -161,10 +161,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					baseExpression = ExpressionTypeEvaluation.GetResolvedConstructorOverloads((TokenExpression)callForeExpression, ctxt);
 				else 
 				{
-					if (callForeExpression is TemplateInstanceExpression)
-						baseExpression = ExpressionTypeEvaluation.GetOverloads(tix = (TemplateInstanceExpression)callForeExpression, ctxt, null, false);
-					else if (callForeExpression is IdentifierExpression)
-						baseExpression = ExpressionTypeEvaluation.GetOverloads(callForeExpression as IdentifierExpression, ctxt, deduceParameters: false);
+					tix = callForeExpression as TemplateInstanceExpression;
+
+					if (callForeExpression is IntermediateIdType)
+						baseExpression = ExpressionTypeEvaluation.GetOverloads(callForeExpression as IntermediateIdType, ctxt, null, false);
 					else
 						baseExpression = new[] { callForeExpression != null ? AbstractType.Get(callForeExpression.Accept(this)) : null };
 				}
@@ -177,10 +177,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			IEnumerable<AbstractType> overloads;
 
-			if (foreExpression is TemplateInstanceExpression)
-				overloads = GetOverloads(foreExpression as TemplateInstanceExpression, ctxt, null);
-			else if (foreExpression is IdentifierExpression)
-				overloads = GetOverloads(foreExpression as IdentifierExpression, ctxt, deduceParameters: false);
+			if (foreExpression is IntermediateIdType)
+				overloads = GetOverloads(foreExpression as IntermediateIdType, ctxt, null, !(foreExpression is IdentifierExpression));
 			else if (foreExpression is PostfixExpression_Access)
 				overloads = GetAccessedOverloads(foreExpression as PostfixExpression_Access, ctxt, null, false);
 			else if (foreExpression is TokenExpression)
@@ -837,46 +835,29 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 		}
 
-		public static AbstractType[] GetOverloads(TemplateInstanceExpression tix, ResolutionContext ctxt, AbstractType resultBases = null, bool deduceParameters = true)
+		public static AbstractType[] GetOverloads(IntermediateIdType id, ResolutionContext ctxt, AbstractType resultBases = null, bool deduceParameters = true)
 		{
-			if (resultBases == null)
-				resultBases = TypeDeclarationResolver.ResolveSingle(tix.InnerDeclaration, ctxt);
+			if (resultBases == null && id is ITypeDeclaration)
+				resultBases = TypeDeclarationResolver.ResolveSingle ((id as ITypeDeclaration).InnerDeclaration, ctxt);
 
 			AbstractType[] res;
 			if (resultBases == null)
-				res = TypeDeclarationResolver.ResolveIdentifier(tix.TemplateIdHash, ctxt, tix, tix.ModuleScopedIdentifier);
+				res = TypeDeclarationResolver.ResolveIdentifier(id.IdHash, ctxt, id, id.ModuleScoped);
 			else
-				res = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(tix.TemplateIdHash, AmbiguousType.TryDissolve(resultBases), ctxt, tix);
-
-			res = (ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) == 0 && deduceParameters ?
-				TemplateInstanceHandler.DeduceParamsAndFilterOverloads(res, tix, ctxt) : res;
-			return res;
-		}
-
-		public AbstractType[] GetOverloads(IdentifierExpression id, IEnumerable<AbstractType> resultBases = null, bool deduceParameters = true)
-		{
-			return GetOverloads(id, ctxt, resultBases, deduceParameters);
-		}
-
-		public static AbstractType[] GetOverloads(IdentifierExpression id, ResolutionContext ctxt, IEnumerable<AbstractType> resultBases = null, bool deduceParameters = true)
-		{
-			AbstractType[] res;
-			if (resultBases == null)
-				res = TypeDeclarationResolver.ResolveIdentifier(id.ValueStringHash, ctxt, id, id.ModuleScoped);
-			else
-				res = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(id.ValueStringHash, resultBases, ctxt, id);
-
-			if (res == null)
-				return null;
+				res = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(id.IdHash, AmbiguousType.TryDissolve(resultBases), ctxt, id);
 
 			var f = DResolver.FilterOutByResultPriority(ctxt, res);
 
 			if (f.Count == 0)
 				return null;
 
-			return (ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) == 0 && deduceParameters ?
-				TemplateInstanceHandler.DeduceParamsAndFilterOverloads(f, null, false, ctxt) :
-				f.ToArray();
+			if ((ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) != 0 || !deduceParameters)
+				return f.ToArray();
+
+			if(id is TemplateInstanceExpression)
+				return TemplateInstanceHandler.DeduceParamsAndFilterOverloads(f, id as TemplateInstanceExpression, ctxt);
+			
+			return TemplateInstanceHandler.DeduceParamsAndFilterOverloads (f, null, false, ctxt);
 		}
 #endregion
 

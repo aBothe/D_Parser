@@ -9,10 +9,17 @@ namespace D_Parser.Dom
 	/// <summary>
 	/// Identifier, e.g. "foo"
 	/// </summary>
-	public class IdentifierDeclaration : AbstractTypeDeclaration
+	public class IdentifierDeclaration : AbstractTypeDeclaration, IntermediateIdType
 	{
-		public bool ModuleScoped;
-		public int IdHash;
+		public bool ModuleScoped {
+			get;
+			set;
+		}
+
+		public int IdHash {
+			get;
+			set;
+		}
 
 		public string Id
 		{

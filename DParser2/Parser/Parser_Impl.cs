@@ -1217,10 +1217,8 @@ namespace D_Parser.Parser
 			if(isModuleScoped && td != null)
 			{
 				var innerMost = td.InnerMost;
-				if (innerMost is IdentifierDeclaration)
-					((IdentifierDeclaration)innerMost).ModuleScoped = true;
-				else if (innerMost is TemplateInstanceExpression)
-					((TemplateInstanceExpression)innerMost).ModuleScopedIdentifier = true;
+				if (innerMost is IntermediateIdType)
+					((IntermediateIdType)innerMost).ModuleScoped = true;
 			}
 
 			return td;
@@ -3075,7 +3073,7 @@ namespace D_Parser.Parser
 			{
 				var tix = TemplateInstance(Scope);
 				if (tix != null)
-					tix.ModuleScopedIdentifier = isModuleScoped;
+					tix.ModuleScoped = isModuleScoped;
 				return tix;
 			}
 
@@ -5441,10 +5439,8 @@ namespace D_Parser.Parser
 			if(modScope)
 			{
 				var innerMost = r.Qualifier.InnerMost;
-				if(innerMost is IdentifierExpression)	
-					(innerMost as IdentifierExpression).ModuleScoped = true;
-				else if(innerMost is TemplateInstanceExpression)
-					(innerMost as TemplateInstanceExpression).ModuleScopedIdentifier = true;
+				if(innerMost is IntermediateIdType)	
+					(innerMost as IntermediateIdType).ModuleScoped = true;
 			}
 
 			// MixinIdentifier

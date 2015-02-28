@@ -3,12 +3,25 @@ using D_Parser.Parser;
 
 namespace D_Parser.Dom.Expressions
 {
+	public interface IntermediateIdType : ISyntaxRegion
+	{
+		bool ModuleScoped { get; set; }
+		int IdHash{get;}
+	}
+
 	/// <summary>
 	/// Identifier as well as literal primary expression
 	/// </summary>
-	public class IdentifierExpression : PrimaryExpression
+	public class IdentifierExpression : PrimaryExpression, IntermediateIdType
 	{
-		public bool ModuleScoped;
+		public bool ModuleScoped {
+			get;
+			set;
+		}
+
+		public int IdHash {
+			get { return ValueStringHash; }
+		}
 
 		public bool IsIdentifier { get { return ValueStringHash != 0 && Format == LiteralFormat.None; } }
 

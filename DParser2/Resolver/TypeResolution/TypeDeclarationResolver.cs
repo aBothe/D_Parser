@@ -204,27 +204,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 			public AbstractType Visit (IdentifierDeclaration id)
 			{
-				var filterTempls = filterTemplates;
-				filterTemplates = true;
-				AbstractType[] res;
-
-				if (id.InnerDeclaration == null)
-					res = ResolveIdentifier(id.IdHash, ctxt, id, id.ModuleScoped);
-				else
-					res = ResolveFurtherTypeIdentifier(id.IdHash, AmbiguousType.TryDissolve(id.InnerDeclaration.Accept(this)), ctxt, id);
-
-				if (filterTempls && (ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) == 0)
-				{
-					var l_ = new List<AbstractType>();
-
-					if (res != null)
-						foreach (var s in res)
-							l_.Add(s);
-
-					return AmbiguousType.Get(TemplateInstanceHandler.DeduceParamsAndFilterOverloads(l_, null, false, ctxt));
-				}
-				else
-					return AmbiguousType.Get(res);
+				return AmbiguousType.Get(ExpressionTypeEvaluation.GetOverloads (id, ctxt, null, filterTemplates));
 			}
 
 			public AbstractType Visit (DTokenDeclaration td)
