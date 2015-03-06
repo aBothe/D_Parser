@@ -54,7 +54,7 @@ namespace D_Parser.Completion
 
 			var sr = FindCurrentCaretContext(editor, ref _b, out inNonCode);
 
-			if (inNonCode || editor.CancelToken.IsCancellationRequested)
+			if (inNonCode)
 				return false;
 
 			if (_b == null || editor.CaretLocation > _b.EndLocation) {
@@ -69,7 +69,7 @@ namespace D_Parser.Completion
 			else if (sr is IExpression)
 				(sr as IExpression).Accept (complVis);
 
-			if (complVis.GeneratedProvider == null || editor.CancelToken.IsCancellationRequested)
+			if (complVis.GeneratedProvider == null)
 				return false;
 
 			complVis.GeneratedProvider.BuildCompletionData(editor, triggerChar);
