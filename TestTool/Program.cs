@@ -14,8 +14,18 @@ namespace TestTool
 {
 	class Program
 	{
+		const string traceFile = "trace.log";
+
 		public static void Main (string[] args)
-		{/*
+		{
+			Trace.Listeners.Clear ();
+			Trace.AutoFlush = false;
+			Trace.UseGlobalLock = false;
+			if(File.Exists(traceFile))
+				File.Delete (traceFile);
+			Trace.Listeners.Add (new TextWriterTraceListener (traceFile));
+
+			/*
 			var sw2 = new Stopwatch();
 			var code = File.ReadAllText(@"B:\Programs\D\dmd2\src\phobos\std\datetime.d");
 			sw2.Start();
@@ -23,8 +33,14 @@ namespace TestTool
 			sw2.Stop();
 			Console.WriteLine (sw2.ElapsedMilliseconds);
 			return;*/
-			(new ResolutionTests ()).Unqual ();
-			(new EvaluationTests()).IsExpressionAlias();			
+			//DParser.ParseString (@"");
+			//(new ResolutionTests ()).BasicResolution0 ();
+			//(new IndentationTests ()).TestIssue576 ();		
+			//(new IndentationTests ()).SwitchIndentation ();
+
+			BotanProfil.Run ();
+
+			Trace.Flush ();
 			return;
 
 			// Indent testing

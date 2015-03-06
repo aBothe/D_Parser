@@ -60,17 +60,33 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (ctxt.CancellationToken.IsCancellationRequested)
 				return new UnknownType(x);
 
+			#if TRACE
+			Trace.WriteLine("Evaluating type of "+x);
+			Trace.Indent();
+			#endif
+
 			long cacheHashBias = tryReturnMethodReturnType ? 31 : 0;
 
 			AbstractType t;
 			if ((t = ctxt.Cache.TryGetType (x, cacheHashBias)) != null &&
-				(t.Tag<TypeDeclarationResolver.AliasTag>(TypeDeclarationResolver.AliasTag.Id) == null)) // Don't accept aliases because their Tag does/base type might differ from the target alias definition.
+			    (t.Tag<TypeDeclarationResolver.AliasTag> (TypeDeclarationResolver.AliasTag.Id) == null)) { // Don't accept aliases because their Tag does/base type might differ from the target alias definition.
+
+				#if TRACE
+				Trace.WriteLine("Return cached item "+(t != null ? t.ToString() : string.Empty));
+				Trace.Unindent();
+				#endif
+
 				return t;
+			}
 
 			t = x.Accept(new ExpressionTypeEvaluation(ctxt) { TryReturnMethodReturnType = tryReturnMethodReturnType });
 
 			if(!(t is TemplateParameterSymbol) || !ctxt.DeducedTypesInHierarchy.Any((tps)=> tps.Parameter == (t as TemplateParameterSymbol).Parameter)) // Don't allow caching parameters that affect the caching context.
 				ctxt.Cache.Add(t ?? new UnknownType(x), x, cacheHashBias);
+
+			#if TRACE
+			Trace.Unindent();
+			#endif
 
 			return t;
 		}
@@ -914,8 +930,33 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// </summary>
 		public static AbstractType[] GetOverloads(IntermediateIdType id, ResolutionContext ctxt, AbstractType resultBases = null, bool deduceParameters = true)
 		{
-			if (resultBases == null && id is ITypeDeclaration)
+			#if TRACE
+			Trace.WriteLine (string.Format("GetOverloads({0}):", id));
+			Trace.Indent ();
+			var sw = new Stopwatch ();
+			#endif
+
+			if (resultBases == null && id is ITypeDeclaration && (id as ITypeDeclaration).InnerDeclaration != null) {
+				#if TRACE 
+				Trace.WriteLine(string.Format("Resolve base type {0}", (id as ITypeDeclaration).InnerDeclaration));
+				Trace.Indent();
+				sw.Restart();
+				#endif
+
 				resultBases = TypeDeclarationResolver.ResolveSingle ((id as ITypeDeclaration).InnerDeclaration, ctxt);
+
+				#if TRACE
+				sw.Stop();
+				Trace.Unindent();
+				Trace.WriteLine(string.Format("Finished resolving base type {0} => {1}. {2} ms.", (id as ITypeDeclaration).InnerDeclaration, resultBases, sw.ElapsedMilliseconds));
+				#endif
+			}
+
+			#if TRACE
+			Trace.WriteLine (string.Format("Getting raw overloads of {0}", id));
+			Trace.Indent();
+			sw.Restart ();
+			#endif
 
 			AbstractType[] res;
 			if (resultBases == null)
@@ -923,18 +964,32 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			else
 				res = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(id.IdHash, resultBases, ctxt, id);
 
+			#if TRACE
+			sw.Stop ();
+			Trace.Unindent();
+			Trace.WriteLine (string.Format("Finished getting raw overloads of {0}. {1}ms", id, sw.ElapsedMilliseconds));
+			Trace.WriteLine("Deducing.");
+			sw.Restart();
+			#endif
+
 			var f = DResolver.FilterOutByResultPriority(ctxt, res);
 
 			if (f.Count == 0)
-				return null;
+				res = null;
+			else if ((ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) != 0 || !deduceParameters)
+				res = f.ToArray();
+			else if(id is TemplateInstanceExpression)
+				res = TemplateInstanceHandler.DeduceParamsAndFilterOverloads(f, id as TemplateInstanceExpression, ctxt);
+			else
+				res = TemplateInstanceHandler.DeduceParamsAndFilterOverloads (f, null, false, ctxt);
 
-			if ((ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) != 0 || !deduceParameters)
-				return f.ToArray();
+			#if TRACE
+			sw.Stop();
+			Trace.WriteLine(string.Format("Finished deduction. {0} ms. {1}", sw.ElapsedMilliseconds, AmbiguousType.Get(res)));
+			Trace.Unindent();
+			#endif
 
-			if(id is TemplateInstanceExpression)
-				return TemplateInstanceHandler.DeduceParamsAndFilterOverloads(f, id as TemplateInstanceExpression, ctxt);
-			
-			return TemplateInstanceHandler.DeduceParamsAndFilterOverloads (f, null, false, ctxt);
+			return res;
 		}
 #endregion
 
