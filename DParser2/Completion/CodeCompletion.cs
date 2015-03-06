@@ -169,8 +169,13 @@ namespace D_Parser.Completion
 			if (timeout == int.MinValue)
 				timeout = CompletionOptions.Instance.CompletionTimeout;
 
+			#if NET40
+			if(timeout > 0)
+				Task.Factory.StartNew(()=>{Thread.Sleep(timeout); cts.Cancel();});
+			#else
 			if (timeout > 0)
 				cts.CancelAfter (timeout);
+			#endif
 
 			ac ();
 
