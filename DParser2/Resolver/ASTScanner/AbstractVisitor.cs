@@ -395,8 +395,8 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			else
 				parms.dontHandleTemplateParamsInNodeScan = false;
 
-			using(ctxt.Push(parms.resolvedCurScope))
-				curScope.Accept(new StatementHandler(this, parms, CodeLocation.Empty));
+			using(var stmtVis = new StatementHandler(this, parms, CodeLocation.Empty, true))
+				curScope.Accept(stmtVis);
 		}
 
 		/// <summary>
@@ -409,24 +409,41 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			return Statement != null && Statement.Accept(new StatementHandler(this, parms, Caret));
 		}
 
-		class StatementHandler : StatementVisitor<bool>, NodeVisitor<bool>
+		class StatementHandler : StatementVisitor<bool>, NodeVisitor<bool>, IDisposable
 		{
 			#region Properties
 			public readonly ItemCheckParameters parms;
-			public readonly bool caretInsensitive;
+			public bool caretInsensitive { get{ return Caret.IsEmpty; } }
 			public readonly CodeLocation Caret;
 			ResolutionContext ctxt { get { return v.ctxt; } }
 
 			readonly AbstractVisitor v;
+			readonly bool pushResolvedCurScope;
+			IDisposable frameToPop;
 			#endregion
 
 			#region Constuctor/IO
-			public StatementHandler(AbstractVisitor v, ItemCheckParameters parms, CodeLocation caret)
+			public StatementHandler(AbstractVisitor v, ItemCheckParameters parms, CodeLocation caret, bool pushResolvedCurScope = false)
 			{
 				this.v = v;
 				this.Caret = caret;
 				this.parms = parms;
-				this.caretInsensitive = caret.IsEmpty;
+
+				frameToPop = null;
+				this.pushResolvedCurScope = pushResolvedCurScope;
+			}
+
+			public void TryPushCurScope()
+			{
+				if (frameToPop == null && pushResolvedCurScope) {
+					frameToPop = ctxt.Push (parms.resolvedCurScope);
+				}
+			}
+
+			public void Dispose ()
+			{
+				if (frameToPop != null)
+					frameToPop.Dispose ();
 			}
 
 			#endregion
@@ -455,7 +472,10 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			public bool Visit(DModule dbn)
 			{
 				// Every module imports 'object' implicitly
-				var ret = !parms.publicImportsOnly && _objectImport.Accept(this);
+				bool ret = false;
+
+				if (!parms.publicImportsOnly)
+					ret = _objectImport.Accept (this);
 				
 				ret |= Visit(dbn as DBlockNode);
 
@@ -490,6 +510,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				if (dv.Initializer != null &&
 					(caretInsensitive || (dv.Initializer.Location > Caret && dv.Initializer.EndLocation < Caret)))
 				{
+					TryPushCurScope ();
 					v.HandleExpression (dv.Initializer, parms);
 
 					if (v.StopEnumerationOnNextScope)
@@ -504,6 +525,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				if (!(caretInsensitive || Caret >= decl.Location))
 					return false;
 
+				TryPushCurScope ();
 				v.HandleItemInternal(decl, parms);
 				return v.StopEnumerationOnNextScope;
 			}
@@ -582,6 +604,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				if (Statement.Location < Caret && Statement.EndLocation >= Caret && Statement.SubExpressions != null)
 					foreach (var x in Statement.SubExpressions)
 						if (x != null && x.Location < Caret && x.EndLocation >= Caret) {
+							TryPushCurScope ();
 							v.HandleExpression (x, parms);
 							if (v.StopEnumerationOnNextScope)
 								return true;
@@ -616,8 +639,12 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 			public bool Visit(ImportStatement impStmt)
 			{
-				if ((parms.publicImportsOnly && impStmt != null && !impStmt.IsPublic) ||
-					!ctxt.CurrentContext.MatchesDeclarationEnvironment(impStmt.Attributes))
+				if ((parms.publicImportsOnly && impStmt != null && !impStmt.IsPublic))
+					return false;
+
+				TryPushCurScope ();
+
+				if(!ctxt.CurrentContext.MatchesDeclarationEnvironment(impStmt.Attributes))
 					return false;
 
 				/*
@@ -642,6 +669,8 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			{
 				if (imp == null || imp.ModuleIdentifier == null)
 					return false;
+
+				TryPushCurScope ();
 
 				DModule mod;
 				var thisModuleName = (ctxt.ScopedBlock != null && (mod = ctxt.ScopedBlock.NodeRoot as DModule) != null) ? mod.ModuleName : string.Empty;
@@ -676,30 +705,26 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			#endregion
 
 			#region Template Mixins
-			public bool Visit(TemplateMixin s)
-			{
-				if (!ctxt.CurrentContext.MatchesDeclarationEnvironment (s.Attributes))
-					return false;
-
-				HandleUnnamedTemplateMixin(s, caretInsensitive, parms);
-				return v.StopEnumerationOnNextScope;
-			}
-			
-			[ThreadStatic]
-			static List<TemplateMixin> templateMixinsBeingAnalyzed;
-			
-			// http://dlang.org/template-mixin.html#TemplateMixin
-			void HandleUnnamedTemplateMixin(TemplateMixin tmx, bool treatAsDeclBlock, ItemCheckParameters parms)
+			/// <summary>
+			/// http://dlang.org/template-mixin.html#TemplateMixin
+			/// </summary>
+			public bool Visit(TemplateMixin tmx)
 			{
 				if (CompletionOptions.Instance.DisableMixinAnalysis)
-					return;
+					return false;
 
 				if (templateMixinsBeingAnalyzed == null)
 					templateMixinsBeingAnalyzed = new List<TemplateMixin>();
 
 				if (templateMixinsBeingAnalyzed.Contains(tmx))
-					return;
+					return false;
 				templateMixinsBeingAnalyzed.Add(tmx);
+
+
+				TryPushCurScope ();
+
+				if (!ctxt.CurrentContext.MatchesDeclarationEnvironment (tmx.Attributes))
+					return false;
 
 				var tmxTemplate = GetTemplateMixinContent(ctxt, tmx, false);
 
@@ -707,33 +732,36 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					ctxt.LogError(tmx.Qualifier, "Mixin qualifier must resolve to a mixin template declaration.");
 				else using (ctxt.Push(tmxTemplate))
 				{
-					parms.dontHandleTemplateParamsInNodeScan = true;
-					v.DeepScanClass(tmxTemplate, parms);
+					v.DeepScanClass(tmxTemplate, new ItemCheckParameters(parms) { dontHandleTemplateParamsInNodeScan = true });
 				}
 
 				templateMixinsBeingAnalyzed.Remove(tmx);
+
+				return v.StopEnumerationOnNextScope;
 			}
+			
+			[ThreadStatic]
+			static List<TemplateMixin> templateMixinsBeingAnalyzed;
 			#endregion
 
 			#region Mixin
-			public bool VisitMixinStatement(MixinStatement s)
-			{
-				return !CompletionOptions.Instance.DisableMixinAnalysis &&
-					ctxt.CurrentContext.MatchesDeclarationEnvironment(s.Attributes) &&
-					HandleMixin(s, caretInsensitive, parms);
-			}
-
 			/// <summary>
 			/// Evaluates the literal given as expression and tries to parse it as a string.
 			/// Important: Assumes all its compilation conditions to be checked already!
 			/// </summary>
-			bool HandleMixin(MixinStatement mx, bool parseDeclDefs, ItemCheckParameters parms)
+			public bool VisitMixinStatement(MixinStatement mx)
 			{
 				if (CompletionOptions.Instance.DisableMixinAnalysis)
 					return false;
+
+				TryPushCurScope ();
+
+				if (!ctxt.CurrentContext.MatchesDeclarationEnvironment (mx.Attributes))
+					return false;
+
 				VariableValue vv;
 				// If in a class/module block => MixinDeclaration
-				if (parseDeclDefs)
+				if (caretInsensitive)
 				{
 					var ast = MixinAnalysis.ParseMixinDeclaration(mx, ctxt, out vv);
 
@@ -771,7 +799,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				return v.StopEnumerationOnNextScope;
 			}
 
-			public static MixinTemplateType GetTemplateMixinContent(ResolutionContext ctxt, TemplateMixin tmx, bool pushOnAnalysisStack = true)
+			static MixinTemplateType GetTemplateMixinContent(ResolutionContext ctxt, TemplateMixin tmx, bool pushOnAnalysisStack = true)
 			{
 				if (pushOnAnalysisStack)
 				{
@@ -893,6 +921,8 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					(!caretInsensitive && Caret < ws.ScopedStatement.Location))
 					return false;
 
+				TryPushCurScope ();
+
 				var back = ctxt.CurrentContext.Caret;
 				ctxt.CurrentContext.Set(ctxt.ScopedBlock,ws.Parent.Location);
 
@@ -967,6 +997,8 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					return sc.ElseStatement != null && sc.ElseStatement.Accept(this);
 				}
 
+				TryPushCurScope ();
+
 				if (!ctxt.CurrentContext.MatchesDeclarationEnvironment(sc.Condition))
 					return false;
 
@@ -1035,11 +1067,6 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				return false;
 			}
 			#endregion
-		}
-
-		public static MixinTemplateType GetTemplateMixinContent(ResolutionContext ctxt, TemplateMixin tmx, bool pushOnAnalysisStack = true)
-		{
-			return StatementHandler.GetTemplateMixinContent(ctxt, tmx, pushOnAnalysisStack);
 		}
 
 		[ThreadStatic]
