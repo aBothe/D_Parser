@@ -12,7 +12,7 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 		public CtfeException(string msg = null) : base(msg) { }
 	}
 
-	public class FunctionEvaluation : StatementVisitor
+	public struct FunctionEvaluation : StatementVisitor
 	{
 		#region Properties
 		readonly InterpretationContext vp;
@@ -24,6 +24,7 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 		FunctionEvaluation(MemberSymbol method, AbstractSymbolValueProvider baseValueProvider, Dictionary<DVariable, ISymbolValue> args)
 		{
 			vp = new InterpretationContext(baseValueProvider);
+			returnedValue = null;
 
 			foreach (var kv in args)
 				vp[kv.Key] = kv.Value;
