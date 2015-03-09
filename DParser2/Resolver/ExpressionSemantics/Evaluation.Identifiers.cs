@@ -10,7 +10,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public partial class Evaluation
 	{
-		class CTFEOrValueRefsVisitor : IResolvedTypeVisitor<ISymbolValue>
+		struct CTFEOrValueRefsVisitor : IResolvedTypeVisitor<ISymbolValue>
 		{
 			public bool ImplicitlyExecute;
 			IExpression idOrTemplateInstance;

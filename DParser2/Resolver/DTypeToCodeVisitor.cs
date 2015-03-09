@@ -7,14 +7,15 @@ using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Resolver
 {
-	public class DTypeToCodeVisitor : IResolvedTypeVisitor
+	public struct DTypeToCodeVisitor : IResolvedTypeVisitor
 	{
-		StringBuilder sb = new StringBuilder();
-		protected readonly bool pretty;
+		StringBuilder sb;
+		readonly bool pretty;
 
 		private DTypeToCodeVisitor(bool pretty)
 		{
 			this.pretty = pretty;
+			sb = new StringBuilder ();
 		}
 
 		public static string GenerateCode(AbstractType t, bool pretty = false)
