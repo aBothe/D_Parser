@@ -10,15 +10,11 @@ using D_Parser.Resolver.ExpressionSemantics;
 
 namespace D_Parser.Dom.Visitors
 {
-	public class AstElementHashingVisitor : DVisitor<long>, IResolvedTypeVisitor<long>, ISymbolValueVisitor<long>
+	public struct AstElementHashingVisitor : DVisitor<long>, IResolvedTypeVisitor<long>, ISymbolValueVisitor<long>
 	{
 		#region Properties
 		const long prime = 31;
 		public static readonly AstElementHashingVisitor Instance = new AstElementHashingVisitor();
-		#endregion
-
-		#region Constructor
-		private AstElementHashingVisitor() { }
 		#endregion
 
 		#region Hashing fundamentals
@@ -36,15 +32,15 @@ namespace D_Parser.Dom.Visitors
 			Hash (ref h, prime, len);
 		}
 
-		void HashEnum(ref long h, long prime, IEnumerable<IExpression> l, bool mindOrder = false)		{			HashEnum (ref h, prime, l, (o) => o.Accept(this), mindOrder);	}
-		void HashEnum(ref long h, long prime, IEnumerable<INode> l, bool mindOrder = false)				{			HashEnum (ref h, prime, l, (o) => o.Accept(this), mindOrder);	}
-		void HashEnum(ref long h, long prime, IEnumerable<DAttribute> l, bool mindOrder = false)		{			HashEnum (ref h, prime, l, (o) => o.Accept(this), mindOrder);	}
-		void HashEnum(ref long h, long prime, IEnumerable<IStatement> l, bool mindOrder = false)		{			HashEnum (ref h, prime, l, (o) => o.Accept(this), mindOrder);	}
-		void HashEnum(ref long h, long prime, IEnumerable<TemplateParameter> l, bool mindOrder = false)	{			HashEnum (ref h, prime, l, (o) => o.Accept(this), mindOrder);	}
-		void HashEnum(ref long h, long prime, IEnumerable<ITypeDeclaration> l, bool mindOrder = false)	{			HashEnum (ref h, prime, l, (o) => o.Accept(this), mindOrder);	}
+		void HashEnum(ref long h, long prime, IEnumerable<IExpression> l, bool mindOrder = false)		{			HashEnum (ref h, prime, l, (o) => o.Accept(Instance), mindOrder);	}
+		void HashEnum(ref long h, long prime, IEnumerable<INode> l, bool mindOrder = false)				{			HashEnum (ref h, prime, l, (o) => o.Accept(Instance), mindOrder);	}
+		void HashEnum(ref long h, long prime, IEnumerable<DAttribute> l, bool mindOrder = false)		{			HashEnum (ref h, prime, l, (o) => o.Accept(Instance), mindOrder);	}
+		void HashEnum(ref long h, long prime, IEnumerable<IStatement> l, bool mindOrder = false)		{			HashEnum (ref h, prime, l, (o) => o.Accept(Instance), mindOrder);	}
+		void HashEnum(ref long h, long prime, IEnumerable<TemplateParameter> l, bool mindOrder = false)	{			HashEnum (ref h, prime, l, (o) => o.Accept(Instance), mindOrder);	}
+		void HashEnum(ref long h, long prime, IEnumerable<ITypeDeclaration> l, bool mindOrder = false)	{			HashEnum (ref h, prime, l, (o) => o.Accept(Instance), mindOrder);	}
 
-		void HashEnum(ref long h, long prime, IEnumerable<AbstractType> l, bool mindOrder = false)	{	HashEnum (ref h, prime, l, (o) => o.Accept(this), mindOrder);	}
-		void HashEnum(ref long h, long prime, IEnumerable<ISymbolValue> l, bool mindOrder = false)	{	HashEnum (ref h, prime, l, (o) => o.Accept(this), mindOrder);	}
+		void HashEnum(ref long h, long prime, IEnumerable<AbstractType> l, bool mindOrder = false)	{	HashEnum (ref h, prime, l, (o) => o.Accept(Instance), mindOrder);	}
+		void HashEnum(ref long h, long prime, IEnumerable<ISymbolValue> l, bool mindOrder = false)	{	HashEnum (ref h, prime, l, (o) => o.Accept(Instance), mindOrder);	}
 
 		static void Hash(ref long h, long prime, long v)	{	h = unchecked(prime * h + v);	}
 
@@ -1177,7 +1173,7 @@ namespace D_Parser.Dom.Visitors
 			var h = VisitAbstractType (t, prime);
 
 			HashEnum (ref h, prime, t.Items, 
-				(o) => o is ISymbolValue ? (o as ISymbolValue).Accept(this) : o is AbstractType ? (o as AbstractType).Accept(this) : 0, true);
+				(o) => o is ISymbolValue ? (o as ISymbolValue).Accept(Instance) : o is AbstractType ? (o as AbstractType).Accept(Instance) : 0, true);
 
 			return h;
 		}
@@ -1345,8 +1341,8 @@ namespace D_Parser.Dom.Visitors
 			var h = VisitExpressionValue (v, prime);
 
 			HashEnum (ref h, prime, v.Elements, (kv) => 
-					((kv.Key != null ? kv.Key.Accept(this) : 0) ^ 
-					(kv.Value != null ? kv.Value.Accept(this) : 0))
+				((kv.Key != null ? kv.Key.Accept(Instance) : 0) ^ 
+					(kv.Value != null ? kv.Value.Accept(Instance) : 0))
 			);
 
 			return h;

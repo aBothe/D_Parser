@@ -338,7 +338,7 @@ namespace D_Parser.Resolver.TypeResolution
 			public ISyntaxRegion typeBase;
 		}
 
-		public sealed class NodeMatchHandleVisitor : NodeVisitor<AbstractType>
+		struct NodeMatchHandleVisitor : NodeVisitor<AbstractType>
 		{
 			public ResolutionContext ctxt;
 			public bool CanResolveBase(INode m)
@@ -351,6 +351,15 @@ namespace D_Parser.Resolver.TypeResolution
 			}
 			public ISyntaxRegion typeBase;
 			public AbstractType resultBase;
+
+
+			public NodeMatchHandleVisitor(ResolutionContext ctxt, ISyntaxRegion typeBase, AbstractType resultBase)
+			{
+				this.ctxt = ctxt;
+				this.typeBase = typeBase;
+				this.resultBase = resultBase;
+			}
+
 
 			public AbstractType Visit(DEnumValue n)
 			{
@@ -784,8 +793,7 @@ namespace D_Parser.Resolver.TypeResolution
 			INode m,
 			ResolutionContext ctxt,
 			AbstractType resultBase = null,
-			ISyntaxRegion typeBase = null,
-			NodeMatchHandleVisitor vis = null)
+			ISyntaxRegion typeBase = null)
 		{
 			// See https://github.com/aBothe/Mono-D/issues/161
 			int stkC;
@@ -813,7 +821,7 @@ namespace D_Parser.Resolver.TypeResolution
 				if (applyOptions)
 					ctxt.CurrentContext.ContextDependentOptions = options;
 
-				ret = m.Accept(vis ?? new NodeMatchHandleVisitor { ctxt = ctxt, resultBase = resultBase, typeBase = typeBase });
+				ret = m.Accept(new NodeMatchHandleVisitor(ctxt, typeBase, resultBase));
 			}
 
 			stackCalls.TryGetValue(m, out stkC);
@@ -839,7 +847,6 @@ namespace D_Parser.Resolver.TypeResolution
 			if (matches == null)
 				return new AbstractType[0];
 
-			var vis = new NodeMatchHandleVisitor { ctxt = ctxt, resultBase = resultBase, typeBase = typeDeclaration };
 			var rl = new List<AbstractType>();
 
 			foreach (var m in matches)
@@ -847,7 +854,7 @@ namespace D_Parser.Resolver.TypeResolution
 				if (m == null)
 					continue;
 
-				var res = HandleNodeMatch(m, ctxt, resultBase, typeDeclaration, vis);
+				var res = HandleNodeMatch(m, ctxt, resultBase, typeDeclaration);
 				if (res != null)
 					rl.Add(res);
 			}

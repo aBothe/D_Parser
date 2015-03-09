@@ -83,7 +83,7 @@ namespace D_Parser.Refactoring
 		}
 		#endregion
 
-		class NodeTypeDeterminer : NodeVisitor<byte>
+		struct NodeTypeDeterminer : NodeVisitor<byte>
 		{
 			public byte Visit(DEnumValue n)
 			{
