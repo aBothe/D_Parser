@@ -79,7 +79,7 @@ namespace D_Parser.Completion
 		public int CurrentlyTypedArgumentIndex;
 	}
 
-	public struct ParameterInsightResolution : ExpressionVisitor
+	public class ParameterInsightResolution : ExpressionVisitor
 	{
 		public readonly ArgumentsResolutionResult res;
 		public readonly IEditorData Editor;

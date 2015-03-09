@@ -8,7 +8,7 @@ using D_Parser.Resolver.Templates;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
-	public partial struct Evaluation
+	public partial class Evaluation
 	{
 		public ISymbolValue Visit(PostfixExpression_MethodCall call)
 		{

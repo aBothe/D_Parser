@@ -9,7 +9,7 @@ using System.Text;
 
 namespace D_Parser.Resolver
 {
-	public struct DTypeToTypeDeclVisitor : IResolvedTypeVisitor<ITypeDeclaration>
+	public class DTypeToTypeDeclVisitor : IResolvedTypeVisitor<ITypeDeclaration>
 	{
 		public static ITypeDeclaration GenerateTypeDecl(AbstractType t)
 		{

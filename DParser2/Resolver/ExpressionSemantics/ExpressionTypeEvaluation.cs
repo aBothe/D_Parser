@@ -12,7 +12,7 @@ using System.Text;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
-	public struct ExpressionTypeEvaluation : ExpressionVisitor<AbstractType>
+	public class ExpressionTypeEvaluation : ExpressionVisitor<AbstractType>
 	{
 		#region Properties
 		public bool TryReturnMethodReturnType;

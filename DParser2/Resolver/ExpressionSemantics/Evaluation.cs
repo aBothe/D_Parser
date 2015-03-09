@@ -9,7 +9,7 @@ using D_Parser.Dom;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
-	public partial struct Evaluation : ExpressionVisitor<ISymbolValue>
+	public partial class Evaluation : ExpressionVisitor<ISymbolValue>
 	{
 		#region Properties
 		private readonly ResolutionContext ctxt;

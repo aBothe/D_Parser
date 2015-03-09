@@ -8,9 +8,9 @@ using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
-	public partial struct Evaluation
+	public partial class Evaluation
 	{
-		struct CTFEOrValueRefsVisitor : IResolvedTypeVisitor<ISymbolValue>
+		class CTFEOrValueRefsVisitor : IResolvedTypeVisitor<ISymbolValue>
 		{
 			public bool ImplicitlyExecute;
 			IExpression idOrTemplateInstance;

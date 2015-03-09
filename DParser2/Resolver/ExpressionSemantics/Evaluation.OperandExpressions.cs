@@ -5,7 +5,7 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
 namespace D_Parser.Resolver.ExpressionSemantics
 {
-	public partial struct Evaluation
+	public partial class Evaluation
 	{
 		// TODO: Implement operator precedence (see http://forum.dlang.org/thread/jjohpp$oj6$1@digitalmars.com )
 

@@ -6,7 +6,7 @@ using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
-	public partial struct Evaluation
+	public partial class Evaluation
 	{
 
 

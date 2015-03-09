@@ -5,7 +5,7 @@ using D_Parser.Resolver;
 using D_Parser.Resolver.TypeResolution;
 namespace D_Parser.Resolver.ExpressionSemantics
 {
-	public partial struct Evaluation
+	public partial class Evaluation
 	{
 		public ISymbolValue Visit(TypeidExpression tid)
 		{

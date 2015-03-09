@@ -12,7 +12,7 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 		public CtfeException(string msg = null) : base(msg) { }
 	}
 
-	public struct FunctionEvaluation : StatementVisitor
+	public class FunctionEvaluation : StatementVisitor
 	{
 		#region Properties
 		readonly InterpretationContext vp;

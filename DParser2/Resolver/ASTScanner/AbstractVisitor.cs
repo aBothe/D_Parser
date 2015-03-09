@@ -409,7 +409,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			return Statement != null && Statement.Accept(new StatementHandler(this, parms, Caret));
 		}
 
-		struct StatementHandler : StatementVisitor<bool>, NodeVisitor<bool>
+		class StatementHandler : StatementVisitor<bool>, NodeVisitor<bool>
 		{
 			#region Properties
 			public readonly ItemCheckParameters parms;
