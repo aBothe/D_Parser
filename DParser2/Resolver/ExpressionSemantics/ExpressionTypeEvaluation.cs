@@ -12,12 +12,14 @@ using System.Text;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
-	public class ExpressionTypeEvaluation : ExpressionVisitor<AbstractType>
+	public struct ExpressionTypeEvaluation : ExpressionVisitor<AbstractType>
 	{
-		#region Properties / LowLevel
-		public bool TryReturnMethodReturnType = true;
+		#region Properties
+		public bool TryReturnMethodReturnType;
 		private readonly ResolutionContext ctxt;
-		public readonly List<EvaluationException> Errors = new List<EvaluationException>();
+		public readonly List<EvaluationException> Errors;
+		bool ignoreErrors;
+		#endregion
 
 		ArrayType GetStringType(LiteralSubformat fmt = LiteralSubformat.Utf8)
 		{
@@ -25,7 +27,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		}
 
 		#region Errors
-		bool ignoreErrors = false;
 		internal void EvalError(EvaluationException ex)
 		{
 			if (!ignoreErrors)
@@ -44,12 +45,14 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				Errors.Add(new EvaluationException(x, msg, new[] { lastResult }));
 		}
 		#endregion
-		#endregion
 
 		#region Ctor/IO
 		public ExpressionTypeEvaluation(ResolutionContext ctxt)
 		{
 			this.ctxt = ctxt;
+			TryReturnMethodReturnType = true;
+			Errors = new List<EvaluationException> ();
+			ignoreErrors = false;
 		}
 
 		public static AbstractType EvaluateType(IExpression x, ResolutionContext ctxt, bool tryReturnMethodReturnType = true)
