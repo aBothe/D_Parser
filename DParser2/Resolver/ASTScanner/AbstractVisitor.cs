@@ -395,14 +395,8 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			else
 				parms.dontHandleTemplateParamsInNodeScan = false;
 
-			var ss = new StatementHandler(this)
-			{
-				parms = parms,
-				caretInsensitive = true,
-			};
-
 			using(ctxt.Push(parms.resolvedCurScope))
-				curScope.Accept(ss);
+				curScope.Accept(new StatementHandler(this, parms, CodeLocation.Empty));
 		}
 
 		/// <summary>
@@ -412,24 +406,27 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		/// <returns>True if scan shall stop, false if not</returns>
 		bool ScanStatementHierarchy(IStatement Statement, CodeLocation Caret, ItemCheckParameters parms)
 		{
-			return Statement != null && Statement.Accept(new StatementHandler(this) { Caret = Caret, caretInsensitive = Caret.IsEmpty, parms = parms });
+			return Statement != null && Statement.Accept(new StatementHandler(this, parms, Caret));
 		}
 
-		class StatementHandler : StatementVisitor<bool>, NodeVisitor<bool>
+		struct StatementHandler : StatementVisitor<bool>, NodeVisitor<bool>
 		{
 			#region Properties
-			public ItemCheckParameters parms;
-			public bool caretInsensitive;
-			public CodeLocation Caret;
+			public readonly ItemCheckParameters parms;
+			public readonly bool caretInsensitive;
+			public readonly CodeLocation Caret;
 			ResolutionContext ctxt { get { return v.ctxt; } }
 
 			readonly AbstractVisitor v;
 			#endregion
 
 			#region Constuctor/IO
-			public StatementHandler(AbstractVisitor v)
+			public StatementHandler(AbstractVisitor v, ItemCheckParameters parms, CodeLocation caret)
 			{
 				this.v = v;
+				this.Caret = caret;
+				this.parms = parms;
+				this.caretInsensitive = caret.IsEmpty;
 			}
 
 			#endregion
