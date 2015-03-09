@@ -8,9 +8,8 @@ using D_Parser.Resolver.Templates;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
-	public partial class Evaluation
+	public partial struct Evaluation
 	{
-		bool? returnBaseTypeOnly;
 		public ISymbolValue Visit(PostfixExpression_MethodCall call)
 		{
 			var returnBaseTypeOnly = !this.returnBaseTypeOnly.HasValue ? 

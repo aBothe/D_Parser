@@ -9,7 +9,7 @@ using D_Parser.Dom.Statements;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
-	public partial class Evaluation
+	public partial struct Evaluation
 	{
 		/// <summary>
 		/// http://dlang.org/expression.html#IsExpression

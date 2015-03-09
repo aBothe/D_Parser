@@ -8,7 +8,7 @@ using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
-	public partial class Evaluation
+	public partial struct Evaluation
 	{
 		struct CTFEOrValueRefsVisitor : IResolvedTypeVisitor<ISymbolValue>
 		{
@@ -220,8 +220,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			return r != null ? r.Accept(new CTFEOrValueRefsVisitor(ValueProvider, idOrTemplateInstance, ImplicitlyExecute, executionArguments)) : null;
 		}
-
-		bool ImplicitlyExecute = true;
 
 		public ISymbolValue Visit(TemplateInstanceExpression tix)
 		{

@@ -9,8 +9,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public abstract class AbstractSymbolValueProvider
 	{
-		internal Evaluation ev;
-
 		public readonly ResolutionContext ResolutionContext;
 		public AbstractSymbolValueProvider(ResolutionContext ctxt)
 		{
@@ -54,9 +52,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public abstract DVariable GetLocal(string LocalName, IdentifierExpression id=null);
 
 		public abstract bool ConstantOnly { get; set; }
-		public void LogError(ISyntaxRegion involvedSyntaxObject, string msg, bool isWarning = false)
+		public void LogError(ISyntaxRegion involvedSyntaxObject, string msg, params ISemantic[] temporaryResults)
 		{
-			//TODO: Handle semantic errors that occur during analysis
+			ResolutionContext.LogError (new EvaluationError (involvedSyntaxObject, msg, temporaryResults));
 		}
 
 		/*
@@ -143,8 +141,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					return(DVariable)mr.Definition;
 			}
 
-			if(ev != null)
-				ev.EvalError(id ?? new IdentifierExpression(LocalName), LocalName + " must represent a local variable or a parameter", res);
+			LogError(id ?? new IdentifierExpression(LocalName), LocalName + " must represent a local variable or a parameter");
 			return null;
 		}
 	}

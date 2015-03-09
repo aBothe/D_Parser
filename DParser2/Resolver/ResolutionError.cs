@@ -17,6 +17,16 @@ namespace D_Parser.Resolver
 		}
 	}
 
+	public class EvaluationError : ResolutionError
+	{
+		public readonly ISemantic[] temporaryResults;
+
+		public EvaluationError(ISyntaxRegion sr, string msg, params ISemantic[] tempRes) : base(sr, msg)
+		{
+			this.temporaryResults = tempRes;
+		}
+	}
+
 	public class AmbiguityError : ResolutionError
 	{
 		public readonly ISemantic[] DetectedOverloads;

@@ -5,18 +5,9 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
 namespace D_Parser.Resolver.ExpressionSemantics
 {
-	public partial class Evaluation
+	public partial struct Evaluation
 	{
 		// TODO: Implement operator precedence (see http://forum.dlang.org/thread/jjohpp$oj6$1@digitalmars.com )
-
-		/// <summary>
-		/// Intermediate left operand operator-expressions.
-		/// </summary>
-		public ISymbolValue lValue;
-		/// <summary>
-		/// Intermediate right operand operator-expressions.
-		/// </summary>
-		public ISymbolValue rValue;
 
 		public ISymbolValue Visit(XorExpression x)
 		{
@@ -271,40 +262,38 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			/*
 			 * TODO: Handle invalid values/value ranges.
 			 */
+			Evaluation ev = this;
 
 			if (x is XorExpression)
 			{
-				return HandleSingleMathOp(x, l,r, (a,b)=>{
-				                          	if(EnsureIntegralType(x.LeftOperand,a) && EnsureIntegralType(x.RightOperand,b))
-												return (long)a.Value ^ (long)b.Value;
-				                          	return 0L;
+				return HandleSingleMathOp(x, l,r, (a,b)=> {
+					if(ev.EnsureIntegralType(x.LeftOperand,a) && ev.EnsureIntegralType(x.RightOperand,b))
+						return (long)a.Value ^ (long)b.Value;
+					return 0L;
 				});
 			}
 			else if (x is OrExpression)
 			{
-				return HandleSingleMathOp(x, l, r, (a, b) =>
-				{
-					if(EnsureIntegralType(x.LeftOperand,a) && EnsureIntegralType(x.RightOperand,b))
+				return HandleSingleMathOp(x, l, r, (a, b) => {
+					if(ev.EnsureIntegralType(x.LeftOperand,a) && ev.EnsureIntegralType(x.RightOperand,b))
 						return (long)a.Value | (long)b.Value;
                   	return 0L;
 				});
 			}
 			else if (x is AndExpression)
 			{
-				return HandleSingleMathOp(x, l, r, (a, b) =>
-				{
-					if(EnsureIntegralType(x.LeftOperand,a) && EnsureIntegralType(x.RightOperand,b))
+				return HandleSingleMathOp(x, l, r, (a, b) => {
+					if(ev.EnsureIntegralType(x.LeftOperand,a) && ev.EnsureIntegralType(x.RightOperand,b))
 												return (long)a.Value & (long)b.Value;
 				                          	return 0L;
 				});
 			}
 			else if (x is ShiftExpression) 
-				return HandleSingleMathOp(x, l, r, (a, b) =>
-				{
-				                          	if(!EnsureIntegralType(x.LeftOperand, a) || !EnsureIntegralType(x.RightOperand, b))
+				return HandleSingleMathOp(x, l, r, (a, b) => {
+					if(!ev.EnsureIntegralType(x.LeftOperand, a) || !ev.EnsureIntegralType(x.RightOperand, b))
 				                          		return 0L;
 					if (b.Value < 0 || b.Value > 31){
-						EvalError(x, "Shift operand must be between 0 and 31", new[]{b});
+						ev.EvalError(x, "Shift operand must be between 0 and 31", new[]{b});
 						return 0m;
 					}
 
@@ -318,7 +307,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							return (ulong)a.Value >> (int)(uint)b.Value;
 					}
 
-					EvalError(x, "Invalid token for shift expression", new[]{l,r});
+					ev.EvalError(x, "Invalid token for shift expression", new[]{l,r});
 					return 0m;
 				});
 			else if (x is AddExpression)
@@ -332,7 +321,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							return new PrimitiveValue(a.BaseTypeToken, a.Value - b.Value, a.ImaginaryPart - b.ImaginaryPart, a.Modifier);
 					}
 
-					EvalError(op, "Invalid token for add/sub expression", new[]{l,r});
+					ev.EvalError(op, "Invalid token for add/sub expression", new[]{l,r});
 					return null;
 				});
 			

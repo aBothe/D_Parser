@@ -9,7 +9,7 @@ using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
-	public partial class Evaluation
+	public partial struct Evaluation
 	{
 		public static int stringTypeHash = "string".GetHashCode();
 		public static int wstringTypeHash = "wstring".GetHashCode();
