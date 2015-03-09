@@ -233,7 +233,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				}
 			}*/
 
-			List<TemplateIntermediateType> interfaces = null;
+			List<InterfaceType> interfaces = null;
 
 			while(udt!= null)
 			{
@@ -255,9 +255,8 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 					if (tit.BaseInterfaces != null) {
 						if (interfaces == null)
-							interfaces = new List<TemplateIntermediateType> ();
-						foreach (var I in tit.BaseInterfaces)
-							EnlistInterfaceHierarchy(interfaces, I);
+							interfaces = new List<InterfaceType> ();
+						EnlistInterfaceHierarchy(interfaces, tit);
 					}
 
 					if(resolveBaseClassIfRequired && udt.Base == null && 
@@ -285,14 +284,14 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			}
 		}
 
-		static void EnlistInterfaceHierarchy(List<TemplateIntermediateType> l, InterfaceType t)
+		static void EnlistInterfaceHierarchy(List<InterfaceType> l, TemplateIntermediateType t)
 		{
 			if (l.Contains(t))
 				return;
 
-			l.Add(t);
-			if(t.Base is TemplateIntermediateType)
-				l.Add(t.Base as TemplateIntermediateType);
+			if(t is InterfaceType)
+				l.Add(t as InterfaceType);
+			
 			if(t.BaseInterfaces != null && t.BaseInterfaces.Length != 0)
 				foreach (var nested in t.BaseInterfaces)
 					EnlistInterfaceHierarchy(l, nested);
