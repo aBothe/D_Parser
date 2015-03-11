@@ -41,7 +41,8 @@ namespace TestTool
 			//(new IndentationTests ()).TestIssue576 ();		
 			//(new IndentationTests ()).SwitchIndentation ();
 
-			BotanProfil.Run ();
+			//BotanProfil.Run ();
+			rt.LooseResolution2();
 
 			Trace.Flush ();
 			return;
