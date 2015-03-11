@@ -77,7 +77,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 					var accessedModule = pack.GetModule(nextIdentifierHash);
 					if (accessedModule != null)
-						r.Add(new ModuleSymbol(accessedModule as DModule, b as PackageSymbol));
+						r.Add(new ModuleSymbol(accessedModule, b as PackageSymbol));
 					else if ((pack = pack.GetPackage(nextIdentifierHash)) != null)
 						r.Add(new PackageSymbol(pack));
 				}
