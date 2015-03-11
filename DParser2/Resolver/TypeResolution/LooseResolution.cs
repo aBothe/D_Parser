@@ -184,7 +184,7 @@ namespace D_Parser.Resolver
 			}
 		}
 
-		static AbstractType LookupIdRawly(Misc.ParseCacheView parseCache, ISyntaxRegion o, DModule oContext)
+		public static AbstractType LookupIdRawly(Misc.ParseCacheView parseCache, ISyntaxRegion o, DModule oContext)
 		{
 			var ctxt = new ResolutionContext (parseCache, null, oContext, o.Location);
 
