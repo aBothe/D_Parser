@@ -977,14 +977,15 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			var f = DResolver.FilterOutByResultPriority(ctxt, res);
 
-			if (f.Count == 0)
-				res = null;
-			else if ((ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) != 0 || !deduceParameters)
-				res = f.ToArray();
-			else if(id is TemplateInstanceExpression)
-				res = TemplateInstanceHandler.DeduceParamsAndFilterOverloads(f, id as TemplateInstanceExpression, ctxt);
-			else
-				res = TemplateInstanceHandler.DeduceParamsAndFilterOverloads (f, null, false, ctxt);
+			if (f.Count > 0)
+			{
+				if ((ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) != 0 || !deduceParameters)
+					res = f.ToArray();
+				else if(id is TemplateInstanceExpression)
+					res = TemplateInstanceHandler.DeduceParamsAndFilterOverloads(f, id as TemplateInstanceExpression, ctxt);
+				else
+					res = TemplateInstanceHandler.DeduceParamsAndFilterOverloads (f, null, false, ctxt);
+			}
 
 			#if TRACE
 			sw.Stop();
