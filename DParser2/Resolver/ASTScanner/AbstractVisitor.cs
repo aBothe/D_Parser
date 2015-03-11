@@ -61,14 +61,10 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			return bn.Children;
 		}
 		
-		public virtual IEnumerable<DModule> PrefilterSubnodes(ModulePackage pack, out ModulePackage[] subPackages)
+		public virtual IEnumerable<DModule> PrefilterSubnodes(ModulePackage pack, out IEnumerable<ModulePackage> subPackages)
 		{
 			subPackages = pack.GetPackages();
-			if(subPackages.Length == 0)
-				subPackages = null;
-			
-			var mods = pack.GetModules();
-			return mods.Length != 0 ? mods : null;
+			return pack.GetModules();
 		}
 
 		protected virtual void HandleItem (INode n) { }
@@ -125,10 +121,10 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			if(ctxt.ParseCache != null)
 				foreach(var root in ctxt.ParseCache)
 				{
-					ModulePackage[] packs;
+					IEnumerable<ModulePackage> packs;
 					var mods = PrefilterSubnodes(root, out packs);
-					
-					if(packs != null){
+
+					if(packs != null)
 						foreach(var pack in packs)
 						{
 							if(nameStubs.Contains(pack.Name))
@@ -137,12 +133,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 							HandleItem(new PackageSymbol(pack));
 							nameStubs.Add(pack.Name);
 						}
-					}
 					
 					if(mods != null)
-					{
 						HandleItems(mods, parms);
-					}
 				}
 
 			// On the root level, handle __ctfe variable

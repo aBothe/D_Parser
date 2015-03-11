@@ -135,18 +135,14 @@ namespace D_Parser.Dom
 
 		public bool IsEmpty { get { return packages.Count == 0 && modules.Count == 0; } }
 
-		public ModulePackage[] GetPackages()
+		public IEnumerable<ModulePackage> GetPackages()
 		{
-			var packs = new ModulePackage[packages.Count];
-			packages.Values.CopyTo(packs, 0);
-			return packs;
+			return packages.Values;
 		}
 
-		public DModule[] GetModules()
+		public IEnumerable<DModule> GetModules()
 		{
-			var mods = new DModule[modules.Count];
-			modules.Values.CopyTo(mods, 0);
-			return mods;
+			return modules.Values;
 		}
 
 		public ModulePackage GetPackage(string name)

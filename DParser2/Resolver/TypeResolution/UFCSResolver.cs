@@ -129,7 +129,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return null;
 		}
 
-		public override IEnumerable<DModule> PrefilterSubnodes (ModulePackage pack, out ModulePackage[] subPackages)
+		public override IEnumerable<DModule> PrefilterSubnodes (ModulePackage pack, out IEnumerable<ModulePackage> subPackages)
 		{
 			subPackages = null;
 			return null;

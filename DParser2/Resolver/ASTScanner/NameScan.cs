@@ -63,7 +63,7 @@ namespace D_Parser.Resolver.ASTScanner
 			return bn.Children.GetNodes (filterHash);
 		}
 
-		public override IEnumerable<DModule> PrefilterSubnodes (ModulePackage pack, out ModulePackage[] subPackages)
+		public override IEnumerable<DModule> PrefilterSubnodes (ModulePackage pack, out IEnumerable<ModulePackage> subPackages)
 		{
 			var subPack = pack.GetPackage (filterHash);
 			if (subPack != null)
