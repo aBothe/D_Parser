@@ -29,6 +29,7 @@ namespace D_Parser.Misc
 		/// If false, all ctrl+space-leveled items will get shown in completion either
 		/// </summary>
 		public bool ShowStructMembersInStructInitOnly = true;
+		public bool EnableResolutionCache = true;
 
 		public void Load(XmlReader x)
 		{
@@ -36,6 +37,9 @@ namespace D_Parser.Misc
 			{
 				switch (x.LocalName)
 				{
+					case "EnableResolutionCache":
+						EnableResolutionCache = x.ReadString().ToLower() == "true";
+					break;
 					case "CompletionTimeout":
 						int.TryParse(x.ReadString(), out CompletionTimeout);
 						break;
@@ -74,6 +78,7 @@ namespace D_Parser.Misc
 			x.WriteElementString("HideDeprecatedNodes", HideDeprecatedNodes.ToString());
 			x.WriteElementString("HideDisabledNodes", HideDisabledNodes.ToString());
 			x.WriteElementString("ShowStructMembersInStructInitOnly", ShowStructMembersInStructInitOnly.ToString());
+			x.WriteElementString("EnableResolutionCache", EnableResolutionCache.ToString());
 		}
 	}
 }

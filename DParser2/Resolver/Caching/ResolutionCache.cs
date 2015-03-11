@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using D_Parser.Dom;
 using D_Parser.Dom.Visitors;
+using D_Parser.Misc;
 
 namespace D_Parser.Resolver
 {
@@ -56,7 +57,7 @@ namespace D_Parser.Resolver
 
 		public void Add(T t, ISyntaxRegion sr, long hashBias = 0)
 		{
-			if (t == null || sr == null)
+			if (t == null || sr == null || !CompletionOptions.Instance.EnableResolutionCache)
 				return;
 
 			CacheEntryDict ce;
