@@ -61,6 +61,12 @@ namespace D_Parser.Resolver
 		//internal readonly ResolutionCache<ISymbolValue> ValueCache;
 		public readonly ParseCacheView ParseCache;
 
+		public void ClearCaches()
+		{
+			MixinCache.Clear ();
+			Cache.Clear ();
+		}
+
 		public IBlockNode ScopedBlock
 		{
 			get {

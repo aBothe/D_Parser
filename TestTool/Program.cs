@@ -18,6 +18,9 @@ namespace TestTool
 
 		public static void Main (string[] args)
 		{
+			var rt = new ResolutionTests ();
+			rt.SetupEnvironment ();
+
 			Trace.Listeners.Clear ();
 			Trace.AutoFlush = false;
 			Trace.UseGlobalLock = false;

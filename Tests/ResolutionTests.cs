@@ -65,7 +65,7 @@ namespace Tests
 		public static ResolutionContext CreateDefCtxt(params string[] modules)
 		{
 			var pcl = CreateCache (modules);
-			return CreateDefCtxt (pcl, pcl[0].GetModules()[0]);
+			return CreateDefCtxt (pcl, pcl[0].GetModules().First());
 		}
 
 		public static ResolutionContext CreateCtxt(string scopedModule,params string[] modules)
@@ -149,6 +149,14 @@ namespace Tests
 		}
 		#endregion
 
+		[SetUp]
+		public void SetupEnvironment()
+		{
+			var co = CompletionOptions.Instance;
+
+			co.CompletionTimeout = -1;
+			co.DisableMixinAnalysis = false;
+		}
 		[Test]
 		public void BasicResolution0()
 		{

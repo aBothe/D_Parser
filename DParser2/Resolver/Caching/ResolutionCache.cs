@@ -66,5 +66,10 @@ namespace D_Parser.Resolver
 
 			ce.Add(ctxt, t, hashBias);
 		}
+
+		public void Clear()
+		{
+			cache.Clear ();
+		}
 	}
 }
