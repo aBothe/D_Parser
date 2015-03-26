@@ -36,12 +36,22 @@ namespace D_Parser.Resolver.TypeResolution
 
 			public override void Visit(PostfixExpression_Access x)
 			{
-				if (x.AccessExpression != null && 
-					x.AccessExpression.Location <= caret && 
-					x.AccessExpression.EndLocation >= caret)
+				if (x.AccessExpression != null &&
+				    x.AccessExpression.Location <= caret &&
+				    x.AccessExpression.EndLocation >= caret) {
+					x.AccessExpression.Accept (this);
+					if(IdNearCaret == x.AccessExpression)
+						IdNearCaret = x;
+				}else
+					base.Visit(x);
+			}
+
+			public override void Visit (TemplateInstanceExpression x)
+			{
+				if (x.Identifier.Location <= caret && x.Identifier.EndLocation >= caret)
 					IdNearCaret = x;
 				else
-					base.Visit(x);
+					base.Visit (x);
 			}
 
 			public override void Visit(IdentifierExpression x)
