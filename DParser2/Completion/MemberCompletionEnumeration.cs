@@ -6,14 +6,17 @@ using D_Parser.Resolver.ASTScanner;
 using D_Parser.Resolver;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace D_Parser.Completion
 {
-	class MemberCompletionEnumeration : AbstractVisitor
+	sealed class MemberCompletionEnumeration : AbstractVisitor
 	{
 		bool isVarInst;
 		readonly ICompletionDataGenerator gen;
-		protected MemberCompletionEnumeration(ResolutionContext ctxt, ICompletionDataGenerator gen) : base(ctxt) 
+		List<int> addedPackageSymbolNames = new List<int>();
+
+		MemberCompletionEnumeration(ResolutionContext ctxt, ICompletionDataGenerator gen) : base(ctxt) 
 		{
 			this.gen = gen;
 		}
@@ -80,7 +83,11 @@ namespace D_Parser.Completion
 		
 		protected override void HandleItem(PackageSymbol pack)
 		{
-			gen.AddPackage(pack.Package.Name);
+			if (addedPackageSymbolNames.Contains (pack.Package.NameHash))
+				return;
+
+			addedPackageSymbolNames.Add (pack.Package.NameHash);
+			gen.AddPackage (pack.Package.Name);
 		}
 	}
 }
