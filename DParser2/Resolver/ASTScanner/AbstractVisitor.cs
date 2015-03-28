@@ -119,7 +119,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			// Handle available modules/packages
 			var nameStubs = new List<string>();
 			if(ctxt.ParseCache != null)
-				foreach(var root in ctxt.ParseCache)
+				foreach(var root in ctxt.ParseCache.EnumRootPackagesSurroundingModule(ctxt.ScopedBlock))
 				{
 					IEnumerable<ModulePackage> packs;
 					var mods = PrefilterSubnodes(root, out packs);
@@ -683,7 +683,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 				var scAst = ctxt.ScopedBlock == null ? null : ctxt.ScopedBlock.NodeRoot as DModule;
 				if (ctxt.ParseCache != null)
-					foreach (var module in ctxt.ParseCache.LookupModuleName(moduleName)) //TODO: Only take the first module? Notify the user about ambigous module names?
+					foreach (var module in ctxt.ParseCache.LookupModuleName(scAst, moduleName)) //TODO: Only take the first module? Notify the user about ambigous module names?
 					{
 						if (module == null || (scAst != null && module.FileName == scAst.FileName && module.FileName != null))
 							continue;

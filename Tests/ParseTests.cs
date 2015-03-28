@@ -926,7 +926,7 @@ void main() {
 			var pc = ParsePhobos();
 			bool hadErrors = false;
 			var sb = new StringBuilder();
-			foreach (var root in pc)
+			foreach (var root in pc.EnumRootPackagesSurroundingModule(null))
 			{
 				foreach(var mod in root)
 					if (mod.ParseErrors.Count != 0)
@@ -943,7 +943,7 @@ void main() {
 			Assert.That(sb.ToString(), Is.Empty);
 		}
 
-		public static ParseCacheView ParsePhobos(bool ufcs=true)
+		public static LegacyParseCacheView ParsePhobos(bool ufcs=true)
 		{
 			var dir = "/usr/include/d";
 
@@ -952,7 +952,7 @@ void main() {
 
 			GlobalParseCache.WaitForFinish();
 
-			return new ParseCacheView(new[]{dir});
+			return new LegacyParseCacheView(new[]{dir});
 		}
 
 		static void pc_FinishedParsing(ParsingFinishedEventArgs ppd)
@@ -1017,8 +1017,8 @@ void main()
 			//pcl.Add(pc);
 
 			var sw = new Stopwatch();
-			var main = pcl[0]["modA"]["main"].First() as DMethod;
-			Assert.AreEqual(0, (pcl[0]["modA"] as DModule).ParseErrors.Count);
+			var main = pcl.FirstPackage()["modA"]["main"].First() as DMethod;
+			Assert.AreEqual(0, (pcl.FirstPackage()["modA"] as DModule).ParseErrors.Count);
 			var s = main.Body.SubStatements.Last() as IExpressionContainingStatement;
 			var ctxt = ResolutionContext.Create(pcl, null, main, s.Location);
 			//ctxt.ContextIndependentOptions |= ResolutionOptions.StopAfterFirstOverloads | ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.DontResolveBaseTypes;

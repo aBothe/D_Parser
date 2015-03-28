@@ -28,7 +28,7 @@ namespace Tests
 				class B:A {}
 				class C:A {}
 				class D:C {}");
-			var ctxt = ResolutionContext.Create(pcl, null, pcl[0]["modA"]);
+			var ctxt = ResolutionContext.Create(pcl, null, pcl.FirstPackage()["modA"]);
 
 			var A = GetType("A",ctxt);
 			var B = GetType("B", ctxt);
@@ -72,7 +72,7 @@ namespace Tests
 
 				class G : A, IC {}
 				class H : B, ID {}");
-			var ctxt = ResolutionContext.Create(pcl, null, pcl[0]["modA"]);
+			var ctxt = ResolutionContext.Create(pcl, null, pcl.FirstPackage()["modA"]);
 
 			var A = GetType("A", ctxt);
 			var B = GetType("B", ctxt);
@@ -121,9 +121,9 @@ void foo(T:T)(T[] t) {}
 
 int[] p=[1,2,3,4,5];
 ");
-			var ctxt = ResolutionContext.Create(pcl, null, pcl[0]["modA"]);
+			var ctxt = ResolutionContext.Create(pcl, null, pcl.FirstPackage()["modA"]);
 
-			var foo = pcl[0]["modA"]["foo"].First() as DMethod;
+			var foo = pcl.FirstPackage()["modA"]["foo"].First() as DMethod;
 			using (ctxt.Push(foo, foo.Body.Location))
 			{
 				var foo_firstArg = TypeDeclarationResolver.ResolveSingle(foo.Parameters[0].Type, ctxt);

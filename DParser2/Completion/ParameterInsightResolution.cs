@@ -172,7 +172,7 @@ namespace D_Parser.Completion
 			public static bool ScanForConstructors(NewExpression sr, IBlockNode scope, UserDefinedType udt, List<AbstractType> _ctors, out bool explicitCtorFound)
 			{
 				explicitCtorFound = false;
-				var ct = new CtorScan(sr, new ResolutionContext(new Misc.ParseCacheView(new RootPackage[] {}), null, scope));
+				var ct = new CtorScan(sr, new ResolutionContext(new Misc.LegacyParseCacheView(new RootPackage[] {}), null, scope));
 				ct.DeepScanClass(udt, new ItemCheckParameters(MemberFilter.Methods), false);
 
 				_ctors.AddRange(ct.matches_types);

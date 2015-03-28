@@ -87,7 +87,7 @@ namespace TestTool
 
 			Console.WriteLine("done.");
 			Console.WriteLine();
-			var pcw = new ParseCacheView(dirs);
+			var pcw = new LegacyParseCacheView(dirs);
 			var ccf = new ConditionalCompilationFlags(new[]{ Environment.OSVersion.Platform == PlatformID.Unix ?"Posix":"Windows", "D2" }, 1, true, null, 0);
 
 			Console.WriteLine ("Dump parse errors:");

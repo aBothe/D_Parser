@@ -10,6 +10,7 @@ using D_Parser.Resolver.ASTScanner;
 using D_Parser.Resolver;
 using D_Parser.Refactoring;
 using D_Parser.Completion;
+using D_Parser.Misc;
 
 namespace Tests
 {
@@ -36,9 +37,9 @@ void main()
 	A.statA.statA = new A!float(); // 15
 }
 ");
-			var ctxt = ResolutionContext.Create(pcl, null, pcl[0]["modA"]);
+			var ctxt = ResolutionContext.Create(pcl, null, pcl.FirstPackage()["modA"]);
 
-			var refs = ReferencesFinder.Scan(pcl[0]["modA"]["A"].First(),ctxt) as List<ISyntaxRegion>;
+			var refs = ReferencesFinder.Scan(pcl.FirstPackage()["modA"]["A"].First(),ctxt) as List<ISyntaxRegion>;
 
 			Assert.IsNotNull(refs);
 			Assert.AreEqual(8, refs.Count);
@@ -67,7 +68,7 @@ void main()
 
 			var ed = new EditorData { 
 				SyntaxTree = modA,
-				ParseCache = new D_Parser.Misc.ParseCacheView(new RootPackage[0])
+				ParseCache = new LegacyParseCacheView(new RootPackage[0])
 			};
 
 			var res = TypeReferenceFinder.Scan(ed, System.Threading.CancellationToken.None, null);

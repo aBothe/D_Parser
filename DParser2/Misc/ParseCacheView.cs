@@ -1,10 +1,10 @@
 //
-// IParseCache.cs
+// ParseCacheView.cs
 //
 // Author:
 //       Alexander Bothe <info@alexanderbothe.com>
 //
-// Copyright (c) 2013 Alexander Bothe
+// Copyright (c) 2015 Alexander Bothe
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,38 +30,28 @@ using D_Parser.Resolver;
 using D_Parser.Parser;
 namespace D_Parser.Misc
 {
-	public class ParseCacheView : IEnumerable<RootPackage>
+	public class LegacyParseCacheView : ParseCacheView
 	{
-		protected List<RootPackage> packs;
+		#region Properties
+		readonly List<RootPackage> packs;
+		#endregion
 
-		static protected readonly AbstractType defaultSizeT = new PrimitiveType(DTokens.Uint);
-
-		static ParseCacheView()
+		#region Constructors
+		public LegacyParseCacheView(IEnumerable<string> packageRoots)
 		{
-			defaultSizeT.Tag (D_Parser.Resolver.TypeResolution.TypeDeclarationResolver.AliasTag.Id, new D_Parser.Resolver.TypeResolution.TypeDeclarationResolver.AliasTag { 
-				aliasDefinition = new DVariable { 
-					Name = "size_t", Type = new DTokenDeclaration (DTokens.Uint) 
-				} 
-			});
+			this.packs = new List<RootPackage> ();
+			Add (packageRoots);
 		}
 
-		DClassLike objectClass;
-		AbstractType sizet;
-		ClassType objectType;
-
-		public ParseCacheView(IEnumerable<string> basePaths)
+		public LegacyParseCacheView(IEnumerable<RootPackage> packages)
 		{
-			if (basePaths == null)
-				throw new ArgumentNullException ("basePaths");
-			packs = new List<RootPackage> ();
-			Add (basePaths);
+			this.packs = new List<RootPackage> (packages);
 		}
+		#endregion
 
-		public ParseCacheView(IEnumerable<RootPackage> roots)
+		public override IEnumerable<RootPackage> EnumRootPackagesSurroundingModule (DModule module)
 		{
-			if (roots == null)
-				throw new ArgumentNullException ("roots");
-			this.packs = new List<RootPackage> (roots);
+			return packs;
 		}
 
 		public void Add(RootPackage pack)
@@ -77,82 +67,28 @@ namespace D_Parser.Misc
 				if((rp=GlobalParseCache.GetRootPackage (r))!=null && !packs.Contains(rp))
 					packs.Add (rp);
 		}
+	}
 
-		public virtual DClassLike ObjectClass {
-			get {
-				if (objectClass != null)
-					return objectClass;
-
-				foreach (var root in this)
-					if ((objectClass = root.ObjectClass) != null)
-						break;
-
-				return objectClass;
-			}
-		}
-
-		public virtual AbstractType SizeT {
-			get {
-				if (sizet != null)
-					return sizet;
-
-				foreach (var root in this)
-					if ((sizet = root.SizeT) != null)
-						break;
-
-				if (sizet == null)
-					sizet = defaultSizeT;
-
-				return sizet;
-			}
-		}
-
-		public virtual ClassType ObjectClassResult {
-			get {
-				if (objectType != null)
-					return objectType;
-
-				foreach (var root in this)
-					if ((objectType = root.ObjectClassResult) != null)
-						break;
-
-				return objectType;
-			}
-		}
-
-		public int Count
+	public abstract class ParseCacheView
+	{
+		public abstract IEnumerable<RootPackage> EnumRootPackagesSurroundingModule(DModule module);
+		public IEnumerable<RootPackage> EnumRootPackagesSurroundingModule(INode childNode)
 		{
-			get{return packs.Count;}
+			return EnumRootPackagesSurroundingModule ((childNode != null ? childNode.NodeRoot : null) as DModule);
 		}
 
-		public RootPackage this[int i]
-		{
-			get{
-				return packs[i];
-			}
-		}
 
-		public IEnumerator<RootPackage> GetEnumerator ()
+		public IEnumerable<ModulePackage> LookupPackage(INode context, string packName)
 		{
-			return packs.GetEnumerator ();
-		}
-
-		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator ()
-		{
-			return GetEnumerator();
-		}
-
-		public IEnumerable<ModulePackage> LookupPackage(string packName)
-		{
-			foreach (var root in this)
+			foreach (var root in EnumRootPackagesSurroundingModule(context))
 				if(root != null)
 					yield return root.GetSubPackage (packName);
 		}
 
-		public IEnumerable<DModule> LookupModuleName(string moduleName)
+		public IEnumerable<DModule> LookupModuleName(INode context, string moduleName)
 		{
 			DModule m;
-			foreach (var root in this)
+			foreach (var root in EnumRootPackagesSurroundingModule(context))
 				if(root != null && (m = root.GetSubModule(moduleName)) != null)
 					yield return m;
 		}

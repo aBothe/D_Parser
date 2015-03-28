@@ -148,6 +148,11 @@ namespace D_Parser.Resolver.TypeResolution
 
 		static readonly int ObjectNameHash = "Object".GetHashCode();
 
+		static ClassType ResolveObjectClass(ResolutionContext ctxt)
+		{
+			return TypeDeclarationResolver.ResolveSingle (new IdentifierDeclaration (ObjectNameHash), ctxt, false) as ClassType;
+		}
+
 		[ThreadStatic]
 		static int bcStack = 0;
 		[ThreadStatic]
@@ -228,7 +233,7 @@ namespace D_Parser.Resolver.TypeResolution
 				// The Object class has no further base class;
 				// Normal class instances have the object as base class;
 				// Interfaces must not have any default base class/interface
-				return isClass ? new ClassType(dc, dc.NameHash != ObjectNameHash ? ctxt.ParseCache.ObjectClassResult : null, null, deducedTypes) :
+				return isClass ? new ClassType(dc, dc.NameHash != ObjectNameHash ? ResolveObjectClass(ctxt) : null, null, deducedTypes) :
 					new InterfaceType(dc, null, deducedTypes) as TemplateIntermediateType;
 			}
 
@@ -266,7 +271,7 @@ namespace D_Parser.Resolver.TypeResolution
 								continue;
 							}
 
-							baseClass = ctxt.ParseCache.ObjectClassResult;
+							baseClass = ResolveObjectClass(ctxt);
 							continue;
 						}
 
@@ -294,7 +299,7 @@ namespace D_Parser.Resolver.TypeResolution
 							interfaces.Add(r as InterfaceType);
 
 							if (isClass && dc.NameHash != ObjectNameHash && baseClass == null)
-								baseClass = ctxt.ParseCache.ObjectClassResult;
+								baseClass = ResolveObjectClass(ctxt);
 						}
 						else
 						{

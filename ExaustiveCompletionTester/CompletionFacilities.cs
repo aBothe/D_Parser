@@ -19,14 +19,14 @@ namespace ExaustiveCompletionTester
 						class Object { string toString(); }
 						alias int size_t;");
 
-		public static ParseCacheView CreateCache(params string[] moduleCodes)
+		public static LegacyParseCacheView CreateCache(params string[] moduleCodes)
 		{
 			var r = new MutableRootPackage(objMod);
 
 			foreach (var code in moduleCodes)
 				r.AddModule(DParser.ParseString(code));
 
-			return new ParseCacheView(new[] { r });
+			return new LegacyParseCacheView(new[] { r });
 		}
 
 		public static EditorData GenEditorData(int caretLine, int caretPos, string focusedModuleCode, params string[] otherModuleCodes)
@@ -42,7 +42,7 @@ namespace ExaustiveCompletionTester
 		public static void UpdateEditorData(EditorData ed, int caretLine, int caretPos, string focusedModuleCode)
 		{
 			var mod = DParser.ParseString(focusedModuleCode);
-			var pack = ed.ParseCache[0] as MutableRootPackage;
+			var pack = (ed.ParseCache as LegacyParseCacheView).EnumRootPackagesSurroundingModule(null).First() as MutableRootPackage;
 
 			pack.AddModule(mod);
 

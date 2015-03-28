@@ -20,7 +20,7 @@ namespace Tests
 	{
 		public static AbstractSymbolValueProvider GetDefaultSymbolVP()
 		{
-			return new StandardValueProvider(new ResolutionContext(new ParseCacheView(new string[0]), null));
+			return new StandardValueProvider(new ResolutionContext(new LegacyParseCacheView(new string[0]), null));
 		}
 
 		public static ISymbolValue E(string expression, AbstractSymbolValueProvider vp=null)
@@ -52,7 +52,7 @@ namespace Tests
 			if (ProvideObjModule)
 				ctxt = ResolutionTests.CreateDefCtxt(ResolutionTests.CreateCache(), block);
 			else
-				ctxt = ResolutionTests.CreateDefCtxt(new ParseCacheView(new string[] { }), block);
+				ctxt = ResolutionTests.CreateDefCtxt(new LegacyParseCacheView(new string[] { }), block);
 
 			var x = DParser.ParseExpression(literal);
 
@@ -214,7 +214,7 @@ namespace Tests
 			TestString("\"asdf\"w", "asdf", false);
 			TestString("\"asdf\"d", "asdf", false);
 
-			var ctxt = new ResolutionContext(new ParseCacheView(new string[]{}), null, new DBlockNode());
+			var ctxt = new ResolutionContext(new LegacyParseCacheView(new string[]{}), null, new DBlockNode());
 
 			var ex = DParser.ParseExpression("['a','s','d','f']");
 			var v = Evaluation.EvaluateValue(ex, ctxt);
@@ -248,7 +248,7 @@ enum b=123;
 const int c=125;
 enum int d=126;
 ");
-			var vp = new StandardValueProvider(ResolutionContext.Create(pcl, null, pcl[0]["modA"]));
+			var vp = new StandardValueProvider(ResolutionContext.Create(pcl, null, pcl.FirstPackage()["modA"]));
 
 			var v = E("a", vp);
 
@@ -313,7 +313,7 @@ class A
 
 A a;");
 
-			var vp = new StandardValueProvider(ResolutionContext.Create(pcl, null, pcl[0]["modA"]));
+			var vp = new StandardValueProvider(ResolutionContext.Create(pcl, null, pcl.FirstPackage()["modA"]));
 			/*
 			var v = E("a.someProp", vp);
 			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
@@ -377,7 +377,7 @@ template isDynArg(T) {
 }
 ");
 
-			var vp = new StandardValueProvider(ResolutionContext.Create(pcl, null,pcl[0]["modA"]));
+			var vp = new StandardValueProvider(ResolutionContext.Create(pcl, null,pcl.FirstPackage()["modA"]));
 
 			Assert.IsTrue(EvalIsExpression("char*[] T : U[], U : V*, V", vp));
 			Assert.IsTrue(EvalIsExpression("string T : U[], U : immutable(V), V : char", vp));
@@ -422,7 +422,7 @@ U derp;
 
 			ctxt.CurrentContext.DeducedTemplateParameters.Clear();
 
-			var dv = ctxt.ParseCache[0]["A"]["derp"].First() as DVariable;
+			var dv = ctxt.MainPackage()["A"]["derp"].First() as DVariable;
 			t = TypeDeclarationResolver.HandleNodeMatch(dv, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That((t as MemberSymbol).Base, Is.Null);
@@ -447,7 +447,7 @@ post;
 			AbstractType t;
 			DSymbol ds;
 
-			var main = ctxt.ParseCache[0]["A"]["main"].First() as DMethod;
+			var main = ctxt.MainPackage()["A"]["main"].First() as DMethod;
 
 			using(ctxt.Push(main, main.Body.Location))
 				t = TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration("U") { Location = main.Body.SubStatements.First().Location }, ctxt);
@@ -649,7 +649,7 @@ template Tmpl(){
 	void bar();
 }
 ", @"module std.someStd;");
-			var ctxt = ResolutionTests.CreateDefCtxt(pcl, pcl[0]["A"], null);
+			var ctxt = ResolutionTests.CreateDefCtxt(pcl, pcl.FirstPackage()["A"], null);
 			
 			BoolTrait(ctxt, "isArithmetic, int");
 			BoolTrait(ctxt, "isArithmetic, i, i+1, int");

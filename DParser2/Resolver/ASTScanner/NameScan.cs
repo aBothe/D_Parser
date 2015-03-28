@@ -37,7 +37,7 @@ namespace D_Parser.Resolver.ASTScanner
 		public static AbstractType ScanForCFunction(ResolutionContext ctxt, string funcName, bool isCFunction = true)
 		{
 			var extC = new Modifier(DTokens.Extern, "C");
-			foreach(var pc in ctxt.ParseCache)
+			foreach(var pc in ctxt.ParseCache.EnumRootPackagesSurroundingModule(ctxt.ScopedBlock))
 			{
 				foreach(var mod in pc)
 				{

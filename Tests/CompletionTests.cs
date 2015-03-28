@@ -120,7 +120,7 @@ struct Cl { int a; }
 ";
 			var ed = GenEditorData(4, 3, code);
 
-			var a = (ed.ParseCache[0]["A"]["Cl"].First() as DClassLike)["a"].First() as DVariable;
+			var a = (ed.MainPackage["A"]["Cl"].First() as DClassLike)["a"].First() as DVariable;
 
 			var g = new TestCompletionDataGen(new[]{ a }, null);
 			Assert.That(CodeCompletion.GenerateCompletionData(ed, g, 'a', true), Is.True);
@@ -136,7 +136,7 @@ struct SomeStruct {ubyte a; static void read() {
 ";
 			var ed = GenEditorData(3, 1, code);
 
-			var SomeStruct = (ed.ParseCache [0] ["A"] ["SomeStruct"].First () as DClassLike);
+			var SomeStruct = (ed.MainPackage ["A"] ["SomeStruct"].First () as DClassLike);
 			var a = SomeStruct["a"].First() as DVariable;
 			var read = SomeStruct ["read"].First () as DMethod;
 			var g = new TestCompletionDataGen(new[]{ read },new[]{ a });
@@ -293,7 +293,7 @@ void main(){
 		[Test]
 		public void ArrayAccessCompletion()
 		{
-			EditorData ed;
+			TestsEditorData ed;
 			INode[] wl;
 
 			var s = @"module A;
@@ -305,7 +305,7 @@ o[0][0].
 
 			ed = GenEditorData (5, 1, s);
 
-			wl = new[]{ (ed.ParseCache[0]["A"]["C"].First() as DClassLike).Children["f"].First() };
+			wl = new[]{ (ed.MainPackage["A"]["C"].First() as DClassLike).Children["f"].First() };
 
 			TestCompletionListContents (ed, wl, null);
 		}
@@ -313,7 +313,7 @@ o[0][0].
 		[Test]
 		public void StaticMemberCompletion()
 		{
-			EditorData ed;
+			TestsEditorData ed;
 			ResolutionContext ctxt = null;
 			INode[] wl;
 			INode[] bl;
@@ -334,7 +334,7 @@ void main() { Class. }";
 		[Ignore]
 		public void CompletionSuggestion()
 		{
-			EditorData ed;
+			TestsEditorData ed;
 
 			var s = @"module A; enum myE { } void foo(myE e);
 void main() {
@@ -367,7 +367,7 @@ foo(
 
 					var m = DParser.ParseString (code);
 					var cache = ResolutionTests.CreateCache ();
-					(cache [0] as MutableRootPackage).AddModule (m);
+					cache.FirstPackage().AddModule (m);
 
 					var ed = new EditorData{ 
 						ModuleCode = code, 
@@ -496,22 +496,26 @@ foo(
 			return n;
 		}
 
-		public static EditorData GenEditorData(int caretLine, int caretPos,string focusedModuleCode,params string[] otherModuleCodes)
+		public class TestsEditorData : EditorData
+		{
+			public MutableRootPackage MainPackage { get{ return (ParseCache as LegacyParseCacheView).FirstPackage(); } }
+		}
+
+		public static TestsEditorData GenEditorData(int caretLine, int caretPos,string focusedModuleCode,params string[] otherModuleCodes)
 		{
 			var cache = ResolutionTests.CreateCache (otherModuleCodes);
-			var ed = new EditorData { ParseCache = cache };
+			var ed = new TestsEditorData { ParseCache = cache };
 
 			UpdateEditorData (ed, caretLine, caretPos, focusedModuleCode);
 
 			return ed;
 		}
 
-		public static void UpdateEditorData(EditorData ed,int caretLine, int caretPos, string focusedModuleCode)
+		public static void UpdateEditorData(TestsEditorData ed,int caretLine, int caretPos, string focusedModuleCode)
 		{
 			var mod = DParser.ParseString (focusedModuleCode);
-			var pack = ed.ParseCache [0] as MutableRootPackage;
 
-			pack.AddModule (mod);
+			ed.MainPackage.AddModule (mod);
 
 			ed.ModuleCode = focusedModuleCode;
 			ed.SyntaxTree = mod;

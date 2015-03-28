@@ -34,10 +34,10 @@ namespace TestTool
 		{
 			Parse ();
 
-			var pcw = new ParseCacheView (new[]{ srcDir });
+			var pcw = new LegacyParseCacheView (new[]{ srcDir });
 			var ctxt = new ResolutionContext (pcw, new ConditionalCompilationFlags(versions,0, true));
 
-			var mod = pcw.LookupModuleName ("botan.pubkey.algo.dsa").First();
+			var mod = pcw.LookupModuleName (null, "botan.pubkey.algo.dsa").First();
 			var scope = ResolutionTests.N<DMethod> (mod, "DSAVerificationOperation.verify");
 			var scopedStmt = ResolutionTests.S (scope, 9);
 

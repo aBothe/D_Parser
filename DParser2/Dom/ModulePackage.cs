@@ -48,53 +48,6 @@ namespace D_Parser.Dom
 		{
 		}
 
-		#region Common type bypasses
-
-		public bool IsObjectClassDefined
-		{
-			get { return ObjectClass != null; }
-		}
-
-		/// <summary>
-		/// To improve resolution performance, the object class that can be defined only once will be stored over here.
-		/// </summary>
-		public DClassLike ObjectClass { get; private set; }
-
-		public AbstractType SizeT { get; private set; }
-
-		/// <summary>
-		/// See <see cref="ObjectClass"/>
-		/// </summary>
-		public ClassType ObjectClassResult { get; private set; }
-
-		public void TryPreResolveCommonTypes()
-		{
-			var obj = GetModule("object");
-			if (obj == null)
-				return;
-
-			ParseCacheView cache = null;
-
-			foreach (var m in obj)
-			{
-				if (m.Name == "Object" && m is DClassLike)
-				{
-					ObjectClassResult = new ClassType(ObjectClass = (DClassLike)m, null);
-					break;
-				}
-				else if (m.Name == "size_t")
-				{
-					if (cache == null)
-						cache = new ParseCacheView(new[]{ this });
-					//TODO: Do a version check, so that only on x64 dmd installations, size_t equals ulong.
-					SizeT = TypeDeclarationResolver.HandleNodeMatch(m, 
-						ResolutionContext.Create(cache, null, obj));
-				}
-			}
-		}
-
-		#endregion
-
 		public override RootPackage Root
 		{
 			get

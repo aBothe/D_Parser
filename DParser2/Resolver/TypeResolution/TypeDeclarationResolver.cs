@@ -501,7 +501,7 @@ namespace D_Parser.Resolver.TypeResolution
 							return keyIsSearched ? ar.KeyType : ar.ValueType;
 						}
 						else if (aggregateType is PointerType)
-							return keyIsSearched ? (ctxt.ParseCache.SizeT ?? new PrimitiveType(DTokens.Uint)) : (aggregateType as PointerType).Base;
+							return keyIsSearched ? TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration("size_t"), ctxt, false /* Generally, size_t isn't templated or such..so for performance, step through additional filtering */) : (aggregateType as PointerType).Base;
 						else if (aggregateType is UserDefinedType)
 						{
 							var tr = (UserDefinedType)aggregateType;
@@ -655,7 +655,7 @@ namespace D_Parser.Resolver.TypeResolution
 			{
 				if (typeBase != null && typeBase.ToString() != mod.ModuleName)
 				{
-					var pack = ctxt.ParseCache.LookupPackage(typeBase.ToString()).FirstOrDefault();
+					var pack = ctxt.ParseCache.LookupPackage(ctxt.ScopedBlock, typeBase.ToString()).FirstOrDefault();
 					if (pack != null)
 						return new PackageSymbol(pack);
 				}
@@ -703,7 +703,7 @@ namespace D_Parser.Resolver.TypeResolution
 				{
 					var mods = new List<DModule>();
 					var td = modAlias ? importSymbolNode.Type : importSymbolNode.Type.InnerDeclaration;
-					foreach (var mod in ctxt.ParseCache.LookupModuleName(td.ToString()))
+					foreach (var mod in ctxt.ParseCache.LookupModuleName(importSymbolNode, td.ToString()))
 						mods.Add(mod);
 					if (mods.Count == 0)
 						ctxt.LogError(new NothingFoundError(importSymbolNode.Type));

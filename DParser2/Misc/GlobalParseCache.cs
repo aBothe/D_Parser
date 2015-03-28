@@ -451,7 +451,6 @@ namespace D_Parser.Misc
 
 			if (!string.IsNullOrEmpty (p.im.basePath) && p.root != null) {
 				ParsedDirectories [im.basePath] = p.root;
-				p.root.TryPreResolveCommonTypes ();
 			}
 
 			var pf = new ParsingFinishedEventArgs (im.basePath, p.root, im.actualTimeNeeded, im.ActualParseTimeNeeded, im.totalFiles);

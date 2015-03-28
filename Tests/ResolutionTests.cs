@@ -19,6 +19,19 @@ using D_Parser.Completion;
 
 namespace Tests
 {
+	public static class ResolutionContextExtensions
+	{
+		public static MutableRootPackage FirstPackage(this LegacyParseCacheView pcl)
+		{
+			return pcl.EnumRootPackagesSurroundingModule (null).First () as MutableRootPackage;
+		}
+
+		public static MutableRootPackage MainPackage(this ResolutionContext ctxt)
+		{
+			return (ctxt.ParseCache as LegacyParseCacheView).FirstPackage();
+		}
+	}
+
 	[TestFixture]
 	public class ResolutionTests
 	{
@@ -31,14 +44,14 @@ namespace Tests
 						alias int size_t;
 						class Exception { string msg; }");
 
-		public static ParseCacheView CreateCache(params string[] moduleCodes)
+		public static LegacyParseCacheView CreateCache(params string[] moduleCodes)
 		{
 			var r = new MutableRootPackage (objMod);
 
 			foreach (var code in moduleCodes)
 				r.AddModule(DParser.ParseString(code));
 
-			return new ParseCacheView (new [] { r });
+			return new LegacyParseCacheView (new [] { r });
 		}
 
 		public static ResolutionContext CreateDefCtxt(ParseCacheView pcl, IBlockNode scope, IStatement stmt = null)
@@ -65,19 +78,19 @@ namespace Tests
 		public static ResolutionContext CreateDefCtxt(params string[] modules)
 		{
 			var pcl = CreateCache (modules);
-			return CreateDefCtxt (pcl, pcl[0].GetModules().First());
+			return CreateDefCtxt (pcl, pcl.FirstPackage().GetModules().First());
 		}
 
 		public static ResolutionContext CreateCtxt(string scopedModule,params string[] modules)
 		{
 			var pcl = CreateCache (modules);
-			return CreateDefCtxt (pcl, pcl [0] [scopedModule]);
+			return CreateDefCtxt (pcl, pcl.FirstPackage() [scopedModule]);
 		}
 
 		public static ResolutionContext CreateDefCtxt(string scopedModule,out DModule mod, params string[] modules)
 		{
 			var pcl = CreateCache (modules);
-			mod = pcl [0] [scopedModule];
+			mod = pcl.FirstPackage() [scopedModule];
 
 			return CreateDefCtxt (pcl, mod);
 		}
@@ -93,13 +106,13 @@ namespace Tests
 
 			int dotIndex = -1;
 			while ((dotIndex = path.IndexOf ('.', dotIndex + 1)) > 0) {
-				mod = ctxt.ParseCache.LookupModuleName (path.Substring (0, dotIndex)).First();
+				mod = ctxt.ParseCache.LookupModuleName (ctxt.ScopedBlock, path.Substring (0, dotIndex)).First();
 				if (mod != null)
 					break;
 			}
 
 			if (dotIndex == -1 && mod == null)
-				return ctxt.ParseCache.LookupModuleName (path).First() as T;
+				return ctxt.ParseCache.LookupModuleName (ctxt.ScopedBlock, path).First() as T;
 
 			if (mod == null)
 				throw new ArgumentException ("Invalid module name");
@@ -196,18 +209,18 @@ void asdf(int* ni=23) {
 	}
 }");
 
-			var ctxt = CreateDefCtxt(pcl, pcl[0]["modA"]);
+			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["modA"]);
 
 			var t = R("T", ctxt);
 			Assert.That(t.Length, Is.EqualTo(1));
-			Assert.That((t[0] as DSymbol).Definition.Parent, Is.SameAs(pcl[0]["modC"]));
+			Assert.That((t[0] as DSymbol).Definition.Parent, Is.SameAs(pcl.FirstPackage()["modC"]));
 
-			ctxt.CurrentContext.Set(pcl[0]["modC"],CodeLocation.Empty);
+			ctxt.CurrentContext.Set(pcl.FirstPackage()["modC"],CodeLocation.Empty);
 			t = R("T", ctxt);
 			Assert.That(t.Length, Is.EqualTo(1));
-			Assert.That((t[0] as DSymbol).Definition.Parent, Is.SameAs(pcl[0]["modC"]));
+			Assert.That((t[0] as DSymbol).Definition.Parent, Is.SameAs(pcl.FirstPackage()["modC"]));
 
-			ctxt.CurrentContext.Set(pcl[0]["modB"], CodeLocation.Empty);
+			ctxt.CurrentContext.Set(pcl.FirstPackage()["modB"], CodeLocation.Empty);
 			t = R("T", ctxt);
 			Assert.That(t.Length, Is.EqualTo(2));
 
@@ -297,7 +310,7 @@ void foo()
 	o.statBase;
 	o.baseB;
 }", @"module B; import A; cl inst;");
-			var foo = pcl[0]["A"]["foo"].First() as DMethod;
+			var foo = pcl.FirstPackage()["A"]["foo"].First() as DMethod;
 			var ctxt = CreateDefCtxt(pcl, foo, foo.Body.Location);
 			var subSt = foo.Body.SubStatements as List<IStatement>;
 			
@@ -324,7 +337,7 @@ void foo()
 			t = ExpressionTypeEvaluation.EvaluateType((subSt[7] as ExpressionStatement).Expression, ctxt);
 			Assert.That(t, Is.Not.Null);
 			
-			ctxt.CurrentContext.Set(pcl[0]["B"]);
+			ctxt.CurrentContext.Set(pcl.FirstPackage()["B"]);
 
 			// test protected across modules
 			t = ExpressionTypeEvaluation.EvaluateType((foo.Body.SubStatements.ElementAt(2) as ExpressionStatement).Expression, ctxt);
@@ -393,7 +406,7 @@ alias Thing!(int) IntThing;
 alias Thing SomeThing;
 ");
 			
-			var ctxt = CreateDefCtxt(pcl, pcl[0]["A"]);
+			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["A"]);
 
 			IExpression ex;
 			AbstractType t;
@@ -428,7 +441,7 @@ alias Thing SomeThing;
 class Blupp : Blah!(Blupp) {}
 class Blah(T){ T b; }");
 			
-			var ctxt = CreateDefCtxt(pcl, pcl[0]["A"]);
+			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["A"]);
 			
 			var ex = DParser.ParseExpression("Blah!Blupp");
 			var t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
@@ -439,7 +452,7 @@ class Blah(T){ T b; }");
 		public void BasicResolution4()
 		{
 			var pcl = CreateCache(@"module modA;");
-			var ctxt = CreateDefCtxt(pcl, pcl[0]["modA"]);
+			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["modA"]);
 
 			var ts = RS("string", ctxt);
 			Assert.That(ts, Is.TypeOf(typeof(ArrayType)));
@@ -468,7 +481,7 @@ private int privInt;
 }
 class C { class Nested { int someDeepVariable; } }");
 
-			var A = pcw [0] ["A"];
+			var A = pcw.FirstPackage() ["A"];
 			var x =  A["x"].First () as DMethod;
 
 			IEditorData ed;
@@ -515,7 +528,7 @@ private int privInt;
 }
 ");
 
-			var A = pcw [0] ["A"];
+			var A = pcw.FirstPackage() ["A"];
 			var x =  A["x"].First () as DMethod;
 
 			IEditorData ed;
@@ -567,7 +580,7 @@ foreach(c; cl)
 class Cl{ int a; }
 Cl** cl;
 ");
-			var A = ctxt.ParseCache[0]["A"];
+			var A = ctxt.MainPackage()["A"];
 			var foo = A["foo"].First() as DMethod;
 			var c_a = ((foo.Body.First() as ForeachStatement).ScopedStatement as ExpressionStatement).Expression;
 			ctxt.CurrentContext.Set(foo, c_a.Location);
@@ -704,7 +717,7 @@ void main()
 }
 ");
 
-			var A = ctxt.ParseCache[0]["A"];
+			var A = ctxt.MainPackage()["A"];
 			var main = A["main"].First() as DMethod;
 			var DDS_Header = main["DDS_Header"].First() as DClassLike;
 			var pixFormat = DDS_Header["pixFormat"].First() as DVariable;
@@ -775,7 +788,7 @@ try{}
 catch(MyException ex){
 ex;
 }", @"module exc; class MyException { int msg; }");
-			var A = ctxt.ParseCache [0] ["A"];
+			var A = ctxt.MainPackage() ["A"];
 			var main = A ["main"].First () as DMethod;
 			var tryStmt = main.Body.SubStatements.ElementAt (0) as TryStatement;
 			var catchStmt = tryStmt.Catches [0];
@@ -799,7 +812,7 @@ try{}
 catch(ex){
 ex;
 }");
-			var A = ctxt.ParseCache [0] ["A"];
+			var A = ctxt.MainPackage() ["A"];
 			var main = A ["main"].First () as DMethod;
 			var tryStmt = main.Body.SubStatements.ElementAt (0) as TryStatement;
 			var catchStmt = tryStmt.Catches [0];
@@ -848,7 +861,7 @@ void foo()
 	}
 }");
 			
-			var A = pcl[0]["A"];
+			var A = pcl.FirstPackage()["A"];
 			var foo = A["foo"].First() as DMethod;
 			var case1 = ((foo.Body.SubStatements.ElementAt(1) as SwitchStatement).ScopedStatement as BlockStatement).SubStatements.ElementAt(1) as SwitchStatement.CaseStatement;
 			var colStmt = case1.SubStatements.ElementAt(1) as ExpressionStatement;
@@ -1027,7 +1040,7 @@ auto o = new Obj();
 Obj[][] oo;
 ");
 			
-			var ctxt = CreateDefCtxt(pcl, pcl[0]["A"]);
+			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["A"]);
 			var myProp = CompletionTests.GetNode (null, "Obj.myProp", ref ctxt);
 			var myPropConstraint = new IsDefinition (myProp);
 
@@ -1074,7 +1087,7 @@ Obj[][] oo;
 				          @"module libweb.server; void runServer() { }",
 				          @"module libweb; public import libweb.client; public import libweb.server;",
 				          @"module test; import libweb;");
-			var ch = ctxt.ParseCache [0];
+			var ch = ctxt.MainPackage();
 
 			ch.GetSubModule("libweb.client").FileName = Path.Combine("libweb","client.d");
 			ch.GetSubModule("libweb.server").FileName = Path.Combine("libweb","server.d");
@@ -1109,7 +1122,7 @@ Obj[][] oo;
 						}
 				}");
 
-			var A = pcl[0]["modA"]["A"].First() as DClassLike;
+			var A = pcl.FirstPackage()["modA"]["A"].First() as DClassLike;
 			var bar = A["bar"].First() as DMethod;
 			var call_fooC = bar.Body.SubStatements.First();
 
@@ -1148,7 +1161,7 @@ void foo(ref B bf) {
 }
 				}");
 
-			var A = pcl[0]["modB"];
+			var A = pcl.FirstPackage()["modB"];
 			var foo = (A ["A"].First () as DClassLike) ["foo"].First () as DMethod;
 			var ctxt = CreateDefCtxt(pcl, foo, foo.Body.SubStatements.ElementAt(0).Location);
 
@@ -1170,12 +1183,12 @@ void foo(ref B bf) {
 			var pcl = CreateCache(@"module A; import B;", @"module B; import C;",@"module C; public import D;",@"module D; void foo(){}",
 			                     @"module E; import F;", @"module F; public import C;");
 			
-			var ctxt = CreateDefCtxt(pcl, pcl[0]["A"]);
+			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["A"]);
 			
 			var t = R("foo",ctxt);
 			Assert.That(t.Length, Is.EqualTo(0));
 			
-			ctxt.CurrentContext.Set(pcl[0]["E"]);
+			ctxt.CurrentContext.Set(pcl.FirstPackage()["E"]);
 			t = R("foo",ctxt);
 			Assert.That(t.Length, Is.EqualTo(1));
 		}
@@ -1188,9 +1201,9 @@ class Class{
 	static import b = B;
 }", "module B;");
 
-			var A = ctxt.ParseCache [0] ["A"];
+			var A = ctxt.MainPackage() ["A"];
 			var Class = A ["Class"].First () as DClassLike;
-			var B = ctxt.ParseCache [0] ["B"];
+			var B = ctxt.MainPackage() ["B"];
 
 			ctxt.CurrentContext.Set (Class);
 
@@ -1222,7 +1235,7 @@ void main()
 
 			Assert.That(t, Is.TypeOf(typeof(PointerType)));
 
-			var C = ctxt.ParseCache[0]["C"];
+			var C = ctxt.MainPackage()["C"];
 			var main = C["main"].First() as DMethod;
 			var i_foo_stmt = main.Body.SubStatements.ElementAt(2) as ExpressionStatement;
 			ctxt.CurrentContext.Set(main, i_foo_stmt.Expression.Location);
@@ -1237,7 +1250,7 @@ void main()
 		{
 			var pcl = CreateCache(@"module A; void aFoo();", @"module std.B; void bFoo();",@"module C;");
 			
-			var ctxt = CreateDefCtxt(pcl, pcl[0]["C"]);
+			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["C"]);
 			
 			DToken tk;
 			var id = DParser.ParseBasicType("A.aFoo", out tk);
@@ -1358,7 +1371,7 @@ const int a=3;
 int b=4;
 ");
 
-			var ctxt = CreateDefCtxt(pcl, pcl[0]["modA"]);
+			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["modA"]);
 
 			var instanceExpr = DParser.ParseExpression("(new MyClass!int).tvar");
 
@@ -1385,7 +1398,7 @@ module modA;
 T foo(T)() {}
 ");
 
-			var ctxt = CreateDefCtxt(pcl, pcl[0]["modA"]);
+			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["modA"]);
 
 			var call = DParser.ParseExpression("foo!int()");
 			var bt = ExpressionTypeEvaluation.EvaluateType(call, ctxt);
@@ -1410,7 +1423,7 @@ class B(T){
 	class C(T2) : T {} 
 }");
 
-			var ctxt = CreateDefCtxt(pcl, pcl[0]["modA"]);
+			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["modA"]);
 
 			var inst = DParser.ParseExpression("(new B!A).new C!A2"); // TODO
 		}
@@ -1433,7 +1446,7 @@ class A
 }
 
 ");
-			var A = pcl[0]["modA"]["A"].First() as DClassLike;
+			var A = pcl.FirstPackage()["modA"]["A"].First() as DClassLike;
 			var bar = A["bar"].First() as DMethod;
 			var ctxt = CreateDefCtxt(pcl, bar, bar.Body);
 
@@ -1442,7 +1455,7 @@ class A
 			var t = ExpressionTypeEvaluation.EvaluateType(e, ctxt, false);
 
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
-			Assert.AreEqual(pcl[0]["modA"]["foo"].First(), ((MemberSymbol)t).Definition);
+			Assert.AreEqual(pcl.FirstPackage()["modA"]["foo"].First(), ((MemberSymbol)t).Definition);
 		}
 
 		/// <summary>
@@ -1618,7 +1631,7 @@ class ConcreteRegistry : Registry!(Conn){}
 class IClient ( P, R : IRegistry!(P) ){}
 class Client : IClient!(Params, ConcreteRegistry){}");
 
-			var mod=pcl[0]["modA"];
+			var mod=pcl.FirstPackage()["modA"];
 			var Client = mod["Client"].First() as DClassLike;
 			var ctxt = CreateDefCtxt(pcl, mod);
 
@@ -1655,7 +1668,7 @@ class B : A!int{}
 class C(U: A!int){}
 class D : C!B {}");
 
-			var mod = pcl[0]["modA"];
+			var mod = pcl.FirstPackage()["modA"];
 			var ctxt = CreateDefCtxt(pcl, mod);
 
 			var res = TypeDeclarationResolver.HandleNodeMatch(mod["D"].First(), ctxt);
@@ -1675,7 +1688,7 @@ class D : C!B {}");
 U genA(U)();
 T delegate(T dgParam) genDelegate(T)();");
 			
-			var A = pcl[0]["A"];
+			var A = pcl.FirstPackage()["A"];
 			var ctxt = CreateDefCtxt(pcl, A);
 			
 			var ex = DParser.ParseExpression("genDelegate!int()");
@@ -1702,7 +1715,7 @@ Appender!(E[]) appender(A : E[], E)(A array = null)
     return Appender!(E[])(array);
 }");
 			
-			var A = pcl[0]["A"];
+			var A = pcl.FirstPackage()["A"];
 			var ctxt = CreateDefCtxt(pcl, A);
 			
 			var ex = DParser.ParseExpression("new Appender!(double[])(darr)");
@@ -1751,7 +1764,7 @@ mixin(def!(-1,""bar""));
 			Assert.That((val as ArrayValue).IsString,Is.True);
 			Assert.That((val as ArrayValue).StringValue, Is.EqualTo("bool someVar;"));
 
-			var def = ctxt.ParseCache [0] ["A"]["def"].First () as DClassLike;
+			var def = ctxt.MainPackage() ["A"]["def"].First () as DClassLike;
 			var defS = new TemplateType (def, new[]{ 
 				new TemplateParameterSymbol(def.TemplateParameters[0], new PrimitiveValue(2)), 
 				new TemplateParameterSymbol(def.TemplateParameters[1], new ArrayValue(Evaluation.GetStringType(ctxt), "someVar")) 
@@ -1853,7 +1866,7 @@ struct Appender(A : T[], T) {
 	this(T[] arr){}
 }
 ");
-			var ctxt = CreateDefCtxt(pcl, pcl[0]["modA"]);
+			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["modA"]);
 
 			var ex = DParser.ParseExpression("appender!(int[])()");
 			var t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
@@ -1884,7 +1897,7 @@ template tt(alias U)
 
 int sym;
 ");
-			var modA = pcl[0]["modA"];
+			var modA = pcl.FirstPackage()["modA"];
 			var ctxt = CreateDefCtxt(pcl, modA);
 
 			var ex = DParser.ParseExpression("Tmpl!sym");
@@ -1947,7 +1960,7 @@ struct StringNumPair(T = string, U = long){
     }
 }
 ");
-			var A = ctxt.ParseCache[0]["A"];
+			var A = ctxt.MainPackage()["A"];
 			var StringNumPair = A["StringNumPair"].First() as DClassLike;
 			var len = StringNumPair["len"].First() as DMethod;
 			ctxt.CurrentContext.Set(len,len.Body.First().Location);
@@ -2008,7 +2021,7 @@ void main() {
 	Write!(int, char, double).write(1, 'a', 6.8); // prints: args are 1a6.8
 }");
 
-			var modA = pcl[0]["modA"];
+			var modA = pcl.FirstPackage()["modA"];
 			var ctxt = CreateDefCtxt(pcl, modA);
 
 			var x = DParser.ParseExpression("Print!(1,'a',6.8)");
@@ -2061,7 +2074,7 @@ class Too(T:int)
 class Too(T:float)
 { int foo2;}");
 			
-			var ctxt = CreateDefCtxt(pcl, pcl[0]["A"]);
+			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["A"]);
 			
 			var ex = DParser.ParseExpression("Too");
 			var t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
@@ -2098,7 +2111,7 @@ void foo(U)(U u)
 	tmplFoo2!U(123);
 }");
 			
-			var foo = pcl[0]["A"]["foo"].First() as DMethod;
+			var foo = pcl.FirstPackage()["A"]["foo"].First() as DMethod;
 			var ctxt = CreateDefCtxt(pcl, foo, foo.Body);
 			var subSt = foo.Body.SubStatements as List<IStatement>;
 
@@ -2146,7 +2159,7 @@ enum E {A,B}
 int writeln(T...)(T t)
 {
 }");
-			var ctxt = CreateDefCtxt(pcl, pcl[0]["A"]);
+			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["A"]);
 
 			IExpression ex;
 			AbstractType x;
@@ -2181,7 +2194,7 @@ template bar(T...) {
 auto foo() {
     
 }");
-			var foo = pcl[0]["A"]["foo"].First() as DMethod;
+			var foo = pcl.FirstPackage()["A"]["foo"].First() as DMethod;
 			var ctxt = CreateDefCtxt(pcl, foo, foo.Body);
 			
 			var ex = DParser.ParseExpression("bar!int");
@@ -2209,7 +2222,7 @@ class B : A{
 	}
 }");
 
-			var B = pcl[0]["modA"]["B"].First() as DClassLike;
+			var B = pcl.FirstPackage()["modA"]["B"].First() as DClassLike;
 			var this_ = (DMethod)B[DMethod.ConstructorIdentifier].First();
 			var ctxt = CreateDefCtxt(pcl, this_);
 
@@ -2394,7 +2407,7 @@ template Baz(B)
 		B[] Baz;
 }");
 
-			var ctxt = CreateDefCtxt(pcl, pcl[0]["m"]);
+			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["m"]);
 
 			DToken tk;
 			var td = DParser.ParseBasicType("Foo!int",out tk);
@@ -2527,7 +2540,7 @@ void main() {
 			ISymbolValue v;
 
 
-			var main = ctxt.ParseCache [0] ["A"] ["main"].First () as DMethod;
+			var main = ctxt.MainPackage() ["A"] ["main"].First () as DMethod;
 			var stmt_x = main.Body.SubStatements.ElementAt (1);
 
 			x = new PostfixExpression_MethodCall{ 
@@ -2609,7 +2622,7 @@ version(C)
 ", @"module b; int pubB;",
 @"module c; int pubC;");
 
-			var ctxt = CreateDefCtxt(pcl, pcl[0]["m"]);
+			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["m"]);
 
 			// Test basic version-dependent resolution
 			var ms = R("f", ctxt);
@@ -2670,7 +2683,7 @@ void foo()
 if(auto n = 1234)
 	n;
 }");
-			var A = ctxt.ParseCache [0] ["A"];
+			var A = ctxt.MainPackage() ["A"];
 			var ifStmt = (A ["foo"].First () as DMethod).Body.SubStatements.ElementAt(0) as IfStatement;
 			var nStmt = (ifStmt.ScopedStatement as ExpressionStatement).Expression;
 			ctxt.CurrentContext.Set (nStmt.Location);
@@ -2782,7 +2795,7 @@ cl clInst;
 notherClass ncl;
 ");
 
-			var mod = pcl [0] ["A"];
+			var mod = pcl.FirstPackage() ["A"];
 			var ctxt = ResolutionContext.Create (pcl, null, mod);
 
 			var x = DParser.ParseExpression ("clInst.a");
@@ -2885,7 +2898,7 @@ debug(4)
 
 ");
 
-			var m = pcl[0]["m"];
+			var m = pcl.FirstPackage()["m"];
 			var A = m["A"].First() as DClassLike;
 			var foo = A["foo"].First() as DMethod;
 			var subst = foo.Body.SubStatements as List<IStatement>;
@@ -2992,7 +3005,7 @@ void main()
 	dbg;
 	noDbg;
 }");
-			var mod = pcl[0]["m"];
+			var mod = pcl.FirstPackage()["m"];
 			var ctxt = CreateDefCtxt(pcl, mod, mod.EndLocation);
 
 			var x = R("a", ctxt);
@@ -3010,7 +3023,7 @@ void main()
 			x = R("dbgY", ctxt);
 			Assert.AreEqual(0, x.Length);
 
-			ctxt.CurrentContext.Set(mod = pcl[0]["B"], mod.EndLocation);
+			ctxt.CurrentContext.Set(mod = pcl.FirstPackage()["B"], mod.EndLocation);
 
 			x = R("dbg", ctxt);
 			Assert.AreEqual(1, x.Length);
@@ -3031,7 +3044,7 @@ void main()
 			t = ((MemberSymbol)t).Base;
 			Assert.That(t,Is.TypeOf(typeof(ArrayType)));
 
-			var main = pcl[0]["B"]["main"].First() as DMethod;
+			var main = pcl.FirstPackage()["B"]["main"].First() as DMethod;
 			var subSt = main.Body.SubStatements as List<IStatement>;
 			using (ctxt.Push(main))
 			{
@@ -3092,7 +3105,7 @@ version(U)
 
 int xx3;
 ");
-			var A = ctxt.ParseCache[0]["A"];
+			var A = ctxt.MainPackage()["A"];
 			ctxt.CurrentContext.Set(A["vy"].First().Location);
 
 			AbstractType t;
@@ -3145,7 +3158,7 @@ static if(Templ!float)
 else
 	int e;");
 			
-			var A = pcl[0]["A"];
+			var A = pcl.FirstPackage()["A"];
 			
 			var ctxt = CreateDefCtxt(pcl, A, null);
 			
@@ -3191,7 +3204,7 @@ void bar();
 @"module C;
 class imp{}");
 			
-			var B = (DModule)pcl[0]["B"];
+			var B = (DModule)pcl.FirstPackage()["B"];
 			var ctxt = CreateDefCtxt(pcl, B["bar"].First() as DMethod);
 			
 			var x = R("imp",ctxt);
@@ -3210,7 +3223,7 @@ class cl(T) if(is(T==int))
 
 class aa(T) if(is(T==float)) {}
 class aa(T) if(is(T==int)) {}");
-			var A = pcl[0]["A"];
+			var A = pcl.FirstPackage()["A"];
 			var ctxt = CreateDefCtxt(pcl, A);
 			
 			var x = TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration("cl"),ctxt);
@@ -3289,7 +3302,7 @@ unittest
 			PrimitiveType pt;
 			ArrayType at;
 
-			var A = ctxt.ParseCache[0]["A"];
+			var A = ctxt.MainPackage()["A"];
 			var Tmpl = A["Tmpl"].First() as DClassLike;
 			ctxt.CurrentContext.Set(Tmpl);
 
@@ -3631,7 +3644,7 @@ mixin(""int x; int ""~""y""~"";"");",
 import A;",
 			                                     @"module C; import A;");
 			
-			var ctxt = ResolutionTests.CreateDefCtxt(pcl, pcl[0]["A"]);
+			var ctxt = ResolutionTests.CreateDefCtxt(pcl, pcl.FirstPackage()["A"]);
 			
 			var x = R("x", ctxt);
 			Assert.That(x.Length, Is.EqualTo(1));
@@ -3639,7 +3652,7 @@ import A;",
 			x = R("y", ctxt);
 			Assert.That(x.Length, Is.EqualTo(1));
 			
-			ctxt.CurrentContext.Set(pcl[0]["pack.B"]);
+			ctxt.CurrentContext.Set(pcl.FirstPackage()["pack.B"]);
 			
 			x = R("x", ctxt);
 			Assert.That(x.Length, Is.EqualTo(1));
@@ -3656,7 +3669,7 @@ import A;",
 			x = R("packA", ctxt);
 			Assert.That(x.Length, Is.EqualTo(0));
 			
-			ctxt.CurrentContext.Set(pcl[0]["C"]);
+			ctxt.CurrentContext.Set(pcl.FirstPackage()["C"]);
 			
 			x = R("privA", ctxt);
 			Assert.That(x.Length, Is.EqualTo(0));
@@ -3683,7 +3696,7 @@ void main()
 }
 ");
 			
-			var A = pcl[0]["A"];
+			var A = pcl.FirstPackage()["A"];
 			var main = A["main"].First() as DMethod;
 			var stmt = main.Body.SubStatements.ElementAt(1);
 			var ctxt = ResolutionTests.CreateDefCtxt(pcl, main, stmt);
@@ -3727,7 +3740,7 @@ class cl
 			                                      @"module B; import A; mixin(mixinStuff); class cl{ void bar(){  } }",
 			                                      @"module C; void CFoo() {}");
 			
-			var B =pcl[0]["B"];
+			var B =pcl.FirstPackage()["B"];
 			var ctxt = ResolutionTests.CreateDefCtxt(pcl, B);
 			
 			var t = RS("CFoo", ctxt);
@@ -3753,12 +3766,12 @@ mixin(""class ""~mxT!(""myClass"")~"" {}"");
 mixin(""template mxT(string n) { enum mxT = n; }"");
 ");
 			
-			var ctxt = ResolutionTests.CreateDefCtxt(pcl, pcl[0]["A"]);
+			var ctxt = ResolutionTests.CreateDefCtxt(pcl, pcl.FirstPackage()["A"]);
 			
 			var t = RS("myClass", ctxt);
 			Assert.That(t, Is.TypeOf(typeof(ClassType)));
 			
-			ctxt.CurrentContext.Set(pcl[0]["B"]);
+			ctxt.CurrentContext.Set(pcl.FirstPackage()["B"]);
 			
 			t = RS("myClass", ctxt);
 			Assert.That(t, Is.Null);
@@ -3827,7 +3840,7 @@ mixin(""template mxT3(string n) { ""~mxT2!(""enum"")~"" mxT3 = n; }"");
 mixin(""template mxT4(""~mxT3!(""string"")~"" n) { enum mxT4 = n; }"");
 mixin(""class ""~mxT4!(""myClass"")~"" {}"");"");");
 			
-			var ctxt = CreateDefCtxt(pcl, pcl[0]["A"]);
+			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["A"]);
 			
 			var t = RS("mxT1",ctxt);
 			Assert.That(t,Is.TypeOf(typeof(TemplateType)));
@@ -3929,7 +3942,7 @@ mixin Mx!int;
 mixin Mx1 myMx;
 mixin Mx!float myTempMx;");
 			
-			var A =pcl[0]["A"];
+			var A =pcl.FirstPackage()["A"];
 			var ctxt = ResolutionTests.CreateDefCtxt(pcl, A);
 			
 			var ex = DParser.ParseExpression("someProp");
@@ -3981,7 +3994,7 @@ void test() {
   b.func();      // calls Code.func()
 }");
 			
-			var A =pcl[0]["A"];
+			var A =pcl.FirstPackage()["A"];
 			var ctxt = ResolutionTests.CreateDefCtxt(pcl, A);
 			
 			var ex = DParser.ParseExpression("(new Code()).func");
@@ -4021,7 +4034,7 @@ void foo() {
 	localDerp;
 	arrayTest[0];
 }");
-			var A = pcl[0]["A"];
+			var A = pcl.FirstPackage()["A"];
 			var foo = A["foo"].First() as DMethod;
 			var ctxt = ResolutionTests.CreateDefCtxt(pcl, foo, foo.Body);
 			var subSt = foo.Body.SubStatements as List<IStatement>;
@@ -4066,7 +4079,7 @@ mixin template mixedInImports()
 			                                      @"module C;
 void CFoo() {}");
 			
-			var B =pcl[0]["B"];
+			var B =pcl.FirstPackage()["B"];
 			var ctxt = ResolutionTests.CreateDefCtxt(pcl, B);
 			
 			var t = RS("CFoo", ctxt);
@@ -4218,7 +4231,7 @@ class TestClass
 TestClass c;
 void main(string[] args) { }
 ");
-			var A = ctxt.ParseCache[0]["A"];
+			var A = ctxt.MainPackage()["A"];
 			var main = A["main"].First() as DMethod;
 			var TestField = A["TestField"].First() as DClassLike;
 			ctxt.CurrentContext.Set(main);

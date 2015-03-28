@@ -34,7 +34,7 @@ namespace D_Parser.Completion.Providers
 					return;
 			}
 
-			foreach (var p in Editor.ParseCache.LookupPackage(pack))
+			foreach (var p in Editor.ParseCache.LookupPackage(Editor.SyntaxTree, pack))
 			{
 				if (p == null)
 					continue;

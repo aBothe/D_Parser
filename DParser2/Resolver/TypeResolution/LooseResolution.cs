@@ -114,7 +114,7 @@ namespace D_Parser.Resolver
 			List<ModulePackage> foundPackages;
 			List<INode> foundItems;
 
-			SearchNodesByName (idToScanForFirst, editor.ParseCache, out foundPackages, out foundItems);
+			SearchNodesByName (idToScanForFirst, editor.SyntaxTree, editor.ParseCache, out foundPackages, out foundItems);
 
 			var res = new List<AbstractType> ();
 
@@ -129,7 +129,7 @@ namespace D_Parser.Resolver
 			return AmbiguousType.Get (res);
 		}
 
-		public static void SearchNodesByName(int idToFind, Misc.ParseCacheView pcw, out List<ModulePackage> foundPackages, out List<INode> foundItems)
+		public static void SearchNodesByName(int idToFind, DModule parseCacheContext, Misc.ParseCacheView pcw, out List<ModulePackage> foundPackages, out List<INode> foundItems)
 		{
 			foundItems = new List<INode>();
 			foundPackages = new List<ModulePackage>();
@@ -143,7 +143,7 @@ namespace D_Parser.Resolver
 			var currentPackageList = new List<ModulePackage>();
 			var nextPackageList = new List<ModulePackage>();
 
-			currentPackageList.AddRange(pcw);
+			currentPackageList.AddRange(pcw.EnumRootPackagesSurroundingModule(parseCacheContext));
 
 			while(currentPackageList.Count != 0)
 			{
@@ -227,7 +227,7 @@ namespace D_Parser.Resolver
 
 			var l = new List<AbstractType> ();
 
-			foreach (var pack in parseCache)
+			foreach (var pack in parseCache.EnumRootPackagesSurroundingModule(oContext))
 				foreach (DModule mod in pack) {
 					var children = mod [id.IdHash];
 					if(children != null)

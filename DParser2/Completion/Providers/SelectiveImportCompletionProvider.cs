@@ -20,7 +20,7 @@ namespace D_Parser.Completion.Providers
 			if (Editor.ParseCache == null)
 				return;
 
-			var module = Editor.ParseCache.LookupModuleName(import.ModuleIdentifier.ToString(true)).FirstOrDefault();
+			var module = Editor.ParseCache.LookupModuleName(Editor.SyntaxTree, import.ModuleIdentifier.ToString(true)).FirstOrDefault();
 
 			if (module == null)
 				return;
