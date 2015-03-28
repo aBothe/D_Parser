@@ -201,32 +201,18 @@ namespace D_Parser.Refactoring
 		{
 			acc.PostfixForeExpression.Accept(this);
 
-			if ((acc.AccessExpression is IdentifierExpression &&
-			    (acc.AccessExpression as IdentifierExpression).ValueStringHash != searchHash) ||
-			    (acc.AccessExpression is TemplateInstanceExpression &&
-			    ((TemplateInstanceExpression)acc.AccessExpression).TemplateIdHash != searchHash)) {
+			var id = acc.AccessExpression is NewExpression ? (acc.AccessExpression as NewExpression).Type as IntermediateIdType : acc.AccessExpression as IntermediateIdType;
+			//TODO: Other types? Have additional facilities to extract an ID out of some expression?
+			if (id != null && id.IdHash != searchHash)
 				return;
-			} else if (acc.AccessExpression is NewExpression) {
-				var nex = acc.AccessExpression as NewExpression;
 
-				if ((nex.Type is IdentifierDeclaration &&
-				    ((IdentifierDeclaration)nex.Type).IdHash != searchHash) ||
-				    (nex.Type is TemplateInstanceExpression &&
-				    ((TemplateInstanceExpression)acc.AccessExpression).TemplateIdHash != searchHash)) {
- 					return;
-				}
-				// Are there other types to test for?
-			} else {
-				// Are there other types to test for?
- 			}
-
-			ctxt.CurrentContext.Set(acc.Location);
-			var ov = ExpressionTypeEvaluation.GetAccessedOverloads(acc, ctxt, null, false);
+			ctxt.CurrentContext.Set (acc.Location);
+			var ov = ExpressionTypeEvaluation.GetAccessedOverloads (acc, ctxt, null, false);
 			if (ov == null)
 				return;
 
-			foreach(var o in ov)
-				if (TryAdd(o, acc.AccessExpression))
+			foreach (var o in ov)
+				if (TryAdd (o, acc.AccessExpression))
 					return;
 		}
 
