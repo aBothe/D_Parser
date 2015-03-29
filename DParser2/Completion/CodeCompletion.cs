@@ -153,7 +153,7 @@ namespace D_Parser.Completion
 
 			ac();
 
-			if (token.IsCancellationRequested)
+			if (token.IsCancellationRequested && cdgen != null)
 				cdgen.NotifyTimeout ();
 		}
 
@@ -179,7 +179,7 @@ namespace D_Parser.Completion
 
 			ac ();
 
-			if (cts.IsCancellationRequested)
+			if (cts.IsCancellationRequested && cdgen != null)
 				cdgen.NotifyTimeout ();
 		}
 	}
