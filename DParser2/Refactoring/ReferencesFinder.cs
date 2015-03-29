@@ -49,9 +49,9 @@ namespace D_Parser.Refactoring
 			searchHash = symbol.NameHash;
 		}
 
-		public static IEnumerable<ISyntaxRegion> Scan(INode symbol, ResolutionContext ctxt, bool includeDefinition = true)
+		public static IEnumerable<ISyntaxRegion> SearchModuleForASTNodeReferences(INode symbol, ResolutionContext ctxt, bool includeDefinition = true)
 		{
-			return Scan(symbol.NodeRoot as DModule, symbol, ctxt, includeDefinition);
+			return SearchModuleForASTNodeReferences(symbol.NodeRoot as DModule, symbol, ctxt, includeDefinition);
 		}
 
 		/// <summary>
@@ -60,7 +60,7 @@ namespace D_Parser.Refactoring
 		/// <param name="symbol">Might not be a child symbol of ast</param>
 		/// <param name="ctxt">The context required to search for symbols</param>
 		/// <returns></returns>
-		public static IEnumerable<ISyntaxRegion> Scan(DModule ast, INode symbol, ResolutionContext ctxt, bool includeDefinition = true)
+		public static IEnumerable<ISyntaxRegion> SearchModuleForASTNodeReferences(DModule ast, INode symbol, ResolutionContext ctxt, bool includeDefinition = true)
 		{
 			if (ast == null || symbol == null || ctxt == null)
 				return null;
