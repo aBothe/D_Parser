@@ -39,7 +39,7 @@ void main()
 ");
 			var ctxt = ResolutionContext.Create(pcl, null, pcl.FirstPackage()["modA"]);
 
-			var refs = ReferencesFinder.Scan(pcl.FirstPackage()["modA"]["A"].First(),ctxt) as List<ISyntaxRegion>;
+			var refs = ReferencesFinder.SearchModuleForASTNodeReferences(pcl.FirstPackage()["modA"]["A"].First(),ctxt) as List<ISyntaxRegion>;
 
 			Assert.IsNotNull(refs);
 			Assert.AreEqual(8, refs.Count);
