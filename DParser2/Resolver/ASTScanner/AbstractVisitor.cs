@@ -102,13 +102,8 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 			var scopedBlock = DResolver.SearchBlockAt (ctxt.ScopedBlock, Caret);
 
-			var dm = scopedBlock as DMethod;
-			IStatement stmt;
-			if (dm != null && (stmt = dm.GetSubBlockAt(Caret)) != null &&
-				ScanStatementHierarchy(stmt, Caret, parms))
-			{
+			if (VisitStatementHierarchy(scopedBlock as DMethod, Caret, parms))
 				return;
-			}
 
 			if (ctxt.ScopedBlock != null) {
 				ScanBlockUpward (ctxt.ScopedBlock, Caret, parms);
@@ -190,14 +185,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				// If the method is a nested method,
 				// this method won't be 'linked' to the parent statement tree directly - 
 				// so, we've to gather the parent method and add its locals to the return list
-				if (dm.Parent is DMethod)
-				{
-					var nestedBlock = (dm.Parent as DMethod).GetSubBlockAt(Caret);
-
-					// Search for the deepest statement scope and add all declarations done in the entire hierarchy
-					if (nestedBlock != null)
-						ScanStatementHierarchy(nestedBlock, Caret, parms);
-				}
+				VisitStatementHierarchy(dm.Parent as DMethod, Caret, parms);
 			}
 			else
 				scanChildren(curScope as DBlockNode, new ItemCheckParameters(parms));
@@ -387,18 +375,14 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			else
 				parms.dontHandleTemplateParamsInNodeScan = false;
 
-			using(var stmtVis = new StatementHandler(this, parms, CodeLocation.Empty, true))
+			using(var stmtVis = new StatementHandler(curScope, this, parms, CodeLocation.Empty, true))
 				curScope.Accept(stmtVis);
 		}
 
-		/// <summary>
-		/// Walks up the statement scope hierarchy and enlists all declarations that have been made BEFORE the caret position. 
-		/// (If CodeLocation.Empty given, this parameter will be ignored)
-		/// </summary>
-		/// <returns>True if scan shall stop, false if not</returns>
-		bool ScanStatementHierarchy(IStatement Statement, CodeLocation Caret, ItemCheckParameters parms)
+		bool VisitStatementHierarchy(DMethod dm, CodeLocation caret, ItemCheckParameters parms)
 		{
-			return Statement != null && Statement.Accept(new StatementHandler(this, parms, Caret));
+			BlockStatement s;
+			return dm != null && (s = dm.GetSubBlockAt (caret)) != null && s.Accept (new StatementHandler (dm, this, parms, caret));
 		}
 
 		class StatementHandler : StatementVisitor<bool>, NodeVisitor<bool>, IDisposable
@@ -412,11 +396,14 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			readonly AbstractVisitor v;
 			readonly bool pushResolvedCurScope;
 			IDisposable frameToPop;
+
+			readonly IBlockNode parentNodeOfVisitedStmt;
 			#endregion
 
 			#region Constuctor/IO
-			public StatementHandler(AbstractVisitor v, ItemCheckParameters parms, CodeLocation caret, bool pushResolvedCurScope = false)
+			public StatementHandler(IBlockNode parentNodeOfVisitedStmt, AbstractVisitor v, ItemCheckParameters parms, CodeLocation caret, bool pushResolvedCurScope = false)
 			{
+				this.parentNodeOfVisitedStmt = parentNodeOfVisitedStmt;
 				this.v = v;
 				this.Caret = caret;
 				this.parms = parms;
@@ -650,9 +637,10 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 				var ret = false;
 
-				if (!impStmt.IsStatic)
+				if (!impStmt.IsStatic) {
 					foreach (var imp in impStmt.Imports)
-						ret |= imp.ModuleAlias == null && imp.Accept(this);
+						ret |= imp.ModuleAlias == null && imp.Accept (this);
+				}
 
 				return ret;
 			}
@@ -681,17 +669,22 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 					seenModules.Add (moduleName);
 				}
 
-				var scAst = ctxt.ScopedBlock == null ? null : ctxt.ScopedBlock.NodeRoot as DModule;
-				if (ctxt.ParseCache != null)
-					foreach (var module in ctxt.ParseCache.LookupModuleName(scAst, moduleName)) //TODO: Only take the first module? Notify the user about ambigous module names?
-					{
-						if (module == null || (scAst != null && module.FileName == scAst.FileName && module.FileName != null))
-							continue;
+				if (ctxt.ParseCache == null)
+					return false;
 
-						v.scanChildren(module, new ItemCheckParameters(parms) { publicImportsOnly = true });
-						if (v.StopEnumerationOnNextScope)
-							return true;
-					}
+				var scopedModule = parentNodeOfVisitedStmt.NodeRoot as DModule;
+
+				foreach (var module in ctxt.ParseCache.LookupModuleName(scopedModule, moduleName)) //TODO: Only take the first module? Notify the user about ambigous module names?
+				{
+					if (module.FileName != null && 
+						module.FileName == scopedModule.FileName)
+						continue;
+
+					v.scanChildren(module, new ItemCheckParameters(parms) { publicImportsOnly = true });
+
+					if (v.StopEnumerationOnNextScope)
+						return true;
+				}
 				return false;
 			}
 			#endregion
@@ -781,7 +774,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 						if (vv != null)
 							ctxt.CurrentContext.IntroduceTemplateParameterTypes(vv.RepresentedType);
 
-						v.ScanStatementHierarchy(bs, CodeLocation.Empty, parms);
+						bs.Accept (new StatementHandler(parentNodeOfVisitedStmt, v, parms, CodeLocation.Empty));
 
 						if (vv != null)
 							ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(vv.RepresentedType);
