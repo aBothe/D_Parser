@@ -1073,27 +1073,23 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			DVariable alreadyParsedAliasThis;
 			AbstractType aliasedSymbol;
 
-			if (!aliasThisDefsBeingParsed.TryGetValue(tit.Definition, out alreadyParsedAliasThis) || alreadyParsedAliasThis != aliasDef)
-			{
-				aliasThisDefsBeingParsed[tit.Definition] = aliasDef;
+			if (aliasThisDefsBeingParsed.TryGetValue (tit.Definition, out alreadyParsedAliasThis) && alreadyParsedAliasThis == aliasDef)
+				return;
 
-				// Resolve the aliased symbol and expect it to be a member symbol(?).
-				//TODO: Check if other cases are allowed as well!
-				using(ctxt.Push(tit))
-					aliasedSymbol = DResolver.StripMemberSymbols(TypeDeclarationResolver.ResolveSingle(aliasDef.Type, ctxt));
+			aliasThisDefsBeingParsed[tit.Definition] = aliasDef;
 
-				aliasThisDefsBeingParsed.Remove(tit.Definition);
+			// Resolve the aliased symbol and expect it to be a member symbol(?).
+			//TODO: Check if other cases are allowed as well!
+			using(ctxt.Push(tit))
+				aliasedSymbol = DResolver.StripMemberSymbols(TypeDeclarationResolver.ResolveSingle(aliasDef.Type, ctxt));
 
-				if (aliasedSymbol is TemplateParameterSymbol)
-					aliasedSymbol = (aliasedSymbol as TemplateParameterSymbol).Base;
-			}
-			else
-				aliasedSymbol = null;
+			aliasThisDefsBeingParsed.Remove(tit.Definition);
 
 			aliasedSymbol = DResolver.StripMemberSymbols (aliasedSymbol);
 			if (aliasedSymbol is PointerType)
 				aliasedSymbol = (aliasedSymbol as DerivedDataType).Base;
 			aliasedSymbol = DResolver.StripMemberSymbols (aliasedSymbol);
+			
 
 			foreach (var statProp in StaticProperties.ListProperties (aliasedSymbol, ctxt)){
 				HandleItemInternal (statProp, parms);
