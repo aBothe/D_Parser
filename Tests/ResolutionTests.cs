@@ -3549,6 +3549,33 @@ AliasThis str;
 		}
 
 		[Test]
+		public void AliasThis5()
+		{
+			var ctxt = CreateCtxt ("m", @"module m;
+struct A {
+    int hello;
+}
+
+struct AliasThis {
+    @property const(A) get() const;
+    @property A get();
+    alias get this;
+}
+
+AliasThis str;
+");
+
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression ("str.hello");
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
+
+			Assert.That (t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That ((t as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+		}
+
+		[Test]
 		public void AliasThisSO()
 		{
 			var ctxt = CreateCtxt ("A", @"module A;

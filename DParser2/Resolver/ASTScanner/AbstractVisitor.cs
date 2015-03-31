@@ -1071,47 +1071,49 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				aliasThisDefsBeingParsed = new Dictionary<IBlockNode, DVariable>();
 
 			DVariable alreadyParsedAliasThis;
-			AbstractType aliasedSymbol;
-
 			if (aliasThisDefsBeingParsed.TryGetValue (tit.Definition, out alreadyParsedAliasThis) && alreadyParsedAliasThis == aliasDef)
 				return;
-
 			aliasThisDefsBeingParsed[tit.Definition] = aliasDef;
 
-			// Resolve the aliased symbol and expect it to be a member symbol(?).
-			//TODO: Check if other cases are allowed as well!
+			AbstractType aliasedSymbolOverloads;
 			using(ctxt.Push(tit))
-				aliasedSymbol = DResolver.StripMemberSymbols(TypeDeclarationResolver.ResolveSingle(aliasDef.Type, ctxt));
+				aliasedSymbolOverloads = DResolver.StripMemberSymbols(DResolver.StripMemberSymbols(TypeDeclarationResolver.ResolveSingle(aliasDef.Type, ctxt)));
 
 			aliasThisDefsBeingParsed.Remove(tit.Definition);
 
-			aliasedSymbol = DResolver.StripMemberSymbols (aliasedSymbol);
-			if (aliasedSymbol is PointerType)
-				aliasedSymbol = (aliasedSymbol as DerivedDataType).Base;
-			aliasedSymbol = DResolver.StripMemberSymbols (aliasedSymbol);
-			
+			if (aliasedSymbolOverloads == null)
+				return;
 
-			foreach (var statProp in StaticProperties.ListProperties (aliasedSymbol, ctxt)){
-				HandleItemInternal (statProp, parms);
-				if(StopEnumerationOnNextScope)
-					return;
-			}
+			foreach (var _ in AmbiguousType.TryDissolve(aliasedSymbolOverloads)) {
+				var aliasedSymbol = _;
 
-			/** TODO: Visit ufcs recommendations and other things that
-			 * become added in e.g. MemberCompletionProvider
-			 */
+				if (aliasedSymbol is PointerType)
+					aliasedSymbol = (aliasedSymbol as DerivedDataType).Base;
+				
+				aliasedSymbol = DResolver.StripMemberSymbols (aliasedSymbol);
 
-			var tit_ = aliasedSymbol as TemplateIntermediateType;
-			DSymbol ds;
-			if (tit_ != null) {
-				using (ctxt.Push (tit_))
-					DeepScanClass (tit_, parms, true);
-			}
-			// Applies to DEnums
-			else if ((ds = aliasedSymbol as DSymbol) != null && ds.Definition is DBlockNode) {
-				parms.resolvedCurScope = ds;
-				scanChildren (ds.Definition as DBlockNode, parms);
-			}
+				foreach (var statProp in StaticProperties.ListProperties (aliasedSymbol, ctxt)) {
+					HandleItemInternal (statProp, parms);
+					if (StopEnumerationOnNextScope)
+						return;
+				}
+
+				/** TODO: Visit ufcs recommendations and other things that
+				 * become added in e.g. MemberCompletionProvider
+				 */
+
+				var tit_ = aliasedSymbol as TemplateIntermediateType;
+				DSymbol ds;
+				if (tit_ != null) {
+					using (ctxt.Push (tit_))
+						DeepScanClass (tit_, parms, true);
+				}
+				// Applies to DEnums
+				else if ((ds = aliasedSymbol as DSymbol) != null && ds.Definition is DBlockNode) {
+						parms.resolvedCurScope = ds;
+						scanChildren (ds.Definition as DBlockNode, parms);
+					}
+				}
 		}
 
 		#region Declaration conditions & Static statements
