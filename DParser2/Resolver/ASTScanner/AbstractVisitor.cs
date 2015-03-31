@@ -1089,7 +1089,11 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			}
 			else
 				aliasedSymbol = null;
-			
+
+			aliasedSymbol = DResolver.StripMemberSymbols (aliasedSymbol);
+			if (aliasedSymbol is PointerType)
+				aliasedSymbol = (aliasedSymbol as DerivedDataType).Base;
+			aliasedSymbol = DResolver.StripMemberSymbols (aliasedSymbol);
 
 			foreach (var statProp in StaticProperties.ListProperties (aliasedSymbol, ctxt)){
 				HandleItemInternal (statProp, parms);

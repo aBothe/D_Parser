@@ -3524,6 +3524,31 @@ struct CL {
 		}
 
 		[Test]
+		public void AliasThis4()
+		{
+			var ctxt = CreateCtxt ("m", @"module m;
+struct A {
+int hello;
+}
+alias TR = A*;
+struct AliasThis {
+alias TR this;
+}
+
+AliasThis str;
+");
+
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression ("str.hello");
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
+
+			Assert.That (t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That ((t as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+		}
+
+		[Test]
 		public void AliasThisSO()
 		{
 			var ctxt = CreateCtxt ("A", @"module A;
