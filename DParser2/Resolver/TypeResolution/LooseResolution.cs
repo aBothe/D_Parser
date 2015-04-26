@@ -22,6 +22,10 @@ namespace D_Parser.Resolver
 
 		public static AbstractType ResolveTypeLoosely(IEditorData editor, ISyntaxRegion o, out NodeResolutionAttempt resolutionAttempt)
 		{
+			resolutionAttempt = NodeResolutionAttempt.Normal;
+			if (o == null)
+				return null;
+			
 			var ctxt = ResolutionContext.Create(editor, false);
 
 			AbstractType ret = null;
@@ -186,6 +190,11 @@ namespace D_Parser.Resolver
 
 		public static AbstractType LookupIdRawly(Misc.ParseCacheView parseCache, ISyntaxRegion o, DModule oContext)
 		{
+			if (parseCache == null)
+				throw new ArgumentNullException ("parseCache");
+			if (o == null)
+				throw new ArgumentNullException ("o");
+
 			var ctxt = new ResolutionContext (parseCache, null, oContext, o.Location);
 
 			/*
@@ -227,13 +236,20 @@ namespace D_Parser.Resolver
 
 			var l = new List<AbstractType> ();
 
-			foreach (var pack in parseCache.EnumRootPackagesSurroundingModule(oContext))
+			foreach (var pack in parseCache.EnumRootPackagesSurroundingModule(oContext)) {
+				if (pack == null)
+					continue;
+				
 				foreach (DModule mod in pack) {
+					if (mod == null)
+						continue;
+
 					var children = mod [id.IdHash];
-					if(children != null)
+					if (children != null)
 						foreach (var n in children)
 							l.Add (TypeDeclarationResolver.HandleNodeMatch (n, ctxt, null, id));
 				}
+			}
 
 			return AmbiguousType.Get(l);
 		}
