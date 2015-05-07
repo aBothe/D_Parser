@@ -14,7 +14,19 @@ namespace D_Parser.Dom.Visitors
 	{
 		#region Properties
 		const long prime = 31;
-		public static readonly AstElementHashingVisitor Instance = new AstElementHashingVisitor();
+		[ThreadStatic]
+		static AstElementHashingVisitor instance;
+		public static AstElementHashingVisitor Instance
+		{
+			get{
+				if (instance == null)
+					instance = new AstElementHashingVisitor ();
+
+				return instance;
+			}
+		}
+
+		readonly List<AbstractType> AbstractTypesBeingVisited = new List<AbstractType>();
 		#endregion
 
 		#region Hashing fundamentals
@@ -54,7 +66,16 @@ namespace D_Parser.Dom.Visitors
 		void Hash(ref long h, long prime, ITypeDeclaration o){		Hash (ref h, prime, (o != null ? o.Accept(this) : 0));	}
 		void Hash(ref long h, long prime, IExpression o)	{		Hash (ref h, prime, (o != null ? o.Accept(this) : 0));	}
 		void Hash(ref long h, long prime, ISymbolValue o)	{		Hash (ref h, prime, (o != null ? o.Accept(this) : 0));	}
-		void Hash(ref long h, long prime, AbstractType o)	{		Hash (ref h, prime, (o != null ? o.Accept(this) : 0));	}
+		void Hash(ref long h, long prime, AbstractType o)	{
+			if (o == null || AbstractTypesBeingVisited.Contains(o)) {
+				Hash (ref h, prime, 0);
+				return;
+			}
+
+			AbstractTypesBeingVisited.Add (o);
+			Hash (ref h, prime, o.Accept(this));
+			AbstractTypesBeingVisited.Remove (o);
+		}
 		#endregion
 
 		#region Nodes
@@ -995,6 +1016,8 @@ namespace D_Parser.Dom.Visitors
 
 			return h;
 		}
+
+
 
 		long VisitDerivedType(DerivedDataType t, long prime)
 		{
