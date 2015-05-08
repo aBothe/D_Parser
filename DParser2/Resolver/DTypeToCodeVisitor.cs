@@ -7,15 +7,14 @@ using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Resolver
 {
-	public struct DTypeToCodeVisitor : IResolvedTypeVisitor
+	public class DTypeToCodeVisitor : IResolvedTypeVisitor
 	{
-		StringBuilder sb;
+		readonly StringBuilder sb = new StringBuilder();
 		readonly bool pretty;
 
 		private DTypeToCodeVisitor(bool pretty)
 		{
 			this.pretty = pretty;
-			sb = new StringBuilder ();
 		}
 
 		public static string GenerateCode(AbstractType t, bool pretty = false)
@@ -75,7 +74,7 @@ namespace D_Parser.Resolver
 
 		public void VisitDelegateCallSymbol(DelegateCallSymbol t)
 		{
-			sb.Append(t.ToString());
+			sb.Append (t.callExpression.ToString());
 		}
 
 		public void VisitDelegateType(DelegateType t)
