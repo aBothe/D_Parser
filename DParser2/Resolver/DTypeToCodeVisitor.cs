@@ -74,7 +74,10 @@ namespace D_Parser.Resolver
 
 		public void VisitDelegateCallSymbol(DelegateCallSymbol t)
 		{
-			sb.Append (t.callExpression.ToString());
+			if (t.Base != null)
+				AcceptType (t.Base);
+			else
+				AcceptType (t.Delegate);
 		}
 
 		public void VisitDelegateType(DelegateType t)
