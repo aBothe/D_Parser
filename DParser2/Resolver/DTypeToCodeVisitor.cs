@@ -74,10 +74,7 @@ namespace D_Parser.Resolver
 
 		public void VisitDelegateCallSymbol(DelegateCallSymbol t)
 		{
-			if (t.Base != null)
-				AcceptType (t.Base);
-			else
-				AcceptType (t.Delegate);
+			AcceptType (t.Delegate);
 		}
 
 		public void VisitDelegateType(DelegateType t)
