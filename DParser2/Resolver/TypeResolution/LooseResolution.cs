@@ -20,11 +20,17 @@ namespace D_Parser.Resolver
 			RawSymbolLookup,
 		}
 
-		public static AbstractType ResolveTypeLoosely(IEditorData editor, ISyntaxRegion o, out NodeResolutionAttempt resolutionAttempt)
+		public static AbstractType ResolveTypeLoosely(IEditorData editor, ISyntaxRegion o, out NodeResolutionAttempt resolutionAttempt, bool editorFriendly)
 		{
 			resolutionAttempt = NodeResolutionAttempt.Normal;
+
 			if (o == null)
 				return null;
+
+			if (editorFriendly) {
+				if (o is PostfixExpression_MethodCall)
+					o = (o as PostfixExpression_MethodCall).PostfixForeExpression;
+			}
 			
 			var ctxt = ResolutionContext.Create(editor, false);
 
@@ -51,10 +57,7 @@ namespace D_Parser.Resolver
 
 					resAttempt = NodeResolutionAttempt.NoParameterOrTemplateDeduction;
 
-					if (o is PostfixExpression_MethodCall)
-						o = (o as PostfixExpression_MethodCall).PostfixForeExpression;
-
-					ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.NoTemplateParameterDeduction | ResolutionOptions.DontResolveAliases;
+					ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly | ResolutionOptions.DontResolveAliases;
 
 					if (o is IdentifierExpression)
 						ret = AmbiguousType.Get(ExpressionTypeEvaluation.GetOverloads(o as IdentifierExpression, ctxt, deduceParameters: false));
