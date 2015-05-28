@@ -79,11 +79,9 @@ namespace D_Parser.Resolver
 			return ret;
 		}
 
-		public static AbstractType ResolveTypeLoosely(IEditorData editor, out NodeResolutionAttempt resolutionAttempt, out ISyntaxRegion sr)
+		public static AbstractType ResolveTypeLoosely(IEditorData editor, out NodeResolutionAttempt resolutionAttempt, out ISyntaxRegion sr, bool editorFriendly = false)
 		{
-			sr = DResolver.GetScopedCodeObject(editor);
-
-			return ResolveTypeLoosely (editor, sr, out resolutionAttempt);
+			return ResolveTypeLoosely (editor, sr = DResolver.GetScopedCodeObject(editor), out resolutionAttempt, editorFriendly);
 		}
 
 		public static AbstractType SearchNodesByName(ref ISyntaxRegion identifier, IEditorData editor)
@@ -223,8 +221,7 @@ namespace D_Parser.Resolver
 				return res;
 
 
-
-			IntermediateIdType id = null;
+			IntermediateIdType id;
 
 			if (td != null)
 				id = td.InnerMost as IntermediateIdType;
