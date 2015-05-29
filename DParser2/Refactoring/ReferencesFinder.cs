@@ -157,22 +157,10 @@ namespace D_Parser.Refactoring
 
 		bool TryAdd(AbstractType resolvedSymbol, ISyntaxRegion sr)
 		{
-			if (resolvedSymbol != null)
+			if (DResolver.GetResultMember(resolvedSymbol, true) == symbol)
 			{
-				INode n;
-				var aliasTag = resolvedSymbol.Tag<TypeDeclarationResolver.AliasTag>(TypeDeclarationResolver.AliasTag.Id);
-				if (aliasTag != null)
-					n = aliasTag.aliasDefinition;
-				else if (resolvedSymbol is DSymbol)
-					n = (resolvedSymbol as DSymbol).Definition;
-				else
-					n = null;
-
-				if (n == symbol)
-				{
-					l.Add(sr);
-					return true;
-				}
+				l.Add(sr);
+				return true;
 			}
 			return false;
 		}
