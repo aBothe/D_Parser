@@ -32,6 +32,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using D_Parser.Resolver.TypeResolution;
+using D_Parser.Dom.Expressions;
 
 namespace D_Parser.Completion.ToolTips
 {
@@ -68,8 +69,9 @@ namespace D_Parser.Completion.ToolTips
 
 			if (t is DelegateType)
 			{
-				var dt = t as DelegateType;
-				//TODO
+				var sb = new StringBuilder();
+				GenDelegateSignature(t as DelegateType, sb, templateParamCompletion, currentMethodParam);
+				return sb.ToString();
 			}
 
 			return DCodeToMarkup(t != null ? t.ToCode(true) : "null");
@@ -94,27 +96,41 @@ namespace D_Parser.Completion.ToolTips
 			return sb.ToString();
 		}
 
-		/*void S(DelegateType dt, StringBuilder sb, bool templArgs = false, int curArg = -1)
+		void GenDelegateSignature(DelegateType dt, StringBuilder sb, bool templArgs = false, int curArg = -1)
 		{
-			if (dt.ReturnType != null)
-				sb.Append(DCodeToMarkup(dt.ReturnType.ToCode(true))).Append(' ');
-
-			// Parameters
-			sb.Append('(');
-
-			if (dt.Parameters != null)
+			if (dt.delegateTypeBase is FunctionLiteral)
+				S((dt.delegateTypeBase as FunctionLiteral).AnonymousMethod, sb, templArgs, curArg, DTypeToTypeDeclVisitor.GenerateTypeDecl(dt.ReturnType));
+			else if (dt.delegateTypeBase is DelegateDeclaration)
 			{
-				for (int i = 0; i < dt.Parameters.Length; i++)
-				{
-					sb.AppendLine();
-					sb.Append("  ");
+				var delegateDecl = dt.delegateTypeBase as DelegateDeclaration;
+				AppendAttributes(delegateDecl.Modifiers, sb);
 
-					var parm = dt.Parameters[i];
+				if (dt.ReturnType != null)
+					sb.Append(DCodeToMarkup(dt.ReturnType.ToCode(true)));
+				else
+					sb.Append(DCodeToMarkup(delegateDecl.ReturnType.ToString()));
+
+				sb.Append(' ').Append(delegateDecl.IsFunction ? "function" : "delegate");
+
+				AppendParameters(delegateDecl.Parameters, sb, templArgs, curArg);
+			}
+			else
+			{
+				if (dt.ReturnType != null)
+					sb.Append(DCodeToMarkup(dt.ReturnType.ToCode(true)));
+
+				sb.Append(" (");
+
+				int i = -1;
+				foreach (var parm in dt.Parameters)
+				{
+					i++;
+					if ((SignatureFlags & TooltipSignatureFlags.NoLineBreakedMethodParameters) == 0)
+						sb.AppendLine().Append("  ");
 
 					var indexBackup = sb.Length;
 
-					//TODO: Show deduced parameters
-					AttributesTypeAndName(parm, sb);
+					sb.Append(parm.ToCode(true));
 
 					if (!templArgs && curArg == i)
 					{
@@ -124,72 +140,70 @@ namespace D_Parser.Completion.ToolTips
 						AppendFormat(contentToUnderline, sb, FormatFlags.Underline);
 					}
 
-					if (parm is DVariable && (parm as DVariable).Initializer != null)
-						sb.Append(" = ").Append((parm as DVariable).Initializer.ToString());
-
 					sb.Append(',');
 				}
 
 				RemoveLastChar(sb, ',');
-				sb.AppendLine();
+				if ((SignatureFlags & TooltipSignatureFlags.NoLineBreakedMethodParameters) == 0)
+					sb.AppendLine();
+
+				sb.Append(')');
+			}
+		}
+
+		void AppendParameters(IEnumerable<INode> parameters, StringBuilder sb, bool templArgs, int curArg)
+		{
+			// Parameters
+			sb.Append('(');
+
+			int i = -1;
+			var addSqareBrackets = (this.SignatureFlags & TooltipSignatureFlags.NoEnsquaredDefaultParams) == 0;
+			foreach (var parm in parameters)
+			{
+				i++;
+				if ((SignatureFlags & TooltipSignatureFlags.NoLineBreakedMethodParameters) == 0)
+					sb.AppendLine().Append("  ");
+
+				var indexBackup = sb.Length;
+
+				var isOpt = (this.SignatureFlags & TooltipSignatureFlags.NoDefaultParams) == 0 && parm is DVariable && (parm as DVariable).Initializer != null;
+
+				if (isOpt && addSqareBrackets)
+					sb.Append('[');
+
+				//TODO: Show deduced parameters
+				AttributesTypeAndName(parm as DNode, sb);
+
+				if (!templArgs && curArg == i)
+				{
+					//TODO: Optimize
+					var contentToUnderline = sb.ToString(indexBackup, sb.Length - indexBackup);
+					sb.Remove(indexBackup, contentToUnderline.Length);
+					AppendFormat(contentToUnderline, sb, FormatFlags.Underline);
+				}
+
+				if (isOpt)
+				{
+					sb.Append(" = ").Append(DCodeToMarkup((parm as DVariable).Initializer.ToString()));
+					if (addSqareBrackets)
+						sb.Append(']');
+				}
+
+				sb.Append(',');
 			}
 
+			RemoveLastChar(sb, ',');
+			if ((SignatureFlags & TooltipSignatureFlags.NoLineBreakedMethodParameters) == 0)
+				sb.AppendLine();
 			sb.Append(')');
-		}*/
+		}
 
 		void S(DMethod dm, StringBuilder sb, bool templArgs = false, int curArg = -1, ITypeDeclaration baseType = null,
 			DeducedTypeDictionary deducedTypes = null)
 		{
 			AttributesTypeAndName(dm, sb, baseType, templArgs ? curArg : -1, deducedTypes);
 
-			// Parameters
-			sb.Append('(');
-
-			if (dm.Parameters.Count != 0)
-			{
-				for (int i = 0; i < dm.Parameters.Count; i++)
-				{
-					if((SignatureFlags & TooltipSignatureFlags.NoLineBreakedMethodParameters) == 0)
-						sb.AppendLine().Append("  ");
-
-					var parm = dm.Parameters[i] as DNode;
-
-					var indexBackup = sb.Length;
-
-					var addSqareBrackets = (this.SignatureFlags & TooltipSignatureFlags.NoEnsquaredDefaultParams) == 0;
-
-					var isOpt = (this.SignatureFlags & TooltipSignatureFlags.NoDefaultParams) == 0 && parm is DVariable && (parm as DVariable).Initializer != null;
-
-					if (isOpt && addSqareBrackets)
-						sb.Append('[');
-
-					//TODO: Show deduced parameters
-					AttributesTypeAndName(parm, sb);
-
-					if (!templArgs && curArg == i)
-					{
-						//TODO: Optimize
-						var contentToUnderline = sb.ToString(indexBackup, sb.Length - indexBackup);
-						sb.Remove(indexBackup, contentToUnderline.Length);
-						AppendFormat(contentToUnderline, sb, FormatFlags.Underline);
-					}
-
-					if (isOpt)
-					{
-						sb.Append(" = ").Append(DCodeToMarkup((parm as DVariable).Initializer.ToString()));
-						if(addSqareBrackets)
-							sb.Append(']');
-					}
-
-					sb.Append(',');
-				}
-
-				RemoveLastChar(sb, ',');
-				if((SignatureFlags & TooltipSignatureFlags.NoLineBreakedMethodParameters) == 0)
-					sb.AppendLine();
-			}
-
-			sb.Append(')');
+			AppendParameters(dm.Parameters, sb, templArgs, curArg);
 
 			AppendConstraint(dm, sb);
 		}
@@ -303,14 +317,19 @@ namespace D_Parser.Completion.ToolTips
 			}
 		}
 
-		void AppendAttributes(DNode dn, StringBuilder sb, bool showStorageClasses = true)
+		void AppendAttributes(IEnumerable<DAttribute> attributes, StringBuilder sb, bool showStorageClasses = true)
 		{
-			if (dn.Attributes != null && dn.Attributes.Count != 0)
+			if (attributes != null)
 			{
-				foreach (var attr in dn.Attributes)
+				foreach (var attr in attributes)
 					if (CanShowAttribute(attr, showStorageClasses))
 						sb.Append(DCodeToMarkup(attr.ToString())).Append(' ');
 			}
+		}
+
+		void AppendAttributes(DNode dn, StringBuilder sb, bool showStorageClasses = true)
+		{
+			AppendAttributes(dn.Attributes, sb, showStorageClasses);
 
 			var dv = dn as DVariable;
 			if (dv != null && dv.IsAlias)

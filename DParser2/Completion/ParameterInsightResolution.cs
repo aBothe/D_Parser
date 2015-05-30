@@ -139,7 +139,7 @@ namespace D_Parser.Completion
 			{
 				ctxt.Push(Editor);
 
-				ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.DontResolveAliases;
+				// ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.DontResolveAliases;
 
 				if (lastParamExpression != null)
 					lastParamExpression.Accept(new ParameterInsightResolution(Editor, ctxt, res, curBlock));				
