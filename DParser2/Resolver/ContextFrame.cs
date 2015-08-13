@@ -26,17 +26,14 @@ namespace D_Parser.Resolver
 		
 		public void IntroduceTemplateParameterTypes(DSymbol tir)
 		{
-			if(tir!=null)
-				foreach (var dt in tir.DeducedTypes)
-					if(dt != null)
-						DeducedTemplateParameters[dt.Parameter] = dt;
+			if (tir != null)
+				DeducedTemplateParameters.Add (tir.DeducedTypes);
 		}
 
 		public void RemoveParamTypesFromPreferredLocals(DSymbol tir)
 		{
 			if (tir != null)
-				foreach (var dt in tir.DeducedTypes)
-					DeducedTemplateParameters.Remove(dt.Parameter);
+				DeducedTemplateParameters.Remove (tir.DeducedTypes);
 		}
 
 		public void Set(CodeLocation caret)

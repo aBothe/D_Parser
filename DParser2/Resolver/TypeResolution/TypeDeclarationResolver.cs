@@ -813,10 +813,16 @@ namespace D_Parser.Resolver.TypeResolution
 			 */
 			var options = ctxt.CurrentContext.ContextDependentOptions;
 			var applyOptions = ctxt.ScopedBlockIsInNodeHierarchy(m);
-			AbstractType ret;
-
+			IDisposable disp;
 			CodeLocation loc = typeBase != null ? typeBase.Location : m.Location;
-			using (resultBase is DSymbol ? ctxt.Push(resultBase as DSymbol, loc) : ctxt.Push(m, loc))
+
+			if (resultBase is DSymbol)
+				disp = ctxt.Push (resultBase as DSymbol, loc);
+			else
+				disp = ctxt.Push (m, loc);
+
+			AbstractType ret;
+			using (disp)
 			{
 				if (applyOptions)
 					ctxt.CurrentContext.ContextDependentOptions = options;
@@ -930,15 +936,8 @@ namespace D_Parser.Resolver.TypeResolution
 
 				if (returnStmt != null && returnStmt.ReturnExpression != null)
 				{
-					var dedTypes = ctxt.CurrentContext.DeducedTemplateParameters;
-					using (ctxt.Push(method, returnStmt.Location))
-					{
-						if (dedTypes.Count != 0 && dedTypes != ctxt.CurrentContext.DeducedTemplateParameters)
-							foreach (var kv in dedTypes)
-								ctxt.CurrentContext.DeducedTemplateParameters[kv.Key] = kv.Value;
-
+					using (ctxt.Push(method, returnStmt.Location, true))
 						returnType = DResolver.StripMemberSymbols(ExpressionTypeEvaluation.EvaluateType(returnStmt.ReturnExpression, ctxt));
-					}
 
 					if (returnType != null)
 						returnType.NonStaticAccess = true;

@@ -864,12 +864,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			IDisposable disp = null;
 
 			if (ModuleScope)
-			{
-				var ded = ctxt.CurrentContext.DeducedTemplateParameters;
-				disp = ctxt.Push(ctxt.ScopedBlock.NodeRoot as DModule);
-				foreach (var kv in ded)
-					ctxt.CurrentContext.DeducedTemplateParameters.Add(kv.Key, kv.Value);
-			}
+				disp = ctxt.Push(ctxt.ScopedBlock.NodeRoot as DModule, true);
 
 			// If there are symbols that must be preferred, take them instead of scanning the ast
 			else

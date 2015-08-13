@@ -247,8 +247,7 @@ namespace D_Parser.Resolver.TypeResolution
 			{
 				var pop = back != ctxt.ScopedBlock;
 
-				foreach (var kv in deducedTypes)
-					ctxt.CurrentContext.DeducedTemplateParameters[kv.Key] = kv.Value;
+				ctxt.CurrentContext.DeducedTemplateParameters.Add(deducedTypes);
 
 				try
 				{
@@ -315,8 +314,7 @@ namespace D_Parser.Resolver.TypeResolution
 				}
 
 				if (!pop)
-					foreach (var kv in deducedTypes) // May be backup old tps?
-						ctxt.CurrentContext.DeducedTemplateParameters.Remove(kv.Key);
+					ctxt.CurrentContext.DeducedTemplateParameters.Remove(deducedTypes); // May be backup old tps?
 			}
 			#endregion
 

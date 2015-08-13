@@ -15,11 +15,10 @@ namespace D_Parser.Resolver.Templates
 		public DeducedTypeDictionary(TemplateParameter[] parameters)
 		{
 			ExpectedParameters = parameters;
-			if (parameters != null)
-			{
-				foreach (var tpar in parameters)
-					this.Add(tpar,null);
-			}
+
+			if(parameters != null)
+				foreach (var tp in parameters)
+					Add(tp, null);
 		}
 
 		public DeducedTypeDictionary(DNode owner)
@@ -28,9 +27,37 @@ namespace D_Parser.Resolver.Templates
 
 		public DeducedTypeDictionary(DSymbol ms) : this(ms.ValidSymbol ? ms.Definition.TemplateParameters : null)
 		{
-			foreach (var i in ms.DeducedTypes)
-				if(i != null && i != ms)
-					this [i.Parameter] = i;
+			Add (ms.DeducedTypes);
+			if (ms is TemplateParameterSymbol)
+				Remove ((ms as TemplateParameterSymbol).Parameter);
+		}
+
+		public void Remove(IEnumerable<TemplateParameterSymbol> tpss)
+		{
+			if (tpss == null)
+				return;
+
+			foreach (var tps in tpss)
+				Remove (tps.Parameter);
+		}
+
+		public void AddDefault(IEnumerable<TemplateParameter> templateParameters)
+		{
+			if (templateParameters == null)
+				return;
+			
+			foreach (var tp in templateParameters)
+				if (this [tp] == null)
+					this [tp] = new TemplateParameterSymbol (tp, null);
+		}
+
+		public void Add(IEnumerable<TemplateParameterSymbol> tpss)
+		{
+			if (tpss == null)
+				return;
+
+			foreach (var tps in tpss)
+				this [tps.Parameter] = tps;
 		}
 
 		public bool AllParamatersSatisfied

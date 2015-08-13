@@ -182,17 +182,21 @@ namespace D_Parser.Resolver
 			}
 		}
 
-		bool Push_(INode newScope, CodeLocation caret)
+		public IDisposable Push(DSymbol ds, bool keepDeducedTemplateParams = false)
 		{
-			while (newScope != null && !(newScope is IBlockNode))
-				newScope = newScope.Parent as DNode;
+			return ds != null ? Push(ds, ds.Definition.Location, keepDeducedTemplateParams) : null;
+		}
+ 
+		public IDisposable Push(DSymbol ds, CodeLocation caret, bool keepDeducedTemplateParams = false)
+		{
+			if (ds == null)
+				return null;
 
-			var pop = newScope != null && ScopedBlock != newScope;
+			var pop = Push_(ds.Definition, caret, keepDeducedTemplateParams);
 
-			if (pop)
-				PushNewScope(newScope as IBlockNode, caret);
-			
-			return pop;
+			CurrentContext.IntroduceTemplateParameterTypes(ds);
+
+			return new PopDisposable(this, pop ? null : ds);
 		}
 
 		public IDisposable Push(IEditorData editor)
@@ -200,49 +204,53 @@ namespace D_Parser.Resolver
 			return Push(DResolver.SearchBlockAt(editor.SyntaxTree, editor.CaretLocation) ?? editor.SyntaxTree, editor.CaretLocation);
 		}
 
-		public IDisposable Push(DSymbol ds)
+		public IDisposable Push(INode newScope, bool keepDeducedTemplateParams = false)
 		{
-			return ds != null ? Push(ds, ds.Definition.Location) : null;
+			return newScope != null ? Push(newScope, newScope.Location, keepDeducedTemplateParams) : null;
 		}
 
-		public IDisposable Push(DSymbol ds, CodeLocation caret)
+		public IDisposable Push(INode newScope, CodeLocation caret, bool keepDeducedTemplateParams = false)
 		{
-			if (ds == null)
-				return null;
-
-			var pop = Push_(ds.Definition, caret);
-
-			CurrentContext.IntroduceTemplateParameterTypes(ds);
-
-			return new PopDisposable(this, pop ? null : ds);
+			return Push_(newScope, caret, keepDeducedTemplateParams) ? new PopDisposable(this) : null;
 		}
 
-		public IDisposable Push(INode newScope)
+		bool Push_(INode newScope, CodeLocation caret, bool keepDeducedTemplateParams = false)
 		{
-			return newScope != null ? Push(newScope, newScope.Location) : null;
+			while (newScope != null && !(newScope is IBlockNode))
+				newScope = newScope.Parent as DNode;
+
+			var pop = newScope != null && ScopedBlock != newScope;
+
+			if (pop)
+				PushNewScope(newScope as IBlockNode, caret, keepDeducedTemplateParams);
+
+			return pop;
 		}
 
-		public IDisposable Push(INode newScope, CodeLocation caret)
-		{
-			return Push_(newScope, caret) ? new PopDisposable(this) : null;
-		}
-		
-		public void Push(ContextFrame frm)
-		{
-			stack.Add(frm);
-		}
-
-		void PushNewScope(IBlockNode scope, CodeLocation caret)
+		void PushNewScope(IBlockNode scope, CodeLocation caret, bool keepDeducedTemplateParams = false)
 		{
 			var cf = new ContextFrame(this);
+			IEnumerable<TemplateParameterSymbol> tpsToKeep;
+
+			keepDeducedTemplateParams = keepDeducedTemplateParams && !ScopedBlockIsInNodeHierarchy (scope);
+
+			if (keepDeducedTemplateParams)
+				tpsToKeep = DeducedTypesInHierarchy;
+			else
+				tpsToKeep = null;				
+
 			Push(cf);
+
+			if (keepDeducedTemplateParams) {
+				CurrentContext.DeducedTemplateParameters.Add (tpsToKeep);
+			}
 
 			cf.Set(scope, caret);
 		}
 
-		void PushNewScope(IBlockNode scope)
+		public void Push(ContextFrame frm)
 		{
-			PushNewScope(scope, scope.BlockStartLocation);
+			stack.Add(frm);
 		}
 
 		public IEnumerable<TemplateParameterSymbol> DeducedTypesInHierarchy
