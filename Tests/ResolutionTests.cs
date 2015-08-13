@@ -33,7 +33,7 @@ namespace Tests
 	}
 
 	[TestFixture]
-	public class ResolutionTests
+	public partial class ResolutionTests
 	{
 		#region Helpers
 		public static DModule objMod = DParser.ParseString(@"module object;

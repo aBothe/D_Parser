@@ -87,6 +87,7 @@
     <Compile Include="ReferenceFinding.cs" />
     <Compile Include="ResolutionTests.cs" />
     <Compile Include="UFCSTests.cs" />
+    <Compile Include="ResolutionTests2.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DParser2\DParser2.csproj">
