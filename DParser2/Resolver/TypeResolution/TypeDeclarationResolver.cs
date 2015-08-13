@@ -246,7 +246,7 @@ namespace D_Parser.Resolver.TypeResolution
 			public AbstractType Visit (VarArgDecl td)
 			{
 				filterTemplates = true;
-				return null;
+				return td.InnerDeclaration != null ? td.InnerDeclaration.Accept(this) : null;
 			}
 
 			public AbstractType Visit (TemplateInstanceExpression td)
