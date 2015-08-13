@@ -108,6 +108,37 @@ foreach(
 		}
 
 		[Test]
+		public void ForeachIteratorVarArg()
+		{
+			var code = @"module A;
+template T(){ struct S {   int a, b, c; }
+static void print(Templ=S)(Templ[] p_args...) {
+int S; 
+foreach(cur; p_args)
+ {
+ cur;
+}}}
+";
+			var ed = GenEditorData(6, 5, code);
+			var S = ResolutionTests.N<DClassLike> (ed.SyntaxTree, "T.S");
+			var print = ResolutionTests.N<DMethod> (ed.SyntaxTree, "T.print");
+			var cur = (ResolutionTests.S (print, 1, 0, 0) as IExpressionContainingStatement).SubExpressions[0];
+
+			var ctxt = ResolutionTests.CreateDefCtxt (ed.ParseCache, print, cur.EndLocation);
+			AbstractType t;
+			MemberSymbol ms;
+
+			t = ExpressionTypeEvaluation.EvaluateType (cur, ctxt);
+			Assert.That (t, Is.TypeOf(typeof(MemberSymbol)));
+			ms = (MemberSymbol)t;
+
+			Assert.That (ms.Base, Is.TypeOf(typeof(TemplateParameterSymbol)));
+			t = (ms.Base as TemplateParameterSymbol).Base;
+
+			Assert.That (t, Is.TypeOf(typeof(StructType)));
+		}
+
+		[Test]
 		public void ForeachIteratorCompletion()
 		{
 			var code = @"module A;
