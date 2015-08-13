@@ -199,7 +199,7 @@ namespace D_Parser.Parser
 	            if(identifierChain is IdentifierDeclaration)
 					n.NameHash = (identifierChain as IdentifierDeclaration).IdHash;
 	            
-	            n.Parameters = p.Parameters(n);
+	            p.Parameters(n);
 	            
 	            return n;
         	}

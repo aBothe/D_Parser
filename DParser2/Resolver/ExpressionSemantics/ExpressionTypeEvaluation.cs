@@ -311,7 +311,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				// Only if no exists, it's allowed to make a default parameter.
 				bool canMakeDefaultCtor = true;
 				foreach (var opCall in GetOpCalls(ct, true))
-					if (opCall.Parameters == null || opCall.Parameters.Count == 0)
+					if (opCall.Parameters.Count == 0)
 					{
 						canMakeDefaultCtor = false;
 						break;
@@ -324,7 +324,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				// Only, if there are no explicit ctors nor opCalls
 				if (isStruct && !foundExplicitCtor && canCreateExplicitStructCtor)
 				{
-					var l = new List<INode>();
+					var dm= new DMethod(DMethod.MethodType.Constructor)
+					{
+						Name = DMethod.ConstructorIdentifier,
+						Parent = ct.Definition,
+						Description = "Default constructor for struct " + ct.Name
+					};
 
 					foreach (var member in ct.Definition)
 					{
@@ -333,16 +338,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							!dv.IsStatic &&
 							!dv.IsAlias &&
 							!dv.IsConst) //TODO dunno if public-ness of items is required..
-							l.Add(dv);
+							dm.Parameters.Add(dv);
 					}
 
-					yield return new DMethod(DMethod.MethodType.Constructor)
-					{
-						Name = DMethod.ConstructorIdentifier,
-						Parent = ct.Definition,
-						Description = "Default constructor for struct " + ct.Name,
-						Parameters = l
-					};
+					yield return dm;
 				}
 			}
 		}

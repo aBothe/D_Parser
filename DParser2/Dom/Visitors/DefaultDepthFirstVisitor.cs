@@ -51,9 +51,8 @@ namespace D_Parser.Dom
 		{
 			VisitDNode(n);
 
-			if(n.Parameters!=null)
-				foreach (var par in n.Parameters)
-					par.Accept(this);
+			foreach (var par in n.Parameters)
+				par.Accept(this);
 
 			if (n.In != null)
 				n.In.Accept(this);

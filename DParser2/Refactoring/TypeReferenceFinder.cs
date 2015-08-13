@@ -343,9 +343,8 @@ namespace D_Parser.Refactoring
 				return;
 
 			// Reset locals
-			if (dm.Parameters != null)
-				foreach (var n in dm.Parameters)
-					tc [n.NameHash] = 0;
+			foreach (var n in dm.Parameters)
+				tc [n.NameHash] = 0;
 		}
 
 		public override void VisitTemplateParameter (TemplateParameter tp)

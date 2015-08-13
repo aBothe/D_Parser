@@ -301,9 +301,10 @@ namespace D_Parser.Misc.Mangling
 					AbstractType ret;
 					List<DAttribute> attrs;
 					Dictionary<INode,AbstractType> pars;
-					Function(out ret, out attrs, out pars, type);
-					
-					var dm = new DMethod(){ Parameters = pars.Keys.ToList(), Attributes = attrs };
+					Function (out ret, out attrs, out pars, type);
+						
+					var dm = new DMethod { Attributes = attrs };
+					dm.Parameters.AddRange (pars.Keys);
 					return new MemberSymbol(dm, ret, null);
 				case 'C':
 				case 'S':

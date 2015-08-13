@@ -171,37 +171,36 @@ namespace D_Parser.Resolver
 				{
 					var ad = t as AssocArrayType;
 					var valueType = DTypeToTypeDeclVisitor.GenerateTypeDecl(ad.ValueType);
-					return new DMethod () {
+					var dm = new DMethod () {
 						Name = "get",
 						Description = "Looks up key; if it exists returns corresponding value else evaluates and returns defaultValue.",
-						Type = valueType,
-						Parameters = new List<INode> {
-							new DVariable () {
-								Name = "key",
-								Type = DTypeToTypeDeclVisitor.GenerateTypeDecl(ad.KeyType)
-							},
-							new DVariable () {
-								Name = "defaultValue",
-								Type = valueType,
-								Attributes = new List<DAttribute>{ new Modifier (DTokens.Lazy) }
-							}
-						}
+						Type = valueType
 					};
+					dm.Parameters.Add(new DVariable () {
+						Name = "key",
+						Type = DTypeToTypeDeclVisitor.GenerateTypeDecl(ad.KeyType)
+					});
+					dm.Parameters.Add(new DVariable () {
+						Name = "defaultValue",
+						Type = valueType,
+						Attributes = new List<DAttribute>{ new Modifier (DTokens.Lazy) }
+					});
+					return dm;
 				}
 			});
 			props.AddProp(new StaticPropertyInfo("remove", null) {
 				RequireThis = true,
-				NodeGetter = (t, ctxt) => new DMethod
-				{
-					Name = "remove",
-					Description = "remove(key) does nothing if the given key does not exist and returns false. If the given key does exist, it removes it from the AA and returns true.",
-					Type = new DTokenDeclaration (DTokens.Bool),
-					Parameters = new List<INode> { 
-						new DVariable {
-							Name = "key",
-							Type = DTypeToTypeDeclVisitor.GenerateTypeDecl((t as AssocArrayType).KeyType)
-						}
-					}
+				NodeGetter = (t, ctxt) => { 
+					var dm =new DMethod	{
+						Name = "remove",
+						Description = "remove(key) does nothing if the given key does not exist and returns false. If the given key does exist, it removes it from the AA and returns true.",
+						Type = new DTokenDeclaration (DTokens.Bool)
+					};
+					dm.Parameters.Add(new DVariable {
+						Name = "key",
+						Type = DTypeToTypeDeclVisitor.GenerateTypeDecl((t as AssocArrayType).KeyType)
+					});
+					return dm;
 				}
 			});
 

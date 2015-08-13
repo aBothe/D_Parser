@@ -67,7 +67,7 @@ namespace D_Parser.Dom
 
 	public class DMethod : DNode, IBlockNode
 	{
-		public List<INode> Parameters = new List<INode>();
+		public readonly List<INode> Parameters = new List<INode>();
 		public MethodType SpecialType = MethodType.Normal;
 
 		BlockStatement _In;
@@ -108,11 +108,13 @@ namespace D_Parser.Dom
 			{
 				var dm = (DMethod)other;
 
-				Parameters = dm.Parameters;
+				Parameters.Clear();
+				Parameters.AddRange(dm.Parameters);
 				SpecialType = dm.SpecialType;
 				_In = dm._In;
 				_Out = dm._Out;
 				_Body = dm._Body;
+				children.Clear ();
 				children.AddRange(dm.children);
 			}
 
@@ -233,7 +235,7 @@ namespace D_Parser.Dom
 		{
 			get
 			{
-				return Parameters != null && Parameters.Count != 0 && Parent is DModule;
+				return Parameters.Count != 0 && Parent is DModule;
 			}
 		}
 

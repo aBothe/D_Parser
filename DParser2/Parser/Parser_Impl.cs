@@ -309,7 +309,7 @@ namespace D_Parser.Parser
 					var dm = new DMethod(DMethod.MethodType.Allocator) { Location = t.Location };
 					ApplyAttributes(dm);
 
-					dm.Parameters = Parameters(dm);
+					Parameters(dm);
 					FunctionBody(dm);
 					module.Add(dm);
 					break;
@@ -320,7 +320,7 @@ namespace D_Parser.Parser
 					ddm.Name = "delete";
 					ApplyAttributes(ddm);
 
-					ddm.Parameters = Parameters(ddm);
+					Parameters(ddm);
 					FunctionBody(ddm);
 					module.Add(ddm);
 					break;
@@ -1305,7 +1305,9 @@ namespace D_Parser.Parser
 				if (AllowWeakTypeParsing && laKind != OpenParenthesis)
 					return null;
 
-				dd.Parameters = Parameters(null);
+				var _dm = new DMethod();
+				Parameters(_dm);
+				dd.Parameters = _dm.Parameters;
 
 				var attributes = new List<DAttribute>();
 				FunctionAttributes(ref attributes);
@@ -1524,12 +1526,12 @@ namespace D_Parser.Parser
 				var dm = dn as DMethod;
 				if (dm == null)
 				{
-					dm = new DMethod{ Parent = dn.Parent, Parameters = null };
+					dm = new DMethod();
 					dm.AssignFrom(dn);
 					dn = dm;
 				}
 
-				dm.Parameters = Parameters(dm);
+				Parameters(dm);
 			}
 
 			FunctionAttributes(ref dn.Attributes);
@@ -1664,16 +1666,16 @@ namespace D_Parser.Parser
 		/// <summary>
 		/// Parse parameters
 		/// </summary>
-		List<INode> Parameters(DMethod Parent)
+		void Parameters(DMethod Parent)
 		{
-			var ret = new List<INode>();
+			var ret = Parent.Parameters;
 			Expect(OpenParenthesis);
 
 			// Empty parameter list
 			if (laKind == (CloseParenthesis))
 			{
 				Step();
-				return ret;
+				return;
 			}
 
 			var stk_backup = BlockAttributes;
@@ -1733,7 +1735,6 @@ namespace D_Parser.Parser
 
 			Expect(CloseParenthesis);
 			BlockAttributes = stk_backup;
-			return ret;
 		}
 
 		private DNode Parameter(IBlockNode Scope = null)
@@ -3182,7 +3183,7 @@ namespace D_Parser.Parser
 							fl.AnonymousMethod.Type = Type(Scope);
 
 						if (laKind == OpenParenthesis)
-							fl.AnonymousMethod.Parameters = Parameters(fl.AnonymousMethod);
+							Parameters(fl.AnonymousMethod);
 
 						FunctionAttributes(fl.AnonymousMethod);
 					}
@@ -3588,7 +3589,7 @@ namespace D_Parser.Parser
 				fl.AnonymousMethod.Parameters.Add(p);
 			}
 			else if (laKind == OpenParenthesis)
-				fl.AnonymousMethod.Parameters = Parameters(fl.AnonymousMethod);
+				Parameters(fl.AnonymousMethod);
 
 			LambdaBody(fl.AnonymousMethod);
 			fl.EndLocation = fl.AnonymousMethod.EndLocation;
@@ -5093,7 +5094,7 @@ namespace D_Parser.Parser
 			}
 			else
 			{
-				dm.Parameters = Parameters(dm);
+				Parameters(dm);
 			}
 
 			// handle post argument attributes
@@ -5123,7 +5124,7 @@ namespace D_Parser.Parser
 			if (IsTemplateParameterList())
 				TemplateParameterList(dm);
 
-			dm.Parameters = Parameters(dm);
+			Parameters(dm);
 
 			// handle post argument attributes
 			FunctionAttributes(dm);
