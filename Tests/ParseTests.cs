@@ -45,7 +45,7 @@ namespace Tests
 		{
 			var e = DParser.ParseExpression("['': false, '&': true, '=': true]");
 
-			Assert.IsInstanceOfType(typeof(AssocArrayExpression),e);
+			Assert.That(e, Is.TypeOf(typeof(AssocArrayExpression)));
 			var aa = (AssocArrayExpression)e;
 
 			Assert.AreEqual(3, aa.Elements.Count);

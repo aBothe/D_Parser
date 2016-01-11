@@ -1375,16 +1375,16 @@ int b=4;
 
 			var instanceExpr = DParser.ParseExpression("(new MyClass!int).tvar");
 
-			Assert.IsInstanceOfType(typeof(PostfixExpression_Access),instanceExpr);
+			Assert.That(instanceExpr, Is.TypeOf(typeof(PostfixExpression_Access)));
 
 			var res = ExpressionTypeEvaluation.EvaluateType(instanceExpr, ctxt);
 
-			Assert.IsInstanceOfType(typeof(MemberSymbol),res);
+			Assert.That(res, Is.TypeOf(typeof(MemberSymbol)));
 			var mr = (MemberSymbol)res;
 
-			Assert.IsInstanceOfType( typeof(TemplateParameterSymbol),mr.Base);
+			Assert.That(mr.Base, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			var tps = (TemplateParameterSymbol)mr.Base;
-			Assert.IsInstanceOfType( typeof(PrimitiveType),tps.Base);
+			Assert.That(tps.Base, Is.TypeOf(typeof(PrimitiveType)));
 			var sr = (PrimitiveType)tps.Base;
 
 			Assert.AreEqual(sr.TypeToken, DTokens.Int);
@@ -1403,9 +1403,9 @@ T foo(T)() {}
 			var call = DParser.ParseExpression("foo!int()");
 			var bt = ExpressionTypeEvaluation.EvaluateType(call, ctxt);
 			
-			Assert.IsInstanceOfType(typeof(TemplateParameterSymbol),bt);
+			Assert.That(bt, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			var tps = (TemplateParameterSymbol)bt;
-			Assert.IsInstanceOfType(typeof(PrimitiveType),tps.Base, "Resolution returned empty result instead of 'int'");
+			Assert.That(tps.Base, Is.TypeOf(typeof(PrimitiveType)), "Resolution returned empty result instead of 'int'");
 			var st = (PrimitiveType)tps.Base;
 			Assert.IsNotNull(st, "Result must be Static type int");
 			Assert.AreEqual(st.TypeToken, DTokens.Int, "Static type must be int");
@@ -1604,11 +1604,11 @@ int delegate(int b) myDeleg;
 			r = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			mr = r as MemberSymbol;
 			Assert.IsNotNull(mr);
-			Assert.IsInstanceOfType(typeof(DelegateType), mr.Base);
+			Assert.That(mr.Base, Is.TypeOf(typeof(DelegateType)));
 
 			x=DParser.ParseExpression("myDeleg(123)");
 			r = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.That (r, Is.TypeOf(typeof(DelegateCallSymbol)));
+			Assert.That(r, Is.TypeOf(typeof(DelegateCallSymbol)));
 			Assert.That((r as DerivedDataType).Base, Is.TypeOf(typeof(PrimitiveType)));
 
 			x = DParser.ParseExpression("foo(myDeleg(123))");
@@ -1636,10 +1636,10 @@ class Client : IClient!(Params, ConcreteRegistry){}");
 			var ctxt = CreateDefCtxt(pcl, mod);
 
 			var res = TypeDeclarationResolver.HandleNodeMatch(Client, ctxt);
-			Assert.IsInstanceOfType(typeof(ClassType),res);
+			Assert.That(res, Is.TypeOf(typeof(ClassType)));
 			var ct = (ClassType)res;
 
-			Assert.IsInstanceOfType( typeof(ClassType),ct.Base);
+			Assert.That(ct.Base, Is.TypeOf(typeof(ClassType)));
 			ct = (ClassType)ct.Base;
 
 			Assert.AreEqual(ct.DeducedTypes.Count, 2);
@@ -1656,7 +1656,7 @@ class Client : IClient!(Params, ConcreteRegistry){}");
 			var tix = DParser.ParseBasicType("IClient!(Params,ConcreteRegistry)",out opt);
 			res = RS(tix, ctxt);
 
-			Assert.IsInstanceOfType(typeof(ClassType),res);
+			Assert.That(res, Is.TypeOf(typeof(ClassType)));
 		}
 
 		[Test]
@@ -1672,10 +1672,10 @@ class D : C!B {}");
 			var ctxt = CreateDefCtxt(pcl, mod);
 
 			var res = TypeDeclarationResolver.HandleNodeMatch(mod["D"].First(), ctxt);
-			Assert.IsInstanceOfType(typeof(ClassType),res);
+			Assert.That(res, Is.TypeOf(typeof(ClassType)));
 			var ct = (ClassType)res;
 
-			Assert.IsInstanceOfType(typeof(ClassType),ct.Base);
+			Assert.That(ct.Base, Is.TypeOf(typeof(ClassType)));
 			ct = (ClassType)ct.Base;
 
 			Assert.AreEqual(1, ct.DeducedTypes.Count);
@@ -1870,11 +1870,11 @@ struct Appender(A : T[], T) {
 
 			var ex = DParser.ParseExpression("appender!(int[])()");
 			var t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
-			Assert.That(t, Is.InstanceOfType(typeof(StructType)));
+			Assert.That(t, Is.TypeOf(typeof(StructType)));
 
 			ex = DParser.ParseExpression("appender!string()");
 			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
-			Assert.That(t, Is.InstanceOfType(typeof(StructType)));
+			Assert.That(t, Is.TypeOf(typeof(StructType)));
 		}
 
 		[Test]

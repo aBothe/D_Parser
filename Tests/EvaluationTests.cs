@@ -252,10 +252,10 @@ enum int d=126;
 
 			var v = E("a", vp);
 
-			Assert.IsInstanceOfType(typeof(VariableValue),v);
+			Assert.That(v, Is.TypeOf(typeof(VariableValue)));
 			var val = vp[((VariableValue)v).Variable];
 
-			Assert.IsInstanceOfType(typeof(PrimitiveValue),val);
+			Assert.That(val, Is.TypeOf(typeof(PrimitiveValue)));
 			var pv = (PrimitiveValue)val;
 
 			Assert.AreEqual(pv.Value, 234M);
@@ -290,12 +290,12 @@ enum int d=126;
 			var vp = new StandardValueProvider(null);
 
 			var v = E("[11,22,33,43][1]", vp);
-			Assert.IsInstanceOfType(typeof(PrimitiveValue),v);
+			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
 			Assert.AreEqual(((PrimitiveValue)v).Value, 22);
 
 			v = E("[11,22,33,44,55,66,77,88,99,100][1..3]", vp);
 
-			Assert.IsInstanceOfType(typeof(ArrayValue),v);
+			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
 			var av=(ArrayValue)v;
 			Assert.AreEqual(av.Elements.Length,2);
 			Assert.AreEqual((av.Elements[0] as PrimitiveValue).Value,22);
@@ -320,7 +320,7 @@ A a;");
 			Assert.AreEqual(((PrimitiveValue)v).Value,3);
 			*/
 			var v = E("A.someProp", vp);
-			Assert.IsInstanceOfType(typeof(VariableValue),v);
+			Assert.That(v, Is.TypeOf(typeof(VariableValue)));
 			var vv = vp[((VariableValue)v).Variable] as PrimitiveValue;
 			Assert.AreEqual(3, vv.Value);
 		}
