@@ -25,6 +25,12 @@ namespace D_Parser.Resolver
 				this[d] = t;
 			}
 
+			public bool Remove(ResolutionContext ctxt, long hashBias)
+			{
+				Int64 d = unchecked(GetTemplateParamHash(ctxt) + hashBias);
+				return Remove(d);
+			}
+
 			static long GetTemplateParamHash(ResolutionContext ctxt)
 			{
 				var tpm = new List<TemplateParameter>();
@@ -65,6 +71,12 @@ namespace D_Parser.Resolver
 				cache[sr] = ce = new CacheEntryDict();
 
 			ce.Add(ctxt, t, hashBias);
+		}
+
+		public bool Remove(ISyntaxRegion sr, long hashBias = 0)
+		{
+			CacheEntryDict ce;
+			return cache.TryGetValue(sr, out ce) && ce.Remove(ctxt, hashBias);
 		}
 
 		public void Clear()

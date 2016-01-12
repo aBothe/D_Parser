@@ -108,7 +108,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (!(t is TemplateParameterSymbol) || !ctxt.DeducedTypesInHierarchy.Any((tps) => tps.Parameter == (t as TemplateParameterSymbol).Parameter)) // Don't allow caching parameters that affect the caching context.
 				ctxt.Cache.Add(t ?? new UnknownType(x), x, cacheHashBias);
 			else // Clear the defer tag
-				ctxt.Cache.Add(null, x, cacheHashBias);
+				ctxt.Cache.Remove(x, cacheHashBias);
 
 			#if TRACE
 			Trace.Unindent();
