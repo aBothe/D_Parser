@@ -57,7 +57,8 @@ namespace D_Parser.Resolver.Templates
 				return;
 
 			foreach (var tps in tpss)
-				this [tps.Parameter] = tps;
+				if(tps != null)
+					this [tps.Parameter] = tps;
 		}
 
 		public bool AllParamatersSatisfied

@@ -1284,7 +1284,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 		static bool IsConstOrStatic(DNode dn)
 		{
-			if (dn is DEnum || dn is DEnumValue)
+			if (dn is DEnum || dn is DEnumValue || dn is DClassLike)
 				return true;
 
 			var dv = dn as DVariable;

@@ -150,7 +150,8 @@ namespace D_Parser.Resolver.TypeResolution
 
 		static ClassType ResolveObjectClass(ResolutionContext ctxt)
 		{
-			return TypeDeclarationResolver.ResolveSingle (new IdentifierDeclaration (ObjectNameHash), ctxt, false) as ClassType;
+			using(ctxt.Push(ctxt.ScopedBlock?.NodeRoot))
+				return TypeDeclarationResolver.ResolveSingle (new IdentifierDeclaration (ObjectNameHash), ctxt, false) as ClassType;
 		}
 
 		[ThreadStatic]
