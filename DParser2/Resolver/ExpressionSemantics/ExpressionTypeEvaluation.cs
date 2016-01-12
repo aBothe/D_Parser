@@ -55,6 +55,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			ignoreErrors = false;
 		}
 
+		private const string DeferredTagId = "deferred";
+
 		public static AbstractType EvaluateType(IExpression x, ResolutionContext ctxt, bool tryReturnMethodReturnType = true)
 		{
 			if (x == null)
@@ -71,21 +73,42 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			long cacheHashBias = tryReturnMethodReturnType ? 31 : 0;
 
 			AbstractType t;
-			if ((t = ctxt.Cache.TryGetType (x, cacheHashBias)) != null &&
-			    (t.Tag<TypeDeclarationResolver.AliasTag> (TypeDeclarationResolver.AliasTag.Id) == null)) { // Don't accept aliases because their Tag does/base type might differ from the target alias definition.
+			if ((t = ctxt.Cache.TryGetType(x, cacheHashBias)) != null)
+			{
+				if(t.Tag<Object>(DeferredTagId) != null)
+				{
+					#if TRACE
+					Trace.WriteLine("Evaluation deferred");
+					Trace.Unindent();
+					#endif
+					return new UnknownType(x);
+				}
 
-				#if TRACE
-				Trace.WriteLine("Return cached item "+(t != null ? t.ToString() : string.Empty));
-				Trace.Unindent();
-				#endif
+				// Don't accept aliases because their Tag does/base type might differ from the target alias definition.
+				if (t.Tag<TypeDeclarationResolver.AliasTag>(TypeDeclarationResolver.AliasTag.Id) == null)
+				{
+					#if TRACE
+					Trace.WriteLine("Return cached item "+(t != null ? t.ToString() : string.Empty));
+					Trace.Unindent();
+					#endif
 
-				return t;
+					return t;
+				}
+			}
+			else
+			{
+				var deferringPointer = new PrimitiveType(DTokens.INVALID);
+				deferringPointer.Tag(DeferredTagId, new object());
+
+				ctxt.Cache.Add(deferringPointer, x, cacheHashBias);
 			}
 
 			t = x.Accept(new ExpressionTypeEvaluation(ctxt) { TryReturnMethodReturnType = tryReturnMethodReturnType });
 
-			if(!(t is TemplateParameterSymbol) || !ctxt.DeducedTypesInHierarchy.Any((tps)=> tps.Parameter == (t as TemplateParameterSymbol).Parameter)) // Don't allow caching parameters that affect the caching context.
+			if (!(t is TemplateParameterSymbol) || !ctxt.DeducedTypesInHierarchy.Any((tps) => tps.Parameter == (t as TemplateParameterSymbol).Parameter)) // Don't allow caching parameters that affect the caching context.
 				ctxt.Cache.Add(t ?? new UnknownType(x), x, cacheHashBias);
+			else // Clear the defer tag
+				ctxt.Cache.Add(null, x, cacheHashBias);
 
 			#if TRACE
 			Trace.Unindent();
