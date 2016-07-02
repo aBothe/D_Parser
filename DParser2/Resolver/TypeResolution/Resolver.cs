@@ -150,7 +150,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 		static ClassType ResolveObjectClass(ResolutionContext ctxt)
 		{
-			using(ctxt.Push(ctxt.ScopedBlock?.NodeRoot))
+			using (ctxt.Push(ctxt.ScopedBlock == null ? null : ctxt.ScopedBlock.NodeRoot)) //TODO: understand why we're passing null
 				return TypeDeclarationResolver.ResolveSingle (new IdentifierDeclaration (ObjectNameHash), ctxt, false) as ClassType;
 		}
 
