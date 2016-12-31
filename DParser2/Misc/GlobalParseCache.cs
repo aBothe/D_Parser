@@ -340,35 +340,43 @@ namespace D_Parser.Misc
 
 					statIm.sw.Restart ();
 
-					//ISSUE: wild card character ? seems to behave differently across platforms
-					// msdn: -> Exactly zero or one character.
-					// monodocs: -> Exactly one character.
-					var files = Directory.GetFiles (path, "*.d", SearchOption.AllDirectories);
-					var ifiles = Directory.GetFiles (path, "*.di", SearchOption.AllDirectories);
+					try
+					{
+						//ISSUE: wild card character ? seems to	behave differently across platforms
+						// msdn: ->	Exactly	zero or	one	character.
+						// monodocs: ->	Exactly	one	character.
+						var	files =	Directory.GetFiles(path, "*.d",	SearchOption.AllDirectories);
+						var	ifiles = Directory.GetFiles(path, "*.di", SearchOption.AllDirectories);
 
-					statIm.totalFiles = statIm.remainingFiles = files.Length + ifiles.Length;
-				
-					var newRoot = new RootPackage {
-						LastParseTime = Directory.GetLastWriteTimeUtc(path)
-					};
+						statIm.totalFiles =	statIm.remainingFiles =	files.Length + ifiles.Length;
 
-					if (statIm.totalFiles == 0) {
-						noticeFinish (new ParseIntermediate (statIm, newRoot, string.Empty));
-						continue;
+						var	newRoot	= new RootPackage
+						{
+							LastParseTime =	Directory.GetLastWriteTimeUtc(path)
+						};
+
+						if (statIm.totalFiles == 0)
+						{
+							noticeFinish(new ParseIntermediate(statIm, newRoot,	string.Empty));
+							continue;
+						}
+
+						parseThreadStartEvent.Set();
+
+						LaunchParseThreads();
+
+						if (files.Length !=	0)
+							foreach	(string	file in	files)
+								queue.Push(new ParseIntermediate(statIm, newRoot, file));
+
+						if (ifiles.Length != 0)
+							foreach	(string	ifile in ifiles)
+								queue.Push(new ParseIntermediate(statIm, newRoot, ifile));
 					}
-
-					parseThreadStartEvent.Set ();
-
-					LaunchParseThreads ();
-
-					if (files.Length != 0)
-						foreach (string file in files)
-							queue.Push (new ParseIntermediate (statIm, newRoot, file));
-
-					if (ifiles.Length != 0)
-						foreach (string ifile in ifiles)
-							queue.Push (new ParseIntermediate (statIm, newRoot,ifile));
-
+					catch (System.UnauthorizedAccessException)
+					{
+						// ignore inaccessible files/directories
+					}
 					parseThreadStartEvent.Reset ();
 				}
 			}
