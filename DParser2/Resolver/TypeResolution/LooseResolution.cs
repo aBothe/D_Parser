@@ -75,7 +75,7 @@ namespace D_Parser.Resolver
 
 					resAttempt = NodeResolutionAttempt.RawSymbolLookup;
 					ret = LookupIdRawly(editor.ParseCache, o, editor.SyntaxTree);
-				});
+				}, editor.CancelToken);
 
 			resolutionAttempt = resAttempt;
 

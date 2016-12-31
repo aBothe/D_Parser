@@ -141,7 +141,7 @@ namespace D_Parser.Resolver.TypeResolution
 					ret = TypeDeclarationResolver.HandleNodeMatch(o as INode, ctxt);
 
 				ctxt.CurrentContext.ContextDependentOptions = optionBackup;
-			});
+			}, editor.CancelToken);
 
 			return ret;
 		}

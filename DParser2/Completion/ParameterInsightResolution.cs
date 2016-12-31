@@ -142,8 +142,8 @@ namespace D_Parser.Completion
 				// ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.DontResolveAliases;
 
 				if (lastParamExpression != null)
-					lastParamExpression.Accept(new ParameterInsightResolution(Editor, ctxt, res, curBlock));				
-			});
+					lastParamExpression.Accept(new ParameterInsightResolution(Editor, ctxt, res, curBlock));
+			}, Editor.CancelToken);
 
 			/*
 			 * alias int function(int a, bool b) myDeleg;

@@ -36,7 +36,7 @@ namespace D_Parser.Completion.Providers
 			var ctxt = ResolutionContext.Create (Editor, true);
 
 			CodeCompletion.DoTimeoutableCompletionTask(null, ctxt, ()=>
-				classType = DResolver.ResolveClassOrInterface(dc, ctxt, null) as TemplateIntermediateType);
+				classType =	DResolver.ResolveClassOrInterface(dc, ctxt,	null) as TemplateIntermediateType, Editor.CancelToken);
 
 			if (classType == null)
 				return;

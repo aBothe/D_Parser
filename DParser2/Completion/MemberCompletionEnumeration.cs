@@ -25,6 +25,7 @@ namespace D_Parser.Completion
 			, CodeLocation Caret,
 		    ParseCacheView CodeCache,
 			MemberFilter VisibleMembers,
+			CancellationToken cancelToken,
 			ConditionalCompilationFlags compilationEnvironment = null)
 		{
 			var ctxt = ResolutionContext.Create(CodeCache, compilationEnvironment);
@@ -34,7 +35,7 @@ namespace D_Parser.Completion
 				ctxt.Push(ScopedBlock, Caret);
 				var en = new MemberCompletionEnumeration(ctxt, cdgen) { isVarInst = true };
 				en.IterateThroughScopeLayers(Caret, VisibleMembers);
-			});
+			}, cancelToken);
 		}
 		
 		public static void EnumChildren(ICompletionDataGenerator cdgen,ResolutionContext ctxt, UserDefinedType udt, 

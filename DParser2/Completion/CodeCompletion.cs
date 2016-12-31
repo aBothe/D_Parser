@@ -146,6 +146,12 @@ namespace D_Parser.Completion
 
 		public static void DoTimeoutableCompletionTask(ICompletionDataGenerator cdgen, ResolutionContext ctxt, Action ac, CancellationToken token)
 		{
+			if (token == CancellationToken.None)
+			{
+				DoTimeoutableCompletionTask(cdgen, ctxt, ac);
+				return;
+			}
+
 			if (token.IsCancellationRequested)
 				return;
 

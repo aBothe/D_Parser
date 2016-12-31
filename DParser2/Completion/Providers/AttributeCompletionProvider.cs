@@ -80,7 +80,7 @@ namespace D_Parser.Completion.Providers
 				foreach (var v in cs.LocalFlags.Versions)
 					if (!VersionCompletionItems.ContainsKey(v))
 						CompletionDataGenerator.AddTextItem (v, "");
-			});
+			}, Editor.CancelToken);
 		}	
 	}
 
@@ -99,7 +99,7 @@ namespace D_Parser.Completion.Providers
 					CompletionDataGenerator.AddTextItem (v, "");
 				foreach (var v in cs.LocalFlags.DebugVersions)
 					CompletionDataGenerator.AddTextItem (v, "");
-			});
+			}, Editor.CancelToken);
 		}
 	}
 

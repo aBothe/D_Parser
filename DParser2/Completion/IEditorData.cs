@@ -1,5 +1,6 @@
 ﻿using D_Parser.Dom;
 using D_Parser.Misc;
+using System.Threading;
 
 namespace D_Parser.Completion
 {
@@ -20,7 +21,9 @@ namespace D_Parser.Completion
 		public bool IsDebug {set;get;}
 		public ulong DebugLevel { get; set; }
 		public string[] GlobalDebugIds { get; set; }
-		
+
+        public CancellationToken CancelToken { get; set; }
+
 		public virtual void ApplyFrom(IEditorData data)
 		{
 			ModuleCode = data.ModuleCode;
@@ -34,6 +37,8 @@ namespace D_Parser.Completion
 			IsDebug = data.IsDebug;
 			DebugLevel = data.DebugLevel;
 			GlobalDebugIds = data.GlobalDebugIds;
+
+			CancelToken	= data.CancelToken;
 		}
 	}
 
@@ -51,5 +56,7 @@ namespace D_Parser.Completion
 		bool IsDebug{get;}
 		ulong DebugLevel { get; }
 		string[] GlobalDebugIds { get; }
+
+		CancellationToken CancelToken { get; }
 	}
 }

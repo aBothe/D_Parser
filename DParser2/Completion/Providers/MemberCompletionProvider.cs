@@ -46,7 +46,7 @@ namespace D_Parser.Completion.Providers
 				{
 					Logger.LogWarn("Error during member completion", ex);
 				}
-			});
+			}, Editor.CancelToken);
 
 			if (t == null) //TODO: Add after-space list creation when an unbound . (Dot) was entered which means to access the global scope
 				return;

@@ -144,6 +144,7 @@ namespace D_Parser.Completion.Providers
 					Editor.CaretLocation,
 					Editor.ParseCache,
 					visibleMembers,
+					Editor.CancelToken,
 					new ConditionalCompilationFlags(Editor));
 
 			var bits = new BitArray (DTokens.MaxToken, false);
