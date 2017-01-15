@@ -6,6 +6,7 @@ using D_Parser.Dom.Statements;
 using D_Parser.Misc;
 using System.Diagnostics;
 using D_Parser.Resolver.TypeResolution;
+using D_Parser.Resolver.ASTScanner;
 using System;
 using System.Threading;
 using D_Parser.Resolver.ExpressionSemantics;
@@ -60,11 +61,13 @@ namespace D_Parser.Resolver
 		internal readonly ResolutionCache<AbstractType> Cache;
 		//internal readonly ResolutionCache<ISymbolValue> ValueCache;
 		public readonly ParseCacheView ParseCache;
+		internal readonly ResolutionCache<NameScan> NameScanCache;
 
 		public void ClearCaches()
 		{
 			MixinCache.Clear ();
-			Cache.Clear ();
+			Cache.Clear();
+			NameScanCache.Clear();
 		}
 
 		public IBlockNode ScopedBlock
@@ -119,6 +122,7 @@ namespace D_Parser.Resolver
 			Cache = new ResolutionCache<AbstractType>(this);
 			//ValueCache = new ResolutionCache<ISymbolValue>(this);
 			MixinCache = new ResolutionCache<MixinAnalysis.MixinCacheItem>(this);
+			NameScanCache = new ResolutionCache<NameScan>(this);
 		}
 
 		public ResolutionContext(ParseCacheView parseCache, ConditionalCompilationFlags gFlags, IBlockNode bn, CodeLocation caret)
@@ -128,6 +132,7 @@ namespace D_Parser.Resolver
 			Cache = new ResolutionCache<AbstractType>(this);
 			//ValueCache = new ResolutionCache<ISymbolValue>(this);
 			MixinCache = new ResolutionCache<MixinAnalysis.MixinCacheItem>(this);
+			NameScanCache = new ResolutionCache<NameScan>(this);
 
 			PushNewScope (bn, caret);
 		}
