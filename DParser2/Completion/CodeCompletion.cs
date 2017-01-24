@@ -169,6 +169,12 @@ namespace D_Parser.Completion
 		/// <param name="timeout">if int.MinValue, this value will be made the default CompletionTimeout.</param>
 		public static void DoTimeoutableCompletionTask(ICompletionDataGenerator cdgen,ResolutionContext ctxt, Action ac, int timeout = int.MinValue)
 		{
+            if (ctxt.CancellationToken != CancellationToken.None)
+            {
+                // inherit existing cancellation token
+                ac();
+                return;
+            }
 			var cts = new CancellationTokenSource ();
 			ctxt.CancellationToken = cts.Token;
 
