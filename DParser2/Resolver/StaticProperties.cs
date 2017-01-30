@@ -56,7 +56,8 @@ namespace D_Parser.Resolver
 					Attributes = !RequireThis ? StaticAttributeList : null,
 					Name = Name,
 					Description = Description,
-					Type = GetPropertyType(t, ctxt)
+					Type = GetPropertyType(t, ctxt),
+                    IsStaticProperty = true
 				};
 			}
 		}
@@ -93,7 +94,7 @@ namespace D_Parser.Resolver
 
 			props.AddProp(new StaticPropertyInfo("init", "A type's or variable's static initializer expression") { TypeGetter = help_ReflectType, ResolvedBaseTypeGetter = help_ReflectResolvedType });
 			props.AddProp(new StaticPropertyInfo("sizeof", "Size of a type or variable in bytes", DTokens.Uint)); // Do not define it as size_t due to unnecessary recursive definition as typeof(int.sizeof)
-			props.AddProp(new StaticPropertyInfo("alignof", "Variable offset", DTokens.Uint) { RequireThis = true });
+			props.AddProp(new StaticPropertyInfo("alignof", "Variable alignment", DTokens.Uint) { RequireThis = true });
 			props.AddProp(new StaticPropertyInfo("mangleof", "String representing the ‘mangled’ representation of the type", "string"));
 			props.AddProp(new StaticPropertyInfo("stringof", "String representing the source representation of the type", "string") { 
 				ValueGetter = (vp, v) => {

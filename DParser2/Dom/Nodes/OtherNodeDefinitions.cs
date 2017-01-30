@@ -13,7 +13,8 @@ namespace D_Parser.Dom
 		public const string AliasThisIdentifier = "this";
 		public static readonly int AliasThisIdentifierHash = AliasThisIdentifier.GetHashCode();
 		public bool IsAlias = false;
-		public bool IsAliasThis;
+        public bool IsAliasThis;
+        public bool IsStaticProperty = false;
 
 		public bool IsLocal
 		{
