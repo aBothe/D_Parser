@@ -62,7 +62,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			IEnumerable<AbstractType> scanResults = baseExpression;
 			var nextResults = new List<AbstractType>();
 
-			while (scanResults != null)
+			while (scanResults != null && !ctxt.CancellationToken.IsCancellationRequested)
 			{
 				foreach (var b in scanResults)
 				{
