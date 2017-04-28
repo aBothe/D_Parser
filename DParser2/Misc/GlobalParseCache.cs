@@ -115,6 +115,8 @@ namespace D_Parser.Misc
 			get{ return parsingThreads > 0; }
 		}
 
+		public static string[] TaskTokens = null;
+
 		/// <summary>
 		/// Contains phys path -> RootPackage relationships.
 		/// </summary>
@@ -413,7 +415,7 @@ namespace D_Parser.Misc
 						sw.Start ();
 
 						// If no debugger attached, save time + memory by skipping function bodies
-						ast = DParser.ParseString (code, im.skipFunctionBodies);
+						ast = DParser.ParseString (code, im.skipFunctionBodies, true, TaskTokens);
 					}
 					catch(Exception ex) {
 						ast = null;

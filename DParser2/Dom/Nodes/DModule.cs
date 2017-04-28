@@ -17,7 +17,10 @@ namespace D_Parser.Dom
         public override void AssignFrom(INode Other)
         {
 			if (Other is DModule)
-				ParseErrors = ((DModule)Other).ParseErrors;
+            {
+                ParseErrors = ((DModule)Other).ParseErrors;
+                Tasks = ((DModule)Other).Tasks;
+            }
 
 			base.AssignFrom(Other);
         }
@@ -60,6 +63,12 @@ namespace D_Parser.Dom
 		}
 
 		public System.Collections.ObjectModel.ReadOnlyCollection<ParserError> ParseErrors
+		{
+			get;
+			set;
+		}
+
+		public System.Collections.ObjectModel.ReadOnlyCollection<ParserError> Tasks
 		{
 			get;
 			set;

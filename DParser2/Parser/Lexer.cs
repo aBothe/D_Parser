@@ -33,6 +33,8 @@ namespace D_Parser.Parser
 		char[] identBuffer = new char[MAX_IDENTIFIER_LENGTH];
 
 		public IList<ParserError> LexerErrors = new List<ParserError>();
+        public List<ParserError> Tasks = new List<ParserError>();
+        public string[] TaskTokens = null;
 
 		/// <summary>
 		/// Set to false if normal block comments shall be logged, too.
@@ -172,7 +174,8 @@ namespace D_Parser.Parser
 			identBuffer = null;
 			LexerErrors = null;
 			Comments = null;
-		}
+            Tasks = null;
+        }
 		#endregion
 
 		#region I/O
@@ -361,10 +364,14 @@ namespace D_Parser.Parser
 
 		string ReadToEndOfLine()
 		{
+			TaskParseState taskState = new TaskParseState(TaskTokens);
+
 			sb.Length = 0;
 			int nextChar;
 			while ((nextChar = reader.Read()) != -1)
 			{
+				taskState.doNextChar(nextChar, Col + sb.Length, sb);
+
 				char ch = (char)nextChar;
 
 				if (nextChar == '\r')
@@ -376,6 +383,8 @@ namespace D_Parser.Parser
 				// Return read string, if EOL is reached
 				if (nextChar == '\n')
 				{
+					taskState.endOfLineOrComment(Line, sb, Tasks);
+
 					++Line;
 					Col = 1;
 					return sb.ToString();
@@ -383,6 +392,8 @@ namespace D_Parser.Parser
 
 				sb.Append(ch);
 			}
+
+			taskState.endOfLineOrComment(Line, sb, Tasks);
 
 			// Got EOF before EOL
 			Col += sb.Length;
@@ -1843,6 +1854,62 @@ namespace D_Parser.Parser
 				Comments.Add(new Comment(commentType, comm.TrimStart('/',' ','\t'), st.Column < 2, st, end));
 		}
 
+		struct TaskParseState
+		{
+			public TaskParseState(string[] tokens)
+			{
+				TaskTokens = tokens;
+				collectTasks = (TaskTokens != null);
+				taskStart = -1;
+				taskCol = 0;
+				task = null;
+			}
+
+			public void doNextChar(int nextChar, int Col, StringBuilder scCurWord)
+			{
+				if (collectTasks && task == null)
+				{
+					if (IsIdentifierPart(nextChar) || nextChar == '@')
+					{
+						if (taskStart == -1)
+						{
+							taskCol = Col;
+							taskStart = scCurWord.Length;
+						}
+					}
+					else if (taskStart >= 0)
+					{
+						string word = scCurWord.ToString(taskStart, scCurWord.Length - taskStart);
+						foreach (var token in TaskTokens)
+							if (word == token)
+							{
+								task = word;
+								break;
+							}
+						if (task == null)
+							taskStart = -1;
+					}
+				}
+			}
+
+			public void endOfLineOrComment(int Line, StringBuilder scCurWord, List<ParserError> Tasks)
+			{
+				if (task != null)
+				{
+					string comment = scCurWord.ToString(taskStart, scCurWord.Length - taskStart);
+					Tasks.Add(new ParserError(false, comment, 0, new CodeLocation(taskCol, Line)));
+					taskStart = -1;
+					task = null;
+				}
+			}
+
+			string[] TaskTokens;
+			bool collectTasks;
+			int taskStart;
+			int taskCol;
+			string task;
+		}
+
 		void ReadMultiLineComment(Comment.Type commentType, bool isNestingComment)
 		{
 			int nestedCommentDepth = 1;
@@ -1851,8 +1918,11 @@ namespace D_Parser.Parser
 			StringBuilder scCurWord = new StringBuilder(); // current word, (scTag == null) or comment (when scTag != null)
 			bool hadLineEnd = false;
 
+			TaskParseState taskState = new TaskParseState(TaskTokens);
+
 			while ((nextChar = ReaderRead()) != -1)
 			{
+				taskState.doNextChar(nextChar, Col, scCurWord);
 
 				char ch = (char)nextChar;
 
@@ -1866,6 +1936,8 @@ namespace D_Parser.Parser
 				// End of multiline comment reached ?
 				if ((isNestingComment ? ch == '+' : ch == '*') && ReaderPeek() == '/')
 				{
+					taskState.endOfLineOrComment(Line, scCurWord, Tasks);
+
 					ReaderRead(); // Skip "*" or "+"
 
 					if (nestedCommentDepth > 1)
@@ -1880,6 +1952,7 @@ namespace D_Parser.Parser
 
 				if (HandleLineEnd(ch))
 				{
+					taskState.endOfLineOrComment(Line - 1, scCurWord, Tasks);
 					scCurWord.AppendLine();
 					hadLineEnd = true;
 				}
@@ -1898,6 +1971,8 @@ namespace D_Parser.Parser
 				else
 					scCurWord.Append(ch);
 			}
+
+			taskState.endOfLineOrComment(Line, scCurWord, Tasks);
 
 			// Reached EOF before end of multiline comment.
 			if (commentType.HasFlag(Comment.Type.Documentation) || !OnlyEnlistDDocComments)

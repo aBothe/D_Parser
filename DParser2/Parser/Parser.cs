@@ -65,7 +65,7 @@ namespace D_Parser.Parser
 			get { return Lexer.IsEOF; }
 		}
 
-		public List<ParserError> ParseErrors = new List<ParserError>();
+        public List<ParserError> ParseErrors = new List<ParserError>();
 		public const int MaxParseErrorsBeforeFailure = 100;
 		#endregion
 
@@ -78,7 +78,7 @@ namespace D_Parser.Parser
 			DeclarationAttributes = null;
 			Lexer.Dispose();
 			Lexer = null;
-			ParseErrors = null;
+            ParseErrors = null;
 		}
 
 		public DParser(Lexer lexer)
@@ -159,11 +159,12 @@ namespace D_Parser.Parser
             return bt;
         }
 
-        public static DModule ParseString(string ModuleCode,bool SkipFunctionBodies=false, bool KeepComments = true)
+        public static DModule ParseString(string ModuleCode, bool SkipFunctionBodies = false, 
+                                          bool KeepComments = true, string[] taskTokens = null)
         {
             using(var sr = new StringReader(ModuleCode))
         	{
-            	using(var p = Create(sr))
+            	using(var p = Create(sr, taskTokens))
             		return p.Parse(SkipFunctionBodies, KeepComments);
         	}
         }
@@ -171,7 +172,7 @@ namespace D_Parser.Parser
         public static DModule ParseFile(string File, bool SkipFunctionBodies=false, bool KeepComments = true)
         {
         	using(var s = new StreamReader(File)){
-	            var p=Create(s);
+	            var p = Create(s);
 	            var m = p.Parse(SkipFunctionBodies, KeepComments);
 	            m.FileName = File;
 	            if(string.IsNullOrEmpty(m.ModuleName))
@@ -205,9 +206,11 @@ namespace D_Parser.Parser
         	}
         }
 
-        public static DParser Create(TextReader tr)
+        public static DParser Create(TextReader tr, string[] taskTokens = null)
         {
-			return new DParser(new Lexer(tr));
+			var parser = new DParser(new Lexer(tr));
+            parser.Lexer.TaskTokens = taskTokens;
+            return parser;
         }
 		#endregion
 
@@ -390,7 +393,8 @@ namespace D_Parser.Parser
             if(KeepComments)
             	Lexer.OnlyEnlistDDocComments = false;
             doc=Root();
-			doc.ParseErrors = new System.Collections.ObjectModel.ReadOnlyCollection<ParserError>(ParseErrors);
+            doc.ParseErrors = new System.Collections.ObjectModel.ReadOnlyCollection<ParserError>(ParseErrors);
+            doc.Tasks = new System.Collections.ObjectModel.ReadOnlyCollection<ParserError>(Lexer.Tasks);
 			if(KeepComments){
 				doc.Comments = Comments.ToArray();
 			}
