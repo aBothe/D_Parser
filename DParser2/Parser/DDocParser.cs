@@ -199,9 +199,8 @@ namespace D_Parser.Parser
 							Step (); // -
 							Step (); // >
 							return;
-						} else
-							goto default;
-						break;
+						}
+						goto default;
 					default:
 						SkipParameterText ();
 						break;

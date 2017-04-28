@@ -1401,10 +1401,12 @@ namespace D_Parser.Parser
 					}
 
 					return null;
+                    /*
 					// Code error! - to prevent infinite declaration loops, step one token forward anyway!
 					if(laKind != CloseCurlyBrace && laKind != CloseParenthesis)
 						Step();
 					return null;
+                     */
 				}
 			}
 			else

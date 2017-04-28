@@ -695,7 +695,7 @@ namespace D_Parser.Resolver.TypeResolution
 			public AbstractType Visit(ImportSymbolNode importSymbolNode)
 			{
 				return VisitAliasDefinition(importSymbolNode);
-
+                /*
 				AbstractType ret = null;
 
 				var modAlias = importSymbolNode is ModuleAliasNode;
@@ -724,6 +724,7 @@ namespace D_Parser.Resolver.TypeResolution
 					ret = new AliasedType(importSymbolNode, bt);
 				}
 				return ret;
+                */
 			}
 
 			public AbstractType Visit(ModuleAliasNode moduleAliasNode)

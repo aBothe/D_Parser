@@ -446,8 +446,9 @@ namespace D_Parser.Resolver.Templates
 					return false;
 				else
 					return ResultComparer.IsImplicitlyConvertible(r_res, v_res);
-			}*/
+			}
 			return false;
+            */
 		}
 	}
 }
