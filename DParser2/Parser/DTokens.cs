@@ -383,7 +383,7 @@ namespace D_Parser.Parser
 		[Obsolete("Use IsMemberFunctionAttribute instead.")]
 		public static readonly BitArray FunctionAttribute = NewSet(Pure, Nothrow);
 		[Obsolete("Use IsMemberFunctionAttribute instead.")]
-		public static readonly BitArray MemberFunctionAttribute = NewSet(Const, Immutable, Shared, InOut, Pure, Nothrow);
+		public static readonly BitArray MemberFunctionAttribute = NewSet(Const, Immutable, Shared, InOut, Pure, Nothrow, Scope, Return);
 		[Obsolete("Use IsParameterModifier instead.")]
 		public static readonly BitArray ParamModifiers = NewSet(In, Out, InOut, Ref, Lazy, Scope);
 		[Obsolete("Use IsClassLike instead.")]
@@ -761,6 +761,7 @@ namespace D_Parser.Parser
 			switch (token)
 			{
 				case Return:
+				case Scope:
 				case Const:
 				case Immutable:
 				case Shared:
