@@ -2046,15 +2046,15 @@ namespace D_Parser.Parser
 			Modifier m;
 
 			switch (laKind) {
-				case DTokens.At:
+			case DTokens.At:
 				attr = AtAttribute(scope);
 				break;
 
-				case DTokens.Pragma:
+			case DTokens.Pragma:
 				attr=_Pragma();
 				break;
 
-				case DTokens.Deprecated:
+			case DTokens.Deprecated:
 				Step();
 				var loc = t.Location;
 				IExpression lc = null;
@@ -2067,7 +2067,7 @@ namespace D_Parser.Parser
 				attr = new DeprecatedAttribute(loc, t.EndLocation, lc);
 				break;
 
-				case DTokens.Extern:
+			case DTokens.Extern:
 				attr = m = new Modifier (laKind, la.Value) { Location = la.Location };
 				Step ();
 				if (laKind == DTokens.OpenParenthesis) {
@@ -2094,13 +2094,12 @@ namespace D_Parser.Parser
 				m.EndLocation = t.EndLocation;
 				break;
 
-				case DTokens.Align:
+			case DTokens.Align:
 				attr = m = new Modifier (laKind, la.Value) { Location = la.Location };
 				Step ();
 				if (laKind == DTokens.OpenParenthesis) {
 					Step();
-					if (Expect(Literal))
-						m.LiteralContent = new IdentifierExpression(t.LiteralValue, t.LiteralFormat);
+					m.LiteralContent = AssignExpression(scope);
 
 					if (!Expect(CloseParenthesis))
 						return;
@@ -2109,7 +2108,7 @@ namespace D_Parser.Parser
 				m.EndLocation = t.EndLocation;
 				break;
 
-				case DTokens.Package:
+			case DTokens.Package:
 				attr = m = new Modifier (laKind, la.Value) { Location = la.Location };
 				Step ();
 
@@ -2125,7 +2124,7 @@ namespace D_Parser.Parser
 				m.EndLocation = t.EndLocation;
 				break;
 
-				default:
+			default:
 				attr = m = new Modifier (laKind, la.Value) { Location = la.Location };
 				Step ();
 				m.EndLocation = t.EndLocation;
