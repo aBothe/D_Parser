@@ -39,7 +39,8 @@ namespace D_Parser.Dom
 			System,
 			Safe,
 			Property,
-			Trusted
+			Trusted,
+			Nogc
 		}
 
 		public readonly BuiltInAttributes Kind;
@@ -63,6 +64,8 @@ namespace D_Parser.Dom
 					return "@system";
 				case BuiltInAttributes.Trusted:
 					return "@trusted";
+				case BuiltInAttributes.Nogc:
+					return "@nogc";
 			}
 			return "@<invalid>";
 		}

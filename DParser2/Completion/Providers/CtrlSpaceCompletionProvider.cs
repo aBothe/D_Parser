@@ -44,7 +44,8 @@ namespace D_Parser.Completion.Providers
 			"property",
 			"safe",
 			"system",
-			"trusted"
+			"trusted",
+			"nogc"
 		};
 
 		static readonly byte[] statementKeywords = new[]{

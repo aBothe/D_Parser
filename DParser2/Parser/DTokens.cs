@@ -576,6 +576,8 @@ namespace D_Parser.Parser
 					return "System functions \nare functions not marked with @safe or @trusted and are not nested inside @safe functions\n\nSystem functions may be marked with the @system attribute.\n \nA function being system does not mean it actually is unsafe, it just means that the compiler is unable to verify that it cannot exhibit undefined behavior.\n\nSystem functions are not covariant with trusted or safe functions.";
 				case "@trusted":
 					return "Trusted functions\n\n- Are marked with the @trusted attribute,\n- Are guaranteed by the programmer to not exhibit \n  any undefined behavior if called by a safe function,\n- May call safe, trusted, or system functions,\n- Are covariant with safe or system functions";
+				case "@nogc":
+					return "No GC functions\nare marked with the @nogc attribute to ensure no GC allocations are done by the function itself or any of the called functions.";
 				default:
 					return GetDescription(GetTokenID(token));
 			}

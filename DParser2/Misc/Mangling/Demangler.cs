@@ -434,6 +434,11 @@ namespace D_Parser.Misc.Mangling
 							nextChar = (char)r.Read();
 							attributes.Add(new BuiltInAtAttribute(BuiltInAtAttribute.BuiltInAttributes.Safe));
 							continue;
+						case 'i':
+							r.Read();
+							nextChar = (char)r.Read();
+							attributes.Add(new BuiltInAtAttribute(BuiltInAtAttribute.BuiltInAttributes.Nogc));
+							continue;
 					}
 				}
 			}

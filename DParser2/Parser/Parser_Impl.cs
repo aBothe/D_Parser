@@ -2170,6 +2170,9 @@ namespace D_Parser.Parser
 					case "disable":
 						att = BuiltInAtAttribute.BuiltInAttributes.Disable;
 						break;
+					case "nogc":
+						att = BuiltInAtAttribute.BuiltInAttributes.Nogc;
+						break;
 				}
 
 				if (att != BuiltInAtAttribute.BuiltInAttributes.None)
