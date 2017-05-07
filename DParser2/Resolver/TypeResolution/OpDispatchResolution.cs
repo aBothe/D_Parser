@@ -57,7 +57,7 @@ namespace D_Parser.Resolver.TypeResolution
 			if (overloads == null || overloads.Length < 0)
 				yield break;
 
-			var av = new ArrayValue (Evaluation.GetStringType(ctxt), Strings.TryGet(nextIdentifierHash));
+			var av = new ArrayValue(Evaluation.GetStringLiteralType(ctxt), Strings.TryGet(nextIdentifierHash));
 
 			foreach (DSymbol o in overloads) {
 				var dn = o.Definition;

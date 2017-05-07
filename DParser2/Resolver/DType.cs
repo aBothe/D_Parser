@@ -277,6 +277,8 @@ namespace D_Parser.Resolver
 		public readonly int FixedLength;
 		public readonly bool IsStaticArray;
 
+		public bool IsStringLiteral { get; set; }
+
 		public ArrayType(AbstractType ValueType)
 			: base(ValueType, null) { FixedLength = -1; }
 
@@ -289,10 +291,13 @@ namespace D_Parser.Resolver
 
 		public override AbstractType Clone(bool cloneBase)
 		{
+			ArrayType type;
 			if(IsStaticArray)
-				return new ArrayType(cloneBase && Base != null ? Base.Clone(true) : Base);
-			
-			return new ArrayType(cloneBase && Base != null ? Base.Clone(true) : Base, FixedLength);
+				type = new ArrayType(cloneBase && Base != null ? Base.Clone(true) : Base);
+			else
+				type = new ArrayType(cloneBase && Base != null ? Base.Clone(true) : Base, FixedLength);
+			type.IsStringLiteral = IsStringLiteral;
+			return type;
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)

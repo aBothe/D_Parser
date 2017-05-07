@@ -101,7 +101,7 @@ namespace D_Parser.Resolver
 					var t = AbstractType.Get(v);
 					if(t == null)
 						return new NullValue();
-					return new ArrayValue(Evaluation.GetStringType(vp.ResolutionContext), (t is DSymbol) ? DNode.GetNodePath((t as DSymbol).Definition,true) : t.ToCode());
+					return new ArrayValue(Evaluation.GetStringLiteralType(vp.ResolutionContext), (t is DSymbol) ? DNode.GetNodePath((t as DSymbol).Definition, true) : t.ToCode());
 				}
 			});
 

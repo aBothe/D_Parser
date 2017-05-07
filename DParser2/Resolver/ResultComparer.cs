@@ -160,6 +160,9 @@ namespace D_Parser.Resolver
 				if (ar1_n != ar2_n)
 					return false;
 
+				if (ar1.IsStringLiteral && ar2.IsString)
+					return true;
+
 				if (ar1_n || IsImplicitlyConvertible(ar1.KeyType, ar2.KeyType, ctxt))
 					return IsImplicitlyConvertible(ar1.Base, ar2.Base, ctxt);
 			}

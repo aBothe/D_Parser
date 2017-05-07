@@ -40,7 +40,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					
 				case "identifier":
 					if(te.Arguments!=null && te.Arguments.Length == 1)
-						return new ArrayValue(GetStringType(), te.Arguments[0].ToString());
+						return new ArrayValue(GetStringLiteralType(), te.Arguments[0].ToString());
 					break;
 					
 					
@@ -102,7 +102,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					}
 					
 					ctxt.ContextIndependentOptions = optionsBackup;
-					return new ArrayValue(GetStringType(), prot);					
+					return new ArrayValue(GetStringLiteralType(), prot);
 					
 				case "getVirtualFunctions":
 					break;

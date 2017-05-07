@@ -418,7 +418,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					else if(e is PrimitiveValue)
 						sb.Append((char)((e as PrimitiveValue).Value));
 				}
-				return new ArrayValue(GetStringType(LiteralSubformat.Utf8), sb.ToString());
+				return new ArrayValue(GetStringLiteralType(LiteralSubformat.Utf8), sb.ToString());
 			}
 			
 			

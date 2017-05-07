@@ -21,9 +21,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		bool ignoreErrors;
 		#endregion
 
-		ArrayType GetStringType(LiteralSubformat fmt = LiteralSubformat.Utf8)
+		ArrayType GetStringLiteralType(LiteralSubformat fmt = LiteralSubformat.Utf8)
 		{
-			return Evaluation.GetStringType(ctxt, fmt);
+			return Evaluation.GetStringLiteralType(ctxt, fmt);
 		}
 
 		#region Errors
@@ -868,7 +868,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 				case Parser.LiteralFormat.StringLiteral:
 				case Parser.LiteralFormat.VerbatimStringLiteral:
-					var str = GetStringType(id.Subformat);
+					var str = GetStringLiteralType(id.Subformat);
 					str.NonStaticAccess = true;
 					return str;
 				default:
@@ -1081,16 +1081,16 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					return new PrimitiveType(DTokens.Bool);
 
 				case DTokens.__FILE__:
-					return GetStringType();
+					return GetStringLiteralType();
 				case DTokens.__LINE__:
 					return new PrimitiveType(DTokens.Int);
 				case DTokens.__MODULE__:
-					return GetStringType();
+					return GetStringLiteralType();
 				case DTokens.__FUNCTION__:
 				//TODO
 					return null;
 				case DTokens.__PRETTY_FUNCTION__:
-					return GetStringType();
+					return GetStringLiteralType();
 				default:
 					return null;
 			}
@@ -1170,7 +1170,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public AbstractType Visit(ImportExpression x)
 		{
-			return Evaluation.GetStringType(ctxt);
+			return Evaluation.GetStringLiteralType(ctxt);
 		}
 
 		public AbstractType Visit(TypeidExpression x)
@@ -1227,7 +1227,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					return null;
 
 				case "identifier":
-					return GetStringType();
+					return GetStringLiteralType();
 
 				case "getMember":
 					pfa = prepareMemberTraitExpression(te, out t);
@@ -1258,7 +1258,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 
 				case "getProtection":
-					return GetStringType();
+					return GetStringLiteralType();
 
 				case "getVirtualFunctions":
 					break;

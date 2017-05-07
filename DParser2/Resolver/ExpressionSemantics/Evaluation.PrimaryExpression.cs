@@ -15,6 +15,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public static int wstringTypeHash = "wstring".GetHashCode();
 		public static int dstringTypeHash = "dstring".GetHashCode();
 
+		public static ArrayType GetStringLiteralType(ResolutionContext ctxt, LiteralSubformat fmt = LiteralSubformat.Utf8)
+		{
+			var type = GetStringType(ctxt, fmt);
+			type.IsStringLiteral = true;
+			return type;
+		}
+		
 		public static ArrayType GetStringType(ResolutionContext ctxt, LiteralSubformat fmt = LiteralSubformat.Utf8)
 		{
 			ArrayType _t = null;
@@ -51,9 +58,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return _t;
 		}
 
-		ArrayType GetStringType(LiteralSubformat fmt = LiteralSubformat.Utf8)
+		ArrayType GetStringLiteralType(LiteralSubformat fmt = LiteralSubformat.Utf8)
 		{
-			return GetStringType(ctxt, fmt);
+			return GetStringLiteralType(ctxt, fmt);
 		}
 
 		public ISymbolValue Visit(TokenExpression x)
@@ -136,17 +143,17 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				case DTokens.False:
 					return new PrimitiveValue(false);
 				case DTokens.__FILE__:
-					return new ArrayValue(GetStringType(), (ctxt.ScopedBlock.NodeRoot as DModule).FileName);
+					return new ArrayValue(GetStringLiteralType(), (ctxt.ScopedBlock.NodeRoot as DModule).FileName);
 				case DTokens.__LINE__:
 					return new PrimitiveValue(x.Location.Line);
 				case DTokens.__MODULE__:
-					return new ArrayValue(GetStringType(), (ctxt.ScopedBlock.NodeRoot as DModule).ModuleName);
+					return new ArrayValue(GetStringLiteralType(), (ctxt.ScopedBlock.NodeRoot as DModule).ModuleName);
 				case DTokens.__FUNCTION__:
 					//TODO
 					return null;
 				case DTokens.__PRETTY_FUNCTION__:
 					var dm = ctxt.ScopedBlock as DMethod;
-					return new ArrayValue(GetStringType(), dm == null ? "<not inside function>" : dm.ToString(false, true));
+					return new ArrayValue(GetStringLiteralType(), dm == null ? "<not inside function>" : dm.ToString(false, true));
 				default:
 					return null;
 			}
@@ -249,7 +256,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			var text = File.ReadAllText(fn);
 
-			return new ArrayValue(GetStringType(), text);
+			return new ArrayValue(GetStringLiteralType(), text);
 		}
 
 		public ISymbolValue Visit(ArrayLiteralExpression arr)

@@ -137,8 +137,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		#endregion
 
 		#region Ctor
-		public ArrayValue(IdentifierExpression stringLiteral, ResolutionContext ctxtToResolveStringType = null) 
-			: base(Evaluation.GetStringType(ctxtToResolveStringType, stringLiteral.Subformat))
+		public ArrayValue(IdentifierExpression stringLiteral, ResolutionContext ctxtToResolveStringType = null)
+			: base(Evaluation.GetStringLiteralType(ctxtToResolveStringType, stringLiteral.Subformat))
 		{
 			StringValue = stringLiteral.StringValue;
 			StringFormat = stringLiteral.Subformat;

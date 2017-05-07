@@ -283,7 +283,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 				case Parser.LiteralFormat.StringLiteral:
 				case Parser.LiteralFormat.VerbatimStringLiteral:
-					return new ArrayValue(GetStringType(id.Subformat), id);
+					return new ArrayValue(GetStringLiteralType(id.Subformat), id);
 				default:
 					return null;
 			}
