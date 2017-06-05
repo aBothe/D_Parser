@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
@@ -127,7 +128,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 									 * Foo f=new Foo();
 									 * f(); -- calls opCall, opCall is not static
 									 */
-									nextResults.Add(bt);
+                                    if (!nextResults.Contains(bt) && !scanResults.Contains(bt))
+									    nextResults.Add(bt);
 									requireStaticItems = false;
 								}
 								//TODO: Can other types work as function/are callable?
