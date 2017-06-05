@@ -1,5 +1,6 @@
 ﻿using D_Parser.Dom;
 using D_Parser.Misc;
+using D_Parser.Resolver;
 using System.Threading;
 
 namespace D_Parser.Completion
@@ -23,6 +24,41 @@ namespace D_Parser.Completion
 		public string[] GlobalDebugIds { get; set; }
 
         public CancellationToken CancelToken { get; set; }
+
+		private ResolutionContext NormalContext;
+		private ResolutionContext NoDeductionContext;
+		private ResolutionContext RawContext;
+
+		public EditorData()
+		{
+		}
+
+		public ResolutionContext GetLooseResolutionContext(LooseResolution.NodeResolutionAttempt att)
+		{
+			if (att == LooseResolution.NodeResolutionAttempt.Normal)
+			{
+				NormalContext.PopAll();
+				return NormalContext;
+			}
+			else if (att == LooseResolution.NodeResolutionAttempt.NoParameterOrTemplateDeduction)
+			{
+				NoDeductionContext.PopAll();
+				return NoDeductionContext;
+			}
+			else if (att == LooseResolution.NodeResolutionAttempt.RawSymbolLookup)
+			{
+				RawContext.PopAll();
+				return RawContext;
+			}
+			return null;
+		}
+
+		public void NewResolutionContexts()
+		{
+			NormalContext = ResolutionContext.Create(this, false);
+			NoDeductionContext = ResolutionContext.Create(this, false);
+			RawContext = ResolutionContext.Create(this, false);
+		}
 
 		public virtual void ApplyFrom(IEditorData data)
 		{
@@ -58,5 +94,7 @@ namespace D_Parser.Completion
 		string[] GlobalDebugIds { get; }
 
 		CancellationToken CancelToken { get; }
+
+		ResolutionContext GetLooseResolutionContext(LooseResolution.NodeResolutionAttempt att);
 	}
 }

@@ -32,10 +32,11 @@ namespace D_Parser.Resolver
 					o = (o as PostfixExpression_MethodCall).PostfixForeExpression;
 			}
 			
-			var ctxt = ResolutionContext.Create(editor, false);
 
 			AbstractType ret = null;
 			NodeResolutionAttempt resAttempt = NodeResolutionAttempt.Normal;
+			var ctxt = editor.GetLooseResolutionContext(resAttempt) ?? ResolutionContext.Create(editor, false);
+
 			CodeCompletion.DoTimeoutableCompletionTask(null, ctxt, () =>
 				{
 					ctxt.Push(editor);
@@ -52,10 +53,15 @@ namespace D_Parser.Resolver
 					if(ret != null && !(ret is UnknownType))
 						return;
 
-
-					ctxt.ClearCaches();
-
 					resAttempt = NodeResolutionAttempt.NoParameterOrTemplateDeduction;
+					var ct = editor.GetLooseResolutionContext(resAttempt);
+					if (ct != null)
+					{
+						ct.Push(editor);
+						ctxt = ct;
+					}
+					else
+						ctxt.ClearCaches();
 
 					ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly | ResolutionOptions.DontResolveAliases;
 
@@ -69,11 +75,16 @@ namespace D_Parser.Resolver
 					if(ret != null && !(ret is UnknownType))
 						return;
 
-
-
-					ctxt.ClearCaches();
-
 					resAttempt = NodeResolutionAttempt.RawSymbolLookup;
+					ct = editor.GetLooseResolutionContext(resAttempt);
+					if (ct != null)
+					{
+						ct.Push(editor);
+						ctxt = ct;
+					}
+					else
+						ctxt.ClearCaches();
+
 					ret = LookupIdRawly(editor.ParseCache, o, editor.SyntaxTree);
 				}, editor.CancelToken);
 

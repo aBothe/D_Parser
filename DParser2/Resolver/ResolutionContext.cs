@@ -167,6 +167,11 @@ namespace D_Parser.Resolver
 				stack.RemoveAt(stack.Count-1);
 		}
 
+		public void PopAll()
+		{
+			stack.Clear();
+		}
+
 		class PopDisposable : IDisposable
 		{
 			public readonly ResolutionContext ctxt;

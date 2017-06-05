@@ -684,6 +684,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 					if (v.StopEnumerationOnNextScope)
 						return true;
+
+                    if (ctxt.CancellationToken.IsCancellationRequested)
+                        break;
 				}
 				return false;
 			}
