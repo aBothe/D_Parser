@@ -21,6 +21,7 @@ namespace D_Parser.Completion.Providers
 		public IBlockNode ScopedBlock;
 		public MemberFilter MemberFilter = MemberFilter.All;
 		IEditorData ed;
+        Dictionary<ImportStatement, bool> ImportCache;
 
 		public MemberCompletionProvider(ICompletionDataGenerator cdg, ISyntaxRegion sr, IBlockNode b) : base(cdg) {
 			AccessExpression = sr;
@@ -31,6 +32,7 @@ namespace D_Parser.Completion.Providers
 		{
 			ed = Editor;
 			ctxt = ResolutionContext.Create(Editor, false);
+            ImportCache = new Dictionary<ImportStatement, bool> ();
 
 			AbstractType t = null;
 			CodeCompletion.DoTimeoutableCompletionTask(CompletionDataGenerator,ctxt,() =>
@@ -228,7 +230,29 @@ namespace D_Parser.Completion.Providers
 				if (di.IsPublic && CanItemBeShownGenerally(i) && AbstractVisitor.CanAddMemberOfType(MemberFilter, i))
 					CompletionDataGenerator.Add(i);
 			}
-		}
+			foreach (var i in tr.Definition.StaticStatements)
+			{
+				var impStmt = i as ImportStatement;
+				if (impStmt != null && impStmt.IsPublic && !ImportCache.ContainsKey(impStmt))
+                {
+                    ImportCache.Add(impStmt, true);
+
+    				foreach (var decl in impStmt.PseudoAliases)
+                        CompletionDataGenerator.Add(decl);
+                        
+    				foreach (var imp in impStmt.Imports)
+                    {
+                        if (imp.ModuleAlias == null && imp.ModuleIdentifier != null) // != null already handled by pseudo aliases
+                        {
+				            string mod = imp.ModuleIdentifier.ToString();
+
+			                foreach (var m in ctxt.ParseCache.LookupModuleName(ed.SyntaxTree, mod))
+                                (new ModuleSymbol(m)).Accept(this);
+                        }
+                    }
+                }
+            }
+        }
 
 		public void VisitPackageSymbol(PackageSymbol mpr)
 		{
