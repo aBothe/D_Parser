@@ -124,7 +124,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				case DTokens.Union:
 				case DTokens.Class:
 				case DTokens.Interface:
-					if (r = typeToCheck is UserDefinedType &&
+                    if (r = typeToCheck is TemplateIntermediateType &&
 						((TemplateIntermediateType)typeToCheck).Definition.ClassType == isExpression.TypeSpecializationToken)
 						res = typeToCheck;
 					break;
