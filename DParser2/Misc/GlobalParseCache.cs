@@ -637,7 +637,7 @@ namespace D_Parser.Misc
 					var pack = kv.Value.GetOrCreateSubPackage (ModuleNameHelper.ExtractPackageName (modName));
 
 					if (pack != null)
-						ret = pack.GetModule (modName);
+                        ret = pack.GetModule(ModuleNameHelper.ExtractModuleName(modName));
 					break;
 				}
 			}
