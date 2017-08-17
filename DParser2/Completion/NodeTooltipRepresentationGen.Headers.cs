@@ -51,6 +51,17 @@ namespace D_Parser.Completion.ToolTips
 
 		public string GenTooltipSignature(AbstractType t, bool templateParamCompletion = false, int currentMethodParam = -1)
 		{
+            if (t is PrimitiveType)
+            {
+                var aliasedSymbol = t.Tag<TypeDeclarationResolver.AliasTag>(TypeDeclarationResolver.AliasTag.Id);
+                if (aliasedSymbol != null)
+                {
+                    var def = aliasedSymbol.aliasDefinition;
+                    if (def != null)
+                        return GenTooltipSignature(aliasedSymbol.aliasDefinition, templateParamCompletion, currentMethodParam,
+                            new DTypeToTypeDeclVisitor().VisitPrimitiveType(t as PrimitiveType), new DeducedTypeDictionary(def));
+                }
+            }
 			var ds = t as DSymbol;
 			if (ds != null)
 			{
@@ -58,13 +69,17 @@ namespace D_Parser.Completion.ToolTips
 					return GenTooltipSignature(ds.Base, false, currentMethodParam);
 
 				var aliasedSymbol = ds.Tag<TypeDeclarationResolver.AliasTag>(TypeDeclarationResolver.AliasTag.Id);
-				return GenTooltipSignature(aliasedSymbol == null || currentMethodParam >= 0 ? ds.Definition : aliasedSymbol.aliasDefinition, templateParamCompletion, currentMethodParam, DTypeToTypeDeclVisitor.GenerateTypeDecl(ds.Base), new DeducedTypeDictionary(ds));
+                if (aliasedSymbol != null)
+                    if (aliasedSymbol.aliasDefinition is ImportSymbolAlias)
+                        aliasedSymbol = null; // skip selective import aliases
+                var def = aliasedSymbol == null || currentMethodParam >= 0 ? ds.Definition : aliasedSymbol.aliasDefinition;
+				return GenTooltipSignature(def, templateParamCompletion, currentMethodParam, DTypeToTypeDeclVisitor.GenerateTypeDecl(ds.Base), new DeducedTypeDictionary(ds));
 			}
 
 			if (t is PackageSymbol)
 			{
 				var pack = (t as PackageSymbol).Package;
-				return "<i>(Package)</i> " + pack.ToString();
+				return "(package) " + pack.ToString();
 			}
 
 			if (t is DelegateType)
@@ -78,28 +93,56 @@ namespace D_Parser.Completion.ToolTips
 		}
 
 		public string GenTooltipSignature(DNode dn, bool templateParamCompletion = false,
-			int currentMethodParam = -1, ITypeDeclaration baseType = null, DeducedTypeDictionary deducedType = null)
+			int currentMethodParam = -1, ITypeDeclaration baseType = null, DeducedTypeDictionary deducedTypes = null)
 		{
 			var sb = new StringBuilder();
 
 			if (dn is DMethod)
-				S(dn as DMethod, sb, templateParamCompletion, currentMethodParam, baseType, deducedType);
+            {
+				AppendMethod(dn as DMethod, sb, templateParamCompletion, currentMethodParam, baseType, deducedTypes);
+            }
 			else if (dn is DModule)
 			{
-				sb.Append("<i>(Module)</i> ").Append((dn as DModule).ModuleName);
+				sb.Append("(module) ").Append((dn as DModule).ModuleName);
 			}
 			else if (dn is DClassLike)
-				S(dn as DClassLike, sb, deducedType);
-			else if (dn != null)
-				AttributesTypeAndName(dn, sb, baseType, -1, deducedType);
+            {
+				AppendClassLike(dn as DClassLike, sb, deducedTypes);
+            }
+			else if (dn is DEnum)
+            {
+                AppendEnum(dn as DEnum, sb, baseType, deducedTypes);
+            }
+			else if (dn is DVariable)
+            {
+                var dvar = dn as DVariable;
+                if (dvar.IsParameter)
+                    sb.Append("(parameter) ");
+                else if (dvar.IsLocal)
+                    sb.Append("(local variable) ");
+                else if (dvar.IsAlias)
+                    sb.Append("(alias) ");
 
+				AttributesTypeAndName(dn, sb, baseType, -1, deducedTypes);
+
+                if (dvar.Initializer != null)
+                    if (dvar.IsConst || dvar.IsAlias || dvar is DEnumValue || dvar.ContainsAttribute(DTokens.Immutable))
+                        sb.Append(" = ").Append(dvar.Initializer.ToString());
+
+                if (dvar.IsAlias && dvar.Type != null)
+                    sb.Append(" : ").Append(dvar.Type.ToString());
+            }
+			else if (dn != null)
+            {
+                AttributesTypeAndName(dn, sb, baseType, -1, deducedTypes);
+            }
 			return sb.ToString();
 		}
 
 		void GenDelegateSignature(DelegateType dt, StringBuilder sb, bool templArgs = false, int curArg = -1)
 		{
 			if (dt.delegateTypeBase is FunctionLiteral)
-				S((dt.delegateTypeBase as FunctionLiteral).AnonymousMethod, sb, templArgs, curArg, DTypeToTypeDeclVisitor.GenerateTypeDecl(dt.ReturnType));
+				AppendMethod((dt.delegateTypeBase as FunctionLiteral).AnonymousMethod, sb, templArgs, curArg, DTypeToTypeDeclVisitor.GenerateTypeDecl(dt.ReturnType));
 			else if (dt.delegateTypeBase is DelegateDeclaration)
 			{
 				var delegateDecl = dt.delegateTypeBase as DelegateDeclaration;
@@ -198,7 +241,7 @@ namespace D_Parser.Completion.ToolTips
 			sb.Append(')');
 		}
 
-		void S(DMethod dm, StringBuilder sb, bool templArgs = false, int curArg = -1, ITypeDeclaration baseType = null,
+		void AppendMethod(DMethod dm, StringBuilder sb, bool templArgs = false, int curArg = -1, ITypeDeclaration baseType = null,
 			DeducedTypeDictionary deducedTypes = null)
 		{
 			AttributesTypeAndName(dm, sb, baseType, templArgs ? curArg : -1, deducedTypes);
@@ -208,13 +251,13 @@ namespace D_Parser.Completion.ToolTips
 			AppendConstraint(dm, sb);
 		}
 
-		void S(DClassLike dc, StringBuilder sb, DeducedTypeDictionary deducedTypes = null)
+		void AppendClassLike(DClassLike dc, StringBuilder sb, DeducedTypeDictionary deducedTypes = null)
 		{
 			AppendAttributes(dc, sb);
 
 			sb.Append(DCodeToMarkup(DTokens.GetTokenString(dc.ClassType))).Append(' ');
 
-			sb.Append(DCodeToMarkup(dc.Name));
+			sb.Append(DCodeToMarkup(AbstractNode.GetNodePath(dc, true)));
 
 			AppendTemplateParams(dc, sb, -1, deducedTypes);
 
@@ -231,17 +274,33 @@ namespace D_Parser.Completion.ToolTips
 			AppendConstraint(dc, sb);
 		}
 
-		void AttributesTypeAndName(DNode dn, StringBuilder sb,
+        void AppendEnum(DEnum de, StringBuilder sb, ITypeDeclaration baseType, DeducedTypeDictionary deducedTypes)
+        {
+            AppendAttributes(de, sb);
+
+            sb.Append("enum ");
+
+            sb.Append(DCodeToMarkup(AbstractNode.GetNodePath(de, true)));
+
+            if (baseType != null)
+                sb.Append(" : ").Append(DCodeToMarkup(baseType.ToString()));
+        }
+
+        void AttributesTypeAndName(DNode dn, StringBuilder sb,
 			ITypeDeclaration baseType = null, int highlightTemplateParam = -1,
 			DeducedTypeDictionary deducedTypes = null)
 		{
-			AppendAttributes(dn, sb, baseType == null);
+            AppendAttributes(dn, sb, baseType == null);
 
 			if (dn.Type != null || baseType != null)
 				sb.Append(DCodeToMarkup((baseType ?? dn.Type).ToString(true))).Append(' ');
 
 			// Maybe highlight variables/method names?
-			sb.Append(dn.Name);
+            var dvar = dn as DVariable;
+            if (dvar == null || !dvar.IsLocal)
+                sb.Append(AbstractNode.GetNodePath(dn, true));
+            else
+                sb.Append(dn.Name);
 
 			AppendTemplateParams(dn, sb, highlightTemplateParam, deducedTypes);
 		}
@@ -330,10 +389,6 @@ namespace D_Parser.Completion.ToolTips
 		void AppendAttributes(DNode dn, StringBuilder sb, bool showStorageClasses = true)
 		{
 			AppendAttributes(dn.Attributes, sb, showStorageClasses);
-
-			var dv = dn as DVariable;
-			if (dv != null && dv.IsAlias)
-				sb.Append("alias ");
 		}
 
 		static void RemoveLastChar(StringBuilder sb, char c)

@@ -73,7 +73,7 @@ namespace D_Parser.Dom
 				// Also include module path
 				if (curParent is DModule)
 					path = (curParent as DModule).ModuleName + "." + path;
-				else
+				else if (!String.IsNullOrEmpty(curParent.Name))
 					path = curParent.Name + "." + path;
 
 				curParent = curParent.Parent;
