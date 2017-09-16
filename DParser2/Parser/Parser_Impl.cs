@@ -261,6 +261,12 @@ namespace D_Parser.Parser
 				case Static:
 					if (Lexer.CurrentPeekToken.Kind == If)
 						goto case Version;
+                    else if (Lexer.CurrentPeekToken.Kind == Foreach || Lexer.CurrentPeekToken.Kind == Foreach_Reverse)
+                    {
+                        Step();
+                        module.Add(ForeachStatement(module, null, true) as StaticForeachStatement);
+                        break;
+                    }
 					goto default;
 				case Assert:
 					Step();
@@ -2010,7 +2016,7 @@ namespace D_Parser.Parser
 					case At:
 						return true;
 					case Static:
-						if (Lexer.CurrentPeekToken.Kind != If)
+                        if (Lexer.CurrentPeekToken.Kind != If && Lexer.CurrentPeekToken.Kind != Foreach && Lexer.CurrentPeekToken.Kind != Foreach_Reverse)
 							return true;
 						return false;
 					case Auto:
@@ -3784,16 +3790,21 @@ namespace D_Parser.Parser
 				case Static:
 					if (Lexer.CurrentPeekToken.Kind == If)
 						return StmtCondition(Parent, Scope);
-					else if (Lexer.CurrentPeekToken.Kind == Assert)
-						goto case Assert;
-					else if (Lexer.CurrentPeekToken.Kind == Import)
+                    else if (Lexer.CurrentPeekToken.Kind == Assert)
+                        goto case Assert;
+                    else if (Lexer.CurrentPeekToken.Kind == Foreach || Lexer.CurrentPeekToken.Kind == Foreach_Reverse)
+                    {
+                        Step();
+					    return ForeachStatement(Scope, Parent, true);
+                    }
+                    else if (Lexer.CurrentPeekToken.Kind == Import)
 						goto case Import;
 					goto default;
 				case For:
 					return ForStatement(Scope, Parent);
 				case Foreach:
 				case Foreach_Reverse:
-					return ForeachStatement(Scope, Parent);
+					return ForeachStatement(Scope, Parent, false);
 				case While:
 					Step();
 
@@ -4254,15 +4265,14 @@ namespace D_Parser.Parser
 			return dbs;
 		}
 
-		ForeachStatement ForeachStatement(IBlockNode Scope,IStatement Parent)
+		ForeachStatement ForeachStatement(IBlockNode Scope, IStatement Parent, bool isStatic)
 		{
 			Step();
 
-			var dbs = new ForeachStatement() { 
-				Location = t.Location, 
-				IsReverse = t.Kind == Foreach_Reverse, 
-				Parent = Parent 
-			};
+            ForeachStatement dbs = isStatic ? new StaticForeachStatement() : new ForeachStatement();
+			dbs.Location = t.Location;
+			dbs.IsReverse = t.Kind == Foreach_Reverse;
+			dbs.Parent = Parent;
 
 			if(!Expect(OpenParenthesis))
 				return dbs;
@@ -4279,6 +4289,9 @@ namespace D_Parser.Parser
 				
 				var forEachVar = new DVariable{ Parent = Scope };
 				forEachVar.Location = la.Location;
+
+                if (isStatic && (laKind == Alias || laKind == Enum))
+                    Step();
 
 				CheckForStorageClasses(Scope);
 				ApplyAttributes(forEachVar);

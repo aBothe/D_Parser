@@ -449,7 +449,12 @@ namespace D_Parser.Dom
 			}
 		}
 
-		public virtual void Visit(Statements.VolatileStatement s)
+        public virtual void Visit(StaticForeachStatement s)
+        {
+            Visit(s as ForeachStatement);
+        }
+       
+        public virtual void Visit(Statements.VolatileStatement s)
 		{
 			VisitChildren(s);
 		}

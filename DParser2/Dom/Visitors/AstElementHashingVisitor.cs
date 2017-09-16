@@ -479,7 +479,12 @@ namespace D_Parser.Dom.Visitors
 			return 1000793;
 		}
 
-		public long VisitMixinStatement(Statements.MixinStatement s)
+        public long Visit(Statements.StaticForeachStatement s)
+        {
+            return 1002341; // higher than any other prime in this file
+        }
+
+        public long VisitMixinStatement(Statements.MixinStatement s)
 		{
 			return 1000829;
 		}

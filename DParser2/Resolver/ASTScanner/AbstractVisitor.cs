@@ -1035,12 +1035,17 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				return false;
 			}
 
-			public bool Visit(StaticAssertStatement s)
-			{
-				return VisitExpressionStmt(s);
-			}
+            public bool Visit(StaticAssertStatement s)
+            {
+                return VisitExpressionStmt(s);
+            }
 
-			public bool Visit(AsmStatement.InstructionStatement instrStatement)
+            public bool Visit(StaticForeachStatement s)
+            {
+                return Visit(s as ForeachStatement);
+            }
+
+            public bool Visit(AsmStatement.InstructionStatement instrStatement)
 			{
 				return false;
 			}

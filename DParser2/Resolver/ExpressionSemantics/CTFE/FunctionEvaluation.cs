@@ -298,7 +298,12 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 			
 		}
 
-		public void Visit(AsmStatement.InstructionStatement instrStatement)
+        public void Visit(StaticForeachStatement foreachStatement)
+        {
+
+        }
+
+        public void Visit(AsmStatement.InstructionStatement instrStatement)
 		{
 
 		}
