@@ -5295,7 +5295,7 @@ namespace D_Parser.Parser
 		#endregion
 
 		#region Functions
-		bool IsFunctionBody { get { return laKind == In || laKind == Out || laKind == Body || laKind == OpenCurlyBrace; } }
+        bool IsFunctionBody { get { return laKind == In || laKind == Out || laKind == Body || laKind == Do || laKind == OpenCurlyBrace; } }
 
 		void FunctionBody(DMethod par)
 		{
@@ -5348,7 +5348,7 @@ namespace D_Parser.Parser
 			}
 
 			// Although there can be in&out constraints, there doesn't have to be a direct body definition. Used on abstract class/interface methods.
-			if (laKind == Body){
+			if (laKind == Body || laKind == Do){
 				Step();
 				par.BodyToken = t.Location;
 			}
