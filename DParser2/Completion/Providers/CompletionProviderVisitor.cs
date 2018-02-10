@@ -472,30 +472,30 @@ namespace D_Parser.Completion
 				base.Visit (s);
 		}
 
-		public override void Visit(AsmStatement s)
+		public override void VisitAsmStatement(AsmStatement s)
 		{
 			scopedStatement = s;
-			base.Visit(s);
+			base.VisitAsmStatement(s);
 			scopedStatement = null;
 		}
 
-		public override void Visit(AsmStatement.InstructionStatement s)
+		public override void VisitAsmInstructionStatement(AsmInstructionStatement s)
 		{
 			scopedStatement = s;
-			if (s.Operation == AsmStatement.InstructionStatement.OpCode.__UNKNOWN__)
+			if (s.Operation == AsmInstructionStatement.OpCode.__UNKNOWN__)
 			{
 				prv = new InlineAsmCompletionProvider(s, cdgen);
 				halt = true;
 			}
 			else
-				base.Visit(s);
+				base.VisitAsmInstructionStatement(s);
 			scopedStatement = null;
 		}
 
-		public override void Visit(AsmStatement.RawDataStatement s)
+		public override void VisitAsmRawDataStatement(AsmRawDataStatement s)
 		{
 			scopedStatement = s;
-			base.Visit(s);
+			base.VisitAsmRawDataStatement(s);
 			scopedStatement = null;
 		}
 
@@ -533,9 +533,9 @@ namespace D_Parser.Completion
 			if (e.Token == DTokens.Incomplete) {
 				halt = true;
 				const MemberFilter BaseAsmFlags = MemberFilter.Classes | MemberFilter.StructsAndUnions | MemberFilter.Enums | MemberFilter.Methods | MemberFilter.TypeParameters | MemberFilter.Types | MemberFilter.Variables;
-				if (scopedStatement is AsmStatement || scopedStatement is AsmStatement.InstructionStatement)
+				if (scopedStatement is AsmStatement || scopedStatement is AsmInstructionStatement)
 					prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, BaseAsmFlags | MemberFilter.x86Registers | MemberFilter.x64Registers | MemberFilter.Labels);
-				else if (scopedStatement is AsmStatement.RawDataStatement)
+				else if (scopedStatement is AsmRawDataStatement)
 					prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, BaseAsmFlags | MemberFilter.Labels);
 				else /*if (handlesInitializer)*/ // Why only in initializers?
 					prv = new CtrlSpaceCompletionProvider (cdgen, scopedBlock, shownKeywords.Count == 0 ? MemberFilter.All | MemberFilter.ExpressionKeywords : shownKeywords.Peek());

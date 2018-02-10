@@ -403,9 +403,9 @@ namespace D_Parser.Dom
 			VisitChildren(s);
 		}
 
-		public virtual void Visit(Statements.AsmStatement s) { VisitChildren(s); }
-		public virtual void Visit(Statements.AsmStatement.RawDataStatement s) { VisitAbstractStmt(s); }
-		public virtual void Visit(Statements.AsmStatement.InstructionStatement s) 
+		public virtual void VisitAsmStatement(AsmStatement s) { VisitChildren(s); }
+		public virtual void VisitAsmRawDataStatement(AsmRawDataStatement s) { VisitAbstractStmt(s); }
+		public virtual void VisitAsmInstructionStatement(AsmInstructionStatement s) 
 		{
 			VisitAbstractStmt(s);
 			if (s.Arguments != null)
@@ -414,7 +414,7 @@ namespace D_Parser.Dom
 					a.Accept(this);
 			}
 		}
-		public virtual void Visit(Statements.AsmStatement.AlignStatement s) 
+		public virtual void VisitAsmAlignStatement(AsmAlignStatement s) 
 		{
 			VisitAbstractStmt(s);
 

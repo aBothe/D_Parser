@@ -4350,7 +4350,7 @@ namespace D_Parser.Parser
 		AsmStatement ParseAsmStatement(IBlockNode Scope, IStatement Parent)
 		{
 			Step();
-			AsmStatement.AlignStatement als;
+			AsmAlignStatement als;
 			var s = new AsmStatement() { Location = t.Location, Parent = Parent };
 
 			CheckForStorageClasses (Scope); // allowed since dmd 2.067
@@ -4367,15 +4367,15 @@ namespace D_Parser.Parser
 				switch(laKind)
 				{
 					case Align:
-					als = new AsmStatement.AlignStatement() { Location = la.Location, Parent = s };
+					als = new AsmAlignStatement() { Location = la.Location, Parent = s };
 					Step();
 					als.ValueExpression = Expression(Scope);
 					l.Add(als);
 					Step();
 					break;
 					case DTokens.Identifier:
-					var opCode = AsmStatement.InstructionStatement.OpCode.__UNKNOWN__;
-					var dataType = AsmStatement.RawDataStatement.DataType.__UNKNOWN__;
+					var opCode = AsmInstructionStatement.OpCode.__UNKNOWN__;
+					var dataType = AsmRawDataStatement.DataType.__UNKNOWN__;
 					if (Peek(1).Kind == Colon)
 					{
 						l.Add(new LabeledStatement() { Location = la.Location, Parent = s, Identifier = la.Value, EndLocation = Peek(1).EndLocation });
@@ -4386,17 +4386,17 @@ namespace D_Parser.Parser
 						continue;
 					}
 
-					if (AsmStatement.RawDataStatement.TryParseDataType(la.Value, out dataType))
-						l.Add(new AsmStatement.RawDataStatement() { Location = la.Location, Parent = s, TypeOfData = dataType });
-					else if (AsmStatement.InstructionStatement.TryParseOpCode(la.Value, out opCode))
-						l.Add(new AsmStatement.InstructionStatement() { Location = la.Location, Parent = s, Operation = opCode });
+					if (AsmRawDataStatement.TryParseDataType(la.Value, out dataType))
+						l.Add(new AsmRawDataStatement() { Location = la.Location, Parent = s, TypeOfData = dataType });
+					else if (AsmInstructionStatement.TryParseOpCode(la.Value, out opCode))
+						l.Add(new AsmInstructionStatement() { Location = la.Location, Parent = s, Operation = opCode });
 					else switch (la.Value.ToLower())
 					{
 						case "pause":
 							SynErr(Identifier, "Pause is not supported by dmd's assembler. Use `rep; nop;` instead to achieve the same effect.");
 							break;
 						case "even":
-							als = new AsmStatement.AlignStatement() { Location = la.Location, Parent = s };
+							als = new AsmAlignStatement() { Location = la.Location, Parent = s };
 							als.ValueExpression = new IdentifierExpression(2) { Location = la.Location, EndLocation = la.EndLocation };
 							l.Add(als);
 							break;
@@ -4405,7 +4405,7 @@ namespace D_Parser.Parser
 							break;
 						default:
 							SynErr(Identifier, "Unknown op-code!");
-							l.Add(new AsmStatement.InstructionStatement() { Location = la.Location, Parent = s, Operation = AsmStatement.InstructionStatement.OpCode.__UNKNOWN__ });
+							l.Add(new AsmInstructionStatement() { Location = la.Location, Parent = s, Operation = AsmInstructionStatement.OpCode.__UNKNOWN__ });
 							break;
 					}
 					Step();
@@ -4450,16 +4450,16 @@ namespace D_Parser.Parser
 					}
 					else
 						Step();
-					if (parentStatement is AsmStatement.InstructionStatement)
-						((AsmStatement.InstructionStatement)parentStatement).Arguments = args.ToArray();
-					else if (parentStatement is AsmStatement.RawDataStatement)
-						((AsmStatement.RawDataStatement)parentStatement).Data = args.ToArray();
+					if (parentStatement is AsmInstructionStatement)
+						((AsmInstructionStatement)parentStatement).Arguments = args.ToArray();
+					else if (parentStatement is AsmRawDataStatement)
+						((AsmRawDataStatement)parentStatement).Data = args.ToArray();
 					break;
 					case DTokens.Semicolon:
 						Step();
 						break;
 					case DTokens.Literal:
-						l.Add(new AsmStatement.RawDataStatement { 
+						l.Add(new AsmRawDataStatement { 
 							Location = la.Location, 
 							Data = new[] { ParseAsmPrimaryExpression(Scope, Parent) },
 							EndLocation = t.EndLocation, 
@@ -4492,7 +4492,7 @@ namespace D_Parser.Parser
 			}
 
 			if (!Expect(CloseCurlyBrace) && (t.Kind == OpenCurlyBrace || t.Kind == Semicolon) && IsEOF)
-				l.Add(new AsmStatement.InstructionStatement() { Operation = AsmStatement.InstructionStatement.OpCode.__UNKNOWN__ });
+				l.Add(new AsmInstructionStatement() { Operation = AsmInstructionStatement.OpCode.__UNKNOWN__ });
 
 			s.EndLocation = t.EndLocation;
 			s.Instructions = l.ToArray();
@@ -4725,7 +4725,7 @@ namespace D_Parser.Parser
 									Step();
 							else if (t.Value != "short")
 								SynErr(Identifier, "Expected ptr!");
-							else if (!(Parent is AsmStatement.InstructionStatement) || !((AsmStatement.InstructionStatement)Parent).IsJmpFamily)
+							else if (!(Parent is AsmInstructionStatement) || !((AsmInstructionStatement)Parent).IsJmpFamily)
 								SynErr(Identifier, "A short reference is only valid for the jmp family of instructions!");
 							return ParseAsmExpression(Scope, Parent);
 
@@ -4760,8 +4760,8 @@ namespace D_Parser.Parser
 					e.EndLocation = t.EndLocation;
 					return e;
 				case Dollar:
-					var ins = Parent as AsmStatement.InstructionStatement;
-					if (ins == null || (!ins.IsJmpFamily && ins.Operation != AsmStatement.InstructionStatement.OpCode.call))
+					var ins = Parent as AsmInstructionStatement;
+					if (ins == null || (!ins.IsJmpFamily && ins.Operation != AsmInstructionStatement.OpCode.call))
 						SynErr(Dollar, "The $ operator is only valid on jmp and call instructions!");
 					Step();
 					return new TokenExpression(t.Kind) { Location = t.Location, EndLocation = t.EndLocation };

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace D_Parser.Dom.Statements
 {
-	public partial class AsmStatement : StatementContainingStatement
+	public class AsmStatement : StatementContainingStatement
 	{
 		public bool Naked { get; set; }
 		public AbstractStatement[] Instructions;
@@ -24,8 +24,8 @@ namespace D_Parser.Dom.Statements
 
 		public override IEnumerable<IStatement> SubStatements { get { return Instructions; } }
 
-		public override void Accept(StatementVisitor vis) { vis.Visit(this); }
-		public override R Accept<R>(StatementVisitor<R> vis) { return vis.Visit(this); }
+		public override void Accept(StatementVisitor vis) { vis.VisitAsmStatement(this); }
+		public override R Accept<R>(StatementVisitor<R> vis) { return vis.VisitAsmStatement(this); }
 	}
 }
 

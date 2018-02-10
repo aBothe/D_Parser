@@ -25,7 +25,7 @@ namespace D_Parser.Completion.Providers
 		{
 			var dt = new List<ItemData>();
 
-			foreach (var desc in AsmStatement.InstructionStatement.OpCodeMap.Values)
+			foreach (var desc in AsmInstructionStatement.OpCodeMap.Values)
 			{
 				string icon = "d-asm-";
 				if (desc.Is64BitOnly)
@@ -35,33 +35,33 @@ namespace D_Parser.Completion.Providers
 
 				switch (desc.InstructionSet)
 				{
-					case AsmStatement.InstructionStatement.IS.X86:
+					case AsmInstructionStatement.IS.X86:
 						break;
-					case AsmStatement.InstructionStatement.IS.FPU:
+					case AsmInstructionStatement.IS.FPU:
 						icon += "-fpu";
 						break;
-					case AsmStatement.InstructionStatement.IS.MMX:
+					case AsmInstructionStatement.IS.MMX:
 						icon += "-mmx";
 						break;
-					case AsmStatement.InstructionStatement.IS.SSE:
+					case AsmInstructionStatement.IS.SSE:
 						icon += "-sse";
 						break;
-					case AsmStatement.InstructionStatement.IS.SSE2:
+					case AsmInstructionStatement.IS.SSE2:
 						icon += "-sse2";
 						break;
-					case AsmStatement.InstructionStatement.IS.SSE3:
+					case AsmInstructionStatement.IS.SSE3:
 						icon += "-sse3";
 						break;
-					case AsmStatement.InstructionStatement.IS.SSSE3:
+					case AsmInstructionStatement.IS.SSSE3:
 						icon += "-ssse3";
 						break;
-					case AsmStatement.InstructionStatement.IS.SSE41:
+					case AsmInstructionStatement.IS.SSE41:
 						icon += "-sse4.1";
 						break;
-					case AsmStatement.InstructionStatement.IS.SSE42:
+					case AsmInstructionStatement.IS.SSE42:
 						icon += "-sse4.2";
 						break;
-					case AsmStatement.InstructionStatement.IS.AVX:
+					case AsmInstructionStatement.IS.AVX:
 						icon += "-avx";
 						break;
 					default:

@@ -248,7 +248,7 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 			
 		}
 
-		public void Visit(AsmStatement asmStatement)
+		public void VisitAsmStatement(AsmStatement asmStatement)
 		{
 			
 		}
@@ -303,17 +303,17 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 
         }
 
-        public void Visit(AsmStatement.InstructionStatement instrStatement)
+        public void VisitAsmInstructionStatement(AsmInstructionStatement instrStatement)
 		{
 
 		}
 
-		public void Visit(AsmStatement.RawDataStatement dataStatement)
+		public void VisitAsmRawDataStatement(AsmRawDataStatement dataStatement)
 		{
 
 		}
 
-		public void Visit(AsmStatement.AlignStatement alignStatement)
+		public void VisitAsmAlignStatement(AsmAlignStatement alignStatement)
 		{
 
 		}

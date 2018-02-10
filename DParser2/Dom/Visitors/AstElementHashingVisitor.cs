@@ -412,22 +412,22 @@ namespace D_Parser.Dom.Visitors
 			return 1000609;
 		}
 
-		public long Visit(Statements.AsmStatement asmStatement)
+		public long VisitAsmStatement(Statements.AsmStatement asmStatement)
 		{
 			return 1000619;
 		}
 
-		public long Visit(Statements.AsmStatement.InstructionStatement instrStatement)
+		public long VisitAsmInstructionStatement(AsmInstructionStatement instrStatement)
 		{
 			return 1000621;
 		}
 
-		public long Visit(Statements.AsmStatement.RawDataStatement dataStatement)
+		public long VisitAsmRawDataStatement(AsmRawDataStatement dataStatement)
 		{
 			return 1000639;
 		}
 
-		public long Visit(Statements.AsmStatement.AlignStatement alignStatement)
+		public long VisitAsmAlignStatement(AsmAlignStatement alignStatement)
 		{
 			return 1000651;
 		}

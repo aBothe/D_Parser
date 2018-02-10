@@ -965,7 +965,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				return VisitSubStatements(s);
 			}
 
-			public bool Visit(AsmStatement s)
+			public bool VisitAsmStatement(AsmStatement s)
 			{
 				return VisitSubStatements(s);
 			}
@@ -1045,17 +1045,17 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
                 return Visit(s as ForeachStatement);
             }
 
-            public bool Visit(AsmStatement.InstructionStatement instrStatement)
+            public bool VisitAsmInstructionStatement(AsmInstructionStatement instrStatement)
 			{
 				return false;
 			}
 
-			public bool Visit(AsmStatement.RawDataStatement dataStatement)
+			public bool VisitAsmRawDataStatement(AsmRawDataStatement dataStatement)
 			{
 				return false;
 			}
 
-			public bool Visit(AsmStatement.AlignStatement alignStatement)
+			public bool VisitAsmAlignStatement(AsmAlignStatement alignStatement)
 			{
 				return false;
 			}

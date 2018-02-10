@@ -32,6 +32,7 @@
     <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
     <BaseAddress>4194304</BaseAddress>
     <AssemblyName>D_Parser</AssemblyName>
+    <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>full</DebugType>
@@ -103,6 +104,7 @@
     <Compile Include="Dom\AbstractTypeDeclaration.cs" />
     <Compile Include="Dom\IDeclarationCondition.cs" />
     <Compile Include="Dom\ParserError.cs" />
+    <Compile Include="Dom\Statements\AsmRawDataStatement.cs" />
     <Compile Include="Dom\Statements\StaticForeachStatement.cs" />
     <Compile Include="Dom\StaticStatement.cs" />
     <Compile Include="Dom\Nodes\AttributeBlock.cs" />
@@ -320,15 +322,8 @@
     <Compile Include="Dom\Expressions\StructMemberInitializer.cs" />
     <Compile Include="Dom\Expressions\AsmRegisterExpression.cs" />
     <Compile Include="Dom\Expressions\UnaryExpression_SegmentBase.cs" />
-    <Compile Include="Dom\Statements\InstructionStatement.cs">
-      <DependentUpon>Dom\Statements\AsmStatement.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Dom\Statements\RawDataStatement.cs">
-      <DependentUpon>Dom\Statements\AsmStatement.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Dom\Statements\AlignStatement.cs">
-      <DependentUpon>Dom\Statements\AsmStatement.cs</DependentUpon>
-    </Compile>
+    <Compile Include="Dom\Statements\AsmInstructionStatement.cs" />
+    <Compile Include="Dom\Statements\AsmAlignStatement.cs" />
     <Compile Include="Completion\Providers\InlineAsmCompletionProvider.cs" />
     <Compile Include="Formatting\Indent\IDocumentIndentEngine.cs" />
     <Compile Include="Formatting\Indent\IStateMachineIndentEngine.cs" />
