@@ -12,7 +12,6 @@ using D_Parser.Misc;
 using D_Parser.Misc.Mangling;
 using D_Parser.Parser;
 using D_Parser.Resolver;
-using D_Parser.Resolver.ASTScanner;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
 using NUnit.Framework;
@@ -941,6 +940,7 @@ void main() {
 			}
 			Console.WriteLine (sb.ToString ());
 			Assert.That(sb.ToString(), Is.Empty);
+			Assert.That(hadErrors, Is.False);
 		}
 
 		public static LegacyParseCacheView ParsePhobos(bool ufcs=true)

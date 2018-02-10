@@ -16,6 +16,7 @@ using D_Parser.Resolver.TypeResolution;
 using NUnit.Framework;
 using System.IO;
 using D_Parser.Completion;
+using NUnit.Framework.Constraints;
 
 namespace Tests
 {
@@ -725,7 +726,6 @@ void main()
 			ctxt.CurrentContext.Set(DDS_Header);
 
 			AbstractType t;
-			ITypeDeclaration td;
 
 			t = RS(pixFormat.Type, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(StructType)));
@@ -1004,28 +1004,13 @@ double* foo(string s, string ss);
 
 			public IsDefinition(INode expectedDefinition) { n = expectedDefinition; }
 
-			public override bool Matches (object actual)
+			public override ConstraintResult ApplyTo<TActual>(TActual actual)
 			{
 				act = actual;
-				return actual == n || (actual is DSymbol && (actual as DSymbol).Definition == n);
-			}
-
-			public override void WriteActualValueTo (NUnit.Framework.Constraints.MessageWriter writer)
-			{
-				
-			}
-
-			public override void WriteMessageTo (NUnit.Framework.Constraints.MessageWriter writer)
-			{
-				writer.DisplayDifferences (n, act);
-			}
-
-			public override void WriteDescriptionTo (NUnit.Framework.Constraints.MessageWriter writer)
-			{
-				
+				return new ConstraintResult(this, actual, n == actual as INode || (actual is DSymbol && (actual as DSymbol).Definition == n));
 			}
 		}
-		
+
 		[Test]
 		public void ArrayIndexer()
 		{
@@ -2414,13 +2399,13 @@ template Baz(B)
 
 			var s = RS(td, ctxt);
 			
-			Assert.IsInstanceOfType(typeof(MemberSymbol),s);
+			Assert.That(s, Is.InstanceOf(typeof(MemberSymbol)));
 
 			var ms = (MemberSymbol)s;
-			Assert.IsInstanceOfType(typeof(DVariable),ms.Definition);
-			Assert.IsInstanceOfType(typeof(TemplateParameterSymbol),ms.Base);
+			Assert.That(ms.Definition, Is.InstanceOf(typeof(DVariable)));
+			Assert.That(ms.Base, Is.InstanceOf(typeof(TemplateParameterSymbol)));
 			var tps = (TemplateParameterSymbol)ms.Base;
-			Assert.IsInstanceOfType(typeof(PrimitiveType),tps.Base);
+			Assert.That(tps.Base, Is.InstanceOf(typeof(PrimitiveType)));
 
 			var pt = (PrimitiveType)tps.Base;
 			Assert.AreEqual(DTokens.Int, pt.TypeToken);
@@ -3872,7 +3857,6 @@ C c;
 ");
 			IExpression x;
 			AbstractType t;
-			ISymbolValue v;
 
 			x = DParser.ParseExpression("c.a");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);

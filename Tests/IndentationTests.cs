@@ -165,7 +165,7 @@ lol(); ger++;
 		bar(); }} fooGer();", 2*TabSize);
 		}
 
-		[Ignore]
+		[Ignore("Formatting not finally done")]
 		[Test]
 		public void IndentationTODO()
 		{
@@ -434,7 +434,7 @@ void main(string[] args)
 ", 5, TabSize);
 		}
 
-		[Ignore]
+		[Ignore("not totally configurable yet")]
 		[Test]
 		public void TestIndenter()
 		{

@@ -362,7 +362,7 @@ void main() { Class. }";
 		}
 
 		[Test]
-		[Ignore]
+		[Ignore("")]
 		public void CompletionSuggestion()
 		{
 			TestsEditorData ed;
@@ -388,11 +388,11 @@ foo(
 					this.neg = neg;
 				}
 
-				public override bool Matches (object actual)
-				{
+                public override ConstraintResult ApplyTo<TActual>(TActual actual)
+                {
 					var code = actual as string;
 					if (code == null)
-						return false;
+						return new ConstraintResult(this, actual, false);
 
 					code += "\n";
 
@@ -411,12 +411,7 @@ foo(
 					var gen = new TestCompletionDataGen (null, null);
 					var res = CodeCompletion.GenerateCompletionData (ed, gen, 'a');
 
-					return neg ? !res : res;
-				}
-
-				public override void WriteDescriptionTo (MessageWriter writer)
-				{
-					writer.WriteLine ();
+					return new ConstraintResult(this, actual, neg ? !res : res);
 				}
 			}
 
