@@ -4,13 +4,13 @@ notifications:
   email: false
   irc: "chat.freenode.net#d.mono-d"
 
-language: c
+language: csharp
+solution: DParser2.Unittest.sln
 
 install:
- - sudo add-apt-repository 'deb http://ppa.launchpad.net/inizan-yannick/mono/ubuntu utopic main' 
- - sudo apt-get update -q 
- - sudo apt-get install mono-mcs
+  - nuget restore DParser2.Unittest.sln
+  - nuget install NUnit.Console -Version 3.8.0 -OutputDirectory packages
  
 script:
-  - xbuild DParser2.Unittest.sln
-  - nunit-console Tests/bin/Debug/Tests.dll
+  - xbuild /p:Configuration=Debug DParser2.Unittest.sln
+  - mono ./packages/NUnit.ConsoleRunner.3.8.0/tools/nunit3-console.exe ./Tests/bin/Debug/Tests.dll
