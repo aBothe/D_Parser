@@ -33,24 +33,33 @@ namespace D_Parser.Completion
 		{
 		}
 
+		/// <summary>
+		/// Part of infrastructure used for keeping LooseResolution context caches across edits.
+		/// Note: Clears the scope stacks!
+		/// </summary>
 		public ResolutionContext GetLooseResolutionContext(LooseResolution.NodeResolutionAttempt att)
 		{
-			if (att == LooseResolution.NodeResolutionAttempt.Normal)
+			ResolutionContext returnedCtxt = null;
+
+			switch (att)
 			{
-				NormalContext.PopAll();
-				return NormalContext;
+				case LooseResolution.NodeResolutionAttempt.Normal:
+					returnedCtxt = NormalContext;
+					break;
+				case LooseResolution.NodeResolutionAttempt.NoParameterOrTemplateDeduction:
+					returnedCtxt = NoDeductionContext;
+					break;
+				case LooseResolution.NodeResolutionAttempt.RawSymbolLookup:
+					returnedCtxt = RawContext;
+					break;
 			}
-			else if (att == LooseResolution.NodeResolutionAttempt.NoParameterOrTemplateDeduction)
+
+			if (returnedCtxt != null)
 			{
-				NoDeductionContext.PopAll();
-				return NoDeductionContext;
+				returnedCtxt.PopAll();
 			}
-			else if (att == LooseResolution.NodeResolutionAttempt.RawSymbolLookup)
-			{
-				RawContext.PopAll();
-				return RawContext;
-			}
-			return null;
+
+			return returnedCtxt;
 		}
 
 		public void NewResolutionContexts()
