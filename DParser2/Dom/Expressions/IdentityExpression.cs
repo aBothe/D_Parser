@@ -9,10 +9,13 @@ namespace D_Parser.Dom.Expressions
 	public class IdentityExpression : OperatorBasedExpression
 	{
 		public bool Not;
+		public readonly int opColumn, opLine;
 
-		public IdentityExpression(bool notIs)
+		public IdentityExpression(bool notIs, CodeLocation oploc)
 		{
 			Not = notIs;
+			opColumn = oploc.Column;
+			opLine = oploc.Line;
 			OperatorToken = DTokens.Is;
 		}
 

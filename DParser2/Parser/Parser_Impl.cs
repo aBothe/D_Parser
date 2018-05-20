@@ -2584,21 +2584,21 @@ namespace D_Parser.Parser
 				break;
 
 			case DTokens.Is:
-				ae = new IdentityExpression (false);
+				ae = new IdentityExpression (false, Lexer.LookAhead.Location);
 				break;
 
 			case DTokens.In:
-				ae = new InExpression (false);
+				ae = new InExpression (false, Lexer.LookAhead.Location);
 				break;
 
 			case Not:
 				switch (Peek (1).Kind) {
 				case DTokens.Is:
-					ae = new IdentityExpression (false);
+					ae = new IdentityExpression (true, Lexer.CurrentPeekToken.Location);
 					Step ();
 					break;
 				case DTokens.In:
-					ae = new InExpression (true);
+					ae = new InExpression (true, Lexer.CurrentPeekToken.Location);
 					Step ();
 					break;
 				default:
