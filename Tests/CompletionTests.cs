@@ -342,6 +342,26 @@ o[0][0].
 		}
 
 		[Test]
+		public void MissingClassMembersOnParameter ()
+		{
+			TestsEditorData ed;
+			INode [] wl;
+
+			var s = @"module A;
+class Array(T) { void dooMagic() {} }
+void foo(Array!byte array) {
+array.
+
+}";
+
+			ed = GenEditorData (5, 1, s);
+
+			wl = new [] { ResolutionTests.GetChildNode (ed.MainPackage.GetModule ("A"), "Array.dooMagic") };
+
+			TestCompletionListContents (ed, wl, null);
+		}
+
+		[Test]
 		public void StaticMemberCompletion()
 		{
 			TestsEditorData ed;
