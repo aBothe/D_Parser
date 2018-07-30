@@ -10,7 +10,7 @@ solution: DParser2.Unittest.sln
 install:
   - nuget restore DParser2.Unittest.sln
   - nuget install NUnit.Console -Version 3.8.0 -OutputDirectory packages
- 
+
 script:
-  - xbuild /p:Configuration=Debug DParser2.Unittest.sln
+  - msbuild DParser2.Unittest.sln /p:Configuration=Debug
   - mono ./packages/NUnit.ConsoleRunner.3.8.0/tools/nunit3-console.exe ./Tests/bin/Debug/Tests.dll
