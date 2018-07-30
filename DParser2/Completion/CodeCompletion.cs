@@ -179,7 +179,7 @@ namespace D_Parser.Completion
 			ctxt.CancellationToken = cts.Token;
 
 			if (timeout == int.MinValue)
-				timeout = CompletionOptions.Instance.CompletionTimeout;
+				timeout = ctxt.CompletionOptions.CompletionTimeout;
 
 			#if NET40
 			if(timeout > 0)

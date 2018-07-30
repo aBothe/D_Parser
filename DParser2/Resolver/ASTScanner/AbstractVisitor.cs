@@ -698,7 +698,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			/// </summary>
 			public bool Visit(TemplateMixin tmx)
 			{
-				if (CompletionOptions.Instance.DisableMixinAnalysis)
+				if (ctxt.CompletionOptions.DisableMixinAnalysis)
 					return false;
 
 				if (templateMixinsBeingAnalyzed == null)
@@ -739,7 +739,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			/// </summary>
 			public bool VisitMixinStatement(MixinStatement mx)
 			{
-				if (CompletionOptions.Instance.DisableMixinAnalysis)
+				if (ctxt.CompletionOptions.DisableMixinAnalysis)
 					return false;
 
 				TryPushCurScope ();
@@ -1266,10 +1266,10 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			if (dn == null || !CanAddMemberOfType (parms.VisibleMembers, dn))
 				return false;
 
-			if (CompletionOptions.Instance.HideDeprecatedNodes && dn.ContainsAttribute(DTokens.Deprecated))
+			if (ctxt.CompletionOptions.HideDeprecatedNodes && dn.ContainsAttribute(DTokens.Deprecated))
 				return false;
 
-			if (CompletionOptions.Instance.HideDisabledNodes &&
+			if (ctxt.CompletionOptions.HideDisabledNodes &&
 				dn.ContainsPropertyAttribute(BuiltInAtAttribute.BuiltInAttributes.Disable))
 				return false;
 

@@ -72,7 +72,8 @@ namespace Tests
 		public static ResolutionContext CreateDefCtxt(ParseCacheView pcl, IBlockNode scope, CodeLocation caret)
 		{
 			var r = ResolutionContext.Create(pcl, new ConditionalCompilationFlags(new[]{"Windows","all"},1,true,null,0), scope, caret);
-			CompletionOptions.Instance.DisableMixinAnalysis = false;
+			r.CompletionOptions.CompletionTimeout = 0;
+			r.CompletionOptions.DisableMixinAnalysis = false;
 			return r;
 		}
 
@@ -162,15 +163,6 @@ namespace Tests
 			return TypeDeclarationResolver.ResolveSingle (id , ctxt);
 		}
 		#endregion
-
-		[SetUp]
-		public void SetupEnvironment()
-		{
-			var co = CompletionOptions.Instance;
-
-			co.CompletionTimeout = -1;
-			co.DisableMixinAnalysis = false;
-		}
 
 		[Test]
 		public void BasicResolution0()

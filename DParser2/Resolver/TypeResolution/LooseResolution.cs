@@ -207,17 +207,17 @@ namespace D_Parser.Resolver
 			if (o == null)
 				throw new ArgumentNullException ("o");
 
-			var ctxt = new ResolutionContext (parseCache, null, oContext, o.Location);
+			var ctxt = ResolutionContext.Create (parseCache, null, oContext, o.Location);
 
 			/*
 			 * Stuff like std.stdio.someSymbol should be covered by this already
 			 */
-			ctxt.ContextIndependentOptions = 
-				ResolutionOptions.DontResolveBaseTypes | 
-				ResolutionOptions.IgnoreAllProtectionAttributes | 
-				ResolutionOptions.IgnoreDeclarationConditions | 
-				ResolutionOptions.NoTemplateParameterDeduction | 
-				ResolutionOptions.ReturnMethodReferencesOnly;
+			ctxt.ContextIndependentOptions =
+				ResolutionOptions.DontResolveBaseTypes |
+				ResolutionOptions.IgnoreAllProtectionAttributes |
+				ResolutionOptions.IgnoreDeclarationConditions |
+				ResolutionOptions.NoTemplateParameterDeduction |
+					ResolutionOptions.ReturnMethodReferencesOnly;
 
 			AbstractType res;
 

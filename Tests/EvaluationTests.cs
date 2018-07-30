@@ -20,7 +20,7 @@ namespace Tests
 	{
 		public static AbstractSymbolValueProvider GetDefaultSymbolVP()
 		{
-			return new StandardValueProvider(new ResolutionContext(new LegacyParseCacheView(new string[0]), null));
+			return new StandardValueProvider(ResolutionContext.Create(new LegacyParseCacheView(new string[0]), null));
 		}
 
 		public static ISymbolValue E(string expression, AbstractSymbolValueProvider vp=null)
@@ -214,7 +214,7 @@ namespace Tests
 			TestString("\"asdf\"w", "asdf", false);
 			TestString("\"asdf\"d", "asdf", false);
 
-			var ctxt = new ResolutionContext(new LegacyParseCacheView(new string[]{}), null, new DBlockNode());
+			var ctxt = ResolutionContext.Create(new LegacyParseCacheView(new string[]{}), null, new DBlockNode());
 
 			var ex = DParser.ParseExpression("['a','s','d','f']");
 			var v = Evaluation.EvaluateValue(ex, ctxt);

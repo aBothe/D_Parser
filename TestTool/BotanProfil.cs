@@ -1,14 +1,11 @@
-﻿using System;
-using D_Parser.Misc;
+﻿using D_Parser.Misc;
 using Tests;
 using D_Parser.Dom;
 using D_Parser.Resolver;
 using System.Linq;
-using D_Parser.Completion;
-using D_Parser.Dom.Expressions;
-using D_Parser.Parser;
 using D_Parser.Resolver.TypeResolution;
 using System.Diagnostics;
+using System;
 
 namespace TestTool
 {
@@ -35,7 +32,7 @@ namespace TestTool
 			Parse ();
 
 			var pcw = new LegacyParseCacheView (new[]{ srcDir });
-			var ctxt = new ResolutionContext (pcw, new ConditionalCompilationFlags(versions,0, true));
+			var ctxt = ResolutionContext.Create (pcw, new ConditionalCompilationFlags(versions,0, true));
 
 			var mod = pcw.LookupModuleName (null, "botan.pubkey.algo.dsa").First();
 			var scope = ResolutionTests.N<DMethod> (mod, "DSAVerificationOperation.verify");

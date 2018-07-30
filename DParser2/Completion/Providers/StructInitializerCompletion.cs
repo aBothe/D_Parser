@@ -56,7 +56,7 @@ namespace D_Parser.Completion.Providers
 				this.alreadyTakenNames = tkn;
 				this.gen = gen;
 
-				if (CompletionOptions.Instance.ShowStructMembersInStructInitOnly)
+				if (ctxt.CompletionOptions.ShowStructMembersInStructInitOnly)
 					this.DeepScanClass(structType, new ItemCheckParameters(MemberFilter.Variables), false);
 				else
 					IterateThroughScopeLayers(CodeLocation.Empty, MemberFilter.All);
