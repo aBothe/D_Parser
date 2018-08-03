@@ -353,7 +353,7 @@ array.
 
 			ed = GenEditorData (5, 1, s, arrayDefModule);
 
-			wl = new [] { ResolutionTests.GetChildNode (ed.MainPackage.GetModule ("Arr"), "Array.dooMagic") };
+			wl = new [] { ResolutionTests.GetChildNode (ed.MainPackage.GetModule ("ArrayMod"), "Array.dooMagic") };
 
 			TestCompletionListContents (ed, wl, null);
 		}
