@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Diagnostics;
-using D_Parser;
+using System.IO;
 using D_Parser.Dom;
 using D_Parser.Formatting;
 using D_Parser.Misc;
-using D_Parser.Parser;
 using D_Parser.Resolver;
-using D_Parser.Resolver.ExpressionSemantics;
 using Tests;
-using System.IO;
 
 namespace TestTool
 {

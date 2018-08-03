@@ -3,7 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
-using D_Parser.Parser;
 using D_Parser.Resolver.TypeResolution;
 using D_Parser.Resolver.Templates;
 
