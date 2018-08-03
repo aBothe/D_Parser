@@ -32,8 +32,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// Intermediate right operand operator-expressions.
 		/// </summary>
 		public ISymbolValue rValue;
-
-		bool? returnBaseTypeOnly;
 		#endregion
 
 		#region Constructor
@@ -47,7 +45,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			ignoreErrors = false;
 			rValue = null;
 			lValue = null;
-			returnBaseTypeOnly = null;
 		}
 		#endregion
 		

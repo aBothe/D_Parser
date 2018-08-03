@@ -11,6 +11,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public partial class Evaluation
 	{
+		bool? returnBaseTypeOnly;
+
 		public ISymbolValue VisitPostfixExpression_Methodcall(PostfixExpression_MethodCall call)
 		{
 			var returnBaseTypeOnly = !this.returnBaseTypeOnly.HasValue ? 
@@ -51,104 +53,116 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			PostfixExpression_MethodCall call, out List<ISemantic> callArguments, out ISymbolValue delegateValue,
 			bool returnBaseTypeOnly, AbstractSymbolValueProvider ValueProvider = null)
 		{
-			//TODO: Refactor this crap!
-
 			delegateValue = null;
 			callArguments = null;
 
-			var methodOverloads = new List<AbstractType>();
+			var methodOverloads = SearchMethodOverloadCandidates (baseExpression, ctxt, ValueProvider, call, 
+			                                                      ref delegateValue, returnBaseTypeOnly, out bool returnInstantly);
 
-			#region Search possible methods, opCalls or delegates that could be called
+			if (returnInstantly) {
+				return methodOverloads.Count > 0 ? methodOverloads[0] : null;
+			}
+
+			if (methodOverloads.Count == 0)
+				return null;
+
+			methodOverloads = TryMatchTemplateArgumentsToOverloads (tix, ctxt, methodOverloads);
+
+			return FilterMethodOverloadsByParameterTypeComparison (call, methodOverloads, ctxt, ValueProvider, returnBaseTypeOnly, baseValue,
+			                                                       ref callArguments, ref delegateValue);
+		}
+
+		static List<AbstractType> SearchMethodOverloadCandidates (
+			AbstractType [] baseExpression,
+			ResolutionContext ctxt,
+			AbstractSymbolValueProvider valueProvider,
+			PostfixExpression_MethodCall call,
+			ref ISymbolValue delegateValue,
+			bool returnBaseTypeOnly,
+			out bool returnInstantly)
+		{
+			// Search possible methods, opCalls or delegates that could be called
+			var methodOverloads = new List<AbstractType> ();
 			bool requireStaticItems = true; //TODO: What if there's an opCall and a foreign method at the same time? - and then this variable would be bullshit
 			IEnumerable<AbstractType> scanResults = baseExpression;
-			var nextResults = new List<AbstractType>();
+			var nextResults = new List<AbstractType> ();
 
-			while (scanResults != null && !ctxt.CancellationToken.IsCancellationRequested)
-			{
-				foreach (var b in scanResults)
-				{
+			while (scanResults != null && !ctxt.CancellationToken.IsCancellationRequested) {
+				foreach (var b in scanResults) {
 					if (b is AmbiguousType)
-						nextResults.AddRange((b as AmbiguousType).Overloads);
+						nextResults.AddRange ((b as AmbiguousType).Overloads);
 					else if (b is TemplateParameterSymbol)
-						nextResults.Add((b as TemplateParameterSymbol).Base);
-					else if (b is MemberSymbol)
-					{
+						nextResults.Add ((b as TemplateParameterSymbol).Base);
+					else if (b is MemberSymbol) {
 						var mr = (MemberSymbol)b;
 
-						if (mr.Definition is DMethod)
-						{
-							methodOverloads.Add(mr);
+						if (mr.Definition is DMethod) {
+							methodOverloads.Add (mr);
 							continue;
 						}
-						else if (mr.Definition is DVariable)
-						{
+						if (mr.Definition is DVariable) {
 							// If we've got a variable here, get its base type/value reference
-							if (ValueProvider != null)
-							{
-								var dgVal = ValueProvider[(DVariable)mr.Definition] as DelegateValue;
+							if (valueProvider != null) {
+								var dgVal = valueProvider [(DVariable)mr.Definition] as DelegateValue;
 
-								if (dgVal != null)
-								{
-									nextResults.Add(dgVal.Definition);
+								if (dgVal != null) {
+									nextResults.Add (dgVal.Definition);
 									continue;
 								}
-								else
-								{
-									ValueProvider.LogError(call, "Variable must be a delegate, not anything else");
-									return null;
-								}
-							}
-							else
-							{
-								var bt = mr.Base ?? TypeDeclarationResolver.ResolveSingle(mr.Definition.Type, ctxt);
 
-								// Must be of type delegate
-								if (bt is DelegateType)
-								{
-									var ret = HandleCallDelegateType(ValueProvider,bt as DelegateType, methodOverloads, returnBaseTypeOnly);
-									if (ret is ISymbolValue)
-									{
-										delegateValue = ret as ISymbolValue;
-										return null;
-									}
-									else if (ret is AbstractType)
-										return ret as AbstractType;
-								}
-								else
-								{
-									/*
-									 * If mr.Node is not a method, so e.g. if it's a variable
-									 * pointing to a delegate
-									 * 
-									 * class Foo
-									 * {
-									 *	string opCall() {  return "asdf";  }
-									 * }
-									 * 
-									 * Foo f=new Foo();
-									 * f(); -- calls opCall, opCall is not static
-									 */
-                                    if (!nextResults.Contains(bt) && !scanResults.Contains(bt))
-									    nextResults.Add(bt);
-									requireStaticItems = false;
-								}
-								//TODO: Can other types work as function/are callable?
+								valueProvider.LogError (call, "Variable must be a delegate, not anything else");
+								returnInstantly = true;
+								return methodOverloads;
 							}
+
+							var bt = mr.Base ?? TypeDeclarationResolver.ResolveSingle (mr.Definition.Type, ctxt);
+
+							// Must be of type delegate
+							if (bt is DelegateType) {
+								var ret = HandleCallDelegateType (valueProvider, bt as DelegateType, methodOverloads, returnBaseTypeOnly);
+								if (ret is ISymbolValue) {
+									delegateValue = ret as ISymbolValue;
+									returnInstantly = true;
+									return methodOverloads;
+								}
+
+								if (ret is AbstractType) {
+									returnInstantly = true;
+									methodOverloads.Add (ret as AbstractType);
+									return methodOverloads;
+								}
+							} else {
+								/*
+								 * If mr.Node is not a method, so e.g. if it's a variable
+								 * pointing to a delegate
+								 * 
+								 * class Foo
+								 * {
+								 *	string opCall() {  return "asdf";  }
+								 * }
+								 * 
+								 * Foo f=new Foo();
+								 * f(); -- calls opCall, opCall is not static
+								 */
+								if (!nextResults.Contains (bt) && !scanResults.Contains (bt))
+									nextResults.Add (bt);
+								requireStaticItems = false;
+							}
+							//TODO: Can other types work as function/are callable?
 						}
-					}
-					else if (b is DelegateType)
-					{
-						var ret = HandleCallDelegateType(ValueProvider,b as DelegateType, methodOverloads, returnBaseTypeOnly);
-						if (ret is ISymbolValue)
-						{
+					} else if (b is DelegateType) {
+						var ret = HandleCallDelegateType (valueProvider, b as DelegateType, methodOverloads, returnBaseTypeOnly);
+						if (ret is ISymbolValue) {
 							delegateValue = ret as ISymbolValue;
-							return null;
+							returnInstantly = true;
+							return methodOverloads;
 						}
-						else if (ret is AbstractType)
-							return ret as AbstractType;
-					}
-					else if (b is ClassType || b is StructType)
-					{
+						if (ret is AbstractType) {
+							returnInstantly = true;
+							methodOverloads.Add (ret as AbstractType);
+							return methodOverloads;
+						}
+					} else if (b is ClassType || b is StructType) {
 						var tit = (TemplateIntermediateType)b;
 						/*
 						 * auto a = MyStruct(); -- opCall-Overloads can be used
@@ -158,8 +172,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						if (classDef == null)
 							continue;
 
-						foreach (var i in ExpressionTypeEvaluation.GetOpCalls(tit, requireStaticItems))
-							methodOverloads.Add(TypeDeclarationResolver.HandleNodeMatch(i, ctxt, b, call) as MemberSymbol);
+						foreach (var i in ExpressionTypeEvaluation.GetOpCalls (tit, requireStaticItems))
+							methodOverloads.Add (TypeDeclarationResolver.HandleNodeMatch (i, ctxt, b, call) as MemberSymbol);
 
 						/*
 						 * Every struct can contain a default ctor:
@@ -169,114 +183,117 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						 * auto s = S(1,true); -- ok
 						 * auto s2= new S(2,false); -- error, no constructor found!
 						 */
-						if (b is StructType && methodOverloads.Count == 0)
-						{
+						if (b is StructType && methodOverloads.Count == 0) {
 							//TODO: Deduce parameters
-							return b;
+							returnInstantly = true;
+							methodOverloads.Add (b);
+							return methodOverloads;
 						}
 					}
 
-					/*
-					 * If the overload is a template, it quite exclusively means that we'll handle a method that is the only
-					 * child inside a template + that is named as the template.
-					 */
-					else if (b is TemplateType)
-						methodOverloads.Add(b);
+					  /*
+					   * If the overload is a template, it quite exclusively means that we'll handle a method that is the only
+					   * child inside a template + that is named as the template.
+					   */
+					  else if (b is TemplateType)
+						methodOverloads.Add (b);
 					else if (b is PrimitiveType) // dmd 2.066: Uniform Construction Syntax. creal(3) is of type creal.
-						methodOverloads.Add(b);
+						methodOverloads.Add (b);
 				}
 
-				scanResults = nextResults.Count == 0 ? null : nextResults.ToArray();
-				nextResults.Clear();
-			}
-			#endregion
-
-			if (methodOverloads.Count == 0)
-				return null;
-
-			// Get all arguments' types
-			callArguments = new List<ISemantic>();
-
-			if (call.Arguments != null)
-			{
-				if (ValueProvider != null)
-				{
-					foreach (var arg in call.Arguments)
-						callArguments.Add(arg != null ? Evaluation.EvaluateValue(arg, ValueProvider) : null);
-				}
-				else
-					foreach (var arg in call.Arguments)
-						callArguments.Add(arg != null ? ExpressionTypeEvaluation.EvaluateType(arg, ctxt) : null);
+				scanResults = nextResults.Count == 0 ? null : nextResults.ToArray ();
+				nextResults.Clear ();
 			}
 
-			#region If explicit template type args were given, try to associate them with each overload
-			if (tix != null)
-			{
-				var args = TemplateInstanceHandler.PreResolveTemplateArgs(tix, ctxt);
-				var deducedOverloads = TemplateInstanceHandler.DeduceParamsAndFilterOverloads(methodOverloads, args, true, ctxt);
-				methodOverloads.Clear();
-				if (deducedOverloads != null)
-					methodOverloads.AddRange(deducedOverloads);
-			}
-			#endregion
+			returnInstantly = false;
+			return methodOverloads;
+		}
 
-			#region Filter by parameter-argument comparison
-			var argTypeFilteredOverloads = new List<AbstractType>();
+		static AbstractType FilterMethodOverloadsByParameterTypeComparison (
+			PostfixExpression_MethodCall call,
+			List<AbstractType> methodOverloads,
+			ResolutionContext ctxt,
+			AbstractSymbolValueProvider valueProvider,
+			bool returnBaseTypeOnly,
+			ISymbolValue baseValue,
+			ref List<ISemantic> callArguments,
+			ref ISymbolValue delegateValue)
+		{
+			callArguments = GetCallArgumentsTypes (ctxt, call, valueProvider);
+
+			var argTypeFilteredOverloads = new List<AbstractType> ();
 			bool hasHandledUfcsResultBefore = false;
 			AbstractType untemplatedMethodResult = null;
 
-			foreach (var ov in methodOverloads)
-			{
+			foreach (var ov in methodOverloads) {
 				if (ov is MemberSymbol)
-					HandleDMethodOverload(ctxt, ValueProvider != null, baseValue, callArguments, returnBaseTypeOnly, argTypeFilteredOverloads, ref hasHandledUfcsResultBefore, 
+					HandleDMethodOverload (ctxt, valueProvider != null, baseValue, callArguments, returnBaseTypeOnly, argTypeFilteredOverloads, ref hasHandledUfcsResultBefore,
 						ov as MemberSymbol, ref untemplatedMethodResult);
-				else if (ov is DelegateType)
-				{
+				else if (ov is DelegateType) {
 					var dg = ov as DelegateType;
-					var bt = dg.Base ?? TypeDeclarationResolver.GetMethodReturnType(dg, ctxt);
+					var bt = dg.Base ?? TypeDeclarationResolver.GetMethodReturnType (dg, ctxt);
 
 					//TODO: Param-Arg check
 
 					if (returnBaseTypeOnly)
-						argTypeFilteredOverloads.Add(bt);
-					else
-					{
-						if (dg.Base == null)
-						{
+						argTypeFilteredOverloads.Add (bt);
+					else {
+						if (dg.Base == null) {
 							if (dg.IsFunctionLiteral)
-								dg = new DelegateType(bt, dg.delegateTypeBase as FunctionLiteral, dg.Parameters);
+								dg = new DelegateType (bt, dg.delegateTypeBase as FunctionLiteral, dg.Parameters);
 							else
-								dg = new DelegateType(bt, dg.delegateTypeBase as DelegateDeclaration, dg.Parameters);
+								dg = new DelegateType (bt, dg.delegateTypeBase as DelegateDeclaration, dg.Parameters);
 						}
-						argTypeFilteredOverloads.Add(new DelegateCallSymbol(dg, call));
+						argTypeFilteredOverloads.Add (new DelegateCallSymbol (dg, call));
 					}
-				}
-				else if (ov is PrimitiveType) // dmd 2.066: Uniform Construction Syntax. creal(3) is of type creal.
-				{
-					if (ValueProvider != null)
-					{
+				} else if (ov is PrimitiveType) // dmd 2.066: Uniform Construction Syntax. creal(3) is of type creal.
+				  {
+					if (valueProvider != null) {
 						if (callArguments == null || callArguments.Count != 1)
-							ValueProvider.LogError(call, "Uniform construction syntax expects exactly one argument");
-						else
-						{
-							var pv = callArguments[0] as PrimitiveValue;
-							if (pv == null)
-								ValueProvider.LogError(call, "Uniform construction syntax expects one built-in scalar value as first argument");
+							valueProvider.LogError (call, "Uniform construction syntax expects exactly one argument");
+						else {
+							if (!(callArguments [0] is PrimitiveValue pv))
+								valueProvider.LogError (call, "Uniform construction syntax expects one built-in scalar value as first argument");
 							else
-								delegateValue = new PrimitiveValue(pv.Value, ov as PrimitiveType, pv.ImaginaryPart);
+								delegateValue = new PrimitiveValue (pv.Value, ov as PrimitiveType, pv.ImaginaryPart);
 						}
 					}
 
-					argTypeFilteredOverloads.Add(ov);
+					argTypeFilteredOverloads.Add (ov);
 				}
 			}
 
 			// Prefer untemplated methods over templated ones
 			if (untemplatedMethodResult != null)
 				return untemplatedMethodResult;
-			#endregion
 
-			return AmbiguousType.Get(argTypeFilteredOverloads);
+			return AmbiguousType.Get (argTypeFilteredOverloads);
+		}
+
+		static List<ISemantic> GetCallArgumentsTypes (ResolutionContext ctxt, PostfixExpression_MethodCall call, AbstractSymbolValueProvider ValueProvider)
+		{
+			var callArguments = new List<ISemantic> ();
+			if (call.Arguments != null) {
+				if (ValueProvider != null) {
+					foreach (var arg in call.Arguments)
+						callArguments.Add (EvaluateValue (arg, ValueProvider));
+				} else
+					foreach (var arg in call.Arguments)
+						callArguments.Add (ExpressionTypeEvaluation.EvaluateType (arg, ctxt));
+			}
+			return callArguments;
+		}
+
+		static List<AbstractType> TryMatchTemplateArgumentsToOverloads (TemplateInstanceExpression tix, ResolutionContext ctxt, List<AbstractType> methodOverloads)
+		{
+			if (tix != null) {
+				var args = TemplateInstanceHandler.PreResolveTemplateArgs (tix, ctxt);
+				var deducedOverloads = TemplateInstanceHandler.DeduceParamsAndFilterOverloads (methodOverloads, args, true, ctxt);
+				methodOverloads.Clear ();
+				if (deducedOverloads != null)
+					return new List<AbstractType>(deducedOverloads);
+			}
+			return methodOverloads;
 		}
 
 		static void HandleDMethodOverload(ResolutionContext ctxt, bool eval, ISymbolValue baseValue, List<ISemantic> callArguments, bool returnBaseTypeOnly, List<AbstractType> argTypeFilteredOverloads, ref bool hasHandledUfcsResultBefore, 
@@ -403,7 +420,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 		}
 
-		internal static bool TryHandleMethodArgumentTuple(ResolutionContext ctxt,ref bool add,
+		static bool TryHandleMethodArgumentTuple(ResolutionContext ctxt,ref bool add,
 			List<ISemantic> callArguments, 
 			DMethod dm, 
 			DeducedTypeDictionary deducedTypeDict, int currentParameter,ref int currentArg)
