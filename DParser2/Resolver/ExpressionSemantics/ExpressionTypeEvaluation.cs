@@ -119,7 +119,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		#endregion
 
 		#region Method (overloads)
-		public AbstractType Visit(PostfixExpression_MethodCall call)
+		public AbstractType VisitPostfixExpression_Methodcall(PostfixExpression_MethodCall call)
 		{
 			List<ISemantic> callArgs;
 			ISymbolValue delegValue;

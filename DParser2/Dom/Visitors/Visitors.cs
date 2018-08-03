@@ -320,7 +320,7 @@ namespace D_Parser.Dom
 		R Visit(PostfixExpression_Access x);
 		R Visit(PostfixExpression_Increment x);
 		R Visit(PostfixExpression_Decrement x);
-		R Visit(PostfixExpression_MethodCall x);
+		R VisitPostfixExpression_Methodcall(PostfixExpression_MethodCall x);
 		R Visit(PostfixExpression_ArrayAccess x);
 
 		R Visit(TemplateInstanceExpression x);

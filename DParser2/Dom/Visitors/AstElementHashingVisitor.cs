@@ -734,7 +734,7 @@ namespace D_Parser.Dom.Visitors
 			return VisitPostfixExpression(x, 1001237);
 		}
 
-		public long Visit(Expressions.PostfixExpression_MethodCall x)
+		public long VisitPostfixExpression_Methodcall(Expressions.PostfixExpression_MethodCall x)
 		{
 			const long prime = 1001267;
 			var h = VisitPostfixExpression (x, prime);

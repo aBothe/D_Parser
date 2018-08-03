@@ -11,7 +11,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public partial class Evaluation
 	{
-		public ISymbolValue Visit(PostfixExpression_MethodCall call)
+		public ISymbolValue VisitPostfixExpression_Methodcall(PostfixExpression_MethodCall call)
 		{
 			var returnBaseTypeOnly = !this.returnBaseTypeOnly.HasValue ? 
 				!ctxt.Options.HasFlag(ResolutionOptions.ReturnMethodReferencesOnly) : 
