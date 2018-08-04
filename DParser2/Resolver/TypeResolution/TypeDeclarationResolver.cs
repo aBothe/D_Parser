@@ -400,7 +400,7 @@ namespace D_Parser.Resolver.TypeResolution
 				return bt;
 			}
 
-			public AbstractType Visit(DVariable variable)
+			public AbstractType VisitDVariable(DVariable variable)
 			{
 				if (variable.IsAlias)
 					return VisitAliasDefinition(variable);
@@ -688,7 +688,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 			public AbstractType Visit(NamedTemplateMixinNode n)
 			{
-				return Visit(n as DVariable);
+				return VisitDVariable(n as DVariable);
 			}
 
 			// Only import symbol aliases are allowed to search in the parse cache
