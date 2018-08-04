@@ -55,7 +55,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			ignoreErrors = false;
 		}
 
-		private const string DeferredTagId = "deferred";
+		const string ResolutionCycleIndicatorTag = "deferred";
 
 		public static AbstractType EvaluateType(IExpression x, ResolutionContext ctxt, bool tryReturnMethodReturnType = true)
 		{
@@ -75,10 +75,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			AbstractType t;
 			if ((t = ctxt.Cache.TryGetType(x, cacheHashBias)) != null)
 			{
-				if(t.Tag<Object>(DeferredTagId) != null)
+				if(t.Tag<Object>(ResolutionCycleIndicatorTag) != null)
 				{
 					#if TRACE
-					Trace.WriteLine("Evaluation deferred");
+					Trace.WriteLine("Evaluation cycle detected!");
 					Trace.Unindent();
 					#endif
 					return new UnknownType(x);
@@ -98,7 +98,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			else
 			{
 				var deferringPointer = new PrimitiveType(DTokens.INVALID);
-				deferringPointer.Tag(DeferredTagId, new object());
+				deferringPointer.Tag(ResolutionCycleIndicatorTag, new object());
 
 				ctxt.Cache.Add(deferringPointer, x, cacheHashBias);
 			}
