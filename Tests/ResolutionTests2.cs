@@ -31,6 +31,53 @@ struct Template( void var = Template ) {}
 		}
 		#endregion
 
+		[Test]
+		public void ConstAttributedSymbolType ()
+		{
+			AbstractType t;
+			IExpression x;
+			DModule A;
+
+			var code = "module A; const private Object co;";
+
+			var ctxt = CreateDefCtxt ("A", out A, code);
+
+			x = DParser.ParseExpression ("co");
+
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
+
+			Assert.That (t, Is.TypeOf<MemberSymbol> ());
+			var baseType = ((MemberSymbol)t).Base;
+
+			Assert.That (baseType, Is.TypeOf<ClassType> ());
+			var objectClass = baseType as ClassType;
+
+			Assert.That (objectClass.Modifier, Is.EqualTo (DTokens.Const));
+		}
+
+		[Test]
+		public void ConstAttributedSymbolType_MemberFunctionAttributeDecl(){
+			AbstractType t;
+			IExpression x;
+			DModule A;
+
+			var code = "module A; const(Object) co;";
+
+			var ctxt = CreateDefCtxt ("A", out A, code);
+
+			x = DParser.ParseExpression ("co");
+
+			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
+
+			Assert.That (t, Is.TypeOf<MemberSymbol>());
+			var baseType = ((MemberSymbol)t).Base;
+
+			Assert.That (baseType, Is.TypeOf<ClassType> ());
+			var objectClass = baseType as ClassType;
+
+			Assert.That (objectClass.Modifier, Is.EqualTo(DTokens.Const));
+		}
+
 		readonly string constNonConstParamDistinguishingSOcode = @"module A;
 class B{
 auto opEquals(Object lhs, Object rhs)
