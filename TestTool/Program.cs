@@ -22,7 +22,8 @@ namespace TestTool
 			Trace.UseGlobalLock = false;
 			if(File.Exists(traceFile))
 				File.Delete (traceFile);
-			Trace.Listeners.Add (new TextWriterTraceListener (traceFile));
+			Trace.Listeners.Add (new TextWriterTraceListener (Console.Out));
+			//Trace.Listeners.Add (new TextWriterTraceListener (traceFile));
 
 			/*
 			var sw2 = new Stopwatch();
@@ -38,9 +39,12 @@ namespace TestTool
 			//(new IndentationTests ()).SwitchIndentation ();
 
 			//BotanProfil.Run ();
-			rt.ConstNonConstParamDistinguishingSO();
-
-			Trace.Flush ();
+			try {
+				rt.ConstAttributedSymbolType ();
+				//rt.ConstNonConstParamDistinguishingSO ();
+			} finally {
+				Trace.Flush ();
+			}
 			return;
 
 			// Indent testing
