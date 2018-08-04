@@ -484,7 +484,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			}
 
 
-			public bool Visit(DVariable dv)
+			public bool VisitDVariable(DVariable dv)
 			{
 				if (dv.Initializer != null &&
 					(caretInsensitive || (dv.Initializer.Location > Caret && dv.Initializer.EndLocation < Caret)))
@@ -511,22 +511,22 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 			public bool Visit(ModuleAliasNode n)
 			{
-				return Visit(n as DVariable);
+				return VisitDVariable(n);
 			}
 
 			public bool Visit(ImportSymbolNode n)
 			{
-				return Visit(n as DVariable);
+				return VisitDVariable(n);
 			}
 
 			public bool Visit(ImportSymbolAlias n)
 			{
-				return Visit(n as DVariable);
+				return VisitDVariable(n);
 			}
 
 			public bool Visit(EponymousTemplate n)
 			{
-				return Visit(n as DVariable);
+				return VisitDVariable(n);
 			}
 			#endregion
 
@@ -837,7 +837,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 			public bool Visit(IfStatement s)
 			{
-				if (s.IfVariable != null && Visit(s.IfVariable))
+				if (s.IfVariable != null && VisitDVariable(s.IfVariable))
 					return true;
 
 				return VisitExpressionStmt(s) || VisitSubStatements(s);
@@ -947,7 +947,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 			public bool Visit(TryStatement.CatchStatement s)
 			{
-				return (s.CatchParameter != null && Visit(s.CatchParameter)) || VisitSubStatements(s);
+				return (s.CatchParameter != null && VisitDVariable(s.CatchParameter)) || VisitSubStatements(s);
 			}
 
 			public bool Visit(TryStatement.FinallyStatement s)
@@ -1019,7 +1019,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			{
 				if (s.Declarations != null)
 					foreach (DNode decl in s.Declarations)
-						if (decl is DVariable ? Visit(decl as DVariable) : VisitDNode(decl))
+						if (decl is DVariable ? VisitDVariable(decl as DVariable) : VisitDNode(decl))
 							return true;
 
 				return false;

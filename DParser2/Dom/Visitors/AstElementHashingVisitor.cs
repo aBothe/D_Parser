@@ -104,10 +104,10 @@ namespace D_Parser.Dom.Visitors
 
 		public long Visit(DEnumValue n)
 		{
-			return unchecked(100003 * Visit(n as DVariable));
+			return unchecked(100003 * VisitDVariable(n as DVariable));
 		}
 
-		public long Visit(DVariable n)
+		public long VisitDVariable(DVariable n)
 		{
 			long h = 100019 * VisitDNode (n);
 
@@ -189,7 +189,7 @@ namespace D_Parser.Dom.Visitors
 
 		public long Visit(EponymousTemplate ep)
 		{
-			return unchecked(1000231 * Visit((DVariable)ep));
+			return unchecked(1000231 * VisitDVariable((DVariable)ep));
 		}
 
 		public long Visit(ModuleAliasNode n)
@@ -204,7 +204,7 @@ namespace D_Parser.Dom.Visitors
 
 		public long Visit(ImportSymbolNode n)
 		{
-			long h = Visit ((DVariable)n);
+			long h = VisitDVariable ((DVariable)n);
 			const long prime = 1000253;
 
 			Hash(ref h, prime, n.ImportStatement != null ? n.ImportStatement.Accept (this) : 0);

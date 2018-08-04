@@ -61,7 +61,7 @@ namespace D_Parser.Dom
 	public interface NodeVisitor<out R> : IVisitor<R>
 	{
 		R Visit(DEnumValue n);
-		R Visit(DVariable n);
+		R VisitDVariable(DVariable n);
 		R Visit(DMethod n);
 		R Visit(DClassLike n);
 		R Visit(DEnum n);

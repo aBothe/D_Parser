@@ -62,7 +62,7 @@ namespace D_Parser.Dom
 
 		public override R Accept<R>(NodeVisitor<R> vis)
 		{
-			return vis.Visit(this);
+			return vis.VisitDVariable(this);
 		}
 	}
 

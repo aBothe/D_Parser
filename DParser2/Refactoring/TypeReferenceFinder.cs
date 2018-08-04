@@ -90,7 +90,7 @@ namespace D_Parser.Refactoring
 				return (byte)TypeReferenceKind.EnumValue;
 			}
 
-			public byte Visit(DVariable n)
+			public byte VisitDVariable(DVariable n)
 			{
 				return n.IsAlias && !n.IsAliasThis ? (byte)TypeReferenceKind.Alias : (byte)TypeReferenceKind.Variable;
 			}
