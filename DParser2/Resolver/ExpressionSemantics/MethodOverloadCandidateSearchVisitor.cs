@@ -9,6 +9,32 @@ namespace D_Parser.Resolver.ExpressionSemantics
 {
 	class MethodOverloadCandidateSearchVisitor : IResolvedTypeVisitor<IEnumerable<AbstractType>>
 	{
+		public static List<AbstractType> SearchCandidates (
+			AbstractType [] baseExpression,
+			ResolutionContext ctxt,
+			AbstractSymbolValueProvider valueProvider,
+			PostfixExpression_MethodCall call,
+			ref ISymbolValue delegateValue,
+			bool returnBaseTypeOnly,
+			out bool returnInstantly)
+		{
+			// Search possible methods, opCalls or delegates that could be called
+			var candidateSearchVisitor = new MethodOverloadCandidateSearchVisitor (ctxt, valueProvider, call, returnBaseTypeOnly);
+			var methodOverloads = new List<AbstractType> ();
+
+			foreach (AbstractType b in baseExpression) {
+				if (ctxt.CancellationToken.IsCancellationRequested)
+					break;
+
+				if (b != null) {
+					methodOverloads.AddRange (b.Accept (candidateSearchVisitor));
+				}
+			}
+
+			returnInstantly = candidateSearchVisitor.returnInstantly;
+			return methodOverloads;
+		}
+
 		readonly ResolutionContext ctxt;
 		readonly AbstractSymbolValueProvider valueProvider;
 		readonly PostfixExpression_MethodCall call;
@@ -19,7 +45,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		bool requireStaticItems = true;
 		public ISymbolValue delegateValue;
 
-		public MethodOverloadCandidateSearchVisitor (ResolutionContext ctxt,
+		MethodOverloadCandidateSearchVisitor (ResolutionContext ctxt,
 			AbstractSymbolValueProvider valueProvider,
 			PostfixExpression_MethodCall call,
 			bool returnBaseTypeOnly)

@@ -334,6 +334,7 @@
     <Compile Include="Resolver\Caching\ExpressionCache.cs" />
     <Compile Include="Resolver\TypeResolution\LooseResolution.cs" />
     <Compile Include="Resolver\ExpressionSemantics\MethodOverloadCandidateSearchVisitor.cs" />
+    <Compile Include="Resolver\ExpressionSemantics\MethodOverloadsByParameterTypeComparisonFilter.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="readme.txt" />
