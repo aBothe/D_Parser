@@ -38,7 +38,7 @@ struct Template( void var = Template ) {}
 			IExpression x;
 			DModule A;
 
-			var code = "module A; const private Object co;";
+			var code = "module A; const Object co;";
 
 			var ctxt = CreateDefCtxt ("A", out A, code);
 
@@ -117,7 +117,6 @@ const Object co,co2;
 			Assert.That((t as MemberSymbol).Definition, Is.SameAs(opEquals1));
 
 			Assert.That((t as MemberSymbol).Base, Is.TypeOf<PrimitiveType>());
-
 		}
 
 		[Test]

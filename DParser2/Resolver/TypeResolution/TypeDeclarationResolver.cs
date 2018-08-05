@@ -417,6 +417,18 @@ namespace D_Parser.Resolver.TypeResolution
 					// Check if inside an foreach statement header
 					if (bt == null)
 						bt = GetForeachIteratorType(variable);
+
+					if (bt != null && variable.Attributes != null && variable.Attributes.Count > 0) {
+						var variableModifiers = variable.Attributes.FindAll ((DAttribute obj) => obj is Modifier).Select ((arg) => ((Modifier)arg).Token).ToArray();
+						if (variableModifiers.Length > 0) {
+							bt = bt.Clone (false);
+							if(bt.HasModifiers) {
+								bt.Modifiers = bt.Modifiers.Union (variableModifiers).ToArray();
+							} else {
+								bt.Modifiers = variableModifiers;
+							}
+						}
+					}
 				}
 				else
 					bt = null;

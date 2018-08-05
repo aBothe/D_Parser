@@ -40,8 +40,7 @@ namespace TestTool
 
 			//BotanProfil.Run ();
 			try {
-				rt.ConstAttributedSymbolType ();
-				//rt.ConstNonConstParamDistinguishingSO ();
+				rt.ConstNonConstParamDistinguishingSO ();
 			} finally {
 				Trace.Flush ();
 			}
