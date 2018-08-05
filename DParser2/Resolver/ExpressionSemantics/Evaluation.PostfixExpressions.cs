@@ -81,130 +81,19 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			out bool returnInstantly)
 		{
 			// Search possible methods, opCalls or delegates that could be called
+			var candidateSearchVisitor = new MethodOverloadCandidateSearchVisitor(ctxt, valueProvider, call, returnBaseTypeOnly);
 			var methodOverloads = new List<AbstractType> ();
-			bool requireStaticItems = true; //TODO: What if there's an opCall and a foreign method at the same time? - and then this variable would be bullshit
-			IEnumerable<AbstractType> scanResults = baseExpression;
-			var nextResults = new List<AbstractType> ();
 
-			while (scanResults != null && !ctxt.CancellationToken.IsCancellationRequested) {
-				foreach (var b in scanResults) {
-					if (b is AmbiguousType)
-						nextResults.AddRange ((b as AmbiguousType).Overloads);
-					else if (b is TemplateParameterSymbol)
-						nextResults.Add ((b as TemplateParameterSymbol).Base);
-					else if (b is MemberSymbol) {
-						var mr = (MemberSymbol)b;
+			foreach(AbstractType b in baseExpression){
+				if (ctxt.CancellationToken.IsCancellationRequested)
+					break;
 
-						if (mr.Definition is DMethod) {
-							methodOverloads.Add (mr);
-							continue;
-						}
-						if (mr.Definition is DVariable) {
-							// If we've got a variable here, get its base type/value reference
-							if (valueProvider != null) {
-								var dgVal = valueProvider [(DVariable)mr.Definition] as DelegateValue;
-
-								if (dgVal != null) {
-									nextResults.Add (dgVal.Definition);
-									continue;
-								}
-
-								valueProvider.LogError (call, "Variable must be a delegate, not anything else");
-								returnInstantly = true;
-								return methodOverloads;
-							}
-
-							var bt = mr.Base ?? TypeDeclarationResolver.ResolveSingle (mr.Definition.Type, ctxt);
-
-							// Must be of type delegate
-							if (bt is DelegateType) {
-								var ret = HandleCallDelegateType (valueProvider, bt as DelegateType, methodOverloads, returnBaseTypeOnly);
-								if (ret is ISymbolValue) {
-									delegateValue = ret as ISymbolValue;
-									returnInstantly = true;
-									return methodOverloads;
-								}
-
-								if (ret is AbstractType) {
-									returnInstantly = true;
-									methodOverloads.Add (ret as AbstractType);
-									return methodOverloads;
-								}
-							} else {
-								/*
-								 * If mr.Node is not a method, so e.g. if it's a variable
-								 * pointing to a delegate
-								 * 
-								 * class Foo
-								 * {
-								 *	string opCall() {  return "asdf";  }
-								 * }
-								 * 
-								 * Foo f=new Foo();
-								 * f(); -- calls opCall, opCall is not static
-								 */
-								if (!nextResults.Contains (bt) && !scanResults.Contains (bt))
-									nextResults.Add (bt);
-								requireStaticItems = false;
-							}
-							//TODO: Can other types work as function/are callable?
-						}
-					} else if (b is DelegateType) {
-						var ret = HandleCallDelegateType (valueProvider, b as DelegateType, methodOverloads, returnBaseTypeOnly);
-						if (ret is ISymbolValue) {
-							delegateValue = ret as ISymbolValue;
-							returnInstantly = true;
-							return methodOverloads;
-						}
-						if (ret is AbstractType) {
-							returnInstantly = true;
-							methodOverloads.Add (ret as AbstractType);
-							return methodOverloads;
-						}
-					} else if (b is ClassType || b is StructType) {
-						var tit = (TemplateIntermediateType)b;
-						/*
-						 * auto a = MyStruct(); -- opCall-Overloads can be used
-						 */
-						var classDef = tit.Definition;
-
-						if (classDef == null)
-							continue;
-
-						foreach (var i in ExpressionTypeEvaluation.GetOpCalls (tit, requireStaticItems))
-							methodOverloads.Add (TypeDeclarationResolver.HandleNodeMatch (i, ctxt, b, call) as MemberSymbol);
-
-						/*
-						 * Every struct can contain a default ctor:
-						 * 
-						 * struct S { int a; bool b; }
-						 * 
-						 * auto s = S(1,true); -- ok
-						 * auto s2= new S(2,false); -- error, no constructor found!
-						 */
-						if (b is StructType && methodOverloads.Count == 0) {
-							//TODO: Deduce parameters
-							returnInstantly = true;
-							methodOverloads.Add (b);
-							return methodOverloads;
-						}
-					}
-
-					  /*
-					   * If the overload is a template, it quite exclusively means that we'll handle a method that is the only
-					   * child inside a template + that is named as the template.
-					   */
-					  else if (b is TemplateType)
-						methodOverloads.Add (b);
-					else if (b is PrimitiveType) // dmd 2.066: Uniform Construction Syntax. creal(3) is of type creal.
-						methodOverloads.Add (b);
+				if (b != null) {
+					methodOverloads.AddRange (b.Accept (candidateSearchVisitor));
 				}
-
-				scanResults = nextResults.Count == 0 ? null : nextResults.ToArray ();
-				nextResults.Clear ();
 			}
 
-			returnInstantly = false;
+			returnInstantly = candidateSearchVisitor.returnInstantly;
 			return methodOverloads;
 		}
 
@@ -392,30 +281,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 					argTypeFilteredOverloads.Add(bt);
 				}
-			}
-		}
-
-		static ISemantic HandleCallDelegateType(AbstractSymbolValueProvider ValueProvider,DelegateType dg, List<AbstractType> methodOverloads, bool returnBaseTypeOnly)
-		{
-			if(returnBaseTypeOnly)
-				return ValueProvider != null ? new TypeValue(dg.Base) as ISemantic : dg.Base;
-
-			/*
-			 * int a = delegate(x) { return x*2; } (12); // a is 24 after execution
-			 * auto dg=delegate(x) {return x*3;};
-			 * int b = dg(4);
-			 */
-
-			if (ValueProvider == null) {
-				methodOverloads.Add (dg);
-				return null;
-			}
-			else
-			{
-				// If it's just wanted to pass back the delegate's return type, skip the remaining parts of this method.
-				//EvalError(dg.DeclarationOrExpressionBase as IExpression, "TODO", dg);
-				ValueProvider.LogError(dg.delegateTypeBase, "Ctfe not implemented yet");
-				return null;
 			}
 		}
 
