@@ -567,12 +567,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			{
 				var ct = t as TemplateIntermediateType;
 				if (ct != null &&
-					!ct.Definition.ContainsAttribute(DTokens.Abstract))
+					!ct.Definition.ContainsAnyAttribute(DTokens.Abstract))
 					foreach (var ctor in GetConstructors(ct)){
 						// Omit all ctors that won't return the adequate 
 						if (ct.HasModifiers)
 						{
-							if (!ctor.ContainsAttribute(ct.Modifiers) && !ctor.ContainsAttribute(DTokens.Pure))
+							if (!ctor.ContainsAnyAttribute(ct.Modifiers) && !ctor.ContainsAnyAttribute(DTokens.Pure))
 								continue;						
 						}
 						else if(ctor.Attributes != null && ctor.Attributes.Count != 0)

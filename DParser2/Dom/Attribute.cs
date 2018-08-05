@@ -222,7 +222,7 @@ namespace D_Parser.Dom
 			return false;
 		}
 
-		public static bool ContainsAttribute(IEnumerable<DAttribute> HayStack, params byte[] NeedleToken)
+		public static bool ContainsAnyAttributeToken(IEnumerable<DAttribute> HayStack, params byte[] NeedleToken)
 		{
 			var l = new List<byte>(NeedleToken);
 			if (HayStack != null)

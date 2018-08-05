@@ -626,7 +626,7 @@ namespace D_Parser.Resolver.TypeResolution
 					return DResolver.ResolveClassOrInterface(dc, ctxt, typeBase, false, invisibleTypeParams.ToList());
 
 					case DTokens.Template:
-						if (dc.ContainsAttribute(DTokens.Mixin))
+						if (dc.ContainsAnyAttribute(DTokens.Mixin))
 							return new MixinTemplateType(dc, invisibleTypeParams);
 						return new TemplateType(dc, invisibleTypeParams);
 

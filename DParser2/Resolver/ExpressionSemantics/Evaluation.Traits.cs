@@ -88,13 +88,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						{
 							var dn = (t as DSymbol).Definition;
 							
-							if(dn.ContainsAttribute(DTokens.Private))
+							if(dn.ContainsAnyAttribute(DTokens.Private))
 								prot = "private";
-							else if(dn.ContainsAttribute(DTokens.Protected))
+							else if(dn.ContainsAnyAttribute(DTokens.Protected))
 								prot = "protected";
-							else if(dn.ContainsAttribute(DTokens.Package))
+							else if(dn.ContainsAnyAttribute(DTokens.Package))
 								prot = "package";
-							else if(dn.ContainsAttribute(DTokens.Export))
+							else if(dn.ContainsAnyAttribute(DTokens.Export))
 								prot = "export";
 						}
 						else
@@ -183,7 +183,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							if(dc != null && dc.ClassType != DTokens.Struct)
 							{
 								bool includeFinalNonOverridingMethods = te.Keyword == "isVirtualFunction";
-								ret = !dm.ContainsAttribute(includeFinalNonOverridingMethods ? (byte)0 : DTokens.Final, DTokens.Static);
+								ret = !dm.ContainsAnyAttribute(includeFinalNonOverridingMethods ? (byte)0 : DTokens.Final, DTokens.Static);
 							}
 							break;
 						case "isAbstractFunction":
@@ -191,15 +191,15 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 							ret = ms!=null && 
 								ms.Definition is DMethod &&
-								ms.Definition.ContainsAttribute(DTokens.Abstract);
+								ms.Definition.ContainsAnyAttribute(DTokens.Abstract);
 							break;
 						case "isFinalFunction":
 							ms = t as MemberSymbol;
 								
 							if( ms!=null && ms.Definition is DMethod)
 							{
-								ret = ms.Definition.ContainsAttribute(DTokens.Abstract) ||
-									(ms.Definition.Parent is DClassLike && (ms.Definition.Parent as DClassLike).ContainsAttribute(DTokens.Final));
+								ret = ms.Definition.ContainsAnyAttribute(DTokens.Abstract) ||
+									(ms.Definition.Parent is DClassLike && (ms.Definition.Parent as DClassLike).ContainsAnyAttribute(DTokens.Final));
 							}
 							break;
 						case "isStaticFunction":
@@ -209,13 +209,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							break;
 								
 						case "isRef":
-							ret = t is MemberSymbol && (t as MemberSymbol).Definition.ContainsAttribute(DTokens.Ref);
+							ret = t is MemberSymbol && (t as MemberSymbol).Definition.ContainsAnyAttribute(DTokens.Ref);
 							break;
 						case "isOut":
-							ret = t is MemberSymbol && (t as MemberSymbol).Definition.ContainsAttribute(DTokens.Out);
+							ret = t is MemberSymbol && (t as MemberSymbol).Definition.ContainsAnyAttribute(DTokens.Out);
 							break;
 						case "isLazy":
-							ret = t is MemberSymbol && (t as MemberSymbol).Definition.ContainsAttribute(DTokens.Lazy);
+							ret = t is MemberSymbol && (t as MemberSymbol).Definition.ContainsAnyAttribute(DTokens.Lazy);
 							break;
 						default:
 							tested = false;
@@ -251,10 +251,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 								break;
 									
 							case "isAbstractClass":
-								ret = t is ClassType && (t as ClassType).Definition.ContainsAttribute(DTokens.Abstract);
+								ret = t is ClassType && (t as ClassType).Definition.ContainsAnyAttribute(DTokens.Abstract);
 								break;
 							case "isFinalClass":
-								ret = t is ClassType && (t as ClassType).Definition.ContainsAttribute(DTokens.Final);
+								ret = t is ClassType && (t as ClassType).Definition.ContainsAnyAttribute(DTokens.Final);
 								break;
 								
 							case "isAssociativeArray":

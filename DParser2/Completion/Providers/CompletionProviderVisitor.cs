@@ -104,7 +104,7 @@ namespace D_Parser.Completion
 		public override void VisitDNode (DNode n)
 		{
 			if (n.NameHash == DTokens.IncompleteIdHash) {
-				if (n.ContainsAttribute(DTokens.Override))
+				if (n.ContainsAnyAttribute(DTokens.Override))
 					prv = new MethodOverrideCompletionProvider(n, cdgen);
 				else
 					explicitlyNoCompletion = true;
@@ -130,7 +130,7 @@ namespace D_Parser.Completion
 
 		public override void Visit (DVariable n)
 		{
-			if (n.NameHash == 0 && n.ContainsAttribute(DTokens.Override))
+			if (n.NameHash == 0 && n.ContainsAnyAttribute(DTokens.Override))
 			{
 				prv = new MethodOverrideCompletionProvider(n, cdgen);
 				halt = true;
@@ -158,7 +158,7 @@ namespace D_Parser.Completion
 
 			// auto |
 			if(!halt && n.NameHash == 0 && 
-				(n.ContainsAttribute (DTokens.Auto) || DParser.ContainsStorageClass(n.Attributes) != Modifier.Empty)) {
+				(n.ContainsAnyAttribute (DTokens.Auto) || DParser.ContainsStorageClass(n.Attributes) != Modifier.Empty)) {
 				halt = true;
 				explicitlyNoCompletion = true;
 			}

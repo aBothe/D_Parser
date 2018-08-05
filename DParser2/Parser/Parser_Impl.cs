@@ -271,7 +271,7 @@ namespace D_Parser.Parser
 				case Assert:
 					Step();
 					CheckForStorageClasses(module);
-					if (!Modifier.ContainsAttribute(DeclarationAttributes, Static))
+					if (!Modifier.ContainsAnyAttributeToken(DeclarationAttributes, Static))
 						SynErr(Static, "Static assert statements must be explicitly marked as static");
 
 					module.Add(ParseStaticAssertStatement(module));
@@ -629,8 +629,8 @@ namespace D_Parser.Parser
 		{
 			// In DMD 2.060, the static keyword must be written exactly before the import token
 			bool isStatic = t!= null && t.Kind == Static; 
-			bool isPublic = Modifier.ContainsAttribute(DeclarationAttributes, Public) ||
-							Modifier.ContainsAttribute(BlockAttributes,Public);
+			bool isPublic = Modifier.ContainsAnyAttributeToken(DeclarationAttributes, Public) ||
+							Modifier.ContainsAnyAttributeToken(BlockAttributes,Public);
 
 			Expect(Import);
 
@@ -756,7 +756,7 @@ namespace D_Parser.Parser
 				{
 					Step();
 					// Always allow more than only one property DAttribute
-					if (!Modifier.ContainsAttribute(DeclarationAttributes.ToArray(), t.Kind))
+					if (!Modifier.ContainsAnyAttributeToken(DeclarationAttributes.ToArray(), t.Kind))
 						PushAttribute(new Modifier(t.Kind, t.Value) { Location = t.Location, EndLocation = t.EndLocation }, false);
 				}
 				ret = true;
@@ -4174,7 +4174,7 @@ namespace D_Parser.Parser
 					}
 				case Assert:
 					CheckForStorageClasses(Scope);
-					if (Modifier.ContainsAttribute(DeclarationAttributes, Static))
+					if (Modifier.ContainsAnyAttributeToken(DeclarationAttributes, Static))
                     {
                         Step();
 						return ParseStaticAssertStatement (Scope);

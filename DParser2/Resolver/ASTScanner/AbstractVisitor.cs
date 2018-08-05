@@ -1266,7 +1266,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			if (dn == null || !CanAddMemberOfType (parms.VisibleMembers, dn))
 				return false;
 
-			if (ctxt.CompletionOptions.HideDeprecatedNodes && dn.ContainsAttribute(DTokens.Deprecated))
+			if (ctxt.CompletionOptions.HideDeprecatedNodes && dn.ContainsAnyAttribute(DTokens.Deprecated))
 				return false;
 
 			if (ctxt.CompletionOptions.HideDisabledNodes &&
@@ -1302,9 +1302,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		static bool CanShowMember(DNode dn, IBlockNode scope)
 		{
 			// http://dlang.org/attribute.html#ProtectionAttribute
-			if (dn.ContainsAttribute(DTokens.Private))
+			if (dn.ContainsAnyAttribute(DTokens.Private))
 				return scope == null || dn.NodeRoot == scope.NodeRoot;
-			else if (dn.ContainsAttribute(DTokens.Package))
+			else if (dn.ContainsAnyAttribute(DTokens.Package))
 				return scope == null || dn.NodeRoot is DModule &&
 					ModuleNameHelper.ExtractPackageName((dn.NodeRoot as DModule).ModuleName) ==
 					ModuleNameHelper.ExtractPackageName((scope.NodeRoot as DModule).ModuleName);
@@ -1314,7 +1314,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 		static bool CheckForProtectedAttribute(DNode dn, IBlockNode scope)
 		{
-			if(!dn.ContainsAttribute(DTokens.Protected) || dn.NodeRoot == scope.NodeRoot)
+			if(!dn.ContainsAnyAttribute(DTokens.Protected) || dn.NodeRoot == scope.NodeRoot)
 				return true;
 
 			while(scope!=null)

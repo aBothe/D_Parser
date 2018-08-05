@@ -772,7 +772,7 @@ else int C;");
 			var b = m["b"].First() as DVariable;
 
 			Assert.AreEqual(2,a.Attributes.Count);
-			Assert.That (a.ContainsAttribute(DTokens.Private));
+			Assert.That (a.ContainsAnyAttribute(DTokens.Private));
 			Assert.AreEqual(0,b.Attributes.Count);
 			
 			var A = m["A"].First() as DVariable;
@@ -829,11 +829,11 @@ int ii;
 			DMethod dm;
 
 			var Class = m ["Class"].First() as DClassLike;
-			Assert.That (Class.ContainsAttribute (DTokens.Final));
+			Assert.That (Class.ContainsAnyAttribute (DTokens.Final));
 			dn = Class ["statFoo"].First () as DNode;
 			Assert.That (dn.Attributes.Count, Is.EqualTo (2));
-			Assert.That (dn.ContainsAttribute(DTokens.Public));
-			Assert.That (dn.ContainsAttribute(DTokens.Static));
+			Assert.That (dn.ContainsAnyAttribute(DTokens.Public));
+			Assert.That (dn.ContainsAnyAttribute(DTokens.Static));
 
 			dm = dn as DMethod;
 			dn = dm.Parameters [0] as DNode;
@@ -842,7 +842,7 @@ int ii;
 
 			dn = dm.Parameters [1] as DNode;
 			Assert.That (dn.Attributes.Count, Is.EqualTo(1));
-			Assert.That(dn.ContainsAttribute(DTokens.Ref));
+			Assert.That(dn.ContainsAnyAttribute(DTokens.Ref));
 
 			dn = (dm.Body.SubStatements.First() as IDeclarationContainingStatement).Declarations[0] as DNode;
 			Assert.That (dn.Attributes.Count, Is.EqualTo (0));
@@ -851,9 +851,9 @@ int ii;
 
 			dn = Class ["statBar"].First () as DNode;
 			Assert.That (dn.Attributes.Count, Is.EqualTo (3));
-			Assert.That (dn.ContainsAttribute(DTokens.Public));
-			Assert.That (dn.ContainsAttribute(DTokens.Static));
-			Assert.That (dn.ContainsAttribute(DTokens.Nothrow));
+			Assert.That (dn.ContainsAnyAttribute(DTokens.Public));
+			Assert.That (dn.ContainsAnyAttribute(DTokens.Static));
+			Assert.That (dn.ContainsAnyAttribute(DTokens.Nothrow));
 
 			dm = dn as DMethod;
 			dn = dm.Parameters [0] as DNode;
@@ -862,7 +862,7 @@ int ii;
 
 			dn = dm.Parameters [1] as DNode;
 			Assert.That (dn.Attributes.Count, Is.EqualTo(1));
-			Assert.That(dn.ContainsAttribute(DTokens.Ref));
+			Assert.That(dn.ContainsAnyAttribute(DTokens.Ref));
 
 			dn = (dm.Body.SubStatements.First() as IDeclarationContainingStatement).Declarations[0] as DNode;
 			Assert.That (dn.Attributes.Count, Is.EqualTo (0));
@@ -871,7 +871,7 @@ int ii;
 
 			dn = Class["priv"].First() as DNode;
 			Assert.That (dn.Attributes.Count, Is.EqualTo(1));
-			Assert.That(dn.ContainsAttribute(DTokens.Private));
+			Assert.That(dn.ContainsAnyAttribute(DTokens.Private));
 
 			dn = m["ii"].First() as DNode;
 			Assert.That (dn.Attributes.Count, Is.EqualTo(0));

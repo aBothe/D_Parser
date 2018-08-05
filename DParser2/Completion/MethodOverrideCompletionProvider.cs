@@ -50,7 +50,7 @@ namespace D_Parser.Completion.Providers
 				{
 					var dm = n as DMethod;
 					if (dm == null ||
-						dm.ContainsAttribute(DTokens.Final, DTokens.Private, DTokens.Static))
+						dm.ContainsAnyAttribute(DTokens.Final, DTokens.Private, DTokens.Static))
 						continue; //TODO: Other attributes?
 
 					CompletionDataGenerator.AddCodeGeneratingNodeItem(dm, GenerateOverridingMethodStub(dm, begunNode, !(t is InterfaceType)));

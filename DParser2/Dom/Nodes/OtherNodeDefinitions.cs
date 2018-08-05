@@ -39,7 +39,7 @@ namespace D_Parser.Dom
 		{
 			get
 			{
-				return ContainsAttribute(DTokens.Const, DTokens.Enum); // TODO: Are there more tokens that indicate a const value?
+				return ContainsAnyAttribute(DTokens.Const, DTokens.Enum); // TODO: Are there more tokens that indicate a const value?
 			}
 		}
 
