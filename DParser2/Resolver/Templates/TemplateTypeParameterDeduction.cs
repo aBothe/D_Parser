@@ -390,11 +390,11 @@ namespace D_Parser.Resolver.Templates
 
 		bool HandleDecl(TemplateTypeParameter p, MemberFunctionAttributeDecl m, AbstractType r)
 		{
-			if (r == null || r.Modifier == 0)
+			if (r == null || !r.HasModifiers)
 				return false;
 
 			// Modifiers must be equal on both sides
-			if (m.Modifier != r.Modifier)
+			if (!r.HasModifier(m.Modifier))
 				return false;
 
 			// Strip modifier, but: immutable(int[]) becomes immutable(int)[] ?!
@@ -402,9 +402,9 @@ namespace D_Parser.Resolver.Templates
 			if (r is AssocArrayType)
 			{
 				var aa = r as AssocArrayType;
-				var clonedValueType = aa.Modifier != r.Modifier ? aa.ValueType.Clone(false) : aa.ValueType;
+				var clonedValueType = aa.Modifiers != r.Modifiers ? aa.ValueType.Clone(false) : aa.ValueType;
 
-				clonedValueType.Modifier = r.Modifier;
+				clonedValueType.Modifiers = r.Modifiers;
 
 				var at = aa as ArrayType;
 				if (at != null)
@@ -415,7 +415,7 @@ namespace D_Parser.Resolver.Templates
 			else
 			{
 				newR = r.Clone(false);
-				newR.Modifier = 0;
+				newR.Modifiers = null;
 			}
 
 			// Now compare the type inside the parentheses with the given type 'r'

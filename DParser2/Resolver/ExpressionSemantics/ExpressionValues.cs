@@ -12,7 +12,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	public class PrimitiveValue : ExpressionValue
 	{
 		public readonly byte BaseTypeToken;
-		public readonly byte Modifier;
+		public readonly byte[] Modifiers;
 
 		/// <summary>
 		/// To make math operations etc. more efficient, use the largest available structure to store scalar values.
@@ -34,34 +34,29 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public PrimitiveValue(decimal Value, PrimitiveType pt, decimal ImaginaryPart = 0M)
 			: base(pt) {
-			this.Modifier = pt.Modifier;
+			this.Modifiers = pt.Modifiers;
 			this.BaseTypeToken = pt.TypeToken;
 			this.Value = Value;
 			this.ImaginaryPart = ImaginaryPart;
 		}
 
-		public PrimitiveValue(byte BaseTypeToken, decimal Value, decimal ImaginaryPart = 0M, byte BaseTypeModifier = 0)
-			: base(new PrimitiveType(BaseTypeToken, BaseTypeModifier))
-		{
-			this.Modifier = BaseTypeModifier;
-			this.BaseTypeToken = BaseTypeToken;
-			this.Value = Value;
-			this.ImaginaryPart = ImaginaryPart;
-		}
+		public PrimitiveValue (byte BaseTypeToken, decimal Value, decimal ImaginaryPart = 0M, params byte [] BaseTypeModifier)
+			: this (Value, new PrimitiveType (BaseTypeToken, BaseTypeModifier), ImaginaryPart)
+		{ }
 
 		/// <summary>
 		/// NaN constructor
 		/// </summary>
-		private PrimitiveValue(byte baseType, byte mod)
+		PrimitiveValue(byte baseType, params byte[] mod)
 			: base(new PrimitiveType(baseType, mod))
 		{
-			Modifier = mod;
+			Modifiers = mod;
 			IsNaN = true;
 		}
 
 		public readonly bool IsNaN;
 
-		public static PrimitiveValue CreateNaNValue(byte baseType = DTokens.Float, byte baseTypeMod = 0)
+		public static PrimitiveValue CreateNaNValue(byte baseType = DTokens.Float, params byte[] baseTypeMod)
 		{
 			return new PrimitiveValue(baseType, baseTypeMod);
 		}

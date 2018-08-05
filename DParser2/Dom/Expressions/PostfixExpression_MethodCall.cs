@@ -62,7 +62,7 @@ namespace D_Parser.Dom.Expressions
 
 		public override R Accept<R>(ExpressionVisitor<R> vis)
 		{
-			return vis.Visit(this);
+			return vis.VisitPostfixExpression_Methodcall(this);
 		}
 	}
 }

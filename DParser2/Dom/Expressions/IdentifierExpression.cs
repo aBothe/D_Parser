@@ -62,14 +62,14 @@ namespace D_Parser.Dom.Expressions
 
 		public override string ToString()
 		{
-			if (Format != Parser.LiteralFormat.None)
+			if (Format != LiteralFormat.None)
 				switch (Format)
 			{
-				case Parser.LiteralFormat.CharLiteral:
+				case LiteralFormat.CharLiteral:
 					return "'" + (EscapeStringHash != 0 ? ("\\"+Strings.TryGet(EscapeStringHash)) : Value ?? "") + "'";
-				case Parser.LiteralFormat.StringLiteral:
+				case LiteralFormat.StringLiteral:
 					return "\"" + StringValue + "\"";
-				case Parser.LiteralFormat.VerbatimStringLiteral:
+				case LiteralFormat.VerbatimStringLiteral:
 					return "r\"" + StringValue + "\"";
 				}
 			else if (IsIdentifier)

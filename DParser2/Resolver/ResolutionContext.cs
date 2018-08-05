@@ -25,6 +25,8 @@ namespace D_Parser.Resolver
 	public sealed class ResolutionContext
 	{
 		#region Properties
+		public CompletionOptions CompletionOptions { get; }
+
 		/// <summary>
 		/// Stores global compilation parameters.
 		/// Used by BuildConditionSet() as global flags for ConditionSet instances.
@@ -91,7 +93,7 @@ namespace D_Parser.Resolver
 		#region Init/Constructor
 		public static ResolutionContext Create(IEditorData editor, bool pushFirstScope, ConditionalCompilationFlags globalConditions = null)
 		{
-			var ctxt = new ResolutionContext(editor.ParseCache, globalConditions ?? new ConditionalCompilationFlags(editor));
+			var ctxt = Create(editor.ParseCache, globalConditions ?? new ConditionalCompilationFlags(editor));
 			if (pushFirstScope)
 				ctxt.Push(editor);
 			return ctxt;
@@ -99,12 +101,12 @@ namespace D_Parser.Resolver
 
 		public static ResolutionContext Create(ParseCacheView pcl, ConditionalCompilationFlags globalConditions)
 		{
-			return new ResolutionContext(pcl, globalConditions);
+			return Create(pcl, globalConditions, null, CodeLocation.Empty);
 		}
 
 		public static ResolutionContext Create(ParseCacheView pcl, ConditionalCompilationFlags globalConditions, IBlockNode scopedBlock)
 		{
-			return new ResolutionContext(pcl, globalConditions, scopedBlock, CodeLocation.Empty);
+			return Create(pcl, globalConditions, scopedBlock, CodeLocation.Empty);
 		}
 
 		public static ResolutionContext Create(ParseCacheView pcl, ConditionalCompilationFlags globalConditions, IBlockNode scopedBlock, CodeLocation caret)
@@ -112,21 +114,9 @@ namespace D_Parser.Resolver
 			return new ResolutionContext(pcl, globalConditions, scopedBlock, caret);
 		}
 
-		public ResolutionContext(ParseCacheView parseCache, ConditionalCompilationFlags gFlags, IBlockNode bn)
-			: this(parseCache, gFlags, bn, CodeLocation.Empty) { }
-
-		public ResolutionContext(ParseCacheView parseCache, ConditionalCompilationFlags gFlags)
+		ResolutionContext(ParseCacheView parseCache, ConditionalCompilationFlags gFlags, IBlockNode bn, CodeLocation caret)
 		{
-			this.CompilationEnvironment = gFlags;
-			this.ParseCache = parseCache;
-			Cache = new ResolutionCache<AbstractType>(this);
-			//ValueCache = new ResolutionCache<ISymbolValue>(this);
-			MixinCache = new ResolutionCache<MixinAnalysis.MixinCacheItem>(this);
-			NameScanCache = new ResolutionCache<NameScan>(this);
-		}
-
-		public ResolutionContext(ParseCacheView parseCache, ConditionalCompilationFlags gFlags, IBlockNode bn, CodeLocation caret)
-		{
+			this.CompletionOptions = CompletionOptions.Instance;
 			this.CompilationEnvironment = gFlags;
 			this.ParseCache = parseCache;
 			Cache = new ResolutionCache<AbstractType>(this);
@@ -134,7 +124,9 @@ namespace D_Parser.Resolver
 			MixinCache = new ResolutionCache<MixinAnalysis.MixinCacheItem>(this);
 			NameScanCache = new ResolutionCache<NameScan>(this);
 
-			PushNewScope (bn, caret);
+			if (bn != null) {
+				PushNewScope (bn, caret);
+			}
 		}
 		#endregion
 
@@ -340,7 +332,7 @@ namespace D_Parser.Resolver
 		{
 			lock(ResolutionErrors)
 				ResolutionErrors.Add(err);
-			if (ResolutionErrors.Count > maxErrorCount && CompletionOptions.Instance.LimitResolutionErrors) {
+			if (ResolutionErrors.Count > maxErrorCount && CompletionOptions.LimitResolutionErrors) {
 #if DEBUG
 				throw new TooManyResolutionErrors (ResolutionErrors.ToArray ());
 #endif

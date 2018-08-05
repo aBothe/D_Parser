@@ -72,7 +72,8 @@ namespace Tests
 		public static ResolutionContext CreateDefCtxt(ParseCacheView pcl, IBlockNode scope, CodeLocation caret)
 		{
 			var r = ResolutionContext.Create(pcl, new ConditionalCompilationFlags(new[]{"Windows","all"},1,true,null,0), scope, caret);
-			CompletionOptions.Instance.DisableMixinAnalysis = false;
+			r.CompletionOptions.CompletionTimeout = 0;
+			r.CompletionOptions.DisableMixinAnalysis = false;
 			return r;
 		}
 
@@ -162,15 +163,6 @@ namespace Tests
 			return TypeDeclarationResolver.ResolveSingle (id , ctxt);
 		}
 		#endregion
-
-		[SetUp]
-		public void SetupEnvironment()
-		{
-			var co = CompletionOptions.Instance;
-
-			co.CompletionTimeout = -1;
-			co.DisableMixinAnalysis = false;
-		}
 
 		[Test]
 		public void BasicResolution0()
@@ -2257,7 +2249,7 @@ class P
 			Assert.That (ctor, Is.Not.Null);
 			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
 			ct = ctor.Base as ClassType;
-			Assert.That (ct.Modifier, Is.EqualTo(0));
+			Assert.That (ct.HasModifiers, Is.False);
 
 			x = DParser.ParseExpression ("new const C");
 			ctor = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false) as MemberSymbol;
@@ -2265,7 +2257,7 @@ class P
 			Assert.That (ctor, Is.Not.Null);
 			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
 			ct = ctor.Base as ClassType;
-			Assert.That (ct.Modifier, Is.EqualTo(DTokens.Const));
+			Assert.That (ct.HasModifier (DTokens.Const));
 
 			x = DParser.ParseExpression ("new immutable C");
 			ctor = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false) as MemberSymbol;
@@ -2273,7 +2265,7 @@ class P
 			Assert.That (ctor, Is.Not.Null);
 			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
 			ct = ctor.Base as ClassType;
-			Assert.That (ct.Modifier, Is.EqualTo(DTokens.Immutable));
+			Assert.That (ct.HasModifier (DTokens.Immutable));
 
 			x = DParser.ParseExpression ("new shared C");
 			ctor = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false) as MemberSymbol;
@@ -2281,7 +2273,7 @@ class P
 			Assert.That (ctor, Is.Not.Null);
 			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
 			ct = ctor.Base as ClassType;
-			Assert.That (ct.Modifier, Is.EqualTo(DTokens.Shared));
+			Assert.That (ct.HasModifier(DTokens.Shared));
 
 
 
@@ -2291,7 +2283,7 @@ class P
 			Assert.That (ctor, Is.Not.Null);
 			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
 			ct = ctor.Base as ClassType;
-			Assert.That (ct.Modifier, Is.EqualTo(0));
+			Assert.That (ct.HasModifiers, Is.False);
 
 			x = DParser.ParseExpression ("new const P");
 			ctor = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false) as MemberSymbol;
@@ -2299,7 +2291,7 @@ class P
 			Assert.That (ctor, Is.Not.Null);
 			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
 			ct = ctor.Base as ClassType;
-			Assert.That (ct.Modifier, Is.EqualTo(DTokens.Const));
+			Assert.That (ct.HasModifier (DTokens.Const));
 
 			x = DParser.ParseExpression ("new immutable P");
 			ctor = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false) as MemberSymbol;
@@ -2307,7 +2299,7 @@ class P
 			Assert.That (ctor, Is.Not.Null);
 			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
 			ct = ctor.Base as ClassType;
-			Assert.That (ct.Modifier, Is.EqualTo(DTokens.Immutable));
+			Assert.That (ct.HasModifier (DTokens.Immutable));
 
 
 
@@ -2317,7 +2309,7 @@ class P
 			Assert.That (ctor, Is.Not.Null);
 			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
 			ct = ctor.Base as ClassType;
-			Assert.That (ct.Modifier, Is.EqualTo(DTokens.Const));
+			Assert.That (ct.HasModifier (DTokens.Const));
 
 			x = DParser.ParseExpression ("new D");
 			ctor = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false) as MemberSymbol;
@@ -3307,7 +3299,7 @@ unittest
 			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(ArrayType)));
 			pt = at.ValueType as PrimitiveType;
 			Assert.That(at.ValueType, Is.TypeOf(typeof(PrimitiveType)));
-			Assert.That(pt.Modifier, Is.EqualTo(DTokens.Immutable));
+			Assert.That(pt.HasModifier (DTokens.Immutable));
 			// immutable(int[]) becomes immutable(int)[] ?!
 
 			ctxt.CurrentContext.DeducedTemplateParameters.Clear();
@@ -3326,7 +3318,7 @@ unittest
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			pt = (t as TemplateParameterSymbol).Base as PrimitiveType;
 			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
-			Assert.That(pt.Modifier, Is.EqualTo(0));
+			Assert.That(pt.HasModifiers, Is.False);
 
 			ctxt.CurrentContext.DeducedTemplateParameters.Clear();
 
@@ -3336,7 +3328,7 @@ unittest
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			pt = (t as TemplateParameterSymbol).Base as PrimitiveType;
 			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
-			Assert.That(pt.Modifier, Is.EqualTo(0));
+			Assert.That(pt.HasModifiers, Is.False);
 
 			ctxt.CurrentContext.DeducedTemplateParameters.Clear();
 
@@ -3346,7 +3338,7 @@ unittest
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			pt = (t as TemplateParameterSymbol).Base as PrimitiveType;
 			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
-			Assert.That(pt.Modifier, Is.EqualTo(0));
+			Assert.That (pt.HasModifiers, Is.False);
 
 			ctxt.CurrentContext.DeducedTemplateParameters.Clear();
 
@@ -3356,7 +3348,7 @@ unittest
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			pt = (t as TemplateParameterSymbol).Base as PrimitiveType;
 			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
-			Assert.That(pt.Modifier, Is.EqualTo(0));
+			Assert.That (pt.HasModifiers, Is.False);
 
 			ctxt.CurrentContext.DeducedTemplateParameters.Clear();
 
@@ -3366,7 +3358,7 @@ unittest
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			pt = (t as TemplateParameterSymbol).Base as PrimitiveType;
 			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
-			Assert.That(pt.Modifier, Is.EqualTo(0));
+			Assert.That (pt.HasModifiers, Is.False);
 
 			ctxt.CurrentContext.DeducedTemplateParameters.Clear();
 
@@ -3376,7 +3368,7 @@ unittest
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			pt = (t as TemplateParameterSymbol).Base as PrimitiveType;
 			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
-			Assert.That(pt.Modifier, Is.EqualTo(0));
+			Assert.That (pt.HasModifiers, Is.False);
 		}
 
 		[Test]

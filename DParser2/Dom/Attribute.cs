@@ -222,35 +222,13 @@ namespace D_Parser.Dom
 			return false;
 		}
 
-		public static bool ContainsAttribute(DAttribute[] HayStack, params byte[] NeedleToken)
-		{
-			if (HayStack == null || HayStack.Length == 0)
-				return false;
-
-			var l = new List<byte>(NeedleToken);
-			foreach (var attr in HayStack)
-				if (attr is Modifier && l.Contains(((Modifier)attr).Token))
-					return true;
-            
-			return false;
-		}
-
-		public static bool ContainsAttribute(List<DAttribute> HayStack, params byte[] NeedleToken)
+		public static bool ContainsAnyAttributeToken(IEnumerable<DAttribute> HayStack, params byte[] NeedleToken)
 		{
 			var l = new List<byte>(NeedleToken);
 			if (HayStack != null)
 				foreach (var attr in HayStack)
 					if (attr is Modifier && l.Contains(((Modifier)attr).Token))
 						return true;
-			return false;
-		}
-
-		public static bool ContainsAttribute(Stack<DAttribute> HayStack, params byte[] NeedleToken)
-		{
-			var l = new List<byte>(NeedleToken);
-			foreach (var attr in HayStack)
-				if (attr is Modifier && l.Contains(((Modifier)attr).Token))
-					return true;
 			return false;
 		}
 

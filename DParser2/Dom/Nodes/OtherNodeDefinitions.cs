@@ -39,7 +39,7 @@ namespace D_Parser.Dom
 		{
 			get
 			{
-				return ContainsAttribute(DTokens.Const, DTokens.Enum); // TODO: Are there more tokens that indicate a const value?
+				return ContainsAnyAttribute(DTokens.Const, DTokens.Enum); // TODO: Are there more tokens that indicate a const value?
 			}
 		}
 
@@ -62,7 +62,7 @@ namespace D_Parser.Dom
 
 		public override R Accept<R>(NodeVisitor<R> vis)
 		{
-			return vis.Visit(this);
+			return vis.VisitDVariable(this);
 		}
 	}
 

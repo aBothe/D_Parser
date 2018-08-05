@@ -40,9 +40,24 @@ namespace D_Parser.Resolver
 		/// <summary>
 		/// e.g. const, immutable
 		/// </summary>
-		public virtual byte Modifier {
+		public virtual byte[] Modifiers {
 			get;
 			set;
+		}
+
+		public bool HasModifiers {
+			get { return Modifiers != null && Modifiers.Length > 0; }
+		}
+
+		public bool HasModifier(byte modifier){
+			if (!HasModifiers)
+				return false;
+
+			foreach (byte mod in Modifiers)
+				if (mod == modifier)
+					return true;
+
+			return false;
 		}
 		#endregion
 
@@ -167,22 +182,22 @@ namespace D_Parser.Resolver
 				yield return t;
 		}
 
-		public override byte Modifier
+		public override byte[] Modifiers
 		{
 			get
 			{
 				if (Overloads.Length != 0)
-					return Overloads[0].Modifier;
-				return base.Modifier;
+					return Overloads[0].Modifiers;
+				return base.Modifiers;
 			}
 			set
 			{
 				foreach (var ov in Overloads) {
-					ov.Modifier = value;
-					DResolver.StripMemberSymbols (ov).Modifier = value;
+					ov.Modifiers = value;
+					DResolver.StripMemberSymbols (ov).Modifiers = value;
 				}
 
-				base.Modifier = value;
+				base.Modifiers = value;
 			}
 		}
 
@@ -219,15 +234,15 @@ namespace D_Parser.Resolver
 	{
 		public readonly byte TypeToken;
 
-		public PrimitiveType(byte TypeToken, byte Modifier = 0)
+		public PrimitiveType(byte TypeToken, params byte[] Modifiers)
 		{
 			this.TypeToken = TypeToken;
-			this.Modifier = Modifier;
+			this.Modifiers = Modifiers;
 		}
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new PrimitiveType(TypeToken, Modifier);
+			return new PrimitiveType(TypeToken, Modifiers);
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -516,7 +531,7 @@ namespace D_Parser.Resolver
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new AliasedType(Definition, cloneBase && Base != null ? Base.Clone(true) : Base, DeducedTypes) { Modifier = Modifier };
+			return new AliasedType(Definition, cloneBase && Base != null ? Base.Clone(true) : Base, DeducedTypes) { Modifiers = Modifiers };
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -549,7 +564,7 @@ namespace D_Parser.Resolver
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new EnumType(Definition, cloneBase && Base != null ? Base.Clone(true) : Base) { Modifier = Modifier };
+			return new EnumType(Definition, cloneBase && Base != null ? Base.Clone(true) : Base) { Modifiers = Modifiers };
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -574,7 +589,7 @@ namespace D_Parser.Resolver
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new StructType(Definition, DeducedTypes) { Modifier = Modifier };
+			return new StructType(Definition, DeducedTypes) { Modifiers = Modifiers };
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -599,7 +614,7 @@ namespace D_Parser.Resolver
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new UnionType(Definition, DeducedTypes) { Modifier = Modifier };
+			return new UnionType(Definition, DeducedTypes) { Modifiers = Modifiers };
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -628,7 +643,7 @@ namespace D_Parser.Resolver
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new ClassType(Definition, cloneBase && Base != null ? Base.Clone(true) as TemplateIntermediateType : Base as TemplateIntermediateType, BaseInterfaces, DeducedTypes) { Modifier = Modifier };
+			return new ClassType(Definition, cloneBase && Base != null ? Base.Clone(true) as TemplateIntermediateType : Base as TemplateIntermediateType, BaseInterfaces, DeducedTypes) { Modifiers = Modifiers };
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -651,7 +666,7 @@ namespace D_Parser.Resolver
 		
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new InterfaceType(Definition, BaseInterfaces, DeducedTypes) { Modifier = Modifier };
+			return new InterfaceType(Definition, BaseInterfaces, DeducedTypes) { Modifiers = Modifiers };
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -690,7 +705,7 @@ namespace D_Parser.Resolver
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new TemplateType(Definition, DeducedTypes) { Modifier = Modifier };
+			return new TemplateType(Definition, DeducedTypes) { Modifiers = Modifiers };
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -710,7 +725,7 @@ namespace D_Parser.Resolver
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new MixinTemplateType(Definition, DeducedTypes) { Modifier = Modifier };
+			return new MixinTemplateType(Definition, DeducedTypes) { Modifiers = Modifiers };
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -808,7 +823,7 @@ namespace D_Parser.Resolver
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new MemberSymbol(Definition, cloneBase && Base != null ? Base.Clone(true) : Base, DeducedTypes) { Modifier = Modifier };
+			return new MemberSymbol(Definition, cloneBase && Base != null ? Base.Clone(true) : Base, DeducedTypes) { Modifiers = Modifiers };
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -865,7 +880,7 @@ namespace D_Parser.Resolver
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new TemplateParameterSymbol(Parameter, ParameterValue ?? (cloneBase && Base != null ? Base.Clone(true) : Base) as ISemantic) { Modifier = Modifier };
+			return new TemplateParameterSymbol(Parameter, ParameterValue ?? (cloneBase && Base != null ? Base.Clone(true) : Base) as ISemantic) { Modifiers = Modifiers };
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -924,7 +939,7 @@ namespace D_Parser.Resolver
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new ModuleSymbol(Definition, cloneBase && Base != null ? Base.Clone(true) as PackageSymbol : Base as PackageSymbol) { Modifier = Modifier };
+			return new ModuleSymbol(Definition, cloneBase && Base != null ? Base.Clone(true) as PackageSymbol : Base as PackageSymbol) { Modifiers = Modifiers };
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -953,7 +968,7 @@ namespace D_Parser.Resolver
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new PackageSymbol(Package) { Modifier = Modifier };
+			return new PackageSymbol(Package) { Modifiers = Modifiers };
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -1000,7 +1015,7 @@ namespace D_Parser.Resolver
 
 		public override AbstractType Clone(bool cloneBase)
 		{
-			return new DTuple(Items) { Modifier = Modifier };
+			return new DTuple(Items) { Modifiers = Modifiers };
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)

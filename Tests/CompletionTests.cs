@@ -1,21 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 using D_Parser;
 using D_Parser.Completion;
 using D_Parser.Dom;
-using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
 using D_Parser.Misc;
 using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
-using D_Parser.Resolver.Templates;
 using D_Parser.Resolver.TypeResolution;
 using NUnit.Framework;
-using System.IO;
 using NUnit.Framework.Constraints;
 
 namespace Tests
@@ -337,6 +333,27 @@ o[0][0].
 			ed = GenEditorData (5, 1, s);
 
 			wl = new[]{ (ed.MainPackage["A"]["C"].First() as DClassLike).Children["f"].First() };
+
+			TestCompletionListContents (ed, wl, null);
+		}
+
+		[Test]
+		public void MissingClassMembersOnParameter ()
+		{
+			TestsEditorData ed;
+			INode [] wl;
+
+			var s = @"module A;
+import ArrayMod;
+void foo(Array!byte array) {
+array.
+
+}";
+			var arrayDefModule = @"module ArrayMod; class Array(T) { void dooMagic() {} }";
+
+			ed = GenEditorData (5, 1, s, arrayDefModule);
+
+			wl = new [] { ResolutionTests.GetChildNode (ed.MainPackage.GetModule ("ArrayMod"), "Array.dooMagic") };
 
 			TestCompletionListContents (ed, wl, null);
 		}

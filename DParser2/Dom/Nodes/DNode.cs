@@ -48,7 +48,7 @@ namespace D_Parser.Dom
 		{
 			get
 			{
-				return !ContainsAttribute(DTokens.Private, DTokens.Protected);
+				return !ContainsAnyAttribute(DTokens.Private, DTokens.Protected);
 			}
 		}
 
@@ -56,7 +56,7 @@ namespace D_Parser.Dom
 		{
 			get
 			{
-				return ContainsAttribute(DTokens.Static, DTokens.__gshared);
+				return ContainsAnyAttribute(DTokens.Static, DTokens.__gshared);
 			}
 		}
 		#endregion
@@ -87,7 +87,7 @@ namespace D_Parser.Dom
 		public bool ContainsAttribute(DAttribute attr)
 		{
 			if(attr is Modifier)
-				return ContainsAttribute((attr as Modifier).Token);
+				return ContainsAnyAttribute((attr as Modifier).Token);
 			else if(attr is BuiltInAtAttribute)
 				return ContainsPropertyAttribute((attr as BuiltInAtAttribute).Kind);
 			else if(attr is UserDeclarationAttribute)
@@ -95,9 +95,9 @@ namespace D_Parser.Dom
 			return false;
 		}
 
-        public bool ContainsAttribute(params byte[] Token)
+        public bool ContainsAnyAttribute(params byte[] Token)
         {
-            return Modifier.ContainsAttribute(Attributes, Token);
+            return Modifier.ContainsAnyAttributeToken(Attributes, Token);
         }
 
 		public bool ContainsPropertyAttribute(BuiltInAtAttribute.BuiltInAttributes kind)

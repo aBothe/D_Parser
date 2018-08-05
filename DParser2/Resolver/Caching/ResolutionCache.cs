@@ -63,7 +63,7 @@ namespace D_Parser.Resolver
 
 		public void Add(T t, ISyntaxRegion sr, long hashBias = 0)
 		{
-			if (t == null || sr == null || !CompletionOptions.Instance.EnableResolutionCache)
+			if (t == null || sr == null || !ctxt.CompletionOptions.EnableResolutionCache)
 				return;
 
 			CacheEntryDict ce;

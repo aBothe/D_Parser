@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-
-using D_Parser.Dom.Expressions;
-using D_Parser.Parser;
-using D_Parser.Resolver.TypeResolution;
 using D_Parser.Dom;
+using D_Parser.Dom.Expressions;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
@@ -32,8 +29,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// Intermediate right operand operator-expressions.
 		/// </summary>
 		public ISymbolValue rValue;
-
-		bool? returnBaseTypeOnly;
 		#endregion
 
 		#region Constructor
@@ -47,7 +42,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			ignoreErrors = false;
 			rValue = null;
 			lValue = null;
-			returnBaseTypeOnly = null;
 		}
 		#endregion
 		

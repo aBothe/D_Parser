@@ -58,7 +58,7 @@ namespace D_Parser.Completion.Providers
 
 		void GenUfcsAndStaticProperties(AbstractType t)
 		{
-			if (t.NonStaticAccess && CompletionOptions.Instance.ShowUFCSItems)
+			if (t.NonStaticAccess && ctxt.CompletionOptions.ShowUFCSItems)
 				CodeCompletion.DoTimeoutableCompletionTask(null, ctxt, () =>
 					{
 						try

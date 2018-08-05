@@ -126,7 +126,7 @@ namespace D_Parser.Completion.ToolTips
 				AttributesTypeAndName(dn, sb, baseType, -1, deducedTypes);
 
                 if (dvar.Initializer != null)
-                    if (dvar.IsConst || dvar.IsAlias || dvar is DEnumValue || dvar.ContainsAttribute(DTokens.Immutable))
+                    if (dvar.IsConst || dvar.IsAlias || dvar is DEnumValue || dvar.ContainsAnyAttribute(DTokens.Immutable))
                         sb.Append(" = ").Append(dvar.Initializer.ToString());
 
                 if (dvar.IsAlias && dvar.Type != null)

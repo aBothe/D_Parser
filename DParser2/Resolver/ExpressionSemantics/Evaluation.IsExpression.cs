@@ -199,7 +199,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				case DTokens.Immutable:
 				case DTokens.InOut: // TODO?
 				case DTokens.Shared:
-					if (r = typeToCheck.Modifier == isExpression.TypeSpecializationToken)
+					if (r = typeToCheck.HasModifier(isExpression.TypeSpecializationToken))
 						res = typeToCheck;
 					break;
 

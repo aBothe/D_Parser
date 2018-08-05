@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Diagnostics;
-using D_Parser;
+using System.IO;
 using D_Parser.Dom;
 using D_Parser.Formatting;
 using D_Parser.Misc;
-using D_Parser.Parser;
 using D_Parser.Resolver;
-using D_Parser.Resolver.ExpressionSemantics;
 using Tests;
-using System.IO;
 
 namespace TestTool
 {
@@ -19,14 +16,14 @@ namespace TestTool
 		public static void Main (string[] args)
 		{
 			var rt = new ResolutionTests ();
-			rt.SetupEnvironment ();
 
 			Trace.Listeners.Clear ();
 			Trace.AutoFlush = false;
 			Trace.UseGlobalLock = false;
 			if(File.Exists(traceFile))
 				File.Delete (traceFile);
-			Trace.Listeners.Add (new TextWriterTraceListener (traceFile));
+			Trace.Listeners.Add (new TextWriterTraceListener (Console.Out));
+			//Trace.Listeners.Add (new TextWriterTraceListener (traceFile));
 
 			/*
 			var sw2 = new Stopwatch();
@@ -42,9 +39,11 @@ namespace TestTool
 			//(new IndentationTests ()).SwitchIndentation ();
 
 			//BotanProfil.Run ();
-			rt.LooseResolution2();
-
-			Trace.Flush ();
+			try {
+				rt.ConstNonConstParamDistinguishingSO ();
+			} finally {
+				Trace.Flush ();
+			}
 			return;
 
 			// Indent testing

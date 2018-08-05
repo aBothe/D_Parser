@@ -118,7 +118,7 @@ namespace D_Parser.Resolver.TypeResolution
 				var tk = td.Token;
 
 				if (DTokens.IsBasicType(tk))
-					return new PrimitiveType(tk, 0);
+					return new PrimitiveType(tk);
 
 				return null;
 			}
@@ -214,7 +214,7 @@ namespace D_Parser.Resolver.TypeResolution
 				if (ret == null)
 					return null;// new UnknownType(attrDecl);
 
-				ret.Modifier = td.Modifier;
+				ret.Modifiers = new [] { td.Modifier };
 
 				return ret;
 			}
@@ -400,7 +400,7 @@ namespace D_Parser.Resolver.TypeResolution
 				return bt;
 			}
 
-			public AbstractType Visit(DVariable variable)
+			public AbstractType VisitDVariable(DVariable variable)
 			{
 				if (variable.IsAlias)
 					return VisitAliasDefinition(variable);
@@ -417,6 +417,18 @@ namespace D_Parser.Resolver.TypeResolution
 					// Check if inside an foreach statement header
 					if (bt == null)
 						bt = GetForeachIteratorType(variable);
+
+					if (bt != null && variable.Attributes != null && variable.Attributes.Count > 0) {
+						var variableModifiers = variable.Attributes.FindAll ((DAttribute obj) => obj is Modifier).Select ((arg) => ((Modifier)arg).Token).ToArray();
+						if (variableModifiers.Length > 0) {
+							bt = bt.Clone (false);
+							if(bt.HasModifiers) {
+								bt.Modifiers = bt.Modifiers.Union (variableModifiers).ToArray();
+							} else {
+								bt.Modifiers = variableModifiers;
+							}
+						}
+					}
 				}
 				else
 					bt = null;
@@ -626,7 +638,7 @@ namespace D_Parser.Resolver.TypeResolution
 					return DResolver.ResolveClassOrInterface(dc, ctxt, typeBase, false, invisibleTypeParams.ToList());
 
 					case DTokens.Template:
-						if (dc.ContainsAttribute(DTokens.Mixin))
+						if (dc.ContainsAnyAttribute(DTokens.Mixin))
 							return new MixinTemplateType(dc, invisibleTypeParams);
 						return new TemplateType(dc, invisibleTypeParams);
 
@@ -688,7 +700,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 			public AbstractType Visit(NamedTemplateMixinNode n)
 			{
-				return Visit(n as DVariable);
+				return VisitDVariable(n as DVariable);
 			}
 
 			// Only import symbol aliases are allowed to search in the parse cache

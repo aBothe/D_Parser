@@ -484,7 +484,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			}
 
 
-			public bool Visit(DVariable dv)
+			public bool VisitDVariable(DVariable dv)
 			{
 				if (dv.Initializer != null &&
 					(caretInsensitive || (dv.Initializer.Location > Caret && dv.Initializer.EndLocation < Caret)))
@@ -511,22 +511,22 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 			public bool Visit(ModuleAliasNode n)
 			{
-				return Visit(n as DVariable);
+				return VisitDVariable(n);
 			}
 
 			public bool Visit(ImportSymbolNode n)
 			{
-				return Visit(n as DVariable);
+				return VisitDVariable(n);
 			}
 
 			public bool Visit(ImportSymbolAlias n)
 			{
-				return Visit(n as DVariable);
+				return VisitDVariable(n);
 			}
 
 			public bool Visit(EponymousTemplate n)
 			{
-				return Visit(n as DVariable);
+				return VisitDVariable(n);
 			}
 			#endregion
 
@@ -698,7 +698,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			/// </summary>
 			public bool Visit(TemplateMixin tmx)
 			{
-				if (CompletionOptions.Instance.DisableMixinAnalysis)
+				if (ctxt.CompletionOptions.DisableMixinAnalysis)
 					return false;
 
 				if (templateMixinsBeingAnalyzed == null)
@@ -739,7 +739,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			/// </summary>
 			public bool VisitMixinStatement(MixinStatement mx)
 			{
-				if (CompletionOptions.Instance.DisableMixinAnalysis)
+				if (ctxt.CompletionOptions.DisableMixinAnalysis)
 					return false;
 
 				TryPushCurScope ();
@@ -837,7 +837,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 			public bool Visit(IfStatement s)
 			{
-				if (s.IfVariable != null && Visit(s.IfVariable))
+				if (s.IfVariable != null && VisitDVariable(s.IfVariable))
 					return true;
 
 				return VisitExpressionStmt(s) || VisitSubStatements(s);
@@ -947,7 +947,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 			public bool Visit(TryStatement.CatchStatement s)
 			{
-				return (s.CatchParameter != null && Visit(s.CatchParameter)) || VisitSubStatements(s);
+				return (s.CatchParameter != null && VisitDVariable(s.CatchParameter)) || VisitSubStatements(s);
 			}
 
 			public bool Visit(TryStatement.FinallyStatement s)
@@ -1019,7 +1019,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			{
 				if (s.Declarations != null)
 					foreach (DNode decl in s.Declarations)
-						if (decl is DVariable ? Visit(decl as DVariable) : VisitDNode(decl))
+						if (decl is DVariable ? VisitDVariable(decl as DVariable) : VisitDNode(decl))
 							return true;
 
 				return false;
@@ -1266,10 +1266,10 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			if (dn == null || !CanAddMemberOfType (parms.VisibleMembers, dn))
 				return false;
 
-			if (CompletionOptions.Instance.HideDeprecatedNodes && dn.ContainsAttribute(DTokens.Deprecated))
+			if (ctxt.CompletionOptions.HideDeprecatedNodes && dn.ContainsAnyAttribute(DTokens.Deprecated))
 				return false;
 
-			if (CompletionOptions.Instance.HideDisabledNodes &&
+			if (ctxt.CompletionOptions.HideDisabledNodes &&
 				dn.ContainsPropertyAttribute(BuiltInAtAttribute.BuiltInAttributes.Disable))
 				return false;
 
@@ -1302,9 +1302,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		static bool CanShowMember(DNode dn, IBlockNode scope)
 		{
 			// http://dlang.org/attribute.html#ProtectionAttribute
-			if (dn.ContainsAttribute(DTokens.Private))
+			if (dn.ContainsAnyAttribute(DTokens.Private))
 				return scope == null || dn.NodeRoot == scope.NodeRoot;
-			else if (dn.ContainsAttribute(DTokens.Package))
+			else if (dn.ContainsAnyAttribute(DTokens.Package))
 				return scope == null || dn.NodeRoot is DModule &&
 					ModuleNameHelper.ExtractPackageName((dn.NodeRoot as DModule).ModuleName) ==
 					ModuleNameHelper.ExtractPackageName((scope.NodeRoot as DModule).ModuleName);
@@ -1314,7 +1314,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 		static bool CheckForProtectedAttribute(DNode dn, IBlockNode scope)
 		{
-			if(!dn.ContainsAttribute(DTokens.Protected) || dn.NodeRoot == scope.NodeRoot)
+			if(!dn.ContainsAnyAttribute(DTokens.Protected) || dn.NodeRoot == scope.NodeRoot)
 				return true;
 
 			while(scope!=null)
