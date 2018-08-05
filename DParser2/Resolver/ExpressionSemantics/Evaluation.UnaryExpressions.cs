@@ -25,7 +25,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var pt = targetType as PrimitiveType;
 			if (pv != null && pt != null) {
 				//TODO: Truncate value bytes if required and/or treat Value/ImaginaryPart in any way!
-				return new PrimitiveValue(pt.TypeToken, pv.Value, pv.ImaginaryPart, pt.Modifier);
+				return new PrimitiveValue(pt.TypeToken, pv.Value, pv.ImaginaryPart, pt.Modifiers);
 			}
 
 			// TODO: Convert actual object
@@ -64,7 +64,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			{
 				var pv = (PrimitiveValue)v;
 
-				return new PrimitiveValue(pv.BaseTypeToken, -pv.Value, -pv.ImaginaryPart, pv.Modifier);
+				return new PrimitiveValue(pv.BaseTypeToken, -pv.Value, -pv.ImaginaryPart, pv.Modifiers);
 			}
 
 			return v;

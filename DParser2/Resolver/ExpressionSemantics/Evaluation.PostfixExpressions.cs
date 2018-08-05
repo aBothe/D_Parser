@@ -383,7 +383,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					var bt = TypeDeclarationResolver.GetMethodReturnType(dm, ctxt) ?? ms.Base;
 
 					if (eval || !returnBaseTypeOnly) {
-						bt = new MemberSymbol (dm, bt, ms.DeducedTypes) { Modifier = ms.Modifier };
+						bt = new MemberSymbol (dm, bt, ms.DeducedTypes) { Modifiers = ms.Modifiers };
 						bt.AssignTagsFrom (ms);
 					}
 

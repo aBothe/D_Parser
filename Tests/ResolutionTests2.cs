@@ -52,7 +52,7 @@ struct Template( void var = Template ) {}
 			Assert.That (baseType, Is.TypeOf<ClassType> ());
 			var objectClass = baseType as ClassType;
 
-			Assert.That (objectClass.Modifier, Is.EqualTo (DTokens.Const));
+			Assert.That (objectClass.HasModifier (DTokens.Const));
 		}
 
 		[Test]
@@ -75,7 +75,7 @@ struct Template( void var = Template ) {}
 			Assert.That (baseType, Is.TypeOf<ClassType> ());
 			var objectClass = baseType as ClassType;
 
-			Assert.That (objectClass.Modifier, Is.EqualTo(DTokens.Const));
+			Assert.That (objectClass.HasModifier (DTokens.Const));
 		}
 
 		readonly string constNonConstParamDistinguishingSOcode = @"module A;

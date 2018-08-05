@@ -38,12 +38,19 @@ namespace D_Parser.Resolver
 					sb.Append(aliasTag.typeBase != null ? aliasTag.typeBase.ToString() : aliasTag.aliasDefinition.ToString(false, false)).Append('=');
 			}
 
-			if (t.Modifier != 0)
-				sb.Append(DTokens.GetTokenString(t.Modifier)).Append('(');
+			if (t.HasModifiers){
+				foreach(byte modifier in t.Modifiers){
+					if (t.Modifiers.Length > 1) {
+						sb.Append (' ');
+					}
+					sb.Append (DTokens.GetTokenString (modifier));
+				}
+				sb.Append ('(');
+			}
 
 			t.Accept(this);
 
-			if (t.Modifier != 0)
+			if (t.HasModifiers)
 				sb.Append(')');
 		}
 

@@ -118,7 +118,7 @@ namespace D_Parser.Resolver.TypeResolution
 				var tk = td.Token;
 
 				if (DTokens.IsBasicType(tk))
-					return new PrimitiveType(tk, 0);
+					return new PrimitiveType(tk);
 
 				return null;
 			}
@@ -214,7 +214,7 @@ namespace D_Parser.Resolver.TypeResolution
 				if (ret == null)
 					return null;// new UnknownType(attrDecl);
 
-				ret.Modifier = td.Modifier;
+				ret.Modifiers = new [] { td.Modifier };
 
 				return ret;
 			}

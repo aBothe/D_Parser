@@ -570,9 +570,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					!ct.Definition.ContainsAttribute(DTokens.Abstract))
 					foreach (var ctor in GetConstructors(ct)){
 						// Omit all ctors that won't return the adequate 
-						if (ct.Modifier != 0)
+						if (ct.HasModifiers)
 						{
-							if (!ctor.ContainsAttribute(ct.Modifier, DTokens.Pure))
+							if (!ctor.ContainsAttribute(ct.Modifiers) && !ctor.ContainsAttribute(DTokens.Pure))
 								continue;						
 						}
 						else if(ctor.Attributes != null && ctor.Attributes.Count != 0)
@@ -842,7 +842,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						id.Subformat == LiteralSubformat.Utf16 ? DTokens.Wchar :
 						DTokens.Char;
 
-					return new PrimitiveType(tk, 0) { NonStaticAccess = true };
+					return new PrimitiveType(tk) { NonStaticAccess = true };
 
 				case LiteralFormat.FloatingPoint | LiteralFormat.Scalar:
 					var im = id.Subformat.HasFlag(LiteralSubformat.Imaginary);
@@ -854,7 +854,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					else if (id.Subformat.HasFlag(LiteralSubformat.Real))
 						tt = im ? DTokens.Ireal : DTokens.Real;
 
-					return new PrimitiveType(tt, 0) { NonStaticAccess = true };
+					return new PrimitiveType(tt) { NonStaticAccess = true };
 
 				case LiteralFormat.Scalar:
 					var unsigned = id.Subformat.HasFlag(LiteralSubformat.Unsigned);
@@ -864,7 +864,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					else
 						tt = unsigned ? DTokens.Uint : DTokens.Int;
 
-					return new PrimitiveType(tt, 0) { NonStaticAccess = true };
+					return new PrimitiveType(tt) { NonStaticAccess = true };
 
 				case Parser.LiteralFormat.StringLiteral:
 				case Parser.LiteralFormat.VerbatimStringLiteral:
@@ -1142,7 +1142,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public AbstractType Visit(AssertExpression x)
 		{
-			return new PrimitiveType(DTokens.Void, 0);
+			return new PrimitiveType(DTokens.Void);
 		}
 
 		public AbstractType Visit(MixinExpression x)

@@ -260,22 +260,22 @@ namespace D_Parser.Misc.Mangling
 			{
 				case 'O':
 					var t = Type();
-					t.Modifier = DTokens.Shared;
+					t.Modifiers = new [] { DTokens.Shared };
 					return t;
 				case 'x':
 					t = Type();
-					t.Modifier = DTokens.Const;
+					t.Modifiers = new [] { DTokens.Const };
 					return t;
 				case 'y':
 					t = Type();
-					t.Modifier = DTokens.Immutable;
+					t.Modifiers = new [] { DTokens.Immutable };
 					return t;
 				case 'N':
 					switch(r.Read())
 					{
 						case 'g':
 							t = Type();
-							t.Modifier = DTokens.InOut;
+						t.Modifiers = new [] { DTokens.InOut };
 							return t;
 						case 'e': // TypeNewArray ?
 							Type();

@@ -72,7 +72,7 @@ namespace Tests
 
 			Assert.That (ar.ValueType, Is.TypeOf (typeof(PrimitiveType)));
 			var pt = ar.ValueType as PrimitiveType;
-			Assert.That (pt.Modifier, Is.EqualTo (DTokens.Immutable));
+			Assert.That (pt.HasModifier (DTokens.Immutable));
 
 			switch (id.Subformat)
 			{
@@ -418,7 +418,7 @@ U derp;
 			Assert.That(ds.Base, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			ds = ds.Base as DSymbol;
 			Assert.That(ds.Base, Is.TypeOf(typeof(PrimitiveType)));
-			Assert.That((ds.Base as PrimitiveType).Modifier, Is.EqualTo(0));
+			Assert.That(!(ds.Base as PrimitiveType).HasModifiers);
 
 			ctxt.CurrentContext.DeducedTemplateParameters.Clear();
 
@@ -471,7 +471,7 @@ post;
 			Assert.That(ds.Base, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			ds = ds.Base as DSymbol;
 			Assert.That(ds.Base, Is.TypeOf(typeof(PrimitiveType)));
-			Assert.That((ds.Base as PrimitiveType).Modifier, Is.EqualTo(0));
+			Assert.That(!(ds.Base as PrimitiveType).HasModifiers);
 		}
 		
 		[Test]

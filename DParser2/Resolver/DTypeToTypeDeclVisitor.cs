@@ -29,8 +29,11 @@ namespace D_Parser.Resolver
 
 			var td = t.Accept(this);
 
-			if(t.Modifier != 0)
-				td = new MemberFunctionAttributeDecl(t.Modifier) { InnerType = td };
+			if(t.HasModifiers){
+				foreach(byte modifier in t.Modifiers){
+					td = new MemberFunctionAttributeDecl (modifier) { InnerType = td };
+				}
+			}
 
 			return td;
 		}

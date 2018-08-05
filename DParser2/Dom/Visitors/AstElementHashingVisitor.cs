@@ -1006,7 +1006,7 @@ namespace D_Parser.Dom.Visitors
 			long h = 1;
 
 			Hash (ref h, prime, t.NonStaticAccess);
-			Hash (ref h, prime, t.Modifier);
+			Hash (ref h, prime, t.Modifiers);
 
 			return h;
 		}

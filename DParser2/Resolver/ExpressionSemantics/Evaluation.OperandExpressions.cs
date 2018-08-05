@@ -316,9 +316,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					switch (op.OperatorToken)
 					{
 						case DTokens.Plus:
-							return new PrimitiveValue(a.BaseTypeToken, a.Value + b.Value, a.ImaginaryPart + b.ImaginaryPart, a.Modifier);
+							return new PrimitiveValue(a.BaseTypeToken, a.Value + b.Value, a.ImaginaryPart + b.ImaginaryPart, a.Modifiers);
 						case DTokens.Minus:
-							return new PrimitiveValue(a.BaseTypeToken, a.Value - b.Value, a.ImaginaryPart - b.ImaginaryPart, a.Modifier);
+							return new PrimitiveValue(a.BaseTypeToken, a.Value - b.Value, a.ImaginaryPart - b.ImaginaryPart, a.Modifiers);
 					}
 
 					ev.EvalError(op, "Invalid token for add/sub expression", new[]{l,r});
@@ -527,9 +527,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			{
 				// If one 
 				if (pl.IsNaN || pr.IsNaN)
-					return PrimitiveValue.CreateNaNValue(pl.IsNaN ? pl.BaseTypeToken : pr.BaseTypeToken, pl.IsNaN ? pl.Modifier : pr.Modifier);
+					return PrimitiveValue.CreateNaNValue(pl.IsNaN ? pl.BaseTypeToken : pr.BaseTypeToken, pl.IsNaN ? pl.Modifiers : pr.Modifiers);
 
-				return new PrimitiveValue(pl.BaseTypeToken, m(pl, pr), 0M, pl.Modifier);
+				return new PrimitiveValue(pl.BaseTypeToken, m(pl, pr), 0M, pl.Modifiers);
 			}
 
 			return null;
@@ -549,7 +549,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (pl != null && pr != null)
 			{
 				if (UnorderedCheck && (pl.IsNaN || pr.IsNaN))
-					return PrimitiveValue.CreateNaNValue(pl.IsNaN ? pl.BaseTypeToken : pr.BaseTypeToken, pl.IsNaN ? pl.Modifier : pr.Modifier);
+					return PrimitiveValue.CreateNaNValue(pl.IsNaN ? pl.BaseTypeToken : pr.BaseTypeToken, pl.IsNaN ? pl.Modifiers : pr.Modifiers);
 
 				return m(pl, pr, x);
 			}
