@@ -158,7 +158,7 @@ namespace D_Parser.Completion
 
 			// auto |
 			if(!halt && n.NameHash == 0 && 
-				(n.ContainsAnyAttribute (DTokens.Auto) || DTokens.ContainsStorageClass(n.Attributes) != Modifier.Empty)) {
+				(n.ContainsAnyAttribute (DTokens.Auto) || DTokensSemanticHelpers.ContainsStorageClass(n.Attributes) != Modifier.Empty)) {
 				halt = true;
 				explicitlyNoCompletion = true;
 			}

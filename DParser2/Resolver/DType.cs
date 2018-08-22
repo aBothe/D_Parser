@@ -334,7 +334,7 @@ namespace D_Parser.Resolver
 		{
 			get{
 				var pt = DResolver.StripMemberSymbols(ValueType) as PrimitiveType;
-				return this is ArrayType && pt != null && DTokens.IsBasicType_Character(pt.TypeToken);
+				return this is ArrayType && pt != null && DTokensSemanticHelpers.IsBasicType_Character(pt.TypeToken);
 			}
 		}
 

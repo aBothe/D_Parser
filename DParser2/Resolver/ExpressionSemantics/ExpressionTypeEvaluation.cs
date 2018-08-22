@@ -776,7 +776,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				{
 					ctxt.LogError(tt, "No items in Type tuple");
 				}
-				else if (idx == null || !DTokens.IsBasicType_Integral(idx.BaseTypeToken))
+				else if (idx == null || !DTokensSemanticHelpers.IsBasicType_Integral(idx.BaseTypeToken))
 				{
 					ctxt.LogError(ix.Expression, "Index expression must evaluate to integer value");
 				}

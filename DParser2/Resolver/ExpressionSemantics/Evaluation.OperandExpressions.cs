@@ -497,7 +497,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		bool EnsureIntegralType(IExpression x,PrimitiveValue v)
 		{
-			if (!DTokens.IsBasicType_Integral(v.BaseTypeToken)){
+			if (!DTokensSemanticHelpers.IsBasicType_Integral(v.BaseTypeToken)){
 				EvalError(x,"Literal must be of integral type",new[]{(ISemantic)v});
 				return false;
 			}

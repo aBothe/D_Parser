@@ -129,6 +129,7 @@
     <Compile Include="Misc\Mangling\Demangler.cs" />
     <Compile Include="Misc\StringView.cs" />
     <Compile Include="Parser\Tokens\Comment.cs" />
+    <Compile Include="Parser\Tokens\DTokensSemanticHelpers.cs" />
     <Compile Include="Parser\Tokens\LiteralFormat.cs" />
     <Compile Include="Parser\Tokens\LiteralSubformat.cs" />
     <Compile Include="Refactoring\ITextDocument.cs" />

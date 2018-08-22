@@ -130,10 +130,10 @@ namespace D_Parser.Completion.Providers
 				case DTokens.Debug:
 					return true;
 				default:
-					return DTokens.IsBasicType (tk) ||
-					DTokens.IsClassLike (tk) ||
-					DTokens.IsStorageClass (tk) || DTokens.IsParamModifier (tk) ||
-					DTokens.IsVisibilityModifier (tk);
+					return DTokensSemanticHelpers.IsBasicType (tk) ||
+					DTokensSemanticHelpers.IsClassLike (tk) ||
+					DTokensSemanticHelpers.IsStorageClass (tk) || DTokensSemanticHelpers.IsParamModifier (tk) ||
+					DTokensSemanticHelpers.IsVisibilityModifier (tk);
 			}
 		}
 

@@ -175,7 +175,7 @@ namespace D_Parser.Dom
 		{
 			foreach (var i in HayStack.ToArray())
 			{
-				if (i is Modifier && DTokens.IsVisibilityModifier(((Modifier)i).Token))
+				if (i is Modifier && DTokensSemanticHelpers.IsVisibilityModifier(((Modifier)i).Token))
 					HayStack.Remove(i);
 			}
 		}
@@ -191,7 +191,7 @@ namespace D_Parser.Dom
 			{
 				var attr = HayStack.Pop();
 				var m = attr as Modifier;
-				if (m == null || (!DTokens.IsVisibilityModifier(m.Token) && m.Token != furtherAttrToRemove))
+				if (m == null || (!DTokensSemanticHelpers.IsVisibilityModifier(m.Token) && m.Token != furtherAttrToRemove))
 					l.Add(attr);
 			}
 
@@ -217,7 +217,7 @@ namespace D_Parser.Dom
 		public static bool ContainsAccessorAttribute(Stack<DAttribute> HayStack)
 		{
 			foreach (var i in HayStack)
-				if (i is Modifier && DTokens.IsVisibilityModifier(((Modifier)i).Token))
+				if (i is Modifier && DTokensSemanticHelpers.IsVisibilityModifier(((Modifier)i).Token))
 					return true;
 			return false;
 		}
@@ -230,14 +230,6 @@ namespace D_Parser.Dom
 					if (attr is Modifier && l.Contains(((Modifier)attr).Token))
 						return true;
 			return false;
-		}
-
-		public bool IsStorageClass
-		{
-			get
-			{
-				return DTokens.IsStorageClass(Token);
-			}
 		}
 
 		public override void Accept(NodeVisitor vis)

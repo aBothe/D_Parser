@@ -117,7 +117,7 @@ namespace D_Parser.Resolver.TypeResolution
 			{
 				var tk = td.Token;
 
-				if (DTokens.IsBasicType(tk))
+				if (DTokensSemanticHelpers.IsBasicType(tk))
 					return new PrimitiveType(tk);
 
 				return null;
