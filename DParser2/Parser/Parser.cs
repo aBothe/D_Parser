@@ -229,9 +229,30 @@ namespace D_Parser.Parser
 			stk.Push(attr);
 		}
 
-        void ApplyAttributes(DNode n)
-        {
-        	n.Attributes = GetCurrentAttributeSet();
+		void ApplyAttributes(DNode n)
+		{
+			var unfilteredAttributesToAssign = GetCurrentAttributeSet();
+			var attributesToAssign = new List<DAttribute>(unfilteredAttributesToAssign);
+
+			foreach(var attribute in unfilteredAttributesToAssign)
+			{
+				byte? mod = (attribute as Modifier)?.Token;
+				if (mod.HasValue)
+				{
+					switch (mod.Value)
+					{
+						case Immutable:
+						case Const:
+						case InOut:
+						case Shared:
+							attributesToAssign.Remove(attribute);
+							AssignOrWrapTypeToNode(n, new MemberFunctionAttributeDecl(mod.Value));
+							break;
+					}
+				}
+			}
+
+			n.Attributes = attributesToAssign;
         }
         
         DAttribute[] GetCurrentAttributeSet_Array()

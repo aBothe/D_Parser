@@ -899,7 +899,7 @@ namespace D_Parser.Parser
 						Lexer.PushLookAheadBackup();
 						var wkTypeParsingBackup = AllowWeakTypeParsing;
 						AllowWeakTypeParsing = true;
-						dv.Type = Type(Scope);
+						AssignOrWrapTypeToNode(dv, Type(Scope));
 						AllowWeakTypeParsing = wkTypeParsingBackup;
 						if(!(laKind == Comma || laKind == Semicolon))
 						{
@@ -956,21 +956,21 @@ namespace D_Parser.Parser
 				Step(); // Step beyond '='
 				if(Expect(Identifier))
 				{
-					dv.Type= new IdentifierDeclaration(t.Value)
+					AssignOrWrapTypeToNode(dv, new IdentifierDeclaration(t.Value)
 					{
 						Location = t.Location,
 						EndLocation = t.EndLocation
-					};
+					});
 				}
 			}
 			else
 			{
 				Step(); // Step beyond Identifier
-				dv.Type = new IdentifierDeclaration(t.Value)
+				AssignOrWrapTypeToNode(dv, new IdentifierDeclaration(t.Value)
 				{
 					Location=dv.NameLocation =t.Location, 
 					EndLocation=t.EndLocation 
-				};
+				});
 
 				Step(); // Step beyond 'this'
 				dv.NameLocation=t.Location;
@@ -1351,6 +1351,23 @@ namespace D_Parser.Parser
 			}
 		}
 
+		static void AssignOrWrapTypeToNode(INode node, ITypeDeclaration td)
+		{
+			if(node.Type != null)
+			{
+				var memberFunctionAttrDecl = node.Type as MemberFunctionAttributeDecl;
+				while (memberFunctionAttrDecl != null && memberFunctionAttrDecl.InnerType is MemberFunctionAttributeDecl)
+					memberFunctionAttrDecl = memberFunctionAttrDecl.InnerType as MemberFunctionAttributeDecl;
+
+				if (memberFunctionAttrDecl != null)
+					memberFunctionAttrDecl.InnerType = td;
+				else
+					node.Type.InnerMost = td;
+			}
+			else
+				node.Type = td;
+		}
+
 		/// <summary>
 		/// Parses a type declarator
 		/// </summary>
@@ -1361,7 +1378,7 @@ namespace D_Parser.Parser
 			ApplyAttributes (ret);
 
 			ParseBasicType2 (ref basicType, parent as IBlockNode);
-			ret.Type = basicType;
+			AssignOrWrapTypeToNode(ret, basicType);
 
 			if (laKind != (OpenParenthesis))
 			{
@@ -1435,7 +1452,7 @@ namespace D_Parser.Parser
 			Step();
 			//SynErr(OpenParenthesis,"C-style function pointers are deprecated. Use the function() syntax instead."); // Only deprecated in D2
 			var cd = new DelegateDeclaration() as ITypeDeclaration;
-			ret.Type = cd;
+			AssignOrWrapTypeToNode(ret, cd);
 			var deleg = cd as DelegateDeclaration;
 
 			/*			 
@@ -1522,7 +1539,7 @@ namespace D_Parser.Parser
 				}
 				Expect(CloseSquareBracket);
 				ad.EndLocation = t.EndLocation;
-				dn.Type = ad;
+				AssignOrWrapTypeToNode(dn, ad);
 			}
 
 			if (laKind == (OpenParenthesis))
@@ -1655,7 +1672,7 @@ namespace D_Parser.Parser
 				if (laKind == (OpenSquareBracket))
 				{
 					DNode dn = new DVariable();
-					dn.Type = td;
+					AssignOrWrapTypeToNode(dn, td);
 					DeclaratorSuffixes(ref dn);
 					td = dn.Type;
 
@@ -1729,8 +1746,8 @@ namespace D_Parser.Parser
 
 				if (!HadComma && ret.Count > 0)
 				{
-					// Put a VarArgDecl around the type of the last parameter
-					ret[ret.Count - 1].Type = new VarArgDecl(ret[ret.Count - 1].Type);
+					var lastParameter = ret[ret.Count - 1];
+					lastParameter.Type = new VarArgDecl(lastParameter.Type);
 				}
 				else
 				{

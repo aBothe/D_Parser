@@ -95,10 +95,22 @@ namespace D_Parser.Dom
 			return false;
 		}
 
-        public bool ContainsAnyAttribute(params byte[] Token)
-        {
-            return Modifier.ContainsAnyAttributeToken(Attributes, Token);
-        }
+		public bool ContainsAnyAttribute(params byte[] Token)
+		{
+			if (Modifier.ContainsAnyAttributeToken(Attributes, Token))
+				return true;
+
+			ITypeDeclaration td = Type;
+			while(td is MemberFunctionAttributeDecl)
+			{
+				var memberFunctionAttributeDecl = td as MemberFunctionAttributeDecl;
+				foreach(var token in Token)
+					if(token == memberFunctionAttributeDecl.Modifier)
+						return true;
+				td = memberFunctionAttributeDecl.InnerType;
+			}
+			return false;
+		}
 
 		public bool ContainsPropertyAttribute(BuiltInAtAttribute.BuiltInAttributes kind)
 		{
