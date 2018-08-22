@@ -267,15 +267,8 @@ namespace D_Parser.Dom
 	/// </summary>
 	public class MemberFunctionAttributeDecl : AbstractTypeDeclaration
 	{
-		/// <summary>
-		/// Equals <see cref="DTokens.Const"/>
-		/// </summary>
-		public byte Modifier = DTokens.Const;
+		public readonly byte Modifier;
 		public ITypeDeclaration InnerType;
-
-		public MemberFunctionAttributeDecl()
-		{
-		}
 
 		public MemberFunctionAttributeDecl(byte ModifierToken)
 		{
