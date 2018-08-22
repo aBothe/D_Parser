@@ -10,7 +10,7 @@ namespace D_Parser.Parser
     /// <summary>
     /// Parser for D Code
     /// </summary>
-    public partial class DParser:DTokens, IDisposable
+    public partial class DParser : IDisposable
 	{
 		#region Properties
 		/// <summary>
@@ -143,14 +143,14 @@ namespace D_Parser.Parser
             var p = Create(new StringReader(Code));
             p.Step();
             // Exception: If we haven't got any basic types as our first token, return this token via OptionalToken
-            if (!p.IsBasicType() || p.laKind == __LINE__ || p.laKind == __FILE__)
+            if (!p.IsBasicType() || p.laKind == DTokens.__LINE__ || p.laKind == DTokens.__FILE__)
             {
                 p.Step();
                 p.Peek(1);
                 OptionalToken = p.t;
 
                 // Only if a dot follows a 'this' or 'super' token we go on parsing; Return otherwise
-                if (!((p.t.Kind == This || p.t.Kind == Super) && p.laKind == Dot))
+                if (!((p.t.Kind == DTokens.This || p.t.Kind == DTokens.Super) && p.laKind == DTokens.Dot))
                     return null;
             }
             
@@ -241,10 +241,10 @@ namespace D_Parser.Parser
 				{
 					switch (mod.Value)
 					{
-						case Immutable:
-						case Const:
-						case InOut:
-						case Shared:
+						case DTokens.Immutable:
+						case DTokens.Const:
+						case DTokens.InOut:
+						case DTokens.Shared:
 							attributesToAssign.Remove(attribute);
 							AssignOrWrapTypeToNode(n, new MemberFunctionAttributeDecl(mod.Value));
 							break;
@@ -321,16 +321,16 @@ namespace D_Parser.Parser
 
 		bool OverPeekBrackets(byte OpenBracketKind,bool LAIsOpenBracket = false)
         {
-            int CloseBracket = CloseParenthesis;
+            int CloseBracket = DTokens.CloseParenthesis;
 
-            if (OpenBracketKind == OpenSquareBracket) 
-				CloseBracket = CloseSquareBracket;
-            else if (OpenBracketKind == OpenCurlyBrace) 
-				CloseBracket = CloseCurlyBrace;
+            if (OpenBracketKind == DTokens.OpenSquareBracket) 
+				CloseBracket = DTokens.CloseSquareBracket;
+            else if (OpenBracketKind == DTokens.OpenCurlyBrace) 
+				CloseBracket = DTokens.CloseCurlyBrace;
 
 			var pk = Lexer.CurrentPeekToken;
             int i = LAIsOpenBracket?1:0;
-            while (pk.Kind != EOF)
+            while (pk.Kind != DTokens.EOF)
             {
                 if (pk.Kind== OpenBracketKind)
                     i++;
