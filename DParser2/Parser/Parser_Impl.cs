@@ -1539,7 +1539,7 @@ namespace D_Parser.Parser
 				}
 				Expect(CloseSquareBracket);
 				ad.EndLocation = t.EndLocation;
-				AssignOrWrapTypeToNode(dn, ad);
+				dn.Type = ad;
 			}
 
 			if (laKind == (OpenParenthesis))
