@@ -1,7 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using D_Parser.Dom;
-using System;
 
 namespace D_Parser.Parser
 {
@@ -233,17 +232,9 @@ namespace D_Parser.Parser
 		public const byte Virtual = 185;
 
 		public const byte MaxToken = 186;
-        public static BitArray NewSet(params byte[] values)
-        {
-            BitArray bitArray = new BitArray(MaxToken);
-            foreach (byte val in values)
-            {
-                bitArray[val] = true;
-            }
-            return bitArray;
-        }
 
-		public static readonly Dictionary<byte, string> Keywords = new Dictionary<byte, string> {
+
+		static readonly Dictionary<byte, string> Keywords = new Dictionary<byte, string> {
 			{ __gshared, "__gshared" },
 			// {__thread, "__thread"},
 			{ __traits, "__traits" },
@@ -371,7 +362,7 @@ namespace D_Parser.Parser
 			{ Wchar, "wchar" },
 			{ While, "while" },
 			{ With, "with" }
-        };
+		};
 		public static Dictionary<string, byte> Keywords_Lookup = new Dictionary<string, byte>();
 
 		static DTokens()
@@ -380,44 +371,45 @@ namespace D_Parser.Parser
 				Keywords_Lookup[kv.Value] = kv.Key;
 		}
 
-        /// <summary>
-        /// Checks if modifier array contains member attributes. If so, it returns the last found attribute. Otherwise 0.
-        /// </summary>
-        /// <param name="mods"></param>
-        /// <returns></returns>
+		/// <summary>
+		/// Checks if modifier array contains member attributes. If so, it returns the last found attribute. Otherwise 0.
+		/// </summary>
+		/// <param name="mods"></param>
+		/// <returns></returns>
 		public static DAttribute ContainsStorageClass(IEnumerable<DAttribute> mods)
-        {
-			if(mods != null)
-				foreach(var m in mods){
-            		if(m is Modifier && ((m as Modifier).IsStorageClass))
-            			return m;
-            		else if(m is AtAttribute)
-            			return m;
+		{
+			if (mods != null)
+				foreach (var m in mods)
+				{
+					if (m is Modifier && ((m as Modifier).IsStorageClass))
+						return m;
+					else if (m is AtAttribute)
+						return m;
 				}
-            return Modifier.Empty;
-        }
+			return Modifier.Empty;
+		}
 
 
-        public static bool ContainsVisMod(List<byte> mods)
-        {
-            return
-            mods.Contains(Public) ||
-            mods.Contains(Private) ||
-            mods.Contains(Package) ||
-            mods.Contains(Protected);
-        }
+		public static bool ContainsVisMod(List<byte> mods)
+		{
+			return
+			mods.Contains(Public) ||
+			mods.Contains(Private) ||
+			mods.Contains(Package) ||
+			mods.Contains(Protected);
+		}
 
-        public static void RemoveVisMod(List<byte> mods)
-        {
-            while (mods.Contains(Public))
-                mods.Remove(Public);
-            while (mods.Contains(Private))
-                mods.Remove(Private);
-            while (mods.Contains(Protected))
-                mods.Remove(Protected);
-            while (mods.Contains(Package))
-                mods.Remove(Package);
-        }
+		public static void RemoveVisMod(List<byte> mods)
+		{
+			while (mods.Contains(Public))
+				mods.Remove(Public);
+			while (mods.Contains(Private))
+				mods.Remove(Private);
+			while (mods.Contains(Protected))
+				mods.Remove(Protected);
+			while (mods.Contains(Package))
+				mods.Remove(Package);
+		}
 
 		static readonly Dictionary<byte, string> NonKeywords = new Dictionary<byte, string> {
 			// Meta
@@ -444,7 +436,7 @@ namespace D_Parser.Parser
 			{ Question, "?" },
 			{ Dollar, "$" },
 			{ Comma, "," },
-			
+
 			// Brackets
 			{ OpenCurlyBrace, "{" },
 			{ CloseCurlyBrace, "}" },
@@ -494,7 +486,7 @@ namespace D_Parser.Parser
 			{ ShiftLeftAssign, "<<=" },
 			{ ShiftRightAssign, ">>=" },
 			{ TripleRightShiftAssign, ">>>=" },
-			
+
 			{ PowAssign, "^^=" },
 			{ LessEqualOrGreater, "<>=" },
 			{ Unordered, "!<>=" },
@@ -505,18 +497,23 @@ namespace D_Parser.Parser
 			{ At, "@" }
 		};
 
-        public static string GetTokenString(byte token)
-        {
-			if (Keywords.ContainsKey(token))
-				return Keywords[token];
-			if (NonKeywords.ContainsKey(token))
-				return NonKeywords[token];
+		public static bool TryGetKeywordString(byte token, out string tokenString)
+		{
+			return Keywords.TryGetValue(token, out tokenString);
+		}
+
+		public static string GetTokenString(byte token)
+		{
+			string tokenString;
+			if (TryGetKeywordString(token, out tokenString) ||
+				NonKeywords.TryGetValue(token, out tokenString))
+				return tokenString;
 
 			return "<Unknown>";
-        }
+		}
 
-        public static byte GetTokenID(string token)
-        {
+		public static byte GetTokenID(string token)
+		{
 			byte k;
 			if (Keywords_Lookup.TryGetValue(token, out k) || token == null || token.Length < 1)
 				return k;
@@ -525,11 +522,11 @@ namespace D_Parser.Parser
 				if (kv.Value == token)
 					return kv.Key;
 
-            return INVALID;
-        }
+			return INVALID;
+		}
 
-        public static string GetDescription(string token)
-        {
+		public static string GetDescription(string token)
+		{
 			switch (token)
 			{
 				case "@disable":
@@ -547,33 +544,33 @@ namespace D_Parser.Parser
 				default:
 					return GetDescription(GetTokenID(token));
 			}
-        }
+		}
 
-        public static string GetDescription(byte token)
-        {
-            switch (token)
-            {
-                case Else:
-                case If:
-                    return "if(a == b)\n{\n   foo();\n}\nelse if(a < b)\n{\n   ...\n}\nelse\n{\n   bar();\n}";
-                case For:
-                    return "for(int i; i<500; i++)\n{\n   foo();\n}";
-                case Foreach_Reverse:
-                case Foreach:
+		public static string GetDescription(byte token)
+		{
+			switch (token)
+			{
+				case Else:
+				case If:
+					return "if(a == b)\n{\n   foo();\n}\nelse if(a < b)\n{\n   ...\n}\nelse\n{\n   bar();\n}";
+				case For:
+					return "for(int i; i<500; i++)\n{\n   foo();\n}";
+				case Foreach_Reverse:
+				case Foreach:
 					return
-                    "foreach"+(token==Foreach_Reverse?"_reverse":"")+
-					"(element; array)\n{\n   foo(element);\n}\n\nOr:\nforeach" + (token == Foreach_Reverse ? "_reverse" : "") + 
+					"foreach" + (token == Foreach_Reverse ? "_reverse" : "") +
+					"(element; array)\n{\n   foo(element);\n}\n\nOr:\nforeach" + (token == Foreach_Reverse ? "_reverse" : "") +
 					"(element, index; array)\n{\n   foo(element);\n}";
-                case While:
-                    return "while(a < b)\n{\n   foo();\n   a++;\n}";
-                case Do:
-                    return "do\n{\n   foo();\na++;\n}\nwhile(a < b);";
-                case Switch:
-                    return "switch(a)\n{\n   case 1:\n      foo();\n      break;\n   case 2:\n      bar();\n      break;\n   default:\n      break;\n}";
-                default:
+				case While:
+					return "while(a < b)\n{\n   foo();\n   a++;\n}";
+				case Do:
+					return "do\n{\n   foo();\na++;\n}\nwhile(a < b);";
+				case Switch:
+					return "switch(a)\n{\n   case 1:\n      foo();\n      break;\n   case 2:\n      bar();\n      break;\n   default:\n      break;\n}";
+				default:
 					return "D Keyword";
-            }
-        }
+			}
+		}
 
 		public static bool IsAssignOperator(byte token)
 		{
@@ -600,8 +597,7 @@ namespace D_Parser.Parser
 		}
 
 		public static readonly byte[] BasicTypes_Array = { Bool, Byte, Ubyte, Short, Ushort, Int, Uint, Long, Ulong, Cent, Ucent, Char, Wchar, Dchar, Float, Double, Real, Ifloat, Idouble, Ireal, Cfloat, Cdouble, Creal, Void };
-		[Obsolete("Use IsBasicType instead.")]
-		public static readonly BitArray BasicTypes = NewSet(BasicTypes_Array);
+
 		public static bool IsBasicType(byte token)
 		{
 			switch (token)
@@ -850,5 +846,5 @@ namespace D_Parser.Parser
 					return false;
 			}
 		}
-    }
+	}
 }

@@ -4500,7 +4500,7 @@ namespace D_Parser.Parser
 						break;
 					default:
 					string val;
-					if (!retrying && DTokens.Keywords.TryGetValue(laKind, out val))
+					if (!retrying && DTokens.TryGetKeywordString(laKind, out val))
 					{
 						la.LiteralValue = val;
 						la.Kind = DTokens.Identifier;

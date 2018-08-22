@@ -293,9 +293,19 @@ namespace D_Parser.Formatting.Indent
 				break;
 			}
 		}
+
+		static BitArray NewSet(params byte[] values)
+		{
+			BitArray bitArray = new BitArray(DTokens.MaxToken);
+			foreach (byte val in values)
+			{
+				bitArray[val] = true;
+			}
+			return bitArray;
+		}
 		#endregion
-		
-		static BitArray specialKeywords = DTokens.NewSet(
+
+		static BitArray specialKeywords = NewSet(
 			DTokens.Foreach,
 			DTokens.Foreach_Reverse, 
 			DTokens.While, 
@@ -304,7 +314,7 @@ namespace D_Parser.Formatting.Indent
 			DTokens.If, 
 			DTokens.Else);
 		
-		static BitArray interestingKeywords = DTokens.NewSet(
+		static BitArray interestingKeywords = NewSet(
 			DTokens.At,
 			
 			DTokens.Import,

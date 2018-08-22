@@ -128,6 +128,9 @@
     <Compile Include="Misc\HashNumbers.cs" />
     <Compile Include="Misc\Mangling\Demangler.cs" />
     <Compile Include="Misc\StringView.cs" />
+    <Compile Include="Parser\Tokens\Comment.cs" />
+    <Compile Include="Parser\Tokens\LiteralFormat.cs" />
+    <Compile Include="Parser\Tokens\LiteralSubformat.cs" />
     <Compile Include="Refactoring\ITextDocument.cs" />
     <Compile Include="Refactoring\ReferencesFinder.cs" />
     <Compile Include="Refactoring\SortImportsRefactoring.cs" />
@@ -195,9 +198,9 @@
     <Compile Include="Dom\Nodes\DNode.cs" />
     <Compile Include="Parser\Parser.cs" />
     <Compile Include="Parser\Parser_Impl.cs" />
-    <Compile Include="Parser\DTokens.cs" />
+    <Compile Include="Parser\Tokens\DTokens.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Parser\DToken.cs" />
+    <Compile Include="Parser\Tokens\DToken.cs" />
     <Compile Include="Dom\DDeclarations.cs" />
     <Compile Include="Resolver\ContextFrame.cs" />
     <Compile Include="Resolver\TypeResolution\UFCSResolver.cs" />
