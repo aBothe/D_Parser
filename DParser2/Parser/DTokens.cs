@@ -380,40 +380,6 @@ namespace D_Parser.Parser
 				Keywords_Lookup[kv.Value] = kv.Key;
 		}
 
-		[Obsolete("Use IsMemberFunctionAttribute instead.")]
-		public static readonly BitArray FunctionAttribute = NewSet(Pure, Nothrow);
-		[Obsolete("Use IsMemberFunctionAttribute instead.")]
-		public static readonly BitArray MemberFunctionAttribute = NewSet(Const, Immutable, Shared, InOut, Pure, Nothrow, Scope, Return);
-		[Obsolete("Use IsParameterModifier instead.")]
-		public static readonly BitArray ParamModifiers = NewSet(In, Out, InOut, Ref, Lazy, Scope);
-		[Obsolete("Use IsClassLike instead.")]
-		public static readonly BitArray ClassLike = NewSet(Class, Template, Interface, Struct, Union);
-		[Obsolete("Use IsBasicType_Integral instead.")]
-		public static readonly BitArray BasicTypes_Integral = NewSet(Bool, Byte, Ubyte, Short, Ushort, Int, Uint, Long, Ulong, Cent, Ucent, Char, Wchar, Dchar);
-		[Obsolete("Use IsBasicType_FloatingPoint instead.")]
-		public static readonly BitArray BasicTypes_FloatingPoint = NewSet(Float, Double, Real, Ifloat, Idouble, Ireal, Cfloat, Cdouble, Creal);
-		[Obsolete("Use IsBasicType_Unsigned instead.")]
-		public static readonly BitArray BasicTypes_Unsigned = NewSet(Ubyte, Ushort, Uint, Ulong, Ucent);
-		[Obsolete("Use IsBasicType_Character instead.")]
-		public static readonly BitArray CharTypes = NewSet (Char, Wchar, Dchar);
-		[Obsolete("Use IsAssignOperator instead.")]
-		public static readonly BitArray AssnStartOp = NewSet(Plus, Minus, Not, Tilde, Times);
-		[Obsolete("Use IsAssignOperator instead.")]
-		public static readonly BitArray AssignOps = NewSet(Assign, PlusAssign, MinusAssign, TimesAssign, DivAssign, ModAssign, BitwiseAndAssign, BitwiseOrAssign, XorAssign, TildeAssign, ShiftLeftAssign, ShiftRightAssign, TripleRightShiftAssign, PowAssign);
-		[Obsolete("Use IsClassLike instead.")]
-		public static readonly BitArray TypeDeclarationKW = NewSet(Class, Interface, Struct, Template, Enum, Delegate, Function);
-		[Obsolete("Use IsRelationalOperator instead.")]
-		public static readonly BitArray RelationalOperators = NewSet(LessThan, LessEqual, GreaterThan, GreaterEqual, Unordered, LessOrGreater, LessEqualOrGreater, UnorderedOrGreater, UnorderedGreaterOrEqual, UnorderedOrLess, UnorderedLessOrEqual, UnorderedOrEqual);
-		[Obsolete("Use IsVisibilityModifier instead.")]
-		public static readonly BitArray VisModifiers = NewSet(Public, Protected, Private, Package);
-		[Obsolete("Use IsModifier instead.")]
-		public static readonly BitArray Modifiers = NewSet(In, Out, InOut, Ref, Static, Override, Const, Public, Private, Protected, Package, Export, Shared, Final, Invariant, Immutable, Pure, Deprecated, Scope, __gshared, Lazy, Nothrow);
-		[Obsolete("Use IsStorageClass instead.")]
-		public static readonly BitArray StorageClass = NewSet(Abstract, Auto, Const, Deprecated, Extern, Final, Immutable, InOut, Shared, Nothrow, Override, Pure, Scope, Static, Synchronized, Ref, __gshared);
-		[Obsolete("Use IsMetaIdentifier instead.")]
-		public static readonly BitArray MetaIdentifiers = NewSet(__DATE__, __FILE__, __FUNCTION__, __LINE__, __MODULE__, __PRETTY_FUNCTION__, __TIMESTAMP__, __TIME__, __VENDOR__, __VERSION__);
-
-
         /// <summary>
         /// Checks if modifier array contains member attributes. If so, it returns the last found attribute. Otherwise 0.
         /// </summary>
