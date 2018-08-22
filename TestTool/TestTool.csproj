@@ -10,7 +10,8 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <StartupObject>TestTool.Program</StartupObject>
     <UseMSBuildEngine>False</UseMSBuildEngine>
-    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Platform)' == 'x86' ">
     <PlatformTarget>x86</PlatformTarget>
@@ -85,6 +86,9 @@
       <Project>{0290A229-9AA1-41C3-B525-CAFB86D8BC42}</Project>
       <Name>DParser2</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.Targets" />
 </Project>
