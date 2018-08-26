@@ -68,25 +68,26 @@ namespace D_Parser.Parser
 				var t = PrepareParsing(sr,startLoc);
 
 				using (var sv = new StringView(code, startOff, caretOffset - startOff))
-				using (var p = DParser.Create(sv))
+				using (var lexer = new Lexer(sv))
+				using (var p = new DParser(lexer))
 				{
-					p.Lexer.SetInitialLocation(startLoc);
-					p.Step();
+					lexer.SetInitialLocation(startLoc);
+					lexer.NextToken();
 
-					if (p.laKind == DTokens.OpenCurlyBrace)
-						p.Step();
+					if (lexer.laKind == DTokens.OpenCurlyBrace)
+						lexer.NextToken();
 
-					while (!p.IsEOF && Parse(t, p)) ;
+					while (!lexer.IsEOF && Parse(t, lexer, p)) ;
 
-					if (isInsideNonCodeSegment = p.Lexer.endedWhileBeingInNonCodeSequence)
+					if (isInsideNonCodeSegment = lexer.endedWhileBeingInNonCodeSequence)
 						return null;
 
-					var block = FinishParsing (t, p);
-					var newLoc = new CodeLocation (caretLocation.Column + 1, caretLocation.Line);
+					var block = FinishParsing(t, p);
+					var newLoc = new CodeLocation(caretLocation.Column + 1, caretLocation.Line);
 					// Update the actual tempBlock as well as methods/other blocks' end location that just appeared while parsing the code incrementally,
 					// so they are transparent to SearchBlockAt
 					var n = block;
-					while (n != null && (n.EndLocation.Line < 1 || n.EndLocation == p.la.Location))
+					while (n != null && (n.EndLocation.Line < 1 || n.EndLocation == lexer.LookAhead.Location))
 					{
 						(n as DNode).EndLocation = newLoc;
 						var chCount = n.Count;
@@ -94,14 +95,14 @@ namespace D_Parser.Parser
 							break;
 						n = n.Children[chCount - 1] as IBlockNode;
 					}
-					AssignEndlocation (t, newLoc);
+					AssignEndlocation(t, newLoc);
 
 					return block;
 				}
 			}
 
 			protected abstract T PrepareParsing(T sr,CodeLocation startLoc);
-			protected abstract bool Parse(T tempBlock, DParser p);
+			protected abstract bool Parse(T tempBlock, Lexer lexer, DParser p);
 			protected abstract IBlockNode FinishParsing(T tempBlock, DParser p);
 
 			protected abstract int ChildCount(T sr);
@@ -134,21 +135,21 @@ namespace D_Parser.Parser
 				return tempBlockStmt; 
 			}
 
-			protected override bool Parse(BlockStatement tempBlockStmt, DParser p)
+			protected override bool Parse(BlockStatement tempBlockStmt, Lexer lexer, DParser p)
 			{
-				if (p.laKind == DTokens.CloseCurlyBrace)
+				if (lexer.laKind == DTokens.CloseCurlyBrace)
 				{
-					p.Step();
+					lexer.NextToken();
 					/*if (metaDecls.Count > 0)
 						metaDecls.RemoveAt (metaDecls.Count - 1);*/
 					return true;
 				}
 
-				var stmt = p.Statement(true, false, tempParentBlock, tempBlockStmt);
+				var stmt = p.parserParts.statementParser.Statement(true, false, tempParentBlock, tempBlockStmt);
 				if (stmt != null)
 					tempBlockStmt.Add(stmt);
 				else
-					p.Step();
+					lexer.NextToken();
 				return true;
 			}
 
@@ -202,11 +203,11 @@ namespace D_Parser.Parser
 				return tempBlock;
 			}
 
-			protected override bool Parse(DBlockNode tempBlock, DParser p)
+			protected override bool Parse(DBlockNode tempBlock, Lexer lexer, DParser p)
 			{
-				if (p.laKind == DTokens.CloseCurlyBrace)
+				if (lexer.laKind == DTokens.CloseCurlyBrace)
 				{
-					p.Step();
+					lexer.NextToken();
 					/*if (metaDecls.Count > 0)
 						metaDecls.RemoveAt (metaDecls.Count - 1);*/
 					return true;
@@ -215,23 +216,23 @@ namespace D_Parser.Parser
 				// Enum bodies
 				if (tempBlock is DEnum)
 				{
-					if (p.laKind == DTokens.Comma)
-							p.Step();
-					var laBackup = p.la;
-					p.EnumValue(tempBlock as DEnum);
-					if (p.la == laBackup)
+					if (lexer.laKind == DTokens.Comma)
+						lexer.NextToken();
+					var laBackup = lexer.LookAhead;
+					p.parserParts.bodiedSymbolsParser.EnumValue(tempBlock as DEnum);
+					if (lexer.LookAhead == laBackup)
 						return false;
 				}
 				else // Normal class/module bodies
 				{
-					if (p.laKind == DTokens.Module)
+					if (lexer.laKind == DTokens.Module)
 					{
-						tempBlock.Add(p.ModuleDeclaration());
-						if (p.IsEOF)
+						tempBlock.Add(p.parserParts.modulesParser.ModuleDeclaration());
+						if (lexer.IsEOF)
 							return false;
 					}
 
-					p.DeclDef(tempBlock);
+					p.parserParts.modulesParser.DeclDef(tempBlock);
 				}
 
 				return true;

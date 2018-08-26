@@ -34,8 +34,7 @@ namespace D_Parser.Parser
 
 		public IList<ParserError> LexerErrors = new List<ParserError>();
         public List<ParserError> Tasks = new List<ParserError>();
-        public string[] TaskTokens = null;
-
+		public HashSet<string> TaskTokens = new HashSet<string>();
 		/// <summary>
 		/// Set to false if normal block comments shall be logged, too.
 		/// </summary>
@@ -1856,10 +1855,14 @@ namespace D_Parser.Parser
 
 		struct TaskParseState
 		{
-			public TaskParseState(string[] tokens)
+			readonly HashSet<string> TaskTokens;
+			int taskStart;
+			int taskCol;
+			string task;
+
+			public TaskParseState(HashSet<string> tokens)
 			{
 				TaskTokens = tokens;
-				collectTasks = (TaskTokens != null);
 				taskStart = -1;
 				taskCol = 0;
 				task = null;
@@ -1867,7 +1870,7 @@ namespace D_Parser.Parser
 
 			public void doNextChar(int nextChar, int Col, StringBuilder scCurWord)
 			{
-				if (collectTasks && task == null)
+				if (TaskTokens.Count != 0 && task == null)
 				{
 					if (IsIdentifierPart(nextChar) || nextChar == '@')
 					{
@@ -1880,12 +1883,8 @@ namespace D_Parser.Parser
 					else if (taskStart >= 0)
 					{
 						string word = scCurWord.ToString(taskStart, scCurWord.Length - taskStart);
-						foreach (var token in TaskTokens)
-							if (word == token)
-							{
-								task = word;
-								break;
-							}
+						if (TaskTokens.Contains(word))
+							task = word;
 						if (task == null)
 							taskStart = -1;
 					}

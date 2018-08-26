@@ -1,90 +1,28 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
-using System;
+using D_Parser.Parser.Implementations;
+
 namespace D_Parser.Parser
 {
-    /// <summary>
-    /// Parser for D Code
-    /// </summary>
-    public partial class DParser : IDisposable
+	/// <summary>
+	/// Parser for D Code
+	/// </summary>
+	public class DParser : IDisposable
 	{
-		#region Properties
-		/// <summary>
-		/// Holds document structure
-		/// </summary>
-		DModule doc;
-
-		public DModule Document
-		{
-			get { return doc; }
-		}
-
-		/// <summary>
-		/// Modifiers for entire block
-		/// </summary>
-		Stack<DAttribute> BlockAttributes = new Stack<DAttribute>();
-		/// <summary>
-		/// Modifiers for current expression only
-		/// </summary>
-		Stack<DAttribute> DeclarationAttributes = new Stack<DAttribute>();
-
-		bool ParseStructureOnly = false;
-		public Lexer Lexer;
-
-		public readonly List<Comment> Comments = new List<Comment>();
-
-		DToken _backupt = new DToken();
-		DToken t
-		{
-			[System.Diagnostics.DebuggerStepThrough]
-			get
-			{
-				return Lexer.CurrentToken ?? _backupt;
-			}
-		}
-
-		/// <summary>
-		/// lookAhead token
-		/// </summary>
-		public DToken la
-		{
-			get
-			{
-				return Lexer.LookAhead;
-			}
-		}
-		
-		public byte laKind {get{return Lexer.laKind;}}
-
-		public bool IsEOF
-		{
-			get { return Lexer.IsEOF; }
-		}
-
-        public List<ParserError> ParseErrors = new List<ParserError>();
-		public const int MaxParseErrorsBeforeFailure = 100;
-		#endregion
-
-		public void Dispose()
-		{
-			doc = null;
-			BlockAttributes.Clear();
-			BlockAttributes = null;
-			DeclarationAttributes.Clear();
-			DeclarationAttributes = null;
-			Lexer.Dispose();
-			Lexer = null;
-            ParseErrors = null;
-		}
+		readonly DParserStateContext stateContext;
+		internal readonly DParserParts parserParts;
 
 		public DParser(Lexer lexer)
 		{
-			this.Lexer = lexer;
-			Lexer.LexerErrors = ParseErrors;
+			stateContext = new DParserStateContext(lexer);
+			parserParts = new DParserParts(stateContext);
 		}
 
 		#region External interface
@@ -96,360 +34,158 @@ namespace D_Parser.Parser
 		public static BlockStatement ParseBlockStatement(string Code, CodeLocation initialLocation, INode ParentNode = null)
 		{
 			var p = Create(new StringReader(Code));
-			p.Lexer.SetInitialLocation(initialLocation);
-			p.Step();
+			p.stateContext.Lexer.SetInitialLocation(initialLocation);
+			p.stateContext.Lexer.NextToken();
 
-			return p.BlockStatement(ParentNode);
+			return p.parserParts.statementParser.BlockStatement(ParentNode);
 		}
 
-        public static IExpression ParseExpression(string Code)
-        {
-            var p = Create(new StringReader(Code));
-            p.Step();
-            return p.Expression();
-        }
+		public static IExpression ParseExpression(string Code)
+		{
+			var p = Create(new StringReader(Code));
+			p.stateContext.Lexer.NextToken();
+			return p.parserParts.expressionsParser.Expression();
+		}
 
 		public static DBlockNode ParseDeclDefs(string Code)
 		{
 			var p = Create(new StringReader(Code));
-			p.Step();
+			p.stateContext.Lexer.NextToken();
 			var block = new DBlockNode();
-			while (!p.IsEOF)
+			while (!p.stateContext.Lexer.IsEOF)
 			{
-				p.DeclDef(block);
+				p.parserParts.modulesParser.DeclDef(block);
 			}
 
-			block.EndLocation = p.la.Location;
+			block.EndLocation = p.stateContext.Lexer.LookAhead.Location;
 			return block;
 		}
 
 		public static IExpression ParseAssignExpression(string Code)
 		{
 			var p = Create(new StringReader(Code));
-			p.Step();
-			return p.AssignExpression();
+			p.stateContext.Lexer.NextToken();
+			return p.parserParts.expressionsParser.AssignExpression();
 		}
 
 		public static ITypeDeclaration ParseBasicType(string code)
 		{
 			DToken tk;
-			return ParseBasicType (code, out tk);
+			return ParseBasicType(code, out tk);
 		}
 
-        public static ITypeDeclaration ParseBasicType(string Code,out DToken OptionalToken)
-        {
-            OptionalToken = null;
+		public static ITypeDeclaration ParseBasicType(string Code, out DToken OptionalToken)
+		{
+			OptionalToken = null;
 
-            var p = Create(new StringReader(Code));
-            p.Step();
-            // Exception: If we haven't got any basic types as our first token, return this token via OptionalToken
-            if (!p.IsBasicType() || p.laKind == DTokens.__LINE__ || p.laKind == DTokens.__FILE__)
-            {
-                p.Step();
-                p.Peek(1);
-                OptionalToken = p.t;
+			var p = Create(new StringReader(Code));
+			var lexer = p.stateContext.Lexer;
+			lexer.NextToken();
+			// Exception: If we haven't got any basic types as our first token, return this token via OptionalToken
+			if (!p.parserParts.declarationParser.IsBasicType()
+				|| lexer.LookAhead.Kind == DTokens.__LINE__
+				|| lexer.LookAhead.Kind == DTokens.__FILE__)
+			{
+				lexer.NextToken();
+				lexer.StartPeek();
+				lexer.Peek();
+				OptionalToken = p.stateContext.t;
 
-                // Only if a dot follows a 'this' or 'super' token we go on parsing; Return otherwise
-                if (!((p.t.Kind == DTokens.This || p.t.Kind == DTokens.Super) && p.laKind == DTokens.Dot))
-                    return null;
-            }
-            
-			var bt= p.BasicType(null);
-			p.ParseBasicType2 (ref bt, p.doc);
-            return bt;
-        }
+				// Only if a dot follows a 'this' or 'super' token we go on parsing; Return otherwise
+				if (!((OptionalToken.Kind == DTokens.This || OptionalToken.Kind == DTokens.Super)
+					&& lexer.LookAhead.Kind == DTokens.Dot))
+					return null;
+			}
 
-        public static DModule ParseString(string ModuleCode, bool SkipFunctionBodies = false, 
-                                          bool KeepComments = true, string[] taskTokens = null)
-        {
-            using(var sr = new StringReader(ModuleCode))
-        	{
-            	using(var p = Create(sr, taskTokens))
-            		return p.Parse(SkipFunctionBodies, KeepComments);
-        	}
-        }
+			var scope = new DModule();
+			var bt = p.parserParts.declarationParser.BasicType(scope);
+			p.parserParts.declarationParser.ParseBasicType2(ref bt, scope);
+			return bt;
+		}
 
-        public static DModule ParseFile(string File, bool SkipFunctionBodies=false, bool KeepComments = true)
-        {
-        	using(var s = new StreamReader(File)){
-	            var p = Create(s);
-	            var m = p.Parse(SkipFunctionBodies, KeepComments);
-	            m.FileName = File;
-	            if(string.IsNullOrEmpty(m.ModuleName))
+		public static DModule ParseString(string ModuleCode, bool SkipFunctionBodies = false,
+										  bool KeepComments = true, string[] taskTokens = null)
+		{
+			using (var sr = new StringReader(ModuleCode))
+			using (var p = Create(sr))
+				return p.Parse(SkipFunctionBodies, KeepComments, taskTokens);
+		}
+
+		public static DModule ParseFile(string File, bool SkipFunctionBodies = false, bool KeepComments = true)
+		{
+			using (var s = new StreamReader(File))
+			{
+				var p = Create(s);
+				var m = p.Parse(SkipFunctionBodies, KeepComments);
+				m.FileName = File;
+				if (string.IsNullOrEmpty(m.ModuleName))
 					m.ModuleName = Path.GetFileNameWithoutExtension(File);
 				s.Close();
 				return m;
-        	}
-        }
-        
-        public static DMethod ParseMethodDeclarationHeader(string headerCode, out ITypeDeclaration identifierChain)
-        {
-        	using(var sr = new StringReader(headerCode))
-        	{
-	            var p = Create(sr);
-	            p.Step();
-	            
-	            var n = new DMethod();
-	            p.CheckForStorageClasses(p.doc);
-	            p.ApplyAttributes(n);
-	            p.FunctionAttributes(n);
-	            
-	            n.Type = p.Type(null);
-	            
-	            identifierChain = p.IdentifierList();
-	            if(identifierChain is IdentifierDeclaration)
-					n.NameHash = (identifierChain as IdentifierDeclaration).IdHash;
-	            
-	            p.Parameters(n);
-	            
-	            return n;
-        	}
-        }
+			}
+		}
 
-        public static DParser Create(TextReader tr, string[] taskTokens = null)
-        {
-			var parser = new DParser(new Lexer(tr));
-            parser.Lexer.TaskTokens = taskTokens;
-            return parser;
-        }
+		public static DMethod ParseMethodDeclarationHeader(string headerCode, out ITypeDeclaration identifierChain)
+		{
+			using (var sr = new StringReader(headerCode))
+			{
+				var p = Create(sr);
+				p.stateContext.Lexer.NextToken();
+
+				var n = new DMethod();
+				var scope = new DModule();
+				p.parserParts.declarationParser.CheckForStorageClasses(scope);
+				p.parserParts.declarationParser.ApplyAttributes(n);
+				p.parserParts.attributesParser.FunctionAttributes(n);
+
+				n.Type = p.parserParts.declarationParser.Type(scope);
+
+				identifierChain = p.parserParts.declarationParser.IdentifierList();
+				if (identifierChain is IdentifierDeclaration)
+					n.NameHash = (identifierChain as IdentifierDeclaration).IdHash;
+
+				p.parserParts.declarationParser.Parameters(n);
+
+				return n;
+			}
+		}
+
+		public static DParser Create(TextReader tr)
+		{
+			return new DParser(new Lexer(tr));
+		}
 		#endregion
 
-		void PushAttribute(DAttribute attr, bool BlockAttributes)
+		/// <summary>
+		/// Initializes and proceed parse procedure
+		/// </summary>
+		/// <param name="parseStructureOnly">If true, all statements and non-declarations are ignored. Useful for analysing libraries.</param>
+		/// <param name="keepComments">If true, all (ddoc + non-ddoc) comment regions will be added to the returned module instance's properties.<br/>
+		/// This property is disabled by default, as non-ddoc-comments are mostly needed for meta operations on the code (e.g. formatting).</param>
+		/// <param name="taskTokens">Allows providing custom in-code task prefixes (e.g. ´@TODO´) that shall be provided in the <pre>Tasks</pre>-property.</param>
+		/// <returns>Completely parsed module structure</returns>
+		public DModule Parse(bool parseStructureOnly = false, bool keepComments = true, IEnumerable<string> taskTokens = null)
 		{
-			var stk=BlockAttributes?this.BlockAttributes:this.DeclarationAttributes;
+			if(taskTokens != null)
+				stateContext.Lexer.TaskTokens = new HashSet<string>(taskTokens);
 
-			var m = attr as Modifier;
-			if(m!=null)
-			// If attr would change the accessability of an item, remove all previously found (so the most near attribute that's next to the item is significant)
-			if (DTokensSemanticHelpers.IsVisibilityModifier(m.Token))
-				Modifier.CleanupAccessorAttributes(stk, m.Token);
-			else
-				Modifier.RemoveFromStack(stk, m.Token);
+			stateContext.ParseStructureOnly = parseStructureOnly;
+			if (keepComments)
+				stateContext.Lexer.OnlyEnlistDDocComments = false;
 
-			stk.Push(attr);
+			var doc = parserParts.modulesParser.Root();
+			doc.ParseErrors = new ReadOnlyCollection<ParserError>(stateContext.ParseErrors);
+			doc.Tasks = new ReadOnlyCollection<ParserError>(stateContext.Lexer.Tasks);
+			if (keepComments)
+				doc.Comments = stateContext.Comments.ToArray();
+
+			return doc;
 		}
 
-		void ApplyAttributes(DNode n)
+		public void Dispose()
 		{
-			var unfilteredAttributesToAssign = GetCurrentAttributeSet();
-			var attributesToAssign = new List<DAttribute>(unfilteredAttributesToAssign);
-
-			foreach(var attribute in unfilteredAttributesToAssign)
-			{
-				byte? mod = (attribute as Modifier)?.Token;
-				if (mod.HasValue)
-				{
-					switch (mod.Value)
-					{
-						case DTokens.Immutable:
-						case DTokens.Const:
-						case DTokens.InOut:
-						case DTokens.Shared:
-							attributesToAssign.Remove(attribute);
-							AssignOrWrapTypeToNode(n, new MemberFunctionAttributeDecl(mod.Value));
-							break;
-					}
-				}
-			}
-
-			n.Attributes = attributesToAssign;
-        }
-        
-        DAttribute[] GetCurrentAttributeSet_Array()
-        {
-        	var attrs = GetCurrentAttributeSet();
-        	return attrs.Count == 0 ? null : attrs.ToArray();
-        }
-		
-        List<DAttribute> GetCurrentAttributeSet()
-        {
-			var vis = D_Parser.Dom.Visitors.AstElementHashingVisitor.Instance;
-			var keys = new List<long>();
-        	var attrs = new List<DAttribute>();
-			Modifier lastVisModifier = null;
-
-			long key;
-			int i;
-
-			foreach (var a in BlockAttributes){
-				// ISSUE: Theoretically, when having two identically written but semantically different UDA attributes, the first one will become overridden.
-				key = a.Accept(vis);
-				if ((i = keys.IndexOf(key)) > -1)
-					attrs[i] = a;
-				else
-				{
-					keys.Add(key);
-					attrs.Insert(0,a);
-				}
-			}
-
-			foreach (var a in DeclarationAttributes)
-			{
-				key = a.Accept(vis);
-				if ((i = keys.IndexOf(key)) > -1)
-					attrs[i] = a;
-				else
-				{
-					keys.Add(key);
-					attrs.Insert(0,a);
-				}
-			}
-			DeclarationAttributes.Clear();
-
-			for (i = attrs.Count - 1; i >= 0; i--)
-			{
-				var m = attrs[i] as Modifier;
-				if (m != null)
-				{
-					// If accessor already in attribute array, remove it
-					if (DTokensSemanticHelpers.IsVisibilityModifier(m.Token))
-					{
-						lastVisModifier = m;
-						// Temporarily remove all vis modifiers and add the last one again
-						attrs.RemoveAt(i);
-						//keys.RemoveAt(i); -- No need to touch keys anymore
-						continue;
-					}
-				}
-			}
-
-			if (lastVisModifier != null)
-				attrs.Insert(0, lastVisModifier);
-
-            return attrs;
-        }
-
-		bool OverPeekBrackets(byte OpenBracketKind,bool LAIsOpenBracket = false)
-        {
-            int CloseBracket = DTokens.CloseParenthesis;
-
-            if (OpenBracketKind == DTokens.OpenSquareBracket) 
-				CloseBracket = DTokens.CloseSquareBracket;
-            else if (OpenBracketKind == DTokens.OpenCurlyBrace) 
-				CloseBracket = DTokens.CloseCurlyBrace;
-
-			var pk = Lexer.CurrentPeekToken;
-            int i = LAIsOpenBracket?1:0;
-            while (pk.Kind != DTokens.EOF)
-            {
-                if (pk.Kind== OpenBracketKind)
-                    i++;
-                else if (pk.Kind== CloseBracket)
-                {
-                    i--;
-                    if (i <= 0) 
-					{ 
-						Peek(); 
-						return true; 
-					}
-                }
-                pk = Peek();
-            }
-			return false;
-        }
-
-        private bool Expect(byte n)
-        {
-			if (laKind == n)
-			{
-				Step();
-				return true; 
-			}
-			else
-			{
-				SynErr(n, DTokens.GetTokenString(n) + " expected, "+DTokens.GetTokenString(laKind)+" found!");
-			}
-            return false;
-        }
-
-        /// <summary>
-        /// Retrieve string value of current token
-        /// </summary>
-        protected string strVal
-        {
-            get
-            {
-                if (t.Kind == DTokens.Identifier || t.Kind == DTokens.Literal)
-                    return t.Value;
-                return DTokens.GetTokenString(t.Kind);
-            }
-        }
-
-        DToken Peek()
-        {
-            return Lexer.Peek();
-        }
-
-        DToken Peek(int n)
-        {
-            Lexer.StartPeek();
-            DToken x = la;
-            while (n > 0)
-            {
-                x = Lexer.Peek();
-                n--;
-            }
-            return x;
-        }
-
-		public void Step()
-		{ 
-			Lexer.NextToken();
+			stateContext.Dispose();
 		}
-
-        [DebuggerStepThrough]
-        public DModule Parse()
-        {
-            return Parse(false);
-        }
-
-        /// <summary>
-        /// Initializes and proceed parse procedure
-        /// </summary>
-        /// <param name="ParseStructureOnly">If true, all statements and non-declarations are ignored - useful for analysing libraries</param>
-        /// <returns>Completely parsed module structure</returns>
-        public DModule Parse(bool ParseStructureOnly, bool KeepComments = true)
-        {
-            this.ParseStructureOnly = ParseStructureOnly;
-            if(KeepComments)
-            	Lexer.OnlyEnlistDDocComments = false;
-            doc=Root();
-            doc.ParseErrors = new System.Collections.ObjectModel.ReadOnlyCollection<ParserError>(ParseErrors);
-            doc.Tasks = new System.Collections.ObjectModel.ReadOnlyCollection<ParserError>(Lexer.Tasks);
-			if(KeepComments){
-				doc.Comments = Comments.ToArray();
-			}
-			
-            return doc;
-        }
-        
-        #region Error handlers
-        void SynErr(byte n, string msg)
-        {
-			if (ParseErrors.Count > MaxParseErrorsBeforeFailure)
-			{
-				return;
-				throw new TooManyErrorsException();
-			}
-			else if (ParseErrors.Count == MaxParseErrorsBeforeFailure)
-				msg = "Too many errors - stop parsing";
-
-			ParseErrors.Add(new ParserError(false,msg,n,la.Location));
-        }
-        void SynErr(byte n)
-		{
-			SynErr(n, DTokens.GetTokenString(n) + " expected" + (t!=null?(", "+DTokens.GetTokenString(t.Kind)+" found"):""));
-        }
-
-        void SemErr(byte n, string msg)
-        {
-			ParseErrors.Add(new ParserError(true, msg, n, la.Location));
-        }
-        /*void SemErr(int n)
-        {
-			ParseErrors.Add(new ParserError(true, DTokens.GetTokenString(n) + " expected" + (t != null ? (", " + DTokens.GetTokenString(t.Kind) + " found") : ""), n, t == null ? la.Location : t.EndLocation));
-        }*/
-        #endregion
 	}
 
 	public class TooManyErrorsException : Exception

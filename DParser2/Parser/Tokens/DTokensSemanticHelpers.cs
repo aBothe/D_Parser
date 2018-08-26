@@ -184,6 +184,25 @@ namespace D_Parser.Parser
 			}
 		}
 
+		public static bool IsBasicType(DToken tk)
+		{
+			switch (tk.Kind)
+			{
+				case DTokens.Typeof:
+				case DTokens.__vector:
+				case DTokens.Identifier:
+					return true;
+				case DTokens.Dot:
+					return tk.Next != null && tk.Next.Kind == (DTokens.Identifier);
+				case DTokens.This:
+				case DTokens.Super:
+					return tk.Next != null && tk.Next.Kind == DTokens.Dot;
+				default:
+					return IsBasicType(tk.Kind)
+						|| IsFunctionAttribute(tk.Kind);
+			}
+		}
+
 		public static bool IsClassLike(byte token)
 		{
 			switch (token)
@@ -215,6 +234,11 @@ namespace D_Parser.Parser
 				default:
 					return false;
 			}
+		}
+
+		public static bool IsFunctionAttribute(byte kind)
+		{
+			return IsMemberFunctionAttribute(kind) || kind == DTokens.At;
 		}
 
 		public static bool IsMetaIdentifier(byte token)
