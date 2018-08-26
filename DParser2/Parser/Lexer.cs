@@ -2260,34 +2260,36 @@ namespace D_Parser.Parser
 
 		public static decimal ParseFloatValue(StringBuilder digit, int NumBase)
 		{
-			// When parsing phobos, this takes roughly 200ms, so may be worth optimizing.
-			//return 0M;
 			decimal ret = 0M;
 
 			int commaPos = -1;
-			int k = digit.Length - 1;
-
+			// Determine optional comma index
 			for (int i = digit.Length - 1; i >= 0; i--)
 				if (digit[i] == '.')
 				{
 					commaPos = i;
-					k = i - 1;
 					break;
 				}
 
-			for (int i = 0; i < digit.Length; i++)
+			// Calculate pre-comma part
+			int maxPreCommaIndex = commaPos > -1 ? commaPos : digit.Length;
+			for (int i = 0; i < maxPreCommaIndex; i++)
 			{
-				if (i == commaPos) { i++; k++; }
+				ret += GetHexNumber(digit[i]);
+				ret *= NumBase;
+			}
+			ret /= NumBase;
 
-				// Check if digit string contains some digits after the comma
-				if (i >= digit.Length) break;
-
-				int n = GetHexNumber(digit[i]);
-				try
+			if (commaPos > -1)
+			{
+				// Calculate & Add floating-point part
+				decimal postCommaMantissa = 0M;
+				for (int i = digit.Length - 1; i > commaPos; i--)
 				{
-					ret += n * (decimal)Math.Pow(NumBase, k - i);
+					postCommaMantissa += GetHexNumber(digit[i]);
+					postCommaMantissa /= NumBase;
 				}
-				catch (OverflowException) { return ret; }
+				ret += postCommaMantissa;
 			}
 
 			return ret;
