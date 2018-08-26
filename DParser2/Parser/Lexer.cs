@@ -955,7 +955,7 @@ namespace D_Parser.Parser
 				bool isImaginary = false;
 				//bool isUnsigned = false;
 				//bool isLong = false;
-				int NumBase = 0; // Set it to 0 initially - it'll be set to another value later for sure
+				byte numBase = 0; // Set it to 0 initially - it'll be set to another value later for sure
 
 				char peek = (char)ReaderPeek();
 
@@ -967,7 +967,7 @@ namespace D_Parser.Parser
 						//prefix = "0x";
 						ReaderRead(); // skip 'x'
 						sb.Length = 0; // Remove '0' from 0x prefix from the stringvalue
-						NumBase = 16;
+						numBase = 16;
 
 						peek = (char)ReaderPeek();
 						while (IsHex(peek) || peek == '_')
@@ -983,7 +983,7 @@ namespace D_Parser.Parser
 						//prefix = "0b";
 						ReaderRead(); // skip 'b'
 						sb.Length = 0;
-						NumBase = 2;
+						numBase = 2;
 
 						peek = (char)ReaderPeek();
 						while (IsBin(peek) || peek == '_')
@@ -1010,12 +1010,12 @@ namespace D_Parser.Parser
 						}
 					}*/
 					else
-						NumBase = 10; // Enables pre-comma parsing .. in this case we'd 000 literals or something like that
+						numBase = 10; // Enables pre-comma parsing .. in this case we'd 000 literals or something like that
 				}
 
-				if (NumBase == 10 || (ch != '.' && NumBase == 0)) // Only allow further digits for 10-based integers, not for binary or hex values
+				if (numBase == 10 || (ch != '.' && numBase == 0)) // Only allow further digits for 10-based integers, not for binary or hex values
 				{
-					NumBase = 10;
+					numBase = 10;
 					while (IsDigit(peek) || peek == '_')
 					{
 						if (peek != '_')
@@ -1028,17 +1028,17 @@ namespace D_Parser.Parser
 				#region Read digits that occur after a comma
 				DToken nextToken = null; // if we accidently read a 'dot'
 				bool AllowSuffixes = true;
-				if ((NumBase == 0 && ch == '.') || peek == '.')
+				if ((numBase == 0 && ch == '.') || peek == '.')
 				{
 					if (ch != '.') ReaderRead();
 					else
 					{
-						NumBase = 10;
+						numBase = 10;
 						sb.Length = 0;
 						sb.Append('0');
 					}
 					peek = (char)ReaderPeek();
-					if (!IsLegalDigit(peek, NumBase))
+					if (!IsLegalDigit(peek, numBase))
 					{
 						if (peek == '.')
 						{
@@ -1063,13 +1063,13 @@ namespace D_Parser.Parser
 								sb.Append((char)ReaderRead());
 							peek = (char)ReaderPeek();
 						}
-						while (IsLegalDigit(peek, NumBase));
+						while (IsLegalDigit(peek, numBase));
 					}
 				}
 				#endregion
 
 				#region Exponents
-				if ((NumBase == 16) ? (peek == 'p' || peek == 'P') : (peek == 'e' || peek == 'E'))
+				if ((numBase == 16) ? (peek == 'p' || peek == 'P') : (peek == 'e' || peek == 'E'))
 				{ // read exponent
 					string suff = peek.ToString();
 					ReaderRead();
@@ -1150,13 +1150,13 @@ namespace D_Parser.Parser
 				#endregion
 
 				#region Parse the digit string
-				var num = ParseFloatValue(sb, NumBase);
+				var num = ParseFloatValue(sb, numBase);
 
 				if (exponent != 0)
 				{
 					try
 					{
-						num *= (decimal)Math.Pow(NumBase == 16 ? 2 : 10, exponent);
+						num *= (decimal)Math.Pow(numBase == 16 ? 2 : 10, exponent);
 					}
 					catch (OverflowException)
 					{
@@ -2258,7 +2258,7 @@ namespace D_Parser.Parser
 			}
 		}
 
-		public static decimal ParseFloatValue(StringBuilder digit, int NumBase)
+		public static decimal ParseFloatValue(StringBuilder digit, byte numBase)
 		{
 			decimal ret = 0M;
 
@@ -2276,9 +2276,9 @@ namespace D_Parser.Parser
 			for (int i = 0; i < maxPreCommaIndex; i++)
 			{
 				ret += GetHexNumber(digit[i]);
-				ret *= NumBase;
+				ret *= numBase;
 			}
-			ret /= NumBase;
+			ret /= numBase;
 
 			if (commaPos > -1)
 			{
@@ -2287,7 +2287,7 @@ namespace D_Parser.Parser
 				for (int i = digit.Length - 1; i > commaPos; i--)
 				{
 					postCommaMantissa += GetHexNumber(digit[i]);
-					postCommaMantissa /= NumBase;
+					postCommaMantissa /= numBase;
 				}
 				ret += postCommaMantissa;
 			}
