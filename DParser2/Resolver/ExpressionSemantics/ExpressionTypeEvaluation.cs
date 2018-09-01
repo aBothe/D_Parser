@@ -15,7 +15,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	public class ExpressionTypeEvaluation : ExpressionVisitor<AbstractType>
 	{
 		#region Properties
-		public bool TryReturnMethodReturnType;
+		bool tryReturnMethodReferenceOnly;
+		public bool TryReturnMethodReferenceOnly
+		{
+			get { return tryReturnMethodReferenceOnly || (ctxt.Options & ResolutionOptions.ReturnMethodReferencesOnly) != 0; }
+			set { tryReturnMethodReferenceOnly = value; }
+		}
 		private readonly ResolutionContext ctxt;
 		public readonly List<EvaluationException> Errors;
 		bool ignoreErrors;
@@ -50,7 +55,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public ExpressionTypeEvaluation(ResolutionContext ctxt)
 		{
 			this.ctxt = ctxt;
-			TryReturnMethodReturnType = true;
+			TryReturnMethodReferenceOnly = false;
 			Errors = new List<EvaluationException> ();
 			ignoreErrors = false;
 		}
@@ -103,7 +108,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				ctxt.Cache.Add(deferringPointer, x, cacheHashBias);
 			}
 
-			t = x.Accept(new ExpressionTypeEvaluation(ctxt) { TryReturnMethodReturnType = tryReturnMethodReturnType });
+			t = x.Accept(new ExpressionTypeEvaluation(ctxt) { TryReturnMethodReferenceOnly = !tryReturnMethodReturnType });
 
 			if (!(t is TemplateParameterSymbol) || !ctxt.DeducedTypesInHierarchy.Any((tps) => tps.Parameter == (t as TemplateParameterSymbol).Parameter)) // Don't allow caching parameters that affect the caching context.
 				ctxt.Cache.Add(t ?? new UnknownType(x), x, cacheHashBias);
@@ -129,13 +134,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			GetRawCallOverloads(ctxt, call.PostfixForeExpression, out baseExpression, out tix);
 
-			return Evaluation.EvalMethodCall(baseExpression, null, tix, ctxt, call, out callArgs, out delegValue, !ctxt.Options.HasFlag(ResolutionOptions.ReturnMethodReferencesOnly));
+			return Evaluation.EvalMethodCall(baseExpression, null, tix, ctxt, call, out callArgs, out delegValue, !TryReturnMethodReferenceOnly);
 		}
 
 
 		AbstractType TryPretendMethodExecution(AbstractType b, ISyntaxRegion typeBase = null, AbstractType[] args = null)
 		{
-			if (!TryReturnMethodReturnType || (ctxt.Options & ResolutionOptions.ReturnMethodReferencesOnly) != 0)
+			if (TryReturnMethodReferenceOnly)
 				return b;
 
 			if (b is AmbiguousType)
@@ -614,7 +619,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return new UnknownType(nex);
 
 			// HACK: Return the base types immediately
-			if (TryReturnMethodReturnType)
+			if (!TryReturnMethodReferenceOnly)
 			{
 				var ret = ctors.First().Value; // AmbiguousType.Get(ctors.Values);
 				if (ret != null)
