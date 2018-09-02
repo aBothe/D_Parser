@@ -36,14 +36,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						fmt == LiteralSubformat.Utf16 ? "wstring" :
 						"string";
 
-					var strNode = obj[strType];
-
-					if (strNode != null)
-						foreach (var n in strNode) {
-							_t = TypeDeclarationResolver.HandleNodeMatch(n, ctxt) as ArrayType;
-							if (_t != null)
-								break;
-						}
+					foreach (var n in obj[strType]) {
+						_t = TypeDeclarationResolver.HandleNodeMatch(n, ctxt) as ArrayType;
+						if (_t != null)
+							break;
+					}
 				}
 			}
 

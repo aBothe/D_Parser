@@ -319,18 +319,16 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			bool foundExplicitCtor = false;
 
 			// Simply get all constructors that have the ctor id assigned. Makin' it faster ;)
-			var ch = ct.Definition[DMethod.ConstructorIdentifier];
-			if (ch != null)
-				foreach (var m in ch)
+			foreach (var m in ct.Definition[DMethod.ConstructorIdentifier])
+			{
+				// Not to forget: 'this' aliases are also possible - so keep checking for m being a genuine ctor
+				var dm = m as DMethod;
+				if (dm != null && dm.SpecialType == DMethod.MethodType.Constructor)
 				{
-					// Not to forget: 'this' aliases are also possible - so keep checking for m being a genuine ctor
-					var dm = m as DMethod;
-					if (dm != null && dm.SpecialType == DMethod.MethodType.Constructor)
-					{
-						yield return dm;
-						foundExplicitCtor = true;
-					}
+					yield return dm;
+					foundExplicitCtor = true;
 				}
+			}
 
 			var isStruct = ct is StructType;
 			if (!foundExplicitCtor || isStruct)

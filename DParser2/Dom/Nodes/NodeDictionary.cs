@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Linq;
 
 namespace D_Parser.Dom
 {
@@ -95,22 +96,11 @@ namespace D_Parser.Dom
 			children.TrimExcess ();
 		}
 
-		public int Count
-		{
-			get
-			{
-				return children.Count;
-			}
-		}
+		public int Count => children.Count;
 
 		public bool HasMultipleOverloads(int NameHash)
 		{
-			List<INode> l;
-
-			if (nameDict.TryGetValue(NameHash, out l))
-				return l.Count > 1;
-
-			return false;
+			return nameDict.TryGetValue(NameHash, out List<INode> l) && l.Count > 1;
 		}
 
 		public bool HasMultipleOverloads(string Name)
@@ -143,9 +133,9 @@ namespace D_Parser.Dom
 
 		public IEnumerable<INode> GetNodes(int nameHash)
 		{
-			List<INode> l;
-			nameDict.TryGetValue (nameHash, out l);
-			return l;
+			if(nameDict.TryGetValue (nameHash, out List<INode> l))
+				return l;
+			return Enumerable.Empty<INode>();
 		}
 
 		public INode ItemAt(int index)
