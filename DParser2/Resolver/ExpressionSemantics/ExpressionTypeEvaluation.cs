@@ -1115,10 +1115,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public AbstractType Visit(ArrayLiteralExpression arr)
 		{
-			if (arr.Elements != null && arr.Elements.Count > 0)
+			var firstLiteralElement = arr.Elements.FirstOrDefault();
+			if (firstLiteralElement != null)
 			{
 				// Simply resolve the first element's type and take it as the array's value type
-				var valueType = arr.Elements[0] != null ? AbstractType.Get(arr.Elements[0].Accept(this)) : null;
+				var valueType = AbstractType.Get(firstLiteralElement.Accept(this));
 
 				return new ArrayType(valueType);
 			}

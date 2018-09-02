@@ -1,9 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using D_Parser.Parser;
 
 namespace D_Parser.Dom.Expressions
 {
-	public class IsExpression : PrimaryExpression,ContainerExpression
+	public class IsExpression : PrimaryExpression, ContainerExpression
 	{
 		public ITypeDeclaration TestedType;
 		public int TypeAliasIdentifierHash;
@@ -75,14 +76,12 @@ namespace D_Parser.Dom.Expressions
 			set;
 		}
 
-		public IExpression[] SubExpressions
+		public IEnumerable<IExpression> SubExpressions
 		{
 			get
 			{ 
 				if (TestedType != null)
-					return new[] { new TypeDeclarationExpression(TestedType) };
-
-				return null;
+					yield return new TypeDeclarationExpression(TestedType);
 			}
 		}
 

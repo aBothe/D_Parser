@@ -6,7 +6,7 @@ namespace D_Parser.Dom.Expressions
 	/// <summary>
 	/// auto arr=['a':0xa, 'b':0xb, 'c':0xc, 'd':0xd, 'e':0xe, 'f':0xf];
 	/// </summary>
-	public class AssocArrayExpression : PrimaryExpression,ContainerExpression
+	public class AssocArrayExpression : PrimaryExpression, ContainerExpression
 	{
 		public IList<KeyValuePair<IExpression, IExpression>> Elements = new List<KeyValuePair<IExpression, IExpression>>();
 
@@ -31,21 +31,17 @@ namespace D_Parser.Dom.Expressions
 			set;
 		}
 
-		public IExpression[] SubExpressions
+		public IEnumerable<IExpression> SubExpressions
 		{
 			get
 			{
-				var l = new List<IExpression>();
-
 				foreach (var kv in Elements)
 				{
 					if (kv.Key != null)
-						l.Add(kv.Key);
+						yield return kv.Key;
 					if (kv.Value != null)
-						l.Add(kv.Value);
+						yield return kv.Value;
 				}
-
-				return l.Count > 0 ? l.ToArray() : null;
 			}
 		}
 

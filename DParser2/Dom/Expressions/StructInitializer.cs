@@ -19,20 +19,14 @@ namespace D_Parser.Dom.Expressions
 			return ret.TrimEnd(',') + "}";
 		}
 
-		public IExpression[] SubExpressions
+		public IEnumerable<IExpression> SubExpressions
 		{
 			get
 			{
-				if (MemberInitializers == null)
-					return null;
-
-				var l = new List<IExpression>(MemberInitializers.Length);
-
-				foreach (var mi in MemberInitializers)
-					if (mi.Value != null)
-						l.Add(mi.Value);
-
-				return l.ToArray();
+				if (MemberInitializers != null)
+					foreach (var mi in MemberInitializers)
+						if (mi.Value != null)
+							yield return mi.Value;
 			}
 		}
 

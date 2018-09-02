@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace D_Parser.Dom.Expressions
 {
-	public class TemplateInstanceExpression : AbstractTypeDeclaration,PrimaryExpression,ContainerExpression, IntermediateIdType
+	public class TemplateInstanceExpression : AbstractTypeDeclaration,PrimaryExpression, ContainerExpression, IntermediateIdType
 	{
 		public bool ModuleScoped {
 			get;
@@ -75,9 +77,9 @@ namespace D_Parser.Dom.Expressions
 			return sb.ToString();
 		}
 
-		public IExpression[] SubExpressions
+		public IEnumerable<IExpression> SubExpressions
 		{
-			get { return Arguments; }
+			get { return Arguments != null ? Arguments : Enumerable.Empty<IExpression>(); }
 		}
 
 		public void Accept(ExpressionVisitor vis)

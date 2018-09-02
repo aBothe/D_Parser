@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 using D_Parser.Dom;
@@ -982,7 +984,7 @@ namespace D_Parser.Parser.Implementations
 						if (assertedExpr != null)
 							exprs.Add(assertedExpr);
 					}
-					ce.AssignExpressions = exprs.ToArray();
+					ce.AssignExpressions = exprs;
 					Expect(DTokens.CloseParenthesis);
 					ce.EndLocation = t.EndLocation;
 					return ce;
@@ -1211,7 +1213,7 @@ namespace D_Parser.Parser.Implementations
 			if (laKind == DTokens.CloseSquareBracket)
 			{
 				Step();
-				return new ArrayLiteralExpression(null) { Location = startLoc, EndLocation = t.EndLocation };
+				return new ArrayLiteralExpression(Enumerable.Empty<IExpression>()) { Location = startLoc, EndLocation = t.EndLocation };
 			}
 
 			var firstExpression = ParseExpressionOrNonVoidInitializer(scope, nonInitializer);

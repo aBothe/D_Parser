@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using D_Parser.Parser;
 
 namespace D_Parser.Dom.Expressions
@@ -25,15 +26,14 @@ namespace D_Parser.Dom.Expressions
 			set;
 		}
 
-		public IExpression[] SubExpressions
+		public IEnumerable<IExpression> SubExpressions
 		{
 			get
 			{ 
 				if (Expression != null)
-					return new[]{ Expression };
-				if (Type != null)
-					return new[] { new TypeDeclarationExpression(Type) };
-				return null;
+					yield return Expression;
+				else if (Type != null)
+					yield return new TypeDeclarationExpression(Type);
 			}
 		}
 

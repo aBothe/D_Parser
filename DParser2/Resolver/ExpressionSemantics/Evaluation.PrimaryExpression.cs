@@ -158,7 +158,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public ISymbolValue Visit(AssertExpression x)
 		{
-			var assertVal = x.AssignExpressions.Length > 0 && x.AssignExpressions[0] != null ? x.AssignExpressions[0].Accept(this) as ISymbolValue : null;
+			var assertVal = x.AssignExpressions.Count > 0 && x.AssignExpressions[0] != null ? x.AssignExpressions[0].Accept(this) as ISymbolValue : null;
 			/*TODO
 			// If it evaluates to a non-null class reference, the class invariant is run. 
 			if(assertVal is ClassInstanceValue)
@@ -173,7 +173,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			{
 				string assertMsg = "";
 
-				if (x.AssignExpressions.Length > 1 && x.AssignExpressions[1] != null)
+				if (x.AssignExpressions.Count > 1 && x.AssignExpressions[1] != null)
 				{
 					var assertMsg_v = x.AssignExpressions[1].Accept(this) as ArrayValue;
 
@@ -258,7 +258,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public ISymbolValue Visit(ArrayLiteralExpression arr)
 		{
-			var elements = new List<ISymbolValue>(arr.Elements.Count);
+			var elements = new List<ISymbolValue>();
 
 			//ISSUE: Type-check each item to distinguish not matching items
 			foreach (var e in arr.Elements)

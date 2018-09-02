@@ -65,24 +65,19 @@ namespace D_Parser.Dom.Expressions
 			set;
 		}
 
-		public IExpression[] SubExpressions
+		public IEnumerable<IExpression> SubExpressions
 		{
 			get
 			{
-				var l = new List<IExpression>();
-
 				if (NewArguments != null)
-					l.AddRange(NewArguments);
+					foreach (var arg in NewArguments)
+						yield return arg;
 
 				if (ClassArguments != null)
-					l.AddRange(ClassArguments);
+					foreach (var arg in ClassArguments)
+						yield return arg;
 
 				//ISSUE: Add the Anonymous class object to the return list somehow?
-
-				if (l.Count > 0)
-					return l.ToArray();
-
-				return null;
 			}
 		}
 

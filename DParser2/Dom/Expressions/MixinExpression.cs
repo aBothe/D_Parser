@@ -1,9 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using D_Parser.Parser;
 
 namespace D_Parser.Dom.Expressions
 {
-	public class MixinExpression : PrimaryExpression,ContainerExpression
+	public class MixinExpression : PrimaryExpression, ContainerExpression
 	{
 		public IExpression AssignExpression;
 
@@ -24,9 +25,9 @@ namespace D_Parser.Dom.Expressions
 			set;
 		}
 
-		public IExpression[] SubExpressions
+		public IEnumerable<IExpression> SubExpressions
 		{
-			get { return new[]{ AssignExpression }; }
+			get { yield return AssignExpression; }
 		}
 
 		public void Accept(ExpressionVisitor vis)

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace D_Parser.Dom.Expressions
 {
@@ -30,9 +31,16 @@ namespace D_Parser.Dom.Expressions
 			get { return (FalseCaseExpression ?? TrueCaseExpression ?? OrOrExpression).EndLocation; }
 		}
 
-		public IExpression[] SubExpressions
+		public IEnumerable<IExpression> SubExpressions
 		{
-			get { return new[] { OrOrExpression, TrueCaseExpression, FalseCaseExpression }; }
+			get {
+				if (OrOrExpression != null)
+					yield return OrOrExpression;
+				if (TrueCaseExpression != null)
+					yield return TrueCaseExpression;
+				if (FalseCaseExpression != null)
+					yield return FalseCaseExpression;
+			}
 		}
 
 		public void Accept(ExpressionVisitor vis)

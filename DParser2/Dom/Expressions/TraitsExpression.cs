@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using D_Parser.Parser;
 
 namespace D_Parser.Dom.Expressions
@@ -41,17 +42,14 @@ namespace D_Parser.Dom.Expressions
 			return vis.Visit(this);
 		}
 
-		public IExpression[] SubExpressions
+		public IEnumerable<IExpression> SubExpressions
 		{
 			get
 			{
-				if (Arguments == null || Arguments.Length == 0)
-					return null;
-
-				var exs = new IExpression[Arguments.Length];
-				for (int i = Arguments.Length - 1; i >= 0; i--)
-					exs[i] = Arguments[i].AssignExpression;
-				return exs;
+				if (Arguments != null)
+					foreach (var arg in Arguments)
+						if (arg.AssignExpression != null)
+							yield return arg.AssignExpression;
 			}
 		}
 	}

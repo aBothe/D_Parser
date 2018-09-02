@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace D_Parser.Dom.Expressions
 {
@@ -7,7 +8,7 @@ namespace D_Parser.Dom.Expressions
 	/// </summary>
 	public interface ContainerExpression : IExpression
 	{
-		IExpression[] SubExpressions { get; }
+		IEnumerable<IExpression> SubExpressions { get; }
 	}
 }
 

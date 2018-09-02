@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace D_Parser.Dom.Expressions
 {
@@ -33,11 +34,12 @@ namespace D_Parser.Dom.Expressions
 			set;
 		}
 
-		public override IExpression[] SubExpressions
+		public override IEnumerable<IExpression> SubExpressions
 		{
 			get
 			{
-				return new[]{ PostfixForeExpression, AccessExpression };
+				yield return PostfixForeExpression;
+				yield return AccessExpression;
 			}
 		}
 

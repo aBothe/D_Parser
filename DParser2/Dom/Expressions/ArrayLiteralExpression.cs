@@ -7,11 +7,11 @@ namespace D_Parser.Dom.Expressions
 	/// <summary>
 	/// auto arr= [1,2,3,4,5,6];
 	/// </summary>
-	public class ArrayLiteralExpression : PrimaryExpression,ContainerExpression
+	public class ArrayLiteralExpression : PrimaryExpression, ContainerExpression
 	{
-		public readonly List<IExpression> Elements = new List<IExpression>();
+		public readonly IEnumerable<IExpression> Elements;
 
-		public ArrayLiteralExpression(List<IExpression> elements)
+		public ArrayLiteralExpression(IEnumerable<IExpression> elements)
 		{
 			Elements = elements;
 		}
@@ -21,16 +21,16 @@ namespace D_Parser.Dom.Expressions
 			var s = "[";
 
 			//HACK: To prevent exessive string building flood, limit element count to 100
-			if (Elements != null)
-				for (int i = 0; i < Elements.Count; i++)
+			int i = 0;
+			foreach(var ex in Elements)
+			{
+				s += ex.ToString() + ", ";
+				if (++i == 100)
 				{
-					s += Elements[i].ToString() + ", ";
-					if (i == 100)
-					{
-						s += "...";
-						break;
-					}
+					s += "...";
+					break;
 				}
+			}
 			s = s.TrimEnd(' ', ',') + "]";
 			return s;
 		}
@@ -47,9 +47,9 @@ namespace D_Parser.Dom.Expressions
 			set;
 		}
 
-		public IExpression[] SubExpressions
+		public IEnumerable<IExpression> SubExpressions
 		{
-			get { return Elements != null && Elements.Count > 0 ? Elements.ToArray() : null; }
+			get { return Elements; }
 		}
 
 		public void Accept(ExpressionVisitor vis)

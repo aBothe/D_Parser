@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace D_Parser.Dom.Expressions
 {
-	public class AssertExpression : PrimaryExpression,ContainerExpression
+	public class AssertExpression : PrimaryExpression, ContainerExpression
 	{
-		public IExpression[] AssignExpressions;
+		public List<IExpression> AssignExpressions;
 
 		public override string ToString()
 		{
@@ -28,7 +29,7 @@ namespace D_Parser.Dom.Expressions
 			set;
 		}
 
-		public IExpression[] SubExpressions
+		public IEnumerable<IExpression> SubExpressions
 		{
 			get { return AssignExpressions; }
 		}

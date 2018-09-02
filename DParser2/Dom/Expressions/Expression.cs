@@ -5,7 +5,7 @@ namespace D_Parser.Dom.Expressions
 {
 	public class Expression : IExpression, IEnumerable<IExpression>, ContainerExpression
 	{
-		public List<IExpression> Expressions = new List<IExpression>();
+		public readonly List<IExpression> Expressions = new List<IExpression>();
 
 		public void Add(IExpression ex)
 		{
@@ -41,9 +41,9 @@ namespace D_Parser.Dom.Expressions
 			get { return Expressions.Count > 0 ? Expressions[Expressions.Count - 1].EndLocation : CodeLocation.Empty; }
 		}
 
-		public IExpression[] SubExpressions
+		public IEnumerable<IExpression> SubExpressions
 		{
-			get { return Expressions.ToArray(); }
+			get { return Expressions; }
 		}
 
 		public void Accept(ExpressionVisitor vis)

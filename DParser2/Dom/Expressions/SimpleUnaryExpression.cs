@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using D_Parser.Parser;
 
 namespace D_Parser.Dom.Expressions
@@ -25,9 +25,9 @@ namespace D_Parser.Dom.Expressions
 			get { return UnaryExpression.EndLocation; }
 		}
 
-		public virtual IExpression[] SubExpressions
+		public virtual IEnumerable<IExpression> SubExpressions
 		{
-			get { return new[]{ UnaryExpression }; }
+			get { yield return UnaryExpression; }
 		}
 
 		public abstract void Accept(ExpressionVisitor vis);

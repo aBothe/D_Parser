@@ -1,5 +1,5 @@
 ﻿using System;
-using D_Parser.Parser;
+using System.Collections.Generic;
 
 namespace D_Parser.Dom.Expressions
 {
@@ -20,11 +20,14 @@ namespace D_Parser.Dom.Expressions
 			set { throw new NotSupportedException(); }
 		}
 
-		public override IExpression[] SubExpressions
+		public override IEnumerable<IExpression> SubExpressions
 		{
 			get
 			{
-				return new[] { RegisterExpression, UnaryExpression };
+				if (RegisterExpression != null)
+					yield return RegisterExpression;
+				if (UnaryExpression != null)
+					yield return UnaryExpression;
 			}
 		}
 

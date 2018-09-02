@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace D_Parser.Dom.Expressions
 {
@@ -13,9 +14,9 @@ namespace D_Parser.Dom.Expressions
 
 		public abstract CodeLocation EndLocation { get; set; }
 
-		public virtual IExpression[] SubExpressions
+		public virtual IEnumerable<IExpression> SubExpressions
 		{
-			get { return new[]{ PostfixForeExpression }; }
+			get { yield return PostfixForeExpression; }
 		}
 
 		public abstract void Accept(ExpressionVisitor vis);

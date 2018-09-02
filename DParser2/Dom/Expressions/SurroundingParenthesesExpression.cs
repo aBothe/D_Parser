@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using D_Parser.Parser;
 
 namespace D_Parser.Dom.Expressions
@@ -27,9 +28,9 @@ namespace D_Parser.Dom.Expressions
 			set;
 		}
 
-		public IExpression[] SubExpressions
+		public IEnumerable<IExpression> SubExpressions
 		{
-			get { return new[]{ Expression }; }
+			get { yield return Expression; }
 		}
 
 		public void Accept(ExpressionVisitor vis)

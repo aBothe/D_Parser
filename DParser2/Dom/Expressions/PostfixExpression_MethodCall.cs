@@ -39,19 +39,16 @@ namespace D_Parser.Dom.Expressions
 			set;
 		}
 
-		public override IExpression[] SubExpressions
+		public override IEnumerable<IExpression> SubExpressions
 		{
 			get
 			{
-				var l = new List<IExpression>();
-
 				if (Arguments != null)
-					l.AddRange(Arguments);
+					foreach (var arg in Arguments)
+						yield return arg;
 
 				if (PostfixForeExpression != null)
-					l.Add(PostfixForeExpression);
-
-				return l.Count > 0 ? l.ToArray() : null;
+					yield return PostfixForeExpression;
 			}
 		}
 

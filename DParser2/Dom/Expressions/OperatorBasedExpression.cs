@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using D_Parser.Parser;
 
 namespace D_Parser.Dom.Expressions
@@ -26,9 +27,12 @@ namespace D_Parser.Dom.Expressions
 			get { return RightOperand != null ? RightOperand.EndLocation : CodeLocation.Empty; }
 		}
 
-		public IExpression[] SubExpressions
+		public IEnumerable<IExpression> SubExpressions
 		{
-			get { return new[]{ LeftOperand, RightOperand }; }
+			get {
+				if (LeftOperand != null) yield return LeftOperand;
+				if (RightOperand != null) yield return RightOperand;
+			}
 		}
 
 		public abstract void Accept(ExpressionVisitor v);

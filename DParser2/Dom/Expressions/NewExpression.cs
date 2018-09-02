@@ -57,26 +57,21 @@ namespace D_Parser.Dom.Expressions
 			set;
 		}
 
-		public IExpression[] SubExpressions
+		public IEnumerable<IExpression> SubExpressions
 		{
 			get
 			{
-				var l = new List<IExpression>();
-
 				// In case of a template instance
 				if (Type is IExpression)
-					l.Add(Type as IExpression);
+					yield return Type as IExpression;
 
 				if (NewArguments != null)
-					l.AddRange(NewArguments);
+					foreach (var arg in NewArguments)
+						yield return arg;
 
 				if (Arguments != null)
-					l.AddRange(Arguments);
-
-				if (l.Count > 0)
-					return l.ToArray();
-
-				return null;
+					foreach (var arg in Arguments)
+						yield return arg;
 			}
 		}
 
