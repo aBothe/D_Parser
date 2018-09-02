@@ -14,7 +14,7 @@ namespace D_Parser.Completion
 	{
 		bool isVarInst;
 		readonly ICompletionDataGenerator gen;
-		List<int> addedPackageSymbolNames = new List<int>();
+		HashSet<int> addedPackageSymbolNames = new HashSet<int>();
 
 		MemberCompletionEnumeration(ResolutionContext ctxt, ICompletionDataGenerator gen) : base(ctxt) 
 		{
@@ -84,11 +84,8 @@ namespace D_Parser.Completion
 		
 		protected override void HandleItem(PackageSymbol pack)
 		{
-			if (addedPackageSymbolNames.Contains (pack.Package.NameHash))
-				return;
-
-			addedPackageSymbolNames.Add (pack.Package.NameHash);
-			gen.AddPackage (pack.Package.Name);
+			if (addedPackageSymbolNames.Add (pack.Package.NameHash))
+				gen.AddPackage (pack.Package.Name);
 		}
 	}
 }

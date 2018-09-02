@@ -72,18 +72,15 @@ namespace D_Parser.Resolver.ASTScanner
 			return bn.Children.GetNodes (filterHash);
 		}
 
-		public override IEnumerable<DModule> PrefilterSubnodes (ModulePackage pack, out IEnumerable<ModulePackage> subPackages)
+		public override IEnumerable<DModule> PrefilterSubnodes (ModulePackage pack, Action<ModulePackage> packageHandler)
 		{
 			var subPack = pack.GetPackage (filterHash);
 			if (subPack != null)
-				subPackages = new[]{ subPack };
-			else
-				subPackages = null;
+				packageHandler(subPack);
 			
 			var ast = pack.GetModule (filterHash);
 			if (ast != null)
-				return new[]{ ast };
-			return null;
+				yield return ast;
 		}
 
 		protected override bool PreCheckItem (INode n)

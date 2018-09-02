@@ -60,10 +60,12 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		{
 			return bn.Children;
 		}
-		
-		public virtual IEnumerable<DModule> PrefilterSubnodes(ModulePackage pack, out IEnumerable<ModulePackage> subPackages)
+
+		public virtual IEnumerable<DModule> PrefilterSubnodes(ModulePackage pack, Action<ModulePackage> packageHandler)
 		{
-			subPackages = pack.GetPackages();
+			foreach (var subPackage in pack.GetPackages())
+				packageHandler(subPackage);
+
 			return pack.GetModules();
 		}
 
@@ -112,30 +114,19 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			}
 			
 			// Handle available modules/packages
-			var nameStubs = new List<string>();
-			if(ctxt.ParseCache != null)
-				foreach(var root in ctxt.ParseCache.EnumRootPackagesSurroundingModule(ctxt.ScopedBlock))
+			if(ctxt.ParseCache != null) {
+				foreach (var root in ctxt.ParseCache.EnumRootPackagesSurroundingModule(ctxt.ScopedBlock))
 				{
-					IEnumerable<ModulePackage> packs;
-					var mods = PrefilterSubnodes(root, out packs);
-
-					if(packs != null)
-						foreach(var pack in packs)
-						{
-							if(nameStubs.Contains(pack.Name))
-								continue;
-							
-							HandleItem(new PackageSymbol(pack));
-							nameStubs.Add(pack.Name);
-						}
-					
-					if(mods != null)
-						HandleItems(mods, parms);
+					var mods = PrefilterSubnodes(root, HandleModulePackage);
+					HandleItems(mods, parms);
 				}
+			}
 
 			// On the root level, handle __ctfe variable
 			HandleItemInternal (__ctfe, parms);
 		}
+
+		private void HandleModulePackage(ModulePackage pack) => HandleItem(new PackageSymbol(pack));
 		
 		void ScanBlockUpward(IBlockNode curScope, CodeLocation Caret, ItemCheckParameters parms)
 		{

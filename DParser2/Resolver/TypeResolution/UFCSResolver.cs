@@ -3,6 +3,7 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Dom;
 using D_Parser.Resolver.ASTScanner;
 using D_Parser.Parser;
+using System;
 
 namespace D_Parser.Resolver.TypeResolution
 {
@@ -129,10 +130,9 @@ namespace D_Parser.Resolver.TypeResolution
 			return null;
 		}
 
-		public override IEnumerable<DModule> PrefilterSubnodes (ModulePackage pack, out IEnumerable<ModulePackage> subPackages)
+		public override IEnumerable<DModule> PrefilterSubnodes (ModulePackage pack, Action<ModulePackage> packageHandler)
 		{
-			subPackages = null;
-			return null;
+			yield break;
 		}
 
 		public static List<AbstractType> TryResolveUFCS(
