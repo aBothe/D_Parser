@@ -483,23 +483,31 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		#region Prefix (unary) experssions
 		public AbstractType Visit(CastExpression ce)
 		{
-			AbstractType castedType;
-
 			if (ce.Type != null)
-				castedType = TypeDeclarationResolver.ResolveSingle(ce.Type, ctxt);
+				return TypeDeclarationResolver.ResolveSingle(ce.Type, ctxt);
 			else if (ce.UnaryExpression != null)
 			{
-				castedType = AbstractType.Get(ce.UnaryExpression.Accept(this));
+				var origType = AbstractType.Get(ce.UnaryExpression.Accept(this));
 
-				if (castedType != null && ce.CastParamTokens != null && ce.CastParamTokens.Length > 0)
+				if (origType == null)
+					return null;
+
+				// MemberSymbols may be cloned, then get assigned a different base typ
+				var memberSymbol = origType as MemberSymbol;
+				var origBaseType = DResolver.StripMemberSymbols(origType);
+
+				var clonedType = origBaseType.Clone(false);
+				clonedType.Modifiers = ce.CastParamTokens; // TODO: StorageClasses only?
+
+				if (memberSymbol != null)
 				{
-					//TODO: Wrap resolved type with member function attributes
+					return new MemberSymbol(memberSymbol.Definition, clonedType, memberSymbol.DeducedTypes);
 				}
+
+				return clonedType;
 			}
 			else
-				castedType = null;
-
-			return castedType;
+				return null;
 		}
 
 		public AbstractType Visit(UnaryExpression_Cat x) // ~b;
