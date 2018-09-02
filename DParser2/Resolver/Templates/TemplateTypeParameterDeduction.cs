@@ -390,11 +390,13 @@ namespace D_Parser.Resolver.Templates
 
 		bool HandleDecl(TemplateTypeParameter p, MemberFunctionAttributeDecl m, AbstractType r)
 		{
+			r = DResolver.StripMemberSymbols(r);
+
 			if (r == null || !r.HasModifiers)
 				return false;
 
-			// Modifiers must be equal on both sides
-			if (!r.HasModifier(m.Modifier))
+			if (!StorageClassImplicitCastCheck.AreModifiersImplicitlyConvertible(
+				StorageClassImplicitCastCheck.GetTypeModifierToken(m.Modifier), StorageClassImplicitCastCheck.GetTypeModifierToken(r)))
 				return false;
 
 			// Strip modifier, but: immutable(int[]) becomes immutable(int)[] ?!

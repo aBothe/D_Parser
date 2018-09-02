@@ -182,6 +182,7 @@
     <Compile Include="Resolver\ResolutionHooks\HookRegistry.cs" />
     <Compile Include="Resolver\ResolutionHooks\IHook.cs" />
     <Compile Include="Resolver\StaticProperties.cs" />
+    <Compile Include="Resolver\StorageClassImplicitCastCheck.cs" />
     <Compile Include="Resolver\Templates\DeducedTypeDictionary.cs" />
     <Compile Include="Resolver\Templates\SpecializationOrdering.cs" />
     <Compile Include="Resolver\Templates\TemplateAliasParameterDeduction.cs" />

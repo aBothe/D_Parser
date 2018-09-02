@@ -134,6 +134,9 @@ namespace D_Parser.Resolver
 				return false;
 			targetType = _r;
 
+			if (!StorageClassImplicitCastCheck.AreModifiersImplicitlyConvertible(targetType, resToCheck))
+				return false;
+
 			if (resToCheck is PrimitiveType && targetType is PrimitiveType)
 			{
 				var sr1 = (PrimitiveType)resToCheck;
