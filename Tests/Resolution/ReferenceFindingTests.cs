@@ -1,21 +1,17 @@
-﻿using System;
-using System.Text;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
-using D_Parser;
 using D_Parser.Parser;
 using D_Parser.Dom;
-using D_Parser.Resolver.ASTScanner;
 using D_Parser.Resolver;
 using D_Parser.Refactoring;
 using D_Parser.Completion;
 using D_Parser.Misc;
 
-namespace Tests
+namespace Tests.Resolution
 {
 	[TestFixture]
-	public class ReferenceFinding
+	public class ReferenceFindingTests
 	{
 		[Test]
 		public void Test1()

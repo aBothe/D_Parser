@@ -4,7 +4,7 @@ using D_Parser.Parser;
 
 namespace D_Parser.Resolver
 {
-	class StorageClassImplicitCastCheck
+	static class StorageClassImplicitCastCheck
 	{
 		[Flags]
 		public enum TypeModifierToken : byte

@@ -79,18 +79,28 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CompletionTests.cs" />
-    <Compile Include="CtfeTests.cs" />
-    <Compile Include="EvaluationTests.cs" />
+    <Compile Include="ExpressionEvaluation\TraitsEvaluationTests.cs" />
+    <Compile Include="Resolution\CtfeTests.cs" />
+    <Compile Include="ExpressionEvaluation\EvaluationTests.cs" />
     <Compile Include="FormatterTests.cs" />
     <Compile Include="IndentationTests.cs" />
-    <Compile Include="ImplicitConversionTests.cs" />
+    <Compile Include="Resolution\DeclarationConstraintsTests.cs" />
+    <Compile Include="Resolution\DeclDefScopingTests.cs" />
+    <Compile Include="Resolution\ImplicitConversionTests.cs" />
     <Compile Include="ParseTests.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="ReferenceFinding.cs" />
-    <Compile Include="ResolutionTests.cs" />
-    <Compile Include="UFCSTests.cs" />
-    <Compile Include="ResolutionTests2.cs" />
+    <Compile Include="Resolution\LooseResolutionTests.cs" />
+    <Compile Include="Resolution\MixinResolutionTests.cs" />
+    <Compile Include="Resolution\OperatorOverloadingTests.cs" />
+    <Compile Include="Resolution\ReferenceFindingTests.cs" />
+    <Compile Include="Resolution\ResolutionTestHelper.cs" />
+    <Compile Include="Resolution\ResolutionTests.cs" />
+    <Compile Include="Resolution\StatementTests.cs" />
+    <Compile Include="Resolution\TemplateMixinResolutionTests.cs" />
+    <Compile Include="Resolution\TemplateParameterDeductionTests.cs" />
+    <Compile Include="Resolution\UFCSTests.cs" />
+    <Compile Include="Resolution\MethodCallOverloadRelatedTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DParser2\DParser2.csproj">

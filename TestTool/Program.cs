@@ -4,8 +4,10 @@ using System.IO;
 using D_Parser.Dom;
 using D_Parser.Formatting;
 using D_Parser.Misc;
+using D_Parser.Parser;
 using D_Parser.Resolver;
 using Tests;
+using Tests.Resolution;
 
 namespace TestTool
 {
@@ -15,8 +17,6 @@ namespace TestTool
 
 		public static void Main (string[] args)
 		{
-			var rt = new ResolutionTests ();
-
 			Trace.Listeners.Clear ();
 			Trace.AutoFlush = false;
 			Trace.UseGlobalLock = false;
@@ -40,7 +40,8 @@ namespace TestTool
 
 			//BotanProfil.Run ();
 			try {
-				rt.ConstNonConstParamDistinguishingSO ();
+				//Console.WriteLine(Lexer.ParseFloatValue(new System.Text.StringBuilder("123"), 10));
+				new DeclarationConstraintsTests().AliasedTemplate();
 			} finally {
 				Trace.Flush ();
 			}

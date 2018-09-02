@@ -1,16 +1,14 @@
-﻿using System;
-using System.Text;
-using System.Collections.Generic;
-using System.Linq;
-using NUnit.Framework;
-using D_Parser.Resolver;
-using D_Parser.Resolver.TypeResolution;
-using D_Parser.Parser;
+﻿using System.Linq;
+
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
+using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
+using D_Parser.Resolver.TypeResolution;
 
-namespace Tests
+using NUnit.Framework;
+
+namespace Tests.Resolution
 {
 	[TestFixture]
 	public class ImplicitConversionTests
@@ -23,7 +21,7 @@ namespace Tests
 		[Test]
 		public void ClassInheritanceTest()
 		{
-			var pcl=ResolutionTests.CreateCache(@"module modA;
+			var pcl = ResolutionTests.CreateCache(@"module modA;
 				class A{}
 				class B:A {}
 				class C:A {}

@@ -13,6 +13,7 @@ using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
 using NUnit.Framework;
 using NUnit.Framework.Constraints;
+using Tests.Resolution;
 
 namespace Tests
 {

@@ -1,36 +1,16 @@
-﻿using D_Parser.Dom;
+﻿using System.Linq;
+using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
 using NUnit.Framework;
 
-namespace Tests
+namespace Tests.Resolution
 {
-	public partial class ResolutionTests
+	[TestFixture]
+	public class MethodCallOverloadRelatedTests : ResolutionTestHelper
 	{
-		#region Template Parameter-related
-		[Test]
-		/// <summary>
-		/// https://github.com/aBothe/D_Parser/issues/192
-		/// </summary>
-		public void TemplateValueParameterDefaultSelfRefSO(){
-			var code = @"module A;
-struct Template( void var = Template ) {}
-";
-			AbstractType t;
-			IExpression x;
-			DModule A;
-			var ctxt = CreateDefCtxt("A", out A, code);
-
-			x = (N<DClassLike>(A, "Template").TemplateParameters[0] as TemplateValueParameter).DefaultExpression;
-
-			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-
-			Assert.That(t, Is.TypeOf(typeof(StructType)));
-		}
-		#endregion
-
 		[Test]
 		public void ConstAttributedSymbolType ()
 		{
@@ -143,6 +123,104 @@ const Object co,co2;
 
 			Assert.That ((t2 as MemberSymbol).Base, Is.TypeOf<PrimitiveType> ());
 
+		}
+
+		[Test]
+		public void ParamArgMatching1()
+		{
+			var ctxt = CreateCtxt("A", @"module A;
+enum mye
+{
+	a,b,c
+}
+
+int foo(string s, mye en);
+double* foo(string s, string ss);
+");
+
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression("foo(\"derp\",mye.a)");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(PrimitiveType)));
+
+			x = DParser.ParseExpression("foo(\"derp\",\"yeah\")");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(PointerType)));
+
+			x = DParser.ParseExpression("foo(\"derp\",1.2)");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+			Assert.That(t, Is.Null);
+		}
+
+		[Test]
+		public void TestOverloads1()
+		{
+			var pcl = CreateCache(@"module modA;
+
+int foo(int i) {}
+
+class A
+{
+	void foo(int k) {}
+
+	void bar()
+	{
+		
+	}
+}
+
+");
+			var A = pcl.FirstPackage()["modA"]["A"].First() as DClassLike;
+			var bar = A["bar"].First() as DMethod;
+			var ctxt = CreateDefCtxt(pcl, bar, bar.Body);
+
+			var e = DParser.ParseExpression("123.foo");
+
+			var t = ExpressionTypeEvaluation.EvaluateType(e, ctxt, false);
+
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.AreEqual(pcl.FirstPackage()["modA"]["foo"].First(), ((MemberSymbol)t).Definition);
+		}
+
+		/// <summary>
+		/// Templated and non-template functions can now be overloaded against each other:
+		/// </summary>
+		[Test]
+		public void TestOverloads2()
+		{
+			var ctxt = CreateCtxt("A", @"module A;
+int* foo(T)(T t) { }
+int foo(int n) { }
+long longVar = 10L;");
+
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression("foo(100)");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(PrimitiveType)));
+
+			x = DParser.ParseExpression("foo(\"asdf\")");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(PointerType)));
+
+			// Integer literal 10L can be converted to int without loss of precisions.
+			// Then the call matches to foo(int n).
+			x = DParser.ParseExpression("foo(10L)");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(PrimitiveType)));
+
+			// A runtime variable 'num' typed long is not implicitly convertible to int.
+			// Then the call matches to foo(T)(T t).
+			x = DParser.ParseExpression("foo(longVar)");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(PointerType)));
 		}
 
 	}

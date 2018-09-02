@@ -6,6 +6,7 @@ using System.Linq;
 using D_Parser.Resolver.TypeResolution;
 using System.Diagnostics;
 using System;
+using Tests.Resolution;
 
 namespace TestTool
 {
