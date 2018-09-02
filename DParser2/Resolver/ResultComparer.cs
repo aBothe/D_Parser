@@ -4,6 +4,7 @@ using D_Parser.Resolver.Templates;
 using D_Parser.Resolver.TypeResolution;
 using D_Parser.Resolver.ExpressionSemantics;
 using System.Collections.Generic;
+using System;
 
 namespace D_Parser.Resolver
 {
@@ -32,9 +33,9 @@ namespace D_Parser.Resolver
 					return true;
 				r1 = tps1.Base;
 			}
-			if(r2 is TemplateParameterSymbol)
+			if (r2 is TemplateParameterSymbol)
 				r2 = ((TemplateParameterSymbol)r2).Base;
-			
+
 			if (r1 is ISymbolValue && r2 is ISymbolValue)
 				return SymbolValueComparer.IsEqual((ISymbolValue)r1, (ISymbolValue)r2);
 
@@ -61,23 +62,23 @@ namespace D_Parser.Resolver
 
 				return IsEqual(ar1.Base, ar2.Base);
 			}
-			else if(r1 is DelegateType && r2 is DelegateType)
+			else if (r1 is DelegateType && r2 is DelegateType)
 			{
 				var dg1 = r1 as DelegateType;
 				var dg2 = r2 as DelegateType;
-				
-				if(dg1.IsFunctionLiteral != dg2.IsFunctionLiteral || 
+
+				if (dg1.IsFunctionLiteral != dg2.IsFunctionLiteral ||
 				   !IsEqual(dg1.ReturnType, dg2.ReturnType))
 					return false;
-				
-				if(dg1.Parameters == null || dg1.Parameters.Length == 0)
-					return dg2.Parameters == null || dg2.Parameters.Length==0;
-				else if(dg2.Parameters == null)
-					return dg1.Parameters == null || dg1.Parameters.Length==0;
-				else if(dg1.Parameters.Length == dg2.Parameters.Length)
+
+				if (dg1.Parameters == null || dg1.Parameters.Length == 0)
+					return dg2.Parameters == null || dg2.Parameters.Length == 0;
+				else if (dg2.Parameters == null)
+					return dg1.Parameters == null || dg1.Parameters.Length == 0;
+				else if (dg1.Parameters.Length == dg2.Parameters.Length)
 				{
-					for(int i = dg1.Parameters.Length-1; i != 0; i--)
-						if(!IsEqual(dg1.Parameters[i], dg2.Parameters[i]))
+					for (int i = dg1.Parameters.Length - 1; i != 0; i--)
+						if (!IsEqual(dg1.Parameters[i], dg2.Parameters[i]))
 							return false;
 					return true;
 				}
@@ -88,7 +89,7 @@ namespace D_Parser.Resolver
 			return false;
 		}
 
-		static readonly List<int> ImplicitConvertabilityTable = new List<int> { 
+		static readonly List<int> ImplicitConvertabilityTable = new List<int> {
 			{(DTokens.Long << 8) + DTokens.Int},
 			{(DTokens.Ulong << 8) + DTokens.Uint},
 		};
@@ -101,22 +102,22 @@ namespace D_Parser.Resolver
 		/// <summary>
 		/// Checks results for implicit type convertability 
 		/// </summary>
-		public static bool IsImplicitlyConvertible(ISemantic resultToCheck, AbstractType targetType, ResolutionContext ctxt=null)
+		public static bool IsImplicitlyConvertible(ISemantic resultToCheck, AbstractType targetType, ResolutionContext ctxt = null)
 		{
 			var resToCheck = AbstractType.Get(resultToCheck);
 			bool isVariable = resToCheck is MemberSymbol;
 
 			// Initially remove aliases from results
-			var _r=DResolver.StripMemberSymbols(resToCheck);
-			if(_r==null)
-				return IsEqual(resToCheck,targetType);
+			var _r = DResolver.StripMemberSymbols(resToCheck);
+			if (_r == null)
+				return IsEqual(resToCheck, targetType);
 			resToCheck = _r;
-			
+
 			if (targetType is DSymbol)
 			{
 				var tpn = ((DSymbol)targetType).Definition as TemplateParameter.Node;
 
-				if (tpn!=null)
+				if (tpn != null)
 				{
 					var par = tpn.Parent as DNode;
 
@@ -134,14 +135,17 @@ namespace D_Parser.Resolver
 				return false;
 			targetType = _r;
 
+			if (!StorageClassImplicitCastCheck.AreModifiersImplicitlyConvertible(targetType, resToCheck))
+				return false;
+
 			if (resToCheck is PrimitiveType && targetType is PrimitiveType)
 			{
 				var sr1 = (PrimitiveType)resToCheck;
 				var sr2 = (PrimitiveType)targetType;
-				
+
 				//if (sr1.TypeToken == sr2.TypeToken /*&& sr1.Modifier == sr2.Modifier*/)
 				//	return true;
-				
+
 				return IsPrimitiveTypeImplicitlyConvertible(sr1.TypeToken, sr2.TypeToken);
 			}
 			else if (resToCheck is UserDefinedType && targetType is UserDefinedType)

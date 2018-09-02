@@ -128,6 +128,17 @@
     <Compile Include="Misc\HashNumbers.cs" />
     <Compile Include="Misc\Mangling\Demangler.cs" />
     <Compile Include="Misc\StringView.cs" />
+    <Compile Include="Parser\Implementations\DAsmStatementParser.cs" />
+    <Compile Include="Parser\Implementations\DAttributesParser.cs" />
+    <Compile Include="Parser\Implementations\DBodiedSymbolsParser.cs" />
+    <Compile Include="Parser\Implementations\DDeclarationParser.cs" />
+    <Compile Include="Parser\Implementations\DExpressionsParser.cs" />
+    <Compile Include="Parser\Implementations\DModulesParser.cs" />
+    <Compile Include="Parser\Implementations\DParserImplementationPart.cs" />
+    <Compile Include="Parser\Implementations\DParserParts.cs" />
+    <Compile Include="Parser\Implementations\DParserStateContext.cs" />
+    <Compile Include="Parser\Implementations\DStatementParser.cs" />
+    <Compile Include="Parser\Implementations\DTemplatesParser.cs" />
     <Compile Include="Parser\Tokens\Comment.cs" />
     <Compile Include="Parser\Tokens\DTokensSemanticHelpers.cs" />
     <Compile Include="Parser\Tokens\LiteralFormat.cs" />
@@ -171,6 +182,7 @@
     <Compile Include="Resolver\ResolutionHooks\HookRegistry.cs" />
     <Compile Include="Resolver\ResolutionHooks\IHook.cs" />
     <Compile Include="Resolver\StaticProperties.cs" />
+    <Compile Include="Resolver\StorageClassImplicitCastCheck.cs" />
     <Compile Include="Resolver\Templates\DeducedTypeDictionary.cs" />
     <Compile Include="Resolver\Templates\SpecializationOrdering.cs" />
     <Compile Include="Resolver\Templates\TemplateAliasParameterDeduction.cs" />
@@ -198,7 +210,6 @@
     <Compile Include="Parser\Lexer.cs" />
     <Compile Include="Dom\Nodes\DNode.cs" />
     <Compile Include="Parser\Parser.cs" />
-    <Compile Include="Parser\Parser_Impl.cs" />
     <Compile Include="Parser\Tokens\DTokens.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Parser\Tokens\DToken.cs" />

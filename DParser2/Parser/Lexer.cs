@@ -33,8 +33,8 @@ namespace D_Parser.Parser
 		char[] identBuffer = new char[MAX_IDENTIFIER_LENGTH];
 
 		public IList<ParserError> LexerErrors = new List<ParserError>();
-        public List<ParserError> Tasks = new List<ParserError>();
-        public string[] TaskTokens = null;
+		public List<ParserError> Tasks = new List<ParserError>();
+		public HashSet<string> TaskTokens = new HashSet<string>();
 
 		/// <summary>
 		/// Set to false if normal block comments shall be logged, too.
@@ -55,13 +55,14 @@ namespace D_Parser.Parser
 					lookaheadToken.Kind == DTokens.__EOF__;
 			}
 		}
-		
+
 		Stack<DToken> laBackup = new Stack<DToken>();
 		Stack<DToken> tokenPool = new Stack<DToken>(40);
 		#endregion
-		
+
 		#region Token pooling
-		DToken tok() {
+		DToken tok()
+		{
 			/*if(tokenPool.Count != 0 && tokenPool.Peek() == lookaheadToken)
 			{
 				return null;
@@ -70,7 +71,7 @@ namespace D_Parser.Parser
 		}
 		void recyclePrevToken()
 		{
-			if(laBackup.Count == 0 && prevToken != null)
+			if (laBackup.Count == 0 && prevToken != null)
 			{
 				prevToken.next = null;
 				//prevToken.LiteralValue = null;
@@ -91,7 +92,7 @@ namespace D_Parser.Parser
 			tk.Subformat = literalSubFormat;
 			tk.LiteralValue = literalValue;
 			tk.RawCodeRepresentation = null;
-			
+
 			return tk;
 		}
 
@@ -101,16 +102,16 @@ namespace D_Parser.Parser
 			var tk = tok();
 			tk.Line = startLocation_Line;
 			tk.Column = startLocation_Col;
-			
-			tk.EndLineDifference = (ushort)unchecked(endLocation_Line-startLocation_Line);
+
+			tk.EndLineDifference = (ushort)unchecked(endLocation_Line - startLocation_Line);
 			tk.EndColumn = endLocation_Col;
-			
+
 			tk.Kind = kind;
 			tk.LiteralFormat = literalFormat;
 			tk.Subformat = literalSubFormat;
 			tk.LiteralValue = literalValue;
 			tk.RawCodeRepresentation = rawCode;
-			
+
 			return tk;
 		}
 
@@ -123,7 +124,7 @@ namespace D_Parser.Parser
 			tk.Column = startLocation_Col;
 			tk.EndLineDifference = 0;
 			tk.EndColumn = unchecked(startLocation_Col + tokenLength);
-			
+
 			tk.LiteralFormat = 0;
 			tk.Subformat = 0;
 			tk.LiteralValue = null;
@@ -174,8 +175,8 @@ namespace D_Parser.Parser
 			identBuffer = null;
 			LexerErrors = null;
 			Comments = null;
-            Tasks = null;
-        }
+			Tasks = null;
+		}
 		#endregion
 
 		#region I/O
@@ -254,12 +255,12 @@ namespace D_Parser.Parser
 			peekToken = peekToken.next;
 			return peekToken;
 		}
-		
+
 		public void PushLookAheadBackup()
 		{
 			laBackup.Push(lookaheadToken);
 		}
-		
+
 		public void PopLookAheadBackup()
 		{
 			prevToken = null;
@@ -281,15 +282,15 @@ namespace D_Parser.Parser
 				}
 			}*/
 		}
-		
+
 		public void RestoreLookAheadBackup()
 		{
 			prevToken = null;
 			curToken = null;
-			
+
 			lookaheadToken = laBackup.Pop();
 			laKind = lookaheadToken.Kind;
-			
+
 			StartPeek();
 			Peek();
 		}
@@ -300,7 +301,8 @@ namespace D_Parser.Parser
 		/// <returns>An <see cref="CurrentToken"/> object.</returns>
 		public void NextToken()
 		{
-			if (lookaheadToken == null){
+			if (lookaheadToken == null)
+			{
 				lookaheadToken = Next();
 				laKind = lookaheadToken.Kind;
 				Peek();
@@ -563,7 +565,7 @@ namespace D_Parser.Parser
 						token = ReadChar();
 						break;
 					case '@':
-						token = Token(DTokens.At, Col-1, Line, 1);
+						token = Token(DTokens.At, Col - 1, Line, 1);
 						break;
 					case '#':
 						if ((token = ReadSpecialTokenSequence()) != null)
@@ -643,7 +645,7 @@ namespace D_Parser.Parser
 								}
 
 								byte key;
-								if(DTokens.Keywords_Lookup.TryGetValue(s,out key))
+								if (DTokens.Keywords_Lookup.TryGetValue(s, out key))
 									return Token(key, x, y, s.Length);
 							}
 							return Token(DTokens.Identifier, x, y, s);
@@ -676,7 +678,7 @@ namespace D_Parser.Parser
 		{
 			int x = Col - 1;
 			int y = Line;
-			
+
 			ReaderRead(); // Skip "
 			var tokenString = new StringBuilder();
 
@@ -685,7 +687,7 @@ namespace D_Parser.Parser
 			int eosTokenCount = 1;
 			byte k;
 
-			string eosIdentifier=null;
+			string eosIdentifier = null;
 			var eos = new List<byte>();
 
 			var tk = Next();
@@ -708,13 +710,13 @@ namespace D_Parser.Parser
 				case DTokens.LessThan:
 					eosToken = DTokens.GreaterThan;
 					break;
-					//TODO: << and <<<
+				//TODO: << and <<<
 				default:
 					eosToken = DTokens.INVALID;
 					break;
 			}
 
-			if(eosToken != 0 && eosToken != DTokens.Identifier)
+			if (eosToken != 0 && eosToken != DTokens.Identifier)
 				while ((tk = Next()).Kind == k)
 					eosTokenCount++;
 
@@ -723,14 +725,14 @@ namespace D_Parser.Parser
 			do
 			{
 				TokenStringParsing_AppendToken(tk, tokenString);
-			next:
-				switch(ReaderPeek())
+				next:
+				switch (ReaderPeek())
 				{
-				case '\'':
-				case '"':
-				case '`': // TODO r" " missing
-					tokenString.Append((char)ReaderRead());
-					goto next;
+					case '\'':
+					case '"':
+					case '`': // TODO r" " missing
+						tokenString.Append((char)ReaderRead());
+						goto next;
 				}
 
 				tk = Next();
@@ -953,7 +955,7 @@ namespace D_Parser.Parser
 				bool isImaginary = false;
 				//bool isUnsigned = false;
 				//bool isLong = false;
-				int NumBase = 0; // Set it to 0 initially - it'll be set to another value later for sure
+				byte numBase = 0; // Set it to 0 initially - it'll be set to another value later for sure
 
 				char peek = (char)ReaderPeek();
 
@@ -965,7 +967,7 @@ namespace D_Parser.Parser
 						//prefix = "0x";
 						ReaderRead(); // skip 'x'
 						sb.Length = 0; // Remove '0' from 0x prefix from the stringvalue
-						NumBase = 16;
+						numBase = 16;
 
 						peek = (char)ReaderPeek();
 						while (IsHex(peek) || peek == '_')
@@ -981,7 +983,7 @@ namespace D_Parser.Parser
 						//prefix = "0b";
 						ReaderRead(); // skip 'b'
 						sb.Length = 0;
-						NumBase = 2;
+						numBase = 2;
 
 						peek = (char)ReaderPeek();
 						while (IsBin(peek) || peek == '_')
@@ -1008,12 +1010,12 @@ namespace D_Parser.Parser
 						}
 					}*/
 					else
-						NumBase = 10; // Enables pre-comma parsing .. in this case we'd 000 literals or something like that
+						numBase = 10; // Enables pre-comma parsing .. in this case we'd 000 literals or something like that
 				}
 
-				if (NumBase == 10 || (ch != '.' && NumBase == 0)) // Only allow further digits for 10-based integers, not for binary or hex values
+				if (numBase == 10 || (ch != '.' && numBase == 0)) // Only allow further digits for 10-based integers, not for binary or hex values
 				{
-					NumBase = 10;
+					numBase = 10;
 					while (IsDigit(peek) || peek == '_')
 					{
 						if (peek != '_')
@@ -1026,17 +1028,17 @@ namespace D_Parser.Parser
 				#region Read digits that occur after a comma
 				DToken nextToken = null; // if we accidently read a 'dot'
 				bool AllowSuffixes = true;
-				if ((NumBase == 0 && ch == '.') || peek == '.')
+				if ((numBase == 0 && ch == '.') || peek == '.')
 				{
 					if (ch != '.') ReaderRead();
 					else
 					{
-						NumBase = 10;
+						numBase = 10;
 						sb.Length = 0;
 						sb.Append('0');
 					}
 					peek = (char)ReaderPeek();
-					if (!IsLegalDigit(peek, NumBase))
+					if (!IsLegalDigit(peek, numBase))
 					{
 						if (peek == '.')
 						{
@@ -1061,13 +1063,13 @@ namespace D_Parser.Parser
 								sb.Append((char)ReaderRead());
 							peek = (char)ReaderPeek();
 						}
-						while (IsLegalDigit(peek, NumBase));
+						while (IsLegalDigit(peek, numBase));
 					}
 				}
 				#endregion
 
 				#region Exponents
-				if ((NumBase == 16) ? (peek == 'p' || peek == 'P') : (peek == 'e' || peek == 'E'))
+				if ((numBase == 16) ? (peek == 'p' || peek == 'P') : (peek == 'e' || peek == 'E'))
 				{ // read exponent
 					string suff = peek.ToString();
 					ReaderRead();
@@ -1076,7 +1078,7 @@ namespace D_Parser.Parser
 					if (peek == '-' || peek == '+')
 						expSuffix += (char)ReaderRead();
 					peek = (char)ReaderPeek();
-					while ((peek >= '0' && peek<='9') || peek == '_')
+					while ((peek >= '0' && peek <= '9') || peek == '_')
 					{ // read exponent value
 						if (peek == '_')
 							ReaderRead();
@@ -1086,7 +1088,7 @@ namespace D_Parser.Parser
 					}
 
 					// Exponents just can be decimal integers
-					int.TryParse(expSuffix,out exponent);
+					int.TryParse(expSuffix, out exponent);
 					expSuffix = suff + expSuffix;
 					peek = (char)ReaderPeek();
 				}
@@ -1095,7 +1097,7 @@ namespace D_Parser.Parser
 				#region Suffixes
 				if (!HasDot)
 				{
-				unsigned:
+					unsigned:
 					if (peek == 'u' || peek == 'U')
 					{
 						ReaderRead();
@@ -1148,14 +1150,15 @@ namespace D_Parser.Parser
 				#endregion
 
 				#region Parse the digit string
-				var num = ParseFloatValue(sb, NumBase);
+				var num = ParseFloatValue(sb, numBase);
 
 				if (exponent != 0)
 				{
-					try{
-						num *= (decimal)Math.Pow(NumBase == 16 ? 2 : 10, exponent);
+					try
+					{
+						num *= (decimal)Math.Pow(numBase == 16 ? 2 : 10, exponent);
 					}
-					catch(OverflowException)
+					catch (OverflowException)
 					{
 						num = decimal.MaxValue;
 						//HACK: Don't register these exceptions. The user will notice the issues at least when compiling stuff.
@@ -1164,7 +1167,7 @@ namespace D_Parser.Parser
 				}
 				#endregion
 
-				var token = Token(DTokens.Literal, x, y, Col-x/*stringValue.Length*/, num,/* stringValue,*/
+				var token = Token(DTokens.Literal, x, y, Col - x/*stringValue.Length*/, num,/* stringValue,*/
 					HasDot || isFloat || isImaginary ? (LiteralFormat.FloatingPoint | LiteralFormat.Scalar) : LiteralFormat.Scalar,
 					subFmt);
 
@@ -1177,17 +1180,18 @@ namespace D_Parser.Parser
 
 		void TryReadExplicitStringFormat(out LiteralSubformat subFmt)
 		{
-			switch ((char)this.ReaderPeek ()) {
+			switch ((char)this.ReaderPeek())
+			{
 				case 'c':
-					ReaderRead ();
+					ReaderRead();
 					break;
 				case 'd':
 					subFmt = LiteralSubformat.Utf32;
-					ReaderRead ();
+					ReaderRead();
 					return;
 				case 'w':
 					subFmt = LiteralSubformat.Utf16;
-					ReaderRead ();
+					ReaderRead();
 					return;
 			}
 
@@ -1214,7 +1218,7 @@ namespace D_Parser.Parser
 					doneNormally = true;
 					//originalValue.Append((char)nextChar);
 					// Skip string literals
-					TryReadExplicitStringFormat (out subFmt);
+					TryReadExplicitStringFormat(out subFmt);
 					break;
 				}
 				HandleLineEnd(ch);
@@ -1300,7 +1304,7 @@ namespace D_Parser.Parser
 
 			// Suffix literal check
 			LiteralSubformat subFmt;
-			TryReadExplicitStringFormat (out subFmt);
+			TryReadExplicitStringFormat(out subFmt);
 
 			return Token(DTokens.Literal, x, y, Col, Line, /*originalValue.ToString(),*/ sb.ToString(), LiteralFormat.VerbatimStringLiteral, subFmt);
 		}
@@ -1540,11 +1544,11 @@ namespace D_Parser.Parser
 
 			unchecked
 			{
-				if((char)ReaderPeek() != '\'')
+				if ((char)ReaderPeek() != '\'')
 					OnError(y, x, String.Format("Char not terminated"));
 
 				int n;
-				while (!((n = ReaderRead()) == '\'' || n == -1));
+				while (!((n = ReaderRead()) == '\'' || n == -1)) ;
 			}
 			return Token(DTokens.Literal, x, y, Col, Line, string.IsNullOrEmpty(surrogatePair) ? (object)chValue : surrogatePair, LiteralFormat.CharLiteral, surrogatePair == null ? LiteralSubformat.Utf8 : LiteralSubformat.Utf16, escapeSequence);
 		}
@@ -1847,19 +1851,23 @@ namespace D_Parser.Parser
 			string comm = ReadToEndOfLine();
 			var end = new CodeLocation(st.Column + tagLen + comm.Length, Line);
 
-			if (reader.Peek () == -1 && st.Line == end.Line)
+			if (reader.Peek() == -1 && st.Line == end.Line)
 				endedWhileBeingInNonCodeSequence = true;
 
-			if ((commentType &Comment.Type.Documentation) != 0 || !OnlyEnlistDDocComments)
-				Comments.Add(new Comment(commentType, comm.TrimStart('/',' ','\t'), st.Column < 2, st, end));
+			if ((commentType & Comment.Type.Documentation) != 0 || !OnlyEnlistDDocComments)
+				Comments.Add(new Comment(commentType, comm.TrimStart('/', ' ', '\t'), st.Column < 2, st, end));
 		}
 
 		struct TaskParseState
 		{
-			public TaskParseState(string[] tokens)
+			readonly HashSet<string> TaskTokens;
+			int taskStart;
+			int taskCol;
+			string task;
+
+			public TaskParseState(HashSet<string> tokens)
 			{
 				TaskTokens = tokens;
-				collectTasks = (TaskTokens != null);
 				taskStart = -1;
 				taskCol = 0;
 				task = null;
@@ -1867,7 +1875,7 @@ namespace D_Parser.Parser
 
 			public void doNextChar(int nextChar, int Col, StringBuilder scCurWord)
 			{
-				if (collectTasks && task == null)
+				if (TaskTokens.Count != 0 && task == null)
 				{
 					if (IsIdentifierPart(nextChar) || nextChar == '@')
 					{
@@ -1880,12 +1888,8 @@ namespace D_Parser.Parser
 					else if (taskStart >= 0)
 					{
 						string word = scCurWord.ToString(taskStart, scCurWord.Length - taskStart);
-						foreach (var token in TaskTokens)
-							if (word == token)
-							{
-								task = word;
-								break;
-							}
+						if (TaskTokens.Contains(word))
+							task = word;
 						if (task == null)
 							taskStart = -1;
 					}
@@ -1902,12 +1906,6 @@ namespace D_Parser.Parser
 					task = null;
 				}
 			}
-
-			string[] TaskTokens;
-			bool collectTasks;
-			int taskStart;
-			int taskCol;
-			string task;
 		}
 
 		void ReadMultiLineComment(Comment.Type commentType, bool isNestingComment)
@@ -1987,7 +1985,7 @@ namespace D_Parser.Parser
 		/// </summary>
 		DToken ReadSpecialTokenSequence()
 		{
-			int x = Col-1;
+			int x = Col - 1;
 			int startLine = Line;
 
 			var nextToken = Next();
@@ -2031,7 +2029,7 @@ namespace D_Parser.Parser
 
 		void OnError(int line, int col, string message)
 		{
-			endedWhileBeingInNonCodeSequence |= reader.Peek () < 0;
+			endedWhileBeingInNonCodeSequence |= reader.Peek() < 0;
 			if (LexerErrors != null)
 				LexerErrors.Add(new ParserError(false, message, CurrentToken != null ? CurrentToken.Kind : -1, new CodeLocation(col, line)));
 		}
@@ -2260,33 +2258,38 @@ namespace D_Parser.Parser
 			}
 		}
 
-		public static decimal ParseFloatValue(StringBuilder digit, int NumBase)
+		public static decimal ParseFloatValue(StringBuilder digit, byte numBase)
 		{
-			// When parsing phobos, this takes roughly 200ms, so may be worth optimizing.
-			//return 0M;
 			decimal ret = 0M;
 
 			int commaPos = -1;
-			int k = digit.Length - 1;
-
-			for (int i = digit.Length -1; i >= 0; i--)
-				if (digit [i] == '.') {
+			// Determine optional comma index
+			for (int i = digit.Length - 1; i >= 0; i--)
+				if (digit[i] == '.')
+				{
 					commaPos = i;
-					k = i - 1;
 					break;
 				}
 
-			for (int i = 0; i < digit.Length; i++)
+			// Calculate pre-comma part
+			int maxPreCommaIndex = commaPos > -1 ? commaPos : digit.Length;
+			for (int i = 0; i < maxPreCommaIndex; i++)
 			{
-				if (i == commaPos) { i++; k++; }
+				ret += GetHexNumber(digit[i]);
+				ret *= numBase;
+			}
+			ret /= numBase;
 
-				// Check if digit string contains some digits after the comma
-				if (i >= digit.Length) break;
-
-				int n = GetHexNumber(digit[i]);
-				try{
-				ret += n * (decimal)Math.Pow(NumBase, k - i);
-				}catch(OverflowException) { return ret; }
+			if (commaPos > -1)
+			{
+				// Calculate & Add floating-point part
+				decimal postCommaMantissa = 0M;
+				for (int i = digit.Length - 1; i > commaPos; i--)
+				{
+					postCommaMantissa += GetHexNumber(digit[i]);
+					postCommaMantissa /= numBase;
+				}
+				ret += postCommaMantissa;
 			}
 
 			return ret;

@@ -3812,7 +3812,7 @@ mixin(""template mxT(string n) { enum mxT = n; }"");
 			var ctxt = CreateCtxt("A",@"module A;
 interface IUnknown {}
 
-public template uuid(T, const char[] g) {
+public template uuid(T, immutable char[] g) {
 	const char [] uuid =
 		""const IID IID_""~T.stringof~""={ 0x"" ~ g[0..8] ~ "",0x"" ~ g[9..13] ~ "",0x"" ~ g[14..18] ~ "",[0x"" ~ g[19..21] ~ "",0x"" ~ g[21..23] ~ "",0x"" ~ g[24..26] ~ "",0x"" ~ g[26..28] ~ "",0x"" ~ g[28..30] ~ "",0x"" ~ g[30..32] ~ "",0x"" ~ g[32..34] ~ "",0x"" ~ g[34..36] ~ ""]};""
 		""template uuidof(T:""~T.stringof~""){""
