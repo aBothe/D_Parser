@@ -433,7 +433,11 @@ namespace D_Parser.Misc
 					Interlocked.Add (ref im.totalMilliseconds, sw.ElapsedMilliseconds);
 
 					if (ast == null)
+					{
+						if (Interlocked.Decrement(ref im.remainingFiles) <= 0)
+							noticeFinish(p);
 						continue;
+					}
 
 					ast.FileName = p.file;
 
