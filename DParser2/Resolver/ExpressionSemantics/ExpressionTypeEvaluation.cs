@@ -891,68 +891,46 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// Resolves an identifier and returns the definition + its base type.
 		/// Does not deduce any template parameters or nor filters out unfitting template specifications!
 		/// </summary>
-		static AbstractType[] ResolveIdentifier(int idHash, ResolutionContext ctxt, ISyntaxRegion idObject, bool ModuleScope = false)
+		static List<AbstractType> ResolveIdentifier(int idHash, ResolutionContext ctxt, ISyntaxRegion idObject, bool preferModuleScope = false)
 		{
-			var loc = idObject is ISyntaxRegion ? ((ISyntaxRegion)idObject).Location : ctxt.CurrentContext.Caret;
-
-			IDisposable disp = null;
-
-			if (ModuleScope)
-				disp = ctxt.Push(ctxt.ScopedBlock.NodeRoot as DModule, true);
-
-			// If there are symbols that must be preferred, take them instead of scanning the ast
-			else
+			if (!preferModuleScope) // If there are symbols that must be preferred, take them instead of scanning the ast
 			{
 				TemplateParameterSymbol dedTemplateParam;
 				if (ctxt.GetTemplateParam(idHash, out dedTemplateParam))
-					return new[] { dedTemplateParam };
-			}
-
-			List<AbstractType> res;
-
-			//var t = ctxt.Cache.TryGetType(idObject);
-			bool hasBaseValue = true;
-			/*if (t != null)
-			{
-				res = new List<AbstractType>(t.Length);
-				foreach (var t_ in t)
 				{
-					if(hasBaseValue)
-						foreach(var t__ in AmbiguousType.TryDissolve(t_))
-							if(!(hasBaseValue = (t__ is DerivedDataType) && (t__ as DerivedDataType).Base != null))
-								break;
-					res.Add(t_);
+					return new List<AbstractType> { dedTemplateParam };
 				}
-			}*/
-
-			if (hasBaseValue || (ctxt.Options & ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.DontResolveBaseTypes) != 0) {
-				res = NameScan.SearchAndResolve (ctxt, loc, idHash, idObject);
-			} else
-				res = null;
-
-			if (disp != null)
-			{
-				disp.Dispose();
-				disp = null;
 			}
 
-			if (res.Count != 0)
+			if ((ctxt.Options & ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.DontResolveBaseTypes) == 0)
+				return new List<AbstractType>();
+
+			using (preferModuleScope ? ctxt.Push(ctxt.ScopedBlock.NodeRoot as DModule, true) : null)
 			{
-				if (idObject is IdentifierExpression || idObject is IdentifierDeclaration)
-					for (var i = res.Count; i > 0; )
-						res[--i] = TypeDeclarationResolver.TryPostDeduceAliasDefinition(res[i], idObject, ctxt);
-				return res.ToArray();
+				var resultsToReturn = new List<AbstractType>();
+
+				bool hadAnyElements = false;
+				bool tryPostDeduceAliasDefinition = idObject is IdentifierExpression || idObject is IdentifierDeclaration;
+				var loc = idObject != null ? idObject.Location : ctxt.CurrentContext.Caret;
+				foreach (var resElement in NameScan.SearchAndResolve(ctxt, loc, idHash, idObject))
+				{
+					hadAnyElements = true;
+					resultsToReturn.Add(tryPostDeduceAliasDefinition ? TypeDeclarationResolver.TryPostDeduceAliasDefinition(resElement, idObject, ctxt) : resElement);
+				}
+
+				if (!hadAnyElements)
+				{
+					// Support some very basic static typing if no phobos is given atm
+					if (idHash == Evaluation.stringTypeHash)
+						resultsToReturn.Add(Evaluation.GetStringType(ctxt));
+					else if (idHash == Evaluation.wstringTypeHash)
+						resultsToReturn.Add(Evaluation.GetStringType(ctxt, LiteralSubformat.Utf16));
+					else if (idHash == Evaluation.dstringTypeHash)
+						resultsToReturn.Add(Evaluation.GetStringType(ctxt, LiteralSubformat.Utf32));
+				}
+
+				return resultsToReturn;
 			}
-
-			// Support some very basic static typing if no phobos is given atm
-			if (idHash == Evaluation.stringTypeHash)
-				res.Add(Evaluation.GetStringType (ctxt));
-			else if(idHash == Evaluation.wstringTypeHash)
-				res.Add(Evaluation.GetStringType (ctxt, LiteralSubformat.Utf16));
-			else if(idHash == Evaluation.dstringTypeHash)
-				res.Add(Evaluation.GetStringType (ctxt, LiteralSubformat.Utf32));
-
-			return res.ToArray();
 		}
 
 
