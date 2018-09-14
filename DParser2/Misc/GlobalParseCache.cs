@@ -432,24 +432,29 @@ namespace D_Parser.Misc
 
 					Interlocked.Add (ref im.totalMilliseconds, sw.ElapsedMilliseconds);
 
-					if (ast == null)
-						continue;
-
-					ast.FileName = p.file;
-
-					if (string.IsNullOrEmpty (ast.ModuleName))
-						ast.ModuleName = DModule.GetModuleName (im.basePath, p.file);
-
-					fileLookup.Remove (p.file);
-					fileLookup.Add (p.file, ast);
-
-					p.root.GetOrCreateSubPackage (ModuleNameHelper.ExtractPackageName (ast.ModuleName), true)
-						.AddModule (ast);
+					if (ast != null)
+					{
+						AddParsedModuleToParseIntermediate(p, im, ast);
+					}
 
 					if (Interlocked.Decrement (ref im.remainingFiles) <= 0)
 						noticeFinish (p);
 				}
 			}
+		}
+
+		private static void AddParsedModuleToParseIntermediate(ParseIntermediate p, StatIntermediate im, DModule ast)
+		{
+			ast.FileName = p.file;
+
+			if (string.IsNullOrEmpty(ast.ModuleName))
+				ast.ModuleName = DModule.GetModuleName(im.basePath, p.file);
+
+			fileLookup.Remove(p.file);
+			fileLookup.Add(p.file, ast);
+
+			p.root.GetOrCreateSubPackage(ModuleNameHelper.ExtractPackageName(ast.ModuleName), true)
+				.AddModule(ast);
 		}
 
 		static void noticeFinish (ParseIntermediate p)
