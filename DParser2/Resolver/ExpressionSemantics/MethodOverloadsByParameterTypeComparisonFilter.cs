@@ -131,8 +131,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							(hadDTuples |= TryHandleMethodArgumentTuple (ctxt, ref add, callArguments, dm, deducedTypeDict, i, ref currentArg)))
 							continue;
 						else if (currentArg < callArguments.Count) {
-							if (!(add = templateParamDeduction.HandleDecl (null, paramType, callArguments [currentArg++])))
+							if (!TemplateTypeParameterTypeMatcher.TryMatchTypeDeclAgainstResolvedResult(paramType, callArguments[currentArg++], ctxt, deducedTypeDict, false))
+							{
+								add = false;
 								break;
+							}
 						} else {
 							// If there are more parameters than arguments given, check if the param has default values
 							add = !(dm.Parameters [i] is DVariable) || (dm.Parameters [i] as DVariable).Initializer != null;

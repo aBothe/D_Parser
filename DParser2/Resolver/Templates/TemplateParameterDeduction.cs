@@ -1,15 +1,10 @@
-﻿using System.Collections.Generic;
-using D_Parser.Dom;
+﻿using D_Parser.Dom;
 
 namespace D_Parser.Resolver.Templates
 {
-	public partial class TemplateParameterDeduction
+	public class TemplateParameterDeduction
 	{
-		#region Properties / ctor
-		/// <summary>
-		/// The dictionary which stores all deduced results + their names
-		/// </summary>
-		DeducedTypeDictionary TargetDictionary;
+		readonly TemplateParameterDeductionVisitor deductionVisitor;
 
 		/// <summary>
 		/// If true and deducing a type parameter,
@@ -18,21 +13,15 @@ namespace D_Parser.Resolver.Templates
 		/// </summary>
 		public bool EnforceTypeEqualityWhenDeducing
 		{
-			get;
-			set;
+			get => deductionVisitor.EnforceTypeEqualityWhenDeducing;
+			set => deductionVisitor.EnforceTypeEqualityWhenDeducing = value;
 		}
 
-		/// <summary>
-		/// Needed for resolving default types
-		/// </summary>
-		ResolutionContext ctxt;
-
+		[System.Diagnostics.DebuggerStepThrough]
 		public TemplateParameterDeduction(DeducedTypeDictionary DeducedParameters, ResolutionContext ctxt)
 		{
-			this.ctxt = ctxt;
-			this.TargetDictionary = DeducedParameters;
+			deductionVisitor = new TemplateParameterDeductionVisitor(ctxt, DeducedParameters);
 		}
-		#endregion
 
 		public bool Handle(TemplateParameter parameter, ISemantic argumentToAnalyze)
 		{
@@ -46,6 +35,7 @@ namespace D_Parser.Resolver.Templates
 				return false;
 
 			//TODO: Handle __FILE__ and __LINE__ correctly - so don't evaluate them at the template declaration but at the point of instantiation
+			var ctxt = deductionVisitor.ctxt;
 
 			/*
 			 * Introduce previously deduced parameters into current resolution context
@@ -57,116 +47,18 @@ namespace D_Parser.Resolver.Templates
 				_prefLocalsBackup = ctxt.CurrentContext.DeducedTemplateParameters;
 
 				var d = new DeducedTypeDictionary();
-				foreach (var kv in TargetDictionary)
+				foreach (var kv in deductionVisitor.TargetDictionary)
 					if (kv.Value != null)
 						d[kv.Key] = kv.Value;
 				ctxt.CurrentContext.DeducedTemplateParameters = d;
 			}
 
-			bool res = false;
-
-			if (parameter is TemplateAliasParameter)
-				res = Handle((TemplateAliasParameter)parameter, argumentToAnalyze);
-			else if (parameter is TemplateThisParameter)
-				res = Handle((TemplateThisParameter)parameter, argumentToAnalyze);
-			else if (parameter is TemplateTypeParameter)
-				res = Handle((TemplateTypeParameter)parameter, argumentToAnalyze);
-			else if (parameter is TemplateValueParameter)
-				res = Handle((TemplateValueParameter)parameter, argumentToAnalyze);
-			else if (parameter is TemplateTupleParameter)
-				res = Handle((TemplateTupleParameter)parameter, new[] { argumentToAnalyze });
+			bool res = parameter.Accept(deductionVisitor, argumentToAnalyze);
 
 			if (ctxt != null && ctxt.CurrentContext != null)
 				ctxt.CurrentContext.DeducedTemplateParameters = _prefLocalsBackup;
 
 			return res;
-		}
-
-		bool Handle(TemplateThisParameter p, ISemantic arg)
-		{
-			// Only special handling required for method calls
-			return Handle(p.FollowParameter,arg);
-		}
-
-		public bool Handle(TemplateTupleParameter p, IEnumerable<ISemantic> arguments)
-		{
-			var l = new List<ISemantic>();
-
-			if(arguments != null)
-				foreach (var arg in arguments)
-					if(arg is DTuple) // If a type tuple was given already, add its items instead of the tuple itself
-					{
-						var tt = arg as DTuple;
-						if(tt.Items != null)
-							l.AddRange(tt.Items);
-					}
-					else
-						l.Add(arg);				
-
-			return Set(p, new DTuple(l.Count == 0 ? null : l), 0);
-		}
-
-		/// <summary>
-		/// Returns true if <param name="parameterNameHash">parameterNameHash</param> is expected somewhere in the template parameter list.
-		/// </summary>
-		bool Contains(int parameterNameHash)
-		{
-			foreach (var kv in TargetDictionary)
-				if (kv.Key.NameHash == parameterNameHash)
-					return true;
-			return false;
-		}
-
-		/// <summary>
-		/// Returns false if the item has already been set before and if the already set item is not equal to 'r'.
-		/// Inserts 'r' into the target dictionary and returns true otherwise.
-		/// </summary>
-		bool Set(TemplateParameter p, ISemantic r, int nameHash)
-		{
-			if (p == null) {
-				if (nameHash != 0 && TargetDictionary.ExpectedParameters != null) {
-					foreach (var tpar in TargetDictionary.ExpectedParameters)
-						if (tpar.NameHash == nameHash) {
-							p = tpar;
-							break;
-						}
-				}
-			}
-
-			if (p == null) {
-				ctxt.LogError (null, "no fitting template parameter found!");
-				return false;
-			}
-
-			// void call(T)(T t) {}
-			// call(myA) -- T is *not* myA but A, so only assign myA's type to T. 
-			if (p is TemplateTypeParameter)
-			{
-				var newR = Resolver.TypeResolution.DResolver.StripMemberSymbols(AbstractType.Get(r));
-				if (newR != null)
-					r = newR;
-			}
-
-			TemplateParameterSymbol rl;
-			if (!TargetDictionary.TryGetValue(p, out rl) || rl == null)
-			{
-				TargetDictionary[p] = new TemplateParameterSymbol(p, r);
-				return true;
-			}
-			else
-			{
-				if (ResultComparer.IsEqual(rl.Base, r))
-				{
-					TargetDictionary[p] = new TemplateParameterSymbol(p, r);
-					return true;
-				}
-				else if(rl == null)
-					TargetDictionary[p] = new TemplateParameterSymbol(p, r);
-
-				// Error: Ambiguous assignment
-
-				return false;
-			}
 		}
 	}
 }

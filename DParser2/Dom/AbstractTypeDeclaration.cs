@@ -18,6 +18,7 @@ namespace D_Parser.Dom
 		string ToString(bool IncludesBase);
 
 		R Accept<R>(TypeDeclarationVisitor<R> vis);
+		R Accept<R, ParameterType>(ITypeDeclarationVisitor<R, ParameterType> vis, ParameterType parameter);
 	}
 	
 	public abstract class AbstractTypeDeclaration : ITypeDeclaration

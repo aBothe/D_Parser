@@ -185,10 +185,9 @@
     <Compile Include="Resolver\StorageClassImplicitCastCheck.cs" />
     <Compile Include="Resolver\Templates\DeducedTypeDictionary.cs" />
     <Compile Include="Resolver\Templates\SpecializationOrdering.cs" />
-    <Compile Include="Resolver\Templates\TemplateAliasParameterDeduction.cs" />
     <Compile Include="Resolver\Templates\TemplateParameterDeduction.cs" />
-    <Compile Include="Resolver\Templates\TemplateTypeParameterDeduction.cs" />
-    <Compile Include="Resolver\Templates\TemplateValueParameterDeduction.cs" />
+    <Compile Include="Resolver\Templates\TemplateParameterDeductionVisitor.cs" />
+    <Compile Include="Resolver\Templates\TemplateTypeParameterTypeMatcher.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.cs" />
     <Compile Include="Resolver\ASTScanner\AbstractVisitor.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.PostfixExpressions.cs" />

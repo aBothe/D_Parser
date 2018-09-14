@@ -4,7 +4,6 @@ using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Resolver.Templates;
 using D_Parser.Resolver.ExpressionSemantics;
-using System.Diagnostics;
 
 namespace D_Parser.Resolver.TypeResolution
 {
@@ -383,7 +382,7 @@ namespace D_Parser.Resolver.TypeResolution
 			}
 			else if(expectedParam is TemplateTupleParameter)
 			{
-				if(!CheckAndDeduceTypeTuple(expectedParam as TemplateTupleParameter, null, deducedTypes, ctxt))
+				if(!CheckAndDeduceTypeTuple(expectedParam as TemplateTupleParameter, Enumerable.Empty<ISemantic>(), deducedTypes, ctxt))
 					return false;
 			}
 			// There might be too few args - but that doesn't mean that it's not correct - it's only required that all parameters got satisfied with a type
@@ -414,7 +413,7 @@ namespace D_Parser.Resolver.TypeResolution
 			DeducedTypeDictionary deducedTypes,
 			ResolutionContext ctxt)
 		{
-			return new Templates.TemplateParameterDeduction(deducedTypes, ctxt).Handle(handledParameter, argumentToCheck);
+			return new TemplateParameterDeduction(deducedTypes, ctxt).Handle(handledParameter, argumentToCheck);
 		}
 
 		static bool CheckAndDeduceTypeTuple(TemplateTupleParameter tupleParameter, 
@@ -422,7 +421,7 @@ namespace D_Parser.Resolver.TypeResolution
 			DeducedTypeDictionary deducedTypes,
 			ResolutionContext ctxt)
 		{
-			return new Templates.TemplateParameterDeduction(deducedTypes,ctxt).Handle(tupleParameter,typeChain);
+			return new TemplateParameterDeduction(deducedTypes,ctxt).Handle(tupleParameter,new DTuple(typeChain));
 		}
 	}
 }
