@@ -92,15 +92,10 @@ namespace D_Parser.Dom.Expressions
 			return vis.Visit(this);
 		}
 
-		public override void Accept(TypeDeclarationVisitor vis)
-		{
-			vis.Visit(this);
-		}
-
-		public override R Accept<R>(TypeDeclarationVisitor<R> vis)
-		{
-			return vis.Visit(this);
-		}
+		public override void Accept(TypeDeclarationVisitor vis) => vis.Visit(this);
+		public override R Accept<R>(TypeDeclarationVisitor<R> vis) => vis.Visit(this);
+		public override R Accept<R, ParameterType>(ITypeDeclarationVisitor<R, ParameterType> vis, ParameterType parameter)
+			=> vis.Visit(this, parameter);
 	}
 }
 

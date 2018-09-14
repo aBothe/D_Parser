@@ -6,6 +6,7 @@ namespace D_Parser.Dom
 {
 	public interface IVisitor { }
 	public interface IVisitor<out R> { }
+	public interface IVisitor<out R, ParameterType> { }
 
 	public interface DVisitor : 
 		NodeVisitor, 
@@ -127,6 +128,16 @@ namespace D_Parser.Dom
 		R Visit(TemplateValueParameter tp);
 		R Visit(TemplateAliasParameter tp);
 		R Visit(TemplateTupleParameter tp);
+	}
+
+	public interface ITemplateParameterVisitor<out R, ParameterType> : IVisitor<R, ParameterType>
+	{
+		R VisitTemplateParameter(TemplateParameter tp, ParameterType parameter);
+		R Visit(TemplateTypeParameter tp, ParameterType parameter);
+		R Visit(TemplateThisParameter tp, ParameterType parameter);
+		R Visit(TemplateValueParameter tp, ParameterType parameter);
+		R Visit(TemplateAliasParameter tp, ParameterType parameter);
+		R Visit(TemplateTupleParameter tp, ParameterType parameter);
 	}
 
 	public interface StatementVisitor : IVisitor
@@ -374,5 +385,19 @@ namespace D_Parser.Dom
 		R Visit(VectorDeclaration td);
 		R Visit(VarArgDecl td);
 		R Visit(TemplateInstanceExpression td);
+	}
+
+	public interface ITypeDeclarationVisitor<out R, ParameterType> : IVisitor<R, ParameterType>
+	{
+		R Visit(IdentifierDeclaration td, ParameterType parameter);
+		R Visit(DTokenDeclaration td, ParameterType parameter);
+		R Visit(ArrayDecl td, ParameterType parameter);
+		R Visit(DelegateDeclaration td, ParameterType parameter);
+		R Visit(PointerDecl td, ParameterType parameter);
+		R Visit(MemberFunctionAttributeDecl td, ParameterType parameter);
+		R Visit(TypeOfDeclaration td, ParameterType parameter);
+		R Visit(VectorDeclaration td, ParameterType parameter);
+		R Visit(VarArgDecl td, ParameterType parameter);
+		R Visit(TemplateInstanceExpression td, ParameterType parameter);
 	}
 }

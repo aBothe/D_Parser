@@ -99,5 +99,6 @@ namespace D_Parser.Dom
 	
 		public abstract void Accept(TypeDeclarationVisitor vis);
 		public abstract R Accept<R>(TypeDeclarationVisitor<R> vis);
+		public abstract R Accept<R, ParameterType>(ITypeDeclarationVisitor<R, ParameterType> vis, ParameterType parameter);
 	}
 }

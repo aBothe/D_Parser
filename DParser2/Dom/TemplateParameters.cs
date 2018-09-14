@@ -53,7 +53,7 @@ namespace D_Parser.Dom
 
 		public abstract void Accept (TemplateParameterVisitor vis);
 		public abstract R Accept<R>(TemplateParameterVisitor<R> vis);
-
+		public abstract R Accept<R, ParameterType>(ITemplateParameterVisitor<R, ParameterType> vis, ParameterType parameter);
 
 		public sealed class Node : DNode
 		{
@@ -116,6 +116,7 @@ namespace D_Parser.Dom
 
 		public override void Accept(TemplateParameterVisitor vis) { vis.Visit(this);	}
 		public override R Accept<R>(TemplateParameterVisitor<R> vis) { return vis.Visit(this); }
+		public override R Accept<R, ParameterType>(ITemplateParameterVisitor<R, ParameterType> vis, ParameterType parameter) => vis.Visit(this, parameter);
 	}
 
 	public sealed class TemplateThisParameter : TemplateParameter
@@ -135,6 +136,7 @@ namespace D_Parser.Dom
 
 		public override void Accept(TemplateParameterVisitor vis) { vis.Visit(this); }
 		public override R Accept<R>(TemplateParameterVisitor<R> vis) { return vis.Visit(this); }
+		public override R Accept<R, ParameterType>(ITemplateParameterVisitor<R, ParameterType> vis, ParameterType parameter) => vis.Visit(this, parameter);
 	}
 
 	public class TemplateValueParameter : TemplateParameter
@@ -155,6 +157,7 @@ namespace D_Parser.Dom
 
 		public override void Accept(TemplateParameterVisitor vis) { vis.Visit(this); }
 		public override R Accept<R>(TemplateParameterVisitor<R> vis) { return vis.Visit(this); }
+		public override R Accept<R, ParameterType>(ITemplateParameterVisitor<R, ParameterType> vis, ParameterType parameter) => vis.Visit(this, parameter);
 	}
 
 	public sealed class TemplateAliasParameter : TemplateValueParameter
@@ -172,6 +175,7 @@ namespace D_Parser.Dom
 
 		public override void Accept(TemplateParameterVisitor vis) { vis.Visit(this); }
 		public override R Accept<R>(TemplateParameterVisitor<R> vis) { return vis.Visit(this); }
+		public override R Accept<R, ParameterType>(ITemplateParameterVisitor<R, ParameterType> vis, ParameterType parameter) => vis.Visit(this, parameter);
 	}
 
 	public sealed class TemplateTupleParameter : TemplateParameter
@@ -186,5 +190,6 @@ namespace D_Parser.Dom
 
 		public override void Accept(TemplateParameterVisitor vis) { vis.Visit(this); }
 		public override R Accept<R>(TemplateParameterVisitor<R> vis) { return vis.Visit(this); }
+		public override R Accept<R, ParameterType>(ITemplateParameterVisitor<R, ParameterType> vis, ParameterType parameter) => vis.Visit(this, parameter);
 	}
 }
