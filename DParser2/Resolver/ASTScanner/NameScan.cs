@@ -14,6 +14,7 @@ namespace D_Parser.Resolver.ASTScanner
 		protected bool stopEnumeration = false;
 		protected override bool StopEnumerationOnNextScope { get { return stopEnumeration; } }
 		
+		[System.Diagnostics.DebuggerStepThrough]
 		protected NameScan(ResolutionContext ctxt, int filterHash, ISyntaxRegion idObject) : base(ctxt)
 		{
 			this.filterHash = filterHash;
