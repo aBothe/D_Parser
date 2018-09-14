@@ -770,7 +770,7 @@ void foo(U)(U u)
 			var ex = (subSt[0] as ExpressionStatement).Expression;
 			var t = ExpressionTypeEvaluation.GetOverloads(ex as TemplateInstanceExpression, ctxt, null, true);
 			Assert.That(t, Is.Not.Null);
-			Assert.That(t.Length, Is.EqualTo(1));
+			Assert.That(t.Count, Is.EqualTo(1));
 
 			var t_ = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t_, Is.TypeOf(typeof(PrimitiveType)));
@@ -778,7 +778,7 @@ void foo(U)(U u)
 			ex = (subSt[1] as ExpressionStatement).Expression;
 			t = ExpressionTypeEvaluation.GetOverloads(ex as TemplateInstanceExpression, ctxt, null, true);
 			Assert.That(t, Is.Not.Null);
-			Assert.That(t.Length, Is.EqualTo(1));
+			Assert.That(t.Count, Is.EqualTo(1));
 
 			t_ = ExpressionTypeEvaluation.EvaluateType(ex, ctxt, false);
 			Assert.That(t_, Is.TypeOf(typeof(MemberSymbol)));
@@ -787,7 +787,7 @@ void foo(U)(U u)
 			ex = (subSt[2] as ExpressionStatement).Expression;
 			t = ExpressionTypeEvaluation.GetOverloads((ex as PostfixExpression_MethodCall).PostfixForeExpression as TemplateInstanceExpression, ctxt, null, true);
 			Assert.That(t, Is.Not.Null);
-			Assert.That(t.Length, Is.EqualTo(1));
+			Assert.That(t.Count, Is.EqualTo(1));
 			Assert.That(t[0], Is.TypeOf(typeof(MemberSymbol)));
 
 			t_ = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);

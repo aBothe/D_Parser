@@ -4,6 +4,7 @@ using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Resolver.Templates;
 using D_Parser.Resolver.ExpressionSemantics;
+using System.Diagnostics;
 
 namespace D_Parser.Resolver.TypeResolution
 {
@@ -86,7 +87,7 @@ namespace D_Parser.Resolver.TypeResolution
 				v is ErrorValue;
 		}
 
-		public static AbstractType[] DeduceParamsAndFilterOverloads(IEnumerable<AbstractType> rawOverloadList,
+		public static List<AbstractType> DeduceParamsAndFilterOverloads(IEnumerable<AbstractType> rawOverloadList,
 			TemplateInstanceExpression templateInstanceExpr,
 			ResolutionContext ctxt, bool isMethodCall = false)
 		{
@@ -108,69 +109,75 @@ namespace D_Parser.Resolver.TypeResolution
 		/// <returns>A filtered list of overloads which mostly fit to the specified arguments.
 		/// Usually contains only 1 element.
 		/// The 'TemplateParameters' property of the results will be also filled for further usage regarding smart completion etc.</returns>
-		public static AbstractType[] DeduceParamsAndFilterOverloads(IEnumerable<AbstractType> rawOverloadList,
-			IEnumerable<ISemantic> givenTemplateArguments,
-			bool isMethodCall,
-			ResolutionContext ctxt)
+		public static List<AbstractType> DeduceParamsAndFilterOverloads(IEnumerable<AbstractType> rawOverloadList,
+					IEnumerable<ISemantic> givenTemplateArguments,
+					bool isMethodCall,
+					ResolutionContext ctxt)
 		{
 			if (rawOverloadList == null)
 				return null;
-			
-			var filteredOverloads = DeduceOverloads(rawOverloadList, givenTemplateArguments, isMethodCall, ctxt);
 
-			AbstractType[] sortedAndFilteredOverloads;
+			var unfilteredOverloads = DeduceOverloads(rawOverloadList, givenTemplateArguments, isMethodCall, ctxt);
+
+			IEnumerable<AbstractType> preFilteredOverloads;
 
 			// If there are >1 overloads, filter from most to least specialized template param
-			if (filteredOverloads.Count > 1)
-				sortedAndFilteredOverloads = SpecializationOrdering.FilterFromMostToLeastSpecialized(filteredOverloads, ctxt);
-			else if (filteredOverloads.Count == 1)
-				sortedAndFilteredOverloads = new[] { filteredOverloads[0] };
+			if (unfilteredOverloads.Count > 1)
+				preFilteredOverloads = SpecializationOrdering.FilterFromMostToLeastSpecialized(unfilteredOverloads, ctxt);
+			else if (unfilteredOverloads.Count == 1)
+				preFilteredOverloads = unfilteredOverloads;
 			else
 				return null;
-			/*
-			if (hasUndeterminedArguments)
-				return sortedAndFilteredOverloads;
-			*/
-			if(sortedAndFilteredOverloads!=null)
+
+			var templateConstraintFilteredOverloads = new List<AbstractType>();
+			foreach (var overload in preFilteredOverloads)
 			{
-				filteredOverloads.Clear();
-				for(int i = sortedAndFilteredOverloads.Length - 1; i >= 0; i--)
+				var ds = overload as DSymbol;
+				if (ds != null && ds.Definition.TemplateConstraint != null)
 				{
-					var ds = sortedAndFilteredOverloads[i] as DSymbol;
-					if(ds != null && ds.Definition.TemplateConstraint != null)
+					ctxt.CurrentContext.IntroduceTemplateParameterTypes(ds);
+					try
 					{
-						ctxt.CurrentContext.IntroduceTemplateParameterTypes(ds);
-						try{
-							var v = Evaluation.EvaluateValue(ds.Definition.TemplateConstraint, ctxt);
-							if(v is VariableValue)
-								v = new StandardValueProvider(ctxt)[((VariableValue)v).Variable];
-							if(!Evaluation.IsFalseZeroOrNull(v))
-								filteredOverloads.Add(ds);
-						}catch{} //TODO: Handle eval exceptions
-						ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(ds);
+						var v = Evaluation.EvaluateValue(ds.Definition.TemplateConstraint, ctxt);
+						if (v is VariableValue)
+							v = new StandardValueProvider(ctxt)[((VariableValue)v).Variable];
+						if (!Evaluation.IsFalseZeroOrNull(v))
+							templateConstraintFilteredOverloads.Add(ds);
 					}
-					else
-						filteredOverloads.Add(sortedAndFilteredOverloads[i]);
+					catch { } //TODO: Handle eval exceptions
+					ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(ds);
 				}
-				if(filteredOverloads.Count == 0)
-					return null;
-				sortedAndFilteredOverloads = filteredOverloads.ToArray();
+				else
+					templateConstraintFilteredOverloads.Add(overload);
 			}
+			if (templateConstraintFilteredOverloads.Count == 0)
+				return null;
 
-			if (sortedAndFilteredOverloads != null &&
-				sortedAndFilteredOverloads.Length == 1)
+			var implicitPropertiesOrEponymousTemplatesOrOther = new List<AbstractType>();
+			foreach(var t in templateConstraintFilteredOverloads)
 			{
-				var t = sortedAndFilteredOverloads [0];
-				if(t is TemplateType)
-					return TryGetImplicitProperty (t as TemplateType, ctxt) ?? sortedAndFilteredOverloads;
-				if (t is EponymousTemplateType)
-					return new[]{ DeduceEponymousTemplate(t as EponymousTemplateType, ctxt) };
+				if (t is TemplateType)
+				{
+					var implicitProperties = TryGetImplicitProperty(t as TemplateType, ctxt);
+					if (implicitProperties.Count > 0)
+						implicitPropertiesOrEponymousTemplatesOrOther.AddRange(implicitProperties);
+					else
+						implicitPropertiesOrEponymousTemplatesOrOther.AddRange(templateConstraintFilteredOverloads);
+				}
+				else if (t is EponymousTemplateType)
+				{
+					var eponymousResolvee = DeduceEponymousTemplate(t as EponymousTemplateType, ctxt);
+					if(eponymousResolvee != null)
+						implicitPropertiesOrEponymousTemplatesOrOther.Add(eponymousResolvee);
+				}
+				else
+					implicitPropertiesOrEponymousTemplatesOrOther.Add(t);
 			}
 
-			return sortedAndFilteredOverloads;
+			return implicitPropertiesOrEponymousTemplatesOrOther;
 		}
 
-		static AbstractType[] TryGetImplicitProperty(TemplateType template, ResolutionContext ctxt)
+		static List<AbstractType> TryGetImplicitProperty(TemplateType template, ResolutionContext ctxt)
 		{
 			// Get actual overloads
 			var matchingChild = TypeDeclarationResolver.ResolveFurtherTypeIdentifier( template.NameHash, template, ctxt, null, false);
@@ -299,9 +306,7 @@ namespace D_Parser.Resolver.TypeResolution
 		{
 			bool isLegitOverload = true;
 
-			var args = givenTemplateArguments ?? new List<ISemantic> ();
-
-			var argEnum = args.GetEnumerator();
+			var argEnum = givenTemplateArguments.GetEnumerator();
 			if(tplNode.TemplateParameters != null)
 				foreach (var expectedParam in tplNode.TemplateParameters)
 					if (!DeduceParam(ctxt, overload, deducedTypes, argEnum, expectedParam))
@@ -347,24 +352,29 @@ namespace D_Parser.Resolver.TypeResolution
 			bool useDefaultType = false;
 			if (argEnum.MoveNext() || (useDefaultType = HasDefaultType(expectedParam)))
 			{
-				// On tuples, take all following arguments and pass them to the check function
-				if (expectedParam is TemplateTupleParameter)
+				if (!useDefaultType)
 				{
-					var tupleItems = new List<ISemantic>();
-					// A tuple must at least contain one item!
-					tupleItems.Add(argEnum.Current);
-					while (argEnum.MoveNext())
+					// On tuples, take all following arguments and pass them to the check function
+					if (expectedParam is TemplateTupleParameter)
+					{
+						var tupleItems = new List<ISemantic>();
+						// A tuple must at least contain one item!
 						tupleItems.Add(argEnum.Current);
+						while (argEnum.MoveNext())
+							tupleItems.Add(argEnum.Current);
 
-					if (!CheckAndDeduceTypeTuple((TemplateTupleParameter)expectedParam, tupleItems, deducedTypes, ctxt))
+						if (!CheckAndDeduceTypeTuple((TemplateTupleParameter)expectedParam, tupleItems, deducedTypes, ctxt))
+							return false;
+					}
+					else if (argEnum.Current != null)
+					{
+						if (!CheckAndDeduceTypeAgainstTplParameter(expectedParam, argEnum.Current, deducedTypes, ctxt))
+							return false;
+					}
+					else
 						return false;
 				}
-				else if (argEnum.Current != null)
-				{
-					if (!CheckAndDeduceTypeAgainstTplParameter(expectedParam, argEnum.Current, deducedTypes, ctxt))
-						return false;
-				}
-				else if (useDefaultType && CheckAndDeduceTypeAgainstTplParameter(expectedParam, null, deducedTypes, ctxt))
+				else if (CheckAndDeduceTypeAgainstTplParameter(expectedParam, null, deducedTypes, ctxt))
 				{
 					// It's legit - just do nothing
 				}

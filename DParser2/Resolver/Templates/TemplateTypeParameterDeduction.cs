@@ -151,7 +151,7 @@ namespace D_Parser.Resolver.Templates
 			 */
 			if (tixBasedArgumentType != null)
 			{
-				var argEnum_given = tixBasedArgumentType.Definition.TemplateParameters.GetEnumerator ();
+				var argEnum_given = (tixBasedArgumentType.Definition.TemplateParameters ?? Enumerable.Empty<TemplateParameter>()).GetEnumerator ();
 
 				foreach (var p in tix.Arguments)
 				{

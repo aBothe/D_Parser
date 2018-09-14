@@ -59,36 +59,36 @@ void asdf(int* ni=23) {
 			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["modA"]);
 
 			var t = R("T", ctxt);
-			Assert.That(t.Length, Is.EqualTo(1));
+			Assert.That(t.Count, Is.EqualTo(1));
 			Assert.That((t[0] as DSymbol).Definition.Parent, Is.SameAs(pcl.FirstPackage()["modC"]));
 
 			ctxt.CurrentContext.Set(pcl.FirstPackage()["modC"], CodeLocation.Empty);
 			t = R("T", ctxt);
-			Assert.That(t.Length, Is.EqualTo(1));
+			Assert.That(t.Count, Is.EqualTo(1));
 			Assert.That((t[0] as DSymbol).Definition.Parent, Is.SameAs(pcl.FirstPackage()["modC"]));
 
 			ctxt.CurrentContext.Set(pcl.FirstPackage()["modB"], CodeLocation.Empty);
 			t = R("T", ctxt);
-			Assert.That(t.Length, Is.EqualTo(2));
+			Assert.That(t.Count, Is.EqualTo(2));
 
 			ctxt.ResolutionErrors.Clear();
 			ctxt.CurrentContext.Set(N<D_Parser.Dom.DModule>(ctxt, "modE"), CodeLocation.Empty);
 			t = R("U", ctxt);
-			Assert.That(t.Length, Is.EqualTo(2));
+			Assert.That(t.Count, Is.EqualTo(2));
 
 			ctxt.CurrentContext.Set(N<DMethod>(ctxt, "modE.N.foo"), CodeLocation.Empty);
 			t = R("X", ctxt);
-			Assert.That(t.Length, Is.EqualTo(1));
+			Assert.That(t.Count, Is.EqualTo(1));
 			Assert.That(t[0], Is.TypeOf(typeof(ClassType)));
 
 			var f = N<DMethod>(ctxt, "modF.asdf");
 			ctxt.CurrentContext.Set(f);
 			t = ExpressionTypeEvaluation.GetOverloads(new IdentifierExpression("ni") { Location = S(f, 0, 0, 1).Location }, ctxt);
 			Assert.That((t[0] as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
-			Assert.That(t.Length, Is.EqualTo(1)); // Was 2; Has been changed to 1 because it's only important to take the 'nearest' declaration that occured before the resolved expression
+			Assert.That(t.Count, Is.EqualTo(1)); // Was 2; Has been changed to 1 because it's only important to take the 'nearest' declaration that occured before the resolved expression
 
-			t = DResolver.FilterOutByResultPriority(ctxt, t).ToArray();
-			Assert.That(t.Length, Is.EqualTo(1));
+			t = DResolver.FilterOutByResultPriority(ctxt, t);
+			Assert.That(t.Count, Is.EqualTo(1));
 		}
 
 		[Test]
@@ -387,11 +387,11 @@ struct Foo
 			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["A"]);
 
 			var t = R("foo", ctxt);
-			Assert.That(t.Length, Is.EqualTo(0));
+			Assert.That(t.Count, Is.EqualTo(0));
 
 			ctxt.CurrentContext.Set(pcl.FirstPackage()["E"]);
 			t = R("foo", ctxt);
-			Assert.That(t.Length, Is.EqualTo(1));
+			Assert.That(t.Count, Is.EqualTo(1));
 		}
 
 		[Test]

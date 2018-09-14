@@ -408,9 +408,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	/// </summary>
 	public class InternalOverloadValue : ExpressionValue
 	{
-		public AbstractType[] Overloads { get; private set; }
+		public List<AbstractType> Overloads { get; private set; }
 
-		public InternalOverloadValue(AbstractType[] overloads) : base(null)
+		public InternalOverloadValue(List<AbstractType> overloads) : base(null)
 		{
 			this.Overloads = overloads;
 		}

@@ -129,7 +129,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			List<ISemantic> callArgs;
 			ISymbolValue delegValue;
 
-			AbstractType[] baseExpression;
+			IEnumerable<AbstractType> baseExpression;
 			TemplateInstanceExpression tix;
 
 			GetRawCallOverloads(ctxt, call.PostfixForeExpression, out baseExpression, out tix);
@@ -138,7 +138,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		}
 
 
-		AbstractType TryPretendMethodExecution(AbstractType b, ISyntaxRegion typeBase = null, AbstractType[] args = null)
+		AbstractType TryPretendMethodExecution(AbstractType b, ISyntaxRegion typeBase = null, IEnumerable<AbstractType> args = null)
 		{
 			if (TryReturnMethodReferenceOnly)
 				return b;
@@ -170,7 +170,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return mr == null ? b : TryPretendMethodExecution_(mr, args);
 		}
 
-		AbstractType TryPretendMethodExecution_(MemberSymbol mr, AbstractType[] execargs = null)
+		AbstractType TryPretendMethodExecution_(MemberSymbol mr, IEnumerable<AbstractType> execargs)
 		{
 			if (!(mr.Definition is DMethod))
 				return mr;
@@ -186,7 +186,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		}
 
 		void GetRawCallOverloads(ResolutionContext ctxt, IExpression callForeExpression,
-			out AbstractType[] baseExpression,
+			out IEnumerable<AbstractType> baseExpression,
 			out TemplateInstanceExpression tix)
 		{
 			tix = null;
@@ -276,7 +276,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				 * and enforces that the explicit ctor will not be generated.
 				 * An opCall overload with no parameters supersedes the default ctor.
 				 */
-				var canCreateExplicitStructCtor = m == null || m.Length == 0;
+				var canCreateExplicitStructCtor = m == null || m.Count == 0;
 
 				if (!canCreateExplicitStructCtor)
 					l.AddRange(m);
@@ -285,20 +285,20 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					GetConstructors(tit, canCreateExplicitStructCtor), ctxt,
 					null, supExpression ?? foreExpression);
 
-				if (m != null && m.Length != 0)
+				if (m != null && m.Count != 0)
 					l.AddRange(m);
 			}
 			else
 				l.Add(ov);
 		}
 
-		public static AbstractType[] GetAccessedOverloads(PostfixExpression_Access acc, ResolutionContext ctxt,
+		public static List<AbstractType> GetAccessedOverloads(PostfixExpression_Access acc, ResolutionContext ctxt,
 			ISemantic resultBase = null, bool DeducePostfixTemplateParams = true)
 		{
 			return Evaluation.EvalPostfixAccessExpression<AbstractType>(new ExpressionTypeEvaluation(ctxt), ctxt, acc, resultBase, DeducePostfixTemplateParams);
 		}
 
-		public static AbstractType[] GetResolvedConstructorOverloads(TokenExpression tk, ResolutionContext ctxt)
+		public static List<AbstractType> GetResolvedConstructorOverloads(TokenExpression tk, ResolutionContext ctxt)
 		{
 			if (tk.Token == DTokens.This || tk.Token == DTokens.Super)
 			{
@@ -735,7 +735,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 				//Search opIndex overloads and try to match them to the given indexing arguments.
 				var overloads = TypeDeclarationResolver.ResolveFurtherTypeIdentifier (OpIndexIdHash, foreExpression, ctxt, x, false);
-				if (overloads != null && overloads.Length > 0) {
+				if (overloads.Count > 0) {
 					var indexArgs = new List<AbstractType> ();
 					if (x.Arguments != null)
 						for (int k = arg_i; k < x.Arguments.Length; k++)
@@ -816,12 +816,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return foreExpression;
 
 			// TODO: Make suitable for multi-dimensional access
-			AbstractType[] sliceArgs;
+			IEnumerable<AbstractType> sliceArgs;
 
 			if (sl != null)
 				sliceArgs = new[] { sl.LowerBoundExpression.Accept (this), sl.UpperBoundExpression.Accept (this) };
 			else
-				sliceArgs = null;
+				sliceArgs = Enumerable.Empty<AbstractType>();
 
 			ctxt.CurrentContext.IntroduceTemplateParameterTypes(udt);
 
@@ -937,7 +937,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// <summary>
 		/// Resolves id and optionally filters out overloads by template deduction.
 		/// </summary>
-		public static AbstractType[] GetOverloads(IntermediateIdType id, ResolutionContext ctxt, AbstractType resultBases = null, bool deduceParameters = true)
+		public static List<AbstractType> GetOverloads(IntermediateIdType id, ResolutionContext ctxt, AbstractType resultBases = null, bool deduceParameters = true)
 		{
 			#if TRACE
 			Trace.WriteLine (string.Format("GetOverloads({0}):", id));
@@ -967,7 +967,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			sw.Restart ();
 			#endif
 
-			AbstractType[] res;
+			List<AbstractType> res;
 			if (resultBases == null)
 				res = ResolveIdentifier(id.IdHash, ctxt, id, id.ModuleScoped);
 			else
@@ -986,11 +986,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (f.Count > 0)
 			{
 				if ((ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) != 0 || !deduceParameters)
-					res = f.ToArray();
+					res = f;
 				else if(id is TemplateInstanceExpression)
 					res = TemplateInstanceHandler.DeduceParamsAndFilterOverloads(f, id as TemplateInstanceExpression, ctxt);
 				else
-					res = TemplateInstanceHandler.DeduceParamsAndFilterOverloads (f, null, false, ctxt);
+					res = TemplateInstanceHandler.DeduceParamsAndFilterOverloads (f, Enumerable.Empty<ISemantic>(), false, ctxt);
 			}
 
 			#if TRACE
@@ -1226,7 +1226,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						break;
 
 					var vs = Evaluation.EvalPostfixAccessExpression(this, ctxt, pfa, t);
-					if (vs == null || vs.Length == 0)
+					if (vs == null || vs.Count == 0)
 						return null;
 					return vs[0];
 

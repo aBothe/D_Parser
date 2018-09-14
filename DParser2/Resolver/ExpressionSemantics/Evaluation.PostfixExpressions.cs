@@ -23,7 +23,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			ISymbolValue delegValue;
 
 			// Deduce template parameters later on
-			AbstractType[] baseExpression;
+			IEnumerable<AbstractType> baseExpression;
 			ISymbolValue baseValue;
 			TemplateInstanceExpression tix;
 
@@ -47,7 +47,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return TryDoCTFEOrGetValueRefs(argTypeFilteredOverloads, call.PostfixForeExpression, true, args.ToArray());
 		}
 
-		public static AbstractType EvalMethodCall(AbstractType[] baseExpression, ISymbolValue baseValue, TemplateInstanceExpression tix,
+		public static AbstractType EvalMethodCall(IEnumerable<AbstractType> baseExpression, ISymbolValue baseValue, TemplateInstanceExpression tix,
 			ResolutionContext ctxt, 
 			PostfixExpression_MethodCall call, out List<ISemantic> callArguments, out ISymbolValue delegateValue,
 			bool returnBaseTypeOnly, AbstractSymbolValueProvider ValueProvider = null)
@@ -78,14 +78,14 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				var deducedOverloads = TemplateInstanceHandler.DeduceParamsAndFilterOverloads (methodOverloads, args, true, ctxt);
 				methodOverloads.Clear ();
 				if (deducedOverloads != null)
-					return new List<AbstractType>(deducedOverloads);
+					return deducedOverloads;
 			}
 			return methodOverloads;
 		}
 
 		void GetRawCallOverloads(ResolutionContext ctxt,PostfixExpression_MethodCall call, 
-			out AbstractType[] baseExpression, 
-			out ISymbolValue baseValue, 
+			out IEnumerable<AbstractType> baseExpression,
+			out ISymbolValue baseValue,
 			out TemplateInstanceExpression tix)
 		{
 			baseValue = null;
@@ -127,7 +127,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					else if (baseValue != null)
 						baseExpression = new[] { baseValue.RepresentedType };
 					else 
-						baseExpression = null;
+						baseExpression = Enumerable.Empty<AbstractType>();
 				}
 
 				ctxt.CurrentContext.ContextDependentOptions = optBackup;
@@ -141,7 +141,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// which stores the return value of the property function b that is executed without arguments.
 		/// Also handles UFCS - so if filtering is wanted, the function becom
 		/// </summary>
-		public static R[] EvalPostfixAccessExpression<R>(ExpressionVisitor<R> vis, ResolutionContext ctxt,PostfixExpression_Access acc,
+		public static List<R> EvalPostfixAccessExpression<R>(ExpressionVisitor<R> vis, ResolutionContext ctxt,PostfixExpression_Access acc,
 			ISemantic resultBase = null, bool EvalAndFilterOverloads = true, bool ResolveImmediateBaseType = true, AbstractSymbolValueProvider ValueProvider = null)
 			where R : class,ISemantic
 		{
@@ -160,7 +160,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 			
 			
-			AbstractType[] overloads;
+			List<AbstractType> overloads;
 			var optBackup = ctxt.CurrentContext.ContextDependentOptions;
 			
 			if (acc.AccessExpression is TemplateInstanceExpression)
@@ -184,7 +184,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				{
 					var staticPropResult = StaticProperties.TryEvalPropertyValue(ValueProvider, baseExpression, id.ValueStringHash);
 					if (staticPropResult != null)
-						return new[]{(R)staticPropResult};
+						return new List<R> { (R) staticPropResult };
 				}
 
 				if (!ResolveImmediateBaseType)
@@ -207,9 +207,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			// If evaluation active and the access expression is stand-alone, return a single item only.
 			if (EvalAndFilterOverloads && ValueProvider != null)
-				return new[] { (R)new Evaluation(ValueProvider).TryDoCTFEOrGetValueRefs(AmbiguousType.Get(overloads), acc.AccessExpression) };
+				return new List<R> { (R)new Evaluation(ValueProvider).TryDoCTFEOrGetValueRefs(AmbiguousType.Get(overloads), acc.AccessExpression) };
 
-			return overloads as R[];
+			return overloads as List<R>;
 		}
 
 		ISymbolValue EvalForeExpression(PostfixExpression ex)
@@ -222,7 +222,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var r = EvalPostfixAccessExpression(this, ctxt, ex, null, true, ValueProvider:ValueProvider);
 			ctxt.CheckForSingleResult(r, ex);
 
-			return r != null && r.Length != 0 ? r[0] : null;
+			return r != null && r.Count > 0 ? r[0] : null;
 		}
 
 		public ISymbolValue Visit(PostfixExpression_Increment x)

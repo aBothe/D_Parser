@@ -53,14 +53,14 @@ version(C)
 
 			// Test basic version-dependent resolution
 			var ms = R("f", ctxt);
-			Assert.AreEqual(1, ms.Length);
+			Assert.AreEqual(1, ms.Count);
 			var m = ms[0] as MemberSymbol;
 			Assert.IsNotNull(m);
 
 			Assert.That(m.Base, Is.TypeOf(typeof(PointerType)));
 
 			ms = R("d", ctxt);
-			Assert.AreEqual(1, ms.Length);
+			Assert.AreEqual(1, ms.Count);
 			m = ms[0] as MemberSymbol;
 			Assert.IsNotNull(m);
 
@@ -68,17 +68,17 @@ version(C)
 
 			ctxt.CurrentContext.Set(ctxt.ScopedBlock.EndLocation);
 			ms = R("a", ctxt);
-			Assert.AreEqual(1, ms.Length);
+			Assert.AreEqual(1, ms.Count);
 			m = ms[0] as MemberSymbol;
 			Assert.IsNotNull(m);
 
 			Assert.That(m.Base, Is.TypeOf(typeof(PointerType)));
 
 			ms = R("pubB", ctxt);
-			Assert.AreEqual(1, ms.Length);
+			Assert.AreEqual(1, ms.Count);
 
 			ms = R("pubC", ctxt);
-			Assert.AreEqual(0, ms.Length);
+			Assert.AreEqual(0, ms.Count);
 		}
 
 		[Test]
@@ -178,7 +178,7 @@ alias bar aliasTwo;
 		{
 			var ctxt = CreateDefCtxt(@"module A;
 int bar(){}
-void* bar(T)(){}
+void[] bar(T)(){}
 alias bar!int aliasOne;
 alias bar aliasTwo;
 ");
@@ -188,16 +188,14 @@ alias bar aliasTwo;
 			MemberSymbol ms;
 
 			x = DParser.ParseExpression("aliasOne()");
-			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-
-			Assert.That(t, Is.TypeOf(typeof(PointerType)));
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt); Assert.That(t, Is.TypeOf(typeof(ArrayType)));
 
 			x = DParser.ParseExpression("aliasOne!(byte*)");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false);
 
 			ms = t as MemberSymbol;
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
-			Assert.That(ms.Base, Is.TypeOf(typeof(PointerType)));
+			Assert.That(ms.Base, Is.TypeOf(typeof(ArrayType)));
 
 			Assert.That(ms.DeducedTypes[0].Base, Is.TypeOf(typeof(PointerType)));
 
@@ -209,7 +207,7 @@ alias bar aliasTwo;
 			x = DParser.ParseExpression("aliasOne");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.That(t, Is.TypeOf(typeof(PointerType)));
+			Assert.That(t, Is.TypeOf(typeof(ArrayType)));
 
 			x = DParser.ParseExpression("aliasOne!(byte*,int)");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
@@ -351,19 +349,19 @@ debug(4)
 			var ctxt = CreateDefCtxt(pcl, foo, foo.Body);
 
 			var x = R("x", ctxt);
-			Assert.AreEqual(1, x.Length);
+			Assert.AreEqual(1, x.Count);
 
 			x = R("y", ctxt);
-			Assert.AreEqual(0, x.Length);
+			Assert.AreEqual(0, x.Count);
 
 			x = R("z", ctxt);
-			Assert.AreEqual(1, x.Length);
+			Assert.AreEqual(1, x.Count);
 
 			x = R("z2", ctxt);
-			Assert.AreEqual(1, x.Length);
+			Assert.AreEqual(1, x.Count);
 
 			x = R("z3", ctxt);
-			Assert.AreEqual(0, x.Length);
+			Assert.AreEqual(0, x.Count);
 
 			IStatement ss;
 			ss = ((subst[2] as StatementCondition).ScopedStatement as BlockStatement).SubStatements.First();
@@ -385,24 +383,24 @@ debug(4)
 			Assert.That(x2, Is.TypeOf(typeof(MemberSymbol)));
 
 			x = R("dbg_a", ctxt);
-			Assert.AreEqual(1, x.Length);
+			Assert.AreEqual(1, x.Count);
 
 			ctxt.CurrentContext.Set(m.EndLocation);
 
 			x = R("dbg_b", ctxt);
-			Assert.AreEqual(1, x.Length);
+			Assert.AreEqual(1, x.Count);
 
 			x = R("dbg_c", ctxt);
-			Assert.AreEqual(0, x.Length);
+			Assert.AreEqual(0, x.Count);
 
 			x = R("dbg_d", ctxt);
-			Assert.AreEqual(1, x.Length);
+			Assert.AreEqual(1, x.Count);
 
 			x = R("dbg_e", ctxt);
-			Assert.AreEqual(1, x.Length);
+			Assert.AreEqual(1, x.Count);
 
 			x = R("dbg_f", ctxt);
-			Assert.AreEqual(0, x.Length);
+			Assert.AreEqual(0, x.Count);
 		}
 
 		[Test]
@@ -455,33 +453,33 @@ void main()
 			var ctxt = CreateDefCtxt(pcl, mod, mod.EndLocation);
 
 			var x = R("a", ctxt);
-			Assert.AreEqual(1, x.Length);
+			Assert.AreEqual(1, x.Count);
 
 			x = R("b", ctxt);
-			Assert.AreEqual(0, x.Length);
+			Assert.AreEqual(0, x.Count);
 
 			x = R("c", ctxt);
-			Assert.AreEqual(0, x.Length);
+			Assert.AreEqual(0, x.Count);
 
 			x = R("dbgX", ctxt);
-			Assert.AreEqual(1, x.Length);
+			Assert.AreEqual(1, x.Count);
 
 			x = R("dbgY", ctxt);
-			Assert.AreEqual(0, x.Length);
+			Assert.AreEqual(0, x.Count);
 
 			ctxt.CurrentContext.Set(mod = pcl.FirstPackage()["B"], mod.EndLocation);
 
 			x = R("dbg", ctxt);
-			Assert.AreEqual(1, x.Length);
+			Assert.AreEqual(1, x.Count);
 
 			x = R("noDbg", ctxt);
-			Assert.AreEqual(0, x.Length);
+			Assert.AreEqual(0, x.Count);
 
 			x = R("a", ctxt);
-			Assert.AreEqual(1, x.Length);
+			Assert.AreEqual(1, x.Count);
 
 			x = R("b", ctxt);
-			Assert.AreEqual(0, x.Length);
+			Assert.AreEqual(0, x.Count);
 
 			DToken tk;
 			var t = RS(DParser.ParseBasicType("T!int", out tk), ctxt);
@@ -609,10 +607,10 @@ else
 			var ctxt = CreateDefCtxt(pcl, A, null);
 
 			var x = R("a", ctxt);
-			Assert.AreEqual(1, x.Length);
+			Assert.AreEqual(1, x.Count);
 
 			x = R("b", ctxt);
-			Assert.AreEqual(0, x.Length);
+			Assert.AreEqual(0, x.Count);
 
 			var v = Evaluation.EvaluateValue(DParser.ParseExpression("Templ!int"), ctxt, true);
 			Assert.That(v, Is.InstanceOf(typeof(VariableValue)));
@@ -622,13 +620,13 @@ else
 			Assert.AreEqual(1m, pv.Value);
 
 			x = R("c", ctxt);
-			Assert.AreEqual(1, x.Length);
+			Assert.AreEqual(1, x.Count);
 
 			x = R("d", ctxt);
-			Assert.AreEqual(0, x.Length);
+			Assert.AreEqual(0, x.Count);
 
 			x = R("e", ctxt);
-			Assert.AreEqual(1, x.Length);
+			Assert.AreEqual(1, x.Count);
 		}
 
 		[Test]
@@ -654,10 +652,10 @@ class imp{}");
 			var ctxt = CreateDefCtxt(pcl, B["bar"].First() as DMethod);
 
 			var x = R("imp", ctxt);
-			Assert.That(x.Length, Is.EqualTo(0));
+			Assert.That(x.Count, Is.EqualTo(0));
 
 			x = R("cl", ctxt);
-			Assert.That(x.Length, Is.EqualTo(1));
+			Assert.That(x.Count, Is.EqualTo(1));
 		}
 
 		[Test]

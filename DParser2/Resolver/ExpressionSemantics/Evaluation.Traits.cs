@@ -51,7 +51,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						break;
 					
 					var vs = EvalPostfixAccessExpression(this, ctxt, pfa,t, ValueProvider:ValueProvider);
-					if(vs == null || vs.Length == 0)
+					if(vs == null || vs.Count == 0)
 						return null;
 					return vs[0];
 					

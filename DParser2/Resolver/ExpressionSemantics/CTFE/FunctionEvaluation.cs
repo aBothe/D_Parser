@@ -4,6 +4,7 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Resolver.ExpressionSemantics;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 {
@@ -34,9 +35,9 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 		/// 
 		/// </summary>
 		/// <param name="dm"></param>
-		/// <param name="args"></param>
+		/// <param name="callArguments"></param>
 		/// <param name="baseValueProvider">Required for evaluating missing default parameters.</param>
-		public static bool AssignCallArgumentsToIC<T>(MemberSymbol mr, T[] args, AbstractSymbolValueProvider baseValueProvider,
+		public static bool AssignCallArgumentsToIC<T>(MemberSymbol mr, IEnumerable<T> callArguments, AbstractSymbolValueProvider baseValueProvider,
 			out Dictionary<DVariable,T> targetArgs, ResolutionContext ctxt = null) where T:class,ISemantic
 		{
 			var dm = mr.Definition as DMethod;
@@ -49,27 +50,31 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 			}
 
 			targetArgs = new Dictionary<DVariable, T>();
-			var argsRemaining = args != null ? args.Length : 0;
-			int argu = 0;
+			if (callArguments == null)
+				callArguments = Enumerable.Empty<T>();
+
+			var argEnumerator = callArguments.GetEnumerator();
 
 			for (; para < dm.Parameters.Count; para++)
 			{
 				var par = dm.Parameters[para] as DVariable;
 
-				if (par.Type is VarArgDecl && argsRemaining > 0)
+				bool hasNext = argEnumerator.MoveNext();
+
+				if (par.Type is VarArgDecl && hasNext)
 				{
-					var va_args = new T[argsRemaining];
-					args.CopyTo(va_args, argu);
-					argsRemaining=0;
+					var va_args = new List<T>();
+					do va_args.Add(argEnumerator.Current);
+					while (argEnumerator.MoveNext());
+
 					//TODO: Assign a value tuple to par
 					if (++para < dm.Parameters.Count)
 						return false;
 				}
 
-				if (argsRemaining > 0)
+				if (hasNext)
 				{
-					targetArgs[par] = args[argu++];
-					argsRemaining--;
+					targetArgs[par] = argEnumerator.Current;
 				}
 				else if (par.Initializer != null)
 				{
@@ -82,7 +87,7 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 					return false;
 			}
 
-			return argsRemaining == 0;
+			return !argEnumerator.MoveNext();
 		}
 
 		public static ISymbolValue Execute(MemberSymbol method, Dictionary<DVariable, ISymbolValue> arguments, AbstractSymbolValueProvider vp)

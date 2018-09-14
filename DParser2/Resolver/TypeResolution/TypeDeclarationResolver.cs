@@ -19,7 +19,7 @@ namespace D_Parser.Resolver.TypeResolution
 		/// 
 		/// a.b -- nextIdentifier would be 'b' whereas <param name="resultBases">resultBases</param> contained the resolution result for 'a'
 		/// </summary>
-		public static AbstractType[] ResolveFurtherTypeIdentifier(int nextIdentifierHash,
+		public static List<AbstractType> ResolveFurtherTypeIdentifier(int nextIdentifierHash,
 			AbstractType resultBases,
 			ResolutionContext ctxt,
 			ISyntaxRegion typeIdObject = null, bool ufcsItem = true)
@@ -94,7 +94,7 @@ namespace D_Parser.Resolver.TypeResolution
 				}
 			}
 
-			return r.Count == 0 ? null : r.ToArray();
+			return r;
 		}
 
 		class SingleResolverVisitor : TypeDeclarationVisitor<AbstractType>
@@ -323,7 +323,7 @@ namespace D_Parser.Resolver.TypeResolution
 					b = AmbiguousType.Get(TemplateInstanceHandler.DeduceParamsAndFilterOverloads(bases, typeBase as TemplateInstanceExpression, ctxt, false));
 				}
 				else 
-					b = AmbiguousType.Get(TemplateInstanceHandler.DeduceParamsAndFilterOverloads(bases, null, false, ctxt));
+					b = AmbiguousType.Get(TemplateInstanceHandler.DeduceParamsAndFilterOverloads(bases, Enumerable.Empty<ISemantic>(), false, ctxt));
 
 				aliasDeductionStack.Pop();
 			}
@@ -852,21 +852,26 @@ namespace D_Parser.Resolver.TypeResolution
 			return ret;
 		}
 
-		public static AbstractType[] HandleNodeMatches(
+		public static List<AbstractType> HandleNodeMatches(
 			IEnumerable<INode> matches,
 			ResolutionContext ctxt,
 			AbstractType resultBase = null,
 			ISyntaxRegion typeDeclaration = null)
 		{
+			var rl = new List<AbstractType>();
+
 			// Abbreviate a foreach-loop + List alloc
 			var ll = matches as IList<INode>;
 			if (ll != null && ll.Count == 1)
-				return new[] { ll[0] == null ? null : HandleNodeMatch(ll[0], ctxt, resultBase, typeDeclaration) };
+			{
+				var returnType = ll[0] != null ? HandleNodeMatch(ll[0], ctxt, resultBase, typeDeclaration) : null;
+				if (returnType != null)
+					rl.Add(returnType);
+				return rl;
+			}
 
 			if (matches == null)
-				return new AbstractType[0];
-
-			var rl = new List<AbstractType>();
+				return rl;
 
 			foreach (var m in matches)
 			{
@@ -877,8 +882,8 @@ namespace D_Parser.Resolver.TypeResolution
 				if (res != null)
 					rl.Add(res);
 			}
-			
-			return rl.ToArray();
+
+			return rl;
 		}
 
 		public static AbstractType GetMethodReturnType(DelegateType dg, ResolutionContext ctxt)

@@ -91,7 +91,7 @@ namespace D_Parser.Resolver
 			return s as AbstractType;
 		}
 
-		public static AbstractType[] Get<R>(IEnumerable<R> at)
+		public static List<AbstractType> Get<R>(IEnumerable<R> at)
 			where R : class,ISemantic
 		{
 			var l = new List<AbstractType>();
@@ -105,7 +105,7 @@ namespace D_Parser.Resolver
 						l.Add(((ISymbolValue)t).RepresentedType);
 				}
 
-			return l.ToArray();
+			return l;
 		}
 
 		public abstract AbstractType Clone(bool cloneBase);
@@ -160,13 +160,14 @@ namespace D_Parser.Resolver
 		{
 			if (types == null)
 				return null;
-			var en = types.GetEnumerator();
-			if (!en.MoveNext())
-				return null;
-			var first = en.Current;
-			if (!en.MoveNext())
-				return first;
-			en.Dispose();
+			using (var en = types.GetEnumerator())
+			{
+				if (!en.MoveNext())
+					return null;
+				var first = en.Current;
+				if (!en.MoveNext())
+					return first;
+			}
 
 			return new AmbiguousType(types);
 		}

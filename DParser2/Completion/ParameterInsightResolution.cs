@@ -354,7 +354,7 @@ namespace D_Parser.Completion
 
 			res.MethodIdentifier = tix;
 			ctxt.ContextIndependentOptions = ResolutionOptions.NoTemplateParameterDeduction;
-			res.ResolvedTypesOrMethods = ExpressionTypeEvaluation.GetOverloads(tix, ctxt, null, false);
+			res.ResolvedTypesOrMethods = ExpressionTypeEvaluation.GetOverloads(tix, ctxt, null, false).ToArray();
 
 			if (tix.Arguments != null)
 				res.CurrentlyTypedArgumentIndex = tix.Arguments.Length;

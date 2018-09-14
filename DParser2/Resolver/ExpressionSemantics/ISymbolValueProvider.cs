@@ -128,7 +128,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			var res = ExpressionTypeEvaluation.GetOverloads(id ?? new IdentifierExpression(LocalName), ResolutionContext, null, false);
 
-			if (res == null || res.Length == 0)
+			if (res == null || res.Count == 0)
 				return null;
 
 			var r = res[0];

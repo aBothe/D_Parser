@@ -205,7 +205,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					}
 				}
 
-				return types != null ? new InternalOverloadValue(types.ToArray()) : v;					
+				return types != null ? new InternalOverloadValue(types) : v;
 			}
 		}
 

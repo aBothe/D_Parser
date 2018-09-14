@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using D_Parser.Dom;
 
 namespace D_Parser.Resolver.Templates
@@ -10,12 +11,12 @@ namespace D_Parser.Resolver.Templates
 	{
 		ResolutionContext ctxt;
 
-		public static AbstractType[] FilterFromMostToLeastSpecialized(
+		public static IEnumerable<AbstractType> FilterFromMostToLeastSpecialized(
 			IEnumerable<AbstractType> templateOverloads,
 			ResolutionContext ctxt)
 		{
 			if (templateOverloads == null)
-				return null;
+				return Enumerable.Empty<AbstractType>();
 
 			var so = new SpecializationOrdering { ctxt = ctxt };
 
@@ -30,7 +31,7 @@ namespace D_Parser.Resolver.Templates
 			var lastEquallySpecializedOverloads = new List<AbstractType>();
 			var en = templateOverloads.GetEnumerator();
 			if (!en.MoveNext())
-				return null;
+				return Enumerable.Empty<AbstractType>();
 			var currentlyMostSpecialized = en.Current;
 			lastEquallySpecializedOverloads.Add(currentlyMostSpecialized);
 
@@ -49,7 +50,7 @@ namespace D_Parser.Resolver.Templates
 				}
 			}
 
-			return lastEquallySpecializedOverloads.ToArray();
+			return lastEquallySpecializedOverloads;
 		}
 
 		AbstractType GetTheMoreSpecialized(AbstractType r1, AbstractType r2)

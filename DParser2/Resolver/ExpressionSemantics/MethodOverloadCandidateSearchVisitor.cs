@@ -10,7 +10,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	class MethodOverloadCandidateSearchVisitor : IResolvedTypeVisitor<IEnumerable<AbstractType>>
 	{
 		public static List<AbstractType> SearchCandidates (
-			AbstractType [] baseExpression,
+			IEnumerable<AbstractType> baseExpression,
 			ResolutionContext ctxt,
 			AbstractSymbolValueProvider valueProvider,
 			PostfixExpression_MethodCall call,

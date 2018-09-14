@@ -78,38 +78,38 @@ import A;",
 			var ctxt = ResolutionTests.CreateDefCtxt(pcl, pcl.FirstPackage()["A"]);
 
 			var x = R("x", ctxt);
-			Assert.That(x.Length, Is.EqualTo(1));
+			Assert.That(x.Count, Is.EqualTo(1));
 
 			x = R("y", ctxt);
-			Assert.That(x.Length, Is.EqualTo(1));
+			Assert.That(x.Count, Is.EqualTo(1));
 
 			ctxt.CurrentContext.Set(pcl.FirstPackage()["pack.B"]);
 
 			x = R("x", ctxt);
-			Assert.That(x.Length, Is.EqualTo(1));
+			Assert.That(x.Count, Is.EqualTo(1));
 
 			x = R("privAA", ctxt);
-			Assert.That(x.Length, Is.EqualTo(0));
+			Assert.That(x.Count, Is.EqualTo(0));
 
 			x = R("privA", ctxt);
-			Assert.That(x.Length, Is.EqualTo(0));
+			Assert.That(x.Count, Is.EqualTo(0));
 
 			x = R("packAA", ctxt);
-			Assert.That(x.Length, Is.EqualTo(0));
+			Assert.That(x.Count, Is.EqualTo(0));
 
 			x = R("packA", ctxt);
-			Assert.That(x.Length, Is.EqualTo(0));
+			Assert.That(x.Count, Is.EqualTo(0));
 
 			ctxt.CurrentContext.Set(pcl.FirstPackage()["C"]);
 
 			x = R("privA", ctxt);
-			Assert.That(x.Length, Is.EqualTo(0));
+			Assert.That(x.Count, Is.EqualTo(0));
 
 			x = R("packAA", ctxt);
-			Assert.That(x.Length, Is.EqualTo(1));
+			Assert.That(x.Count, Is.EqualTo(1));
 
 			x = R("packA", ctxt);
-			Assert.That(x.Length, Is.EqualTo(1));
+			Assert.That(x.Count, Is.EqualTo(1));
 		}
 
 		[Test]

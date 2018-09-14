@@ -44,7 +44,7 @@ namespace D_Parser.Resolver.TypeResolution
 			if (nextIdentifierHash == opDispatchId || b == null)
 				yield break;
 
-			AbstractType[] overloads;
+			IEnumerable<AbstractType> overloads;
 
 			var opt = ctxt.CurrentContext.ContextDependentOptions;
 			// Look for opDispatch-Members inside b's Definition
@@ -54,7 +54,7 @@ namespace D_Parser.Resolver.TypeResolution
 				overloads = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(opDispatchId, b, ctxt, typeBase, false);
 			}
 
-			if (overloads == null || overloads.Length < 0)
+			if (overloads == null)
 				yield break;
 
 			var av = new ArrayValue(Evaluation.GetStringLiteralType(ctxt), Strings.TryGet(nextIdentifierHash));

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using D_Parser.Dom;
@@ -154,9 +155,9 @@ namespace Tests
 			return GetChildNode(child as IBlockNode, path.Substring(childNameIndex + 1));
 		}
 
-		public static AbstractType[] R(string id, ResolutionContext ctxt)
+		public static List<AbstractType> R(string id, ResolutionContext ctxt)
 		{
-			return ExpressionTypeEvaluation.GetOverloads(new IdentifierExpression(id), ctxt, null, false) ?? new AbstractType[0];
+			return ExpressionTypeEvaluation.GetOverloads(new IdentifierExpression(id), ctxt, null, false) ?? new List<AbstractType>();
 		}
 
 		public static AbstractType RS(string id, ResolutionContext ctxt)
