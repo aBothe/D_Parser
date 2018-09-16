@@ -362,34 +362,18 @@ namespace D_Parser.Resolver.TypeResolution
 						while (argEnum.MoveNext())
 							tupleItems.Add(argEnum.Current);
 
-						if (!CheckAndDeduceTypeTuple((TemplateTupleParameter)expectedParam, tupleItems, deducedTypes, ctxt))
-							return false;
-					}
-					else if (argEnum.Current != null)
-					{
-						if (!CheckAndDeduceTypeAgainstTplParameter(expectedParam, argEnum.Current, deducedTypes, ctxt))
-							return false;
+						return CheckAndDeduceTypeTuple((TemplateTupleParameter)expectedParam, tupleItems, deducedTypes, ctxt);
 					}
 					else
-						return false;
+						return argEnum.Current != null
+							&& CheckAndDeduceTypeAgainstTplParameter(expectedParam, argEnum.Current, deducedTypes, ctxt);
 				}
-				else if (CheckAndDeduceTypeAgainstTplParameter(expectedParam, null, deducedTypes, ctxt))
-				{
-					// It's legit - just do nothing
-				}
-				else
-					return false;
+				else return CheckAndDeduceTypeAgainstTplParameter(expectedParam, null, deducedTypes, ctxt);
 			}
-			else if(expectedParam is TemplateTupleParameter)
-			{
-				if(!CheckAndDeduceTypeTuple(expectedParam as TemplateTupleParameter, Enumerable.Empty<ISemantic>(), deducedTypes, ctxt))
-					return false;
-			}
+			else if (expectedParam is TemplateTupleParameter)
+				return CheckAndDeduceTypeTuple(expectedParam as TemplateTupleParameter, Enumerable.Empty<ISemantic>(), deducedTypes, ctxt);
 			// There might be too few args - but that doesn't mean that it's not correct - it's only required that all parameters got satisfied with a type
-			else if (!deducedTypes.AllParamatersSatisfied)
-				return false;
-
-			return true;
+			else return deducedTypes.AllParamatersSatisfied;
 		}
 
 		public static bool HasDefaultType(TemplateParameter p)
