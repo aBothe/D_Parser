@@ -515,24 +515,40 @@ int sym;
 		[Test]
 		public void TemplateParamDeduction13()
 		{
-			var ctxt = CreateCtxt("A", @"module A;
+			var ctxt = CreateCtxt("modA", @"module modA;
 class A(S:string) {}
 class A(T){}
+
 class C(U: A!W, W){ W item; }
 ");
 
 			ITypeDeclaration td;
 			AbstractType t;
+			ClassType ct;
 
 			td = DParser.ParseBasicType("C!(A!int)");
 			t = RS(td, ctxt);
 
 			Assert.That(t, Is.TypeOf(typeof(ClassType)));
-			var ct = t as ClassType;
+			ct = t as ClassType;
 			Assert.That(ct.DeducedTypes.Count, Is.EqualTo(2));
 			Assert.That(ct.DeducedTypes[0].Name, Is.EqualTo("U"));
 			Assert.That(ct.DeducedTypes[1].Name, Is.EqualTo("W"));
 			Assert.That(ct.DeducedTypes[1].Base, Is.TypeOf(typeof(PrimitiveType)));
+		}
+
+		[Test]
+		public void TemplateParamDeduction14()
+		{
+			var ctxt = CreateCtxt("modA", @"module modA;
+class A(S:string) {}
+
+class C(U: A!W, W){ W item; }
+");
+
+			ITypeDeclaration td;
+			AbstractType t;
+			ClassType ct;
 
 			td = DParser.ParseBasicType("C!(A!string)");
 			t = RS(td, ctxt);
@@ -756,11 +772,55 @@ static int* tmplBar(T)(T t) {}
 
 void foo(U)(U u)
 {
-	tmplFoo!U;
 	tmplFoo2!U;
 	tmplBar!U(u);
 	tmplFoo2!(int[])(123);
 	tmplFoo2!U(123);
+}");
+			IExpression ex;
+
+			var foo = pcl.FirstPackage()["A"]["foo"].First() as DMethod;
+			var ctxt = CreateDefCtxt(pcl, foo, foo.Body);
+			var subSt = foo.Body.SubStatements as List<IStatement>;
+
+			ex = (subSt[0] as ExpressionStatement).Expression;
+			var t = ExpressionTypeEvaluation.GetOverloads(ex as TemplateInstanceExpression, ctxt, null, true);
+			Assert.That(t, Is.Not.Null);
+			Assert.That(t.Count, Is.EqualTo(1));
+
+			var t_ = ExpressionTypeEvaluation.EvaluateType(ex, ctxt, false);
+			Assert.That(t_, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.That((t_ as MemberSymbol).Base, Is.TypeOf(typeof(ArrayType)));
+
+			ex = (subSt[1] as ExpressionStatement).Expression;
+			t = ExpressionTypeEvaluation.GetOverloads((ex as PostfixExpression_MethodCall).PostfixForeExpression as TemplateInstanceExpression, ctxt, null, true);
+			Assert.That(t, Is.Not.Null);
+			Assert.That(t.Count, Is.EqualTo(1));
+			Assert.That(t[0], Is.TypeOf(typeof(MemberSymbol)));
+
+			t_ = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
+			Assert.That(t_, Is.TypeOf(typeof(PointerType)));
+
+			ex = (subSt[2] as ExpressionStatement).Expression;
+			t_ = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
+			Assert.That(t_, Is.TypeOf(typeof(ArrayType)));
+
+			ex = (subSt[3] as ExpressionStatement).Expression;
+			t_ = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
+			Assert.That(t_, Is.TypeOf(typeof(ArrayType)));
+		}
+
+		[Test]
+		public void TemplateParameterPrototypeRecognition1()
+		{
+			var pcl = CreateCache(@"module A;
+static int tmplFoo(T)() {}
+static int[] tmplFoo2(T : U[], U)(int oo) {}
+static int* tmplBar(T)(T t) {}
+
+void foo(U)(U u)
+{
+	tmplFoo!U;
 }");
 
 			var foo = pcl.FirstPackage()["A"]["foo"].First() as DMethod;
@@ -774,32 +834,6 @@ void foo(U)(U u)
 
 			var t_ = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t_, Is.TypeOf(typeof(PrimitiveType)));
-
-			ex = (subSt[1] as ExpressionStatement).Expression;
-			t = ExpressionTypeEvaluation.GetOverloads(ex as TemplateInstanceExpression, ctxt, null, true);
-			Assert.That(t, Is.Not.Null);
-			Assert.That(t.Count, Is.EqualTo(1));
-
-			t_ = ExpressionTypeEvaluation.EvaluateType(ex, ctxt, false);
-			Assert.That(t_, Is.TypeOf(typeof(MemberSymbol)));
-			Assert.That((t_ as MemberSymbol).Base, Is.TypeOf(typeof(ArrayType)));
-
-			ex = (subSt[2] as ExpressionStatement).Expression;
-			t = ExpressionTypeEvaluation.GetOverloads((ex as PostfixExpression_MethodCall).PostfixForeExpression as TemplateInstanceExpression, ctxt, null, true);
-			Assert.That(t, Is.Not.Null);
-			Assert.That(t.Count, Is.EqualTo(1));
-			Assert.That(t[0], Is.TypeOf(typeof(MemberSymbol)));
-
-			t_ = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
-			Assert.That(t_, Is.TypeOf(typeof(PointerType)));
-
-			ex = (subSt[3] as ExpressionStatement).Expression;
-			t_ = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
-			Assert.That(t_, Is.TypeOf(typeof(ArrayType)));
-
-			ex = (subSt[4] as ExpressionStatement).Expression;
-			t_ = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
-			Assert.That(t_, Is.TypeOf(typeof(ArrayType)));
 		}
 
 		[Test]

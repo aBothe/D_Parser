@@ -347,33 +347,42 @@ namespace D_Parser.Resolver.TypeResolution
 				return true;
 			}
 
-			// Used when no argument but default arg given
-			bool useDefaultType = false;
-			if (argEnum.MoveNext() || (useDefaultType = HasDefaultType(expectedParam)))
+			if (argEnum.MoveNext())
 			{
-				if (!useDefaultType)
+				// On tuples, take all following arguments and pass them to the check function
+				if (expectedParam is TemplateTupleParameter)
 				{
-					// On tuples, take all following arguments and pass them to the check function
-					if (expectedParam is TemplateTupleParameter)
-					{
-						var tupleItems = new List<ISemantic>();
-						// A tuple must at least contain one item!
+					var tupleItems = new List<ISemantic>();
+					// A tuple must at least contain one item!
+					tupleItems.Add(argEnum.Current);
+					while (argEnum.MoveNext())
 						tupleItems.Add(argEnum.Current);
-						while (argEnum.MoveNext())
-							tupleItems.Add(argEnum.Current);
 
-						return CheckAndDeduceTypeTuple((TemplateTupleParameter)expectedParam, tupleItems, deducedTypes, ctxt);
-					}
-					else
-						return argEnum.Current != null
-							&& CheckAndDeduceTypeAgainstTplParameter(expectedParam, argEnum.Current, deducedTypes, ctxt);
+					return CheckAndDeduceTypeTuple((TemplateTupleParameter)expectedParam, tupleItems, deducedTypes, ctxt);
 				}
-				else return CheckAndDeduceTypeAgainstTplParameter(expectedParam, null, deducedTypes, ctxt);
+				else
+					return DeduceOrInduceSingleTemplateParameter(expectedParam, argEnum.Current, deducedTypes, ctxt);
 			}
+			else if (HasDefaultType(expectedParam))
+				return CheckAndDeduceTypeAgainstTplParameter(expectedParam, null, deducedTypes, ctxt);
 			else if (expectedParam is TemplateTupleParameter)
 				return CheckAndDeduceTypeTuple(expectedParam as TemplateTupleParameter, Enumerable.Empty<ISemantic>(), deducedTypes, ctxt);
 			// There might be too few args - but that doesn't mean that it's not correct - it's only required that all parameters got satisfied with a type
 			else return deducedTypes.AllParamatersSatisfied;
+		}
+
+		static bool DeduceOrInduceSingleTemplateParameter(TemplateParameter parameter, ISemantic argumentToAnalyze, DeducedTypeDictionary deducedTypes, ResolutionContext ctxt)
+		{
+			if (argumentToAnalyze == null)
+				return false;
+
+			if (argumentToAnalyze is TemplateParameterSymbol tps && tps.Base == null)
+			{
+				// (Only) In the context of template parameter deduction
+				var probablyInducableParameter = TypeDeclarationResolver.ResolveTemplateParameter(ctxt, new TemplateParameter.Node(parameter));
+				return CheckAndDeduceTypeAgainstTplParameter(tps.Parameter, probablyInducableParameter, deducedTypes, ctxt);
+			}
+			else return CheckAndDeduceTypeAgainstTplParameter(parameter, argumentToAnalyze, deducedTypes, ctxt);
 		}
 
 		public static bool HasDefaultType(TemplateParameter p)

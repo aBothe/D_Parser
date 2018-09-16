@@ -263,6 +263,24 @@ namespace D_Parser.Resolver.TypeResolution
 			return declaration == null ? null : declaration.Accept (new SingleResolverVisitor (ctxt, filterTemplates));
 		}
 
+		public static AbstractType ResolveTemplateParameter(ResolutionContext ctxt, TemplateParameter.Node tpn)
+		{
+			TemplateParameterSymbol tpnBase;
+
+			if (ctxt.GetTemplateParam(tpn.NameHash, out tpnBase) && tpnBase.Parameter == tpn.TemplateParameter)
+				return tpnBase;
+
+			AbstractType baseType;
+			//TODO: What if there are like nested default constructs like (T = U*, U = int) ?
+			var ttp = tpn.TemplateParameter as TemplateTypeParameter;
+			if (ttp != null && (ttp.Default != null || ttp.Specialization != null))
+				baseType = ResolveSingle(ttp.Default ?? ttp.Specialization, ctxt);
+			else
+				baseType = null;
+
+			return new TemplateParameterSymbol(tpn, baseType);
+		}
+
 
 		#region Intermediate methods
 		[ThreadStatic]
@@ -352,7 +370,7 @@ namespace D_Parser.Resolver.TypeResolution
 			public ISyntaxRegion typeBase;
 			public AbstractType resultBase;
 
-
+			[System.Diagnostics.DebuggerStepThrough]
 			public NodeMatchHandleVisitor(ResolutionContext ctxt, ISyntaxRegion typeBase, AbstractType resultBase)
 			{
 				this.ctxt = ctxt;
@@ -671,7 +689,7 @@ namespace D_Parser.Resolver.TypeResolution
 					if (pack != null)
 						return new PackageSymbol(pack);
 				}
-				
+
 				return new ModuleSymbol(mod);
 			}
 
@@ -682,20 +700,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 			public AbstractType Visit(TemplateParameter.Node tpn)
 			{
-				TemplateParameterSymbol tpnBase;
-
-				if (ctxt.GetTemplateParam(tpn.NameHash, out tpnBase) && tpnBase.Parameter == tpn.TemplateParameter)
-					return tpnBase;
-
-				AbstractType baseType;
-				//TODO: What if there are like nested default constructs like (T = U*, U = int) ?
-				var ttp = tpn.TemplateParameter as TemplateTypeParameter;
-				if (CanResolveBase(tpn) && ttp != null && (ttp.Default != null || ttp.Specialization != null))
-					baseType = TypeDeclarationResolver.ResolveSingle(ttp.Default ?? ttp.Specialization, ctxt);
-				else
-					baseType = null;
-
-				return new TemplateParameterSymbol(tpn, baseType);
+				return CanResolveBase(tpn) ? ResolveTemplateParameter(ctxt, tpn) : new TemplateParameterSymbol(tpn, null);
 			}
 
 			public AbstractType Visit(NamedTemplateMixinNode n)

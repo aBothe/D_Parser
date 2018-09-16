@@ -753,8 +753,8 @@ unittest
 			td = DParser.ParseBasicType("inst");
 			t = RS(td, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
-			t = (t as MemberSymbol).Base;
-			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
+			var baseT = (t as MemberSymbol).Base;
+			Assert.That(baseT, Is.TypeOf(typeof(TemplateParameterSymbol)));
 
 			ctxt.CurrentContext.Set(A);
 
