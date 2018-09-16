@@ -1,4 +1,5 @@
 ﻿using D_Parser.Dom;
+using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Resolver.Templates
 {
@@ -53,12 +54,15 @@ namespace D_Parser.Resolver.Templates
 				ctxt.CurrentContext.DeducedTemplateParameters = d;
 			}
 
-			bool res = parameter.Accept(deductionVisitor, argumentToAnalyze);
-
-			if (ctxt != null && ctxt.CurrentContext != null)
-				ctxt.CurrentContext.DeducedTemplateParameters = _prefLocalsBackup;
-
-			return res;
+			try
+			{
+				return parameter.Accept(deductionVisitor, argumentToAnalyze);
+			}
+			finally
+			{
+				if (ctxt != null && ctxt.CurrentContext != null)
+					ctxt.CurrentContext.DeducedTemplateParameters = _prefLocalsBackup;
+			}
 		}
 	}
 }
