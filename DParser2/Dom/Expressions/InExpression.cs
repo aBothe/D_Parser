@@ -9,10 +9,13 @@ namespace D_Parser.Dom.Expressions
 	public class InExpression : OperatorBasedExpression
 	{
 		public bool Not;
+		public readonly int opColumn, opLine;
 
-		public InExpression(bool notIn)
+		public InExpression(bool notIn, CodeLocation oploc)
 		{
 			Not = notIn;
+			opColumn = oploc.Column;
+			opLine = oploc.Line;
 			OperatorToken = DTokens.In;
 		}
 
