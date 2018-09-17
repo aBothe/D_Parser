@@ -770,12 +770,12 @@ static int tmplFoo(T)() {}
 static int[] tmplFoo2(T : U[], U)(int oo) {}
 static int* tmplBar(T)(T t) {}
 
-void foo(U)(U u)
+void foo(FU)(FU u)
 {
-	tmplFoo2!U;
-	tmplBar!U(u);
+	tmplFoo2!FU;
+	tmplBar!FU(u);
 	tmplFoo2!(int[])(123);
-	tmplFoo2!U(123);
+	tmplFoo2!FU(123);
 }");
 			IExpression ex;
 
