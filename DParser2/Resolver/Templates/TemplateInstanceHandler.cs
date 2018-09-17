@@ -303,23 +303,18 @@ namespace D_Parser.Resolver.TypeResolution
 			DNode tplNode,
 			DeducedTypeDictionary deducedTypes)
 		{
-			bool isLegitOverload = true;
-
 			var argEnum = givenTemplateArguments.GetEnumerator();
 			if(tplNode.TemplateParameters != null)
 				foreach (var expectedParam in tplNode.TemplateParameters)
 					if (!DeduceParam(ctxt, overload, deducedTypes, argEnum, expectedParam))
-					{
-						isLegitOverload = false;
-						break; // Don't check further params if mismatch has been found
-					}
+						return false;
 
 			if (!isMethodCall && argEnum.MoveNext())
 			{
 				// There are too many arguments passed - discard this overload
-				isLegitOverload = false;
+				return false;
 			}
-			return isLegitOverload;
+			return true;
 		}
 
 		private static bool DeduceParam(ResolutionContext ctxt, 
