@@ -82,9 +82,6 @@ namespace D_Parser.Resolver
 
 		public static AbstractType Get(ISemantic s)
 		{
-			//FIXME: What to do with the other overloads?
-			if (s is InternalOverloadValue)
-				return new AmbiguousType((s as InternalOverloadValue).Overloads);
 			if (s is ISymbolValue)
 				return (s as ISymbolValue).RepresentedType;
 			

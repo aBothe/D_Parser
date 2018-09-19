@@ -168,8 +168,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			public ISymbolValue VisitAmbigousType(AmbiguousType t)
 			{
-				ISymbolValue v = null;
-				List<AbstractType> types = null;
+				var results = new List<ISymbolValue>(t.Overloads.Length);
 
 				foreach (var o in t.Overloads)
 				{
@@ -178,34 +177,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					{
 						ImplicitlyExecute = false; // For a second overload, don't do ctfe if there's a second match
 
-						if(newValue is TypeValue && (v != null || types != null))
-						{
-							if(types == null)
-								types = new List<AbstractType>();
-
-							if(v is TypeValue)
-							{
-								types.Add((v as TypeValue).RepresentedType);
-								v = null;
-							}
-							else{
-								// Error: Incompatible overloads?
-								v = null;
-							}
-
-							types.Add((newValue as TypeValue).RepresentedType);
-							continue;
-						}
-						else if (v != null)
-						{
-							// Ambiguous value
-							continue;
-						}
-						v = newValue;
+						results.Add(newValue);
 					}
 				}
 
-				return types != null ? new InternalOverloadValue(types) : v;
+				results.TrimExcess();
+				return results.Count > 1 ? new InternalOverloadValue(results) : results.Count > 0 ? results[0] : null;
 			}
 		}
 

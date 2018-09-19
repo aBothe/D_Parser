@@ -17,7 +17,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			this.RepresentedType = RepresentedType;
 		}
 
-		public AbstractType RepresentedType
+		public virtual AbstractType RepresentedType
 		{
 			get;
 			private set;

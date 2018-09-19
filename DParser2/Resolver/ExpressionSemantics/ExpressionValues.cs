@@ -2,7 +2,6 @@
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom;
 using D_Parser.Parser;
-using D_Parser.Resolver;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Text;
@@ -408,12 +407,23 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	/// </summary>
 	public class InternalOverloadValue : ExpressionValue
 	{
-		public List<AbstractType> Overloads { get; private set; }
+		public List<ISymbolValue> Overloads { get; private set; }
 
-		public InternalOverloadValue(List<AbstractType> overloads) : base(null)
+		public InternalOverloadValue(List<ISymbolValue> overloads) : base(null)
 		{
 			this.Overloads = overloads;
 		}
+
+		public List<AbstractType> GetRepresentedTypes()
+		{
+			var types = new List<AbstractType>(Overloads.Count);
+			foreach(var val in Overloads){
+				types.Add(val.RepresentedType);
+			}
+			return types;
+		}
+
+		public override AbstractType RepresentedType => AmbiguousType.Get(GetRepresentedTypes());
 
 		public override string ToCode()
 		{
@@ -426,14 +436,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return s.TrimEnd(',') + "]";
 		}
 
-
-		public override void Accept(ISymbolValueVisitor vis)
-		{
-			vis.VisitTypeOverloadValue(this);
-		}
-		public override R Accept<R>(ISymbolValueVisitor<R> vis)
-		{
-			return vis.VisitTypeOverloadValue(this);
-		}
+		public override void Accept(ISymbolValueVisitor vis) => vis.VisitTypeOverloadValue(this);
+		public override R Accept<R>(ISymbolValueVisitor<R> vis) => vis.VisitTypeOverloadValue(this);
 	}
 }

@@ -119,15 +119,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					else if (fore is IdentifierExpression)
 						ImplicitlyExecute = false;
 
-					if(call.PostfixForeExpression != null)
-						baseValue = call.PostfixForeExpression.Accept(this) as ISymbolValue;
+					if(fore != null)
+						baseValue = call.PostfixForeExpression.Accept(this);
 
-					if (baseValue is InternalOverloadValue)
-						baseExpression = ((InternalOverloadValue)baseValue).Overloads;
-					else if (baseValue != null)
-						baseExpression = new[] { baseValue.RepresentedType };
-					else 
-						baseExpression = Enumerable.Empty<AbstractType>();
+					baseExpression = baseValue != null ? AmbiguousType.TryDissolve(baseValue.RepresentedType) : Enumerable.Empty<AbstractType>();
 				}
 
 				ctxt.CurrentContext.ContextDependentOptions = optBackup;
