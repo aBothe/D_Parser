@@ -11,7 +11,7 @@ namespace Tests.Resolution
 		[Test]
 		public void ReturnStmt()
 		{
-			var ctxt = ResolutionTests.CreateCtxt("A", @"module A;
+			var ctxt = ResolutionTestHelper.CreateCtxt("A", @"module A;
 string inty(A)() { return ""int y;""; }
 ");
 
@@ -32,7 +32,7 @@ string inty(A)() { return ""int y;""; }
 		[Test]
 		public void ReturnStmt2()
 		{
-			var ctxt = ResolutionTests.CreateCtxt("A", @"module A;
+			var ctxt = ResolutionTestHelper.CreateCtxt("A", @"module A;
 int foo() { return 123; }
 string foo(string s) { return s ~ ""gh""; }
 ");
@@ -53,7 +53,7 @@ string foo(string s) { return s ~ ""gh""; }
 		[Test]
 		public void ReturnStmt3()
 		{
-			var ctxt = ResolutionTests.CreateCtxt("A", @"module A;
+			var ctxt = ResolutionTestHelper.CreateCtxt("A", @"module A;
 int foo() { return 123; }
 string foo(string s) { return s ~ ""gh""; }
 ");

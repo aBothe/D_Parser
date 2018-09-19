@@ -12,15 +12,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	{
 		class CTFEOrValueRefsVisitor : IResolvedTypeVisitor<ISymbolValue>
 		{
-			public bool ImplicitlyExecute;
 			IExpression idOrTemplateInstance;
-			ISymbolValue[] executionArguments;
+			IEnumerable<ISymbolValue> executionArguments;
 			AbstractSymbolValueProvider ValueProvider;
 
-			public CTFEOrValueRefsVisitor(AbstractSymbolValueProvider vp,IExpression idOrTemplateInstance, bool ImplicitlyExecute = true, ISymbolValue[] executionArguments = null)
+			public CTFEOrValueRefsVisitor(AbstractSymbolValueProvider vp,IExpression idOrTemplateInstance, IEnumerable<ISymbolValue> executionArguments = null)
 			{
-				this.ValueProvider = vp;
-				this.ImplicitlyExecute = ImplicitlyExecute;
+				ValueProvider = vp;
 				this.idOrTemplateInstance = idOrTemplateInstance;
 				this.executionArguments = executionArguments;
 			}
@@ -110,9 +108,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				if (mr.Definition is DVariable)
 					return new VariableValue(mr);
 
-				if (!ImplicitlyExecute)
-					return new TypeValue(mr);
-
 				// If we've got a function here, execute it
 				if (mr.Definition is DMethod)
 				{
@@ -174,11 +169,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				{
 					var newValue = o.Accept(this);
 					if (newValue != null)
-					{
-						ImplicitlyExecute = false; // For a second overload, don't do ctfe if there's a second match
-
 						results.Add(newValue);
-					}
 				}
 
 				results.TrimExcess();
@@ -189,28 +180,19 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// <summary>
 		/// Evaluates the identifier/template instance as usual.
 		/// If the id points to a variable, the initializer/dynamic value will be evaluated using its initializer.
-		/// 
-		/// If ImplicitlyExecute is false but value evaluation is switched on, an InternalOverloadValue-object will be returned
-		/// that keeps all overloads passed via 'overloads'
 		/// </summary>
-		ISymbolValue TryDoCTFEOrGetValueRefs(AbstractType r, IExpression idOrTemplateInstance, bool ImplicitlyExecute = true, ISymbolValue[] executionArguments=null)
+		ISymbolValue TryDoCTFEOrGetValueRefs(AbstractType r, IExpression idOrTemplateInstance, bool ImplicitlyExecute = true, IEnumerable<ISymbolValue> executionArguments=null)
 		{
-			return r != null ? r.Accept(new CTFEOrValueRefsVisitor(ValueProvider, idOrTemplateInstance, ImplicitlyExecute, executionArguments)) : null;
+			return r != null ? r.Accept(new CTFEOrValueRefsVisitor(ValueProvider, idOrTemplateInstance, executionArguments)) : null;
 		}
 
 		public ISymbolValue Visit(TemplateInstanceExpression tix)
 		{
-			var ImplicitlyExecute = this.ImplicitlyExecute;
-			this.ImplicitlyExecute = true;
-
-			return TryDoCTFEOrGetValueRefs(AmbiguousType.Get(ExpressionTypeEvaluation.GetOverloads(tix, ctxt)), tix, ImplicitlyExecute);
+			return TryDoCTFEOrGetValueRefs(AmbiguousType.Get(ExpressionTypeEvaluation.GetOverloads(tix, ctxt)), tix);
 		}
 
 		public ISymbolValue Visit(IdentifierExpression id)
 		{
-			var ImplicitlyExecute = this.ImplicitlyExecute;
-			this.ImplicitlyExecute = true;
-
 			if (id.IsIdentifier)
 			{
 				var o = ExpressionTypeEvaluation.EvaluateType(id, ctxt, false);
@@ -221,7 +203,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					return null;
 				}
 
-				return TryDoCTFEOrGetValueRefs(o, id, ImplicitlyExecute);
+				return TryDoCTFEOrGetValueRefs(o, id);
 			}
 
 			byte tt;

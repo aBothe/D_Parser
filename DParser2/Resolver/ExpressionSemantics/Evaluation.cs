@@ -18,7 +18,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		private readonly AbstractSymbolValueProvider ValueProvider;
 		bool resolveConstOnly { get { return ValueProvider == null || ValueProvider.ConstantOnly; } set { if(ValueProvider!=null) ValueProvider.ConstantOnly = value; } }
 
-		bool ImplicitlyExecute;
 		bool ignoreErrors;
 
 		/// <summary>
@@ -38,7 +37,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			this.ctxt = vp.ResolutionContext;
 			Errors = new List<EvaluationException>();
 
-			ImplicitlyExecute = true;
 			ignoreErrors = false;
 			rValue = null;
 			lValue = null;

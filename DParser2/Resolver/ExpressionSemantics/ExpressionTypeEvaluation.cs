@@ -134,7 +134,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			GetRawCallOverloads(ctxt, call.PostfixForeExpression, out baseExpression, out tix);
 
-			return Evaluation.EvalMethodCall(baseExpression, null, tix, ctxt, call, out callArgs, out delegValue, !TryReturnMethodReferenceOnly);
+			return Evaluation.EvalMethodCall(baseExpression, tix, ctxt, call, out callArgs, out delegValue, !TryReturnMethodReferenceOnly);
 		}
 
 

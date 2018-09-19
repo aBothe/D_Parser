@@ -41,21 +41,23 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 			out Dictionary<DVariable,T> targetArgs, ResolutionContext ctxt = null) where T:class,ISemantic
 		{
 			var dm = mr.Definition as DMethod;
-			int para = 0;
 
-			ISemantic firstArg;
-			if (TypeResolution.UFCSResolver.IsUfcsResult(mr, out firstArg))
-			{
-				para++;
-			}
-
-			targetArgs = new Dictionary<DVariable, T>();
 			if (callArguments == null)
 				callArguments = Enumerable.Empty<T>();
 
+			if (TypeResolution.UFCSResolver.IsUfcsResult(mr, out ISemantic firstArg) && firstArg is T)
+			{
+				var ufcsPrependedArgList = new List<T>();
+				ufcsPrependedArgList.Add((T)firstArg);
+				ufcsPrependedArgList.AddRange(callArguments);
+				callArguments = ufcsPrependedArgList;
+			}
+
+			targetArgs = new Dictionary<DVariable, T>();
+
 			var argEnumerator = callArguments.GetEnumerator();
 
-			for (; para < dm.Parameters.Count; para++)
+			for (int para = 0; para < dm.Parameters.Count; para++)
 			{
 				var par = dm.Parameters[para] as DVariable;
 

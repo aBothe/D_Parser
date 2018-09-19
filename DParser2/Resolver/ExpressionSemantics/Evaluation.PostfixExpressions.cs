@@ -24,12 +24,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			// Deduce template parameters later on
 			IEnumerable<AbstractType> baseExpression;
-			ISymbolValue baseValue;
 			TemplateInstanceExpression tix;
 
-			GetRawCallOverloads(ctxt, call, out baseExpression, out baseValue, out tix);
+			GetRawCallOverloads(ctxt, call, out baseExpression, out tix);
 
-			var argTypeFilteredOverloads = EvalMethodCall(baseExpression, baseValue, tix, ctxt, call, out callArguments, out delegValue, returnBaseTypeOnly, ValueProvider);
+			var argTypeFilteredOverloads = EvalMethodCall(baseExpression, tix, ctxt, call, out callArguments, out delegValue, returnBaseTypeOnly, ValueProvider);
 
 			if (delegValue != null)
 				return delegValue;
@@ -44,10 +43,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					args.Add(a as ISymbolValue);
 
 			// Execute/Evaluate the variable contents etc.
-			return TryDoCTFEOrGetValueRefs(argTypeFilteredOverloads, call.PostfixForeExpression, true, args.ToArray());
+			return TryDoCTFEOrGetValueRefs(argTypeFilteredOverloads, call.PostfixForeExpression, true, args);
 		}
 
-		public static AbstractType EvalMethodCall(IEnumerable<AbstractType> baseExpression, ISymbolValue baseValue, TemplateInstanceExpression tix,
+		public static AbstractType EvalMethodCall(IEnumerable<AbstractType> baseExpression, TemplateInstanceExpression tix,
 			ResolutionContext ctxt, 
 			PostfixExpression_MethodCall call, out List<ISemantic> callArguments, out ISymbolValue delegateValue,
 			bool returnBaseTypeOnly, AbstractSymbolValueProvider ValueProvider = null)
@@ -67,7 +66,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			methodOverloads = TryMatchTemplateArgumentsToOverloads (tix, ctxt, methodOverloads);
 
-			return MethodOverloadsByParameterTypeComparisonFilter.FilterOverloads (call, methodOverloads, ctxt, ValueProvider, returnBaseTypeOnly, baseValue,
+			return MethodOverloadsByParameterTypeComparisonFilter.FilterOverloads (call, methodOverloads, ctxt, ValueProvider, returnBaseTypeOnly,
 			                                                       ref callArguments, ref delegateValue);
 		}
 
@@ -85,10 +84,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		void GetRawCallOverloads(ResolutionContext ctxt,PostfixExpression_MethodCall call, 
 			out IEnumerable<AbstractType> baseExpression,
-			out ISymbolValue baseValue,
 			out TemplateInstanceExpression tix)
 		{
-			baseValue = null;
 			tix = null;
 
 			if (call.PostfixForeExpression is PostfixExpression_Access)
@@ -112,17 +109,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				{
 					var fore = call.PostfixForeExpression;
 					if (fore is TemplateInstanceExpression)
-					{
-						ImplicitlyExecute = false;
-						tix = call.PostfixForeExpression as TemplateInstanceExpression;
-					}
-					else if (fore is IdentifierExpression)
-						ImplicitlyExecute = false;
+						tix = fore as TemplateInstanceExpression;
 
-					if(fore != null)
-						baseValue = call.PostfixForeExpression.Accept(this);
-
-					baseExpression = baseValue != null ? AmbiguousType.TryDissolve(baseValue.RepresentedType) : Enumerable.Empty<AbstractType>();
+					baseExpression = ExpressionTypeEvaluation.GetUnfilteredMethodOverloads(fore, ctxt);
 				}
 
 				ctxt.CurrentContext.ContextDependentOptions = optBackup;
@@ -202,7 +191,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			// If evaluation active and the access expression is stand-alone, return a single item only.
 			if (EvalAndFilterOverloads && ValueProvider != null)
-				return new List<R> { (R)new Evaluation(ValueProvider).TryDoCTFEOrGetValueRefs(AmbiguousType.Get(overloads), acc.AccessExpression) };
+				return new List<R> { (R)new Evaluation(ValueProvider).TryDoCTFEOrGetValueRefs(
+					AmbiguousType.Get(overloads),
+					acc.AccessExpression,
+					executionArguments: new[] { baseExpression as ISymbolValue })
+				};
 
 			return overloads as List<R>;
 		}

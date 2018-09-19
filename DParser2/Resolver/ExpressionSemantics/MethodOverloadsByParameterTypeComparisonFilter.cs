@@ -17,7 +17,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			ResolutionContext ctxt,
 			AbstractSymbolValueProvider valueProvider,
 			bool returnBaseTypeOnly,
-			ISymbolValue baseValue,
 			ref List<ISemantic> callArguments,
 			ref ISymbolValue delegateValue)
 		{
@@ -29,7 +28,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			foreach (var ov in methodOverloads) {
 				if (ov is MemberSymbol)
-					HandleDMethodOverload (ctxt, valueProvider != null, baseValue, callArguments, returnBaseTypeOnly, argTypeFilteredOverloads, ref hasHandledUfcsResultBefore,
+					HandleDMethodOverload (ctxt, valueProvider != null, callArguments, returnBaseTypeOnly, argTypeFilteredOverloads, ref hasHandledUfcsResultBefore,
 						ov as MemberSymbol, ref untemplatedMethodResult);
 				else if (ov is DelegateType) {
 					var dg = ov as DelegateType;
@@ -86,7 +85,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return callArguments;
 		}
 
-		static void HandleDMethodOverload (ResolutionContext ctxt, bool eval, ISymbolValue baseValue, List<ISemantic> callArguments, bool returnBaseTypeOnly, List<AbstractType> argTypeFilteredOverloads, ref bool hasHandledUfcsResultBefore,
+		static void HandleDMethodOverload (ResolutionContext ctxt, bool eval, List<ISemantic> callArguments, bool returnBaseTypeOnly, List<AbstractType> argTypeFilteredOverloads, ref bool hasHandledUfcsResultBefore,
 			MemberSymbol ms, ref AbstractType untemplatedMethod)
 		{
 			var dm = ms.Definition as DMethod;
@@ -94,13 +93,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (dm == null)
 				return;
 
-
-
 			ISemantic firstUfcsArg;
 			bool isUfcs = UFCSResolver.IsUfcsResult (ms, out firstUfcsArg);
 			// In the case of an ufcs, insert the first argument into the CallArguments list
 			if (isUfcs && !hasHandledUfcsResultBefore) {
-				callArguments.Insert (0, eval ? baseValue as ISemantic : firstUfcsArg);
+				callArguments.Insert (0, firstUfcsArg);
 				hasHandledUfcsResultBefore = true;
 			} else if (!isUfcs && hasHandledUfcsResultBefore) // In the rare case of having a ufcs result occuring _after_ a normal member result, remove the initial arg again
 			  {
