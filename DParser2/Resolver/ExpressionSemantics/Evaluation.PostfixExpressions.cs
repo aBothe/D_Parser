@@ -271,7 +271,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 				// Make $ operand available
 				var arrLen_Backup = ValueProvider.CurrentArrayLength;
-				ValueProvider.CurrentArrayLength = av.Elements.Length;
+				ValueProvider.CurrentArrayLength = av.Length;
 
 				var n = ix.Expression.Accept(this) as PrimitiveValue;
 
@@ -294,13 +294,18 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					return null;
 				}
 
-				if (i < 0 || i > av.Elements.Length)
+				if (i < 0 || i > av.Length)
 				{
-					EvalError(ix.Expression, "Index out of range - it must be between 0 and " + av.Elements.Length);
+					EvalError(ix.Expression, "Index out of range - it must be between 0 and " + av.Length);
 					return null;
 				}
 
-				return av.Elements[i];
+				if (av.IsString)
+				{
+					char c = av.StringValue[i];
+					return new PrimitiveValue(c, (PrimitiveType)(av.RepresentedType as ArrayType).ValueType);
+				}
+				else return av.Elements[i];
 			}
 			else if (foreExpression is AssociativeArrayValue)
 			{

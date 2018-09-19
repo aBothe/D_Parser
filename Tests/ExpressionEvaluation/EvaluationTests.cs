@@ -299,6 +299,16 @@ enum int d=126;
 		}
 
 		[Test]
+		public void TestStringAccess()
+		{
+			var vp = new StandardValueProvider(null);
+
+			var v = E("\"asdf\"[1]", vp);
+			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			Assert.AreEqual(((PrimitiveValue)v).Value, (decimal)'s');
+		}
+
+		[Test]
 		public void TestAccessExpression()
 		{
 			var pcl = ResolutionTests.CreateCache(@"module modA;
