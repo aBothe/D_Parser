@@ -309,6 +309,18 @@ enum int d=126;
 		}
 
 		[Test]
+		public void TestStringAccess2()
+		{
+			var ctxt = ResolutionTestHelper.CreateDefCtxt("module A; enum stringConstant = \"asdf\";");
+
+			var vp = new StandardValueProvider(ctxt);
+
+			var v = E("stringConstant[1]", vp);
+			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			Assert.AreEqual(((PrimitiveValue)v).Value, (decimal)'s');
+		}
+
+		[Test]
 		public void TestAccessExpression()
 		{
 			var pcl = ResolutionTests.CreateCache(@"module modA;

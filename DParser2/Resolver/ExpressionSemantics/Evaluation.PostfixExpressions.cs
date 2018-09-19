@@ -209,7 +209,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		ISymbolValue EvalForeExpression(PostfixExpression ex)
 		{
-			return ex.PostfixForeExpression != null ? ex.PostfixForeExpression.Accept(this) : null;
+			var foreValue = ex.PostfixForeExpression != null ? ex.PostfixForeExpression.Accept(this) : null;
+
+			if (resolveConstOnly && foreValue is VariableValue)
+				return ValueProvider[((VariableValue)foreValue).Variable];
+
+			return foreValue;
 		}
 
 		public ISymbolValue Visit(PostfixExpression_Access ex)
