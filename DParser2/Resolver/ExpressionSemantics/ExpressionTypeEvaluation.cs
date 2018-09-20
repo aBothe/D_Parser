@@ -981,7 +981,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			sw.Restart();
 			#endif
 
-			var f = DResolver.FilterOutByResultPriority(ctxt, res);
+			var f = FilterOutByResultPriority(ctxt, res);
 
 			if (f.Count > 0)
 			{
@@ -1001,7 +1001,93 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			return res;
 		}
-#endregion
+
+		public static List<T> FilterOutByResultPriority<T>(
+			ResolutionContext ctxt,
+			IEnumerable<T> results) where T : AbstractType
+		{
+			var symbols = new List<INode>();
+			var newRes = new List<T>();
+
+			if (results != null)
+			{
+				foreach (var rb in results)
+				{
+					var n = GetResultMember(rb);
+					if (n != null)
+					{
+						if (symbols.Contains(n))
+							continue;
+						symbols.Add(n);
+
+						// Put priority on locals
+						if (n is DVariable &&
+						   (n as DVariable).IsLocal)
+						{
+							newRes.Clear();
+							newRes.Add(rb);
+							break;
+						}
+
+						if (ctxt.CurrentContext.ScopedBlock == null)
+							break;
+
+						// If member/type etc. is part of the actual module, omit external symbols
+						if (n.NodeRoot != ctxt.CurrentContext.ScopedBlock.NodeRoot)
+						{
+							bool omit = false;
+							foreach (var r in newRes)
+							{
+								var k = GetResultMember(r);
+								if (k != null && k.NodeRoot == ctxt.CurrentContext.ScopedBlock.NodeRoot)
+								{
+									omit = true;
+									break;
+								}
+							}
+
+							if (omit)
+								continue;
+						}
+						else
+							foreach (var r in newRes.ToArray())
+							{
+								var k = GetResultMember(r);
+								if (k != null && k.NodeRoot != ctxt.CurrentContext.ScopedBlock.NodeRoot)
+									newRes.Remove(r);
+							}
+					}
+
+					if (!newRes.Contains(rb))
+						newRes.Add(rb);
+				}
+			}
+
+			return newRes;
+		}
+
+		public static DNode GetResultMember(ISemantic res, bool keepAliases = false)
+		{
+			var t = AbstractType.Get(res);
+
+			if (t == null)
+				return null;
+
+			if (keepAliases)
+			{
+				var aliasTag = t.Tag<TypeDeclarationResolver.AliasTag>(TypeDeclarationResolver.AliasTag.Id);
+				if (aliasTag != null &&
+					(!(aliasTag.aliasDefinition is ImportSymbolAlias) || // Only if the import symbol alias definition was selected, go to its base
+					(aliasTag.typeBase != null && aliasTag.aliasDefinition.NameLocation != aliasTag.typeBase.Location)))
+					return aliasTag.aliasDefinition;
+			}
+
+			if (t is DSymbol)
+				return ((DSymbol)res).Definition;
+
+			return null;
+		}
+		#endregion
 
 		#region Primitive expressions
 		public AbstractType Visit(Expression ex)

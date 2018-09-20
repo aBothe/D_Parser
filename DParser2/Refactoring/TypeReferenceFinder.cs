@@ -49,7 +49,7 @@ namespace D_Parser.Refactoring
 		Alias = DTokens.Alias
 	}
 
-	public class TypeReferenceFinder : AbstractResolutionVisitor
+	class TypeReferenceFinder : AbstractResolutionVisitor
 	{
 		#region Properties
 		Dictionary<DeclarationCondition,int> handledConditions = new Dictionary<DeclarationCondition,int>();

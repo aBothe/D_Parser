@@ -12,7 +12,7 @@ namespace D_Parser.Formatting
 		Intrusive
 	}
 	
-	public partial class DFormattingVisitor : DefaultDepthFirstVisitor
+	partial class DFormattingVisitor : DefaultDepthFirstVisitor
 	{
 		#region Change management
 		internal sealed class TextReplaceAction
@@ -58,7 +58,7 @@ namespace D_Parser.Formatting
 		
 		class ReplaceActionComparer : IComparer<TextReplaceAction>
 		{
-			public int Compare(DFormattingVisitor.TextReplaceAction x, DFormattingVisitor.TextReplaceAction y)
+			public int Compare(TextReplaceAction x, TextReplaceAction y)
 			{
 				if(x.Offset == y.Offset)
 					return 0;

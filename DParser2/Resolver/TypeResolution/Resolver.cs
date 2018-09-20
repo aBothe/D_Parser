@@ -7,98 +7,14 @@ using D_Parser.Dom.Statements;
 using D_Parser.Parser;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.Templates;
-using System.Threading;
-
 
 namespace D_Parser.Resolver.TypeResolution
 {
 	/// <summary>
 	/// Generic class for resolve module relations and/or declarations
 	/// </summary>
-	public class DResolver
+	public partial class DResolver
 	{
-		class ScopedObjectVisitor : DefaultDepthFirstVisitor
-		{
-			public ISyntaxRegion IdNearCaret;
-			readonly CodeLocation caret;
-
-			public ScopedObjectVisitor(CodeLocation caret)
-			{
-				this.caret = caret;
-			}
-
-			public override void Visit(PostfixExpression_MethodCall x)
-			{
-				base.Visit(x);
-				if (IdNearCaret == x.PostfixForeExpression)
-					IdNearCaret = x;
-			}
-
-			public override void Visit(PostfixExpression_Access x)
-			{
-				if (x.AccessExpression != null &&
-				    x.AccessExpression.Location <= caret &&
-				    x.AccessExpression.EndLocation >= caret) {
-					x.AccessExpression.Accept (this);
-					if(IdNearCaret == x.AccessExpression)
-						IdNearCaret = x;
-				}else
-					base.Visit(x);
-			}
-
-			public override void Visit (TemplateInstanceExpression x)
-			{
-				if (x.Identifier.Location <= caret && x.Identifier.EndLocation >= caret)
-					IdNearCaret = x;
-				else
-					base.Visit (x);
-			}
-
-			public override void Visit(IdentifierExpression x)
-			{
-				if (x.Location <= caret && x.EndLocation >= caret)
-					IdNearCaret = x;
-				else
-					base.Visit(x);
-			}
-
-			public override void Visit(IdentifierDeclaration x)
-			{
-				if (x.Location <= caret && x.EndLocation >= caret)
-					IdNearCaret = x;
-				else
-					base.Visit(x);
-			}
-
-			public override void VisitTemplateParameter(TemplateParameter tp)
-			{
-				var nl = tp.NameLocation;
-				string name;
-				if (tp.NameHash != 0 &&
-					caret.Line == nl.Line &&
-					caret.Column >= nl.Column &&
-					(name = tp.Name) != null &&
-					caret.Column <= nl.Column + name.Length)
-					IdNearCaret = tp.Representation;
-			}
-
-			public override void VisitDNode(DNode n)
-			{
-				var nl = n.NameLocation;
-				string name;	
-				if (n.NameHash != 0 &&
-					caret.Line == nl.Line &&
-					caret.Column >= nl.Column &&
-					(name = n.Name) != null &&
-					caret.Column <= nl.Column + name.Length)
-					IdNearCaret = n;
-				else
-					base.VisitDNode(n);
-			}
-
-			// Template parameters
-		}
-
 		/// <summary>Used for code completion/symbol resolution.</summary>
 		/// <param name="editor">Can be null</param>
 		public static ISyntaxRegion GetScopedCodeObject(IEditorData editor)
@@ -494,83 +410,6 @@ namespace D_Parser.Resolver.TypeResolution
 				}
 
 			return Parent;
-		}
-
-		public static List<T> FilterOutByResultPriority<T>(
-			ResolutionContext ctxt,
-			IEnumerable<T> results) where T : AbstractType
-		{
-			var symbols = new List<INode>();
-			var newRes = new List<T>();
-
-			if (results != null) {
-				foreach (var rb in results) {
-					var n = GetResultMember (rb);
-					if (n != null) {
-						if (symbols.Contains(n))
-							continue;
-						symbols.Add(n);
-
-						// Put priority on locals
-						if (n is DVariable &&
-						   (n as DVariable).IsLocal) {
-							newRes.Clear ();
-							newRes.Add (rb);
-							break;
-						}
-						
-						if (ctxt.CurrentContext.ScopedBlock == null)
-							break;
-
-						// If member/type etc. is part of the actual module, omit external symbols
-						if (n.NodeRoot != ctxt.CurrentContext.ScopedBlock.NodeRoot) {
-							bool omit = false;
-							foreach (var r in newRes) {
-								var k = GetResultMember (r);
-								if (k != null && k.NodeRoot == ctxt.CurrentContext.ScopedBlock.NodeRoot) {
-									omit = true;
-									break;
-								}
-							}
-
-							if (omit)
-								continue;
-						} else
-							foreach (var r in newRes.ToArray()) {
-								var k = GetResultMember (r);
-								if (k != null && k.NodeRoot != ctxt.CurrentContext.ScopedBlock.NodeRoot)
-									newRes.Remove (r);
-							}
-					}
-
-					if(!newRes.Contains(rb))
-						newRes.Add (rb);
-				}
-			}
-
-			return newRes;
-		}
-
-		public static DNode GetResultMember(ISemantic res, bool keepAliases = false)
-		{
-			var t = AbstractType.Get(res);
-
-			if(t == null)
-				return null;
-
-			if (keepAliases)
-			{
-				var aliasTag = t.Tag<TypeDeclarationResolver.AliasTag>(TypeDeclarationResolver.AliasTag.Id);
-				if (aliasTag != null && 
-					(!(aliasTag.aliasDefinition is ImportSymbolAlias) || // Only if the import symbol alias definition was selected, go to its base
-					(aliasTag.typeBase != null && aliasTag.aliasDefinition.NameLocation != aliasTag.typeBase.Location)))
-					return aliasTag.aliasDefinition;
-			}
-
-			if(t is DSymbol)
-				return ((DSymbol)res).Definition;
-
-			return null;
 		}
 
 		/// <summary>

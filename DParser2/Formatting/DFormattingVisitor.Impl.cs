@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 using D_Parser.Dom;
 using D_Parser.Dom.Statements;
@@ -7,7 +6,7 @@ using D_Parser.Dom.Expressions;
 
 namespace D_Parser.Formatting
 {
-	public partial class DFormattingVisitor : DefaultDepthFirstVisitor
+	partial class DFormattingVisitor
 	{
 		List<DAttribute> AlreadyHandledAttributes = new List<DAttribute>();
 		

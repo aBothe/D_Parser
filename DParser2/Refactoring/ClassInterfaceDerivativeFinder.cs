@@ -29,7 +29,6 @@ using D_Parser.Dom;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ASTScanner;
 using D_Parser.Resolver.TypeResolution;
-using D_Parser.Parser;
 
 namespace D_Parser.Refactoring
 {

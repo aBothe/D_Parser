@@ -29,7 +29,7 @@ using D_Parser.Parser;
 
 namespace D_Parser.Formatting.Indent
 {
-	public class DIndentEngine : IStateMachineIndentEngine
+	class DIndentEngine : IStateMachineIndentEngine
 	{
 		#region Properties
 		protected DFormattingOptions Policy;

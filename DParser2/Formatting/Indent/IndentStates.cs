@@ -28,14 +28,12 @@ using System;
 
 namespace D_Parser.Formatting.Indent
 {
-	#region IndentState
-
 	/// <summary>
 	///     The base class for all indentation states. 
 	///     Each state defines the logic for indentation based on chars that
 	///     are pushed to it.
 	/// </summary>
-	public abstract class IndentState : ICloneable
+	abstract class IndentState : ICloneable
 	{
 		#region Properties
 
@@ -223,7 +221,5 @@ namespace D_Parser.Formatting.Indent
 
 		#endregion
 	}
-
-	#endregion
 }
 

@@ -146,6 +146,9 @@
     <Compile Include="Refactoring\ITextDocument.cs" />
     <Compile Include="Refactoring\ReferencesFinder.cs" />
     <Compile Include="Refactoring\SortImportsRefactoring.cs" />
+    <Compile Include="Resolver\ASTScanner\ItemCheckParameters.cs" />
+    <Compile Include="Resolver\ASTScanner\SingleNodeNameScan.cs" />
+    <Compile Include="Resolver\ASTScanner\AbstractVisitor.StatementHandler.cs" />
     <Compile Include="Resolver\ConditionalCompilation.cs" />
     <Compile Include="Resolver\DTypeToCodeVisitor.cs" />
     <Compile Include="Resolver\DTypeToTypeDeclVisitor.cs" />
@@ -193,6 +196,8 @@
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.PostfixExpressions.cs" />
     <Compile Include="Resolver\Templates\TemplateInstanceHandler.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.Traits.cs" />
+    <Compile Include="Resolver\TypeResolution\ScopedObjectVisitor.cs" />
+    <Compile Include="Resolver\TypeResolution\SingleResolverVisitor.cs" />
     <Compile Include="Resolver\TypeResolution\TypeDeclarationResolver.cs" />
     <Compile Include="Completion\ICompletionDataGenerator.cs" />
     <Compile Include="Completion\ParameterInsightResolution.cs" />

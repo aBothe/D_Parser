@@ -30,7 +30,7 @@ namespace D_Parser.Formatting.Indent
 	/// <summary>
 	///     The base interface for all indent engines.
 	/// </summary>
-	public interface IDocumentIndentEngine : ICloneable
+	interface IDocumentIndentEngine : ICloneable
 	{
 		/// <summary>
 		///     The indentation string of the current line.

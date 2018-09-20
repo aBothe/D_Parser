@@ -27,7 +27,7 @@ using System;
 
 namespace D_Parser.Formatting.Indent
 {
-	public interface IStateMachineIndentEngine : IDocumentIndentEngine
+	interface IStateMachineIndentEngine : IDocumentIndentEngine
 	{
 		Inside Inside {get;}
 

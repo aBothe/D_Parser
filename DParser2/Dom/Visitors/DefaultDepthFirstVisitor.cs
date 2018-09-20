@@ -1,10 +1,9 @@
-﻿using System.Collections.Generic;
-using D_Parser.Dom.Statements;
+﻿using D_Parser.Dom.Statements;
 using D_Parser.Dom.Expressions;
 
 namespace D_Parser.Dom
 {
-	public abstract class DefaultDepthFirstVisitor : DVisitor
+	abstract class DefaultDepthFirstVisitor : DVisitor
 	{
 		#region Nodes
 		public virtual void VisitChildren(IBlockNode block)

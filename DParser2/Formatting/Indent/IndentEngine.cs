@@ -33,7 +33,7 @@ using D_Parser.Parser;
 
 namespace D_Parser.Formatting.Indent
 {
-	public class IndentEngine : ICloneable, DFormattingOptionsFactory
+	class IndentEngine : ICloneable, DFormattingOptionsFactory
 	{
 		#region Properties
 		protected DFormattingOptions Policy;

@@ -30,7 +30,7 @@ using System.Collections.Generic;
 
 namespace D_Parser.Completion
 {
-	public class ParamInsightVisitor : DefaultDepthFirstVisitor
+	internal class ParamInsightVisitor : DefaultDepthFirstVisitor
 	{
 		Stack<IExpression> CallExpressionStack = new Stack<IExpression>();
 		/// <summary>

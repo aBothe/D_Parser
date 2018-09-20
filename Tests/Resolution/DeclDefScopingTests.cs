@@ -87,7 +87,7 @@ void asdf(int* ni=23) {
 			Assert.That((t[0] as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 			Assert.That(t.Count, Is.EqualTo(1)); // Was 2; Has been changed to 1 because it's only important to take the 'nearest' declaration that occured before the resolved expression
 
-			t = DResolver.FilterOutByResultPriority(ctxt, t);
+			t = ExpressionTypeEvaluation.FilterOutByResultPriority(ctxt, t);
 			Assert.That(t.Count, Is.EqualTo(1));
 		}
 

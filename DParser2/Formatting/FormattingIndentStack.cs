@@ -28,7 +28,7 @@ using System.Collections.Generic;
 
 namespace D_Parser.Formatting
 {
-	public enum IndentType {
+	enum IndentType {
 		Block,
 		Continuation,
 		Label,
@@ -38,7 +38,7 @@ namespace D_Parser.Formatting
 		Negative
 	}
 
-	public class FormattingIndentStack
+	class FormattingIndentStack
 	{
 		readonly Stack<IndentType> indentStack = new Stack<IndentType> ();
 		readonly ITextEditorOptions options;

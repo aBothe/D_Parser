@@ -5,7 +5,7 @@ using D_Parser.Parser;
 namespace D_Parser.Formatting.Indent
 {
 	[Flags]
-	public enum Inside
+	enum Inside
 	{
 		Empty                  = 0,
 		
@@ -40,7 +40,7 @@ namespace D_Parser.Formatting.Indent
 	/// <summary>
 	/// Description of IndentStack.
 	/// </summary>
-	public class IndentStack: ICloneable {
+	class IndentStack: ICloneable {
 		const int INITIAL_CAPACITY = 16;
 		
 		struct Node {
