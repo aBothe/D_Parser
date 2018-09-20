@@ -391,11 +391,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						continue;
 				}
 				else if(e is PrimitiveValue)
-				{
-					var btt = (e as PrimitiveValue).BaseTypeToken;
-					if(btt == DTokens.Char || btt == DTokens.Dchar || btt == DTokens.Wchar)
-						continue;
-				}
+					continue;
 				
 				isString = false;
 			}

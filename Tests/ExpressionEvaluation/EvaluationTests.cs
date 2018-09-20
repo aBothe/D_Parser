@@ -648,5 +648,17 @@ enum isIntOrFloat(F) = is(F == int) || is(F == float);
 			var t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(ArrayType)));
 		}
+
+		[Test]
+		public void ImplicitIntToCharConversion()
+		{
+			var x = DParser.ParseExpression("`a` ~ 97");
+			var v = Evaluation.EvaluateValue(x, ResolutionTestHelper.CreateDefCtxt("module A;"));
+
+			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+			var av = v as ArrayValue;
+			Assert.That(av.IsString);
+			Assert.That(av.StringValue, Is.EqualTo("aa"));
+		}
 	}
 }
