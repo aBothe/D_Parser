@@ -586,5 +586,44 @@ void foo()
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 		}
+
+		[Test]
+		public void StaticForeach()
+		{
+			var ctxt = CreateDefCtxt(@"module modA;
+static foreach(i; 0 .. 5) {
+	mixin(`enum var` ~ i!text ~ ` = i;`);
+}
+");
+
+			for (int i = 0; i <= 5; i++)
+			{
+				var x = DParser.ParseExpression("var" + i);
+				var v = Evaluation.EvaluateValue(x, ctxt);
+
+				Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+				Assert.That((v as PrimitiveValue).Value, Is.EqualTo(i));
+			}
+		}
+
+		[Test]
+		public void StaticForeachScope()
+		{
+			var ctxt = CreateDefCtxt(@"module modA;
+enum staticArray = [0,1,2,3,4,5];
+static foreach(i; staticArray) {
+	mixin(`enum var` ~ i!text ~ ` = i;`);
+}
+");
+
+			for (int i = 0; i <= 5; i++)
+			{
+				var x = DParser.ParseExpression("var" + i);
+				var v = Evaluation.EvaluateValue(x, ctxt);
+
+				Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+				Assert.That((v as PrimitiveValue).Value, Is.EqualTo(i));
+			}
+		}
 	}
 }

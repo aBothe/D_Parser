@@ -60,5 +60,27 @@ int a;
 			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(ArrayType)));
 		}
 
+		[Test]
+		public void NoParenthesesUfcsCall()
+		{
+			var ctxt = ResolutionTestHelper.CreateCtxt("A", @"module A;
+int foo() { return 123; }
+string foo(string s) { return s ~ ""gh""; }
+");
+
+			IExpression x;
+			ISymbolValue v;
+			ArrayValue av;
+
+			x = DParser.ParseExpression("\"asdf\".foo");
+			v = Evaluation.EvaluateValue(x, ctxt);
+
+			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+			av = v as ArrayValue;
+
+			Assert.That(av.IsString);
+			Assert.That(av.StringValue, Is.EqualTo("asdfgh"));
+		}
+
 	}
 }
