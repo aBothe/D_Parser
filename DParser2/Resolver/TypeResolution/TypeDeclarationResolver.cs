@@ -289,7 +289,7 @@ namespace D_Parser.Resolver.TypeResolution
 				else
 					bt = null;
 
-				return new MemberSymbol(variable, bt);
+				return new MemberSymbol(variable, bt, variable.Initializer != null ? ctxt.DeducedTypesInHierarchy : null);
 			}
 
 			/// <summary>
