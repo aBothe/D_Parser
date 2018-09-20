@@ -146,9 +146,12 @@
     <Compile Include="Refactoring\ITextDocument.cs" />
     <Compile Include="Refactoring\ReferencesFinder.cs" />
     <Compile Include="Refactoring\SortImportsRefactoring.cs" />
+    <Compile Include="Resolver\ASTScanner\Util\IndexKeyExtendingEnumerable.cs" />
+    <Compile Include="Resolver\ASTScanner\Util\IotaEnumerable.cs" />
     <Compile Include="Resolver\ASTScanner\ItemCheckParameters.cs" />
     <Compile Include="Resolver\ASTScanner\SingleNodeNameScan.cs" />
     <Compile Include="Resolver\ASTScanner\AbstractVisitor.StatementHandler.cs" />
+    <Compile Include="Resolver\ASTScanner\Util\StringCharValuesEnumerable.cs" />
     <Compile Include="Resolver\ConditionalCompilation.cs" />
     <Compile Include="Resolver\DTypeToCodeVisitor.cs" />
     <Compile Include="Resolver\DTypeToTypeDeclVisitor.cs" />

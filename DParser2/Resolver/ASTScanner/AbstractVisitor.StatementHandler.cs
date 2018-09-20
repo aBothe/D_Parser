@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
-
+using System.Linq;
 using D_Parser.Dom;
 using D_Parser.Dom.Statements;
+using D_Parser.Resolver.ASTScanner.Util;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
 
@@ -677,9 +679,105 @@ namespace D_Parser.Resolver.ASTScanner
 				return VisitExpressionStmt(s);
 			}
 
+			IEnumerable<KeyValuePair<ISymbolValue, ISymbolValue>> DetermineForeachKeyValuePairs(StaticForeachStatement s)
+			{
+				if (s.IsRangeStatement)
+				{
+					var lowerBound = Evaluation.EvaluateValue(s.Aggregate, ctxt);
+					var upperBound = Evaluation.EvaluateValue(s.UpperAggregate, ctxt);
+
+					var lowerPrimitive = lowerBound as PrimitiveValue;
+					var upperPrimitive = upperBound as PrimitiveValue;
+
+					if (lowerPrimitive == null)
+					{
+						ctxt.LogError(s.Aggregate, "couldn't resolve lower-bound aggregate number");
+						return null;
+					}
+					else if (upperPrimitive == null)
+					{
+						ctxt.LogError(s.UpperAggregate, "couldn't resolve lower-bound aggregate number");
+						return null;
+					}
+
+					if (lowerPrimitive.Value > upperPrimitive.Value)
+					{
+						ctxt.LogError(s, "lower aggregate " + lowerPrimitive.Value + " must be less than " + upperPrimitive.Value);
+						return null;
+					}
+
+					return new IotaEnumerable((PrimitiveType)lowerPrimitive.RepresentedType, lowerPrimitive.Value, upperPrimitive.Value);
+				}
+				else
+				{
+					var aggregate = Evaluation.EvaluateValue(s.Aggregate, ctxt);
+
+					if (aggregate is AssociativeArrayValue)
+					{
+						var aa = aggregate as AssociativeArrayValue;
+						return aa.Elements;
+					}
+					else if (aggregate is ArrayValue)
+					{
+						var av = aggregate as ArrayValue;
+						IEnumerable<ISymbolValue> values;
+						if (av.IsString)
+						{
+							var arrayType = av.RepresentedType as ArrayType;
+							values = new StringCharValuesEnumerable((PrimitiveType)arrayType.ValueType, av.StringValue);
+						}
+						else if (av.Elements != null)
+							values = av.Elements;
+						else
+							values = Enumerable.Empty<ISymbolValue>();
+
+						return new IndexKeyExtendingEnumerable(values);
+					}
+					else
+					{
+						ctxt.LogError(s, "aggregate must be (optionally associative) array");
+						return null;
+					}
+				}
+			}
+
 			public bool Visit(StaticForeachStatement s)
 			{
-				return Visit(s as ForeachStatement);
+				if(s.ForeachTypeList == null || s.ForeachTypeList.Length == 0)
+					return Visit(s as ForeachStatement);
+
+				var  keyValues = DetermineForeachKeyValuePairs(s);
+				if(keyValues == null)
+					return Visit(s as ForeachStatement);
+
+				var valueHoldingIterator = s.ForeachTypeList[0];
+				var keyHoldingIterator = s.ForeachTypeList.Length > 1 ? s.ForeachTypeList[1] : null;
+
+				var pseudoValueTemplateParameter = new TemplateValueParameter(valueHoldingIterator.NameHash, valueHoldingIterator.NameLocation, valueHoldingIterator.Parent as DNode).Representation;
+				var pseudoKeyTemplateParameter = keyHoldingIterator != null ? new TemplateValueParameter(keyHoldingIterator.NameHash, keyHoldingIterator.NameLocation, keyHoldingIterator.Parent as DNode).Representation : null;
+
+				var deducedTypes = ctxt.CurrentContext.DeducedTemplateParameters;
+
+				foreach (var kv in keyValues)
+				{
+					// Set iterator/optinal key variables as template parameter
+					deducedTypes[pseudoValueTemplateParameter.TemplateParameter] = new TemplateParameterSymbol(pseudoValueTemplateParameter, kv.Value);
+					if(pseudoKeyTemplateParameter != null)
+						deducedTypes[pseudoKeyTemplateParameter.TemplateParameter] = new TemplateParameterSymbol(pseudoKeyTemplateParameter, kv.Key);
+
+					if (s.ScopedStatement.Accept(this))
+						break;
+
+					if (v.ctxt.CancellationToken.IsCancellationRequested ||
+						v.StopEnumerationOnNextScope)
+						break;
+				}
+
+				deducedTypes.Remove(pseudoValueTemplateParameter.TemplateParameter);
+				if(pseudoKeyTemplateParameter != null)
+					deducedTypes.Remove(pseudoKeyTemplateParameter.TemplateParameter);
+
+				return false;
 			}
 
 			public bool VisitAsmInstructionStatement(AsmInstructionStatement instrStatement)

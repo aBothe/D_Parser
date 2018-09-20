@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
@@ -588,17 +585,35 @@ void foo()
 		}
 
 		[Test]
-		public void StaticForeach()
+		public void StaticForeach_UpperAggregate()
 		{
 			var ctxt = CreateDefCtxt(@"module modA;
-static foreach(i; 0 .. 5) {
-	mixin(`enum var` ~ i!text ~ ` = i;`);
+static foreach(i; 97 .. 100) {
+	mixin(`enum var` ~ i ~ ` = 0;`);
 }
 ");
 
-			for (int i = 0; i <= 5; i++)
+			for (int i = 97; i <= 100; i++)
 			{
-				var x = DParser.ParseExpression("var" + i);
+				var td = DParser.ParseBasicType("var" + (char)i);
+				var t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
+
+				Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			}
+		}
+
+		[Test]
+		public void StaticForeach_UpperAggregate_IteratorAsDefInitializer()
+		{
+			var ctxt = CreateDefCtxt(@"module modA;
+static foreach(i; 97 .. 100) {
+	mixin(`enum var` ~ i ~ ` = i;`);
+}
+");
+
+			for (int i = 97; i <= 100; i++)
+			{
+				var x = DParser.ParseExpression("var" + (char)i);
 				var v = Evaluation.EvaluateValue(x, ctxt);
 
 				Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
@@ -607,22 +622,21 @@ static foreach(i; 0 .. 5) {
 		}
 
 		[Test]
-		public void StaticForeachScope()
+		public void StaticForeach_ArrayAggregate()
 		{
 			var ctxt = CreateDefCtxt(@"module modA;
-enum staticArray = [0,1,2,3,4,5];
+enum staticArray = ['0','1','2','3','4','5'];
 static foreach(i; staticArray) {
-	mixin(`enum var` ~ i!text ~ ` = i;`);
+	mixin(`enum var` ~ i ~ ` = 0;`);
 }
 ");
 
 			for (int i = 0; i <= 5; i++)
 			{
-				var x = DParser.ParseExpression("var" + i);
-				var v = Evaluation.EvaluateValue(x, ctxt);
+				var td = DParser.ParseBasicType("var" + i);
+				var t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
 
-				Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
-				Assert.That((v as PrimitiveValue).Value, Is.EqualTo(i));
+				Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			}
 		}
 	}
