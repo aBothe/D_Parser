@@ -3,7 +3,7 @@ using D_Parser.Dom.Expressions;
 
 namespace D_Parser.Dom
 {
-	abstract class DefaultDepthFirstVisitor : DVisitor
+	public abstract class DefaultDepthFirstVisitor : DVisitor
 	{
 		#region Nodes
 		public virtual void VisitChildren(IBlockNode block)

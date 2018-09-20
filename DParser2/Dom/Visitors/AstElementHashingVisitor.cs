@@ -7,7 +7,7 @@ using D_Parser.Resolver.ExpressionSemantics;
 
 namespace D_Parser.Dom.Visitors
 {
-	class AstElementHashingVisitor : DVisitor<long>, IResolvedTypeVisitor<long>, ISymbolValueVisitor<long>
+	public class AstElementHashingVisitor : DVisitor<long>, IResolvedTypeVisitor<long>, ISymbolValueVisitor<long>
 	{
 		#region Properties
 		const long prime = 31;

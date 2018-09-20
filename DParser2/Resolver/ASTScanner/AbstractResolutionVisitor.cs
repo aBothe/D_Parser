@@ -28,7 +28,7 @@ using D_Parser.Dom.Statements;
 
 namespace D_Parser.Resolver.ASTScanner
 {
-	class AbstractResolutionVisitor: DefaultDepthFirstVisitor
+	public class AbstractResolutionVisitor: DefaultDepthFirstVisitor
 	{
 		protected readonly ResolutionContext ctxt;
 
