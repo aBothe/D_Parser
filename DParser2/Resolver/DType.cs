@@ -476,16 +476,12 @@ namespace D_Parser.Resolver
 
 		public void SetDeducedTypes(IEnumerable<TemplateParameterSymbol> s)
 		{
-			if (s == null) {
-				DeducedTypes = new ReadOnlyCollection<TemplateParameterSymbol>(new List<TemplateParameterSymbol>(0));
-				return;
-			}
+			var l = new List<TemplateParameterSymbol>();
 
-			var l = new List<TemplateParameterSymbol> ();
-
-			foreach (var tps in s)
-				if (tps != null && tps != this && tps.Base != this)
-					l.Add (tps);
+			if(s != null)
+				foreach (var tps in s)
+					if (tps != null && tps != this && tps.Base != this)
+						l.Add (tps);
 
 			DeducedTypes = new ReadOnlyCollection<TemplateParameterSymbol> (l);
 		}
