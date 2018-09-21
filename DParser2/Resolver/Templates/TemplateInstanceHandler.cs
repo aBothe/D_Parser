@@ -4,6 +4,7 @@ using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Resolver.Templates;
 using D_Parser.Resolver.ExpressionSemantics;
+using System;
 
 namespace D_Parser.Resolver.TypeResolution
 {
@@ -114,7 +115,7 @@ namespace D_Parser.Resolver.TypeResolution
 					ResolutionContext ctxt)
 		{
 			if (rawOverloadList == null)
-				return null;
+				return new List<AbstractType>();
 
 			var unfilteredOverloads = DeduceOverloads(rawOverloadList, givenTemplateArguments, isMethodCall, ctxt);
 
@@ -126,7 +127,7 @@ namespace D_Parser.Resolver.TypeResolution
 			else if (unfilteredOverloads.Count == 1)
 				preFilteredOverloads = unfilteredOverloads;
 			else
-				return null;
+				return new List<AbstractType>();
 
 			var templateConstraintFilteredOverloads = new List<AbstractType>();
 			foreach (var overload in preFilteredOverloads)
@@ -150,7 +151,7 @@ namespace D_Parser.Resolver.TypeResolution
 					templateConstraintFilteredOverloads.Add(overload);
 			}
 			if (templateConstraintFilteredOverloads.Count == 0)
-				return null;
+				return new List<AbstractType>();
 
 			var implicitPropertiesOrEponymousTemplatesOrOther = new List<AbstractType>();
 			foreach(var t in templateConstraintFilteredOverloads)

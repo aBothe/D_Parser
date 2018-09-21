@@ -11,7 +11,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	{
 		public static AbstractType FilterOverloads(
 			PostfixExpression_MethodCall call,
-			List<AbstractType> methodOverloads,
+			IEnumerable<AbstractType> methodOverloads,
 			ResolutionContext ctxt,
 			AbstractSymbolValueProvider valueProvider,
 			bool returnBaseTypeOnly,

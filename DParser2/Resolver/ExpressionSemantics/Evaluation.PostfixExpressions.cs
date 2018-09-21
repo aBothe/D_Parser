@@ -65,20 +65,19 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (methodOverloads.Count == 0)
 				return null;
 
-			methodOverloads = TryMatchTemplateArgumentsToOverloads (tix, ctxt, methodOverloads);
+			var templateMatchedMethodOverloads = TryMatchTemplateArgumentsToOverloads (tix, ctxt, methodOverloads);
 
-			return MethodOverloadsByParameterTypeComparisonFilter.FilterOverloads (call, methodOverloads, ctxt, ValueProvider, returnBaseTypeOnly,
-			                                                       out callArguments, ref delegateValue);
+			return MethodOverloadsByParameterTypeComparisonFilter.FilterOverloads (call,
+				templateMatchedMethodOverloads, ctxt,
+				ValueProvider, returnBaseTypeOnly,
+				out callArguments, ref delegateValue);
 		}
 
-		static List<AbstractType> TryMatchTemplateArgumentsToOverloads (TemplateInstanceExpression tix, ResolutionContext ctxt, List<AbstractType> methodOverloads)
+		static IEnumerable<AbstractType> TryMatchTemplateArgumentsToOverloads (TemplateInstanceExpression tix, ResolutionContext ctxt, IEnumerable<AbstractType> methodOverloads)
 		{
 			if (tix != null) {
 				var args = TemplateInstanceHandler.PreResolveTemplateArgs (tix, ctxt);
-				var deducedOverloads = TemplateInstanceHandler.DeduceParamsAndFilterOverloads (methodOverloads, args, true, ctxt);
-				methodOverloads.Clear ();
-				if (deducedOverloads != null)
-					return deducedOverloads;
+				return TemplateInstanceHandler.DeduceParamsAndFilterOverloads (methodOverloads, args, true, ctxt);
 			}
 			return methodOverloads;
 		}

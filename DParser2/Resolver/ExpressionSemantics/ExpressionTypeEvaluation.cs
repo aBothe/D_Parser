@@ -741,9 +741,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						for (int k = arg_i; k < x.Arguments.Length; k++)
 							indexArgs.Add (x.Arguments [k].Expression.Accept (this)); // TODO: Treat slices properly..somehow
 
-					overloads = TemplateInstanceHandler.DeduceParamsAndFilterOverloads (overloads, indexArgs, true, ctxt);
+					var filteredOverload = AmbiguousType.Get(TemplateInstanceHandler.DeduceParamsAndFilterOverloads (overloads, indexArgs, true, ctxt));
 					ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals (udt);
-					foreExpression = TryPretendMethodExecution (AmbiguousType.Get (overloads), x, indexArgs.Count != 0 ? indexArgs.ToArray () : null);
+					foreExpression = TryPretendMethodExecution (filteredOverload, x, indexArgs.Count != 0 ? indexArgs.ToArray () : null);
 					arg_i += indexArgs.Count; //TODO: Only increment by the amount of actually used args for filtering out the respective method overload.
 					return foreExpression;
 				} else
@@ -827,10 +827,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			var overloads = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(OpSliceIdHash, foreExpression, ctxt, x, false);
 
-			overloads = TemplateInstanceHandler.DeduceParamsAndFilterOverloads(overloads, sliceArgs, true, ctxt);
+			var returnedOverload = AmbiguousType.Get(TemplateInstanceHandler.DeduceParamsAndFilterOverloads(overloads, sliceArgs, true, ctxt));
 
 			ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(udt);
-			return TryPretendMethodExecution(AmbiguousType.Get(overloads), x, sliceArgs) ?? foreExpression;
+			return TryPretendMethodExecution(returnedOverload, x, sliceArgs) ?? foreExpression;
 		}
 		#endregion
 
