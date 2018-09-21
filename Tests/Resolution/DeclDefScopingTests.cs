@@ -664,5 +664,24 @@ static foreach(index, value; staticArray) {
 			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
 			Assert.That((v as PrimitiveValue).Value, Is.EqualTo(1));
 		}
+
+		[Test]
+		public void StaticForeach_AssocArrayAggregate()
+		{
+			var ctxt = CreateDefCtxt(@"module modA;
+static foreach(index, value; ['a':'0','b':'1','c':'2','d':'3','e':'4','f':'5']) {
+	mixin(`enum var` ~ value ~ ` = index;`);
+}
+");
+
+			for (int i = 0; i <= 5; i++)
+			{
+				var x = DParser.ParseExpression("var" + i);
+				var v = Evaluation.EvaluateValue(x, ctxt);
+
+				Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+				Assert.That((v as PrimitiveValue).Value, Is.EqualTo('a'+i));
+			}
+		}
 	}
 }
