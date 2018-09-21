@@ -63,6 +63,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 					argTypeFilteredOverloads.Add (ov);
 				}
+				else if (ov is StructType)
+					argTypeFilteredOverloads.Add(ov);
 			}
 
 			// Prefer untemplated methods over templated ones
