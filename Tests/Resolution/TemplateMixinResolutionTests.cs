@@ -291,41 +291,31 @@ template bitfields(T...)
 			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
 		}
 
-		[Test]
-		public void TemplateAliasParams()
-		{
-			var ctxt = CreateCtxt("A", @"module A;
-class Mixery(U)
-{
-	int a;
-	U u;
-}
-
+		const string templateAliasParamsCode = @"module A;
 struct TestField(T)
 {
         T t;
         alias t this; // doesn't matter
 }
- 
+
 mixin template MyTemplate(alias T)
 {
         auto Field1 = T!(ulong)();
         auto Field2 = T!(string)();
 }
- 
+
 class TestClass
 {
         mixin MyTemplate!(TestField);
 }
 
 TestClass c;
-void main(string[] args) { }
-");
-			var A = ctxt.MainPackage()["A"];
-			var main = A["main"].First() as DMethod;
-			var TestField = A["TestField"].First() as DClassLike;
-			ctxt.CurrentContext.Set(main);
+";
 
+		[Test]
+		public void TemplateAliasParams()
+		{
+			var ctxt = CreateDefCtxt(templateAliasParamsCode);
 			IExpression x;
 			AbstractType t;
 
@@ -346,16 +336,66 @@ void main(string[] args) { }
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
 			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(StructType)));
+		}
 
-			ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(MyTemplate);
+		[Test]
+		public void TemplateAliasParams2_AccessMixinTemplateAliasedStruct()
+		{
+			var ctxt = CreateDefCtxt(templateAliasParamsCode);
+			IExpression x;
+			AbstractType t;
 
-			ctxt.CurrentContext.Set(main);
 			x = DParser.ParseExpression("c.Field1");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			var @base = (t as MemberSymbol).Base;
 			Assert.That(@base, Is.TypeOf(typeof(StructType)));
+		}
+
+		[Test]
+		public void TemplateAliasParams3_AccessMixinTemplateAliasedStructProperties()
+		{
+			var ctxt = CreateDefCtxt(templateAliasParamsCode);
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression("c.Field2.t");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			var ms = t as MemberSymbol;
+			Assert.That(ms.Base, Is.TypeOf(typeof(TemplateParameterSymbol)));
+			var tps = ms.Base as TemplateParameterSymbol;
+			Assert.That(tps.Base, Is.TypeOf(typeof(ArrayType)));
+			var at = tps.Base as ArrayType;
+			Assert.That(at.ValueType, Is.TypeOf(typeof(PrimitiveType)));
+		}
+
+		[Test]
+		public void TemplateAliasParams4_CachingIssues()
+		{
+			var ctxt = CreateDefCtxt(templateAliasParamsCode);
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression("c.Field1");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			var @base = (t as MemberSymbol).Base;
+			Assert.That(@base, Is.TypeOf(typeof(StructType)));
+
+			x = DParser.ParseExpression("c.Field2.t");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			var ms = t as MemberSymbol;
+			Assert.That(ms.Base, Is.TypeOf(typeof(TemplateParameterSymbol)));
+			var tps = ms.Base as TemplateParameterSymbol;
+			Assert.That(tps.Base, Is.TypeOf(typeof(ArrayType)));
+			var at = tps.Base as ArrayType;
+			Assert.That(at.ValueType, Is.TypeOf(typeof(PrimitiveType)));
 		}
 
 		[Test]
