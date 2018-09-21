@@ -45,7 +45,8 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 			if (callArguments == null)
 				callArguments = Enumerable.Empty<T>();
 
-			if (TypeResolution.UFCSResolver.IsUfcsResult(mr, out ISemantic firstArg) && firstArg is T)
+			ISemantic firstArg;
+			if (TypeResolution.UFCSResolver.IsUfcsResult(mr, out firstArg) && firstArg is T)
 			{
 				var ufcsPrependedArgList = new List<T>();
 				ufcsPrependedArgList.Add((T)firstArg);

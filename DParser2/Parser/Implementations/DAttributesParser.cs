@@ -11,7 +11,10 @@ namespace D_Parser.Parser.Implementations
 		readonly DParserParts parserParts;
 
 		public DAttributesParser(DParserStateContext stateContext, DParserParts parserParts)
-			: base(stateContext) => this.parserParts = parserParts;
+			: base(stateContext)
+		{
+			this.parserParts = parserParts;
+		}
 
 		public DMethod _Invariant()
 		{

@@ -11,7 +11,7 @@ namespace D_Parser.Parser.Implementations
 		readonly DParserParts parserParts;
 
 		public DTemplatesParser(DParserStateContext stateContext, DParserParts parserParts)
-			: base(stateContext) => this.parserParts = parserParts;
+			: base(stateContext) { this.parserParts = parserParts; }
 
 		/*
 		 * American beer is like sex on a boat - Fucking close to water;)

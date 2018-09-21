@@ -54,8 +54,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			delegateValue = null;
 			callArguments = null;
 
+			bool returnInstantly;
 			var methodOverloads = MethodOverloadCandidateSearchVisitor.SearchCandidates (baseExpression, ctxt, ValueProvider, call, 
-			                                                      ref delegateValue, returnBaseTypeOnly, out bool returnInstantly);
+			                                                      ref delegateValue, returnBaseTypeOnly, out returnInstantly);
 
 			if (returnInstantly) {
 				return methodOverloads.Count > 0 ? methodOverloads[0] : null;

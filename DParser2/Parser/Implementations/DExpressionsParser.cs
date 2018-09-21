@@ -14,7 +14,7 @@ namespace D_Parser.Parser.Implementations
 		readonly DParserParts parserParts;
 
 		public DExpressionsParser(DParserStateContext stateContext, DParserParts parserParts)
-			: base(stateContext) => this.parserParts = parserParts;
+			: base(stateContext) { this.parserParts = parserParts; }
 
 		public IExpression Expression(IBlockNode Scope = null)
 		{

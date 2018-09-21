@@ -371,7 +371,8 @@ namespace D_Parser.Resolver.TypeResolution
 			if (argumentToAnalyze == null)
 				return false;
 
-			if (argumentToAnalyze is TemplateParameterSymbol tps && tps.Base == null && tps.Parameter.Parent is DClassLike)
+			var tps = argumentToAnalyze as TemplateParameterSymbol;
+			if (tps != null && tps.Base == null && tps.Parameter.Parent is DClassLike)
 			{
 				// (Only) In the context of template parameter deduction
 				var probablyInducableParameter = TypeDeclarationResolver.ResolveTemplateParameter(ctxt, new TemplateParameter.Node(parameter));

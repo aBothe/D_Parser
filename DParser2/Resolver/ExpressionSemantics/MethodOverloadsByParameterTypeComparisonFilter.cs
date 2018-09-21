@@ -53,7 +53,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						if (callArguments == null || callArguments.Count != 1)
 							valueProvider.LogError (call, "Uniform construction syntax expects exactly one argument");
 						else {
-							if (!(callArguments [0] is PrimitiveValue pv))
+							PrimitiveValue pv;
+							if ((pv = callArguments [0] as PrimitiveValue) == null)
 								valueProvider.LogError (call, "Uniform construction syntax expects one built-in scalar value as first argument");
 							else
 								delegateValue = new PrimitiveValue (pv.Value, ov as PrimitiveType, pv.ImaginaryPart);

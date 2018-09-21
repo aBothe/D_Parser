@@ -100,7 +100,8 @@ namespace D_Parser.Dom
 
 		public bool HasMultipleOverloads(int NameHash)
 		{
-			return nameDict.TryGetValue(NameHash, out List<INode> l) && l.Count > 1;
+			List<INode> l;
+			return nameDict.TryGetValue(NameHash, out l) && l.Count > 1;
 		}
 
 		public bool HasMultipleOverloads(string Name)
@@ -133,7 +134,8 @@ namespace D_Parser.Dom
 
 		public IEnumerable<INode> GetNodes(int nameHash)
 		{
-			if(nameDict.TryGetValue (nameHash, out List<INode> l))
+			List<INode> l;
+			if (nameDict.TryGetValue (nameHash, out l))
 				return l;
 			return Enumerable.Empty<INode>();
 		}

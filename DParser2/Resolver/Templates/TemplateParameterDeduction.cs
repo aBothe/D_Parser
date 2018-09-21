@@ -14,8 +14,8 @@ namespace D_Parser.Resolver.Templates
 		/// </summary>
 		public bool EnforceTypeEqualityWhenDeducing
 		{
-			get => deductionVisitor.EnforceTypeEqualityWhenDeducing;
-			set => deductionVisitor.EnforceTypeEqualityWhenDeducing = value;
+			get { return deductionVisitor.EnforceTypeEqualityWhenDeducing; }
+			set { deductionVisitor.EnforceTypeEqualityWhenDeducing = value; }
 		}
 
 		[System.Diagnostics.DebuggerStepThrough]

@@ -33,6 +33,7 @@
     <BaseAddress>4194304</BaseAddress>
     <AssemblyName>D_Parser</AssemblyName>
     <PlatformTarget>AnyCPU</PlatformTarget>
+    <LangVersion>6</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>full</DebugType>
