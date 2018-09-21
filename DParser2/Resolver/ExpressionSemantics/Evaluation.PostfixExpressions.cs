@@ -68,7 +68,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			methodOverloads = TryMatchTemplateArgumentsToOverloads (tix, ctxt, methodOverloads);
 
 			return MethodOverloadsByParameterTypeComparisonFilter.FilterOverloads (call, methodOverloads, ctxt, ValueProvider, returnBaseTypeOnly,
-			                                                       ref callArguments, ref delegateValue);
+			                                                       out callArguments, ref delegateValue);
 		}
 
 		static List<AbstractType> TryMatchTemplateArgumentsToOverloads (TemplateInstanceExpression tix, ResolutionContext ctxt, List<AbstractType> methodOverloads)
