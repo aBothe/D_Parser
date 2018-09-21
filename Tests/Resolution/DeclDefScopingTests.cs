@@ -639,5 +639,30 @@ static foreach(i; staticArray) {
 				Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 			}
 		}
+
+		[Test]
+		public void StaticForeach_ArrayAggregate_UsingKeyIterator()
+		{
+			var ctxt = CreateDefCtxt(@"module modA;
+enum staticArray = ['a','b'];
+static foreach(index, value; staticArray) {
+	mixin(`enum var` ~ value ~ ` = index;`);
+}
+");
+			IExpression x;
+			ISymbolValue v;
+
+			x = DParser.ParseExpression("vara");
+			v = Evaluation.EvaluateValue(x, ctxt);
+
+			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			Assert.That((v as PrimitiveValue).Value, Is.EqualTo(0));
+
+			x = DParser.ParseExpression("varb");
+			v = Evaluation.EvaluateValue(x, ctxt);
+
+			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			Assert.That((v as PrimitiveValue).Value, Is.EqualTo(1));
+		}
 	}
 }

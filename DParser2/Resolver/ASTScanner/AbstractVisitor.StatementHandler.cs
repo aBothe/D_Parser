@@ -750,8 +750,8 @@ namespace D_Parser.Resolver.ASTScanner
 				if(keyValues == null)
 					return Visit(s as ForeachStatement);
 
-				var valueHoldingIterator = s.ForeachTypeList[0];
-				var keyHoldingIterator = s.ForeachTypeList.Length > 1 ? s.ForeachTypeList[1] : null;
+				var valueHoldingIterator = s.ForeachTypeList.Length > 1 ? s.ForeachTypeList[1] : s.ForeachTypeList[0];
+				var keyHoldingIterator = s.ForeachTypeList.Length > 1 ? s.ForeachTypeList[0] : null;
 
 				var pseudoValueTemplateParameter = new TemplateValueParameter(valueHoldingIterator.NameHash, valueHoldingIterator.NameLocation, valueHoldingIterator.Parent as DNode).Representation;
 				var pseudoKeyTemplateParameter = keyHoldingIterator != null ? new TemplateValueParameter(keyHoldingIterator.NameHash, keyHoldingIterator.NameLocation, keyHoldingIterator.Parent as DNode).Representation : null;
