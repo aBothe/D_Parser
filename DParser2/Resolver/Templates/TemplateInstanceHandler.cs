@@ -279,12 +279,9 @@ namespace D_Parser.Resolver.TypeResolution
 				if (deducedTypes.AllParamatersSatisfied) // Happens e.g. after resolving a class/interface definition
 					filteredOverloads.Add(originalOverload);
 				else if (DeduceParams(givenTemplateArguments, isMethodCall, ctxt, overload, tplNode, deducedTypes))
-				{
 					filteredOverloads.Add(ResolvedTypeCloner.Clone(overload, deducedTypes));
-				}
-				else
-					overload.SetDeducedTypes(null);
 			}
+
 			return filteredOverloads;
 		}
 
