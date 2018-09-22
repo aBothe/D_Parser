@@ -280,7 +280,7 @@ namespace D_Parser.Resolver.TypeResolution
 					filteredOverloads.Add(originalOverload);
 				else if (DeduceParams(givenTemplateArguments, isMethodCall, ctxt, overload, tplNode, deducedTypes))
 				{
-					overload.SetDeducedTypes(deducedTypes); // Assign calculated types to final result
+					filteredOverloads.Add(ResolvedTypeCloner.Clone(overload, deducedTypes));
 				}
 				else
 					overload.SetDeducedTypes(null);

@@ -334,8 +334,7 @@ TestClass c;
 
 			x = DParser.ParseExpression("T!ulong");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
-			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(StructType)));
+			Assert.That(t, Is.TypeOf(typeof(StructType)));
 		}
 
 		[Test]
