@@ -65,8 +65,7 @@ namespace D_Parser.Resolver.TypeResolution
 					dn.TemplateParameters[0] is TemplateValueParameter)
 				{
 					//TODO: Test parameter types for being a string value
-					o.SetDeducedTypes(new[]{ new TemplateParameterSymbol(dn.TemplateParameters[0], av) });
-					yield return o;
+					yield return ResolvedTypeCloner.Clone(o, new[] { new TemplateParameterSymbol(dn.TemplateParameters[0], av) });
 				}
 			}
 		}

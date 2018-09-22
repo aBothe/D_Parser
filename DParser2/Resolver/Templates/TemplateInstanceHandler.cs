@@ -231,8 +231,6 @@ namespace D_Parser.Resolver.TypeResolution
 
 			foreach (var originalOverload in rawOverloadList)
 			{
-				TypeDeclarationResolver.AliasTag aliasTag;
-
 				var overload = originalOverload as DSymbol;
 				while (overload is TemplateParameterSymbol)
 					overload = overload.Base as DSymbol;
@@ -243,9 +241,6 @@ namespace D_Parser.Resolver.TypeResolution
 						filteredOverloads.Add(originalOverload);
 					continue;
 				}
-				else if ((aliasTag = overload.Tag<TypeDeclarationResolver.AliasTag>(TypeDeclarationResolver.AliasTag.Id)) != null && 
-					(hasTemplateArgsPassed || !(aliasTag.aliasDefinition.Type is TemplateInstanceExpression)))
-					TypeDeclarationResolver.ResetDeducedSymbols(overload);
 
 				var tplNode = overload.Definition;
 

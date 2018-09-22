@@ -420,9 +420,8 @@ namespace D_Parser.Resolver
 			get;
 			private set;
 		}
-		public bool HasDeducedTypes {get{ return DeducedTypes.Count != 0; }}
 
-		public void SetDeducedTypes(IEnumerable<TemplateParameterSymbol> s)
+		void SetDeducedTypes(IEnumerable<TemplateParameterSymbol> s)
 		{
 			var l = new List<TemplateParameterSymbol>();
 

@@ -110,32 +110,6 @@ namespace D_Parser.Resolver.TypeResolution
 		[ThreadStatic]
 		static Dictionary<INode, int> stackCalls;
 
-		internal static void ResetDeducedSymbols(AbstractType b)
-		{
-			var ds = b as DSymbol;
-			if (ds != null && 
-				ds.HasDeducedTypes &&
-				ds.Definition.TemplateParameters != null)
-			{
-				var remainingTemplateSymbols = new List<TemplateParameterSymbol>(ds.DeducedTypes);
-
-				foreach (var tp in ds.Definition.TemplateParameters)
-				{
-					if (tp != null)
-					{
-						foreach (var sym in remainingTemplateSymbols)
-							if (sym.Parameter == tp)
-							{
-								remainingTemplateSymbols.Remove(sym);
-								break;
-							}
-					}
-				}
-
-				ds.SetDeducedTypes(remainingTemplateSymbols);
-			}
-		}
-
 		[ThreadStatic]
 		static Stack<ISyntaxRegion> aliasDeductionStack = new Stack<ISyntaxRegion>();
 
@@ -157,13 +131,7 @@ namespace D_Parser.Resolver.TypeResolution
 				//TODO: Declare alias-level context? 
 
 				if (typeBase is TemplateInstanceExpression)
-				{
-					// Reset 
-					foreach (var bas in bases)
-						ResetDeducedSymbols(bas);
-
 					b = AmbiguousType.Get(TemplateInstanceHandler.DeduceParamsAndFilterOverloads(bases, typeBase as TemplateInstanceExpression, ctxt, false));
-				}
 				else 
 					b = AmbiguousType.Get(TemplateInstanceHandler.DeduceParamsAndFilterOverloads(bases, Enumerable.Empty<ISemantic>(), false, ctxt));
 
