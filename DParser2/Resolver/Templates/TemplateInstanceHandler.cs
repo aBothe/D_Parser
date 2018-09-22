@@ -229,17 +229,18 @@ namespace D_Parser.Resolver.TypeResolution
 			if (rawOverloadList == null)
 				return filteredOverloads;
 
-			foreach (var o in rawOverloadList)
+			foreach (var originalOverload in rawOverloadList)
 			{
 				TypeDeclarationResolver.AliasTag aliasTag;
 
-				var overload = o as DSymbol;
+				var overload = originalOverload as DSymbol;
 				while (overload is TemplateParameterSymbol)
 					overload = overload.Base as DSymbol;
+
 				if (overload == null)
 				{
 					if (!hasTemplateArgsPassed)
-						filteredOverloads.Add(o);
+						filteredOverloads.Add(originalOverload);
 					continue;
 				}
 				else if ((aliasTag = overload.Tag<TypeDeclarationResolver.AliasTag>(TypeDeclarationResolver.AliasTag.Id)) != null && 
@@ -251,7 +252,7 @@ namespace D_Parser.Resolver.TypeResolution
 				// Generically, the node should never be null -- except for TemplateParameterNodes that encapsule such params
 				if (tplNode == null)
 				{
-					filteredOverloads.Add(o);
+					filteredOverloads.Add(originalOverload);
 					continue;
 				}
 
@@ -269,18 +270,17 @@ namespace D_Parser.Resolver.TypeResolution
 				if (tplNode.TemplateParameters == null)
 				{
 					if (!hasTemplateArgsPassed || isMethodCall)
-						filteredOverloads.Add(o);
+						filteredOverloads.Add(originalOverload);
 					continue;
 				}
 
 				var deducedTypes = new DeducedTypeDictionary(overload);
 
 				if (deducedTypes.AllParamatersSatisfied) // Happens e.g. after resolving a class/interface definition
-					filteredOverloads.Add(o);
+					filteredOverloads.Add(originalOverload);
 				else if (DeduceParams(givenTemplateArguments, isMethodCall, ctxt, overload, tplNode, deducedTypes))
 				{
 					overload.SetDeducedTypes(deducedTypes); // Assign calculated types to final result
-					filteredOverloads.Add(o);
 				}
 				else
 					overload.SetDeducedTypes(null);

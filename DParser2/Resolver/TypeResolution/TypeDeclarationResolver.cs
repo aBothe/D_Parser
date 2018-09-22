@@ -44,20 +44,6 @@ namespace D_Parser.Resolver.TypeResolution
 					{
 						r.AddRange(SingleNodeNameScan.SearchChildrenAndResolve(ctxt, udt, nextIdentifierHash, typeIdObject));
 
-						TemplateParameterSymbol[] dedTypes = null;
-						foreach (var t in r)
-						{
-							var ds = t as DSymbol;
-							if (ds != null && !ds.HasDeducedTypes)
-							{
-								if (dedTypes == null)
-									dedTypes = ctxt.DeducedTypesInHierarchy.ToArray();
-
-								if(dedTypes.Length != 0)
-									ds.SetDeducedTypes(dedTypes);
-							}
-						}
-
 						statProp = StaticProperties.TryEvalPropertyType(ctxt, b, nextIdentifierHash);
 						if (statProp != null)
 							r.Add(statProp);
