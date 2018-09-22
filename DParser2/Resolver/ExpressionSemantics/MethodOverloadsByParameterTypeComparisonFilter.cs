@@ -166,12 +166,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 					if (deducedTypeDict.AllParamatersSatisfied)
 					{
-						ms.SetDeducedTypes(deducedTypeDict);
 						var bt = TypeDeclarationResolver.GetMethodReturnType(dm, ctxt) ?? ms.Base;
 
 						if (valueProvider != null || !returnBaseTypeOnly)
 						{
-							bt = new MemberSymbol(dm, bt, ms.DeducedTypes) { Modifiers = ms.Modifiers };
+							bt = new MemberSymbol(dm, bt, deducedTypeDict) { Modifiers = ms.Modifiers };
 							bt.AssignTagsFrom(ms);
 						}
 
