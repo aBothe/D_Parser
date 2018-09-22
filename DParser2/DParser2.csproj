@@ -175,9 +175,9 @@
     <Compile Include="Misc\CompletionOptions.cs" />
     <Compile Include="Misc\ModuleNameHelper.cs" />
     <Compile Include="Resolver\ASTScanner\NameScan.cs" />
-    <Compile Include="Resolver\DType.cs" />
+    <Compile Include="Resolver\Model\DType.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.PrimaryExpression.cs" />
-    <Compile Include="Resolver\ISemantic.cs" />
+    <Compile Include="Resolver\Model\ISemantic.cs" />
     <Compile Include="Resolver\IResolvedTypeVisitor.cs" />
     <Compile Include="Resolver\MixinAnalysis.cs" />
     <Compile Include="Resolver\ResolutionError.cs" />
@@ -191,6 +191,7 @@
     <Compile Include="Resolver\StaticProperties.cs" />
     <Compile Include="Resolver\StorageClassImplicitCastCheck.cs" />
     <Compile Include="Resolver\Templates\DeducedTypeDictionary.cs" />
+    <Compile Include="Resolver\ResolvedTypeCloner.cs" />
     <Compile Include="Resolver\Templates\SpecializationOrdering.cs" />
     <Compile Include="Resolver\Templates\TemplateParameterDeduction.cs" />
     <Compile Include="Resolver\Templates\TemplateParameterDeductionVisitor.cs" />
@@ -222,7 +223,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Parser\Tokens\DToken.cs" />
     <Compile Include="Dom\DDeclarations.cs" />
-    <Compile Include="Resolver\ContextFrame.cs" />
+    <Compile Include="Resolver\Model\ContextFrame.cs" />
     <Compile Include="Resolver\TypeResolution\UFCSResolver.cs" />
     <Compile Include="Resolver\ConditionalCompilationFlags.cs" />
     <Compile Include="Misc\VersionIdEvaluation.cs" />

@@ -105,8 +105,6 @@ namespace D_Parser.Resolver
 			return l;
 		}
 
-		public abstract AbstractType Clone(bool cloneBase);
-
 		public abstract void Accept(IResolvedTypeVisitor vis);
 		public abstract R Accept<R>(IResolvedTypeVisitor<R> vis);
 	}
@@ -127,11 +125,6 @@ namespace D_Parser.Resolver
 		public override R Accept<R> (IResolvedTypeVisitor<R> vis)
 		{
 			return vis.VisitUnknownType (this);
-		}
-
-		public override AbstractType Clone (bool cloneBase)
-		{
-			return new UnknownType (BaseExpression);
 		}
 	}
 
@@ -211,11 +204,6 @@ namespace D_Parser.Resolver
 			Overloads = l.ToArray();
 		}
 
-		public override AbstractType Clone(bool cloneBase)
-		{
-			return new AmbiguousType(Overloads);
-		}
-
 		public override void Accept(IResolvedTypeVisitor vis)
 		{
 			vis.VisitAmbigousType(this);
@@ -236,11 +224,6 @@ namespace D_Parser.Resolver
 		{
 			this.TypeToken = TypeToken;
 			this.Modifiers = Modifiers;
-		}
-
-		public override AbstractType Clone(bool cloneBase)
-		{
-			return new PrimitiveType(TypeToken, Modifiers);
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -269,11 +252,6 @@ namespace D_Parser.Resolver
 	{
 		public PointerType(AbstractType Base) : base(Base) { }
 
-		public override AbstractType Clone(bool cloneBase)
-		{
-			return new PointerType(cloneBase && Base != null ? Base.Clone(true) : Base);
-		}
-
 		public override void Accept(IResolvedTypeVisitor vis)
 		{
 			vis.VisitPointerType(this);
@@ -300,17 +278,6 @@ namespace D_Parser.Resolver
 		{
 			FixedLength = ArrayLength;
 			IsStaticArray = ArrayLength >= 0;
-		}
-
-		public override AbstractType Clone(bool cloneBase)
-		{
-			ArrayType type;
-			if(IsStaticArray)
-				type = new ArrayType(cloneBase && Base != null ? Base.Clone(true) : Base);
-			else
-				type = new ArrayType(cloneBase && Base != null ? Base.Clone(true) : Base, FixedLength);
-			type.IsStringLiteral = IsStringLiteral;
-			return type;
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -349,11 +316,6 @@ namespace D_Parser.Resolver
 			this.KeyType = KeyType;
 		}
 
-		public override AbstractType Clone(bool cloneBase)
-		{
-			return new AssocArrayType(cloneBase && Base != null ? Base.Clone(true) : Base, cloneBase && KeyType != null ? KeyType.Clone(true) : KeyType);
-		}
-
 		public override void Accept(IResolvedTypeVisitor vis)
 		{
 			vis.VisitAssocArrayType(this);
@@ -378,11 +340,6 @@ namespace D_Parser.Resolver
 		{
 			this.Delegate = dg;
 			this.callExpression = callExpression;
-		}
-
-		public override AbstractType Clone(bool cloneBase)
-		{
-			return new DelegateCallSymbol(cloneBase && Delegate != null ? Delegate.Clone(true) as DelegateType : Delegate, callExpression);
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -432,15 +389,6 @@ namespace D_Parser.Resolver
 		}
 
 		public AbstractType ReturnType { get { return Base; } }
-
-		public override AbstractType Clone(bool cloneBase)
-		{
-			//TODO: Clone parameters
-			if (IsFunctionLiteral)
-				return new DelegateType (cloneBase && Base != null ? Base.Clone (true) : Base, delegateTypeBase as FunctionLiteral, Parameters);
-			
-			return new DelegateType(cloneBase && Base != null ? Base.Clone(true) : Base, delegateTypeBase as DelegateDeclaration, Parameters);
-		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
 		{
@@ -523,11 +471,6 @@ namespace D_Parser.Resolver
 			return base.ToString();
 		}
 
-		public override AbstractType Clone(bool cloneBase)
-		{
-			return new AliasedType(Definition, cloneBase && Base != null ? Base.Clone(true) : Base, DeducedTypes) { Modifiers = Modifiers };
-		}
-
 		public override void Accept(IResolvedTypeVisitor vis)
 		{
 			vis.VisitAliasedType(this);
@@ -556,11 +499,6 @@ namespace D_Parser.Resolver
 			return "(enum) " + base.ToString();
 		}
 
-		public override AbstractType Clone(bool cloneBase)
-		{
-			return new EnumType(Definition, cloneBase && Base != null ? Base.Clone(true) : Base) { Modifiers = Modifiers };
-		}
-
 		public override void Accept(IResolvedTypeVisitor vis)
 		{
 			vis.VisitEnumType(this);
@@ -581,11 +519,6 @@ namespace D_Parser.Resolver
 			return "(struct) " + base.ToString();
 		}
 
-		public override AbstractType Clone(bool cloneBase)
-		{
-			return new StructType(Definition, DeducedTypes) { Modifiers = Modifiers };
-		}
-
 		public override void Accept(IResolvedTypeVisitor vis)
 		{
 			vis.VisitStructType(this);
@@ -604,11 +537,6 @@ namespace D_Parser.Resolver
 		public override string ToString()
 		{
 			return "(union) " + base.ToString();
-		}
-
-		public override AbstractType Clone(bool cloneBase)
-		{
-			return new UnionType(Definition, DeducedTypes) { Modifiers = Modifiers };
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -635,11 +563,6 @@ namespace D_Parser.Resolver
 			return "(class) "+base.ToString();
 		}
 
-		public override AbstractType Clone(bool cloneBase)
-		{
-			return new ClassType(Definition, cloneBase && Base != null ? Base.Clone(true) as TemplateIntermediateType : Base as TemplateIntermediateType, BaseInterfaces, DeducedTypes) { Modifiers = Modifiers };
-		}
-
 		public override void Accept(IResolvedTypeVisitor vis)
 		{
 			vis.VisitClassType(this);
@@ -657,11 +580,6 @@ namespace D_Parser.Resolver
 			InterfaceType[] baseInterfaces=null,
 			IEnumerable<TemplateParameterSymbol> deducedTypes = null) 
 			: base(dc, null, baseInterfaces, deducedTypes) {}
-		
-		public override AbstractType Clone(bool cloneBase)
-		{
-			return new InterfaceType(Definition, BaseInterfaces, DeducedTypes) { Modifiers = Modifiers };
-		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
 		{
@@ -697,11 +615,6 @@ namespace D_Parser.Resolver
 
 		public TemplateType(DClassLike dc, IEnumerable<TemplateParameterSymbol> inheritedTypeParams = null) : base(dc, null, null, inheritedTypeParams) { }
 
-		public override AbstractType Clone(bool cloneBase)
-		{
-			return new TemplateType(Definition, DeducedTypes) { Modifiers = Modifiers };
-		}
-
 		public override void Accept(IResolvedTypeVisitor vis)
 		{
 			vis.VisitTemplateType(this);
@@ -716,11 +629,6 @@ namespace D_Parser.Resolver
 	public class MixinTemplateType : TemplateType
 	{
 		public MixinTemplateType(DClassLike dc, IEnumerable<TemplateParameterSymbol> inheritedTypeParams = null) : base(dc, inheritedTypeParams) { }
-
-		public override AbstractType Clone(bool cloneBase)
-		{
-			return new MixinTemplateType(Definition, DeducedTypes) { Modifiers = Modifiers };
-		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
 		{
@@ -760,11 +668,6 @@ namespace D_Parser.Resolver
 			return "(Eponymous Template Type) "+ Definition;
 		}
 
-		public override AbstractType Clone(bool cloneBase)
-		{
-			return new EponymousTemplateType(Definition, DeducedTypes);
-		}
-
 		public override void Accept(IResolvedTypeVisitor vis)
 		{
 			vis.VisitEponymousTemplateType(this);
@@ -790,11 +693,6 @@ namespace D_Parser.Resolver
 			this.ValueGetter = valueGetter;
 		}
 
-		public override AbstractType Clone(bool cloneBase)
-		{
-			return new StaticProperty(Definition, cloneBase && Base != null ? Base.Clone(true) : Base, ValueGetter);
-		}
-
 		public override void Accept(IResolvedTypeVisitor vis)
 		{
 			vis.VisitStaticProperty(this);
@@ -813,11 +711,6 @@ namespace D_Parser.Resolver
 			: base(member, memberType, deducedTypes) {
 				if (memberType != null)
 					memberType.NonStaticAccess = true;
-		}
-
-		public override AbstractType Clone(bool cloneBase)
-		{
-			return new MemberSymbol(Definition, cloneBase && Base != null ? Base.Clone(true) : Base, DeducedTypes) { Modifiers = Modifiers };
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -872,11 +765,6 @@ namespace D_Parser.Resolver
 			return "<"+(Parameter == null ? "(unknown)" : Parameter.Name)+">"+(ParameterValue!=null ? ParameterValue.ToString() : (Base==null ? "" : Base.ToString()));
 		}
 
-		public override AbstractType Clone(bool cloneBase)
-		{
-			return new TemplateParameterSymbol(Parameter, ParameterValue ?? (cloneBase && Base != null ? Base.Clone(true) : Base) as ISemantic) { Modifiers = Modifiers };
-		}
-
 		public override void Accept(IResolvedTypeVisitor vis)
 		{
 			vis.VisitTemplateParameterSymbol(this);
@@ -898,11 +786,6 @@ namespace D_Parser.Resolver
 
 		public ArrayAccessSymbol(PostfixExpression_ArrayAccess indexExpr, AbstractType arrayValueType):
 		base(arrayValueType)	{ this.indexExpression = indexExpr; }
-
-		public override AbstractType Clone(bool cloneBase)
-		{
-			return new ArrayAccessSymbol(indexExpression, cloneBase && Base != null ? Base.Clone(true) : Base);
-		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
 		{
@@ -931,11 +814,6 @@ namespace D_Parser.Resolver
 			return "(module) "+base.ToString();
 		}
 
-		public override AbstractType Clone(bool cloneBase)
-		{
-			return new ModuleSymbol(Definition, cloneBase && Base != null ? Base.Clone(true) as PackageSymbol : Base as PackageSymbol) { Modifiers = Modifiers };
-		}
-
 		public override void Accept(IResolvedTypeVisitor vis)
 		{
 			vis.VisitModuleSymbol(this);
@@ -958,11 +836,6 @@ namespace D_Parser.Resolver
 		public override string ToString()
 		{
 			return "(package) "+base.ToString();
-		}
-
-		public override AbstractType Clone(bool cloneBase)
-		{
-			return new PackageSymbol(Package) { Modifiers = Modifiers };
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)
@@ -1005,11 +878,6 @@ namespace D_Parser.Resolver
 			{
 				return Items != null && Items.All(i => i is AbstractType);
 			}
-		}
-
-		public override AbstractType Clone(bool cloneBase)
-		{
-			return new DTuple(Items) { Modifiers = Modifiers };
 		}
 
 		public override void Accept(IResolvedTypeVisitor vis)

@@ -494,7 +494,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				var memberSymbol = origType as MemberSymbol;
 				var origBaseType = DResolver.StripMemberSymbols(origType);
 
-				var clonedType = origBaseType.Clone(false);
+				var clonedType = ResolvedTypeCloner.Clone(origBaseType);
 				clonedType.Modifiers = ce.CastParamTokens; // TODO: StorageClasses only?
 
 				if (memberSymbol != null)

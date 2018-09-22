@@ -277,7 +277,7 @@ namespace D_Parser.Resolver.TypeResolution
 					if (bt != null && variable.Attributes != null && variable.Attributes.Count > 0) {
 						var variableModifiers = variable.Attributes.FindAll ((DAttribute obj) => obj is Modifier).Select ((arg) => ((Modifier)arg).Token).ToArray();
 						if (variableModifiers.Length > 0) {
-							bt = bt.Clone (false);
+							bt = ResolvedTypeCloner.Clone(bt);
 							if(bt.HasModifiers) {
 								bt.Modifiers = bt.Modifiers.Union (variableModifiers).ToArray();
 							} else {

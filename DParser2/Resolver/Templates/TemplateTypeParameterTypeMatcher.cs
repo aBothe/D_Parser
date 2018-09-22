@@ -289,7 +289,7 @@ namespace D_Parser.Resolver.Templates
 				if (r is AssocArrayType)
 				{
 					var aa = r as AssocArrayType;
-					var clonedValueType = aa.Modifiers != r.Modifiers ? aa.ValueType.Clone(false) : aa.ValueType;
+					var clonedValueType = aa.Modifiers != r.Modifiers ? ResolvedTypeCloner.Clone(aa.ValueType) : aa.ValueType;
 
 					clonedValueType.Modifiers = r.Modifiers;
 
@@ -301,7 +301,7 @@ namespace D_Parser.Resolver.Templates
 				}
 				else
 				{
-					newR = r.Clone(false);
+					newR = ResolvedTypeCloner.Clone(r);
 					newR.Modifiers = null;
 				}
 
