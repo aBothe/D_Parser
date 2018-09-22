@@ -6,20 +6,27 @@ namespace D_Parser.Resolver
 {
 	public class ResolvedTypeCloner : IResolvedTypeVisitor<AbstractType>
 	{
-		private IEnumerable<TemplateParameterSymbol> templateParameterSymbols;
+		AbstractType newBase;
+		IEnumerable<TemplateParameterSymbol> templateParameterSymbols;
 
-		ResolvedTypeCloner(IEnumerable<TemplateParameterSymbol> templateParameterSymbols)
-		{
-			this.templateParameterSymbols = templateParameterSymbols;
-		}
+		ResolvedTypeCloner() { }
 
-		public static AbstractType Clone(AbstractType t, IEnumerable<TemplateParameterSymbol> templateParameterSymbols = null)
+		public static AbstractTypeT Clone<AbstractTypeT>(
+			AbstractTypeT t,
+			IEnumerable<TemplateParameterSymbol> templateParameterSymbols = null,
+			AbstractType newBase = null)
+			where AbstractTypeT : AbstractType
 		{
-			return t.Accept(new ResolvedTypeCloner(templateParameterSymbols));
+			return (AbstractTypeT) t.Accept(new ResolvedTypeCloner { newBase = newBase, templateParameterSymbols = templateParameterSymbols });
 		}
 
 		AbstractType TryCloneBase(DerivedDataType derivedDataType)
 		{
+			if(newBase != null)
+			{
+				try { return newBase; }
+				finally { newBase = null; }
+			}
 			return /*cloneBase && derivedDataType.Base != null ? derivedDataType.Base.Accept(this) : */derivedDataType.Base;
 		}
 
@@ -33,7 +40,8 @@ namespace D_Parser.Resolver
 				deducedTypes[tps.Parameter] = tps;
 
 			foreach (var tps in templateParameterSymbols)
-				deducedTypes[tps.Parameter] = tps;
+				if(tps != null)
+					deducedTypes[tps.Parameter] = tps;
 
 			templateParameterSymbols = null;
 
