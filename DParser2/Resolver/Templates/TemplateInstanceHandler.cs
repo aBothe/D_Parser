@@ -179,24 +179,15 @@ namespace D_Parser.Resolver.TypeResolution
 
 		static List<AbstractType> TryGetImplicitProperty(TemplateType template, ResolutionContext ctxt)
 		{
-			// Get actual overloads
-			var matchingChild = TypeDeclarationResolver.ResolveFurtherTypeIdentifier( template.NameHash, template, ctxt, null, false);
-
-			if (matchingChild != null) // Currently requried for proper UFCS resolution - sustain template's Tag
-				foreach (var ch in matchingChild)
-				{
-					var ds = ch as DSymbol;
-					if (ds != null)
-					{
-						var newDeducedTypes = new DeducedTypeDictionary(ds);
-						foreach (var tps in template.DeducedTypes)
-							newDeducedTypes[tps.Parameter] = tps;
-						ds.SetDeducedTypes(newDeducedTypes);
-					}
-					ch.AssignTagsFrom(template);
-				}
-
-			return matchingChild;
+			try
+			{
+				ctxt.CurrentContext.IntroduceTemplateParameterTypes(template);
+				return TypeDeclarationResolver.ResolveFurtherTypeIdentifier(template.NameHash, template, ctxt, null, false);
+			}
+			finally
+			{
+				ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(template);
+			}
 		}
 
 		static AbstractType DeduceEponymousTemplate(EponymousTemplateType ept, ResolutionContext ctxt)
