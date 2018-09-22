@@ -398,6 +398,47 @@ TestClass c;
 			Assert.That(at.ValueType, Is.TypeOf(typeof(PrimitiveType)));
 		}
 
+		const string templateAliasParamsCode2 = @"module A;
+struct TestField(TFValueType)
+{
+	TFValueType t;
+}
+
+class TestClass(alias T)
+{
+	auto Field1 = T!(ulong)();
+	auto Field2 = T!(string)();
+}
+
+TestClass!TestField c;
+";
+
+		[Test]
+		public void TemplateAliasParams5_CachingIssues()
+		{
+			var ctxt = CreateDefCtxt(templateAliasParamsCode2);
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression("c.Field1");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			var @base = (t as MemberSymbol).Base;
+			Assert.That(@base, Is.TypeOf(typeof(StructType)));
+
+			x = DParser.ParseExpression("c.Field2.t");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			var ms = t as MemberSymbol;
+			Assert.That(ms.Base, Is.TypeOf(typeof(TemplateParameterSymbol)));
+			var tps = ms.Base as TemplateParameterSymbol;
+			Assert.That(tps.Base, Is.TypeOf(typeof(ArrayType)));
+			var at = tps.Base as ArrayType;
+			Assert.That(at.ValueType, Is.TypeOf(typeof(PrimitiveType)));
+		}
+
 		[Test]
 		public void StdSignals()
 		{
