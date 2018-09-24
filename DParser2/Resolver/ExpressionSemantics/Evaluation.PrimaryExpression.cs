@@ -60,6 +60,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return GetStringLiteralType(ctxt, fmt);
 		}
 
+		public ISymbolValue VisitStringLiteralExpression(StringLiteralExpression x)
+		{
+			return new ArrayValue(x, ctxt);
+		}
+
 		public ISymbolValue Visit(TokenExpression x)
 		{
 			switch (x.Token)

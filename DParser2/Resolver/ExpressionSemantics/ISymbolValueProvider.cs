@@ -43,7 +43,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public DVariable GetLocal(IdentifierExpression id)
 		{
-			return GetLocal(id.Value as string, id);
+			return GetLocal(id.StringValue, id);
 		}
 
 		/// <summary>

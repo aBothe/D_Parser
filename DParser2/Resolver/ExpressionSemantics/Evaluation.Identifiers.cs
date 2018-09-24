@@ -193,27 +193,15 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public ISymbolValue Visit(IdentifierExpression id)
 		{
-			if (id.IsIdentifier)
+			var o = ExpressionTypeEvaluation.EvaluateType(id, ctxt, false);
+
+			if (o == null)
 			{
-				var o = ExpressionTypeEvaluation.EvaluateType(id, ctxt, false);
-
-				if (o == null)
-				{
-					EvalError(id, "Symbol could not be found");
-					return null;
-				}
-
-				return TryDoCTFEOrGetValueRefs(o, id);
+				EvalError(id, "Symbol could not be found");
+				return null;
 			}
 
-			switch (id.Format)
-			{
-				case Parser.LiteralFormat.StringLiteral:
-				case Parser.LiteralFormat.VerbatimStringLiteral:
-					return new ArrayValue(GetStringLiteralType(id.Subformat), id);
-				default:
-					return null;
-			}
+			return TryDoCTFEOrGetValueRefs(o, id);
 		}
 
 		public ISymbolValue VisitScalarConstantExpression(ScalarConstantExpression id)

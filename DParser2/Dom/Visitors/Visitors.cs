@@ -271,6 +271,7 @@ namespace D_Parser.Dom
 
 		void Visit(TemplateInstanceExpression x);
 		void VisitScalarConstantExpression(ScalarConstantExpression x);
+		void VisitStringLiteralExpression(StringLiteralExpression x);
 		void Visit(IdentifierExpression x);
 		void Visit(TokenExpression x);
 		void Visit(TypeDeclarationExpression x);
@@ -337,6 +338,7 @@ namespace D_Parser.Dom
 
 		R Visit(TemplateInstanceExpression x);
 		R VisitScalarConstantExpression(ScalarConstantExpression x);
+		R VisitStringLiteralExpression(StringLiteralExpression x);
 		R Visit(IdentifierExpression x);
 		R Visit(TokenExpression x);
 		R Visit(TypeDeclarationExpression x);

@@ -249,7 +249,7 @@ namespace D_Parser.Misc.Mangling
 					var t = Type(); // Where should the explicit type be used when there's already a value?
 					return Value();
 				case 'S':
-					return new IdentifierExpression(LName(),LiteralFormat.StringLiteral);
+					return new StringLiteralExpression(LName());
 			}
 			return null;
 		}
@@ -583,12 +583,23 @@ namespace D_Parser.Misc.Mangling
 					
 					for(;len > 0; len--)
 						sb.Append((char)(Lexer.GetHexNumber((char)r.Read()) << 4 + Lexer.GetHexNumber((char)r.Read())));
-					
-					return new IdentifierExpression(sb.ToString(), 
-					                                LiteralFormat.StringLiteral, p == 'a' ? 
-					                                	LiteralSubformat.Utf8 : (p == 'w' ? 
-					                                    LiteralSubformat.Utf16 : 
-					                                                         LiteralSubformat.Utf32));
+
+					LiteralSubformat encoding;
+					switch (p)
+					{
+						default:
+						case 'a':
+							encoding = LiteralSubformat.Utf8;
+							break;
+						case 'w':
+							encoding = LiteralSubformat.Utf16;
+							break;
+						case 'd':
+							encoding = LiteralSubformat.Utf32;
+							break;
+					}
+
+					return new StringLiteralExpression(sb.ToString(), false, encoding);
 			}
 			
 			if(Lexer.IsLegalDigit(p, 10))

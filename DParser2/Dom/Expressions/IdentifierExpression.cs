@@ -1,6 +1,4 @@
-﻿using System;
-using D_Parser.Parser;
-
+﻿
 namespace D_Parser.Dom.Expressions
 {
 	public interface IntermediateIdType : ISyntaxRegion
@@ -9,9 +7,6 @@ namespace D_Parser.Dom.Expressions
 		int IdHash{get;}
 	}
 
-	/// <summary>
-	/// Identifier as well as literal primary expression
-	/// </summary>
 	public class IdentifierExpression : PrimaryExpression, IntermediateIdType
 	{
 		public bool ModuleScoped {
@@ -20,49 +15,21 @@ namespace D_Parser.Dom.Expressions
 		}
 
 		public int IdHash {
-			get { return ValueStringHash; }
+			get;
+			private set;
 		}
 
-		public bool IsIdentifier { get { return ValueStringHash != 0 && Format == LiteralFormat.None; } }
+		public string StringValue { get { return Strings.TryGet(IdHash); } }
 
-		public readonly object Value;
-		public readonly int ValueStringHash;
-
-		public string StringValue { get { return ValueStringHash != 0 ? Strings.TryGet(ValueStringHash) : Value as string; } }
-
-		public readonly LiteralFormat Format;
-		public readonly LiteralSubformat Subformat;
-		//public IdentifierExpression() { }
-		public IdentifierExpression(object Val)
-		{
-			Value = Val;
-			Format = LiteralFormat.None;
-		}
-
-		public IdentifierExpression(string Value, LiteralFormat LiteralFormat = LiteralFormat.None, LiteralSubformat Subformat = 0)
+		public IdentifierExpression(string id)
 		{ 
-			Strings.Add(Value);
-			ValueStringHash = Value.GetHashCode(); 
-			this.Format = LiteralFormat; 
-			this.Subformat = Subformat;
+			Strings.Add(id);
+			IdHash = id.GetHashCode();
 		}
 
 		public override string ToString()
 		{
-			if (Format != LiteralFormat.None)
-				switch (Format)
-			{
-				case LiteralFormat.StringLiteral:
-					return "\"" + StringValue + "\"";
-				case LiteralFormat.VerbatimStringLiteral:
-					return "r\"" + StringValue + "\"";
-				}
-			else if (IsIdentifier)
-			{
-				return (ModuleScoped ? "." : "") + StringValue;
-			}
-
-			return Value == null ? null : Value.ToString();
+			return (ModuleScoped ? "." : "") + StringValue;
 		}
 
 		public CodeLocation Location

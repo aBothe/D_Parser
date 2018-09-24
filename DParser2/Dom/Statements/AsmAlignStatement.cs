@@ -11,8 +11,8 @@ namespace D_Parser.Dom.Statements
 		{
 			if (ValueExpression == null)
 				return "align <NULL>";
-			var ie = ValueExpression as IdentifierExpression;
-			if (ie != null && ie.Value.Equals(2))
+			var ie = ValueExpression as ScalarConstantExpression;
+			if (ie != null && ie.Value.Equals(2m))
 				return "even";
 			else
 				return "align " + ValueExpression.ToString();

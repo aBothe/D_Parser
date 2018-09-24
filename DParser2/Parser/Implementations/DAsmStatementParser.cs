@@ -66,7 +66,7 @@ namespace D_Parser.Parser.Implementations
 									break;
 								case "even":
 									als = new AsmAlignStatement() { Location = la.Location, Parent = s };
-									als.ValueExpression = new IdentifierExpression(2) { Location = la.Location, EndLocation = la.EndLocation };
+									als.ValueExpression = new ScalarConstantExpression(2m, LiteralFormat.Scalar) { Location = la.Location, EndLocation = la.EndLocation };
 									l.Add(als);
 									break;
 								case "naked":

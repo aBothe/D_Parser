@@ -131,21 +131,18 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		#endregion
 
 		#region Ctor
-		public ArrayValue(IdentifierExpression stringLiteral, ResolutionContext ctxtToResolveStringType = null)
-			: base(Evaluation.GetStringLiteralType(ctxtToResolveStringType, stringLiteral.Subformat))
+		public ArrayValue(StringLiteralExpression stringLiteral, ResolutionContext ctxtToResolveStringType = null)
+			: this(Evaluation.GetStringLiteralType(ctxtToResolveStringType, stringLiteral.Subformat), stringLiteral)
 		{
-			StringValue = stringLiteral.StringValue;
-			StringFormat = stringLiteral.Subformat;
 		}
 
 		/// <summary>
 		/// String constructor.
 		/// Given result stores both type and idenfitierexpression whose Value is used as content
 		/// </summary>
-		public ArrayValue(ArrayType stringLiteralResult, IdentifierExpression stringLiteral)
-			: base(stringLiteralResult)
+		public ArrayValue(ArrayType stringLiteralResult, StringLiteralExpression stringLiteral)
+			: this(stringLiteralResult, stringLiteral.Value)
 		{
-			StringValue = stringLiteral.StringValue;
 			StringFormat = stringLiteral.Subformat;
 		}
 

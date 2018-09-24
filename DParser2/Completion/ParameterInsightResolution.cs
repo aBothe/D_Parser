@@ -396,6 +396,7 @@ namespace D_Parser.Completion
 		public void Visit(PostfixExpression_Increment x) {}
 		public void Visit(PostfixExpression_Decrement x) {}
 		public void VisitScalarConstantExpression(ScalarConstantExpression x) {}
+		public void VisitStringLiteralExpression(StringLiteralExpression x) {}
 		public void Visit(IdentifierExpression x) {}
 		public void Visit(TokenExpression x) {}
 		public void Visit(TypeDeclarationExpression x) {}

@@ -109,7 +109,7 @@ namespace D_Parser.Resolver
 							break;
 						}
 
-					args.Add(argEx ?? new IdentifierExpression(tp.NameHash));
+					args.Add(argEx ?? new IdentifierExpression(tp.Name));
 				}
 
 				td = new TemplateInstanceExpression(td) { Arguments = args.ToArray() };

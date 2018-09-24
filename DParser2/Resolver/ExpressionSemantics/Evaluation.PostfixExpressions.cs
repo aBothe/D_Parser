@@ -166,7 +166,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 				if (ValueProvider != null && EvalAndFilterOverloads && baseExpression != null)
 				{
-					var staticPropResult = StaticProperties.TryEvalPropertyValue(ValueProvider, baseExpression, id.ValueStringHash);
+					var staticPropResult = StaticProperties.TryEvalPropertyValue(ValueProvider, baseExpression, id.IdHash);
 					if (staticPropResult != null)
 						return new List<R> { (R) staticPropResult };
 				}

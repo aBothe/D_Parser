@@ -774,7 +774,7 @@ namespace D_Parser.Dom.Visitors
 			return h;
 		}
 
-		public long VisitScalarConstantExpression(ScalarConstantExpression x)
+		public long VisitScalarConstantExpression(Expressions.ScalarConstantExpression x)
 		{
 			const long prime = 1002341;
 			long h = 1;
@@ -787,14 +787,24 @@ namespace D_Parser.Dom.Visitors
 			return h;
 		}
 
+		public long VisitStringLiteralExpression(Expressions.StringLiteralExpression x)
+		{
+			const long prime = 1002343;
+			long h = 1;
+
+			Hash(ref h, prime, x.Format);
+			Hash(ref h, prime, x.Subformat);
+			Hash(ref h, prime, x.Value);
+
+			return h;
+		}
+
 		public long Visit(Expressions.IdentifierExpression x)
 		{
 			long h = 1;
 			const long prime = 1001311;
 
-			Hash (ref h, prime, x.IsIdentifier);
-			Hash (ref h, prime, x.ValueStringHash);
-			Hash (ref h, prime, x.Value);
+			Hash (ref h, prime, x.IdHash);
 
 			return h;
 		}
@@ -1428,6 +1438,7 @@ namespace D_Parser.Dom.Visitors
 		}
 
 		// 1002341 for ScalarConstantExpression
+		// 1002343 for StringLiteralExpression
 
 		#endregion
 	}

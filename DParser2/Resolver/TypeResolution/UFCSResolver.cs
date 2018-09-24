@@ -158,7 +158,7 @@ namespace D_Parser.Resolver.TypeResolution
 			int name;
 
 			if (acc.AccessExpression is IdentifierExpression)
-				name = ((IdentifierExpression)acc.AccessExpression).ValueStringHash;
+				name = ((IdentifierExpression)acc.AccessExpression).IdHash;
 			else if (acc.AccessExpression is TemplateInstanceExpression)
 				name = ((TemplateInstanceExpression)acc.AccessExpression).TemplateIdHash;
 			else

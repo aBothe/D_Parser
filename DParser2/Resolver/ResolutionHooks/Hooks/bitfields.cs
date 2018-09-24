@@ -89,7 +89,7 @@ namespace D_Parser.Resolver.ResolutionHooks
 				tupleStruct.Add(new DVariable { 
 					NameHash = tupleStruct.NameHash, 
 					Attributes = new List<DAttribute> { new Modifier(DTokens.Enum) }, 
-					Initializer = new IdentifierExpression(sb.ToString(), LiteralFormat.StringLiteral, LiteralSubformat.Utf8)
+					Initializer = new StringLiteralExpression(sb.ToString())
 				});
 			}
 

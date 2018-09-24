@@ -104,6 +104,7 @@
     <Compile Include="Completion\Providers\StructInitializerCompletion.cs" />
     <Compile Include="Dom\AbstractTypeDeclaration.cs" />
     <Compile Include="Dom\Expressions\ScalarConstantExpression.cs" />
+    <Compile Include="Dom\Expressions\StringLiteralExpression.cs" />
     <Compile Include="Dom\IDeclarationCondition.cs" />
     <Compile Include="Dom\ParserError.cs" />
     <Compile Include="Dom\Statements\AsmRawDataStatement.cs" />

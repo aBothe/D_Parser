@@ -53,8 +53,8 @@ namespace Tests.ExpressionEvaluation
 
 			var x = DParser.ParseExpression(literal);
 
-			Assert.That(x,Is.TypeOf(typeof(IdentifierExpression)));
-			var id = (IdentifierExpression)x;
+			Assert.That(x,Is.TypeOf(typeof(StringLiteralExpression)));
+			var id = (StringLiteralExpression)x;
 
 			var v = Evaluation.EvaluateValue(x, ctxt);
 

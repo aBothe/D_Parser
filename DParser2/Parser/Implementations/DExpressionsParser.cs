@@ -913,7 +913,7 @@ namespace D_Parser.Parser.Implementations
 							Step();
 							sb.Append(t.RawCodeRepresentation ?? t.Value);
 						}
-						return new IdentifierExpression(sb.ToString(), t.LiteralFormat, t.Subformat) { Location = startLoc, EndLocation = t.EndLocation };
+						return new StringLiteralExpression(sb.ToString(), t.LiteralFormat == LiteralFormat.VerbatimStringLiteral, t.Subformat) { Location = startLoc, EndLocation = t.EndLocation };
 					}
 					//else if (t.LiteralFormat == LiteralFormat.CharLiteral)return new IdentifierExpression(t.LiteralValue) { LiteralFormat=t.LiteralFormat,Location = startLoc, EndLocation = t.EndLocation };
 					return new ScalarConstantExpression(t.LiteralValue, t.LiteralFormat, t.Subformat, t.RawCodeRepresentation) { Location = startLoc, EndLocation = t.EndLocation };

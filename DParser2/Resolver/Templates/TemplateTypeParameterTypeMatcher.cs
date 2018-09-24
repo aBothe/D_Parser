@@ -154,7 +154,7 @@ namespace D_Parser.Resolver.Templates
 						* test if it's part of the parameter list
 						*/
 					var id = x_param as IdentifierExpression;
-					if (id != null && id.IsIdentifier && Contains(id.ValueStringHash))
+					if (id != null && Contains(id.IdHash))
 					{ // Match int[5] into T[n],n - after deduction, n will be 5
 
 						// If an expression (the usual case) has been passed as argument, evaluate its value, otherwise is its type already resolved.
@@ -164,7 +164,7 @@ namespace D_Parser.Resolver.Templates
 						// The affected parameter must also be a value parameter then, if an expression was given.
 
 						// and handle it as if it was an identifier declaration..
-						result = TemplateParameterDeductionVisitor.Set(ctxt, TargetDictionary, originallyReferredTemplateTypeParam, finalArg, id.ValueStringHash);
+						result = TemplateParameterDeductionVisitor.Set(ctxt, TargetDictionary, originallyReferredTemplateTypeParam, finalArg, id.IdHash);
 					}
 					else if (argumentArrayType is ArrayType)
 					{ // Match int[5] into T[5]
@@ -485,10 +485,7 @@ namespace D_Parser.Resolver.Templates
 
 				var id = p as IdentifierExpression;
 				if (id != null)
-				{
-					if (id.IsIdentifier)
-						return new IdentifierDeclaration(id.ValueStringHash) { Location = p.Location, EndLocation = p.EndLocation };
-				}
+					return new IdentifierDeclaration(id.StringValue) { Location = p.Location, EndLocation = p.EndLocation };
 				else if (p is TypeDeclarationExpression)
 					return ((TypeDeclarationExpression)p).Declaration;
 				return null;

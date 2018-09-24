@@ -167,7 +167,7 @@ namespace D_Parser.Refactoring
 
 		public override void Visit (IdentifierExpression id)
 		{
-			if (id.IsIdentifier && id.ValueStringHash == searchHash)
+			if (id.IdHash == searchHash)
 			{
 				ctxt.CurrentContext.Set(id.Location);
 				if (TryAdd(ExpressionTypeEvaluation.EvaluateType(id, ctxt, false), id))

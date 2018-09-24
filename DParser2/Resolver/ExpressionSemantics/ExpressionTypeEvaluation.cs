@@ -839,59 +839,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return TryPretendMethodExecution(AmbiguousType.Get(GetOverloads(tix, ctxt)));
 		}
 
-		public AbstractType VisitScalarConstantExpression(ScalarConstantExpression id)
-		{
-			byte tt;
-			switch (id.Format)
-			{
-				case Parser.LiteralFormat.CharLiteral:
-					var tk = id.Subformat == LiteralSubformat.Utf32 ? DTokens.Dchar :
-						id.Subformat == LiteralSubformat.Utf16 ? DTokens.Wchar :
-						DTokens.Char;
-
-					return new PrimitiveType(tk) { NonStaticAccess = true };
-
-				case LiteralFormat.FloatingPoint | LiteralFormat.Scalar:
-					var im = id.Subformat.HasFlag(LiteralSubformat.Imaginary);
-
-					tt = im ? DTokens.Idouble : DTokens.Double;
-
-					if (id.Subformat.HasFlag(LiteralSubformat.Float))
-						tt = im ? DTokens.Ifloat : DTokens.Float;
-					else if (id.Subformat.HasFlag(LiteralSubformat.Real))
-						tt = im ? DTokens.Ireal : DTokens.Real;
-
-					return new PrimitiveType(tt) { NonStaticAccess = true };
-
-				case LiteralFormat.Scalar:
-					var unsigned = id.Subformat.HasFlag(LiteralSubformat.Unsigned);
-
-					if (id.Subformat.HasFlag(LiteralSubformat.Long))
-						tt = unsigned ? DTokens.Ulong : DTokens.Long;
-					else
-						tt = unsigned ? DTokens.Uint : DTokens.Int;
-
-					return new PrimitiveType(tt) { NonStaticAccess = true };
-				default:
-					return null;
-			}
-		}
-
 		public AbstractType Visit(IdentifierExpression id)
 		{
-			if (id.IsIdentifier)
-				return TryPretendMethodExecution(AmbiguousType.Get(GetOverloads(id, ctxt)));
-
-			switch (id.Format)
-			{
-				case Parser.LiteralFormat.StringLiteral:
-				case Parser.LiteralFormat.VerbatimStringLiteral:
-					var str = GetStringLiteralType(id.Subformat);
-					str.NonStaticAccess = true;
-					return str;
-				default:
-					return null;
-			}
+			return TryPretendMethodExecution(AmbiguousType.Get(GetOverloads(id, ctxt)));
 		}
 
 		/// <summary>
@@ -1096,6 +1046,20 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		}
 		#endregion
 
+		public AbstractType VisitStringLiteralExpression(StringLiteralExpression id)
+		{
+			switch (id.Format)
+			{
+				case Parser.LiteralFormat.StringLiteral:
+				case Parser.LiteralFormat.VerbatimStringLiteral:
+					var str = GetStringLiteralType(id.Subformat);
+					str.NonStaticAccess = true;
+					return str;
+				default:
+					throw new ArgumentException("format");
+			}
+		}
+
 		#region Primitive expressions
 		public AbstractType Visit(Expression ex)
 		{
@@ -1105,6 +1069,44 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public AbstractType Visit(AnonymousClassExpression x)
 		{
 			return TypeDeclarationResolver.HandleNodeMatch(x.AnonymousClass, ctxt, typeBase: x);
+		}
+
+		public AbstractType VisitScalarConstantExpression(ScalarConstantExpression id)
+		{
+			byte tt;
+			switch (id.Format)
+			{
+				case Parser.LiteralFormat.CharLiteral:
+					var tk = id.Subformat == LiteralSubformat.Utf32 ? DTokens.Dchar :
+						id.Subformat == LiteralSubformat.Utf16 ? DTokens.Wchar :
+						DTokens.Char;
+
+					return new PrimitiveType(tk) { NonStaticAccess = true };
+
+				case LiteralFormat.FloatingPoint | LiteralFormat.Scalar:
+					var im = id.Subformat.HasFlag(LiteralSubformat.Imaginary);
+
+					tt = im ? DTokens.Idouble : DTokens.Double;
+
+					if (id.Subformat.HasFlag(LiteralSubformat.Float))
+						tt = im ? DTokens.Ifloat : DTokens.Float;
+					else if (id.Subformat.HasFlag(LiteralSubformat.Real))
+						tt = im ? DTokens.Ireal : DTokens.Real;
+
+					return new PrimitiveType(tt) { NonStaticAccess = true };
+
+				case LiteralFormat.Scalar:
+					var unsigned = id.Subformat.HasFlag(LiteralSubformat.Unsigned);
+
+					if (id.Subformat.HasFlag(LiteralSubformat.Long))
+						tt = unsigned ? DTokens.Ulong : DTokens.Long;
+					else
+						tt = unsigned ? DTokens.Uint : DTokens.Int;
+
+					return new PrimitiveType(tt) { NonStaticAccess = true };
+				default:
+					return null;
+			}
 		}
 
 		public AbstractType Visit(TokenExpression x)
