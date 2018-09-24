@@ -1390,7 +1390,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						// Mock up a postfix_access expression to ensure static properties & ufcs methods are checked either
 						return new PostfixExpression_Access
 						{
-							PostfixForeExpression = tEx.AssignExpression ?? new TypeDeclarationExpression(tEx.Type),
+							PostfixForeExpression = tEx.AssignExpression ?? TypeDeclarationExpression.TryWrap(tEx.Type),
 							AccessExpression = new IdentifierExpression(av.StringValue)
 							{
 								Location = litEx.Location,

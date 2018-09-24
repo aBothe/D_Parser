@@ -33,7 +33,7 @@ namespace D_Parser.Dom.Expressions
 				if (Expression != null)
 					yield return Expression;
 				else if (Type != null)
-					yield return new TypeDeclarationExpression(Type);
+					yield return TypeDeclarationExpression.TryWrap(Type);
 			}
 		}
 

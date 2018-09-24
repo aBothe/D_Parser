@@ -9,24 +9,30 @@ namespace D_Parser.Dom.Expressions
 	{
 		public readonly ITypeDeclaration Declaration;
 
-		public TypeDeclarationExpression(ITypeDeclaration td)
+		public static IExpression TryWrap(ISyntaxRegion expressionOrDeclaration)
+		{
+			return expressionOrDeclaration != null ? expressionOrDeclaration as IExpression ??
+				new TypeDeclarationExpression(expressionOrDeclaration as ITypeDeclaration) : null;
+		}
+
+		TypeDeclarationExpression(ITypeDeclaration td)
 		{
 			Declaration = td;
 		}
 
 		public override string ToString()
 		{
-			return Declaration != null ? Declaration.ToString() : "";
+			return Declaration.ToString();
 		}
 
 		public CodeLocation Location
 		{
-			get { return Declaration != null ? Declaration.Location : CodeLocation.Empty; }
+			get { return Declaration.Location; }
 		}
 
 		public CodeLocation EndLocation
 		{
-			get { return Declaration != null ? Declaration.EndLocation : CodeLocation.Empty; }
+			get { return Declaration.EndLocation; }
 		}
 
 		public void Accept(ExpressionVisitor vis)

@@ -105,7 +105,7 @@ namespace D_Parser.Resolver
 								//TODO: Convert ISymbolValues back to IExpression
 							}
 							else
-								argEx = new TypeDeclarationExpression(AcceptType(tps));
+								argEx = TypeDeclarationExpression.TryWrap(AcceptType(tps));
 							break;
 						}
 

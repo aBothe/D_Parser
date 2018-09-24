@@ -221,7 +221,7 @@ namespace D_Parser.Misc.Mangling
 					{
 						var arg = tix.Arguments[argumentIndex];
 						if (arg is TypeDeclarationExpression)
-							tix.Arguments[argumentIndex] = new TypeDeclarationExpression(RemoveNestedTemplateRefsFromQualifier((arg as TypeDeclarationExpression).Declaration));
+							tix.Arguments[argumentIndex] = TypeDeclarationExpression.TryWrap(RemoveNestedTemplateRefsFromQualifier((arg as TypeDeclarationExpression).Declaration));
 					}
 			}
 			else{
@@ -244,7 +244,7 @@ namespace D_Parser.Misc.Mangling
 			switch((char)r.Read())
 			{
 				case 'T':
-					return new TypeDeclarationExpression(DTypeToTypeDeclVisitor.GenerateTypeDecl(Type()));
+					return TypeDeclarationExpression.TryWrap(DTypeToTypeDeclVisitor.GenerateTypeDecl(Type()));
 				case 'V':
 					var t = Type(); // Where should the explicit type be used when there's already a value?
 					return Value();

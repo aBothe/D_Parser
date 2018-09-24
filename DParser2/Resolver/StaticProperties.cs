@@ -264,7 +264,7 @@ namespace D_Parser.Resolver
 							l.Add(null);
 							continue;
 						}
-						l.Add(td as IExpression ?? new TypeDeclarationExpression(td));
+						l.Add(TypeDeclarationExpression.TryWrap(td));
 					}
 
 					return new TemplateInstanceExpression(new IdentifierDeclaration("Tuple")) { Arguments =  l.ToArray() };

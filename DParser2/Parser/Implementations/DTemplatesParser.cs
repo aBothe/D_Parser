@@ -383,7 +383,7 @@ namespace D_Parser.Parser.Implementations
 						if (typeArg != null && (laKind == DTokens.CloseParenthesis || laKind == DTokens.Comma))
 						{
 							Lexer.PopLookAheadBackup();
-							args.Add(new TypeDeclarationExpression(typeArg));
+							args.Add(TypeDeclarationExpression.TryWrap(typeArg));
 						}
 						else
 						{
@@ -443,7 +443,7 @@ namespace D_Parser.Parser.Implementations
 						if (DTokensSemanticHelpers.IsBasicType(laKind))
 						{
 							Step();
-							args.Add(new TypeDeclarationExpression(new DTokenDeclaration(t.Kind)
+							args.Add(TypeDeclarationExpression.TryWrap(new DTokenDeclaration(t.Kind)
 							{
 								Location = t.Location,
 								EndLocation = t.EndLocation

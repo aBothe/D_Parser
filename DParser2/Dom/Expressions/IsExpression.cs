@@ -81,7 +81,7 @@ namespace D_Parser.Dom.Expressions
 			get
 			{ 
 				if (TestedType != null)
-					yield return new TypeDeclarationExpression(TestedType);
+					yield return TypeDeclarationExpression.TryWrap(TestedType);
 			}
 		}
 

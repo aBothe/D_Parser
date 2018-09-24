@@ -857,7 +857,7 @@ namespace D_Parser.Parser.Implementations
 				case DTokens.New:
 					return NewExpression(Scope);
 				case DTokens.Typeof:
-					return new TypeDeclarationExpression(parserParts.declarationParser.TypeOf(Scope));
+					return TypeDeclarationExpression.TryWrap(parserParts.declarationParser.TypeOf(Scope));
 				case DTokens.__traits:
 					return TraitsExpression(Scope);
 				// Dollar (== Array length expression)
@@ -1168,7 +1168,7 @@ namespace D_Parser.Parser.Implementations
 								if (Expect(DTokens.Identifier) || IsEOF)
 									return new PostfixExpression_Access()
 									{
-										PostfixForeExpression = new TypeDeclarationExpression(bt),
+										PostfixForeExpression = TypeDeclarationExpression.TryWrap(bt),
 										AccessExpression = IsEOF ? new TokenExpression(DTokens.Incomplete) as IExpression
 										: new IdentifierExpression(t.Value) { Location = t.Location, EndLocation = t.EndLocation },
 										EndLocation = t.EndLocation
@@ -1177,14 +1177,14 @@ namespace D_Parser.Parser.Implementations
 							case DTokens.OpenParenthesis:
 								Step();
 
-								var callExp = new PostfixExpression_MethodCall { PostfixForeExpression = new TypeDeclarationExpression(bt) };
+								var callExp = new PostfixExpression_MethodCall { PostfixForeExpression = TypeDeclarationExpression.TryWrap(bt) };
 								callExp.Arguments = ArgumentList(Scope).ToArray();
 
 								Expect(DTokens.CloseParenthesis);
 								return callExp;
 							default:
 								if (bt is TypeOfDeclaration || bt is MemberFunctionAttributeDecl)
-									return new TypeDeclarationExpression(bt);
+									return TypeDeclarationExpression.TryWrap(bt);
 								break;
 						}
 
