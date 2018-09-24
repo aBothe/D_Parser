@@ -215,11 +215,14 @@ namespace D_Parser.Misc.Mangling
 			{
 				var tix = td as TemplateInstanceExpression;
 				id = tix.TemplateIdHash;
-				
-				if(tix.Arguments!=null && tix.Arguments.Length != 0)
-					foreach(var arg in tix.Arguments)
-						if(arg is TypeDeclarationExpression)
-							(arg as TypeDeclarationExpression).Declaration = RemoveNestedTemplateRefsFromQualifier((arg as TypeDeclarationExpression).Declaration);
+
+				if (tix.Arguments != null)
+					for (int argumentIndex = 0; argumentIndex < tix.Arguments.Length; argumentIndex++)
+					{
+						var arg = tix.Arguments[argumentIndex];
+						if (arg is TypeDeclarationExpression)
+							tix.Arguments[argumentIndex] = new TypeDeclarationExpression(RemoveNestedTemplateRefsFromQualifier((arg as TypeDeclarationExpression).Declaration));
+					}
 			}
 			else{
 				td.InnerDeclaration = RemoveNestedTemplateRefsFromQualifier(td.InnerDeclaration);

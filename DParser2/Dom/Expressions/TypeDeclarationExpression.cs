@@ -7,11 +7,7 @@ namespace D_Parser.Dom.Expressions
 	/// </summary>
 	public class TypeDeclarationExpression : PrimaryExpression
 	{
-		public ITypeDeclaration Declaration;
-
-		public TypeDeclarationExpression()
-		{
-		}
+		public readonly ITypeDeclaration Declaration;
 
 		public TypeDeclarationExpression(ITypeDeclaration td)
 		{
