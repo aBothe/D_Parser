@@ -54,7 +54,7 @@ void main() {
 
 			x = new PostfixExpression_MethodCall
 			{
-				Arguments = new[] { new IdentifierExpression(123m, LiteralFormat.Scalar) },
+				Arguments = new[] { new ScalarConstantExpression(123m, LiteralFormat.Scalar) },
 				PostfixForeExpression = new PostfixExpression_Access
 				{
 					AccessExpression = new IdentifierExpression("bar"),

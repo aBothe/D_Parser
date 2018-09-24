@@ -270,6 +270,7 @@ namespace D_Parser.Dom
 		void Visit(PostfixExpression_ArrayAccess x);
 
 		void Visit(TemplateInstanceExpression x);
+		void VisitScalarConstantExpression(ScalarConstantExpression x);
 		void Visit(IdentifierExpression x);
 		void Visit(TokenExpression x);
 		void Visit(TypeDeclarationExpression x);
@@ -335,6 +336,7 @@ namespace D_Parser.Dom
 		R Visit(PostfixExpression_ArrayAccess x);
 
 		R Visit(TemplateInstanceExpression x);
+		R VisitScalarConstantExpression(ScalarConstantExpression x);
 		R Visit(IdentifierExpression x);
 		R Visit(TokenExpression x);
 		R Visit(TypeDeclarationExpression x);

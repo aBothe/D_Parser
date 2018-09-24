@@ -363,260 +363,58 @@ namespace D_Parser.Completion
 		}
 
 		#region unused
-		public void Visit(Expression x)
-		{
-			
-		}
-
-		public void Visit(AssignExpression x)
-		{
-			
-		}
-
-		public void Visit(ConditionalExpression x)
-		{
-			
-		}
-
-		public void Visit(OrOrExpression x)
-		{
-			
-		}
-
-		public void Visit(AndAndExpression x)
-		{
-			
-		}
-
-		public void Visit(XorExpression x)
-		{
-			
-		}
-
-		public void Visit(OrExpression x)
-		{
-			
-		}
-
-		public void Visit(AndExpression x)
-		{
-			
-		}
-
-		public void Visit(EqualExpression x)
-		{
-			
-		}
-
-		public void Visit(IdentityExpression x)
-		{
-			
-		}
-
-		public void Visit(RelExpression x)
-		{
-			
-		}
-
-		public void Visit(InExpression x)
-		{
-			
-		}
-
-		public void Visit(ShiftExpression x)
-		{
-			
-		}
-
-		public void Visit(AddExpression x)
-		{
-			
-		}
-
-		public void Visit(MulExpression x)
-		{
-			
-		}
-
-		public void Visit(CatExpression x)
-		{
-			
-		}
-
-		public void Visit(PowExpression x)
-		{
-			
-		}
-
-		public void Visit(UnaryExpression_And x)
-		{
-			
-		}
-
-		public void Visit(UnaryExpression_Increment x)
-		{
-			
-		}
-
-		public void Visit(UnaryExpression_Decrement x)
-		{
-			
-		}
-
-		public void Visit(UnaryExpression_Mul x)
-		{
-			
-		}
-
-		public void Visit(UnaryExpression_Add x)
-		{
-			
-		}
-
-		public void Visit(UnaryExpression_Sub x)
-		{
-			
-		}
-
-		public void Visit(UnaryExpression_Not x)
-		{
-			
-		}
-
-		public void Visit(UnaryExpression_Cat x)
-		{
-			
-		}
-
-		public void Visit(UnaryExpression_Type x)
-		{
-			
-		}
-
-		public void Visit(AnonymousClassExpression x)
-		{
-			
-		}
-
-		public void Visit(DeleteExpression x)
-		{
-			
-		}
-
-		public void Visit(CastExpression x)
-		{
-			
-		}
-
-		public void Visit(PostfixExpression_Access x)
-		{
-			
-		}
-
-		public void Visit(PostfixExpression_Increment x)
-		{
-			
-		}
-
-		public void Visit(PostfixExpression_Decrement x)
-		{
-			
-		}
-
-		public void Visit(IdentifierExpression x)
-		{
-			
-		}
-
-		public void Visit(TokenExpression x)
-		{
-			
-		}
-
-		public void Visit(TypeDeclarationExpression x)
-		{
-			
-		}
-
-		public void Visit(ArrayLiteralExpression x)
-		{
-			
-		}
-
-		public void Visit(AssocArrayExpression x)
-		{
-			
-		}
-
-		public void Visit(FunctionLiteral x)
-		{
-			
-		}
-
-		public void Visit(AssertExpression x)
-		{
-			
-		}
-
-		public void Visit(MixinExpression x)
-		{
-			
-		}
-
-		public void Visit(ImportExpression x)
-		{
-			
-		}
-
-		public void Visit(TypeidExpression x)
-		{
-			
-		}
-
-		public void Visit(IsExpression x)
-		{
-			
-		}
-
-		public void Visit(TraitsExpression x)
-		{
-			
-		}
-
-		public void Visit(SurroundingParenthesesExpression x)
-		{
-			
-		}
-
-		public void Visit(VoidInitializer x)
-		{
-			
-		}
-
-		public void Visit(ArrayInitializer x)
-		{
-			
-		}
-
-		public void Visit(StructInitializer x)
-		{
-			
-		}
-
-		public void Visit(StructMemberInitializer structMemberInitializer)
-		{
-			
-		}
-
-		public void Visit(AsmRegisterExpression x)
-		{
-			
-		}
-
-		public void Visit(UnaryExpression_SegmentBase x)
-		{
-
-		}
+		public void Visit(Expression x) {}
+		public void Visit(AssignExpression x) {}
+		public void Visit(ConditionalExpression x) {}
+		public void Visit(OrOrExpression x) {}
+		public void Visit(AndAndExpression x) {}
+		public void Visit(XorExpression x) {}
+		public void Visit(OrExpression x) {}
+		public void Visit(AndExpression x) {}
+		public void Visit(EqualExpression x) {}
+		public void Visit(IdentityExpression x) {}
+		public void Visit(RelExpression x) {}
+		public void Visit(InExpression x) {}
+		public void Visit(ShiftExpression x) {}
+		public void Visit(AddExpression x) {}
+		public void Visit(MulExpression x) {}
+		public void Visit(CatExpression x) {}
+		public void Visit(PowExpression x) {}
+		public void Visit(UnaryExpression_And x) {}
+		public void Visit(UnaryExpression_Increment x) {}
+		public void Visit(UnaryExpression_Decrement x) {}
+		public void Visit(UnaryExpression_Mul x) {}
+		public void Visit(UnaryExpression_Add x) {}
+		public void Visit(UnaryExpression_Sub x) {}
+		public void Visit(UnaryExpression_Not x) {}
+		public void Visit(UnaryExpression_Cat x) {}
+		public void Visit(UnaryExpression_Type x) {}
+		public void Visit(AnonymousClassExpression x) {}
+		public void Visit(DeleteExpression x) {}
+		public void Visit(CastExpression x) {}
+		public void Visit(PostfixExpression_Access x) {}
+		public void Visit(PostfixExpression_Increment x) {}
+		public void Visit(PostfixExpression_Decrement x) {}
+		public void VisitScalarConstantExpression(ScalarConstantExpression x) {}
+		public void Visit(IdentifierExpression x) {}
+		public void Visit(TokenExpression x) {}
+		public void Visit(TypeDeclarationExpression x) {}
+		public void Visit(ArrayLiteralExpression x) {}
+		public void Visit(AssocArrayExpression x) {}
+		public void Visit(FunctionLiteral x) {}
+		public void Visit(AssertExpression x) {}
+		public void Visit(MixinExpression x) {}
+		public void Visit(ImportExpression x) {}
+		public void Visit(TypeidExpression x) {}
+		public void Visit(IsExpression x) {}
+		public void Visit(TraitsExpression x) {}
+		public void Visit(SurroundingParenthesesExpression x) {}
+		public void Visit(VoidInitializer x) {}
+		public void Visit(ArrayInitializer x) {}
+		public void Visit(StructInitializer x) {}
+		public void Visit(StructMemberInitializer structMemberInitializer) {}
+		public void Visit(AsmRegisterExpression x) {}
+		public void Visit(UnaryExpression_SegmentBase x) {}
 		#endregion
 	}
 }

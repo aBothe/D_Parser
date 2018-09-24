@@ -437,7 +437,7 @@ namespace D_Parser.Parser.Implementations
 					return new TokenExpression(t.Kind) { Location = t.Location, EndLocation = t.EndLocation };
 				case DTokens.Literal:
 					Step();
-					return new IdentifierExpression(t.LiteralValue, t.LiteralFormat, t.Subformat) { Location = t.Location, EndLocation = t.EndLocation };
+					return new ScalarConstantExpression(t.LiteralValue, t.LiteralFormat, t.Subformat) { Location = t.Location, EndLocation = t.EndLocation };
 				case DTokens.This:
 					Step();
 					return new TokenExpression(DTokens.This) { Location = t.Location, EndLocation = t.EndLocation };

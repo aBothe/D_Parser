@@ -528,10 +528,10 @@ namespace D_Parser.Misc.Mangling
 					return new TokenExpression(DTokens.Null);
 				case 'N':
 					r.Read();
-					return new IdentifierExpression(-Number(), LiteralFormat.Scalar, LiteralSubformat.Integer);
+					return new ScalarConstantExpression(-Number(), LiteralFormat.Scalar, LiteralSubformat.Integer);
 				case 'i':
 					r.Read();
-					return new IdentifierExpression(-Number(), LiteralFormat.Scalar, LiteralSubformat.Integer | LiteralSubformat.Imaginary);
+					return new ScalarConstantExpression(-Number(), LiteralFormat.Scalar, LiteralSubformat.Integer | LiteralSubformat.Imaginary);
 				case 'e': // HexFloat
 					r.Read();
 					return HexFloat();
@@ -592,7 +592,7 @@ namespace D_Parser.Misc.Mangling
 			}
 			
 			if(Lexer.IsLegalDigit(p, 10))
-				return new IdentifierExpression(Number(), LiteralFormat.Scalar, LiteralSubformat.Integer);
+				return new ScalarConstantExpression(Number(), LiteralFormat.Scalar, LiteralSubformat.Integer);
 			
 			return null;
 		}
@@ -654,7 +654,7 @@ namespace D_Parser.Misc.Mangling
 				n *= (decimal)Math.Pow(10, exp);
 			}
 			
-			return new IdentifierExpression(n, LiteralFormat.Scalar | ((Math.Truncate(n) == n) ? 0 : LiteralFormat.FloatingPoint), LiteralSubformat.Double);
+			return new ScalarConstantExpression(n, LiteralFormat.Scalar | ((Math.Truncate(n) == n) ? 0 : LiteralFormat.FloatingPoint), LiteralSubformat.Double);
 		}
 		
 		string LName(int len = -1)

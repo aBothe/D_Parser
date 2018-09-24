@@ -28,8 +28,8 @@ namespace Tests
 		{
 			var e = DParser.ParseExpression("0x1.921fb54442d18469898cc51701b84p+1L");
 			
-			Assert.That(e, Is.TypeOf(typeof(IdentifierExpression)));
-			var id = e as IdentifierExpression;
+			Assert.That(e, Is.TypeOf(typeof(ScalarConstantExpression)));
+			var id = e as ScalarConstantExpression;
 			Assert.That(Math.Abs((decimal)id.Value - (decimal)Math.PI), Is.LessThan(0.1M));
 		}
 		

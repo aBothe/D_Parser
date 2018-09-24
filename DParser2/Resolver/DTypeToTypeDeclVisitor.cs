@@ -53,7 +53,7 @@ namespace D_Parser.Resolver
 			return new ArrayDecl
 			{
 				ValueType = AcceptType(t.Base),
-				KeyExpression = t.IsStaticArray ? new IdentifierExpression(t.FixedLength, LiteralFormat.Scalar) : null
+				KeyExpression = t.IsStaticArray ? new ScalarConstantExpression(t.FixedLength, LiteralFormat.Scalar) : null
 			};
 		}
 

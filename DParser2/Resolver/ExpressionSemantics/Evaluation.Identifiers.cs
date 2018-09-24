@@ -206,6 +206,18 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return TryDoCTFEOrGetValueRefs(o, id);
 			}
 
+			switch (id.Format)
+			{
+				case Parser.LiteralFormat.StringLiteral:
+				case Parser.LiteralFormat.VerbatimStringLiteral:
+					return new ArrayValue(GetStringLiteralType(id.Subformat), id);
+				default:
+					return null;
+			}
+		}
+
+		public ISymbolValue VisitScalarConstantExpression(ScalarConstantExpression id)
+		{
 			byte tt;
 			switch (id.Format)
 			{
@@ -240,9 +252,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 					return new PrimitiveValue(tt, Convert.ToDecimal(id.Value));
 
-				case Parser.LiteralFormat.StringLiteral:
-				case Parser.LiteralFormat.VerbatimStringLiteral:
-					return new ArrayValue(GetStringLiteralType(id.Subformat), id);
 				default:
 					return null;
 			}

@@ -774,6 +774,19 @@ namespace D_Parser.Dom.Visitors
 			return h;
 		}
 
+		public long VisitScalarConstantExpression(ScalarConstantExpression x)
+		{
+			const long prime = 1002341;
+			long h = 1;
+
+			Hash(ref h, prime, x.EscapeStringHash);
+			Hash(ref h, prime, x.Format);
+			Hash(ref h, prime, x.Subformat);
+			Hash(ref h, prime, x.Value);
+
+			return h;
+		}
+
 		public long Visit(Expressions.IdentifierExpression x)
 		{
 			long h = 1;
@@ -1413,6 +1426,8 @@ namespace D_Parser.Dom.Visitors
 		{
 			return VisitExpressionValue (v, 1002299);
 		}
+
+		// 1002341 for ScalarConstantExpression
 
 		#endregion
 	}

@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
@@ -840,11 +839,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return TryPretendMethodExecution(AmbiguousType.Get(GetOverloads(tix, ctxt)));
 		}
 
-		public AbstractType Visit(IdentifierExpression id)
+		public AbstractType VisitScalarConstantExpression(ScalarConstantExpression id)
 		{
-			if (id.IsIdentifier)
-				return TryPretendMethodExecution(AmbiguousType.Get(GetOverloads(id, ctxt)));
-
 			byte tt;
 			switch (id.Format)
 			{
@@ -876,7 +872,18 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						tt = unsigned ? DTokens.Uint : DTokens.Int;
 
 					return new PrimitiveType(tt) { NonStaticAccess = true };
+				default:
+					return null;
+			}
+		}
 
+		public AbstractType Visit(IdentifierExpression id)
+		{
+			if (id.IsIdentifier)
+				return TryPretendMethodExecution(AmbiguousType.Get(GetOverloads(id, ctxt)));
+
+			switch (id.Format)
+			{
 				case Parser.LiteralFormat.StringLiteral:
 				case Parser.LiteralFormat.VerbatimStringLiteral:
 					var str = GetStringLiteralType(id.Subformat);

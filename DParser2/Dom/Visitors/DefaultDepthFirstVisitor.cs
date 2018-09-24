@@ -743,6 +743,11 @@ namespace D_Parser.Dom
 						arg.Accept(this);
 		}
 
+		public virtual void VisitScalarConstantExpression(Expressions.ScalarConstantExpression x)
+		{
+
+		}
+
 		public virtual void Visit(Expressions.IdentifierExpression x)
 		{
 			
