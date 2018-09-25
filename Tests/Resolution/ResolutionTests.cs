@@ -381,13 +381,7 @@ class P
 			Assert.That (ctor, Is.Null);
 		}
 
-		/// <summary>
-		/// Implicit Function Template Instantiation now supports enclosing type/scope deduction.
-		/// </summary>
-		[Test]
-		public void ImprovedIFTI()
-		{
-			var ctxt = CreateCtxt("modA",@"module modA;
+		const string iftiSampleCode = @"module modA;
 struct A{    struct Foo { } }
 struct B{    struct Foo { } }
 
@@ -398,7 +392,15 @@ auto a_f = A.Foo();
 
 auto b = B();
 auto b_f = B.Foo();
-");
+";
+
+		/// <summary>
+		/// Implicit Function Template Instantiation now supports enclosing type/scope deduction.
+		/// </summary>
+		[Test]
+		public void ImprovedIFTI()
+		{
+			var ctxt = CreateCtxt("modA", iftiSampleCode);
 			IExpression x;
 			AbstractType t;
 
@@ -411,16 +413,24 @@ auto b_f = B.Foo();
 			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 
 			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
+		}
 
-			x = DParser.ParseExpression ("call(a, b_f)");
-			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
+		[Test]
+		public void ImprovedIFTI2()
+		{
+			var ctxt = CreateCtxt("modA", iftiSampleCode);
+			IExpression x;
+			AbstractType t;
 
-			Assert.That (t, Is.Null);
+			x = DParser.ParseExpression("call(a, b_f)");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			x = DParser.ParseExpression ("call(b, a_f)");
-			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
+			Assert.That(t, Is.Null);
 
-			Assert.That (t, Is.Null);
+			x = DParser.ParseExpression("call(b, a_f)");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+
+			Assert.That(t, Is.Null);
 		}
 	}
 }
