@@ -447,7 +447,7 @@ struct TestField(TFValueType)
 class TestClass(alias T)
 {
 	auto Field1 = T!(ulong)();
-	auto Field2 = T!(string)();
+	T!(string) Field2;
 }
 
 TestClass!(TestField!int) c;
@@ -467,7 +467,7 @@ struct TestField(TFValueType)
 
 class TestClass(T) // no alias here
 {
-	auto Field1 = T!(ulong)();
+	T!(ulong) Field1;
 	auto Field2 = T!(string)();
 }
 
@@ -487,15 +487,14 @@ TestClass!(TestField!int) c;
 			AbstractType t;
 
 			{
-				x = DParser.ParseExpression("c.Field1");
+				x = DParser.ParseExpression("c.Field1.t");
 				t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
 				Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 				var @base = (t as MemberSymbol).Base;
-				Assert.That(@base, Is.TypeOf(typeof(StructType)));
-				var structType = @base as StructType;
-				var deducedFirstParam = structType.DeducedTypes[0];
-				var firstParamType = deducedFirstParam.Base;
+				Assert.That(@base, Is.TypeOf(typeof(TemplateParameterSymbol)));
+				var tps = @base as TemplateParameterSymbol;
+				var firstParamType = tps.Base;
 				Assert.That(firstParamType, Is.TypeOf(typeof(PrimitiveType)));
 				var primitiveFirstParamType = firstParamType as PrimitiveType;
 				Assert.That(primitiveFirstParamType.TypeToken, Is.EqualTo(DTokens.Ulong));
