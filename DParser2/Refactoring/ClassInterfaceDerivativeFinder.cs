@@ -81,7 +81,7 @@ namespace D_Parser.Refactoring
 			var dc = n as DClassLike;
 				
 			// resolve immediate base classes/interfaces; Rely on dc being either a class or an interface, nothing else.
-			var t = DResolver.ResolveClassOrInterface (dc,ctxt, null);
+			var t = ClassInterfaceResolver.ResolveClassOrInterface (dc,ctxt, null);
 			alreadyResolvedClasses.Add (dc);
 
 			// Look for classes/interfaces that match dc (check all dcs to have better performance on ambiguous lastresults),

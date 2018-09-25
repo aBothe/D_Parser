@@ -230,7 +230,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 					if(resolveBaseClassIfRequired && udt.Base == null && 
 						(type == DTokens.Class ||type == DTokens.Interface))
-						udt = DResolver.ResolveClassOrInterface(udt.Definition as DClassLike, ctxt, null);
+						udt = ClassInterfaceResolver.ResolveClassOrInterface(udt.Definition as DClassLike, ctxt, null);
 
 					if(udt != null)
 						udt = udt.Base as UserDefinedType;

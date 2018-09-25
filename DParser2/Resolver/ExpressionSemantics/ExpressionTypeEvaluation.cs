@@ -1141,7 +1141,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 					if (classDef is DClassLike)
 					{
-						var tr = DResolver.ResolveClassOrInterface(classDef as DClassLike, ctxt, x, true);
+						var tr = ClassInterfaceResolver.ResolveClassOrInterface(classDef as DClassLike, ctxt, x, true);
 
 						if (tr.Base != null)
 						{

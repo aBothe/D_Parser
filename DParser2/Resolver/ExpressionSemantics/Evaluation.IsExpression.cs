@@ -180,7 +180,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 					if (dc != null)
 					{
-						var udt = DResolver.ResolveClassOrInterface(dc, ctxt, null, true) as ClassType;
+						var udt = ClassInterfaceResolver.ResolveClassOrInterface(dc, ctxt, null, true) as ClassType;
 
 						if (r = udt.Base != null && ResultComparer.IsEqual(typeToCheck, udt.Base))
 						{

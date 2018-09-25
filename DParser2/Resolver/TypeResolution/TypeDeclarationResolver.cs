@@ -445,7 +445,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 					case DTokens.Interface:
 					case DTokens.Class:
-					return DResolver.ResolveClassOrInterface(dc, ctxt, typeBase, false, invisibleTypeParams.ToList());
+					return ClassInterfaceResolver.ResolveClassOrInterface(dc, ctxt, typeBase, false, invisibleTypeParams.ToList());
 
 					case DTokens.Template:
 						if (dc.ContainsAnyAttribute(DTokens.Mixin))

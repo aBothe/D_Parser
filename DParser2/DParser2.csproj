@@ -204,6 +204,7 @@
     <Compile Include="Resolver\Templates\TemplateInstanceHandler.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.Traits.cs" />
     <Compile Include="Resolver\TypeResolution\ASTSearchHelper.cs" />
+    <Compile Include="Resolver\TypeResolution\ClassInterfaceResolver.cs" />
     <Compile Include="Resolver\TypeResolution\ScopedObjectVisitor.cs" />
     <Compile Include="Resolver\TypeResolution\SingleResolverVisitor.cs" />
     <Compile Include="Resolver\TypeResolution\TypeDeclarationResolver.cs" />
