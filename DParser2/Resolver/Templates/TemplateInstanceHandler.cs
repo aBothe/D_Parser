@@ -15,18 +15,46 @@ namespace D_Parser.Resolver.TypeResolution
 			// Resolve given argument expressions
 			var templateArguments = new List<ISemantic>();
 
+			int currentTemplateArgumentIndex = -1;
 			if (tix != null && tix.Arguments!=null)
-				foreach (var arg in tix.Arguments)
+				foreach (var optionallyWrappedArgument in tix.Arguments)
 				{
-					if (arg is TypeDeclarationExpression)
+					currentTemplateArgumentIndex++;
+					ISyntaxRegion arg;
+					if (optionallyWrappedArgument is TypeDeclarationExpression)
+						arg = (optionallyWrappedArgument as TypeDeclarationExpression).Declaration;
+					else
+						arg = optionallyWrappedArgument;
+
+					if (arg == null)
+						continue;
+
+					AbstractType res;
+
+					var aliasThisParam = arg is IntermediateIdType
+							&& IsTemplateAliasParameterAtIndex(rawOverloadList, currentTemplateArgumentIndex);
+
+					if (!aliasThisParam && arg is IExpression)
 					{
-						var tde = (TypeDeclarationExpression)arg;
+						ISemantic v = Evaluation.EvaluateValue(arg as IExpression, ctxt, true);
+						if (v is VariableValue)
+						{
+							var vv = v as VariableValue;
+							if (vv.Variable.IsConst && vv.Variable.Initializer != null)
+								v = Evaluation.EvaluateValue(vv, new StandardValueProvider(ctxt));
+						}
 
-						var res = TypeDeclarationResolver.ResolveSingle(tde.Declaration, ctxt);
-
-						// Might be a simple symbol without any applied template arguments that is then passed to an template alias parameter
-						if (res == null && tde.Declaration is IdentifierDeclaration)
-							res = TypeDeclarationResolver.ResolveSingle(tde.Declaration, ctxt, false);
+						v = DResolver.StripValueTypeWrappers(v);
+						templateArguments.Add(v);
+					}
+					else
+					{
+						if (aliasThisParam)
+							res = AmbiguousType.Get(ExpressionTypeEvaluation.GetOverloads(arg as IntermediateIdType, ctxt, null, false));
+						else if (arg is ITypeDeclaration)
+							res = TypeDeclarationResolver.ResolveSingle(arg as ITypeDeclaration, ctxt);
+						else
+							throw new ArgumentNullException("arg");
 
 						var amb = res as AmbiguousType;
 						if (amb != null)
@@ -52,7 +80,7 @@ namespace D_Parser.Resolver.TypeResolution
 							{
 								eval = new StandardValueProvider(ctxt)[dv];
 							}
-							catch(System.Exception ee) // Should be a non-const-expression error here only
+							catch (System.Exception ee) // Should be a non-const-expression error here only
 							{
 								ctxt.LogError(dv.Initializer, ee.Message);
 							}
@@ -62,22 +90,22 @@ namespace D_Parser.Resolver.TypeResolution
 						else
 							templateArguments.Add(res);
 					}
-					else
-					{
-						ISemantic v = Evaluation.EvaluateValue(arg, ctxt, true);
-						if (v is VariableValue)
-						{
-							var vv = v as VariableValue;
-							if (vv.Variable.IsConst && vv.Variable.Initializer != null)
-								v = Evaluation.EvaluateValue(vv, new StandardValueProvider(ctxt));
-						}
-						
-						v = DResolver.StripValueTypeWrappers(v);
-						templateArguments.Add(v);
-					}
 				}
 
 			return templateArguments;
+		}
+
+		static bool IsTemplateAliasParameterAtIndex(IEnumerable<DNode> nodeOverloads, int argumentIndex)
+		{
+			foreach(var dc in nodeOverloads)
+			{
+				var templateParameters = dc.TemplateParameters;
+				if (templateParameters != null
+					&& templateParameters.Length > argumentIndex
+					&& templateParameters[argumentIndex] is TemplateAliasParameter)
+					return true;
+			}
+			return false;
 		}
 		
 		internal static bool IsNonFinalArgument(ISemantic v)

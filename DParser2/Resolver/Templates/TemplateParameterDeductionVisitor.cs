@@ -81,8 +81,6 @@ namespace D_Parser.Resolver.Templates
 					TargetDictionary[p] = new TemplateParameterSymbol(p, r);
 					return true;
 				}
-				else if (rl == null)
-					TargetDictionary[p] = new TemplateParameterSymbol(p, r);
 
 				// Error: Ambiguous assignment
 

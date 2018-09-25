@@ -397,7 +397,7 @@ TestClass c;
 			Assert.That(at.ValueType, Is.TypeOf(typeof(PrimitiveType)));
 		}
 
-		const string templateAliasParamsCode2 = @"module A;
+		const string templateAliasParamsCode5 = @"module A;
 struct TestField(TFValueType)
 {
 	TFValueType t;
@@ -413,9 +413,76 @@ TestClass!TestField c;
 ";
 
 		[Test]
-		public void TemplateAliasParams5_CachingIssues()
+		public void TemplateAliasParams5()
 		{
-			var ctxt = CreateDefCtxt(templateAliasParamsCode2);
+			var ctxt = CreateDefCtxt(templateAliasParamsCode5);
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression("c.Field1");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			var @base = (t as MemberSymbol).Base;
+			Assert.That(@base, Is.TypeOf(typeof(StructType)));
+
+			x = DParser.ParseExpression("c.Field2.t");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			var ms = t as MemberSymbol;
+			Assert.That(ms.Base, Is.TypeOf(typeof(TemplateParameterSymbol)));
+			var tps = ms.Base as TemplateParameterSymbol;
+			Assert.That(tps.Base, Is.TypeOf(typeof(ArrayType)));
+			var at = tps.Base as ArrayType;
+			Assert.That(at.ValueType, Is.TypeOf(typeof(PrimitiveType)));
+		}
+
+		const string templateAliasParamsCode6 = @"module A;
+struct TestField(TFValueType)
+{
+	TFValueType t;
+}
+
+class TestClass(alias T)
+{
+	auto Field1 = T!(ulong)();
+	auto Field2 = T!(string)();
+}
+
+TestClass!(TestField!int) c;
+";
+
+		[Test]
+		public void TemplateAliasParams6_AlreadyResolvableTestFieldStruct()
+		{
+			TemplateAliasParams6_7(templateAliasParamsCode6);
+		}
+
+		const string templateAliasParamsCode7 = @"module A;
+struct TestField(TFValueType)
+{
+	TFValueType t;
+}
+
+class TestClass(T) // no alias here
+{
+	auto Field1 = T!(ulong)();
+	auto Field2 = T!(string)();
+}
+
+TestClass!(TestField!int) c;
+";
+
+		[Test]
+		public void TemplateAliasParams7_AlreadyResolvableTestFieldStruct_NoAliasParam()
+		{
+			TemplateAliasParams6_7(templateAliasParamsCode7);
+		}
+
+		void TemplateAliasParams6_7(string code)
+		{
+			var ctxt = CreateDefCtxt(code);
 			IExpression x;
 			AbstractType t;
 
