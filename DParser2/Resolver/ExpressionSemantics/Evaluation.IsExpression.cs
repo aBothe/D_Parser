@@ -176,7 +176,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					break;
 
 				case DTokens.Super: //TODO: Test this
-					var dc = DResolver.SearchClassLikeAt(ctxt.ScopedBlock, isExpression.Location) as DClassLike;
+					var dc = ASTSearchHelper.SearchClassLikeAt(ctxt.ScopedBlock, isExpression.Location) as DClassLike;
 
 					if (dc != null)
 					{
@@ -204,7 +204,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					break;
 
 				case DTokens.Return: // TODO: Test
-					var dm = DResolver.SearchBlockAt(ctxt.ScopedBlock, isExpression.Location) as DMethod;
+					var dm = ASTSearchHelper.SearchBlockAt(ctxt.ScopedBlock, isExpression.Location) as DMethod;
 
 					if (dm != null)
 					{

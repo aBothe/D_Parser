@@ -203,7 +203,7 @@ namespace D_Parser.Resolver
 
 		public IDisposable Push(IEditorData editor)
 		{
-			return Push(DResolver.SearchBlockAt(editor.SyntaxTree, editor.CaretLocation) ?? editor.SyntaxTree, editor.CaretLocation);
+			return Push(ASTSearchHelper.SearchBlockAt(editor.SyntaxTree, editor.CaretLocation) ?? editor.SyntaxTree, editor.CaretLocation);
 		}
 
 		public IDisposable Push(INode newScope, bool keepDeducedTemplateParams = false)

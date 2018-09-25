@@ -99,7 +99,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 		{
 			var parms = new ItemCheckParameters(VisibleMembers);
 
-			var scopedBlock = DResolver.SearchBlockAt (ctxt.ScopedBlock, Caret);
+			var scopedBlock = ASTSearchHelper.SearchBlockAt (ctxt.ScopedBlock, Caret);
 
 			if (VisitStatementHierarchy(scopedBlock as DMethod, Caret, parms))
 				return;
@@ -486,7 +486,7 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 							}
 			}
 
-			var n = DResolver.SearchRegionAt<INode>(block.Children.ItemAt, block.Count, caret) as DNode;
+			var n = ASTSearchHelper.SearchRegionAt<INode>(block.Children.ItemAt, block.Count, caret) as DNode;
 
 			if (n != null && n.Attributes != null && n.Attributes.Count != 0)
 				foreach (var attr in n.Attributes)

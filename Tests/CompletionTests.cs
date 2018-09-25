@@ -194,7 +194,7 @@ void main() {}";
 			var main = m ["main"].First () as DMethod;
 			var foo = m ["foo"].First () as DVariable;
 
-			var b = DResolver.SearchBlockAt (m, new CodeLocation (11, 3));
+			var b = ASTSearchHelper.SearchBlockAt (m, new CodeLocation (11, 3));
 			Assert.That (b, Is.SameAs (main));
 
 			code = @"module A;
@@ -227,7 +227,7 @@ void main() {
 			var main = m ["main"].First () as DMethod;
 			var foo = m ["foo"].First () as DVariable;
 
-			var b = DResolver.SearchBlockAt (m, new CodeLocation (1, 4));
+			var b = ASTSearchHelper.SearchBlockAt (m, new CodeLocation (1, 4));
 			Assert.That (b, Is.SameAs (main));
 			var stmt = main.Body;
 
@@ -261,7 +261,7 @@ void main() {
 			var main = m ["main"].First () as DMethod;
 			var foo = m ["foo"].First () as DVariable;
 
-			var b = DResolver.SearchBlockAt (m, new CodeLocation (1, 4));
+			var b = ASTSearchHelper.SearchBlockAt (m, new CodeLocation (1, 4));
 			Assert.That (b, Is.SameAs (main));
 
 			code = @"module A;

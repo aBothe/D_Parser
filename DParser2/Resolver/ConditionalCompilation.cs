@@ -175,7 +175,7 @@ namespace D_Parser.Resolver
 
 			public override void VisitChildren(IBlockNode block)
 			{
-				var ch = DResolver.SearchRegionAt<INode>(block.Children, caret);
+				var ch = ASTSearchHelper.SearchRegionAt<INode>(block.Children, caret);
 				if (ch != null && ch != block)
 					ch.Accept(this);
 			}

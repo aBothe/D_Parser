@@ -261,7 +261,7 @@ namespace D_Parser.Resolver.TypeResolution
 				var curMethod = ctxt.ScopedBlock as DMethod;
 				var loc = ctxt.CurrentContext.Caret;
 				loc = new CodeLocation(loc.Column-1, loc.Line); // SearchStmtDeeplyAt only checks '<' EndLocation, we may need to have '<=' though due to completion offsets.
-				var curStmt = curMethod != null ? DResolver.SearchStatementDeeplyAt(curMethod.GetSubBlockAt(ctxt.CurrentContext.Caret), loc) : null;
+				var curStmt = curMethod != null ? ASTSearchHelper.SearchStatementDeeplyAt(curMethod.GetSubBlockAt(ctxt.CurrentContext.Caret), loc) : null;
 
 				if (curStmt == null)
 					return null;

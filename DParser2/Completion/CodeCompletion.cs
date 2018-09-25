@@ -111,7 +111,7 @@ namespace D_Parser.Completion
 			isInsideNonCodeSegment = false;
 
 			if(currentScope == null)
-				currentScope = DResolver.SearchBlockAt (editor.SyntaxTree, editor.CaretLocation);
+				currentScope = ASTSearchHelper.SearchBlockAt (editor.SyntaxTree, editor.CaretLocation);
 
 			if (currentScope == null)
 				return null;
@@ -131,7 +131,7 @@ namespace D_Parser.Completion
 				var tempBlock = blockStmt.UpdateBlockPartly (editor, out isInsideNonCodeSegment);
 				if (tempBlock == null)
 					return null;
-				currentScope = DResolver.SearchBlockAt (tempBlock, editor.CaretLocation);
+				currentScope = ASTSearchHelper.SearchBlockAt (tempBlock, editor.CaretLocation);
 			}else {
 				while (currentScope is DMethod)
 					currentScope = currentScope.Parent as IBlockNode;
@@ -139,7 +139,7 @@ namespace D_Parser.Completion
 					return null;
 
 				var tempBlock = (currentScope as DBlockNode).UpdateBlockPartly (editor, out isInsideNonCodeSegment);
-				currentScope = DResolver.SearchBlockAt (tempBlock, editor.CaretLocation);
+				currentScope = ASTSearchHelper.SearchBlockAt (tempBlock, editor.CaretLocation);
 			}
 			return currentScope;
 		}

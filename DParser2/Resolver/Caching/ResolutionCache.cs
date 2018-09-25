@@ -5,6 +5,7 @@ using System.Text;
 using D_Parser.Dom;
 using D_Parser.Dom.Visitors;
 using D_Parser.Misc;
+using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Resolver
 {
@@ -35,7 +36,7 @@ namespace D_Parser.Resolver
 			{
 				var tpm = new List<TemplateParameter>();
 				var hashVis = AstElementHashingVisitor.Instance;
-				var h = ctxt.ScopedBlock == null ? 1 : Resolver.TypeResolution.DResolver.SearchBlockAt(ctxt.ScopedBlock, ctxt.CurrentContext.Caret).Accept(hashVis);
+				var h = ctxt.ScopedBlock == null ? 1 : ASTSearchHelper.SearchBlockAt(ctxt.ScopedBlock, ctxt.CurrentContext.Caret).Accept(hashVis);
 				foreach (var tps in ctxt.DeducedTypesInHierarchy)
 				{
 					if (tps == null || tpm.Contains(tps.Parameter))

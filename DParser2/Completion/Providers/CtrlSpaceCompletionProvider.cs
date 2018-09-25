@@ -178,7 +178,7 @@ namespace D_Parser.Completion.Providers
 
 			if ((visibleMembers & MemberFilter.Labels) != 0)
 			{
-				var stmt = DResolver.SearchStatementDeeplyAt(curBlock, Editor.CaretLocation);
+				var stmt = ASTSearchHelper.SearchStatementDeeplyAt(curBlock, Editor.CaretLocation);
 				bool addedSwitchKWs = false;
 				while(stmt != null && stmt.Parent != null)
 				{
