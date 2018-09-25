@@ -44,7 +44,7 @@ namespace D_Parser.Resolver.TypeResolution
 								v = Evaluation.EvaluateValue(vv, new StandardValueProvider(ctxt));
 						}
 
-						v = DResolver.StripValueTypeWrappers(v);
+						v = StripValueTypeWrappers(v);
 						templateArguments.Add(v);
 					}
 					else
@@ -93,6 +93,15 @@ namespace D_Parser.Resolver.TypeResolution
 				}
 
 			return templateArguments;
+		}
+
+		static ISemantic StripValueTypeWrappers(ISemantic s)
+		{
+			while (true)
+				if (s is TypeValue)
+					s = (s as TypeValue).RepresentedType;
+				else
+					return s;
 		}
 
 		static bool IsTemplateAliasParameterAtIndex(IEnumerable<DNode> nodeOverloads, int argumentIndex)
