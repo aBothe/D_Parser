@@ -848,12 +848,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// Resolves an identifier and returns the definition + its base type.
 		/// Does not deduce any template parameters or nor filters out unfitting template specifications!
 		/// </summary>
-		static List<AbstractType> ResolveIdentifier(int idHash, ResolutionContext ctxt, ISyntaxRegion idObject, bool preferModuleScope = false)
+		static List<AbstractType> ResolveIdentifier(IntermediateIdType id, ResolutionContext ctxt)
 		{
-			if (!preferModuleScope) // If there are symbols that must be preferred, take them instead of scanning the ast
+			if (!id.ModuleScoped) // If there are symbols that must be preferred, take them instead of scanning the ast
 			{
 				TemplateParameterSymbol dedTemplateParam;
-				if (ctxt.GetTemplateParam(idHash, out dedTemplateParam))
+				if (ctxt.GetTemplateParam(id.IdHash, out dedTemplateParam))
 				{
 					return new List<AbstractType> { dedTemplateParam };
 				}
@@ -862,27 +862,27 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if ((ctxt.Options & ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.DontResolveBaseTypes) == 0)
 				return new List<AbstractType>();
 
-			using (preferModuleScope ? ctxt.Push(ctxt.ScopedBlock.NodeRoot as DModule, true) : null)
+			using (id.ModuleScoped ? ctxt.Push(ctxt.ScopedBlock.NodeRoot as DModule, true) : null)
 			{
 				var resultsToReturn = new List<AbstractType>();
 
 				bool hadAnyElements = false;
-				bool tryPostDeduceAliasDefinition = idObject is IdentifierExpression || idObject is IdentifierDeclaration;
-				var loc = idObject != null ? idObject.Location : ctxt.CurrentContext.Caret;
-				foreach (var resElement in NameScan.SearchAndResolve(ctxt, loc, idHash, idObject))
+				bool tryPostDeduceAliasDefinition = id is IdentifierExpression || id is IdentifierDeclaration;
+				var loc = id != null ? id.Location : ctxt.CurrentContext.Caret;
+				foreach (var resElement in NameScan.SearchAndResolve(ctxt, loc, id.IdHash, id))
 				{
 					hadAnyElements = true;
-					resultsToReturn.Add(tryPostDeduceAliasDefinition ? TypeDeclarationResolver.TryPostDeduceAliasDefinition(resElement, idObject, ctxt) : resElement);
+					resultsToReturn.Add(tryPostDeduceAliasDefinition ? TypeDeclarationResolver.TryPostDeduceAliasDefinition(resElement, id, ctxt) : resElement);
 				}
 
 				if (!hadAnyElements)
 				{
 					// Support some very basic static typing if no phobos is given atm
-					if (idHash == Evaluation.stringTypeHash)
+					if (id.IdHash == Evaluation.stringTypeHash)
 						resultsToReturn.Add(Evaluation.GetStringType(ctxt));
-					else if (idHash == Evaluation.wstringTypeHash)
+					else if (id.IdHash == Evaluation.wstringTypeHash)
 						resultsToReturn.Add(Evaluation.GetStringType(ctxt, LiteralSubformat.Utf16));
-					else if (idHash == Evaluation.dstringTypeHash)
+					else if (id.IdHash == Evaluation.dstringTypeHash)
 						resultsToReturn.Add(Evaluation.GetStringType(ctxt, LiteralSubformat.Utf32));
 				}
 
@@ -926,7 +926,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			List<AbstractType> res;
 			if (resultBases == null)
-				res = ResolveIdentifier(id.IdHash, ctxt, id, id.ModuleScoped);
+				res = ResolveIdentifier(id, ctxt);
 			else
 				res = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(id.IdHash, resultBases, ctxt, id);
 
