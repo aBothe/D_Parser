@@ -10,7 +10,7 @@ namespace D_Parser.Resolver.TypeResolution
 {
 	public static class TemplateInstanceHandler
 	{
-		public static List<ISemantic> PreResolveTemplateArgs(TemplateInstanceExpression tix, ResolutionContext ctxt)
+		public static List<ISemantic> PreResolveTemplateArgs(IEnumerable<DNode> rawOverloadList, TemplateInstanceExpression tix, ResolutionContext ctxt)
 		{
 			// Resolve given argument expressions
 			var templateArguments = new List<ISemantic>();
@@ -91,7 +91,13 @@ namespace D_Parser.Resolver.TypeResolution
 			TemplateInstanceExpression templateInstanceExpr,
 			ResolutionContext ctxt, bool isMethodCall = false)
 		{
-			var args = PreResolveTemplateArgs(templateInstanceExpr, ctxt);
+			var dnodeOverloads = new List<DNode>();
+			foreach(var at in rawOverloadList)
+			{
+				if (at is DSymbol)
+					dnodeOverloads.Add((at as DSymbol).Definition);
+			}
+			var args = PreResolveTemplateArgs(dnodeOverloads, templateInstanceExpr, ctxt);
 			return DeduceParamsAndFilterOverloads(rawOverloadList, args, isMethodCall, ctxt);
 		}
 

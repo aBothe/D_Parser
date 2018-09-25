@@ -119,7 +119,7 @@ namespace D_Parser.Resolver.TypeResolution
 				if (ctxt.CurrentContext == null)
 					ctxt.Push (backup);
 
-				var givenTemplateArguments = TemplateInstanceHandler.PreResolveTemplateArgs(tix, ctxt);
+				var givenTemplateArguments = TemplateInstanceHandler.PreResolveTemplateArgs(new[] { dc }, tix, ctxt);
 
 				if (ctxt.CurrentContext != backup) {
 					foreach (var kv in ctxt.CurrentContext.DeducedTemplateParameters) {
