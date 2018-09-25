@@ -76,8 +76,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		static IEnumerable<AbstractType> TryMatchTemplateArgumentsToOverloads (TemplateInstanceExpression tix, ResolutionContext ctxt, IEnumerable<AbstractType> methodOverloads)
 		{
 			if (tix != null) {
-				var args = TemplateInstanceHandler.PreResolveTemplateArgs (tix, ctxt);
-				return TemplateInstanceHandler.DeduceParamsAndFilterOverloads (methodOverloads, args, true, ctxt);
+				return TemplateInstanceHandler.DeduceParamsAndFilterOverloads(methodOverloads, tix, ctxt, true);
 			}
 			return methodOverloads;
 		}
