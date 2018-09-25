@@ -486,23 +486,33 @@ TestClass!(TestField!int) c;
 			IExpression x;
 			AbstractType t;
 
-			x = DParser.ParseExpression("c.Field1");
-			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+			{
+				x = DParser.ParseExpression("c.Field1");
+				t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
-			var @base = (t as MemberSymbol).Base;
-			Assert.That(@base, Is.TypeOf(typeof(StructType)));
+				Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+				var @base = (t as MemberSymbol).Base;
+				Assert.That(@base, Is.TypeOf(typeof(StructType)));
+				var structType = @base as StructType;
+				var deducedFirstParam = structType.DeducedTypes[0];
+				var firstParamType = deducedFirstParam.Base;
+				Assert.That(firstParamType, Is.TypeOf(typeof(PrimitiveType)));
+				var primitiveFirstParamType = firstParamType as PrimitiveType;
+				Assert.That(primitiveFirstParamType.TypeToken, Is.EqualTo(DTokens.Ulong));
+			}
 
-			x = DParser.ParseExpression("c.Field2.t");
-			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+			{
+				x = DParser.ParseExpression("c.Field2.t");
+				t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
-			var ms = t as MemberSymbol;
-			Assert.That(ms.Base, Is.TypeOf(typeof(TemplateParameterSymbol)));
-			var tps = ms.Base as TemplateParameterSymbol;
-			Assert.That(tps.Base, Is.TypeOf(typeof(ArrayType)));
-			var at = tps.Base as ArrayType;
-			Assert.That(at.ValueType, Is.TypeOf(typeof(PrimitiveType)));
+				Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+				var ms = t as MemberSymbol;
+				Assert.That(ms.Base, Is.TypeOf(typeof(TemplateParameterSymbol)));
+				var tps = ms.Base as TemplateParameterSymbol;
+				Assert.That(tps.Base, Is.TypeOf(typeof(ArrayType)));
+				var at = tps.Base as ArrayType;
+				Assert.That(at.ValueType, Is.TypeOf(typeof(PrimitiveType)));
+			}
 		}
 
 		[Test]

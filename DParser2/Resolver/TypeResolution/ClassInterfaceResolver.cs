@@ -7,7 +7,7 @@ using D_Parser.Resolver.Templates;
 
 namespace D_Parser.Resolver.TypeResolution
 {
-	class ClassInterfaceResolver
+	static class ClassInterfaceResolver
 	{
 		static readonly int ObjectNameHash = "Object".GetHashCode();
 

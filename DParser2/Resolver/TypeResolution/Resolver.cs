@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using D_Parser.Completion;
+﻿using D_Parser.Completion;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
-using D_Parser.Parser;
 using D_Parser.Resolver.ExpressionSemantics;
-using D_Parser.Resolver.Templates;
 
 namespace D_Parser.Resolver.TypeResolution
 {
@@ -65,7 +61,7 @@ namespace D_Parser.Resolver.TypeResolution
 		/// <summary>
 		/// Removes all kinds of members from the given results.
 		/// </summary>
-		public static AbstractType StripMemberSymbols(AbstractType r)
+		internal static AbstractType StripMemberSymbols(AbstractType r)
 		{
 			var ds = r as DerivedDataType;
 			if (ds != null && ds.Base != null) {
