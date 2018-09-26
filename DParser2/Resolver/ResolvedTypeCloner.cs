@@ -4,12 +4,18 @@ using D_Parser.Dom.Expressions;
 
 namespace D_Parser.Resolver
 {
-	public class ResolvedTypeCloner : IResolvedTypeVisitor<AbstractType>
+	class ResolvedTypeCloner : IResolvedTypeVisitor<AbstractType>
 	{
-		AbstractType newBase;
-		IEnumerable<TemplateParameterSymbol> templateParameterSymbols;
+		public class CloneOptions
+		{
+			public AbstractType newBase;
+			public bool resetDeducedTypes = false;
+			public IEnumerable<TemplateParameterSymbol> templateParameterSymbols;
+		}
 
-		ResolvedTypeCloner() { }
+		readonly CloneOptions options;
+
+		ResolvedTypeCloner(CloneOptions options) { this.options = options; }
 
 		public static AbstractTypeT Clone<AbstractTypeT>(
 			AbstractTypeT t,
@@ -17,33 +23,45 @@ namespace D_Parser.Resolver
 			AbstractType newBase = null)
 			where AbstractTypeT : AbstractType
 		{
-			return (AbstractTypeT) t.Accept(new ResolvedTypeCloner { newBase = newBase, templateParameterSymbols = templateParameterSymbols });
+			return Clone<AbstractTypeT>(t, new CloneOptions() { newBase = newBase, templateParameterSymbols = templateParameterSymbols });
+		}
+
+		public static AbstractTypeT Clone<AbstractTypeT>(AbstractTypeT t, CloneOptions options) where AbstractTypeT : AbstractType
+		{
+			if (t == null)
+				return default(AbstractTypeT);
+
+			return (AbstractTypeT)t.Accept(new ResolvedTypeCloner(options));
 		}
 
 		AbstractType TryCloneBase(DerivedDataType derivedDataType)
 		{
-			if(newBase != null)
+			if(options.newBase != null)
 			{
-				try { return newBase; }
-				finally { newBase = null; }
+				try { return options.newBase; }
+				finally { options.newBase = null; }
 			}
 			return /*cloneBase && derivedDataType.Base != null ? derivedDataType.Base.Accept(this) : */derivedDataType.Base;
 		}
 
 		IEnumerable<TemplateParameterSymbol> TryMergeDeducedTypes(DSymbol ds)
 		{
-			if (templateParameterSymbols == null)
+			if (options.templateParameterSymbols == null && !options.resetDeducedTypes)
 				return ds.DeducedTypes;
 
 			var deducedTypes = new Dictionary<TemplateParameter, TemplateParameterSymbol>();
-			foreach (var tps in ds.DeducedTypes)
-				deducedTypes[tps.Parameter] = tps;
-
-			foreach (var tps in templateParameterSymbols)
-				if(tps != null)
+			if(options.resetDeducedTypes)
+				foreach (var tps in ds.DeducedTypes)
 					deducedTypes[tps.Parameter] = tps;
 
-			templateParameterSymbols = null;
+			if (options.templateParameterSymbols != null)
+			{
+				foreach (var tps in options.templateParameterSymbols)
+					if (tps != null)
+						deducedTypes[tps.Parameter] = tps;
+
+				options.templateParameterSymbols = null;
+			}
 
 			return deducedTypes.Values;
 		}
