@@ -426,6 +426,14 @@ auto b_f = B.Foo();
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
 			Assert.That(t, Is.Null);
+		}
+
+		[Test]
+		public void ImprovedIFTI3()
+		{
+			var ctxt = CreateCtxt("modA", iftiSampleCode);
+			IExpression x;
+			AbstractType t;
 
 			x = DParser.ParseExpression("call(b, a_f)");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);

@@ -3,6 +3,7 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
 using D_Parser.Resolver.ASTScanner;
 using D_Parser.Resolver.ExpressionSemantics.CTFE;
+using D_Parser.Resolver.Templates;
 using D_Parser.Resolver.TypeResolution;
 using System;
 using System.Collections.Generic;
@@ -844,19 +845,22 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return TryPretendMethodExecution(AmbiguousType.Get(GetOverloads(id, ctxt)));
 		}
 
-		/// <summary>
-		/// Resolves an identifier and returns the definition + its base type.
-		/// Does not deduce any template parameters or nor filters out unfitting template specifications!
-		/// </summary>
 		static List<AbstractType> ResolveIdentifier(IntermediateIdType id, ResolutionContext ctxt)
 		{
-			if (!id.ModuleScoped) // If there are symbols that must be preferred, take them instead of scanning the ast
+			TemplateParameterSymbol dedTemplateParam;
+			if (!id.ModuleScoped && ctxt.GetTemplateParam(id.IdHash, out dedTemplateParam))
 			{
-				TemplateParameterSymbol dedTemplateParam;
-				if (ctxt.GetTemplateParam(id.IdHash, out dedTemplateParam))
+				var tix = id as TemplateInstanceExpression;
+				if(tix != null && dedTemplateParam.Base != null && (ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) == 0)
 				{
-					return new List<AbstractType> { dedTemplateParam };
+					var cloneOptions = new ResolvedTypeCloner.CloneOptions();
+					cloneOptions.resetDeducedTypes = true;
+
+					var argumentLessResult = ResolvedTypeCloner.Clone(dedTemplateParam.Base, cloneOptions);
+					return TemplateInstanceHandler.DeduceParamsAndFilterOverloads(new[] { argumentLessResult }, tix, ctxt);
 				}
+
+				return new List<AbstractType> { dedTemplateParam };
 			}
 
 			if ((ctxt.Options & ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.DontResolveBaseTypes) == 0)

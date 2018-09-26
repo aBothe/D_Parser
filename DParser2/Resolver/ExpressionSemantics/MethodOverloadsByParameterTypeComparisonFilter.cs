@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Resolver.Templates;
@@ -7,7 +6,7 @@ using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
-	public class MethodOverloadsByParameterTypeComparisonFilter
+	internal static class MethodOverloadsByParameterTypeComparisonFilter
 	{
 		public static AbstractType FilterOverloads(
 			PostfixExpression_MethodCall call,

@@ -151,12 +151,16 @@ namespace D_Parser.Resolver.TypeResolution
 		struct NodeMatchHandleVisitor : NodeVisitor<AbstractType>
 		{
 			public ResolutionContext ctxt;
-			public bool CanResolveBase(INode m)
+			bool HasntReachedResolutionStackPeak(INode nodeToResolve)
 			{
 				int stkC;
-				stackCalls.TryGetValue(m, out stkC);
+				stackCalls.TryGetValue(nodeToResolve, out stkC);
+				return stkC < 4;
+			}
+			bool CanResolveBase(INode m)
+			{
 				return ((ctxt.Options & ResolutionOptions.DontResolveBaseTypes) != ResolutionOptions.DontResolveBaseTypes) &&
-						stkC < 4 && 
+						HasntReachedResolutionStackPeak(m) &&
 						(!(m.Type is IdentifierDeclaration) || (m.Type as IdentifierDeclaration).IdHash != m.NameHash || m.Type.InnerDeclaration != null); // pretty rough and incomplete SO prevention hack
 			}
 			public ISyntaxRegion typeBase;
@@ -492,7 +496,8 @@ namespace D_Parser.Resolver.TypeResolution
 
 			public AbstractType Visit(TemplateParameter.Node tpn)
 			{
-				return CanResolveBase(tpn) ? ResolveTemplateParameter(ctxt, tpn) : new TemplateParameterSymbol(tpn, null);
+				return HasntReachedResolutionStackPeak(tpn) && ((ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) == 0) ?
+					ResolveTemplateParameter(ctxt, tpn) : new TemplateParameterSymbol(tpn, null);
 			}
 
 			public AbstractType Visit(NamedTemplateMixinNode n)

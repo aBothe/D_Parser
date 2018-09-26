@@ -68,24 +68,8 @@ namespace D_Parser.Resolver.Templates
 					r = newR;
 			}
 
-			TemplateParameterSymbol rl;
-			if (!TargetDictionary.TryGetValue(p, out rl) || rl == null)
-			{
-				TargetDictionary[p] = new TemplateParameterSymbol(p, r);
-				return true;
-			}
-			else
-			{
-				if (ResultComparer.IsEqual(rl.Base, r))
-				{
-					TargetDictionary[p] = new TemplateParameterSymbol(p, r);
-					return true;
-				}
-
-				// Error: Ambiguous assignment
-
-				return false;
-			}
+			TargetDictionary[p] = new TemplateParameterSymbol(p, r);
+			return true;
 		}
 
 		public bool Visit(TemplateTypeParameter p, ISemantic arg)

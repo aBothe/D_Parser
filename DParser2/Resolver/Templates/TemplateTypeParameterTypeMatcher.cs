@@ -86,18 +86,6 @@ namespace D_Parser.Resolver.Templates
 					return TemplateParameterDeductionVisitor.Set(ctxt, TargetDictionary, (originallyReferredTemplateTypeParam != null && id.IdHash == originallyReferredTemplateTypeParam.NameHash) ? originallyReferredTemplateTypeParam : null, r, id.IdHash);
 				}
 
-				var deducee = DResolver.StripMemberSymbols(AbstractType.Get(r)) as DSymbol;
-				if (id.InnerDeclaration != null && deducee != null && deducee.Definition.NameHash == id.IdHash)
-				{
-					var physicalParentType = TypeDeclarationResolver.HandleNodeMatch(deducee.Definition.Parent, ctxt, null, id.InnerDeclaration);
-					if (id.InnerDeclaration != null && id.InnerDeclaration.Accept(this, physicalParentType))
-					{
-						if (Contains(id.IdHash))
-							TemplateParameterDeductionVisitor.Set(ctxt, TargetDictionary, (originallyReferredTemplateTypeParam != null && id.IdHash == originallyReferredTemplateTypeParam.NameHash) ? originallyReferredTemplateTypeParam : null, deducee, id.IdHash);
-						return true;
-					}
-				}
-
 				/*
 				 * If not stand-alone identifier or is not required as template param, resolve the id and compare it against r
 				 */
