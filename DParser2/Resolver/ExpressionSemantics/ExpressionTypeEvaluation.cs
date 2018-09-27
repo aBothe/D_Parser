@@ -849,19 +849,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			TemplateParameterSymbol dedTemplateParam;
 			if (!id.ModuleScoped && ctxt.GetTemplateParam(id.IdHash, out dedTemplateParam))
-			{
-				var tix = id as TemplateInstanceExpression;
-				if(tix != null && dedTemplateParam.Base != null && (ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) == 0)
-				{
-					var cloneOptions = new ResolvedTypeCloner.CloneOptions();
-					cloneOptions.resetDeducedTypes = true;
-
-					var argumentLessResult = ResolvedTypeCloner.Clone(dedTemplateParam.Base, cloneOptions);
-					return TemplateInstanceHandler.DeduceParamsAndFilterOverloads(new[] { argumentLessResult }, tix, ctxt);
-				}
-
-				return new List<AbstractType> { dedTemplateParam };
-			}
+				return ResolveAlreadyResolvedTemplateParameter(id, ctxt, dedTemplateParam);
 
 			if ((ctxt.Options & ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.DontResolveBaseTypes) == 0)
 				return new List<AbstractType>();
@@ -870,28 +858,45 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			{
 				var resultsToReturn = new List<AbstractType>();
 
-				bool hadAnyElements = false;
-				bool tryPostDeduceAliasDefinition = id is IdentifierExpression || id is IdentifierDeclaration;
 				var loc = id != null ? id.Location : ctxt.CurrentContext.Caret;
 				foreach (var resElement in NameScan.SearchAndResolve(ctxt, loc, id.IdHash, id))
 				{
-					hadAnyElements = true;
-					resultsToReturn.Add(tryPostDeduceAliasDefinition ? TypeDeclarationResolver.TryPostDeduceAliasDefinition(resElement, id, ctxt) : resElement);
+					resultsToReturn.Add(TypeDeclarationResolver.TryPostDeduceAliasDefinition(resElement, id, ctxt));
 				}
 
-				if (!hadAnyElements)
-				{
-					// Support some very basic static typing if no phobos is given atm
-					if (id.IdHash == Evaluation.stringTypeHash)
-						resultsToReturn.Add(Evaluation.GetStringType(ctxt));
-					else if (id.IdHash == Evaluation.wstringTypeHash)
-						resultsToReturn.Add(Evaluation.GetStringType(ctxt, LiteralSubformat.Utf16));
-					else if (id.IdHash == Evaluation.dstringTypeHash)
-						resultsToReturn.Add(Evaluation.GetStringType(ctxt, LiteralSubformat.Utf32));
-				}
+				TryToAddStringTypeResult(id, ctxt, resultsToReturn);
 
 				return resultsToReturn;
 			}
+		}
+
+		private static void TryToAddStringTypeResult(IntermediateIdType id, ResolutionContext ctxt, List<AbstractType> resultsToReturn)
+		{
+			if (resultsToReturn.Count == 0)
+			{
+				// Support some very basic static typing if no phobos is given atm
+				if (id.IdHash == Evaluation.stringTypeHash)
+					resultsToReturn.Add(Evaluation.GetStringType(ctxt));
+				else if (id.IdHash == Evaluation.wstringTypeHash)
+					resultsToReturn.Add(Evaluation.GetStringType(ctxt, LiteralSubformat.Utf16));
+				else if (id.IdHash == Evaluation.dstringTypeHash)
+					resultsToReturn.Add(Evaluation.GetStringType(ctxt, LiteralSubformat.Utf32));
+			}
+		}
+
+		private static List<AbstractType> ResolveAlreadyResolvedTemplateParameter(IntermediateIdType id, ResolutionContext ctxt, TemplateParameterSymbol dedTemplateParam)
+		{
+			var tix = id as TemplateInstanceExpression;
+			if (tix != null && dedTemplateParam.Base != null && (ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) == 0)
+			{
+				var cloneOptions = new ResolvedTypeCloner.CloneOptions();
+				cloneOptions.resetDeducedTypes = true;
+
+				var argumentLessResult = ResolvedTypeCloner.Clone(dedTemplateParam.Base, cloneOptions);
+				return TemplateInstanceHandler.DeduceParamsAndFilterOverloads(new[] { argumentLessResult }, tix, ctxt);
+			}
+
+			return new List<AbstractType> { dedTemplateParam };
 		}
 
 
