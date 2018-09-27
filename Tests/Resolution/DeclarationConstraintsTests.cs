@@ -178,7 +178,7 @@ alias bar aliasTwo;
 		{
 			var ctxt = CreateDefCtxt(@"module A;
 int bar(){}
-void[] bar(T)(){}
+T[] bar(T)(){}
 alias bar!int aliasOne;
 alias bar aliasTwo;
 ");
@@ -188,16 +188,30 @@ alias bar aliasTwo;
 			MemberSymbol ms;
 
 			x = DParser.ParseExpression("aliasOne()");
-			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt); Assert.That(t, Is.TypeOf(typeof(ArrayType)));
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(ArrayType)));
 
 			x = DParser.ParseExpression("aliasOne!(byte*)");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false);
 
 			ms = t as MemberSymbol;
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
-			Assert.That(ms.Base, Is.TypeOf(typeof(ArrayType)));
-
 			Assert.That(ms.DeducedTypes[0].Base, Is.TypeOf(typeof(PointerType)));
+			Assert.That(ms.Base, Is.TypeOf(typeof(ArrayType)));
+		}
+
+		[Test]
+		public void AliasedTemplate2()
+		{
+			var ctxt = CreateDefCtxt(@"module A;
+int bar(){}
+void[] bar(T)(){}
+alias bar!int aliasOne;
+alias bar aliasTwo;
+");
+
+			IExpression x;
+			AbstractType t;
 
 			x = DParser.ParseExpression("aliasTwo");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
