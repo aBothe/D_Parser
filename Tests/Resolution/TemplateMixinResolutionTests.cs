@@ -184,10 +184,7 @@ void CFoo() {}");
 			Assert.That((t as MemberSymbol).Definition, Is.TypeOf(typeof(DMethod)));
 		}
 
-		[Test]
-		public void AutoImplementHook()
-		{
-			var ctxt = CreateCtxt("A", @"module A;
+		readonly string[] autoImplementHook = new [] { @"module A;
 import std.typecons;
 struct Parms;
 interface TestAPI
@@ -231,7 +228,12 @@ template BlackHole(Base)
     alias AutoImplement!(Base, generateEmptyFunction, isAbstractFunction)
             BlackHole;
 }
-");
+" };
+
+		[Test]
+		public void AutoImplementHook1()
+		{
+			var ctxt = CreateCtxt("A", autoImplementHook);
 
 			IExpression x;
 			AbstractType t;
@@ -239,13 +241,35 @@ template BlackHole(Base)
 			x = DParser.ParseExpression("BlackHole!TestAPI");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false);
 
-			Assert.That(t, Is.TypeOf(typeof(ClassType)));
-			Assert.That((t as ClassType).BaseInterfaces[0], Is.TypeOf(typeof(InterfaceType)));
+			Assert.That(t, Is.TypeOf(typeof(AliasedType)));
+			var aliasedType = t as AliasedType;
+
+			Assert.That(aliasedType.Base, Is.TypeOf(typeof(ClassType)));
+			var classType = aliasedType.Base as ClassType;
+			Assert.That(classType.BaseInterfaces[0], Is.TypeOf(typeof(InterfaceType)));
+		}
+
+		[Test]
+		public void AutoImplementHook2()
+		{
+			var ctxt = CreateCtxt("A", autoImplementHook);
+
+			IExpression x;
+			AbstractType t;
 
 			x = DParser.ParseExpression("yorp.foo");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false);
 
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+		}
+
+		[Test]
+		public void AutoImplementHook3()
+		{
+			var ctxt = CreateCtxt("A", autoImplementHook);
+
+			IExpression x;
+			AbstractType t;
 
 			x = DParser.ParseExpression("AutoImplement!(TestAPI, generateEmptyFunction)");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false);

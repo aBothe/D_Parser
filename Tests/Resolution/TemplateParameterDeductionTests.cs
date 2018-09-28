@@ -63,12 +63,14 @@ alias Thing SomeThing;
 			IExpression ex;
 			AbstractType t;
 
-			ex = DParser.ParseExpression("new Thing!int");
+			ex = DParser.ParseExpression("new Thing!int(123)");
 			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt, false);
-			Assert.That(t, Is.TypeOf(typeof(AmbiguousType))); // Returns the empty & struct ctor
-			var ctors = AmbiguousType.TryDissolve(t).ToArray();
-			Assert.That(ctors.Length, Is.EqualTo(2));
-			Assert.That(((DSymbol)ctors[0]).Name, Is.EqualTo(DMethod.ConstructorIdentifier));
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol))); // Returns struct ctor
+			var ctor = t as MemberSymbol;
+			Assert.That(ctor.Name, Is.EqualTo(DMethod.ConstructorIdentifier));
+			Assert.That(ctor.Definition, Is.TypeOf(typeof(DMethod)));
+			var ctorDefinition = ctor.Definition as DMethod;
+			Assert.That(ctorDefinition.Parameters.Count, Is.EqualTo(1));
 
 			ex = DParser.ParseExpression("new IntThing");
 			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
