@@ -217,6 +217,9 @@ namespace D_Parser.Dom
 		#endregion
 	}
 
+	/// <summary>
+	/// Only import symbol aliases are allowed to search in the parse cache
+	/// </summary>
 	public abstract class ImportSymbolNode : DVariable
 	{
 		public readonly ImportStatement ImportStatement;

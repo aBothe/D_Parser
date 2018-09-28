@@ -89,7 +89,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					return new UnknownType(x);
 				}
 
-				// Don't accept aliases because their Tag does/base type might differ from the target alias definition.
 				if (t.Tag<TypeDeclarationResolver.AliasTag>(TypeDeclarationResolver.AliasTag.Id) == null)
 				{
 					#if TRACE
