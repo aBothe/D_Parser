@@ -58,6 +58,14 @@ namespace D_Parser.Resolver.TypeResolution
 			return ret;
 		}
 
+		public static AbstractType StripAliasedTypes(AbstractType t)
+		{
+			var unaliasedOverload = t;
+			while (unaliasedOverload is AliasedType && (unaliasedOverload as AliasedType).Base != null)
+				unaliasedOverload = (unaliasedOverload as AliasedType).Base;
+			return unaliasedOverload;
+		}
+
 		/// <summary>
 		/// Removes all kinds of members from the given results.
 		/// </summary>

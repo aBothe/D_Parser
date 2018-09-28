@@ -136,37 +136,23 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return Evaluation.EvalMethodCall(baseExpression, tix, ctxt, call, out callArgs, out delegValue, !TryReturnMethodReferenceOnly);
 		}
 
-
-		AbstractType TryPretendMethodExecution(AbstractType b, ISyntaxRegion typeBase = null, IEnumerable<AbstractType> args = null)
+		AbstractType TryPretendMethodExecution(IEnumerable<AbstractType> possibleOverloads, ISyntaxRegion typeBase = null, IEnumerable<AbstractType> args = null)
 		{
-			if (TryReturnMethodReferenceOnly)
-				return b;
-
-			if (b is AmbiguousType)
+			if (!TryReturnMethodReferenceOnly)
 			{
-				AbstractType first = null;
-
-				foreach (var ov in (b as AmbiguousType).Overloads)
+				foreach (var overload in possibleOverloads)
 				{
-					if (ov is MemberSymbol)
+					var ms = DResolver.StripAliasedTypes(overload) as MemberSymbol;
+					if (ms != null)
 					{
-						var next = TryPretendMethodExecution_(ov as MemberSymbol, args);
-						if (first == null && next != ov)
-						{
-							first = next;
-							continue;
-						}
-						// Error - ambiguous parameter configurations
+						var executionResult = TryPretendMethodExecution_(ms, args);
+						if (executionResult != null)
+							return executionResult;
 					}
-					
-					// Error
 				}
-
-				return first ?? b;
 			}
 
-			var mr = b as MemberSymbol;
-			return mr == null ? b : TryPretendMethodExecution_(mr, args);
+			return AmbiguousType.Get(possibleOverloads);
 		}
 
 		AbstractType TryPretendMethodExecution_(MemberSymbol ms, IEnumerable<AbstractType> execargs)
@@ -632,23 +618,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return ret;
 			}
 
-			MemberSymbol finalCtor = null;
-
 			//TODO: Determine argument types and filter out ctor overloads.
-			var kvFirst = ctors.First();
-			finalCtor = new MemberSymbol(kvFirst.Key, kvFirst.Value);
-
-
-
-			if (finalCtor != null)
-				return TryPretendMethodExecution(finalCtor, nex);
-
 			var resolvedCtors = new List<AbstractType>();
 
 			foreach(var kv in ctors)
 				resolvedCtors.Add(new MemberSymbol(kv.Key, kv.Value));
 
-			return TryPretendMethodExecution(AmbiguousType.Get(resolvedCtors), nex);
+			return TryPretendMethodExecution(resolvedCtors, nex);
 		}
 		#endregion
 
@@ -665,7 +641,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public AbstractType Visit(PostfixExpression_Access ex)
 		{
-			return TryPretendMethodExecution(AmbiguousType.Get(Evaluation.EvalPostfixAccessExpression(this, ctxt, ex)));
+			return TryPretendMethodExecution(Evaluation.EvalPostfixAccessExpression(this, ctxt, ex));
 		}
 
 		public AbstractType Visit(PostfixExpression_Increment x)
@@ -740,9 +716,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						for (int k = arg_i; k < x.Arguments.Length; k++)
 							indexArgs.Add (x.Arguments [k].Expression.Accept (this)); // TODO: Treat slices properly..somehow
 
-					var filteredOverload = AmbiguousType.Get(TemplateInstanceHandler.DeduceParamsAndFilterOverloads (overloads, indexArgs, true, ctxt));
+					var filteredOverloads = TemplateInstanceHandler.DeduceParamsAndFilterOverloads (overloads, indexArgs, true, ctxt);
 					ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals (udt);
-					foreExpression = TryPretendMethodExecution (filteredOverload, x, indexArgs.Count != 0 ? indexArgs.ToArray () : null);
+					foreExpression = TryPretendMethodExecution (filteredOverloads, x, indexArgs.Count != 0 ? indexArgs.ToArray () : null);
 					arg_i += indexArgs.Count; //TODO: Only increment by the amount of actually used args for filtering out the respective method overload.
 					return foreExpression;
 				} else
@@ -826,7 +802,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			var overloads = TypeDeclarationResolver.ResolveFurtherTypeIdentifier(OpSliceIdHash, foreExpression, ctxt, x, false);
 
-			var returnedOverload = AmbiguousType.Get(TemplateInstanceHandler.DeduceParamsAndFilterOverloads(overloads, sliceArgs, true, ctxt));
+			var returnedOverload = TemplateInstanceHandler.DeduceParamsAndFilterOverloads(overloads, sliceArgs, true, ctxt);
 
 			ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals(udt);
 			return TryPretendMethodExecution(returnedOverload, x, sliceArgs) ?? foreExpression;
@@ -836,12 +812,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		#region Identifier primitives
 		public AbstractType Visit(TemplateInstanceExpression tix)
 		{
-			return TryPretendMethodExecution(AmbiguousType.Get(GetOverloads(tix, ctxt)));
+			return TryPretendMethodExecution(GetOverloads(tix, ctxt));
 		}
 
 		public AbstractType Visit(IdentifierExpression id)
 		{
-			return TryPretendMethodExecution(AmbiguousType.Get(GetOverloads(id, ctxt)));
+			return TryPretendMethodExecution(GetOverloads(id, ctxt));
 		}
 
 		static List<AbstractType> ResolveIdentifier(IntermediateIdType id, ResolutionContext ctxt)
