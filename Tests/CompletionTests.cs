@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using System.Threading;
 using D_Parser;
 using D_Parser.Completion;
 using D_Parser.Dom;
@@ -549,6 +549,7 @@ foo(
 		{
 			var cache = ResolutionTests.CreateCache (otherModuleCodes);
 			var ed = new TestsEditorData { ParseCache = cache };
+			ed.CancelToken = CancellationToken.None;
 
 			UpdateEditorData (ed, caretLine, caretPos, focusedModuleCode);
 

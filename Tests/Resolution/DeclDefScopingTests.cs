@@ -415,9 +415,26 @@ class Class{
 		{
 			var ctxt = CreateCtxt("B", @"module A;
 int foo() {}
-float* foo(int i) {}
+float* foo(int i) {}",
+@"module B; import A:foo;");
 
-", @"module B; import A:foo;", @"module C;
+			IExpression x;
+			AbstractType t;
+
+			x = DParser.ParseExpression("foo(123)");
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(PointerType)));
+		}
+
+		[Test]
+		public void SelectiveImports2()
+		{
+			var ctxt = CreateCtxt("B", @"module A;
+int foo() {}
+float* foo(int i) {}",
+@"module B; import A:foo;",
+@"module C;
 void main()
 {
 	import A:foo;
@@ -427,11 +444,6 @@ void main()
 
 			IExpression x;
 			AbstractType t;
-
-			x = DParser.ParseExpression("foo(123)");
-			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-
-			Assert.That(t, Is.TypeOf(typeof(PointerType)));
 
 			var C = ctxt.MainPackage()["C"];
 			var main = C["main"].First() as DMethod;

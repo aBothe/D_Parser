@@ -43,11 +43,31 @@ alias Thing SomeThing;
 			ex = DParser.ParseExpression("IntThing");
 			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(t, Is.TypeOf(typeof(StructType)));
+		}
+
+		[Test]
+		public void BasicResolution3()
+		{
+			var pcl = CreateCache(@"module A;
+struct Thing(T)
+{
+	public T property;
+}
+
+alias Thing!(int) IntThing;
+alias Thing SomeThing;
+");
+
+			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["A"]);
+
+			IExpression ex;
+			AbstractType t;
 
 			ex = DParser.ParseExpression("new Thing!int");
 			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt, false);
-			Assert.That(t, Is.TypeOf(typeof(MemberSymbol))); // Returns the empty ctor
+			Assert.That(t, Is.TypeOf(typeof(AmbiguousType))); // Returns the empty & struct ctor
 			var ctors = AmbiguousType.TryDissolve(t).ToArray();
+			Assert.That(ctors.Length, Is.EqualTo(2));
 			Assert.That(((DSymbol)ctors[0]).Name, Is.EqualTo(DMethod.ConstructorIdentifier));
 
 			ex = DParser.ParseExpression("new IntThing");
@@ -56,7 +76,7 @@ alias Thing SomeThing;
 		}
 
 		[Test]
-		public void BasicResolution3()
+		public void BasicResolution4()
 		{
 			var pcl = CreateCache(@"module A;
 class Blupp : Blah!(Blupp) {}
@@ -299,7 +319,7 @@ T delegate(T dgParam) genDelegate(T)();");
 		}
 
 		[Test]
-		public void TestParamDeduction8()
+		public void TestParamDeduction8_Appender()
 		{
 			var pcl = CreateCache(@"module A;
 double[] darr;
