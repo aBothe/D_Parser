@@ -21,12 +21,6 @@ namespace D_Parser.Resolver
 			if (t == null)
 				return null;
 
-			var aliasTag = t.Tag<TypeDeclarationResolver.AliasTag>(TypeDeclarationResolver.AliasTag.Id);
-			if (aliasTag != null)
-			{
-				return new IdentifierDeclaration(aliasTag.aliasDefinition.NameHash);
-			}
-
 			var td = t.Accept(this);
 
 			if(t.HasModifiers){
@@ -129,7 +123,7 @@ namespace D_Parser.Resolver
 
 		public ITypeDeclaration VisitAliasedType(AliasedType t)
 		{
-			return VisitDSymbol(t);
+			return new IdentifierDeclaration(t.Definition.NameHash);
 		}
 
 		public ITypeDeclaration VisitEnumType(EnumType t)

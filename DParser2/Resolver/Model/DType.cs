@@ -455,12 +455,14 @@ namespace D_Parser.Resolver
 		protected UserDefinedType(DNode Node, AbstractType baseType, IEnumerable<TemplateParameterSymbol> deducedTypes) : base(Node, baseType, deducedTypes) { }
 	}
 
-	public class AliasedType : MemberSymbol
+	public class AliasedType : DSymbol
 	{
 		public new DVariable Definition { get { return base.Definition as DVariable; } }
+		public readonly ISyntaxRegion declaration;
 
-		public AliasedType(DVariable AliasDefinition, AbstractType Type, IEnumerable<TemplateParameterSymbol> deducedTypes = null)
+		public AliasedType(DVariable AliasDefinition, AbstractType Type, ISyntaxRegion declaration, IEnumerable<TemplateParameterSymbol> deducedTypes = null)
 			: base(AliasDefinition, Type, deducedTypes) {
+			this.declaration = declaration;
 				if (Type != null)
 					Type.NonStaticAccess = false;
 		}

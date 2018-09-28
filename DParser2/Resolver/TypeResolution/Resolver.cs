@@ -73,16 +73,28 @@ namespace D_Parser.Resolver.TypeResolution
 		{
 			var ds = r as DerivedDataType;
 			if (ds != null && ds.Base != null) {
+				while(ds is AliasedType && ds.Base != null)
+				{
+					r = ds.Base;
+					ds = r as DerivedDataType;
+				}
+
 				if (ds is ArrayAccessSymbol || ds is MemberSymbol || ds is DelegateCallSymbol) {
 					r = ds.Base;
-					ds = r as DSymbol;
+					ds = r as DerivedDataType;
+				}
+
+				while (ds is AliasedType && ds.Base != null)
+				{
+					r = ds.Base;
+					ds = r as DerivedDataType;
 				}
 
 				if (r is TemplateParameterSymbol) {
 					if (ds.Base == null)
 						return r;
 					r = ds.Base;
-					ds = r as DSymbol;
+					ds = r as DerivedDataType;
 				}
 
 				// There's one special case to handle (TODO: are there further cases?):

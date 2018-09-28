@@ -81,11 +81,11 @@ namespace D_Parser.Resolver.TypeResolution
 				HandleMethod (n as DMethod);
 			else if ((dv = n as DVariable) != null && dv.IsAlias)
 			{
-				var t = TypeDeclarationResolver.HandleNodeMatch(n, ctxt, null, sr);
+				var t = DResolver.StripAliasedTypes(TypeDeclarationResolver.HandleNodeMatch(n, ctxt, null, sr));
 
 				foreach (var ov in AmbiguousType.TryDissolve(t))
 				{
-					ds = ov as DSymbol;
+					ds = DResolver.StripAliasedTypes(ov) as DSymbol;
 					if (ds is MemberSymbol && ds.Definition is DMethod)
 						HandleMethod(ds.Definition as DMethod, ov as MemberSymbol);
 					else if (ds != null && (dc = ds.Definition as DClassLike) != null && dc.ClassType == DTokens.Template)

@@ -31,13 +31,6 @@ namespace D_Parser.Resolver
 			if (t == null)
 				return;
 
-			if (pretty)
-			{
-				var aliasTag = t.Tag<TypeDeclarationResolver.AliasTag>(TypeDeclarationResolver.AliasTag.Id);
-				if (aliasTag != null)
-					sb.Append(aliasTag.typeBase != null ? aliasTag.typeBase.ToString() : aliasTag.aliasDefinition.ToString(false, false)).Append('=');
-			}
-
 			if (t.HasModifiers){
 				foreach(byte modifier in t.Modifiers){
 					if (t.Modifiers.Length > 1) {
@@ -110,6 +103,9 @@ namespace D_Parser.Resolver
 
 		public void VisitAliasedType(AliasedType t)
 		{
+			if(pretty)
+				sb.Append(t.declaration != null ? t.declaration.ToString() : t.Definition.ToString(false, false)).Append('=');
+
 			if (t.Base != null)
 				AcceptType(t.Base);
 			else

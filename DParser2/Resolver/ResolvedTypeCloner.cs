@@ -68,7 +68,7 @@ namespace D_Parser.Resolver
 
 		public AbstractType VisitAliasedType(AliasedType t)
 		{
-			return new AliasedType(t.Definition, TryCloneBase(t), TryMergeDeducedTypes(t)) { Modifiers = t.Modifiers };
+			return new AliasedType(t.Definition, TryCloneBase(t), t.declaration, TryMergeDeducedTypes(t)) { Modifiers = t.Modifiers };
 		}
 
 		public AbstractType VisitAmbigousType(AmbiguousType t)

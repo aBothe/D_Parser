@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Resolver.TypeResolution;
@@ -56,9 +57,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			this.returnBaseTypeOnly = returnBaseTypeOnly;
 		}
 
-		public IEnumerable<AbstractType> VisitAliasedType (AliasedType t)
+		public IEnumerable<AbstractType> VisitAliasedType (AliasedType at)
 		{
-			return HandleInvalidTypes (t);
+			using (ctxt.Push(at))
+			{
+				var resolvedAliasBase = TypeDeclarationResolver.ResolveDVariableBaseType(at.Definition, ctxt, true);
+				return AmbiguousType.TryDissolve(resolvedAliasBase ?? at);
+			}
 		}
 
 		public IEnumerable<AbstractType> VisitAmbigousType (AmbiguousType t)
@@ -199,7 +204,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 					valueProvider.LogError (call, "Variable must be a delegate, not anything else");
 					returnInstantly = true;
-					return new AbstractType [] { };
+					return Enumerable.Empty<AbstractType>();
 				}
 
 				var bt = mr.Base ?? TypeDeclarationResolver.ResolveSingle (mr.Definition.Type, ctxt);
@@ -230,7 +235,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return returnedTypes;
 			}
 
-			return new AbstractType [] { };
+			return Enumerable.Empty<AbstractType>();
 		}
 
 		public IEnumerable<AbstractType> VisitMixinTemplateType (MixinTemplateType t)

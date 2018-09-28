@@ -111,53 +111,106 @@ namespace D_Parser.Resolver.TypeResolution
 		static Dictionary<INode, int> stackCalls;
 
 		[ThreadStatic]
-		static Stack<ISyntaxRegion> aliasDeductionStack = new Stack<ISyntaxRegion>();
+		static Stack<ISyntaxRegion> aliasDeductionStack;
 
 		internal static AbstractType TryPostDeduceAliasDefinition(AbstractType b, ISyntaxRegion typeBase, ResolutionContext ctxt)
 		{
-			if (typeBase != null &&
-				b != null && 
-				b.Tag<AliasTag>(AliasTag.Id) != null && 
-				(ctxt.Options & ResolutionOptions.DontResolveAliases) == 0)
+			if (typeBase != null && b is AliasedType
+				&& (ctxt.Options & ResolutionOptions.DontResolveAliases) == 0)
 			{
 				if (aliasDeductionStack == null)
 					aliasDeductionStack = new Stack<ISyntaxRegion>();
 				else if (aliasDeductionStack.Contains(typeBase))
 					return b;
 				aliasDeductionStack.Push(typeBase);
+				try
+				{
+					var alias = b as AliasedType;
 
-				var bases = AmbiguousType.TryDissolve(b);
+					IEnumerable<AbstractType> aliasBase;
+					if (alias.Base == null)
+					{
+						using (ctxt.Push(alias))
+						{
+							var t = ResolveDVariableBaseType(alias.Definition, ctxt, true);
+							aliasBase = t != null ? AmbiguousType.TryDissolve(t) : new[] { b };
+						}
+					}
+					else
+						aliasBase = AmbiguousType.TryDissolve(alias.Base);
 
-				//TODO: Declare alias-level context? 
+					IEnumerable<AbstractType> bases;
+					if (typeBase is TemplateInstanceExpression)
+						bases = TemplateInstanceHandler.DeduceParamsAndFilterOverloads(aliasBase, typeBase as TemplateInstanceExpression, ctxt, false);
+					else
+						bases = TemplateInstanceHandler.DeduceParamsAndFilterOverloads(aliasBase, Enumerable.Empty<ISemantic>(), false, ctxt);
 
-				if (typeBase is TemplateInstanceExpression)
-					b = AmbiguousType.Get(TemplateInstanceHandler.DeduceParamsAndFilterOverloads(bases, typeBase as TemplateInstanceExpression, ctxt, false));
-				else 
-					b = AmbiguousType.Get(TemplateInstanceHandler.DeduceParamsAndFilterOverloads(bases, Enumerable.Empty<ISemantic>(), false, ctxt));
-
-				aliasDeductionStack.Pop();
+					return AmbiguousType.Get(bases);
+				}
+				finally
+				{
+					aliasDeductionStack.Pop();
+				}
 			}
 
 			return b;
 		}
 
-		public class AliasTag
+		public static AbstractType ResolveDVariableBaseType(DVariable variable, ResolutionContext ctxt, bool resolveBaseTypeType)
 		{
-			public const string Id = "AliasTag";
-			public DVariable aliasDefinition;
-			public ISyntaxRegion typeBase;
+			if (!NodeMatchHandleVisitor.CanResolveBase(variable, ctxt))
+				return null;
+
+			var optBackup = ctxt.CurrentContext.ContextDependentOptions;
+			if (resolveBaseTypeType)
+			{
+				ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
+				if (variable.Type is IdentifierDeclaration)
+					ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.NoTemplateParameterDeduction;
+			}
+
+			var bt = TypeDeclarationResolver.ResolveSingle(variable.Type, ctxt);
+
+			ctxt.CurrentContext.ContextDependentOptions = optBackup;
+
+			// For auto variables, use the initializer to get its type
+			if (bt == null && variable.Initializer != null)
+				bt = DResolver.StripMemberSymbols(ExpressionTypeEvaluation.EvaluateType(variable.Initializer, ctxt));
+
+			// Check if inside an foreach statement header
+			if (bt == null)
+				bt = NodeMatchHandleVisitor.GetForeachIteratorType(variable, ctxt);
+
+			if (bt != null && variable.Attributes != null && variable.Attributes.Count > 0)
+			{
+				var variableModifiers = variable.Attributes.FindAll((DAttribute obj) => obj is Modifier).Select((arg) => ((Modifier)arg).Token).ToArray();
+				if (variableModifiers.Length > 0)
+				{
+					bt = ResolvedTypeCloner.Clone(bt);
+					if (bt.HasModifiers)
+					{
+						bt.Modifiers = bt.Modifiers.Union(variableModifiers).ToArray();
+					}
+					else
+					{
+						bt.Modifiers = variableModifiers;
+					}
+				}
+			}
+
+			return bt;
 		}
 
 		struct NodeMatchHandleVisitor : NodeVisitor<AbstractType>
 		{
 			public ResolutionContext ctxt;
-			bool HasntReachedResolutionStackPeak(INode nodeToResolve)
+			static bool HasntReachedResolutionStackPeak(INode nodeToResolve)
 			{
 				int stkC;
 				stackCalls.TryGetValue(nodeToResolve, out stkC);
 				return stkC < 4;
 			}
-			bool CanResolveBase(INode m)
+			public static bool CanResolveBase(INode m, ResolutionContext ctxt)
 			{
 				return ((ctxt.Options & ResolutionOptions.DontResolveBaseTypes) != ResolutionOptions.DontResolveBaseTypes) &&
 						HasntReachedResolutionStackPeak(m) &&
@@ -182,72 +235,16 @@ namespace D_Parser.Resolver.TypeResolution
 
 			AbstractType VisitAliasDefinition(DVariable v)
 			{
-				AbstractType bt;
-
-				// Ignore explicitly set resolution restrictions - aliases must be resolved!
-				if (!CanResolveBase(v) &&
-					(ctxt.Options & ResolutionOptions.DontResolveBaseTypes) == 0)
-					return new AliasedType(v, null);
-
-				// Is it really that easy?
-				var optBackup = ctxt.CurrentContext.ContextDependentOptions;
-				ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.ReturnMethodReferencesOnly;
-				if (v.Type is IdentifierDeclaration)
-					ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.NoTemplateParameterDeduction;
-
-				bt = TypeDeclarationResolver.ResolveSingle(v.Type, ctxt);
-
-				ctxt.CurrentContext.ContextDependentOptions = optBackup;
-
-				// For auto variables, use the initializer to get its type
-				if (bt == null && v.Initializer != null)
-					bt = DResolver.StripMemberSymbols(ExpressionTypeEvaluation.EvaluateType(v.Initializer, ctxt));
-
-				// Check if inside an foreach statement header
-				if (bt == null)
-					bt = GetForeachIteratorType(v);
-
-				if (bt == null)
-					return new AliasedType(v, null);
-
-				bt.Tag(AliasTag.Id, new AliasTag { aliasDefinition = v, typeBase = typeBase });
-				return bt;
+				return new AliasedType(v, ResolveDVariableBaseType(v, ctxt, true), typeBase, ctxt.DeducedTypesInHierarchy);
 			}
 
 			public AbstractType VisitDVariable(DVariable variable)
 			{
 				if (variable.IsAlias)
 					return VisitAliasDefinition(variable);
-				AbstractType bt;
 
-				if (CanResolveBase(variable))
-				{
-					bt = TypeDeclarationResolver.ResolveSingle(variable.Type, ctxt);
-
-					// For auto variables, use the initializer to get its type
-					if (bt == null && variable.Initializer != null)
-						bt = DResolver.StripMemberSymbols(ExpressionTypeEvaluation.EvaluateType(variable.Initializer, ctxt));
-
-					// Check if inside an foreach statement header
-					if (bt == null)
-						bt = GetForeachIteratorType(variable);
-
-					if (bt != null && variable.Attributes != null && variable.Attributes.Count > 0) {
-						var variableModifiers = variable.Attributes.FindAll ((DAttribute obj) => obj is Modifier).Select ((arg) => ((Modifier)arg).Token).ToArray();
-						if (variableModifiers.Length > 0) {
-							bt = ResolvedTypeCloner.Clone(bt);
-							if(bt.HasModifiers) {
-								bt.Modifiers = bt.Modifiers.Union (variableModifiers).ToArray();
-							} else {
-								bt.Modifiers = variableModifiers;
-							}
-						}
-					}
-				}
-				else
-					bt = null;
-
-				return new MemberSymbol(variable, bt, variable.Initializer != null ? ctxt.DeducedTypesInHierarchy : null);
+				return new MemberSymbol(variable, ResolveDVariableBaseType(variable, ctxt, true),
+					variable.Initializer != null ? ctxt.DeducedTypesInHierarchy : null);
 			}
 
 			/// <summary>
@@ -259,7 +256,7 @@ namespace D_Parser.Resolver.TypeResolution
 			///		writeln(i);
 			/// }
 			/// </summary>
-			public AbstractType GetForeachIteratorType(DVariable i)
+			public static AbstractType GetForeachIteratorType(DVariable i, ResolutionContext ctxt)
 			{
 				var r = new List<AbstractType>();
 				var curMethod = ctxt.ScopedBlock as DMethod;
@@ -432,7 +429,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 			public AbstractType Visit(DMethod m)
 			{
-				return new MemberSymbol(m, CanResolveBase(m) ? GetMethodReturnType(m, ctxt) : null, GetInvisibleTypeParameters(m));
+				return new MemberSymbol(m, CanResolveBase(m, ctxt) ? GetMethodReturnType(m, ctxt) : null, GetInvisibleTypeParameters(m));
 			}
 
 			public AbstractType Visit(DClassLike dc)
@@ -505,40 +502,9 @@ namespace D_Parser.Resolver.TypeResolution
 				return VisitDVariable(n as DVariable);
 			}
 
-			// Only import symbol aliases are allowed to search in the parse cache
 			public AbstractType Visit(ImportSymbolNode importSymbolNode)
 			{
 				return VisitAliasDefinition(importSymbolNode);
-                /*
-				AbstractType ret = null;
-
-				var modAlias = importSymbolNode is ModuleAliasNode;
-				if (modAlias ? importSymbolNode.Type != null : importSymbolNode.Type.InnerDeclaration != null)
-				{
-					var mods = new List<DModule>();
-					var td = modAlias ? importSymbolNode.Type : importSymbolNode.Type.InnerDeclaration;
-					foreach (var mod in ctxt.ParseCache.LookupModuleName(importSymbolNode, td.ToString()))
-						mods.Add(mod);
-					if (mods.Count == 0)
-						ctxt.LogError(new NothingFoundError(importSymbolNode.Type));
-					else
-						if (mods.Count > 1)
-						{
-							var m__ = new List<ISemantic>();
-							foreach (var mod in mods)
-								m__.Add(new ModuleSymbol(mod));
-							ctxt.LogError(new AmbiguityError(importSymbolNode.Type, m__));
-						}
-					var bt = mods.Count != 0 ? (AbstractType)new ModuleSymbol(mods[0]) : null;
-					//TODO: Is this correct behaviour?
-					if (!modAlias)
-					{
-						bt = AmbiguousType.Get(ResolveFurtherTypeIdentifier(importSymbolNode.Type.ToString(false).GetHashCode(), bt, ctxt, importSymbolNode.Type));
-					}
-					ret = new AliasedType(importSymbolNode, bt);
-				}
-				return ret;
-                */
 			}
 
 			public AbstractType Visit(ModuleAliasNode moduleAliasNode)

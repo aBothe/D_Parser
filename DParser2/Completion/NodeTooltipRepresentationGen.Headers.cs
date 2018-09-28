@@ -51,29 +51,13 @@ namespace D_Parser.Completion.ToolTips
 
 		public string GenTooltipSignature(AbstractType t, bool templateParamCompletion = false, int currentMethodParam = -1)
 		{
-            if (t is PrimitiveType)
-            {
-                var aliasedSymbol = t.Tag<TypeDeclarationResolver.AliasTag>(TypeDeclarationResolver.AliasTag.Id);
-                if (aliasedSymbol != null)
-                {
-                    var def = aliasedSymbol.aliasDefinition;
-                    if (def != null)
-                        return GenTooltipSignature(aliasedSymbol.aliasDefinition, templateParamCompletion, currentMethodParam,
-                            new DTypeToTypeDeclVisitor().VisitPrimitiveType(t as PrimitiveType), new DeducedTypeDictionary(def));
-                }
-            }
 			var ds = t as DSymbol;
 			if (ds != null)
 			{
 				if (currentMethodParam >= 0 && !templateParamCompletion && ds.Definition is DVariable && ds.Base != null)
 					return GenTooltipSignature(ds.Base, false, currentMethodParam);
 
-				var aliasedSymbol = ds.Tag<TypeDeclarationResolver.AliasTag>(TypeDeclarationResolver.AliasTag.Id);
-                if (aliasedSymbol != null)
-                    if (aliasedSymbol.aliasDefinition is ImportSymbolAlias)
-                        aliasedSymbol = null; // skip selective import aliases
-                var def = aliasedSymbol == null || currentMethodParam >= 0 ? ds.Definition : aliasedSymbol.aliasDefinition;
-				return GenTooltipSignature(def, templateParamCompletion, currentMethodParam, DTypeToTypeDeclVisitor.GenerateTypeDecl(ds.Base), new DeducedTypeDictionary(ds));
+				return GenTooltipSignature(ds.Definition, templateParamCompletion, currentMethodParam, DTypeToTypeDeclVisitor.GenerateTypeDecl(ds.Base), new DeducedTypeDictionary(ds));
 			}
 
 			if (t is PackageSymbol)

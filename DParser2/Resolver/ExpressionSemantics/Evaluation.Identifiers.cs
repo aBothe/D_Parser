@@ -55,7 +55,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			public ISymbolValue VisitAliasedType(AliasedType at)
 			{
-				return VisitMemberSymbol(at); // ?
+				return new TypeValue(at); // ?
 			}
 
 			public ISymbolValue VisitEnumType(EnumType t)

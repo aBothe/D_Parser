@@ -1101,7 +1101,7 @@ namespace D_Parser.Dom.Visitors
 
 		public long VisitAliasedType(AliasedType t)
 		{
-			return VisitMemberSymbol(t, 1001743);
+			return VisitDSymbol(t, 1001743);
 		}
 
 		long VisitDSymbol(DSymbol t, long prime)

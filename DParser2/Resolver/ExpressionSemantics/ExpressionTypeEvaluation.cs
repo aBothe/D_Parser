@@ -89,7 +89,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					return new UnknownType(x);
 				}
 
-				if (t.Tag<TypeDeclarationResolver.AliasTag>(TypeDeclarationResolver.AliasTag.Id) == null)
+				if (!(t is AliasedType))
 				{
 					#if TRACE
 					Trace.WriteLine("Return cached item "+(t != null ? t.ToString() : string.Empty));
@@ -164,9 +164,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if(!FunctionEvaluation.AssignCallArgumentsToIC(ms, execargs, null, out args, ctxt))
 				return null;
 
-			if((ctxt.Options & ResolutionOptions.DontResolveBaseTypes) != 0)
+			if((ctxt.Options & ResolutionOptions.DontResolveBaseTypes) != 0
+				|| TryReturnMethodReferenceOnly)
 				return ms;
-
 			return ms.Base;
 		}
 
@@ -1007,21 +1007,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return newRes;
 		}
 
-		public static DNode GetResultMember(ISemantic res, bool keepAliases = false)
+		public static DNode GetResultMember(ISemantic res)
 		{
 			var t = AbstractType.Get(res);
-
-			if (t == null)
-				return null;
-
-			if (keepAliases)
-			{
-				var aliasTag = t.Tag<TypeDeclarationResolver.AliasTag>(TypeDeclarationResolver.AliasTag.Id);
-				if (aliasTag != null &&
-					(!(aliasTag.aliasDefinition is ImportSymbolAlias) || // Only if the import symbol alias definition was selected, go to its base
-					(aliasTag.typeBase != null && aliasTag.aliasDefinition.NameLocation != aliasTag.typeBase.Location)))
-					return aliasTag.aliasDefinition;
-			}
 
 			if (t is DSymbol)
 				return ((DSymbol)res).Definition;

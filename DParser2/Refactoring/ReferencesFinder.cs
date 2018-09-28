@@ -157,7 +157,7 @@ namespace D_Parser.Refactoring
 
 		bool TryAdd(AbstractType resolvedSymbol, ISyntaxRegion sr)
 		{
-			if (ExpressionTypeEvaluation.GetResultMember(resolvedSymbol, true) == symbol)
+			if (ExpressionTypeEvaluation.GetResultMember(resolvedSymbol) == symbol)
 			{
 				l.Add(sr);
 				return true;
