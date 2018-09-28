@@ -1,5 +1,4 @@
 ﻿using D_Parser.Dom;
-using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Resolver.Templates
 {

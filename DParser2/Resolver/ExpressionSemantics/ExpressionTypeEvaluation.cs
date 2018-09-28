@@ -169,19 +169,19 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return mr == null ? b : TryPretendMethodExecution_(mr, args);
 		}
 
-		AbstractType TryPretendMethodExecution_(MemberSymbol mr, IEnumerable<AbstractType> execargs)
+		AbstractType TryPretendMethodExecution_(MemberSymbol ms, IEnumerable<AbstractType> execargs)
 		{
-			if (!(mr.Definition is DMethod))
-				return mr;
+			if (!(ms.Definition is DMethod))
+				return ms;
 
 			Dictionary<DVariable, AbstractType> args;
-			if(!FunctionEvaluation.AssignCallArgumentsToIC<AbstractType>(mr, execargs, null, out args, ctxt))
+			if(!FunctionEvaluation.AssignCallArgumentsToIC(ms, execargs, null, out args, ctxt))
 				return null;
 
 			if((ctxt.Options & ResolutionOptions.DontResolveBaseTypes) != 0)
-				return mr;
+				return ms;
 
-			return mr.Base;
+			return ms.Base;
 		}
 
 		void GetRawCallOverloads(ResolutionContext ctxt, IExpression callForeExpression,

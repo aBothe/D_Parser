@@ -465,11 +465,6 @@ namespace D_Parser.Resolver
 					Type.NonStaticAccess = false;
 		}
 
-		public override string ToString()
-		{
-			return base.ToString();
-		}
-
 		public override void Accept(IResolvedTypeVisitor vis)
 		{
 			vis.VisitAliasedType(this);
