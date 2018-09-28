@@ -3,7 +3,6 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
 using D_Parser.Resolver.ASTScanner;
 using D_Parser.Resolver.ExpressionSemantics.CTFE;
-using D_Parser.Resolver.Templates;
 using D_Parser.Resolver.TypeResolution;
 using System;
 using System.Collections.Generic;
@@ -138,21 +137,19 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		AbstractType TryPretendMethodExecution(IEnumerable<AbstractType> possibleOverloads, ISyntaxRegion typeBase = null, IEnumerable<AbstractType> args = null)
 		{
-			if (!TryReturnMethodReferenceOnly)
+			var allowedOverloads = new List<AbstractType>();
+			foreach (var overload in possibleOverloads)
 			{
-				foreach (var overload in possibleOverloads)
+				var ms = DResolver.StripAliasedTypes(overload) as MemberSymbol;
+				if (ms != null)
 				{
-					var ms = DResolver.StripAliasedTypes(overload) as MemberSymbol;
-					if (ms != null)
-					{
-						var executionResult = TryPretendMethodExecution_(ms, args);
-						if (executionResult != null)
-							return executionResult;
-					}
+					var executionResult = TryPretendMethodExecution_(ms, args);
+					if (executionResult != null)
+						allowedOverloads.Add(executionResult);
 				}
 			}
 
-			return AmbiguousType.Get(possibleOverloads);
+			return AmbiguousType.Get(allowedOverloads.Count > 0 ? allowedOverloads : possibleOverloads);
 		}
 
 		AbstractType TryPretendMethodExecution_(MemberSymbol ms, IEnumerable<AbstractType> execargs)
@@ -548,10 +545,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration(uat.AccessIdentifierHash) { EndLocation = uat.EndLocation, InnerDeclaration = uat.Type }, ctxt);
 		}
 
+		/// <summary>
+		/// http://www.d-programming-language.org/expression.html#NewExpression
+		/// </summary>
 		public AbstractType Visit(NewExpression nex)
 		{
-			// http://www.d-programming-language.org/expression.html#NewExpression
-
 			var possibleTypes = TypeDeclarationResolver.ResolveSingle(nex.Type, ctxt, !(nex.Type is IdentifierDeclaration));
 
 			var ctors = new Dictionary<DMethod, TemplateIntermediateType>();
@@ -618,13 +616,17 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return ret;
 			}
 
-			//TODO: Determine argument types and filter out ctor overloads.
+			var argumentTypes = new List<AbstractType>();
+			if (nex.Arguments != null) //TODO: Contextual template parameters
+					foreach (var newExpressionArgument in nex.Arguments)
+						argumentTypes.Add(EvaluateType(newExpressionArgument, ctxt));
+
 			var resolvedCtors = new List<AbstractType>();
 
 			foreach(var kv in ctors)
 				resolvedCtors.Add(new MemberSymbol(kv.Key, kv.Value));
 
-			return TryPretendMethodExecution(resolvedCtors, nex);
+			return TryPretendMethodExecution(resolvedCtors, nex, argumentTypes);
 		}
 		#endregion
 
