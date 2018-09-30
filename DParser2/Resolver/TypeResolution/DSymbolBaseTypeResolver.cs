@@ -32,21 +32,14 @@ namespace D_Parser.Resolver.TypeResolution
 				return symbol;
 
 			var symbolDefinition = symbol.Definition;
-			// See https://github.com/aBothe/Mono-D/issues/161
-			int stkC;
-			if (stackCalls == null)
-			{
-				stackCalls = new Dictionary<INode, int>();
-				stackCalls[symbolDefinition] = 1;
-			}
-			else
-				stackCalls[symbolDefinition] = stackCalls.TryGetValue(symbolDefinition, out stkC) ? ++stkC : 1;
+			BumpResolutionStackLevel(symbolDefinition);
 
 			var visitor = new DSymbolBaseTypeResolver(ctxt, typeBase, resultBase);
 
 			try
 			{
-				if (HasntReachedResolutionStackPeak(symbolDefinition)) {
+				if (HasntReachedResolutionStackPeak(symbolDefinition))
+				{
 					if (symbol is TemplateParameterSymbol ?
 						((ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) == 0)
 						: CanResolveBase(symbolDefinition, ctxt))
@@ -56,12 +49,31 @@ namespace D_Parser.Resolver.TypeResolution
 			}
 			finally
 			{
-				stackCalls.TryGetValue(symbolDefinition, out stkC);
-				if (stkC == 1)
-					stackCalls.Remove(symbolDefinition);
-				else
-					stackCalls[symbolDefinition] = stkC - 1;
+				PopResolutionStackLevel(symbolDefinition);
 			}
+		}
+
+		private static void PopResolutionStackLevel(DNode symbolDefinition)
+		{
+			int stkC;
+			stackCalls.TryGetValue(symbolDefinition, out stkC);
+			if (stkC == 1)
+				stackCalls.Remove(symbolDefinition);
+			else
+				stackCalls[symbolDefinition] = stkC - 1;
+		}
+
+		private static void BumpResolutionStackLevel(DNode symbolDefinition)
+		{
+			// See https://github.com/aBothe/Mono-D/issues/161
+			int stkC;
+			if (stackCalls == null)
+			{
+				stackCalls = new Dictionary<INode, int>();
+				stackCalls[symbolDefinition] = 1;
+			}
+			else
+				stackCalls[symbolDefinition] = stackCalls.TryGetValue(symbolDefinition, out stkC) ? ++stkC : 1;
 		}
 
 		static bool HasntReachedResolutionStackPeak(INode nodeToResolve)
