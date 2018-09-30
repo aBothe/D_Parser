@@ -43,7 +43,10 @@ namespace D_Parser.Resolver.ResolutionHooks
 				return null;
 
 			returnedNode = cls.Definition;
-			var baseClass = DResolver.StripMemberSymbols(AbstractType.Get(en.Current)) as TemplateIntermediateType;
+			var current = AbstractType.Get(en.Current);
+			current = DResolver.StripAliasedTypes(current);
+			current = DResolver.StripMemberSymbols(current);
+			var baseClass = current as TemplateIntermediateType;
 
 			if (baseClass == null)
 				return ds;
