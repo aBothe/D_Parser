@@ -322,13 +322,6 @@ namespace D_Parser.Resolver.TypeResolution
 			AbstractType resultBase = null,
 			ISyntaxRegion typeBase = null)
 		{
-			/*
-			 * Pushing a new scope is only required if current scope cannot be found in the handled node's hierarchy.
-			 * Edit: No, it is required nearly every time because of nested type declarations - then, we do need the 
-			 * current block scope.
-			 */
-			var options = ctxt.CurrentContext.ContextDependentOptions;
-			var applyOptions = ctxt.ScopedBlockIsInNodeHierarchy(m);
 			IDisposable disp;
 			CodeLocation loc = typeBase != null ? typeBase.Location : m.Location;
 
@@ -337,16 +330,14 @@ namespace D_Parser.Resolver.TypeResolution
 			else
 				disp = ctxt.Push (m, loc);
 
-			using (disp)
-			{
-				if (applyOptions)
-					ctxt.CurrentContext.ContextDependentOptions = options;
+			AbstractType noBaseResolvedType;
 
-				var noBaseResolvedType = m.Accept(new NodeMatchHandleVisitor(ctxt, typeBase));
-				if (noBaseResolvedType is DSymbol)
-					return DSymbolBaseTypeResolver.ResolveBaseType(noBaseResolvedType as DSymbol, ctxt, typeBase, resultBase);
-				return noBaseResolvedType;
-			}
+			using (disp)
+				noBaseResolvedType = m.Accept(new NodeMatchHandleVisitor(ctxt, typeBase));
+
+			if (noBaseResolvedType is DSymbol)
+				return DSymbolBaseTypeResolver.ResolveBaseType(noBaseResolvedType as DSymbol, ctxt, typeBase, resultBase);
+			return noBaseResolvedType;
 		}
 
 		public static List<AbstractType> HandleNodeMatches(
