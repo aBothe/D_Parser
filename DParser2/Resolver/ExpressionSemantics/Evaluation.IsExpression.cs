@@ -208,7 +208,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 					if (dm != null)
 					{
-						var retType_ = TypeDeclarationResolver.GetMethodReturnType(dm, ctxt);
+						var retType_ = DSymbolBaseTypeResolver.GetMethodReturnType(dm, ctxt);
 
 						if (r = retType_ != null && ResultComparer.IsEqual(typeToCheck, retType_))
 							res = retType_;

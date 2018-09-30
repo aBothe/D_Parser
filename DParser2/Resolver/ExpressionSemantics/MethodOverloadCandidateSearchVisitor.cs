@@ -61,7 +61,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			using (ctxt.Push(at))
 			{
-				var resolvedAliasBase = TypeDeclarationResolver.ResolveDVariableBaseType(at.Definition, ctxt, true);
+				var resolvedAliasBase = DSymbolBaseTypeResolver.ResolveDVariableBaseType(at.Definition, ctxt, true);
 				return AmbiguousType.TryDissolve(resolvedAliasBase ?? at);
 			}
 		}

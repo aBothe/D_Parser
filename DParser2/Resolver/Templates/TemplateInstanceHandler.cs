@@ -400,7 +400,7 @@ namespace D_Parser.Resolver.TypeResolution
 			if (tps != null && tps.Base == null && tps.Parameter.Parent is DClassLike)
 			{
 				// (Only) In the context of template parameter deduction
-				var probablyInducableParameter = TypeDeclarationResolver.ResolveTemplateParameter(ctxt, new TemplateParameter.Node(parameter));
+				var probablyInducableParameter = DSymbolBaseTypeResolver.ResolveTemplateParameter(ctxt, new TemplateParameter.Node(parameter));
 				return CheckAndDeduceTypeAgainstTplParameter(tps.Parameter, probablyInducableParameter, deducedTypes, ctxt);
 			}
 			else return CheckAndDeduceTypeAgainstTplParameter(parameter, argumentToAnalyze, deducedTypes, ctxt);

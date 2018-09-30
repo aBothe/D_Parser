@@ -165,7 +165,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 					if (deducedTypeDict.AllParamatersSatisfied)
 					{
-						var bt = TypeDeclarationResolver.GetMethodReturnType(dm, ctxt) ?? ms.Base;
+						var bt = DSymbolBaseTypeResolver.GetMethodReturnType(dm, ctxt) ?? ms.Base;
 
 						if (valueProvider != null || !returnBaseTypeOnly)
 						{
@@ -279,7 +279,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			public void VisitDelegateType(DelegateType dg)
 			{
-				var bt = dg.Base ?? TypeDeclarationResolver.GetMethodReturnType(dg, ctxt);
+				var bt = dg.Base ?? GetDelegateReturnType(dg, ctxt);
 
 				//TODO: Param-Arg check
 
@@ -296,6 +296,17 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					}
 					argTypeFilteredOverloads.Add(new DelegateCallSymbol(dg, call));
 				}
+			}
+
+			static AbstractType GetDelegateReturnType(DelegateType dg, ResolutionContext ctxt)
+			{
+				if (dg == null || ctxt == null)
+					return null;
+
+				if (dg.IsFunctionLiteral)
+					return DSymbolBaseTypeResolver.GetMethodReturnType(((FunctionLiteral)dg.delegateTypeBase).AnonymousMethod, ctxt);
+
+				return TypeDeclarationResolver.ResolveSingle(((DelegateDeclaration)dg.delegateTypeBase).ReturnType, ctxt);
 			}
 
 			/// <summary>

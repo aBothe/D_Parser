@@ -1194,7 +1194,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public AbstractType Visit(FunctionLiteral x)
 		{
 			return new DelegateType(
-				(ctxt.Options & ResolutionOptions.DontResolveBaseTypes | ResolutionOptions.ReturnMethodReferencesOnly) != 0 ? null : TypeDeclarationResolver.GetMethodReturnType(x.AnonymousMethod, ctxt),
+				(ctxt.Options & ResolutionOptions.DontResolveBaseTypes | ResolutionOptions.ReturnMethodReferencesOnly) != 0
+				? null : DSymbolBaseTypeResolver.GetMethodReturnType(x.AnonymousMethod, ctxt),
 				x,
 				TypeResolution.TypeDeclarationResolver.HandleNodeMatches(x.AnonymousMethod.Parameters, ctxt));
 		}
