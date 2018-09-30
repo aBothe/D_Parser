@@ -348,28 +348,8 @@ namespace D_Parser.Resolver.TypeResolution
 		{
 			var rl = new List<AbstractType>();
 
-			// Abbreviate a foreach-loop + List alloc
-			var ll = matches as IList<INode>;
-			if (ll != null && ll.Count == 1)
-			{
-				var returnType = ll[0] != null ? HandleNodeMatch(ll[0], ctxt, resultBase, typeDeclaration) : null;
-				if (returnType != null)
-					rl.Add(returnType);
-				return rl;
-			}
-
-			if (matches == null)
-				return rl;
-
 			foreach (var m in matches)
-			{
-				if (m == null)
-					continue;
-
-				var res = HandleNodeMatch(m, ctxt, resultBase, typeDeclaration);
-				if (res != null)
-					rl.Add(res);
-			}
+				rl.Add(HandleNodeMatch(m, ctxt, resultBase, typeDeclaration));
 
 			return rl;
 		}
