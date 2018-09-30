@@ -11,22 +11,20 @@ namespace D_Parser.Resolver.TypeResolution
 {
 	struct DSymbolBaseTypeResolver : IResolvedTypeVisitor<DSymbol>
 	{
-		public readonly ResolutionContext ctxt;
-		public readonly ISyntaxRegion typeBase;
-		public AbstractType resultBase;
+		readonly ResolutionContext ctxt;
+		readonly ISyntaxRegion typeBase;
 
 		[ThreadStatic]
 		static Dictionary<INode, int> stackCalls;
 
 		[System.Diagnostics.DebuggerStepThrough]
-		DSymbolBaseTypeResolver(ResolutionContext ctxt, ISyntaxRegion typeBase, AbstractType resultBase)
+		DSymbolBaseTypeResolver(ResolutionContext ctxt, ISyntaxRegion typeBase)
 		{
 			this.ctxt = ctxt;
 			this.typeBase = typeBase;
-			this.resultBase = resultBase;
 		}
 
-		public static DSymbol ResolveBaseType(DSymbol symbol, ResolutionContext ctxt, ISyntaxRegion typeBase, AbstractType resultBase)
+		public static DSymbol ResolveBaseType(DSymbol symbol, ResolutionContext ctxt, ISyntaxRegion typeBase)
 		{
 			if (symbol == null || symbol.Base != null)
 				return symbol;
@@ -34,7 +32,7 @@ namespace D_Parser.Resolver.TypeResolution
 			var symbolDefinition = symbol.Definition;
 			BumpResolutionStackLevel(symbolDefinition);
 
-			var visitor = new DSymbolBaseTypeResolver(ctxt, typeBase, resultBase);
+			var visitor = new DSymbolBaseTypeResolver(ctxt, typeBase);
 
 			try
 			{
@@ -43,7 +41,10 @@ namespace D_Parser.Resolver.TypeResolution
 					if (symbol is TemplateParameterSymbol ?
 						((ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) == 0)
 						: CanResolveBase(symbolDefinition, ctxt))
-						return symbol.Accept(visitor);
+					{
+						using (ctxt.Push(symbol))
+							return symbol.Accept(visitor);
+					}
 				}
 				return symbol;
 			}
@@ -128,14 +129,14 @@ namespace D_Parser.Resolver.TypeResolution
 
 		public DSymbol VisitMemberSymbol(MemberSymbol t)
 		{
-			if(t.Definition is DEnumValue)
+			if (t.Definition is DEnumValue)
 			{
 				return new MemberSymbol(t.Definition,
-					resultBase ?? TypeDeclarationResolver.HandleNodeMatch(t.Definition.Parent, ctxt),
+					TypeDeclarationResolver.HandleNodeMatch(t.Definition.Parent, ctxt),
 					t.DeducedTypes);
 			}
 
-			if(t.Definition is DVariable)
+			if (t.Definition is DVariable)
 				return new MemberSymbol(t.Definition,
 					ResolveDVariableBaseType(t.Definition as DVariable, ctxt, true), ctxt.DeducedTypesInHierarchy);
 
@@ -419,7 +420,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 		public DSymbol VisitTemplateParameterSymbol(TemplateParameterSymbol t)
 		{
-			return ResolveTemplateParameter(ctxt, (TemplateParameter.Node) t.Definition);
+			return ResolveTemplateParameter(ctxt, (TemplateParameter.Node)t.Definition);
 		}
 
 		public static TemplateParameterSymbol ResolveTemplateParameter(ResolutionContext ctxt, TemplateParameter.Node tpn)

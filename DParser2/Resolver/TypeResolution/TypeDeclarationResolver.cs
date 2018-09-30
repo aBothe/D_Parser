@@ -336,7 +336,7 @@ namespace D_Parser.Resolver.TypeResolution
 				noBaseResolvedType = m.Accept(new NodeMatchHandleVisitor(ctxt, typeBase));
 
 			if (noBaseResolvedType is DSymbol)
-				return DSymbolBaseTypeResolver.ResolveBaseType(noBaseResolvedType as DSymbol, ctxt, typeBase, resultBase);
+				return DSymbolBaseTypeResolver.ResolveBaseType(noBaseResolvedType as DSymbol, ctxt, typeBase);
 			return noBaseResolvedType;
 		}
 
