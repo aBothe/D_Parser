@@ -175,7 +175,7 @@ namespace D_Parser.Completion
 				var ct = new CtorScan(sr, ResolutionContext.Create(new Misc.LegacyParseCacheView(new RootPackage[] {}), null, scope));
 				ct.DeepScanClass(udt, new ItemCheckParameters(MemberFilter.Methods), false);
 
-				_ctors.AddRange(ct.matches_types);
+				_ctors.AddRange(ct.GetMatches());
 
 				var rawList = (udt.Definition as DClassLike)[DMethod.ConstructorIdentifierHash];
 				if(rawList != null)
@@ -191,7 +191,7 @@ namespace D_Parser.Completion
 					}
 				}
 
-				return ct.matches_types.Count != 0;
+				return _ctors.Count != 0;
 			}
 
 			protected override bool PreCheckItem (INode n)

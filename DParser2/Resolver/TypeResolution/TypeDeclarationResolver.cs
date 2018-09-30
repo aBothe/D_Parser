@@ -320,7 +320,8 @@ namespace D_Parser.Resolver.TypeResolution
 			INode m,
 			ResolutionContext ctxt,
 			AbstractType resultBase = null,
-			ISyntaxRegion typeBase = null)
+			ISyntaxRegion typeBase = null,
+			bool allowBaseTypeResolution = true)
 		{
 			IDisposable disp;
 			CodeLocation loc = typeBase != null ? typeBase.Location : m.Location;
@@ -335,7 +336,7 @@ namespace D_Parser.Resolver.TypeResolution
 			using (disp)
 				noBaseResolvedType = m.Accept(new NodeMatchHandleVisitor(ctxt, typeBase));
 
-			if (noBaseResolvedType is DSymbol)
+			if (allowBaseTypeResolution && noBaseResolvedType is DSymbol)
 				return DSymbolBaseTypeResolver.ResolveBaseType(noBaseResolvedType as DSymbol, ctxt, typeBase);
 			return noBaseResolvedType;
 		}

@@ -44,7 +44,7 @@ namespace D_Parser.Resolver.ASTScanner
 			else if (t.Definition is IBlockNode)
 				scan.ScanBlock(t.Definition as IBlockNode, CodeLocation.Empty, parms);
 
-			return scan.matches_types;
+			return scan.GetMatches();
 		}
 	}
 }

@@ -68,9 +68,6 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 
 		protected virtual void HandleItem (INode n) { }
 
-		/// <summary>
-		/// Return true if search shall stop(!), false if search shall go on
-		/// </summary>
 		protected virtual void HandleItem(INode n, AbstractType resolvedCurrentScope) { HandleItem(n); }
 		
 		protected virtual void HandleItem(PackageSymbol pack) { }
