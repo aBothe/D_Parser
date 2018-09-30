@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using D_Parser.Dom;
+using D_Parser.Dom.Expressions;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
 
@@ -160,22 +161,26 @@ namespace D_Parser.Resolver.Templates
 			#region Handle parameter defaults
 			if (arg == null)
 			{
+				ISemantic defaultTypeOrValue;
 				if (p.DefaultExpression != null)
 				{
-					var eval = Evaluation.EvaluateValue(p.DefaultExpression, ctxt);
-
-					if (eval == null)
-						return false;
-
-					return Set(p, eval, 0);
+					defaultTypeOrValue = Evaluation.EvaluateValue(p.DefaultExpression, ctxt);
+					// Given `template Template(alias p = myDefault) {}`
+					// Then myDefault could both count as expression as well as typedecl,
+					// so treat the identifier as either of these types.
+					if (defaultTypeOrValue == null && p.DefaultExpression is IntermediateIdType)
+					{
+						defaultTypeOrValue = ExpressionTypeEvaluation.EvaluateType(p.DefaultExpression, ctxt, false);
+					}
 				}
 				else if (p.DefaultType != null)
 				{
-					var res = TypeDeclarationResolver.ResolveSingle(p.DefaultType, ctxt);
-
-					return res != null && Set(p, res, 0);
+					defaultTypeOrValue = TypeDeclarationResolver.ResolveSingle(p.DefaultType, ctxt);
 				}
-				return false;
+				else
+					defaultTypeOrValue = null;
+
+				return defaultTypeOrValue != null && Set(p, defaultTypeOrValue, 0);
 			}
 			#endregion
 
