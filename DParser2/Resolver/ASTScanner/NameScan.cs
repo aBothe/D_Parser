@@ -43,31 +43,7 @@ namespace D_Parser.Resolver.ASTScanner
 			}
 			return scan.matches_types;
 		}
-		
-		public static AbstractType ScanForCFunction(ResolutionContext ctxt, string funcName, bool isCFunction = true)
-		{
-			var extC = new Modifier(DTokens.Extern, "C");
-			foreach(var pc in ctxt.ParseCache.EnumRootPackagesSurroundingModule(ctxt.ScopedBlock))
-			{
-				foreach(var mod in pc)
-				{
-					var nodes = mod[funcName];
-					if(nodes != null)
-					{
-						foreach(var n in nodes){
-							if(n is DMethod)
-							{
-								var dm = n as DMethod;
-								if(!isCFunction || dm.ContainsAttribute(extC))
-									return TypeDeclarationResolver.HandleNodeMatch(n, ctxt);
-							}
-						}
-					}
-				}
-			}
-			return null;
-		}
-		
+
 		public override IEnumerable<INode> PrefilterSubnodes (IBlockNode bn)
 		{
 			return bn.Children.GetNodes (filterHash);

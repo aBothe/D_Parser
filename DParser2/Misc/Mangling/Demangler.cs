@@ -59,7 +59,7 @@ namespace D_Parser.Misc.Mangling
 			if(qualifier is IdentifierDeclaration && qualifier.InnerDeclaration == null)
 			{
 				var id = (qualifier as IdentifierDeclaration).Id;
-				return Resolver.ASTScanner.NameScan.ScanForCFunction(ctxt, id, isCFunction);
+				return ScanForCFunction(ctxt, id, isCFunction);
 			}
 			
 			bool seekCtor = false;
@@ -80,7 +80,32 @@ namespace D_Parser.Misc.Mangling
 			}
 			return resSym;
 		}
-		
+
+		static AbstractType ScanForCFunction(ResolutionContext ctxt, string funcName, bool isCFunction = true)
+		{
+			var extC = new Modifier(DTokens.Extern, "C");
+			foreach (var pc in ctxt.ParseCache.EnumRootPackagesSurroundingModule(ctxt.ScopedBlock))
+			{
+				foreach (var mod in pc)
+				{
+					var nodes = mod[funcName];
+					if (nodes != null)
+					{
+						foreach (var n in nodes)
+						{
+							if (n is DMethod)
+							{
+								var dm = n as DMethod;
+								if (!isCFunction || dm.ContainsAttribute(extC))
+									return TypeDeclarationResolver.HandleNodeMatch(n, ctxt);
+							}
+						}
+					}
+				}
+			}
+			return null;
+		}
+
 		public static AbstractType Demangle(string mangledString, ResolutionContext ctxt, out ITypeDeclaration qualifier, out bool isCFunction)
 		{
 			if(string.IsNullOrEmpty(mangledString))
