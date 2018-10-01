@@ -133,8 +133,8 @@ namespace D_Parser.Resolver.TypeResolution
 
 		struct NodeMatchHandleVisitor : NodeVisitor<AbstractType>
 		{
-			public readonly ResolutionContext ctxt;
-			public ISyntaxRegion typeBase;
+			readonly ResolutionContext ctxt;
+			readonly ISyntaxRegion typeBase;
 
 			[System.Diagnostics.DebuggerStepThrough]
 			public NodeMatchHandleVisitor(ResolutionContext ctxt, ISyntaxRegion typeBase)
@@ -145,12 +145,12 @@ namespace D_Parser.Resolver.TypeResolution
 
 			public AbstractType Visit(DEnumValue n)
 			{
-				return new MemberSymbol(n, null, ctxt.DeducedTypesInHierarchy);
+				return new MemberSymbol(n, null, GetInvisibleTypeParameters(n));
 			}
 
 			AbstractType VisitAliasDefinition(DVariable v)
 			{
-				return new AliasedType(v, null, typeBase, ctxt.DeducedTypesInHierarchy);
+				return new AliasedType(v, null, typeBase, GetInvisibleTypeParameters(v));
 			}
 
 			public AbstractType VisitDVariable(DVariable variable)
@@ -158,7 +158,7 @@ namespace D_Parser.Resolver.TypeResolution
 				if (variable.IsAlias)
 					return VisitAliasDefinition(variable);
 
-				return new MemberSymbol(variable, null, ctxt.DeducedTypesInHierarchy);
+				return new MemberSymbol(variable, null, GetInvisibleTypeParameters(variable));
 			}
 
 			/// <summary>
@@ -183,7 +183,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 			public AbstractType Visit(EponymousTemplate ep)
 			{
-				return new EponymousTemplateType(ep, new ReadOnlyCollection<TemplateParameterSymbol>(new List<TemplateParameterSymbol>(GetInvisibleTypeParameters(ep))));
+				return new EponymousTemplateType(ep, GetInvisibleTypeParameters(ep));
 			}
 
 			public AbstractType Visit(DMethod m)
