@@ -5,7 +5,6 @@ using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
 using D_Parser.Resolver.ASTScanner;
-using System.Collections.ObjectModel;
 
 namespace D_Parser.Resolver.TypeResolution
 {
@@ -21,7 +20,6 @@ namespace D_Parser.Resolver.TypeResolution
 			ResolutionContext ctxt,
 			ISyntaxRegion typeIdObject = null, bool ufcsItem = true)
 		{
-			MemberSymbol statProp;
 			if ((resultBases = DResolver.StripMemberSymbols(resultBases)) == null)
 				return null;
 
@@ -42,7 +40,7 @@ namespace D_Parser.Resolver.TypeResolution
 					{
 						r.AddRange(SingleNodeNameScan.SearchChildrenAndResolve(ctxt, udt, nextIdentifierHash, typeIdObject));
 
-						statProp = StaticProperties.TryEvalPropertyType(ctxt, b, nextIdentifierHash);
+						var statProp = StaticProperties.TryEvalPropertyType(ctxt, b, nextIdentifierHash);
 						if (statProp != null)
 							r.Add(statProp);
 
@@ -68,7 +66,7 @@ namespace D_Parser.Resolver.TypeResolution
 					r.AddRange(SingleNodeNameScan.SearchChildrenAndResolve(ctxt, b as ModuleSymbol, nextIdentifierHash, typeIdObject));
 				else
 				{
-					statProp = StaticProperties.TryEvalPropertyType(ctxt, b, nextIdentifierHash);
+					var statProp = StaticProperties.TryEvalPropertyType(ctxt, b, nextIdentifierHash);
 					if (statProp != null)
 						r.Add(statProp);
 
