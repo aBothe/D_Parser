@@ -442,27 +442,27 @@ namespace D_Parser.Resolver.TypeResolution
 		}
 
 		// No basetype to furtherly specify:
-		public DSymbol VisitEponymousTemplateType(EponymousTemplateType t) { return t; }
-		public DSymbol VisitMixinTemplateType(MixinTemplateType t) { return t; }
-		public DSymbol VisitStructType(StructType t) { return t; }
-		public DSymbol VisitTemplateType(TemplateType t) { return t; }
-		public DSymbol VisitUnionType(UnionType t) { return t; }
-		public DSymbol VisitModuleSymbol(ModuleSymbol t) { return t; }
+		public DSymbol VisitEponymousTemplateType(EponymousTemplateType t) => t;
+		public DSymbol VisitMixinTemplateType(MixinTemplateType t) => t;
+		public DSymbol VisitStructType(StructType t) => t;
+		public DSymbol VisitTemplateType(TemplateType t) => t;
+		public DSymbol VisitUnionType(UnionType t) => t;
+		public DSymbol VisitModuleSymbol(ModuleSymbol t) => t;
 
 		// Not usually being returned by NodeMatchHandleVisitor:
-		public DSymbol VisitStaticProperty(StaticProperty t) { throw new NotImplementedException(); }
+		public DSymbol VisitStaticProperty(StaticProperty t) => throw new NotImplementedException();
 
 		// Not a DSymbol:
-		public DSymbol VisitUnknownType(UnknownType t) { throw new NotImplementedException(); }
-		public DSymbol VisitDelegateCallSymbol(DelegateCallSymbol t) { throw new NotImplementedException(); }
-		public DSymbol VisitDelegateType(DelegateType t) { throw new NotImplementedException(); }
-		public DSymbol VisitDTuple(DTuple t) { throw new NotImplementedException(); }
-		public DSymbol VisitAmbigousType(AmbiguousType t) { throw new NotImplementedException(); }
-		public DSymbol VisitArrayAccessSymbol(ArrayAccessSymbol t) { throw new NotImplementedException(); }
-		public DSymbol VisitArrayType(ArrayType t) { throw new NotImplementedException(); }
-		public DSymbol VisitAssocArrayType(AssocArrayType t) { throw new NotImplementedException(); }
-		public DSymbol VisitPackageSymbol(PackageSymbol t) { throw new NotImplementedException(); }
-		public DSymbol VisitPointerType(PointerType t) { throw new NotImplementedException(); }
-		public DSymbol VisitPrimitiveType(PrimitiveType t) { throw new NotImplementedException(); }
+		public DSymbol VisitUnknownType(UnknownType t) => throw new NotImplementedException();
+		public DSymbol VisitDelegateCallSymbol(DelegateCallSymbol t) => throw new NotImplementedException();
+		public DSymbol VisitDelegateType(DelegateType t) => throw new NotImplementedException();
+		public DSymbol VisitDTuple(DTuple t) => throw new NotImplementedException();
+		public DSymbol VisitAmbigousType(AmbiguousType t) => throw new NotImplementedException();
+		public DSymbol VisitArrayAccessSymbol(ArrayAccessSymbol t) => throw new NotImplementedException();
+		public DSymbol VisitArrayType(ArrayType t) => throw new NotImplementedException();
+		public DSymbol VisitAssocArrayType(AssocArrayType t) => throw new NotImplementedException();
+		public DSymbol VisitPackageSymbol(PackageSymbol t) => throw new NotImplementedException();
+		public DSymbol VisitPointerType(PointerType t) => throw new NotImplementedException();
+		public DSymbol VisitPrimitiveType(PrimitiveType t) => throw new NotImplementedException();
 	}
 }

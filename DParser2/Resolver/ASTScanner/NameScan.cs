@@ -88,7 +88,7 @@ namespace D_Parser.Resolver.ASTScanner
 
 		protected override void HandleItem (INode n, AbstractType resolvedCurrentScope)
 		{
-			var res = TypeDeclarationResolver.HandleNodeMatch (n, ctxt, resolvedCurrentScope, idObject, false);
+			var res = TypeDeclarationResolver.HandleNodeMatch_NoBaseTypeResolution (n, ctxt, resolvedCurrentScope, idObject);
 			if (res != null)
 				matches_types.Add (res);
 			stopEnumeration = true;

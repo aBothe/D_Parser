@@ -311,34 +311,35 @@ namespace D_Parser.Resolver.TypeResolution
 			#endregion
 		}
 
-		/// <summary>
-		/// The variable's or method's base type will be resolved (if auto type, the intializer's type will be taken).
-		/// A class' base class will be searched.
-		/// etc..
-		/// </summary>
 		public static AbstractType HandleNodeMatch(
 			INode m,
 			ResolutionContext ctxt,
 			AbstractType resultBase = null,
-			ISyntaxRegion typeBase = null,
-			bool allowBaseTypeResolution = true)
+			ISyntaxRegion typeBase = null)
+		{
+			var noBaseResolvedType = HandleNodeMatch_NoBaseTypeResolution(m, ctxt, resultBase, typeBase);
+
+			if (noBaseResolvedType is DSymbol)
+				return DSymbolBaseTypeResolver.ResolveBaseType(noBaseResolvedType as DSymbol, ctxt, typeBase);
+			return noBaseResolvedType;
+		}
+
+		public static AbstractType HandleNodeMatch_NoBaseTypeResolution(
+			INode m,
+			ResolutionContext ctxt,
+			AbstractType resultBase,
+			ISyntaxRegion typeBase)
 		{
 			IDisposable disp;
 			CodeLocation loc = typeBase != null ? typeBase.Location : m.Location;
 
 			if (resultBase is DSymbol)
-				disp = ctxt.Push (resultBase as DSymbol, loc);
+				disp = ctxt.Push(resultBase as DSymbol, loc);
 			else
-				disp = ctxt.Push (m, loc);
-
-			AbstractType noBaseResolvedType;
+				disp = ctxt.Push(m, loc);
 
 			using (disp)
-				noBaseResolvedType = m.Accept(new NodeMatchHandleVisitor(ctxt, typeBase));
-
-			if (allowBaseTypeResolution && noBaseResolvedType is DSymbol)
-				return DSymbolBaseTypeResolver.ResolveBaseType(noBaseResolvedType as DSymbol, ctxt, typeBase);
-			return noBaseResolvedType;
+				return m.Accept(new NodeMatchHandleVisitor(ctxt, typeBase));
 		}
 
 		public static List<AbstractType> HandleNodeMatches(
