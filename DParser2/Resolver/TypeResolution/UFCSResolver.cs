@@ -65,7 +65,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return n is DMethod;
 		}
 
-		protected override void HandleItem (INode n)
+		protected override void HandleItem (INode n, AbstractType resolvedCurrentScope)
 		{
 			DSymbol ds;
 			DVariable dv;
@@ -100,6 +100,8 @@ namespace D_Parser.Resolver.TypeResolution
 				}
 			}
 		}
+
+		protected override void HandleItem(PackageSymbol pack) { }
 
 		void HandleMethod(DMethod dm, MemberSymbol alreadyResolvedMethod = null)
 		{

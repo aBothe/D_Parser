@@ -76,7 +76,7 @@ namespace D_Parser.Refactoring
 			return !(dc == null || dc.BaseClasses == null || dc.BaseClasses.Count == 0 || alreadyResolvedClasses.Contains (dc));
 		}
 
-		protected override void HandleItem (INode n)
+		protected override void HandleItem (INode n, AbstractType resolvedCurrentScope)
 		{
 			var dc = n as DClassLike;
 				
@@ -116,6 +116,8 @@ namespace D_Parser.Refactoring
 				}
 			}
 		}
+
+		protected override void HandleItem(PackageSymbol pack) { }
 	}
 }
 

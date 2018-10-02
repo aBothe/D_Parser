@@ -54,10 +54,12 @@ namespace D_Parser.Resolver.ASTScanner
 
 		List<INode> Nodes = new List<INode> ();
 
-		protected override void HandleItem (INode n)
+		protected override void HandleItem (INode n, AbstractType resolvedCurrentScope)
 		{
 			Nodes.Add (n);
 		}
+
+		protected override void HandleItem(PackageSymbol pack) { }
 	}
 }
 

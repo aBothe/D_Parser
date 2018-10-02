@@ -1,11 +1,8 @@
-﻿using D_Parser.Completion;
-using D_Parser.Dom;
-using D_Parser.Dom.Statements;
+﻿using D_Parser.Dom;
 using D_Parser.Misc;
 using D_Parser.Resolver.ASTScanner;
 using D_Parser.Resolver;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace D_Parser.Completion
@@ -74,7 +71,7 @@ namespace D_Parser.Completion
 			return isVarInst || !(n is DMethod || dv != null || n is TemplateParameter.Node) ||	(n as DNode).IsStatic || n is DEnumValue ||	(dv != null && (dv.IsConst || dv.IsAlias));
 		}
 		
-		protected override void HandleItem(INode n)
+		protected override void HandleItem(INode n, AbstractType currentlyResolvedScope)
 		{
 			if(n is DModule)
 				gen.AddModule(n as DModule);

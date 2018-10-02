@@ -66,11 +66,9 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			return pack.GetModules();
 		}
 
-		protected virtual void HandleItem (INode n) { }
+		protected abstract void HandleItem(INode n, AbstractType resolvedCurrentScope);
 
-		protected virtual void HandleItem(INode n, AbstractType resolvedCurrentScope) { HandleItem(n); }
-		
-		protected virtual void HandleItem(PackageSymbol pack) { }
+		protected abstract void HandleItem(PackageSymbol pack);
 
 		void HandleItems(IEnumerable<INode> nodes, ItemCheckParameters parms)
 		{

@@ -1,13 +1,9 @@
 ﻿using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
-using D_Parser.Misc;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ASTScanner;
 using D_Parser.Resolver.TypeResolution;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace D_Parser.Completion.Providers
 {
@@ -62,15 +58,10 @@ namespace D_Parser.Completion.Providers
 					IterateThroughScopeLayers(CodeLocation.Empty, MemberFilter.All);
 			}
 
-			protected override bool PreCheckItem (INode n)
-			{
-				return !alreadyTakenNames.Contains (n.NameHash);
-			}
+			protected override bool PreCheckItem (INode n) => !alreadyTakenNames.Contains (n.NameHash);
 
-			protected override void HandleItem(INode n)
-			{
-				gen.Add(n);
-			}
+			protected override void HandleItem(INode n, AbstractType resolvedCurrentScope) => gen.Add(n);
+			protected override void HandleItem(PackageSymbol pack) { }
 		}
 	}
 }
