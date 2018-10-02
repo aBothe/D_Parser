@@ -73,7 +73,7 @@ namespace D_Parser.Completion.Providers
 
 			CodeCompletion.DoTimeoutableCompletionTask (CompletionDataGenerator, ctxt, () => {
 				ctxt.Push(Editor);
-				var cs = ctxt.CurrentContext.DeclarationCondititons;
+				var cs = ctxt.CurrentContext.DeclarationConditions;
 				foreach (var v in cs.GlobalFlags.Versions)
 					if(!VersionCompletionItems.ContainsKey(v))
 						CompletionDataGenerator.AddTextItem (v, "");
@@ -94,7 +94,7 @@ namespace D_Parser.Completion.Providers
 			var ctxt = ResolutionContext.Create (Editor, false);
 			CodeCompletion.DoTimeoutableCompletionTask (CompletionDataGenerator, ctxt, () => {
 				ctxt.Push(Editor);
-				var cs = ctxt.CurrentContext.DeclarationCondititons;
+				var cs = ctxt.CurrentContext.DeclarationConditions;
 				foreach (var v in cs.GlobalFlags.DebugVersions)
 					CompletionDataGenerator.AddTextItem (v, "");
 				foreach (var v in cs.LocalFlags.DebugVersions)
