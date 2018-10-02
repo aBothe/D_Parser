@@ -53,10 +53,20 @@ namespace D_Parser.Resolver
 
 		public CancellationToken CancellationToken { get; set; }
 
+		const ResolutionOptions AvoidEverything = ResolutionOptions.DontResolveBaseTypes
+					| ResolutionOptions.DontResolveBaseClasses
+					| ResolutionOptions.NoTemplateParameterDeduction
+					| ResolutionOptions.DontResolveAliases
+					| ResolutionOptions.IgnoreDeclarationConditions;
+
 		public ResolutionOptions Options
 		{
 			[DebuggerStepThrough]
-			get { return ContextIndependentOptions | (CurrentContext != null ? CurrentContext.ContextDependentOptions : 0) | (CancellationToken.IsCancellationRequested ? (ResolutionOptions.DontResolveBaseTypes | ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.NoTemplateParameterDeduction | ResolutionOptions.DontResolveAliases | ResolutionOptions.IgnoreDeclarationConditions) : 0); }
+			get {
+				if (!CancellationToken.IsCancellationRequested)
+					return ContextIndependentOptions | (CurrentContext != null ? CurrentContext.ContextDependentOptions : 0);
+				return AvoidEverything;
+			}
 		}
 
 		internal readonly ResolutionCache<MixinAnalysis.MixinCacheItem> MixinCache;
