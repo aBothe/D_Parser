@@ -15,7 +15,7 @@ namespace D_Parser.Resolver.ASTScanner
 	{
 		#region Properties
 		public static readonly DVariable __ctfe;
-		Dictionary<string, List<string>> scannedModules = new Dictionary<string, List<string>>();
+		readonly Dictionary<int, List<string>> scannedModules = new Dictionary<int, List<string>>();
 
 		static readonly ImportStatement.Import _objectImport = new ImportStatement.Import
 		{

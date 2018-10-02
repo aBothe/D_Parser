@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using D_Parser.Dom;
@@ -12,7 +11,7 @@ namespace D_Parser.Resolver.ASTScanner
 {
 	partial class AbstractVisitor
 	{
-		class StatementHandler : StatementVisitor<bool>, NodeVisitor<bool>, IDisposable
+		struct StatementHandler : StatementVisitor<bool>, NodeVisitor<bool>, IDisposable
 		{
 			#region Properties
 			public readonly ItemCheckParameters parms;
@@ -45,7 +44,7 @@ namespace D_Parser.Resolver.ASTScanner
 				this.pushResolvedCurScope = pushResolvedCurScope;
 			}
 
-			public void TryPushCurScope()
+			void TryPushCurScope()
 			{
 				if (frameToPop == null && pushResolvedCurScope)
 				{
@@ -290,35 +289,33 @@ namespace D_Parser.Resolver.ASTScanner
 				TryPushCurScope();
 
 				DModule mod;
-				var thisModuleName = (ctxt.ScopedBlock != null && (mod = ctxt.ScopedBlock.NodeRoot as DModule) != null) ? mod.ModuleName : string.Empty;
+				var thisModuleName = (ctxt.ScopedBlock != null && (mod = ctxt.ScopedBlock.NodeRoot as DModule) != null) ? mod.NameHash : 0;
 
-				if (string.IsNullOrEmpty(thisModuleName))
+				if (thisModuleName == 0)
 					return false;
 
 				var moduleName = imp.ModuleIdentifier.ToString();
 
 				List<string> seenModules;
-				lock (v.scannedModules)
+				if (!v.scannedModules.TryGetValue(thisModuleName, out seenModules))
 				{
-					if (!v.scannedModules.TryGetValue(thisModuleName, out seenModules))
-						seenModules = v.scannedModules[thisModuleName] = new List<string>();
-					else if (seenModules.Contains(moduleName))
-						return false;
-					seenModules.Add(moduleName);
+					seenModules = new List<string>();
+					v.scannedModules[thisModuleName] = seenModules;
 				}
+				else if (seenModules.Contains(moduleName))
+					return false;
+				seenModules.Add(moduleName);
 
 				if (ctxt.ParseCache == null)
 					return false;
 
 				var scopedModule = parentNodeOfVisitedStmt.NodeRoot as DModule;
 
+				var childscanParameters = new ItemCheckParameters(parms) { publicImportsOnly = true };
 				foreach (var module in ctxt.ParseCache.LookupModuleName(scopedModule, moduleName)) //TODO: Only take the first module? Notify the user about ambigous module names?
 				{
-					if (module.FileName != null &&
-						module.FileName == scopedModule.FileName)
-						continue;
-
-					v.scanChildren(module, new ItemCheckParameters(parms) { publicImportsOnly = true });
+					if (module.FileName == null || module.FileName != scopedModule.FileName)
+						v.scanChildren(module, childscanParameters);
 
 					if (v.StopEnumerationOnNextScope)
 						return true;
