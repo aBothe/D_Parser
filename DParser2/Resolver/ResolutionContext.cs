@@ -266,6 +266,14 @@ namespace D_Parser.Resolver
 			}
 		}
 
+		public bool ContainsDeducedTemplateParameter(TemplateParameter templateParameter)
+		{
+			foreach (var contextFrame in stack)
+				if(contextFrame.DeducedTemplateParameters.ContainsKey(templateParameter))
+					return true;
+			return false;
+		}
+
 		public bool GetTemplateParam(int idHash, out TemplateParameterSymbol tps)
 		{
 			for (var i = stack.Count - 1; i >= 0; i--)
