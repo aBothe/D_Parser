@@ -169,7 +169,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 						if (valueProvider != null || !returnBaseTypeOnly)
 						{
-							bt = new MemberSymbol(dm, bt, deducedTypeDict) { Modifiers = ms.Modifiers };
+							bt = new MemberSymbol(dm, bt, deducedTypeDict.Values) { Modifiers = ms.Modifiers };
 							bt.AssignTagsFrom(ms);
 						}
 

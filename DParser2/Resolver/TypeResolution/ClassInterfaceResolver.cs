@@ -75,9 +75,9 @@ namespace D_Parser.Resolver.TypeResolution
 				ResolveBaseClasses(dc, ctxt, instanceDeclaration, ResolveFirstBaseIdOnly, deducedTypes, out baseClass, out interfaces);
 
 				if (isClass)
-					return new ClassType(dc, baseClass, interfaces.Count == 0 ? null : interfaces.ToArray(), deducedTypes);
+					return new ClassType(dc, baseClass, interfaces.Count == 0 ? null : interfaces.ToArray(), deducedTypes.Values);
 
-				return new InterfaceType(dc, interfaces.Count == 0 ? null : interfaces.ToArray(), deducedTypes);
+				return new InterfaceType(dc, interfaces.Count == 0 ? null : interfaces.ToArray(), deducedTypes.Values);
 			}
 			finally
 			{

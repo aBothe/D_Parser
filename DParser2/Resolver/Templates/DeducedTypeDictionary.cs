@@ -1,12 +1,10 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using D_Parser.Dom;
-using System.Collections.ObjectModel;
 
 namespace D_Parser.Resolver.Templates
 {
-	public class DeducedTypeDictionary : Dictionary<TemplateParameter,TemplateParameterSymbol>, IEnumerable<TemplateParameterSymbol>	{
+	public class DeducedTypeDictionary : Dictionary<TemplateParameter,TemplateParameterSymbol>, IReadOnlyCollection<TemplateParameterSymbol>	{
 
 		public readonly TemplateParameter[] ExpectedParameters;
 

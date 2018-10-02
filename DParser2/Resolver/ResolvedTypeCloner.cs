@@ -44,7 +44,7 @@ namespace D_Parser.Resolver
 			return /*cloneBase && derivedDataType.Base != null ? derivedDataType.Base.Accept(this) : */derivedDataType.Base;
 		}
 
-		IEnumerable<TemplateParameterSymbol> TryMergeDeducedTypes(DSymbol ds)
+		ICollection<TemplateParameterSymbol> TryMergeDeducedTypes(DSymbol ds)
 		{
 			if (options.templateParameterSymbols == null && !options.resetDeducedTypes)
 				return ds.DeducedTypes;

@@ -164,19 +164,21 @@ namespace D_Parser.Resolver.TypeResolution
 			/// the parameters might be re-used in the nested class.
 			/// Only pays attention to those parameter symbols that are located in the current resolution scope's AST hierarchy.
 			/// </summary>
-			IEnumerable<TemplateParameterSymbol> GetInvisibleTypeParameters(DNode n)
+			List<TemplateParameterSymbol> GetInvisibleTypeParameters(DNode n)
 			{
+				var parameterSymbols = new List<TemplateParameterSymbol>();
 				ContextFrame prev = null;
 				foreach (var cf in ctxt.ContextStack) {
 					// Only stay in the same AST hierarchy
 					if (prev != null && cf.ScopedBlock != null && cf.ScopedBlock.Parent != prev.ScopedBlock)
-						yield break;
+						break;
 					prev = cf;
 
 					foreach (var kv in cf.DeducedTemplateParameters)
-						if (!n.ContainsTemplateParameter (kv.Value.Parameter))
-							yield return kv.Value;
+						if (!n.ContainsTemplateParameter(kv.Value.Parameter))
+							parameterSymbols.Add(kv.Value);
 				}
+				return parameterSymbols;
 			}
 
 			public AbstractType Visit(EponymousTemplate ep)
@@ -231,10 +233,7 @@ namespace D_Parser.Resolver.TypeResolution
 				return new ModuleSymbol(mod);
 			}
 
-			public AbstractType Visit(DBlockNode dBlockNode)
-			{
-				throw new NotImplementedException();
-			}
+			public AbstractType Visit(DBlockNode dBlockNode) => throw new NotImplementedException();
 
 			public AbstractType Visit(TemplateParameter.Node tpn)
 			{
@@ -260,53 +259,16 @@ namespace D_Parser.Resolver.TypeResolution
 			{
 				return VisitAliasDefinition(importSymbolAlias);
 			}
-
-			#region Attributes etc.
-			public AbstractType VisitAttribute(Modifier attr)
-			{
-				throw new NotImplementedException();
-			}
-
-			public AbstractType VisitAttribute(DeprecatedAttribute a)
-			{
-				throw new NotImplementedException();
-			}
-
-			public AbstractType VisitAttribute(PragmaAttribute attr)
-			{
-				throw new NotImplementedException();
-			}
-
-			public AbstractType VisitAttribute(BuiltInAtAttribute a)
-			{
-				throw new NotImplementedException();
-			}
-
-			public AbstractType VisitAttribute(UserDeclarationAttribute a)
-			{
-				throw new NotImplementedException();
-			}
-
-			public AbstractType VisitAttribute(VersionCondition a)
-			{
-				throw new NotImplementedException();
-			}
-
-			public AbstractType VisitAttribute(DebugCondition a)
-			{
-				throw new NotImplementedException();
-			}
-
-			public AbstractType VisitAttribute(StaticIfCondition a)
-			{
-				throw new NotImplementedException();
-			}
-
-			public AbstractType VisitAttribute(NegatedDeclarationCondition a)
-			{
-				throw new NotImplementedException();
-			}
-			#endregion
+			
+			public AbstractType VisitAttribute(Modifier attr) => throw new NotImplementedException();
+			public AbstractType VisitAttribute(DeprecatedAttribute a) => throw new NotImplementedException();
+			public AbstractType VisitAttribute(PragmaAttribute attr) => throw new NotImplementedException();
+			public AbstractType VisitAttribute(BuiltInAtAttribute a) => throw new NotImplementedException();
+			public AbstractType VisitAttribute(UserDeclarationAttribute a) => throw new NotImplementedException();
+			public AbstractType VisitAttribute(VersionCondition a) => throw new NotImplementedException();
+			public AbstractType VisitAttribute(DebugCondition a) => throw new NotImplementedException();
+			public AbstractType VisitAttribute(StaticIfCondition a) => throw new NotImplementedException();
+			public AbstractType VisitAttribute(NegatedDeclarationCondition a) => throw new NotImplementedException();
 		}
 
 		public static AbstractType HandleNodeMatch(

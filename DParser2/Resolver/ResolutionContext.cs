@@ -255,13 +255,14 @@ namespace D_Parser.Resolver
 			stack.Add(frm);
 		}
 
-		public IEnumerable<TemplateParameterSymbol> DeducedTypesInHierarchy
+		public List<TemplateParameterSymbol> DeducedTypesInHierarchy
 		{
 			get
 			{
-				for (var i = stack.Count - 1; i >= 0; i--)
-					foreach (var kv in stack[i].DeducedTemplateParameters)
-						yield return kv.Value;
+				var parameterSymbols = new List<TemplateParameterSymbol>();
+				foreach (var contextFrame in stack)
+					parameterSymbols.AddRange(contextFrame.DeducedTemplateParameters);
+				return parameterSymbols;
 			}
 		}
 
