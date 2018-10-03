@@ -4,6 +4,7 @@ using D_Parser.Resolver;
 using D_Parser.Dom;
 using D_Parser.Resolver.TypeResolution;
 using D_Parser.Dom.Expressions;
+using D_Parser.Parser;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
@@ -131,10 +132,53 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return new ErrorValue(new EvaluationException(variable + " must have a constant initializer"));
 
 			if (variable is DEnumValue enumValueVariable && enumValueVariable.Initializer == null)
-			{
-			}
+				return EvaluateNonInitializedEnumValue(enumValueVariable);
 
 			return Evaluation.EvaluateValue(variable.Initializer, this);
+		}
+
+		ISymbolValue EvaluateNonInitializedEnumValue(DEnumValue enumValue)
+		{
+			// Find previous enumvalue entry of parent enum
+			var parentEnum = (DEnum)enumValue.Parent;
+
+			var startIndex = parentEnum.Children.IndexOf(enumValue);
+			if(startIndex == -1)
+				throw new InvalidOperationException("enumValue must be child of its parent enum.");
+
+			IExpression previousInitializer = null;
+			var enumValueIncrementStepsToAdd = 0;
+			for (var currentEnumChildIndex = startIndex - 1; currentEnumChildIndex >= 0; currentEnumChildIndex--)
+			{
+				var enumChild = (DEnumValue)parentEnum.Children[currentEnumChildIndex];
+				if (enumChild.Initializer != null)
+				{
+					previousInitializer = enumChild.Initializer;
+					enumValueIncrementStepsToAdd = startIndex - currentEnumChildIndex;
+					break;
+				}
+			}
+
+			if(previousInitializer == null)
+				return new PrimitiveValue(DTokens.Int, startIndex); //TODO: Must be EnumBaseType.init, not only int.init
+
+			var incrementExpression = BuildEnumValueIncrementExpression(previousInitializer, enumValueIncrementStepsToAdd);
+			return Evaluation.EvaluateValue(incrementExpression, this);
+		}
+
+		private static AddExpression BuildEnumValueIncrementExpression(IExpression previousInitializer,
+			int enumValueIncrementStepsToAdd)
+		{
+			var incrementExpression = new AddExpression(false)
+			{
+				LeftOperand = previousInitializer,
+				RightOperand = new ScalarConstantExpression((decimal) enumValueIncrementStepsToAdd, LiteralFormat.Scalar)
+				{
+					Location = previousInitializer.EndLocation,
+					EndLocation = previousInitializer.EndLocation
+				}
+			};
+			return incrementExpression;
 		}
 	}
 }

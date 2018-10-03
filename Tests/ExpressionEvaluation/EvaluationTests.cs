@@ -661,7 +661,13 @@ enum isIntOrFloat(F) = is(F == int) || is(F == float);
 			Assert.That(av.StringValue, Is.EqualTo("aa"));
 		}
 
-		private const string enumSampleCode = @"module A;
+		/// <summary>
+		/// https://dlang.org/spec/enum.html#named_enums
+		/// </summary>
+		[TestFixture]
+		public class EnumValueInitializers
+		{
+			private const string enumSampleCode = @"module A;
 enum
 {
     E0,
@@ -672,19 +678,80 @@ enum
     E11 = 11,
 }";
 
+			[Test]
+			public void EnumValueInitializerDefaults_AssumeFirstValue()
+			{
+				var ctxt = ResolutionTestHelper.CreateDefCtxt(enumSampleCode);
 
-		[Test]
-		public void EnumValueInitializerDefaults_RegularInitializer()
-		{
-			var ctxt = ResolutionTestHelper.CreateDefCtxt(enumSampleCode);
+				var x = DParser.ParseExpression("E0");
+				var v = Evaluation.EvaluateValue(x, ctxt);
 
-			var x = DParser.ParseExpression("E9");
-			var v = Evaluation.EvaluateValue(x, ctxt);
+				Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+				var pv = v as PrimitiveValue;
+				Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Int));
+				Assert.That(pv.Value, Is.EqualTo(0d));
+			}
 
-			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
-			var pv = v as PrimitiveValue;
-			Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Int));
-			Assert.That(pv.Value, Is.EqualTo(9d));
+			[Test]
+			public void EnumValueInitializerDefaults_AssumeMissingInBetweenValue()
+			{
+				var ctxt = ResolutionTestHelper.CreateDefCtxt(enumSampleCode);
+
+				var x = DParser.ParseExpression("E8");
+				var v = Evaluation.EvaluateValue(x, ctxt);
+
+				Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+				var pv = v as PrimitiveValue;
+				Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Int));
+				Assert.That(pv.Value, Is.EqualTo(8d));
+			}
+
+			[Test]
+			public void EnumValueInitializerDefaults_AssumeMissingInBetweenValue2()
+			{
+				var ctxt = ResolutionTestHelper.CreateDefCtxt(enumSampleCode);
+
+				var x = DParser.ParseExpression("E8_5");
+				var v = Evaluation.EvaluateValue(x, ctxt);
+
+				Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+				var pv = v as PrimitiveValue;
+				Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Int));
+				Assert.That(pv.Value, Is.EqualTo(9d));
+			}
+
+			[Test]
+			public void EnumValueInitializerDefaults_RegularInitializer()
+			{
+				var ctxt = ResolutionTestHelper.CreateDefCtxt(enumSampleCode);
+
+				var x = DParser.ParseExpression("E9");
+				var v = Evaluation.EvaluateValue(x, ctxt);
+
+				Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+				var pv = v as PrimitiveValue;
+				Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Int));
+				Assert.That(pv.Value, Is.EqualTo(9d));
+			}
+
+			[Test]
+			public void EnumValueInitializerDefaults_RegularInitializer2()
+			{
+				var ctxt = ResolutionTestHelper.CreateDefCtxt(@"module A;
+enum {
+E0,
+E1,
+E2
+}");
+
+				var x = DParser.ParseExpression("E2");
+				var v = Evaluation.EvaluateValue(x, ctxt);
+
+				Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+				var pv = v as PrimitiveValue;
+				Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Int));
+				Assert.That(pv.Value, Is.EqualTo(2d));
+			}
 		}
 	}
 }

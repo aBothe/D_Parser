@@ -495,11 +495,11 @@ foo(
 			public List<INode> addedItems = new List<INode> ();
 			public void Add (INode n)
 			{
-				if (blackList != null)
-					Assert.That (blackList.Contains (n), Is.False);
+				if (blackList != null && blackList.Contains(n))
+					Assert.Fail();
 
-				if (whiteList != null && whiteList.Contains(n))
-					Assert.That (remainingWhiteList.Remove (n), Is.True, n+" occurred at least twice!");
+				if (whiteList != null && whiteList.Contains(n) && !remainingWhiteList.Remove(n))
+					Assert.Fail (n + " occurred at least twice!");
 
 				addedItems.Add (n);
 			}
