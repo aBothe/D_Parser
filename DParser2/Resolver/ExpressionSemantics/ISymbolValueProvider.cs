@@ -81,68 +81,60 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public override bool ConstantOnly
 		{
-			get { return true; }
+			get => true;
 			set { }
 		}
 		
-		List<DVariable> varsBeingResolved = new List<DVariable>();
+		readonly List<DVariable> varsBeingResolved = new List<DVariable>();
 
 		public override ISymbolValue this[DVariable n]
 		{
 			get
 			{
-				if (n == null){
+				if (n == null)
 					return new ErrorValue(new EvaluationException("There must be a valid variable node given in order to retrieve its value"));
-				}
 
-				if (n.IsConst)
+				if(varsBeingResolved.Contains(n)){
+					return new ErrorValue(new EvaluationException("Cannot reference itself"));
+				}
+				varsBeingResolved.Add(n);
+				try
 				{
-					if(varsBeingResolved.Contains(n)){
-						return new ErrorValue(new EvaluationException("Cannot reference itself"));
-					}
-					varsBeingResolved.Add(n);
-					// .. resolve it's pre-compile time value and make the returned value the given argument
-					ISymbolValue val;
-					try{
-						val = Evaluation.EvaluateValue(n.Initializer,this);
-					}
-					finally{
-						varsBeingResolved.Remove(n);
-					}
-
-					// If it's null, then the initializer is null - which is equal to e.g. 0 or null !;
-
-					if (val != null)
-						return val;
+					return EvaluateConstVariablesValue(n);
 				}
-
-				return new ErrorValue(new EvaluationException(n+" must have a constant initializer"));
+				finally{
+					varsBeingResolved.Remove(n);
+				}
 			}
-			set
-			{
-				throw new NotImplementedException();
-			}
+			set => throw new NotImplementedException();
 		}
 
-		public override DVariable GetLocal(string LocalName, IdentifierExpression id=null)
+		public override DVariable GetLocal(string localName, IdentifierExpression id=null)
 		{
-			var res = ExpressionTypeEvaluation.GetOverloads(id ?? new IdentifierExpression(LocalName), ResolutionContext, null, false);
+			var res = ExpressionTypeEvaluation.GetOverloads(id ?? new IdentifierExpression(localName), ResolutionContext, null, false);
 
 			if (res == null || res.Count == 0)
 				return null;
 
 			var r = res[0];
 
-			if (r is MemberSymbol)
-			{
-				var mr = (MemberSymbol)r;
+			if (r is MemberSymbol mr && mr.Definition is DVariable variable)
+				return variable;
 
-				if (mr.Definition is DVariable)
-					return(DVariable)mr.Definition;
+			LogError(id ?? new IdentifierExpression(localName), localName + " must represent a local variable or a parameter");
+			return null;
+		}
+
+		ISymbolValue EvaluateConstVariablesValue(DVariable variable)
+		{
+			if (!variable.IsConst)
+				return new ErrorValue(new EvaluationException(variable + " must have a constant initializer"));
+
+			if (variable is DEnumValue enumValueVariable && enumValueVariable.Initializer == null)
+			{
 			}
 
-			LogError(id ?? new IdentifierExpression(LocalName), LocalName + " must represent a local variable or a parameter");
-			return null;
+			return Evaluation.EvaluateValue(variable.Initializer, this);
 		}
 	}
 }

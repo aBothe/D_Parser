@@ -660,5 +660,31 @@ enum isIntOrFloat(F) = is(F == int) || is(F == float);
 			Assert.That(av.IsString);
 			Assert.That(av.StringValue, Is.EqualTo("aa"));
 		}
+
+		private const string enumSampleCode = @"module A;
+enum
+{
+    E0,
+    E7 = 7,
+    E8, // 8
+	E8_5, // 9
+    E9 = 9,
+    E11 = 11,
+}";
+
+
+		[Test]
+		public void EnumValueInitializerDefaults_RegularInitializer()
+		{
+			var ctxt = ResolutionTestHelper.CreateDefCtxt(enumSampleCode);
+
+			var x = DParser.ParseExpression("E9");
+			var v = Evaluation.EvaluateValue(x, ctxt);
+
+			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			var pv = v as PrimitiveValue;
+			Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Int));
+			Assert.That(pv.Value, Is.EqualTo(9d));
+		}
 	}
 }

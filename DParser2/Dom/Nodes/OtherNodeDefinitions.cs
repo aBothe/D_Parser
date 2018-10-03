@@ -337,6 +337,8 @@ namespace D_Parser.Dom
 		{
 			return vis.Visit(this);
 		}
+
+		public override bool IsConst => true;
 	}
 	
 	public class NamedTemplateMixinNode : DVariable
