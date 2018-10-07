@@ -183,7 +183,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// </summary>
 		ISymbolValue TryDoCTFEOrGetValueRefs(AbstractType r, IExpression idOrTemplateInstance, IEnumerable<ISymbolValue> executionArguments=null)
 		{
-			return r?.Accept(new CTFEOrValueRefsVisitor(ValueProvider, idOrTemplateInstance, executionArguments)) : null;
+			return r?.Accept(new CTFEOrValueRefsVisitor(ValueProvider, idOrTemplateInstance, executionArguments));
 		}
 
 		public ISymbolValue Visit(TemplateInstanceExpression tix)
