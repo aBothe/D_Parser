@@ -7,7 +7,7 @@ using System.Text;
 
 namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 {
-	class InterpretationContext : AbstractSymbolValueProvider
+	class InterpretationContext : StandardValueProvider
 	{
 		#region Properties
 		// Storage for already resolved symbols or such
@@ -35,18 +35,19 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 					return v;
 
 				// Assign a default value to the variable
-				var t = TypeResolution.TypeDeclarationResolver.HandleNodeMatch(variable, base.ResolutionContext) as MemberSymbol;
-				if (t != null)
+				var variableBaseType =
+					TypeResolution.DSymbolBaseTypeResolver.ResolveDVariableBaseType(variable, ResolutionContext, true);
+				if (variableBaseType != null)
 				{
-					if (t.Base is PrimitiveType)
-						v= new PrimitiveValue(0M, t.Base as PrimitiveType);
+					if (variableBaseType is PrimitiveType type)
+						v= new PrimitiveValue(0M, type);
 					else
-						v = new NullValue(t.Base as DSymbol);
+						v = new NullValue(variableBaseType);
 				}
 				else
 					v = new NullValue();
 
-				Locals[variable] = v;
+				this[variable] = v;
 
 				return v;
 			}
