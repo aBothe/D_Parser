@@ -18,7 +18,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public abstract ISymbolValue this[DVariable variable] { get; set; }
 
-		public abstract bool ConstantOnly { get; }
+		public abstract bool Readonly { get; }
 		public void LogError(ISyntaxRegion involvedSyntaxObject, string msg, params ISemantic[] temporaryResults)
 		{
 			ResolutionContext.LogError (new EvaluationError (involvedSyntaxObject, msg, temporaryResults));
@@ -46,7 +46,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	{
 		public StandardValueProvider(ResolutionContext ctxt) : base(ctxt)	{	}
 
-		public override bool ConstantOnly { get; } = true;
+		public override bool Readonly { get; } = true;
 
 		readonly List<DVariable> varsBeingResolved = new List<DVariable>();
 

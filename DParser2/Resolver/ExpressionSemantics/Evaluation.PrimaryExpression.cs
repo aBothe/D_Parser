@@ -71,7 +71,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			{
 				// References current class scope
 				case DTokens.This:
-					if (resolveConstOnly)
+					if (readonlyEvaluation)
 					{
 						EvalError(new NoConstException(x));
 						return null;
@@ -91,7 +91,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				case DTokens.Super:
 					// References super type of currently scoped class declaration
 
-					if (resolveConstOnly)
+					if (readonlyEvaluation)
 					{
 						EvalError(new NoConstException(x));
 						return null;
@@ -121,7 +121,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					return null;
 
 				case DTokens.Null:
-					if (resolveConstOnly)
+					if (readonlyEvaluation)
 					{
 						EvalError(new NoConstException(x));
 						return null;

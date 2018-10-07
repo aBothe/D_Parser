@@ -15,7 +15,6 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 		readonly Dictionary<DVariable, ISymbolValue> Locals = new Dictionary<DVariable, ISymbolValue>();
 		#endregion
 
-		#region Constructor
 		public InterpretationContext(AbstractSymbolValueProvider baseValueProvider) : base(baseValueProvider.ResolutionContext)
 		{
 			var ic = baseValueProvider as InterpretationContext;
@@ -24,7 +23,6 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 				// Copy over already resolved types and parent template symbols etc.
 			}
 		}
-		#endregion
 
 		public override ISymbolValue this[DVariable variable]
 		{
@@ -59,6 +57,6 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 			}
 		}
 
-		public override bool ConstantOnly { get; } = false;
+		public override bool Readonly { get; } = false;
 	}
 }

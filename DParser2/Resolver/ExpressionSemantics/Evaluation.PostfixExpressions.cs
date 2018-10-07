@@ -203,7 +203,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			var foreValue = ex.PostfixForeExpression != null ? ex.PostfixForeExpression.Accept(this) : null;
 
-			if (resolveConstOnly && foreValue is VariableValue)
+			if (readonlyEvaluation && foreValue is VariableValue)
 				return ValueProvider[((VariableValue)foreValue).Variable];
 
 			return foreValue;
@@ -221,7 +221,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			var foreExpr = EvalForeExpression(x);
 
-			if (resolveConstOnly)
+			if (readonlyEvaluation)
 				EvalError(new NoConstException(x));
 			// Must be implemented anyway regarding ctfe/ Op overloading
 			return null;
@@ -231,7 +231,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			var foreExpr = EvalForeExpression(x);
 
-			if (resolveConstOnly)
+			if (readonlyEvaluation)
 				EvalError(new NoConstException(x));
 			// Must be implemented anyway regarding ctfe
 			return null;
