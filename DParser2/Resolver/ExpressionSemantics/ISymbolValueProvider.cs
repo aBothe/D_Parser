@@ -13,44 +13,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public readonly ResolutionContext ResolutionContext;
 		public AbstractSymbolValueProvider(ResolutionContext ctxt)
 		{
-			this.ResolutionContext = ctxt;
-		}
-
-		public ISymbolValue this[IdentifierExpression id]
-		{
-			get
-			{
-				return this[GetLocal(id)];
-			}
-			set
-			{
-				this[GetLocal(id)] = value;
-			}
-		}
-
-		public ISymbolValue this[string LocalName]
-		{
-			get
-			{
-				return this[GetLocal(LocalName)];
-			}
-			set
-			{
-				this[GetLocal(LocalName)] = value;
-			}
+			ResolutionContext = ctxt;
 		}
 
 		public abstract ISymbolValue this[DVariable variable] { get; set; }
-
-		public DVariable GetLocal(IdentifierExpression id)
-		{
-			return GetLocal(id.StringValue, id);
-		}
-
-		/// <summary>
-		/// Searches a local/parameter variable and returns the node
-		/// </summary>
-		public abstract DVariable GetLocal(string LocalName, IdentifierExpression id=null);
 
 		public abstract bool ConstantOnly { get; set; }
 		public void LogError(ISyntaxRegion involvedSyntaxObject, string msg, params ISemantic[] temporaryResults)
@@ -108,22 +74,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				}
 			}
 			set => throw new NotImplementedException();
-		}
-
-		public override DVariable GetLocal(string localName, IdentifierExpression id=null)
-		{
-			var res = ExpressionTypeEvaluation.GetOverloads(id ?? new IdentifierExpression(localName), ResolutionContext, null, false);
-
-			if (res == null || res.Count == 0)
-				return null;
-
-			var r = res[0];
-
-			if (r is MemberSymbol mr && mr.Definition is DVariable variable)
-				return variable;
-
-			LogError(id ?? new IdentifierExpression(localName), localName + " must represent a local variable or a parameter");
-			return null;
 		}
 
 		ISymbolValue EvaluateConstVariablesValue(DVariable variable)

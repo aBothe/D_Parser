@@ -58,14 +58,6 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 			}
 		}
 
-		public override DVariable GetLocal(string LocalName, IdentifierExpression id = null)
-		{
-			foreach (var kv in Locals)
-				if (kv.Key.Name == LocalName)
-					return kv.Key;
-			return null;
-		}
-
 		public override bool ConstantOnly{get{ return false; }set{}}
 	}
 }
