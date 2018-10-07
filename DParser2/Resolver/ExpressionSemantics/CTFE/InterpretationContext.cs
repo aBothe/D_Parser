@@ -58,6 +58,6 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 			}
 		}
 
-		public override bool ConstantOnly{get{ return false; }set{}}
+		public override bool ConstantOnly { get; } = false;
 	}
 }

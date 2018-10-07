@@ -16,7 +16,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// Is not null if the expression value shall be evaluated.
 		/// </summary>
 		private readonly AbstractSymbolValueProvider ValueProvider;
-		bool resolveConstOnly { get { return ValueProvider == null || ValueProvider.ConstantOnly; } set { if(ValueProvider!=null) ValueProvider.ConstantOnly = value; } }
+		bool resolveConstOnly => ValueProvider == null || ValueProvider.ConstantOnly;
 
 		bool ignoreErrors;
 

@@ -206,7 +206,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public static string EvaluateMixinExpressionContent(AbstractSymbolValueProvider vp,MixinExpression x)
 		{
 			var ev = new Evaluation(vp);
-			ev.resolveConstOnly = true;
 
 			var v = x.AssignExpression != null ? x.AssignExpression.Accept(ev) as ArrayValue : null;
 
@@ -237,10 +236,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public ISymbolValue Visit(ImportExpression x)
 		{
-			var cnst = resolveConstOnly;
-			resolveConstOnly = true;
 			var v = x.AssignExpression != null ? x.AssignExpression.Accept(this) as ArrayValue : null;
-			resolveConstOnly = cnst;
 
 			if (v == null || !v.IsString){
 				EvalError( new InvalidStringException(x));
