@@ -43,7 +43,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					args.Add(a as ISymbolValue);
 
 			// Execute/Evaluate the variable contents etc.
-			return TryDoCTFEOrGetValueRefs(argTypeFilteredOverloads, call.PostfixForeExpression, true, args);
+			return TryDoCTFEOrGetValueRefs(argTypeFilteredOverloads, call.PostfixForeExpression, args);
 		}
 
 		public static AbstractType EvalMethodCall(IEnumerable<AbstractType> baseExpression, TemplateInstanceExpression tix,
@@ -193,7 +193,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return new List<R> { (R)new Evaluation(ValueProvider).TryDoCTFEOrGetValueRefs(
 					AmbiguousType.Get(overloads),
 					acc.AccessExpression,
-					executionArguments: new[] { baseExpression as ISymbolValue })
+					new[] { baseExpression as ISymbolValue })
 				};
 
 			return overloads as List<R>;

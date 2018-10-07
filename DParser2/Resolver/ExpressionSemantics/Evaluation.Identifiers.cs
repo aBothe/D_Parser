@@ -181,9 +181,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// Evaluates the identifier/template instance as usual.
 		/// If the id points to a variable, the initializer/dynamic value will be evaluated using its initializer.
 		/// </summary>
-		ISymbolValue TryDoCTFEOrGetValueRefs(AbstractType r, IExpression idOrTemplateInstance, bool ImplicitlyExecute = true, IEnumerable<ISymbolValue> executionArguments=null)
+		ISymbolValue TryDoCTFEOrGetValueRefs(AbstractType r, IExpression idOrTemplateInstance, IEnumerable<ISymbolValue> executionArguments=null)
 		{
-			return r != null ? r.Accept(new CTFEOrValueRefsVisitor(ValueProvider, idOrTemplateInstance, executionArguments)) : null;
+			return r?.Accept(new CTFEOrValueRefsVisitor(ValueProvider, idOrTemplateInstance, executionArguments)) : null;
 		}
 
 		public ISymbolValue Visit(TemplateInstanceExpression tix)
