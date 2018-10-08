@@ -360,40 +360,40 @@ namespace D_Parser.Resolver
 		static PropOwnerType GetOwnerType(ISemantic t)
 		{
 			if (t is TypeValue)
-				t = (t as TypeValue).RepresentedType;
+				t = ((TypeValue) t).RepresentedType;
 
-			if (t is ArrayValue || t is ArrayType)
-				return PropOwnerType.Array;
-			else if (t is AssociativeArrayValue || t is AssocArrayType)
-				return PropOwnerType.AssocArray;
-			else if (t is DelegateValue || t is DelegateType)
-				return PropOwnerType.Delegate;
-			else if (t is PrimitiveValue || t is PrimitiveType)
+			switch (t)
 			{
-				var tk = t is PrimitiveType ? (t as PrimitiveType).TypeToken : (t as PrimitiveValue).BaseTypeToken;
-				if (DTokensSemanticHelpers.IsBasicType_Integral(tk))
-					return PropOwnerType.Integral;
-				if (DTokensSemanticHelpers.IsBasicType_FloatingPoint(tk))
-					return PropOwnerType.FloatingPoint;
-			}
-			else if (t is InstanceValue || t is ClassType || t is InterfaceType || t is TemplateType)
-				return PropOwnerType.ClassLike;
-			else if (t is StructType)
-				return PropOwnerType.Struct;
-			else if (t is DTuple)
-				return PropOwnerType.TypeTuple;
-			else if (t is TemplateParameterSymbol)
-			{
-				var tps = t as TemplateParameterSymbol;
-				if (tps != null &&
-					(tps.Parameter is TemplateThisParameter ?
-						(tps.Parameter as TemplateThisParameter).FollowParameter : tps.Parameter) is TemplateTupleParameter)
+				case ArrayValue _:
+				case ArrayType _:
+					return PropOwnerType.Array;
+				case AssociativeArrayValue _:
+				case AssocArrayType _:
+					return PropOwnerType.AssocArray;
+				case DelegateValue _:
+				case DelegateType _:
+					return PropOwnerType.Delegate;
+				case PrimitiveValue _:
+				case PrimitiveType _:
+				{
+					var tk = t is PrimitiveType type ? type.TypeToken : (t as PrimitiveValue).BaseTypeToken;
+					if (DTokensSemanticHelpers.IsBasicType_Integral(tk))
+						return PropOwnerType.Integral;
+					if (DTokensSemanticHelpers.IsBasicType_FloatingPoint(tk))
+						return PropOwnerType.FloatingPoint;
+					break;
+				}
+				case ClassType _:
+				case InterfaceType _:
+				case TemplateType _:
+					return PropOwnerType.ClassLike;
+				case StructType _:
+					return PropOwnerType.Struct;
+				case DTuple _:
+				case TemplateParameterSymbol tps when (tps.Parameter is TemplateThisParameter parameter ?
+					parameter.FollowParameter : tps.Parameter) is TemplateTupleParameter:
 					return PropOwnerType.TypeTuple;
-			}
-			else if (t is MemberSymbol)
-			{
-				var ms = (t as MemberSymbol).Definition.Parent as DClassLike;
-				if (ms != null && ms.ClassType == DTokens.Struct)
+				case MemberSymbol symbol when symbol.Definition.Parent is DClassLike ms && ms.ClassType == DTokens.Struct:
 					return PropOwnerType.StructElement;
 			}
 			return PropOwnerType.None;
@@ -411,9 +411,8 @@ namespace D_Parser.Resolver
 			while (t is AliasedType || t is PointerType)
 				t = (t as DerivedDataType).Base;
 
-			var tps = t as TemplateParameterSymbol;
-			if (tps != null && tps.Base == null && 
-				(tps.Parameter is TemplateThisParameter ? (tps.Parameter as TemplateThisParameter).FollowParameter : tps.Parameter) is TemplateTupleParameter)
+			if (t is TemplateParameterSymbol tps && tps.Base == null &&
+				(tps.Parameter is TemplateThisParameter parameter ? parameter.FollowParameter : tps.Parameter) is TemplateTupleParameter)
 				return;
 			else
 				t = DResolver.StripMemberSymbols(t);
