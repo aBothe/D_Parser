@@ -35,7 +35,7 @@ namespace D_Parser.Resolver.TypeResolution
 		public AbstractType Visit (ArrayDecl ad)
 		{
 			filterTemplates = true;
-			var valueType = ad.ValueType != null ? ad.ValueType.Accept(this) : null;
+			var valueType = ad.ValueType?.Accept(this);
 
 			AbstractType keyType = null;
 			int fixedArrayLength = -1;

@@ -422,9 +422,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			while(catQueue.Count != 0)
 			{
 				var e = catQueue.Dequeue();
-				
-				var av = e as ArrayValue;
-				if(av != null)
+
+				if(e is ArrayValue av)
 				{
 					if(av.IsString)
 						elements.Add(av);
@@ -556,12 +555,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public ISymbolValue Visit(ConditionalExpression x)
 		{
-			var b = x.OrOrExpression != null ? x.OrOrExpression.Accept(this) as ISymbolValue : null;
+			var b = x.OrOrExpression?.Accept(this);
 
 			if (IsFalseZeroOrNull(b))
-				return x.FalseCaseExpression != null ? x.FalseCaseExpression.Accept(this) : null;
+				return x.FalseCaseExpression?.Accept(this);
 
-			return x.TrueCaseExpression != null ? x.TrueCaseExpression.Accept(this) : null;
+			return x.TrueCaseExpression?.Accept(this);
 		}
 
 		public ISymbolValue Visit(InExpression x)
@@ -569,7 +568,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			// The return value of the InExpression is null if the element is not in the array; 
 			// if it is in the array it is a pointer to the element.
 
-			return x.RightOperand != null ? x.RightOperand.Accept(this) : null;
+			return x.RightOperand?.Accept(this);
 		}
 	}
 }

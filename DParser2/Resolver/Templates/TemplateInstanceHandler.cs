@@ -29,45 +29,33 @@ namespace D_Parser.Resolver.TypeResolution
 					if (arg == null)
 						continue;
 
-					AbstractType res;
-
 					var aliasThisParam = arg is IntermediateIdType
 							&& IsTemplateAliasParameterAtIndex(rawOverloadList, currentTemplateArgumentIndex);
 
-					if (!aliasThisParam && arg is IExpression)
+					if (!aliasThisParam && arg is IExpression expression)
 					{
-						ISemantic v = Evaluation.EvaluateValue(arg as IExpression, ctxt, true);
-						if (v is VariableValue)
-						{
-							var vv = v as VariableValue;
-							if (vv.Variable.IsConst && vv.Variable.Initializer != null)
-								v = Evaluation.EvaluateValue(vv, new StandardValueProvider(ctxt));
-						}
-
+						ISemantic v = Evaluation.EvaluateValue(expression, ctxt);
 						v = StripValueTypeWrappers(v);
 						templateArguments.Add(v);
 					}
 					else
 					{
+						AbstractType res;
 						if (aliasThisParam)
 							res = AmbiguousType.Get(ExpressionTypeEvaluation.GetOverloads(arg as IntermediateIdType, ctxt, null, false));
-						else if (arg is ITypeDeclaration)
-							res = TypeDeclarationResolver.ResolveSingle(arg as ITypeDeclaration, ctxt);
+						else if (arg is ITypeDeclaration td)
+							res = TypeDeclarationResolver.ResolveSingle(td, ctxt);
 						else
 							throw new ArgumentNullException("arg");
 
-						var amb = res as AmbiguousType;
-						if (amb != null)
+						if (res is AmbiguousType amb)
 						{
 							// Error
 							res = amb.Overloads[0];
 						}
 
-						var mr = res as MemberSymbol;
-						if (mr != null && mr.Definition is DVariable)
+						if (res is MemberSymbol mr && mr.Definition is DVariable dv)
 						{
-							var dv = (DVariable)mr.Definition;
-
 							if (dv.IsAlias || dv.Initializer == null)
 							{
 								templateArguments.Add(mr);
@@ -80,12 +68,12 @@ namespace D_Parser.Resolver.TypeResolution
 							{
 								eval = new StandardValueProvider(ctxt)[dv];
 							}
-							catch (System.Exception ee) // Should be a non-const-expression error here only
+							catch (Exception ee) // Should be a non-const-expression error here only
 							{
 								ctxt.LogError(dv.Initializer, ee.Message);
 							}
 
-							templateArguments.Add(eval ?? (ISemantic)mr);
+							templateArguments.Add(eval ?? mr);
 						}
 						else
 							templateArguments.Add(res);
