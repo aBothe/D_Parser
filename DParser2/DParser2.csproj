@@ -177,6 +177,7 @@
     <Compile Include="Misc\CompletionOptions.cs" />
     <Compile Include="Misc\ModuleNameHelper.cs" />
     <Compile Include="Resolver\ASTScanner\NameScan.cs" />
+    <Compile Include="Resolver\Model\ComplexValue.cs" />
     <Compile Include="Resolver\Model\DType.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.PrimaryExpression.cs" />
     <Compile Include="Resolver\Model\ISemantic.cs" />
