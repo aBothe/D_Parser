@@ -28,7 +28,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			GetRawCallOverloads(ctxt, call, out baseExpression, out tix);
 
-			var argTypeFilteredOverloads = EvalMethodCall(baseExpression, tix, ctxt, call, out callArguments, out delegValue, returnBaseTypeOnly, ValueProvider);
+			var argTypeFilteredOverloads = EvalMethodCall(baseExpression, tix, ctxt, call, out callArguments, out delegValue, returnBaseTypeOnly, evaluationState);
 
 			if (delegValue != null)
 				return delegValue;
@@ -49,7 +49,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public static AbstractType EvalMethodCall(IEnumerable<AbstractType> baseExpression, TemplateInstanceExpression tix,
 			ResolutionContext ctxt, 
 			PostfixExpression_MethodCall call, out List<ISemantic> callArguments, out ISymbolValue delegateValue,
-			bool returnBaseTypeOnly, AbstractSymbolValueProvider ValueProvider = null)
+			bool returnBaseTypeOnly, StatefulEvaluationContext ValueProvider = null)
 		{
 			delegateValue = null;
 			callArguments = null;
@@ -125,7 +125,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// Also handles UFCS - so if filtering is wanted, the function becom
 		/// </summary>
 		public static List<R> EvalPostfixAccessExpression<R>(ExpressionVisitor<R> vis, ResolutionContext ctxt,PostfixExpression_Access acc,
-			ISemantic resultBase = null, bool EvalAndFilterOverloads = true, bool ResolveImmediateBaseType = true, AbstractSymbolValueProvider ValueProvider = null)
+			ISemantic resultBase = null, bool EvalAndFilterOverloads = true, bool ResolveImmediateBaseType = true, StatefulEvaluationContext ValueProvider = null)
 			where R : class,ISemantic
 		{
 			if (acc == null)
@@ -204,14 +204,14 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var foreValue = ex.PostfixForeExpression != null ? ex.PostfixForeExpression.Accept(this) : null;
 
 			if (readonlyEvaluation && foreValue is VariableValue)
-				return ValueProvider[((VariableValue)foreValue).Variable];
+				return EvaluateVariableValue((VariableValue)foreValue);
 
 			return foreValue;
 		}
 
 		public ISymbolValue Visit(PostfixExpression_Access ex)
 		{
-			var r = EvalPostfixAccessExpression(this, ctxt, ex, null, true, ValueProvider:ValueProvider);
+			var r = EvalPostfixAccessExpression(this, ctxt, ex, null, true, ValueProvider:evaluationState);
 			ctxt.CheckForSingleResult(r, ex);
 
 			return r != null && r.Count > 0 ? r[0] : null;
@@ -258,21 +258,21 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return foreExpression;
 		}
 
+		private int currentArrayLength = -1;
+
 		ISymbolValue AccessArrayAtIndex(PostfixExpression_ArrayAccess x, ISymbolValue foreExpression, PostfixExpression_ArrayAccess.IndexArgument ix)
 		{
 			//TODO: Access pointer arrays(?)
 
-			if (foreExpression is ArrayValue) // ArrayValue must be checked first due to inheritance!
+			if (foreExpression is ArrayValue av) // ArrayValue must be checked first due to inheritance!
 			{
-				var av = foreExpression as ArrayValue;
-
 				// Make $ operand available
-				var arrLen_Backup = ValueProvider.CurrentArrayLength;
-				ValueProvider.CurrentArrayLength = av.Length;
+				var arrLen_Backup = currentArrayLength;
+				currentArrayLength = av.Length;
 
 				var n = ix.Expression.Accept(this) as PrimitiveValue;
 
-				ValueProvider.CurrentArrayLength = arrLen_Backup;
+				currentArrayLength = arrLen_Backup;
 
 				if (n == null)
 				{
@@ -280,7 +280,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					return null;
 				}
 
-				int i = 0;
+				int i;
 				try
 				{
 					i = Convert.ToInt32(n.Value);
@@ -304,10 +304,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				}
 				else return av.Elements[i];
 			}
-			else if (foreExpression is AssociativeArrayValue)
+			else if (foreExpression is AssociativeArrayValue aa)
 			{
-				var aa = (AssociativeArrayValue)foreExpression;
-
 				var key = ix.Expression.Accept(this) as PrimitiveValue;
 
 				if (key == null)
@@ -348,15 +346,15 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return foreExpression;
 
 			// Make $ operand available
-			var arrLen_Backup = ValueProvider.CurrentArrayLength;
+			var arrLen_Backup = currentArrayLength;
 			var len = ar.Length;
-			ValueProvider.CurrentArrayLength = len;
+			currentArrayLength = len;
 
 			//TODO: Strip aliases and whatever things may break this
 			var bound_lower = sl.LowerBoundExpression.Accept(this) as PrimitiveValue;
 			var bound_upper = sl.UpperBoundExpression.Accept(this) as PrimitiveValue;
 
-			ValueProvider.CurrentArrayLength = arrLen_Backup;
+			currentArrayLength = arrLen_Backup;
 
 			if (bound_lower == null || bound_upper == null)
 			{

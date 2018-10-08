@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using D_Parser.Dom;
+﻿using D_Parser.Dom;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
@@ -9,8 +8,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	public abstract class LValue : ReferenceValue
 	{
 		protected LValue(MemberSymbol nodeType) : base(nodeType) { }
-
-		public abstract void Set(AbstractSymbolValueProvider vp, ISymbolValue value);
 	}
 
 	/// <summary>
@@ -24,16 +21,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public VariableValue(MemberSymbol mr) : base(mr)
 		{ }
 
-		public override void Set(AbstractSymbolValueProvider vp, ISymbolValue value)
-		{
-			vp[ReferencedNode as DVariable] = value;
-		}
-
 		public override string ToCode()
 		{
 			return ReferencedNode == null ? "null" : ReferencedNode.ToString(false);
 		}
-
 
 		public override void Accept(ISymbolValueVisitor vis)
 		{
@@ -42,24 +33,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public override R Accept<R>(ISymbolValueVisitor<R> vis)
 		{
 			return vis.VisitVariableValue(this);
-		}
-	}
-
-	/// <summary>
-	/// Used for static properties.
-	/// </summary>
-	public class StaticVariableValue : VariableValue
-	{
-		public StaticVariableValue(MemberSymbol staticPropertyResult)
-			: base(staticPropertyResult) { }
-		
-		public StaticVariableValue(DVariable artificialVariable, AbstractType propType)
-			: base(new MemberSymbol(artificialVariable, propType, null)) { }
-
-		public override void Set(AbstractSymbolValueProvider vp, ISymbolValue value)
-		{
-			vp.LogError(null,"Cannot assign a value to a static property.", new[]{this, value});
-			//TODO: What about array.length?
 		}
 	}
 
@@ -73,45 +46,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// If -1, a item passed to Set() will be added instead of replaced.
 		/// </summary>
 		public readonly int ItemNumber;
-
-		public override void Set(AbstractSymbolValueProvider vp, ISymbolValue value)
-		{
-			var oldV = vp[Variable];
-
-			if (oldV is ArrayValue)
-			{
-				var av = (ArrayValue)oldV;
-
-				//TODO: Immutability checks
-
-				if (av.IsString)
-				{
-
-				}
-				else
-				{
-					var at = av.RepresentedType as ArrayType;
-					var newElements = new ISymbolValue[av.Elements.Length + (ItemNumber<0 ? 1:0)];
-					av.Elements.CopyTo(newElements, 0);
-
-					if (!ResultComparer.IsImplicitlyConvertible(value.RepresentedType, at.ValueType)){
-						vp.LogError(null,value.ToCode() + " must be implicitly convertible to the array's value type!", value);
-						return;
-					}
-
-					// Add..
-					if (ItemNumber < 0)
-						av.Elements[av.Elements.Length - 1] = value;
-					else // or set the new value
-						av.Elements[ItemNumber] = value;
-
-					vp[Variable] = new ArrayValue(at, newElements);
-				}
-			}
-			else{
-				vp.LogError(null,"Type of accessed item must be an array", oldV);
-			}
-		}
 
 		public ArrayPointer(MemberSymbol arrayVariable, int accessedItem)
 			: base(arrayVariable)
@@ -148,50 +82,5 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			Key = accessedItemKey;
 		}
-
-		public override void Set(AbstractSymbolValueProvider vp, ISymbolValue value)
-		{
-			var oldV = vp[Variable];
-
-			if (oldV is AssociativeArrayValue)
-			{
-				if (Key != null)
-				{
-					var aa = (AssociativeArrayValue)oldV;
-
-					int itemToReplace = -1;
-
-					for (int i = 0; i < aa.Elements.Count; i++)
-						if (SymbolValueComparer.IsEqual(aa.Elements[i].Key, Key))
-						{
-							itemToReplace = i;
-							break;
-						}
-
-					// If we haven't found a matching key, add it to the array
-					var newElements = new KeyValuePair<ISymbolValue, ISymbolValue>[aa.Elements.Count + (itemToReplace == -1 ? 1 : 0)];
-					aa.Elements.CopyTo(newElements, 0);
-
-					if (itemToReplace != -1)
-						newElements[itemToReplace] = new KeyValuePair<ISymbolValue, ISymbolValue>(newElements[itemToReplace].Key, value);
-					else
-						newElements[newElements.Length - 1] = new KeyValuePair<ISymbolValue, ISymbolValue>(Key, value);
-
-					// Finally, make a new associative array containing the new elements
-					vp[Variable] = new AssociativeArrayValue(aa.RepresentedType as AssocArrayType, newElements);
-				}
-				else{
-					vp.LogError(null,"Key expression must not be null", Key);
-				}
-			}
-			else{
-				vp.LogError(null,"Type of accessed item must be an associative array", oldV);
-			}
-		}
 	}
-
-	/*public class PointerValue : ExpressionValue
-	{
-
-	}*/
 }

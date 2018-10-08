@@ -159,7 +159,6 @@
     <Compile Include="Resolver\DTypeToCodeVisitor.cs" />
     <Compile Include="Resolver\DTypeToTypeDeclVisitor.cs" />
     <Compile Include="Resolver\ExpressionSemantics\CTFE\FunctionEvaluation.cs" />
-    <Compile Include="Resolver\ExpressionSemantics\CTFE\InterpretationContext.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.Identifiers.cs" />
     <Compile Include="Resolver\ExpressionSemantics\EvaluationException.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.TypeidExpression.cs" />
@@ -167,7 +166,8 @@
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.UnaryExpressions.cs" />
     <Compile Include="Resolver\ExpressionSemantics\ExpressionTypeEvaluation.cs" />
     <Compile Include="Resolver\ExpressionSemantics\ISymbolValue.cs" />
-    <Compile Include="Resolver\ExpressionSemantics\ISymbolValueProvider.cs" />
+    <Compile Include="Resolver\ExpressionSemantics\LeftValueSetterVisitor.cs" />
+    <Compile Include="Resolver\ExpressionSemantics\StatefulEvaluationContext.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.IsExpression.cs" />
     <Compile Include="Resolver\ExpressionSemantics\ISymbolValueVisitor.cs" />
     <Compile Include="Resolver\ExpressionSemantics\LeftValues.cs" />
@@ -177,6 +177,7 @@
     <Compile Include="Misc\CompletionOptions.cs" />
     <Compile Include="Misc\ModuleNameHelper.cs" />
     <Compile Include="Resolver\ASTScanner\NameScan.cs" />
+    <Compile Include="Resolver\ExpressionSemantics\VariableValueEvaluation.cs" />
     <Compile Include="Resolver\Model\ComplexValue.cs" />
     <Compile Include="Resolver\Model\DType.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.PrimaryExpression.cs" />

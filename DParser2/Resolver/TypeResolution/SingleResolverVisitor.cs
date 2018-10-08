@@ -47,7 +47,7 @@ namespace D_Parser.Resolver.TypeResolution
 				if (val != null)
 				{
 					// It should be mostly a number only that points out how large the final array should be
-					var pv = Evaluation.GetVariableContents(val, new StandardValueProvider(ctxt)) as PrimitiveValue;
+					var pv = val as PrimitiveValue;
 					if (pv != null)
 					{
 						fixedArrayLength = System.Convert.ToInt32(pv.Value);

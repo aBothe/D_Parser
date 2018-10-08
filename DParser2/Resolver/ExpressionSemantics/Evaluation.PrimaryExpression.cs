@@ -132,8 +132,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 				case DTokens.Dollar:
 					// It's only allowed if the evaluation stack contains an array value
-					if (ValueProvider.CurrentArrayLength != -1)
-						return new PrimitiveValue(ValueProvider.CurrentArrayLength);
+					if (currentArrayLength != -1)
+						return new PrimitiveValue(currentArrayLength);
 					else
 					{
 						EvalError(x, "Dollar not allowed here!");
@@ -200,21 +200,19 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public static string EvaluateMixinExpressionContent(ResolutionContext ctxt, MixinExpression x)
 		{
-			return EvaluateMixinExpressionContent(new StandardValueProvider(ctxt), x);
+			return EvaluateMixinExpressionContent(null, ctxt, x);
 		}
 
-		public static string EvaluateMixinExpressionContent(AbstractSymbolValueProvider vp,MixinExpression x)
+		static string EvaluateMixinExpressionContent(StatefulEvaluationContext vp, ResolutionContext ctxt, MixinExpression x)
 		{
-			var ev = new Evaluation(vp);
+			var ev = vp != null ? new Evaluation(vp) : new Evaluation(ctxt);
 
-			var v = x.AssignExpression != null ? x.AssignExpression.Accept(ev) as ArrayValue : null;
-
-			return v != null && v.IsString ? v.StringValue : null;
+			return x.AssignExpression?.Accept(ev) is ArrayValue v && v.IsString ? v.StringValue : null;
 		}
 
 		public ISymbolValue Visit(MixinExpression x)
 		{
-			var s = EvaluateMixinExpressionContent(ValueProvider, x);
+			var s = EvaluateMixinExpressionContent(evaluationState, ctxt, x);
 
 			if (s == null)
 			{
@@ -236,7 +234,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public ISymbolValue Visit(ImportExpression x)
 		{
-			var v = x.AssignExpression != null ? x.AssignExpression.Accept(this) as ArrayValue : null;
+			var v = x.AssignExpression?.Accept(this) as ArrayValue;
 
 			if (v == null || !v.IsString){
 				EvalError( new InvalidStringException(x));

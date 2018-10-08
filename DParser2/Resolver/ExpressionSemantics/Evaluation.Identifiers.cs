@@ -12,13 +12,17 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	{
 		class CTFEOrValueRefsVisitor : IResolvedTypeVisitor<ISymbolValue>
 		{
-			IExpression idOrTemplateInstance;
-			IEnumerable<ISymbolValue> executionArguments;
-			AbstractSymbolValueProvider ValueProvider;
+			readonly IExpression idOrTemplateInstance;
+			readonly IEnumerable<ISymbolValue> executionArguments;
+			readonly StatefulEvaluationContext ValueProvider;
+			readonly ResolutionContext ctxt;
 
-			public CTFEOrValueRefsVisitor(AbstractSymbolValueProvider vp,IExpression idOrTemplateInstance, IEnumerable<ISymbolValue> executionArguments = null)
+			public CTFEOrValueRefsVisitor(StatefulEvaluationContext vp, ResolutionContext ctxt,
+				IExpression idOrTemplateInstance,
+				IEnumerable<ISymbolValue> executionArguments = null)
 			{
 				ValueProvider = vp;
+				this.ctxt = ctxt;
 				this.idOrTemplateInstance = idOrTemplateInstance;
 				this.executionArguments = executionArguments;
 			}
@@ -112,10 +116,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				if (mr.Definition is DMethod)
 				{
 					Dictionary<DVariable, ISymbolValue> targetArgs;
-					if(!FunctionEvaluation.AssignCallArgumentsToIC(mr, executionArguments, ValueProvider, out targetArgs))
+					if(!FunctionEvaluation.AssignCallArgumentsToIC(mr, executionArguments,
+						ValueProvider, out targetArgs, ctxt))
 						return null;
 
-					return FunctionEvaluation.Execute(mr, targetArgs, ValueProvider);
+					return FunctionEvaluation.Execute(mr, targetArgs, ctxt);
 				}
 
 				// Are there other types to execute/handle?
@@ -183,7 +188,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// </summary>
 		ISymbolValue TryDoCTFEOrGetValueRefs(AbstractType r, IExpression idOrTemplateInstance, IEnumerable<ISymbolValue> executionArguments=null)
 		{
-			return r?.Accept(new CTFEOrValueRefsVisitor(ValueProvider, idOrTemplateInstance, executionArguments));
+			return r?.Accept(new CTFEOrValueRefsVisitor(evaluationState, ctxt, idOrTemplateInstance, executionArguments));
 		}
 
 		public ISymbolValue Visit(TemplateInstanceExpression tix)

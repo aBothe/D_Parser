@@ -618,7 +618,7 @@ else
 
 			var A = pcl.FirstPackage()["A"];
 
-			var ctxt = CreateDefCtxt(pcl, A, null);
+			var ctxt = CreateDefCtxt(pcl, A);
 
 			var x = R("a", ctxt);
 			Assert.AreEqual(1, x.Count);
@@ -626,9 +626,8 @@ else
 			x = R("b", ctxt);
 			Assert.AreEqual(0, x.Count);
 
-			var v = Evaluation.EvaluateValue(DParser.ParseExpression("Templ!int"), ctxt, true);
-			Assert.That(v, Is.InstanceOf(typeof(VariableValue)));
-			v = Evaluation.EvaluateValue(v as VariableValue, new StandardValueProvider(ctxt));
+			var v = Evaluation.EvaluateValue(DParser.ParseExpression("Templ!int"), ctxt, out var variableValue);
+			Assert.That(variableValue, Is.Not.Null);
 			Assert.That(v, Is.InstanceOf(typeof(PrimitiveValue)));
 			var pv = (PrimitiveValue)v;
 			Assert.AreEqual(1m, pv.Value);

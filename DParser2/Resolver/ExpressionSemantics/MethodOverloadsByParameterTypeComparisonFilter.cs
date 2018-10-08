@@ -12,7 +12,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			PostfixExpression_MethodCall call,
 			IEnumerable<AbstractType> methodOverloads,
 			ResolutionContext ctxt,
-			AbstractSymbolValueProvider valueProvider,
+			StatefulEvaluationContext valueProvider,
 			bool returnBaseTypeOnly,
 			out List<ISemantic> callArguments,
 			ref ISymbolValue delegateValue)
@@ -36,7 +36,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return AmbiguousType.Get(visitor.argTypeFilteredOverloads);
 		}
 
-		static List<ISemantic> GetCallArgumentsTypes(ResolutionContext ctxt, PostfixExpression_MethodCall call, AbstractSymbolValueProvider ValueProvider)
+		static List<ISemantic> GetCallArgumentsTypes(ResolutionContext ctxt, PostfixExpression_MethodCall call, StatefulEvaluationContext ValueProvider)
 		{
 			var callArguments = new List<ISemantic>();
 			if (call.Arguments != null)
@@ -57,7 +57,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			readonly PostfixExpression_MethodCall call;
 			ResolutionContext ctxt;
-			AbstractSymbolValueProvider valueProvider;
+			StatefulEvaluationContext valueProvider;
 			bool returnBaseTypeOnly;
 			List<ISemantic> callArguments;
 
@@ -70,7 +70,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			public OverloadFilterVisitor(
 				PostfixExpression_MethodCall call,
 				ResolutionContext ctxt,
-				AbstractSymbolValueProvider valueProvider,
+				StatefulEvaluationContext valueProvider,
 				bool returnBaseTypeOnly,
 				List<ISemantic> callArguments)
 			{

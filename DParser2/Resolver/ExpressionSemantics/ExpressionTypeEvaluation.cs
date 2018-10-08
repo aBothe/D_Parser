@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using D_Parser.Resolver.Templates;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
@@ -1353,7 +1354,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// Evaluates the first argument to <param name="t">t</param>, 
 		/// takes the second traits argument, tries to evaluate it to a string, and puts it + the first arg into an postfix_access expression
 		/// </summary>
-		internal static PostfixExpression_Access prepareMemberTraitExpression(ResolutionContext ctxt, TraitsExpression te, out AbstractType t, AbstractSymbolValueProvider vp = null)
+		internal static PostfixExpression_Access prepareMemberTraitExpression(ResolutionContext ctxt, TraitsExpression te, out AbstractType t, StatefulEvaluationContext vp = null)
 		{
 			if (te.Arguments != null && te.Arguments.Length == 2)
 			{

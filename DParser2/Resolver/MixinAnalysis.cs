@@ -96,13 +96,10 @@ namespace D_Parser.Resolver
 					}
 
 					// Evaluate the mixin expression
-					v = Evaluation.EvaluateValue(mx.MixinExpression, ctxt, true);
-					evaluatedVariable = v as VariableValue;
-					if (evaluatedVariable != null)
-						v = Evaluation.EvaluateValue(evaluatedVariable, new StandardValueProvider(ctxt));
+					v = Evaluation.EvaluateValue(mx.MixinExpression, ctxt, out evaluatedVariable);
 				}
 			}
-			
+
 			// Ensure it's a string literal
 			if (v is ArrayValue av && av.IsString) {
 				ISyntaxRegion parsedCode;

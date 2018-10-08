@@ -5,8 +5,9 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Resolver.Templates;
 using D_Parser.Resolver.ExpressionSemantics;
 using System;
+using D_Parser.Resolver.TypeResolution;
 
-namespace D_Parser.Resolver.TypeResolution
+namespace D_Parser.Resolver.Templates
 {
 	public static class TemplateInstanceHandler
 	{
@@ -63,10 +64,9 @@ namespace D_Parser.Resolver.TypeResolution
 							}
 
 							ISemantic eval = null;
-
 							try
 							{
-								eval = new StandardValueProvider(ctxt)[dv];
+								eval = Evaluation.EvaluateValue(dv.Initializer, ctxt);
 							}
 							catch (Exception ee) // Should be a non-const-expression error here only
 							{
@@ -104,7 +104,7 @@ namespace D_Parser.Resolver.TypeResolution
 			}
 			return false;
 		}
-		
+
 		internal static bool IsNonFinalArgument(ISemantic v)
 		{
 			return (v is TypeValue && (v as TypeValue).RepresentedType is TemplateParameterSymbol) ||
@@ -127,13 +127,13 @@ namespace D_Parser.Resolver.TypeResolution
 		}
 
 		/// <summary>
-		/// Associates the given arguments with the template parameters specified in the type/method declarations 
+		/// Associates the given arguments with the template parameters specified in the type/method declarations
 		/// and filters out unmatching overloads.
 		/// </summary>
 		/// <param name="rawOverloadList">Can be either type results or method results</param>
-		/// <param name="givenTemplateArguments">A list of already resolved arguments passed explicitly 
-		/// in the !(...) section of a template instantiation 
-		/// or call arguments given in the (...) appendix 
+		/// <param name="givenTemplateArguments">A list of already resolved arguments passed explicitly
+		/// in the !(...) section of a template instantiation
+		/// or call arguments given in the (...) appendix
 		/// that follows a method identifier</param>
 		/// <param name="isMethodCall">If true, arguments that exceed the expected parameter count will be ignored as far as all parameters could be satisfied.</param>
 		/// <param name="ctxt"></param>
@@ -170,8 +170,6 @@ namespace D_Parser.Resolver.TypeResolution
 					try
 					{
 						var v = Evaluation.EvaluateValue(ds.Definition.TemplateConstraint, ctxt);
-						if (v is VariableValue)
-							v = new StandardValueProvider(ctxt)[((VariableValue)v).Variable];
 						if (!Evaluation.IsFalseZeroOrNull(v))
 							templateConstraintFilteredOverloads.Add(ds);
 					}
@@ -235,7 +233,7 @@ namespace D_Parser.Resolver.TypeResolution
 			// Get actual overloads
 			AbstractType deducedType = null;
 			var def = ept.Definition;
-			deducedType = new MemberSymbol(def, def.Type != null ? 
+			deducedType = new MemberSymbol(def, def.Type != null ?
 				TypeDeclarationResolver.ResolveSingle(def.Type, ctxt) :
 				ExpressionTypeEvaluation.EvaluateType(def.Initializer, ctxt), ept.DeducedTypes); //ept; //ExpressionTypeEvaluation.EvaluateType (ept.Definition.Initializer, ctxt);
 
@@ -248,8 +246,8 @@ namespace D_Parser.Resolver.TypeResolution
 		}
 
 		private static List<AbstractType> DeduceOverloads(
-			IEnumerable<AbstractType> rawOverloadList, 
-			IEnumerable<ISemantic> givenTemplateArguments, 
+			IEnumerable<AbstractType> rawOverloadList,
+			IEnumerable<ISemantic> givenTemplateArguments,
 			bool isMethodCall,
 			ResolutionContext ctxt)
 		{
@@ -309,10 +307,10 @@ namespace D_Parser.Resolver.TypeResolution
 			return filteredOverloads;
 		}
 
-		internal static bool DeduceParams(IEnumerable<ISemantic> givenTemplateArguments, 
-			bool isMethodCall, 
-			ResolutionContext ctxt, 
-			DSymbol overload, 
+		internal static bool DeduceParams(IEnumerable<ISemantic> givenTemplateArguments,
+			bool isMethodCall,
+			ResolutionContext ctxt,
+			DSymbol overload,
 			DNode tplNode,
 			DeducedTypeDictionary deducedTypes)
 		{
@@ -330,10 +328,10 @@ namespace D_Parser.Resolver.TypeResolution
 			return true;
 		}
 
-		private static bool DeduceParam(ResolutionContext ctxt, 
-			DSymbol overload, 
+		private static bool DeduceParam(ResolutionContext ctxt,
+			DSymbol overload,
 			DeducedTypeDictionary deducedTypes,
-			IEnumerator<ISemantic> argEnum, 
+			IEnumerator<ISemantic> argEnum,
 			TemplateParameter expectedParam)
 		{
 			if (expectedParam is TemplateThisParameter && overload != null && overload.Base != null)
@@ -346,7 +344,7 @@ namespace D_Parser.Resolver.TypeResolution
 				if (t == null)
 					return false;
 
-				//TODO: Still not sure if it's ok to pass a type result to it 
+				//TODO: Still not sure if it's ok to pass a type result to it
 				// - looking at things like typeof(T) that shall return e.g. const(A) instead of A only.
 
 				if (!CheckAndDeduceTypeAgainstTplParameter(ttp, t, deducedTypes, ctxt))
@@ -410,7 +408,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return false;
 		}
 
-		static bool CheckAndDeduceTypeAgainstTplParameter(TemplateParameter handledParameter, 
+		static bool CheckAndDeduceTypeAgainstTplParameter(TemplateParameter handledParameter,
 			ISemantic argumentToCheck,
 			DeducedTypeDictionary deducedTypes,
 			ResolutionContext ctxt)
@@ -418,7 +416,7 @@ namespace D_Parser.Resolver.TypeResolution
 			return new TemplateParameterDeduction(deducedTypes, ctxt).Handle(handledParameter, argumentToCheck);
 		}
 
-		static bool CheckAndDeduceTypeTuple(TemplateTupleParameter tupleParameter, 
+		static bool CheckAndDeduceTypeTuple(TemplateTupleParameter tupleParameter,
 			IEnumerable<ISemantic> typeChain,
 			DeducedTypeDictionary deducedTypes,
 			ResolutionContext ctxt)

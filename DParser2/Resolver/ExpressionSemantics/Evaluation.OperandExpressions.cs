@@ -446,8 +446,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		ISymbolValue TryGetValue(ISemantic s)
 		{
-			if (s is VariableValue)
-				return EvaluateValue(s as VariableValue, ValueProvider);
+			if (s is VariableValue value)
+				return EvaluateVariableValue(value);
 
 			return s as ISymbolValue;
 		}

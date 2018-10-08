@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
+using D_Parser.Parser;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
@@ -10,53 +11,51 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	{
 		#region Properties
 		private readonly ResolutionContext ctxt;
-		public List<EvaluationException> Errors;
+		readonly List<EvaluationException> Errors = new List<EvaluationException>();
 
 		/// <summary>
 		/// Is not null if the expression value shall be evaluated.
 		/// </summary>
-		private readonly AbstractSymbolValueProvider ValueProvider;
-		bool readonlyEvaluation => ValueProvider == null || ValueProvider.Readonly;
+		private readonly StatefulEvaluationContext evaluationState;
+		bool readonlyEvaluation => evaluationState == null;
 
 		bool ignoreErrors;
 
 		/// <summary>
 		/// Intermediate left operand operator-expressions.
 		/// </summary>
-		public ISymbolValue lValue;
+		ISymbolValue lValue;
 		/// <summary>
 		/// Intermediate right operand operator-expressions.
 		/// </summary>
-		public ISymbolValue rValue;
+		ISymbolValue rValue;
 		#endregion
 
-		#region Constructor
 		[DebuggerStepThrough]
-		Evaluation(AbstractSymbolValueProvider vp) { 
-			this.ValueProvider = vp; 
-			this.ctxt = vp.ResolutionContext;
-			Errors = new List<EvaluationException>();
-
-			ignoreErrors = false;
-			rValue = null;
-			lValue = null;
+		Evaluation(StatefulEvaluationContext vp) : this(vp.ResolutionContext) {
+			evaluationState = vp;
 		}
-		#endregion
+
+		Evaluation(ResolutionContext ctxt)
+		{
+			evaluationState = null;
+			this.ctxt = ctxt;
+		}
 		
 		#region Errors
-		internal void EvalError(EvaluationException ex)
+		void EvalError(EvaluationException ex)
 		{
 			if(!ignoreErrors)
 				Errors.Add(ex);
 		}
 		
-		internal void EvalError(IExpression x, string msg, ISemantic[] lastResults = null)
+		void EvalError(IExpression x, string msg, ISemantic[] lastResults = null)
 		{
 			if(!ignoreErrors)
 				Errors.Add(new EvaluationException(x,msg,lastResults));
 		}
 		
-		internal void EvalError(IExpression x, string msg, ISemantic lastResult)
+		void EvalError(IExpression x, string msg, ISemantic lastResult)
 		{
 			if(!ignoreErrors)
 				Errors.Add(new EvaluationException(x,msg,new[]{lastResult}));
@@ -64,70 +63,135 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		#endregion
 
 		/// <summary>
-		/// Uses the standard value provider for expression value evaluation
+		/// Readonly expression evaluation.
 		/// </summary>
-		public static ISymbolValue EvaluateValue (IExpression x, ResolutionContext ctxt, bool lazyVariableValueEvaluation = false)
+		public static ISymbolValue EvaluateValue (IExpression x, ResolutionContext ctxt)
 		{
+			return EvaluateValue(x, ctxt, out _);
+		}
+
+		/// <summary>
+		/// Readonly expression evaluation.
+		/// </summary>
+		public static ISymbolValue EvaluateValue (IExpression x, ResolutionContext ctxt, out VariableValue evaluatedVariableValue)
+		{
+			evaluatedVariableValue = null;
+			if (x == null)
+				return null;
+
+			if (ctxt == null)
+				throw new ArgumentNullException(nameof(ctxt));
+
 			if (ctxt.CancellationToken.IsCancellationRequested)
 				return new TypeValue(new UnknownType(x));
 
-			var vp = new StandardValueProvider (ctxt);
-			var v = EvaluateValue (x, vp);
-				
-			if (v is VariableValue && !lazyVariableValueEvaluation)
-				return EvaluateValue (v as VariableValue, vp);
+			var evaluation = new Evaluation (ctxt);
 
-			return v;
+			var v = x.Accept(evaluation);
+
+			if (!(v is VariableValue variableValue))
+			{
+				if(v == null && evaluation.Errors.Count != 0)
+					return new ErrorValue(evaluation.Errors.ToArray());
+				return v;
+			}
+
+			evaluatedVariableValue = variableValue;
+			return new Evaluation(ctxt).EvaluateVariableValue(variableValue);
 		}
 
-		public static ISymbolValue EvaluateValue(IExpression x, AbstractSymbolValueProvider vp)
+		public static ISymbolValue EvaluateValue(IExpression x, StatefulEvaluationContext vp)
 		{
 			if (x == null)
 				return null;
 
 			if (vp == null)
-				throw new ArgumentNullException("vp");
-			ISymbolValue v;
-			if (vp.ResolutionContext != null)
-			{
-				if(vp.ResolutionContext.CancellationToken.IsCancellationRequested)
-					return new TypeValue(new UnknownType(x));
-				/*
-				if (vp is StandardValueProvider) // only for read-only/immutable expression value states
-				{
-					v = vp.ResolutionContext.ValueCache.TryGetType(x);
-					if (v != null)
-						return v;
-				}*/
-			}
+				throw new ArgumentNullException(nameof(vp));
+
+			if (vp.ResolutionContext != null && vp.ResolutionContext.CancellationToken.IsCancellationRequested)
+				return new TypeValue(new UnknownType(x));
 
 			var ev = new Evaluation(vp);
 
-			v = x.Accept(ev);
+			var v = x.Accept(ev);
 
 			if(v == null && ev.Errors.Count != 0)
 				return new ErrorValue(ev.Errors.ToArray());
-			/*
-			if(vp.ResolutionContext != null && vp is StandardValueProvider)
-				vp.ResolutionContext.ValueCache.Add(v, x);
-			*/
+
 			return v;
 		}
 		
-		public static ISymbolValue EvaluateValue(VariableValue v, AbstractSymbolValueProvider vp)
+		ISymbolValue EvaluateVariableValue(VariableValue v)
 		{
-			if (vp.ResolutionContext != null && vp.ResolutionContext.CancellationToken.IsCancellationRequested)
+			if (ctxt != null && ctxt.CancellationToken.IsCancellationRequested)
 				return v;
 
-			if(v.RepresentedType is TemplateParameterSymbol)
+			if(v.RepresentedType is TemplateParameterSymbol tps && tps.ParameterValue != null)
 			{
-				var tps = v.RepresentedType as TemplateParameterSymbol;
-				if(tps.ParameterValue != null)
-					return tps.ParameterValue;
+				return tps.ParameterValue;
 			}
-			
-			using(vp.ResolutionContext.Push(v.RepresentedType))
-				return vp[v.Variable] ?? v;
+
+			if (readonlyEvaluation || v.Variable.IsConst)
+			{
+				using (ctxt?.Push(v.RepresentedType))
+					return EvaluateConstVariablesValue(v.Variable);
+			}
+			return evaluationState.GetLocalValue(v.Variable);
+		}
+
+		ISymbolValue EvaluateConstVariablesValue(DVariable variable)
+		{
+			if (!variable.IsConst)
+				return new ErrorValue(new EvaluationException(variable + " must have a constant initializer"));
+
+			if (variable is DEnumValue enumValueVariable && enumValueVariable.Initializer == null)
+				return EvaluateNonInitializedEnumValue(enumValueVariable);
+
+			return variable.Initializer?.Accept(this);
+		}
+
+		ISymbolValue EvaluateNonInitializedEnumValue(DEnumValue enumValue)
+		{
+			// Find previous enumvalue entry of parent enum
+			var parentEnum = (DEnum)enumValue.Parent;
+
+			var startIndex = parentEnum.Children.IndexOf(enumValue);
+			if(startIndex == -1)
+				throw new InvalidOperationException("enumValue must be child of its parent enum.");
+
+			IExpression previousInitializer = null;
+			var enumValueIncrementStepsToAdd = 0;
+			for (var currentEnumChildIndex = startIndex - 1; currentEnumChildIndex >= 0; currentEnumChildIndex--)
+			{
+				var enumChild = (DEnumValue)parentEnum.Children[currentEnumChildIndex];
+				if (enumChild.Initializer != null)
+				{
+					previousInitializer = enumChild.Initializer;
+					enumValueIncrementStepsToAdd = startIndex - currentEnumChildIndex;
+					break;
+				}
+			}
+
+			if(previousInitializer == null)
+				return new PrimitiveValue(DTokens.Int, startIndex); //TODO: Must be EnumBaseType.init, not only int.init
+
+			var incrementExpression = BuildEnumValueIncrementExpression(previousInitializer, enumValueIncrementStepsToAdd);
+			return incrementExpression.Accept(this);
+		}
+
+		private static AddExpression BuildEnumValueIncrementExpression(IExpression previousInitializer,
+			int enumValueIncrementStepsToAdd)
+		{
+			var incrementExpression = new AddExpression(false)
+			{
+				LeftOperand = previousInitializer,
+				RightOperand = new ScalarConstantExpression((decimal) enumValueIncrementStepsToAdd, LiteralFormat.Scalar)
+				{
+					Location = previousInitializer.EndLocation,
+					EndLocation = previousInitializer.EndLocation
+				}
+			};
+			return incrementExpression;
 		}
 
 		public ISymbolValue Visit(Expression ex)
@@ -184,18 +248,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return v is NullValue;
 
 			return v != null;
-		}
-
-		/// <summary>
-		/// Removes all variable references by resolving them via the given value provider.
-		/// Useful when only the value is of interest, not its container or other things.
-		/// </summary>
-		public static ISymbolValue GetVariableContents(ISymbolValue v, AbstractSymbolValueProvider vp)
-		{
-			while (v is VariableValue)
-				v = vp[(v as VariableValue).Variable];
-
-			return v;
 		}
 	}
 }

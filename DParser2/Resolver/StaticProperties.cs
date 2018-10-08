@@ -11,7 +11,7 @@ namespace D_Parser.Resolver
 {
 	public static class StaticProperties
 	{
-		public delegate ISymbolValue ValueGetterHandler(AbstractSymbolValueProvider vp, ISemantic baseValue);
+		public delegate ISymbolValue ValueGetterHandler(StatefulEvaluationContext vp, ISemantic baseValue);
 
 		class StaticPropertyInfo
 		{
@@ -468,7 +468,7 @@ namespace D_Parser.Resolver
 			return null;
 		}
 
-		public static ISymbolValue TryEvalPropertyValue(AbstractSymbolValueProvider vp, ISemantic baseSymbol, int propName)
+		public static ISymbolValue TryEvalPropertyValue(StatefulEvaluationContext vp, ISemantic baseSymbol, int propName)
 		{
 			var props = Properties[PropOwnerType.Generic];
 			StaticPropertyInfo prop;
