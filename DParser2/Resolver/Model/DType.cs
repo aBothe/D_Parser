@@ -82,8 +82,8 @@ namespace D_Parser.Resolver
 
 		public static AbstractType Get(ISemantic s)
 		{
-			if (s is ISymbolValue)
-				return (s as ISymbolValue).RepresentedType;
+			if (s is ISymbolValue value)
+				return value.RepresentedType;
 			
 			return s as AbstractType;
 		}

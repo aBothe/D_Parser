@@ -7,6 +7,7 @@ using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
 using System;
 using System.Collections.Generic;
+
 namespace D_Parser.Resolver
 {
 	public static class StaticProperties
@@ -249,7 +250,7 @@ namespace D_Parser.Resolver
 			{
 				TypeGetter = (t, ctxt) =>
 				{
-					var members = GetStructMembers(t as StructType, ctxt);
+					var members = GetTypeMembers(t as UserDefinedType, ctxt);
 					var l = new List<IExpression>();
 
 					var vis = new DTypeToTypeDeclVisitor();
@@ -272,19 +273,19 @@ namespace D_Parser.Resolver
 					return new TemplateInstanceExpression(new IdentifierDeclaration("Tuple")) { Arguments =  l.ToArray() };
 				},
 
-				ResolvedBaseTypeGetter = (t, ctxt) =>
+				ResolvedBaseTypeGetter = (t, ctxt) => GetTupleofTuple(t as UserDefinedType, ctxt),
+
+				ValueGetter = (vp, value) =>
 				{
-					var members = GetStructMembers(t as StructType, ctxt);
-					var tupleItems = new List<ISemantic>();
+					if (value is TypeValue typeValue)
+						value = typeValue.RepresentedType;
+					var members = GetTypeMembers(value as UserDefinedType, vp.ResolutionContext);
+					var tupleItems = new ISymbolValue[members.Count];
 
-					foreach (var member in members)
-					{
-						var mt = DResolver.StripMemberSymbols(member);
-						if (mt != null)
-							tupleItems.Add(mt);
-					}
+					for(var memberIndex = 0; memberIndex < members.Count; memberIndex++)
+						tupleItems[memberIndex] = new TypeValue(members[memberIndex]);
 
-					return new DTuple(tupleItems);
+					return new ArrayValue(new ArrayType(new UnknownType(null)), tupleItems);
 				}
 			});
 
@@ -338,6 +339,21 @@ namespace D_Parser.Resolver
 		static AbstractType help_ReflectResolvedType(AbstractType t, ResolutionContext ctxt)
 		{
 			return t;
+		}
+
+		static DTuple GetTupleofTuple(UserDefinedType t, ResolutionContext ctxt)
+		{
+			var members = GetTypeMembers(t, ctxt);
+			var tupleItems = new List<AbstractType>();
+
+			foreach (var member in members)
+			{
+				var mt = DResolver.StripMemberSymbols(member);
+				if (mt != null)
+					tupleItems.Add(mt);
+			}
+
+			return new DTuple(tupleItems);
 		}
 
 		[ThreadStatic]

@@ -141,7 +141,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				//TODO!
 				return null;
 			}
-			
+
+			if(baseExpression == null)
+				return new List<R>();
 			
 			List<AbstractType> overloads;
 			var optBackup = ctxt.CurrentContext.ContextDependentOptions;
