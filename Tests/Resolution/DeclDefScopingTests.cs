@@ -695,5 +695,30 @@ static foreach(index, value; ['a':'0','b':'1','c':'2','d':'3','e':'4','f':'5']) 
 				Assert.That((v as PrimitiveValue).Value, Is.EqualTo('a'+i));
 			}
 		}
+
+		[Test]
+		public void StaticForeach_AliasUsingTupleOf()
+		{
+			var ctxt = CreateDefCtxt(@"module modA;
+struct S1
+{
+	int a;
+	int b;
+}
+
+struct S2
+{
+	static foreach(alias x; S1.tupleof)
+		mixin(`long ` ~ x.stringof ~ `;`);
+}
+
+S2 s2;
+");
+
+			var x = DParser.ParseExpression("s2.a");
+			var t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+		}
 	}
 }

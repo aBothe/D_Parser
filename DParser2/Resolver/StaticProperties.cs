@@ -7,6 +7,7 @@ using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
 using System;
 using System.Collections.Generic;
+
 namespace D_Parser.Resolver
 {
 	public static class StaticProperties
@@ -18,7 +19,7 @@ namespace D_Parser.Resolver
 			public readonly string Name;
 			public readonly string Description;
 			public readonly ITypeDeclaration OverrideType;
-			public bool RequireThis = false;
+			public bool RequireThis;
 
 			public Func<AbstractType, ResolutionContext, DNode> NodeGetter;
 			public Func<AbstractType, ResolutionContext, ITypeDeclaration> TypeGetter;
@@ -39,12 +40,12 @@ namespace D_Parser.Resolver
 			public StaticPropertyInfo(string name, string desc, ITypeDeclaration overrideType = null)
 			{ Name = name; Description = desc; OverrideType = overrideType; }
 
-			public ITypeDeclaration GetPropertyType(AbstractType t, ResolutionContext ctxt)
+			ITypeDeclaration GetPropertyType(AbstractType t, ResolutionContext ctxt)
 			{
 				return OverrideType ?? (TypeGetter != null && t != null ? TypeGetter(t,ctxt) : null);
 			}
 
-			public static readonly List<DAttribute> StaticAttributeList = new List<DAttribute> { new Modifier(DTokens.Static) };
+			static readonly List<DAttribute> StaticAttributeList = new List<DAttribute> { new Modifier(DTokens.Static) };
 
 			public DNode GenerateRepresentativeNode(AbstractType t, ResolutionContext ctxt)
 			{
@@ -80,7 +81,8 @@ namespace D_Parser.Resolver
 		#endregion
 
 		#region Constructor/Init
-		static Dictionary<PropOwnerType, Dictionary<int, StaticPropertyInfo>> Properties = new Dictionary<PropOwnerType, Dictionary<int, StaticPropertyInfo>>();
+		private static readonly Dictionary<PropOwnerType, Dictionary<int, StaticPropertyInfo>> Properties
+			= new Dictionary<PropOwnerType, Dictionary<int, StaticPropertyInfo>>();
 
 		static void AddProp(this Dictionary<int, StaticPropertyInfo> props, StaticPropertyInfo prop)
 		{
@@ -101,7 +103,8 @@ namespace D_Parser.Resolver
 					var t = AbstractType.Get(v);
 					if(t == null)
 						return new NullValue();
-					return new ArrayValue(Evaluation.GetStringLiteralType(vp.ResolutionContext), (t is DSymbol) ? DNode.GetNodePath((t as DSymbol).Definition, true) : t.ToCode());
+					return new ArrayValue(Evaluation.GetStringLiteralType(vp.ResolutionContext),
+						t is DSymbol symbol ? symbol.Definition.Name : t.ToCode());
 				}
 			});
 
@@ -247,7 +250,7 @@ namespace D_Parser.Resolver
 			{
 				TypeGetter = (t, ctxt) =>
 				{
-					var members = GetStructMembers(t as StructType, ctxt);
+					var members = GetTypeMembers(t as UserDefinedType, ctxt);
 					var l = new List<IExpression>();
 
 					var vis = new DTypeToTypeDeclVisitor();
@@ -270,19 +273,19 @@ namespace D_Parser.Resolver
 					return new TemplateInstanceExpression(new IdentifierDeclaration("Tuple")) { Arguments =  l.ToArray() };
 				},
 
-				ResolvedBaseTypeGetter = (t, ctxt) =>
+				ResolvedBaseTypeGetter = (t, ctxt) => GetTupleofTuple(t as UserDefinedType, ctxt),
+
+				ValueGetter = (vp, value) =>
 				{
-					var members = GetStructMembers(t as StructType, ctxt);
-					var tupleItems = new List<ISemantic>();
+					if (value is TypeValue typeValue)
+						value = typeValue.RepresentedType;
+					var members = GetTypeMembers(value as UserDefinedType, vp.ResolutionContext);
+					var tupleItems = new ISymbolValue[members.Count];
 
-					foreach (var member in members)
-					{
-						var mt = DResolver.StripMemberSymbols(member);
-						if (mt != null)
-							tupleItems.Add(mt);
-					}
+					for(var memberIndex = 0; memberIndex < members.Count; memberIndex++)
+						tupleItems[memberIndex] = new TypeValue(members[memberIndex]);
 
-					return new DTuple(tupleItems);
+					return new ArrayValue(new ArrayType(new UnknownType(null)), tupleItems);
 				}
 			});
 
@@ -338,18 +341,40 @@ namespace D_Parser.Resolver
 			return t;
 		}
 
-		[ThreadStatic]
-		static DClassLike lastStructHandled;
-		[ThreadStatic]
-		static IEnumerable<AbstractType> lastStructMembersEnlisted;
-		static IEnumerable<AbstractType> GetStructMembers(StructType t, ResolutionContext ctxt)
+		static DTuple GetTupleofTuple(UserDefinedType t, ResolutionContext ctxt)
 		{
-			if(lastStructMembersEnlisted == null ||
-				lastStructHandled != t.Definition)
+			var members = GetTypeMembers(t, ctxt);
+			var tupleItems = new List<AbstractType>();
+
+			foreach (var member in members)
 			{
-				lastStructHandled = t.Definition;
+				var mt = DResolver.StripMemberSymbols(member);
+				if (mt != null)
+					tupleItems.Add(mt);
+			}
+
+			return new DTuple(tupleItems);
+		}
+
+		[ThreadStatic]
+		static WeakReference<DNode> _lastStructHandled;
+		[ThreadStatic]
+		static WeakReference<List<AbstractType>> _lastStructMembersEnlisted;
+		static List<AbstractType> GetTypeMembers(UserDefinedType t, ResolutionContext ctxt)
+		{
+			if(_lastStructHandled == null)
+				_lastStructHandled = new WeakReference<DNode>(null);
+			if(_lastStructMembersEnlisted == null)
+				_lastStructMembersEnlisted = new WeakReference<List<AbstractType>>(null);
+
+			if(!_lastStructMembersEnlisted.TryGetTarget(out var lastStructMembersEnlisted)
+			   || !_lastStructHandled.TryGetTarget(out DNode lastStructHandled)
+			   || lastStructHandled != t.Definition)
+			{
+				_lastStructHandled.SetTarget(t.Definition);
 				var children = ItemEnumeration.EnumChildren(t, ctxt, MemberFilter.Variables);
 				lastStructMembersEnlisted = TypeDeclarationResolver.HandleNodeMatches(children, ctxt, t);
+				_lastStructMembersEnlisted.SetTarget(lastStructMembersEnlisted);
 			}
 			
 			return lastStructMembersEnlisted;

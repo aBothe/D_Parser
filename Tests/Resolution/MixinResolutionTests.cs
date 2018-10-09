@@ -209,7 +209,7 @@ mixin(""template mxT(string n) { enum mxT = n; }"");
 		}
 
 		[Test]
-		public void Mixins6()
+		public void StaticProperty_Stringof()
 		{
 			var ctxt = CreateCtxt("A", @"module A;
 interface IUnknown {}
@@ -233,7 +233,11 @@ public template uuid(T, immutable char[] g) {
 			var av = v as ArrayValue;
 			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
 			Assert.That(av.IsString);
-			Assert.That(av.StringValue, Is.EqualTo(@"const IID IID_A.IUnknown={ 0x00000000,0x0000,0x0000,[0xC0,0x00,0x00,0x00,0x00,0x00,0x00,0x46]};template uuidof(T:A.IUnknown){    const IID uuidof ={ 0x00000000,0x0000,0x0000,[0xC0,0x00,0x00,0x00,0x00,0x00,0x00,0x46]};}"));
+			Assert.That(av.StringValue, Is.EqualTo(
+				@"const IID IID_IUnknown={ 0x00000000,0x0000,0x0000,[0xC0,0x00,0x00,0x00,0x00,0x00,0x00,0x46]};"
+				+ "template uuidof(T:IUnknown){"
+				+ "    const IID uuidof ={ 0x00000000,0x0000,0x0000,[0xC0,0x00,0x00,0x00,0x00,0x00,0x00,0x46]};"
+				+ "}"));
 		}
 
 		[Test]
