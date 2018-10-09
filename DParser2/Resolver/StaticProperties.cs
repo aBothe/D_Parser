@@ -339,17 +339,24 @@ namespace D_Parser.Resolver
 		}
 
 		[ThreadStatic]
-		static DClassLike lastStructHandled;
+		static WeakReference<DNode> _lastStructHandled;
 		[ThreadStatic]
-		static IEnumerable<AbstractType> lastStructMembersEnlisted;
-		static IEnumerable<AbstractType> GetStructMembers(StructType t, ResolutionContext ctxt)
+		static WeakReference<List<AbstractType>> _lastStructMembersEnlisted;
+		static List<AbstractType> GetTypeMembers(UserDefinedType t, ResolutionContext ctxt)
 		{
-			if(lastStructMembersEnlisted == null ||
-				lastStructHandled != t.Definition)
+			if(_lastStructHandled == null)
+				_lastStructHandled = new WeakReference<DNode>(null);
+			if(_lastStructMembersEnlisted == null)
+				_lastStructMembersEnlisted = new WeakReference<List<AbstractType>>(null);
+
+			if(!_lastStructMembersEnlisted.TryGetTarget(out var lastStructMembersEnlisted)
+			   || !_lastStructHandled.TryGetTarget(out DNode lastStructHandled)
+			   || lastStructHandled != t.Definition)
 			{
-				lastStructHandled = t.Definition;
+				_lastStructHandled.SetTarget(t.Definition);
 				var children = ItemEnumeration.EnumChildren(t, ctxt, MemberFilter.Variables);
 				lastStructMembersEnlisted = TypeDeclarationResolver.HandleNodeMatches(children, ctxt, t);
+				_lastStructMembersEnlisted.SetTarget(lastStructMembersEnlisted);
 			}
 			
 			return lastStructMembersEnlisted;
