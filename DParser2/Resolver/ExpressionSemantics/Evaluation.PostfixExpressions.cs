@@ -131,7 +131,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (acc == null)
 				return null;
 
-			var baseExpression = resultBase ?? (acc.PostfixForeExpression != null ? acc.PostfixForeExpression.Accept(vis) as ISemantic : null);
+			var baseExpression = resultBase ?? acc.PostfixForeExpression?.Accept(vis);
 
 			if (acc.AccessExpression is NewExpression)
 			{
@@ -146,12 +146,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			List<AbstractType> overloads;
 			var optBackup = ctxt.CurrentContext.ContextDependentOptions;
 			
-			if (acc.AccessExpression is TemplateInstanceExpression)
+			if (acc.AccessExpression is TemplateInstanceExpression tix)
 			{
 				if (!ResolveImmediateBaseType)
 					ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.DontResolveBaseTypes;
 
-				var tix = (TemplateInstanceExpression)acc.AccessExpression;
 				// Do not deduce and filter if superior expression is a method call since call arguments' types also count as template arguments!
 				overloads = ExpressionTypeEvaluation.GetOverloads(tix, ctxt, AbstractType.Get(baseExpression), EvalAndFilterOverloads);
 
@@ -159,10 +158,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					ctxt.CurrentContext.ContextDependentOptions = optBackup;
 			}
 
-			else if (acc.AccessExpression is IdentifierExpression)
+			else if (acc.AccessExpression is IdentifierExpression id)
 			{
-				var id = acc.AccessExpression as IdentifierExpression;
-
 				if (ValueProvider != null && EvalAndFilterOverloads && baseExpression != null)
 				{
 					var staticPropResult = StaticProperties.TryEvalPropertyValue(ValueProvider, baseExpression, id.IdHash);
@@ -201,10 +198,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		ISymbolValue EvalForeExpression(PostfixExpression ex)
 		{
-			var foreValue = ex.PostfixForeExpression != null ? ex.PostfixForeExpression.Accept(this) : null;
+			var foreValue = ex.PostfixForeExpression?.Accept(this);
 
-			if (readonlyEvaluation && foreValue is VariableValue)
-				return ValueProvider[((VariableValue)foreValue).Variable];
+			if (readonlyEvaluation && foreValue is VariableValue value)
+				return ValueProvider[value.Variable];
 
 			return foreValue;
 		}
