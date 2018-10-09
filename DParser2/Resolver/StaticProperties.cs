@@ -18,7 +18,7 @@ namespace D_Parser.Resolver
 			public readonly string Name;
 			public readonly string Description;
 			public readonly ITypeDeclaration OverrideType;
-			public bool RequireThis = false;
+			public bool RequireThis;
 
 			public Func<AbstractType, ResolutionContext, DNode> NodeGetter;
 			public Func<AbstractType, ResolutionContext, ITypeDeclaration> TypeGetter;
@@ -39,12 +39,12 @@ namespace D_Parser.Resolver
 			public StaticPropertyInfo(string name, string desc, ITypeDeclaration overrideType = null)
 			{ Name = name; Description = desc; OverrideType = overrideType; }
 
-			public ITypeDeclaration GetPropertyType(AbstractType t, ResolutionContext ctxt)
+			ITypeDeclaration GetPropertyType(AbstractType t, ResolutionContext ctxt)
 			{
 				return OverrideType ?? (TypeGetter != null && t != null ? TypeGetter(t,ctxt) : null);
 			}
 
-			public static readonly List<DAttribute> StaticAttributeList = new List<DAttribute> { new Modifier(DTokens.Static) };
+			static readonly List<DAttribute> StaticAttributeList = new List<DAttribute> { new Modifier(DTokens.Static) };
 
 			public DNode GenerateRepresentativeNode(AbstractType t, ResolutionContext ctxt)
 			{
@@ -80,7 +80,8 @@ namespace D_Parser.Resolver
 		#endregion
 
 		#region Constructor/Init
-		static Dictionary<PropOwnerType, Dictionary<int, StaticPropertyInfo>> Properties = new Dictionary<PropOwnerType, Dictionary<int, StaticPropertyInfo>>();
+		private static readonly Dictionary<PropOwnerType, Dictionary<int, StaticPropertyInfo>> Properties
+			= new Dictionary<PropOwnerType, Dictionary<int, StaticPropertyInfo>>();
 
 		static void AddProp(this Dictionary<int, StaticPropertyInfo> props, StaticPropertyInfo prop)
 		{
@@ -101,7 +102,8 @@ namespace D_Parser.Resolver
 					var t = AbstractType.Get(v);
 					if(t == null)
 						return new NullValue();
-					return new ArrayValue(Evaluation.GetStringLiteralType(vp.ResolutionContext), (t is DSymbol) ? DNode.GetNodePath((t as DSymbol).Definition, true) : t.ToCode());
+					return new ArrayValue(Evaluation.GetStringLiteralType(vp.ResolutionContext),
+						t is DSymbol symbol ? symbol.Definition.Name : t.ToCode());
 				}
 			});
 
