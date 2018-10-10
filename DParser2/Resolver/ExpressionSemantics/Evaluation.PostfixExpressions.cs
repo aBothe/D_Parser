@@ -162,9 +162,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			else if (acc.AccessExpression is IdentifierExpression id)
 			{
-				if (ValueProvider != null && EvalAndFilterOverloads && baseExpression != null)
+				if (EvalAndFilterOverloads)
 				{
-					var staticPropResult = StaticProperties.TryEvalPropertyValue(ValueProvider, baseExpression, id.IdHash);
+					var staticPropResult = StaticProperties.TryEvalPropertyValue(ctxt, baseExpression, id.IdHash);
 					if (staticPropResult != null)
 						return new List<R> { (R) staticPropResult };
 				}
@@ -188,14 +188,17 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 
 			// If evaluation active and the access expression is stand-alone, return a single item only.
-			if (EvalAndFilterOverloads && ValueProvider != null)
-				return new List<R> { (R)new Evaluation(ValueProvider).TryDoCTFEOrGetValueRefs(
+			if (!EvalAndFilterOverloads || ValueProvider == null)
+				return overloads as List<R>;
+
+			var evaluation = new Evaluation(ValueProvider);
+			return new List<R>
+			{
+				(R) evaluation.TryDoCTFEOrGetValueRefs(
 					AmbiguousType.Get(overloads),
 					acc.AccessExpression,
-					new[] { baseExpression as ISymbolValue })
-				};
-
-			return overloads as List<R>;
+					new[] {baseExpression as ISymbolValue})
+			};
 		}
 
 		ISymbolValue EvalForeExpression(PostfixExpression ex)

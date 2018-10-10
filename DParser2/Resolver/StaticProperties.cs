@@ -12,7 +12,7 @@ namespace D_Parser.Resolver
 {
 	public static class StaticProperties
 	{
-		public delegate ISymbolValue ValueGetterHandler(StatefulEvaluationContext vp, ISemantic baseValue);
+		public delegate ISymbolValue ValueGetterHandler(ResolutionContext ctxt, ISemantic baseValue);
 
 		class StaticPropertyInfo
 		{
@@ -99,11 +99,11 @@ namespace D_Parser.Resolver
 			props.AddProp(new StaticPropertyInfo("alignof", "Variable alignment", DTokens.Uint) { RequireThis = true });
 			props.AddProp(new StaticPropertyInfo("mangleof", "String representing the ‘mangled’ representation of the type", "string"));
 			props.AddProp(new StaticPropertyInfo("stringof", "String representing the source representation of the type", "string") { 
-				ValueGetter = (vp, v) => {
+				ValueGetter = (ctxt, v) => {
 					var t = AbstractType.Get(v);
 					if(t == null)
 						return new NullValue();
-					return new ArrayValue(Evaluation.GetStringLiteralType(vp.ResolutionContext),
+					return new ArrayValue(Evaluation.GetStringLiteralType(ctxt),
 						t is DSymbol symbol ? symbol.Definition.Name : t.ToCode());
 				}
 			});
@@ -142,7 +142,7 @@ namespace D_Parser.Resolver
 			props.AddProp(new StaticPropertyInfo("length", "Array length", DTokens.Int) { 
 				RequireThis = true,
 			ValueGetter = 
-				(vp, v) => {
+				(ctxt, v) => {
 					var av = v as ArrayValue;
 					return new PrimitiveValue(av.Elements != null ? av.Elements.Length : 0); 
 				}});
@@ -275,11 +275,11 @@ namespace D_Parser.Resolver
 
 				ResolvedBaseTypeGetter = (t, ctxt) => GetTupleofTuple(t as UserDefinedType, ctxt),
 
-				ValueGetter = (vp, value) =>
+				ValueGetter = (ctxt, value) =>
 				{
 					if (value is TypeValue typeValue)
 						value = typeValue.RepresentedType;
-					var members = GetTypeMembers(value as UserDefinedType, vp.ResolutionContext);
+					var members = GetTypeMembers(value as UserDefinedType, ctxt);
 					var tupleItems = new ISymbolValue[members.Count];
 
 					for(var memberIndex = 0; memberIndex < members.Count; memberIndex++)
@@ -493,15 +493,16 @@ namespace D_Parser.Resolver
 			return null;
 		}
 
-		public static ISymbolValue TryEvalPropertyValue(StatefulEvaluationContext vp, ISemantic baseSymbol, int propName)
+		public static ISymbolValue TryEvalPropertyValue(ResolutionContext ctxt, ISemantic baseSymbol, int propName)
 		{
 			var props = Properties[PropOwnerType.Generic];
-			StaticPropertyInfo prop;
 
-			if (props.TryGetValue(propName, out prop) || (Properties.TryGetValue(GetOwnerType(baseSymbol), out props) && props.TryGetValue(propName, out prop)))
+			if (props.TryGetValue(propName, out var prop)
+			    || (Properties.TryGetValue(GetOwnerType(baseSymbol), out props)
+			        && props.TryGetValue(propName, out prop)))
 			{
 				if (prop.ValueGetter != null)
-					return prop.ValueGetter(vp, baseSymbol);
+					return prop.ValueGetter(ctxt, baseSymbol);
 			}
 
 			return null;
