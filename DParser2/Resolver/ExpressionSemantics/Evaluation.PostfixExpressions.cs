@@ -197,7 +197,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				(R) evaluation.TryDoCTFEOrGetValueRefs(
 					AmbiguousType.Get(overloads),
 					acc.AccessExpression,
-					new[] {baseExpression as ISymbolValue})
+					new List<ISymbolValue> {baseExpression as ISymbolValue})
 			};
 		}
 

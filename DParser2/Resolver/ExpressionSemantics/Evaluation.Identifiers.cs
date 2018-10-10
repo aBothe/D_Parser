@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
@@ -13,13 +14,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		class CTFEOrValueRefsVisitor : IResolvedTypeVisitor<ISymbolValue>
 		{
 			readonly IExpression idOrTemplateInstance;
-			readonly IEnumerable<ISymbolValue> executionArguments;
+			readonly List<ISymbolValue> executionArguments;
 			readonly StatefulEvaluationContext ValueProvider;
 			readonly ResolutionContext ctxt;
 
 			public CTFEOrValueRefsVisitor(StatefulEvaluationContext vp, ResolutionContext ctxt,
 				IExpression idOrTemplateInstance,
-				IEnumerable<ISymbolValue> executionArguments = null)
+				List<ISymbolValue> executionArguments)
 			{
 				ValueProvider = vp;
 				this.ctxt = ctxt;
@@ -186,7 +187,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// Evaluates the identifier/template instance as usual.
 		/// If the id points to a variable, the initializer/dynamic value will be evaluated using its initializer.
 		/// </summary>
-		ISymbolValue TryDoCTFEOrGetValueRefs(AbstractType r, IExpression idOrTemplateInstance, IEnumerable<ISymbolValue> executionArguments=null)
+		ISymbolValue TryDoCTFEOrGetValueRefs(AbstractType r, IExpression idOrTemplateInstance, List<ISymbolValue> executionArguments=null)
 		{
 			return r?.Accept(new CTFEOrValueRefsVisitor(evaluationState, ctxt, idOrTemplateInstance, executionArguments));
 		}
