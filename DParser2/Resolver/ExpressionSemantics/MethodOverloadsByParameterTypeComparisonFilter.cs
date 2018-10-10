@@ -315,20 +315,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			/// <param name="ov"></param>
 			public void VisitPrimitiveType(PrimitiveType ov)
 			{
-				if (valueProvider != null)
-				{
-					if (callArguments == null || callArguments.Count != 1)
-						valueProvider.LogError(call, "Uniform construction syntax expects exactly one argument");
-					else
-					{
-						PrimitiveValue pv;
-						if ((pv = callArguments[0] as PrimitiveValue) == null)
-							valueProvider.LogError(call, "Uniform construction syntax expects one built-in scalar value as first argument");
-						else
-							delegateValue = new PrimitiveValue(pv.Value, ov as PrimitiveType, pv.ImaginaryPart);
-					}
-				}
-
 				argTypeFilteredOverloads.Add(ov);
 			}
 

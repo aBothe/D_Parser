@@ -30,6 +30,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			public ISymbolValue VisitPrimitiveType(PrimitiveType pt)
 			{
+				if (executionArguments == null || executionArguments.Count != 1)
+					ctxt.LogError(idOrTemplateInstance, "Uniform construction syntax expects exactly one argument");
+				else if(executionArguments[0] is PrimitiveValue primitiveValue)
+					return new PrimitiveValue(primitiveValue.Value, pt, primitiveValue.ImaginaryPart);
+				else
+					ctxt.LogError(idOrTemplateInstance, "Uniform construction syntax expects one built-in scalar value as first argument");
 				return new TypeValue(pt);
 			}
 
