@@ -19,7 +19,20 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				this.returnBaseTypeOnly.Value;
 			this.returnBaseTypeOnly = null;
 
-			List<ISemantic> callArguments;
+			var callArguments = new List<ISymbolValue>();
+			var callArgument_Semantic = new List<ISemantic>();
+			if (call.ArgumentCount > 0)
+			{
+				foreach (var arg in call.Arguments)
+				{
+					var callArgument = evaluationState != null
+						? EvaluateValue(arg, evaluationState)
+						: EvaluateValue(arg, ctxt);
+					callArguments.Add(callArgument);
+					callArgument_Semantic.Add(callArgument);
+				}
+			}
+
 			ISymbolValue delegValue;
 
 			// Deduce template parameters later on
@@ -28,31 +41,23 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			GetRawCallOverloads(ctxt, call, out baseExpression, out tix);
 
-			var argTypeFilteredOverloads = EvalMethodCall(baseExpression, tix, ctxt, call, out callArguments, out delegValue, returnBaseTypeOnly, evaluationState);
+			var argTypeFilteredOverloads = EvalMethodCall(baseExpression, tix, ctxt, call, callArgument_Semantic, out delegValue, returnBaseTypeOnly, evaluationState);
 
 			if (delegValue != null)
 				return delegValue;
 			if (argTypeFilteredOverloads == null)
 				return null;
 
-			// Convert ISemantic[] to ISymbolValue[]
-			var args = new List<ISymbolValue>(callArguments != null ? callArguments.Count : 0);
-
-			if(callArguments != null)
-				foreach (var a in callArguments)
-					args.Add(a as ISymbolValue);
-
 			// Execute/Evaluate the variable contents etc.
-			return TryDoCTFEOrGetValueRefs(argTypeFilteredOverloads, call.PostfixForeExpression, args);
+			return TryDoCTFEOrGetValueRefs(argTypeFilteredOverloads, call.PostfixForeExpression, callArguments);
 		}
 
 		public static AbstractType EvalMethodCall(IEnumerable<AbstractType> baseExpression, TemplateInstanceExpression tix,
 			ResolutionContext ctxt, 
-			PostfixExpression_MethodCall call, out List<ISemantic> callArguments, out ISymbolValue delegateValue,
+			PostfixExpression_MethodCall call, List<ISemantic> callArguments, out ISymbolValue delegateValue,
 			bool returnBaseTypeOnly, StatefulEvaluationContext ValueProvider = null)
 		{
 			delegateValue = null;
-			callArguments = null;
 
 			bool returnInstantly;
 			var methodOverloads = MethodOverloadCandidateSearchVisitor.SearchCandidates (baseExpression, ctxt, ValueProvider, call, 
@@ -70,7 +75,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return MethodOverloadsByParameterTypeComparisonFilter.FilterOverloads (call,
 				templateMatchedMethodOverloads, ctxt,
 				ValueProvider, returnBaseTypeOnly,
-				out callArguments, ref delegateValue);
+				callArguments, ref delegateValue);
 		}
 
 		static IEnumerable<AbstractType> TryMatchTemplateArgumentsToOverloads (TemplateInstanceExpression tix, ResolutionContext ctxt, IEnumerable<AbstractType> methodOverloads)

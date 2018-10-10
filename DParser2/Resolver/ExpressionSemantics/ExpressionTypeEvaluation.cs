@@ -125,7 +125,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		#region Method (overloads)
 		public AbstractType VisitPostfixExpression_Methodcall(PostfixExpression_MethodCall call)
 		{
-			List<ISemantic> callArgs;
 			ISymbolValue delegValue;
 
 			IEnumerable<AbstractType> baseExpression;
@@ -133,7 +132,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			GetRawCallOverloads(ctxt, call.PostfixForeExpression, out baseExpression, out tix);
 
-			return Evaluation.EvalMethodCall(baseExpression, tix, ctxt, call, out callArgs, out delegValue, !TryReturnMethodReferenceOnly);
+			var callArguments = new List<ISemantic>();
+			if(call.ArgumentCount > 0)
+				foreach (var arg in call.Arguments)
+					callArguments.Add(EvaluateType(arg, ctxt));
+
+			return Evaluation.EvalMethodCall(baseExpression, tix, ctxt, call, callArguments, out delegValue, !TryReturnMethodReferenceOnly);
 		}
 
 		AbstractType TryPretendMethodExecution(IEnumerable<AbstractType> possibleOverloads, ISyntaxRegion typeBase = null, IEnumerable<AbstractType> args = null)

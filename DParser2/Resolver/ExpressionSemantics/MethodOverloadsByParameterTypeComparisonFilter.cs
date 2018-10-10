@@ -14,11 +14,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			ResolutionContext ctxt,
 			StatefulEvaluationContext valueProvider,
 			bool returnBaseTypeOnly,
-			out List<ISemantic> callArguments,
+			List<ISemantic> callArguments,
 			ref ISymbolValue delegateValue)
 		{
-			callArguments = GetCallArgumentsTypes(ctxt, call, valueProvider);
-
 			var visitor = new OverloadFilterVisitor(call, ctxt, valueProvider, returnBaseTypeOnly, callArguments);
 
 			foreach (var ov in methodOverloads)
@@ -36,30 +34,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return AmbiguousType.Get(visitor.argTypeFilteredOverloads);
 		}
 
-		static List<ISemantic> GetCallArgumentsTypes(ResolutionContext ctxt, PostfixExpression_MethodCall call, StatefulEvaluationContext ValueProvider)
-		{
-			var callArguments = new List<ISemantic>();
-			if (call.Arguments != null)
-			{
-				if (ValueProvider != null)
-				{
-					foreach (var arg in call.Arguments)
-						callArguments.Add(Evaluation.EvaluateValue(arg, ValueProvider));
-				}
-				else
-					foreach (var arg in call.Arguments)
-						callArguments.Add(ExpressionTypeEvaluation.EvaluateType(arg, ctxt));
-			}
-			return callArguments;
-		}
-
 		class OverloadFilterVisitor : IResolvedTypeVisitor
 		{
 			readonly PostfixExpression_MethodCall call;
-			ResolutionContext ctxt;
-			StatefulEvaluationContext valueProvider;
-			bool returnBaseTypeOnly;
-			List<ISemantic> callArguments;
+			readonly ResolutionContext ctxt;
+			readonly StatefulEvaluationContext valueProvider;
+			readonly bool returnBaseTypeOnly;
+			readonly List<ISemantic> callArguments;
 
 			bool hasHandledUfcsResultBefore = false;
 
