@@ -130,7 +130,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			GetRawCallOverloads(ctxt, call.PostfixForeExpression, out baseExpression, out tix);
 
-			var callArguments = new List<ISemantic>();
+			var callArguments = new List<AbstractType>();
 			if(call.ArgumentCount > 0)
 				foreach (var arg in call.Arguments)
 					callArguments.Add(EvaluateType(arg, ctxt));

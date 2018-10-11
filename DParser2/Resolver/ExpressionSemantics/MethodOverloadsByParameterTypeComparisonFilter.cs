@@ -14,7 +14,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			ResolutionContext ctxt,
 			StatefulEvaluationContext valueProvider,
 			bool returnBaseTypeOnly,
-			List<ISemantic> callArguments)
+			List<AbstractType> callArguments)
 		{
 			var visitor = new OverloadFilterVisitor(call, ctxt, valueProvider, returnBaseTypeOnly, callArguments);
 
@@ -36,7 +36,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			readonly ResolutionContext ctxt;
 			readonly StatefulEvaluationContext valueProvider;
 			readonly bool returnBaseTypeOnly;
-			readonly List<ISemantic> callArguments;
+			readonly List<AbstractType> callArguments;
 
 			bool hasHandledUfcsResultBefore = false;
 
@@ -48,7 +48,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				ResolutionContext ctxt,
 				StatefulEvaluationContext valueProvider,
 				bool returnBaseTypeOnly,
-				List<ISemantic> callArguments)
+				List<AbstractType> callArguments)
 			{
 				this.call = call;
 				this.ctxt = ctxt;
@@ -64,12 +64,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				if (dm == null)
 					return;
 
-				ISemantic firstUfcsArg;
-				bool isUfcs = UFCSResolver.IsUfcsResult(ms, out firstUfcsArg);
+				bool isUfcs = UFCSResolver.IsUfcsResult(ms, out var firstUfcsArg);
 				// In the case of an ufcs, insert the first argument into the CallArguments list
 				if (isUfcs && !hasHandledUfcsResultBefore)
 				{
-					callArguments.Insert(0, firstUfcsArg);
+					callArguments.Insert(0, AbstractType.Get(firstUfcsArg));
 					hasHandledUfcsResultBefore = true;
 				}
 				else if (!isUfcs && hasHandledUfcsResultBefore) // In the rare case of having a ufcs result occuring _after_ a normal member result, remove the initial arg again
@@ -158,7 +157,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 
 			static bool TryHandleMethodArgumentTuple(ResolutionContext ctxt, ref bool add,
-			List<ISemantic> callArguments,
+			List<AbstractType> callArguments,
 			DMethod dm,
 			DeducedTypeDictionary deducedTypeDict, int currentParameter, ref int currentArg)
 			{
@@ -240,7 +239,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				else
 				{
 					// - If there was no explicit initialization, put all arguments' types into a type tuple
-					var argsToTake = new ISemantic[argCountToHandle];
+					var argsToTake = new AbstractType[argCountToHandle];
 					callArguments.CopyTo(currentArg, argsToTake, 0, argsToTake.Length);
 					currentArg += argsToTake.Length;
 					var tt = new DTuple(argsToTake);

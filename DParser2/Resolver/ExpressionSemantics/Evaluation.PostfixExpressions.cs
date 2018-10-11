@@ -13,7 +13,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public ISymbolValue VisitPostfixExpression_Methodcall(PostfixExpression_MethodCall call)
 		{
 			var callArguments = new List<ISymbolValue>();
-			var callArgument_Semantic = new List<ISemantic>();
+			var callArgumentTypes = new List<AbstractType>();
 			if (call.ArgumentCount > 0)
 			{
 				foreach (var arg in call.Arguments)
@@ -22,7 +22,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 						? EvaluateValue(arg, evaluationState)
 						: EvaluateValue(arg, ctxt);
 					callArguments.Add(callArgument);
-					callArgument_Semantic.Add(callArgument);
+					callArgumentTypes.Add(AbstractType.Get(callArgument));
 				}
 			}
 
@@ -30,7 +30,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			GetRawCallOverloads(ctxt, call, out var baseExpression, out var tix);
 
 			var argTypeFilteredOverloads =
-				EvalMethodCall(baseExpression, tix, ctxt, call, callArgument_Semantic, false, evaluationState);
+				EvalMethodCall(baseExpression, tix, ctxt, call, callArgumentTypes, false, evaluationState);
 
 			if (argTypeFilteredOverloads == null)
 				return null;
@@ -41,7 +41,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public static AbstractType EvalMethodCall(IEnumerable<AbstractType> baseExpression, TemplateInstanceExpression tix,
 			ResolutionContext ctxt, 
-			PostfixExpression_MethodCall call, List<ISemantic> callArguments,
+			PostfixExpression_MethodCall call, List<AbstractType> callArguments,
 			bool returnBaseTypeOnly, StatefulEvaluationContext ValueProvider = null)
 		{
 			var methodOverloads = MethodOverloadCandidateSearchVisitor.SearchCandidates (
