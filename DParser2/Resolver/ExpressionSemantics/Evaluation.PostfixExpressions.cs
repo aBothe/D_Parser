@@ -186,10 +186,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 
 			// If evaluation active and the access expression is stand-alone, return a single item only.
-			if (!EvalAndFilterOverloads || ValueProvider == null)
+			if (!EvalAndFilterOverloads || typeof(AbstractType).IsAssignableFrom(typeof(R)))
 				return overloads as List<R>;
 
-			var evaluation = new Evaluation(ValueProvider);
+			var evaluation = ValueProvider != null ? new Evaluation(ValueProvider) : new Evaluation(ctxt);
 			return new List<R>
 			{
 				(R) evaluation.TryDoCTFEOrGetValueRefs(
