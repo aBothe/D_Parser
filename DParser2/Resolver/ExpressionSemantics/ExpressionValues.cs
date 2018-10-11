@@ -292,29 +292,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	#endregion
 
 	#region User data types
-
-	public abstract class InstanceValue : ReferenceValue
-	{
-		public DClassLike Definition{ get{ return ReferencedNode as DClassLike; }}
-
-		public Dictionary<DVariable, ISymbolValue> Members = new Dictionary<DVariable, ISymbolValue>();
-		public Dictionary<DVariable, AbstractType> MemberTypes = new Dictionary<DVariable, AbstractType>();
-
-		protected InstanceValue(TemplateIntermediateType ClassType)
-			: base(ClassType)
-		{
-
-		}
-
-		/// <summary>
-		/// Initializes all variables that have gotten an explicit initializer.
-		/// </summary>
-		public void RunInitializers()
-		{
-
-		}
-	}
-
 	/// <summary>
 	/// Stores a type. Used e.g. as foreexpressions for PostfixExpressions.
 	/// </summary>
@@ -339,44 +316,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 	public abstract class ReferenceValue : ExpressionValue
 	{
-		public virtual DNode ReferencedNode {get{ return RepresentedType != null ? (base.RepresentedType as DSymbol).Definition : null; }}
-		public new DSymbol RepresentedType {get{ return base.RepresentedType as DSymbol; }}
-		public AbstractType BaseType { get{ return RepresentedType != null ? RepresentedType.Base : null; } }
-
+		public DNode ReferencedNode => RepresentedType?.Definition;
+		public new DSymbol RepresentedType => base.RepresentedType as DSymbol;
 		public ReferenceValue(DSymbol symbol) : base(symbol) {}
 	}
-	/*
-	public class AliasValue : ExpressionValue
-	{
-		public AliasValue(IExpression x, MemberResult AliasResult)
-			: base(ExpressionValueType.Alias, AliasResult, x) { }
-	}
-
-	public class InstanceValue : ExpressionValue
-	{
-		
-	}
-
-	public class StructInstanceValue : ExpressionValue
-	{
-
-	}
-
-	public class UnionInstanceValue : ExpressionValue
-	{
-
-	}
-
-	public class EnumInstanceValue : ExpressionValue
-	{
-
-	}
-
-	public class ClassInstanceValue : ExpressionValue
-	{
-
-	}
-	*/
 
 	public class NullValue : ReferenceValue
 	{

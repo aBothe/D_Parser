@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using D_Parser.Resolver.Templates;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
@@ -124,15 +125,17 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		#region Method (overloads)
 		public AbstractType VisitPostfixExpression_Methodcall(PostfixExpression_MethodCall call)
 		{
-			List<ISemantic> callArgs;
-			ISymbolValue delegValue;
-
 			IEnumerable<AbstractType> baseExpression;
 			TemplateInstanceExpression tix;
 
 			GetRawCallOverloads(ctxt, call.PostfixForeExpression, out baseExpression, out tix);
 
-			return Evaluation.EvalMethodCall(baseExpression, tix, ctxt, call, out callArgs, out delegValue, !TryReturnMethodReferenceOnly);
+			var callArguments = new List<AbstractType>();
+			if(call.ArgumentCount > 0)
+				foreach (var arg in call.Arguments)
+					callArguments.Add(EvaluateType(arg, ctxt));
+
+			return Evaluation.EvalMethodCall(baseExpression, tix, ctxt, call, callArguments, !TryReturnMethodReferenceOnly);
 		}
 
 		AbstractType TryPretendMethodExecution(IEnumerable<AbstractType> possibleOverloads, ISyntaxRegion typeBase = null, IEnumerable<AbstractType> args = null)
@@ -140,8 +143,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var allowedOverloads = new List<AbstractType>();
 			foreach (var overload in possibleOverloads)
 			{
-				var ms = DResolver.StripAliasedTypes(overload) as MemberSymbol;
-				if (ms != null)
+				if (DResolver.StripAliasedTypes(overload) is MemberSymbol ms)
 				{
 					var executionResult = TryPretendMethodExecution_(ms, args);
 					if (executionResult != null)
@@ -633,7 +635,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		#region Postfix expressions
 		AbstractType EvalForeExpression(PostfixExpression ex)
 		{
-			var foreExpr = ex.PostfixForeExpression != null ? ex.PostfixForeExpression.Accept(this) : null;
+			var foreExpr = ex.PostfixForeExpression?.Accept(this);
 
 			if (foreExpr == null)
 				ctxt.LogError(new NothingFoundError(ex.PostfixForeExpression));
@@ -683,14 +685,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return foreExpression;
 		}
 
-		public AbstractType AccessArrayAtIndex(PostfixExpression_ArrayAccess x, AbstractType foreExpression, PostfixExpression_ArrayAccess.IndexArgument ix,ref int arg_i)
+		private AbstractType AccessArrayAtIndex(PostfixExpression_ArrayAccess x, AbstractType foreExpression, PostfixExpression_ArrayAccess.IndexArgument ix,ref int arg_i)
 		{
-			if (foreExpression is TemplateIntermediateType)
+			if (foreExpression is TemplateIntermediateType tit)
 			{
 				//TODO: Wtf is this?
 
 				//TODO: Proper resolution of alias this declarations
-				var tit = foreExpression as TemplateIntermediateType;
 				var ch = tit.Definition[DVariable.AliasThisIdentifierHash];
 				if (ch != null)
 				{
@@ -705,9 +706,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				foreExpression = tit;
 			}
 
-			var udt = foreExpression as UserDefinedType;
-
-			if (udt != null) {
+			if (foreExpression is UserDefinedType udt) {
 				ctxt.CurrentContext.IntroduceTemplateParameterTypes (udt);
 
 				//Search opIndex overloads and try to match them to the given indexing arguments.
@@ -727,9 +726,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals (udt);
 			}
 
-			if (foreExpression is AssocArrayType)
+			if (foreExpression is AssocArrayType ar)
 			{
-				var ar = foreExpression as AssocArrayType;
 				/*
 				 * myType_Array[0] -- returns TypeResult myType
 				 * return the value type of a given array result
@@ -745,19 +743,17 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			 * 
 			 * a[0] = 12;
 			 */
-			else if (foreExpression is PointerType)
+			else if (foreExpression is PointerType type)
 			{
-				var b = (foreExpression as PointerType).Base;
+				var b = type.Base;
 				if (b != null)
 					b.NonStaticAccess = true;
 				return b;
 			}
 			//return new ArrayAccessSymbol(x,((PointerType)foreExpression).Base);
 
-			else if (foreExpression is DTuple)
+			else if (foreExpression is DTuple tt)
 			{
-				var tt = foreExpression as DTuple;
-
 				var idx = Evaluation.EvaluateValue(ix.Expression, ctxt) as PrimitiveValue;
 
 				if (tt.Items == null)
@@ -785,11 +781,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public static readonly int OpSliceIdHash = "opSlice".GetHashCode();
 
-		AbstractType SliceArray(PostfixExpression_ArrayAccess x, AbstractType foreExpression, PostfixExpression_ArrayAccess.SliceArgument sl)
+		private AbstractType SliceArray(PostfixExpression_ArrayAccess x, AbstractType foreExpression, PostfixExpression_ArrayAccess.SliceArgument sl)
 		{
-			var udt = DResolver.StripMemberSymbols(foreExpression) as UserDefinedType;
-
-			if (udt == null)
+			if (!(DResolver.StripMemberSymbols(foreExpression) is UserDefinedType udt))
 				return foreExpression;
 
 			// TODO: Make suitable for multi-dimensional access
@@ -822,10 +816,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return TryPretendMethodExecution(GetOverloads(id, ctxt));
 		}
 
-		static List<AbstractType> ResolveIdentifier(IntermediateIdType id, ResolutionContext ctxt)
+		private static List<AbstractType> ResolveIdentifier(IntermediateIdType id, ResolutionContext ctxt)
 		{
-			TemplateParameterSymbol dedTemplateParam;
-			if (!id.ModuleScoped && ctxt.GetTemplateParam(id.IdHash, out dedTemplateParam))
+			if (!id.ModuleScoped && ctxt.GetTemplateParam(id.IdHash, out var dedTemplateParam))
 				return ResolveAlreadyResolvedTemplateParameter(id, ctxt, dedTemplateParam);
 
 			if ((ctxt.Options & ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.DontResolveBaseTypes) == 0)
@@ -835,7 +828,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			{
 				var resultsToReturn = new List<AbstractType>();
 
-				var loc = id != null ? id.Location : ctxt.CurrentContext.Caret;
+				var loc = id.Location;
 				foreach (var resElement in NameScan.SearchAndResolve(ctxt, loc, id.IdHash, id))
 				{
 					resultsToReturn.Add(TypeDeclarationResolver.TryPostDeduceAliasDefinition(resElement, id, ctxt));
@@ -863,8 +856,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		private static List<AbstractType> ResolveAlreadyResolvedTemplateParameter(IntermediateIdType id, ResolutionContext ctxt, TemplateParameterSymbol dedTemplateParam)
 		{
-			var tix = id as TemplateInstanceExpression;
-			if (tix != null && dedTemplateParam.Base != null && (ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) == 0)
+			if (id is TemplateInstanceExpression tix
+			    && dedTemplateParam.Base != null
+			    && (ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) == 0)
 			{
 				var cloneOptions = new ResolvedTypeCloner.CloneOptions();
 				cloneOptions.resetDeducedTypes = true;
@@ -883,14 +877,14 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public static List<AbstractType> GetOverloads(IntermediateIdType id, ResolutionContext ctxt, AbstractType resultBases = null, bool deduceParameters = true)
 		{
 			#if TRACE
-			Trace.WriteLine (string.Format("GetOverloads({0}):", id));
+			Trace.WriteLine ($"GetOverloads({id}):");
 			Trace.Indent ();
 			var sw = new Stopwatch ();
 			#endif
 
 			if (resultBases == null && id is ITypeDeclaration && (id as ITypeDeclaration).InnerDeclaration != null) {
 				#if TRACE 
-				Trace.WriteLine(string.Format("Resolve base type {0}", (id as ITypeDeclaration).InnerDeclaration));
+				Trace.WriteLine($"Resolve base type {(id as ITypeDeclaration).InnerDeclaration}");
 				Trace.Indent();
 				sw.Restart();
 				#endif
@@ -900,12 +894,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				#if TRACE
 				sw.Stop();
 				Trace.Unindent();
-				Trace.WriteLine(string.Format("Finished resolving base type {0} => {1}. {2} ms.", (id as ITypeDeclaration).InnerDeclaration, resultBases, sw.ElapsedMilliseconds));
+				Trace.WriteLine(
+					$"Finished resolving base type {((ITypeDeclaration) id).InnerDeclaration} => {resultBases}. {sw.ElapsedMilliseconds} ms.");
 				#endif
 			}
 
 			#if TRACE
-			Trace.WriteLine (string.Format("Getting raw overloads of {0}", id));
+			Trace.WriteLine ($"Getting raw overloads of {id}");
 			Trace.Indent();
 			sw.Restart ();
 			#endif
@@ -919,7 +914,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			#if TRACE
 			sw.Stop ();
 			Trace.Unindent();
-			Trace.WriteLine (string.Format("Finished getting raw overloads of {0}. {1}ms", id, sw.ElapsedMilliseconds));
+			Trace.WriteLine ($"Finished getting raw overloads of {id}. {sw.ElapsedMilliseconds}ms");
 			Trace.WriteLine("Deducing.");
 			sw.Restart();
 			#endif
@@ -938,7 +933,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			#if TRACE
 			sw.Stop();
-			Trace.WriteLine(string.Format("Finished deduction. {0} ms. {1}", sw.ElapsedMilliseconds, AmbiguousType.Get(res)));
+			Trace.WriteLine($"Finished deduction. {sw.ElapsedMilliseconds} ms. {AmbiguousType.Get(res)}");
 			Trace.Unindent();
 			#endif
 
@@ -952,58 +947,57 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var symbols = new List<INode>();
 			var newRes = new List<T>();
 
-			if (results != null)
+			if (results == null)
+				return newRes;
+
+			foreach (var rb in results)
 			{
-				foreach (var rb in results)
+				var n = GetResultMember(rb);
+				if (n != null)
 				{
-					var n = GetResultMember(rb);
-					if (n != null)
+					if (symbols.Contains(n))
+						continue;
+					symbols.Add(n);
+
+					// Put priority on locals
+					if (n is DVariable variable && variable.IsLocal)
 					{
-						if (symbols.Contains(n))
-							continue;
-						symbols.Add(n);
-
-						// Put priority on locals
-						if (n is DVariable &&
-						   (n as DVariable).IsLocal)
-						{
-							newRes.Clear();
-							newRes.Add(rb);
-							break;
-						}
-
-						if (ctxt.CurrentContext.ScopedBlock == null)
-							break;
-
-						// If member/type etc. is part of the actual module, omit external symbols
-						if (n.NodeRoot != ctxt.CurrentContext.ScopedBlock.NodeRoot)
-						{
-							bool omit = false;
-							foreach (var r in newRes)
-							{
-								var k = GetResultMember(r);
-								if (k != null && k.NodeRoot == ctxt.CurrentContext.ScopedBlock.NodeRoot)
-								{
-									omit = true;
-									break;
-								}
-							}
-
-							if (omit)
-								continue;
-						}
-						else
-							foreach (var r in newRes.ToArray())
-							{
-								var k = GetResultMember(r);
-								if (k != null && k.NodeRoot != ctxt.CurrentContext.ScopedBlock.NodeRoot)
-									newRes.Remove(r);
-							}
+						newRes.Clear();
+						newRes.Add(rb);
+						break;
 					}
 
-					if (!newRes.Contains(rb))
-						newRes.Add(rb);
+					if (ctxt.CurrentContext.ScopedBlock == null)
+						break;
+
+					// If member/type etc. is part of the actual module, omit external symbols
+					if (n.NodeRoot != ctxt.CurrentContext.ScopedBlock.NodeRoot)
+					{
+						bool omit = false;
+						foreach (var r in newRes)
+						{
+							var k = GetResultMember(r);
+							if (k != null && k.NodeRoot == ctxt.CurrentContext.ScopedBlock.NodeRoot)
+							{
+								omit = true;
+								break;
+							}
+						}
+
+						if (omit)
+							continue;
+					}
+					else
+						foreach (var r in newRes.ToArray())
+						{
+							var k = GetResultMember(r);
+							if (k != null && k.NodeRoot != ctxt.CurrentContext.ScopedBlock.NodeRoot)
+								newRes.Remove(r);
+						}
 				}
+
+				if (!newRes.Contains(rb))
+					newRes.Add(rb);
 			}
 
 			return newRes;
@@ -1024,8 +1018,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			switch (id.Format)
 			{
-				case Parser.LiteralFormat.StringLiteral:
-				case Parser.LiteralFormat.VerbatimStringLiteral:
+				case LiteralFormat.StringLiteral:
+				case LiteralFormat.VerbatimStringLiteral:
 					var str = GetStringLiteralType(id.Subformat);
 					str.NonStaticAccess = true;
 					return str;
@@ -1050,7 +1044,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			byte tt;
 			switch (id.Format)
 			{
-				case Parser.LiteralFormat.CharLiteral:
+				case LiteralFormat.CharLiteral:
 					var tk = id.Subformat == LiteralSubformat.Utf32 ? DTokens.Dchar :
 						id.Subformat == LiteralSubformat.Utf16 ? DTokens.Wchar :
 						DTokens.Char;
@@ -1113,9 +1107,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					while (!(classDef is DClassLike) && classDef != null)
 						classDef = classDef.Parent as IBlockNode;
 
-					if (classDef is DClassLike)
+					if (classDef is DClassLike like)
 					{
-						var tr = ClassInterfaceResolver.ResolveClassOrInterface(classDef as DClassLike, ctxt, x, true);
+						var tr = ClassInterfaceResolver.ResolveClassOrInterface(like, ctxt, x, true);
 
 						if (tr.Base != null)
 						{
@@ -1177,18 +1171,15 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public AbstractType Visit(AssocArrayExpression aa)
 		{
-			if (aa.Elements != null && aa.Elements.Count > 0)
-			{
-				var firstElement = aa.Elements[0].Key;
-				var firstElementValue = aa.Elements[0].Value;
+			if (aa.Elements == null || aa.Elements.Count <= 0)
+				return null;
 
-				var keyType = firstElement != null ? AbstractType.Get(firstElement.Accept(this)) : null;
-				var valueType = firstElementValue != null ? AbstractType.Get(firstElementValue.Accept(this)) : null;
+			var firstElement = aa.Elements[0].Key;
+			var firstElementValue = aa.Elements[0].Value;
 
-				return new AssocArrayType(valueType, keyType);
-			}
-
-			return null;
+			var keyType = firstElement != null ? AbstractType.Get(firstElement.Accept(this)) : null;
+			var valueType = firstElementValue != null ? AbstractType.Get(firstElementValue.Accept(this)) : null;
+			return new AssocArrayType(valueType, keyType);
 		}
 
 		public AbstractType Visit(FunctionLiteral x)
@@ -1196,8 +1187,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return new DelegateType(
 				(ctxt.Options & ResolutionOptions.DontResolveBaseTypes | ResolutionOptions.ReturnMethodReferencesOnly) != 0
 				? null : DSymbolBaseTypeResolver.GetMethodReturnType(x.AnonymousMethod, ctxt),
-				x,
-				TypeResolution.TypeDeclarationResolver.HandleNodeMatches(x.AnonymousMethod.Parameters, ctxt));
+				x, TypeDeclarationResolver.HandleNodeMatches(x.AnonymousMethod.Parameters, ctxt));
 		}
 
 		public AbstractType Visit(AssertExpression x)
@@ -1278,7 +1268,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			PostfixExpression_Access pfa;
 			AbstractType t;
-			ResolutionOptions optionsBackup;
 
 			switch (te.Keyword)
 			{
@@ -1302,7 +1291,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 
 				case "getOverloads":
-					optionsBackup = ctxt.ContextIndependentOptions;
+					var optionsBackup = ctxt.ContextIndependentOptions;
 					ctxt.ContextIndependentOptions = ResolutionOptions.IgnoreAllProtectionAttributes;
 
 					pfa = prepareMemberTraitExpression(te, out t);
@@ -1343,7 +1332,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return null;
 		}
 
-		PostfixExpression_Access prepareMemberTraitExpression(TraitsExpression te, out AbstractType t)
+		private PostfixExpression_Access prepareMemberTraitExpression(TraitsExpression te, out AbstractType t)
 		{
 			return prepareMemberTraitExpression(ctxt, te, out t);
 		}
@@ -1353,7 +1342,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// Evaluates the first argument to <param name="t">t</param>, 
 		/// takes the second traits argument, tries to evaluate it to a string, and puts it + the first arg into an postfix_access expression
 		/// </summary>
-		internal static PostfixExpression_Access prepareMemberTraitExpression(ResolutionContext ctxt, TraitsExpression te, out AbstractType t, AbstractSymbolValueProvider vp = null)
+		internal static PostfixExpression_Access prepareMemberTraitExpression(ResolutionContext ctxt, TraitsExpression te, out AbstractType t, StatefulEvaluationContext vp = null)
 		{
 			if (te.Arguments != null && te.Arguments.Length == 2)
 			{
@@ -1367,10 +1356,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					var litEx = te.Arguments[1].AssignExpression;
 					var v = vp != null ? Evaluation.EvaluateValue(litEx, vp) : Evaluation.EvaluateValue(litEx, ctxt);
 					
-					if (v is ArrayValue && (v as ArrayValue).IsString)
+					if (v is ArrayValue av && av.IsString)
 					{
-						var av = v as ArrayValue;
-
 						// Mock up a postfix_access expression to ensure static properties & ufcs methods are checked either
 						return new PostfixExpression_Access
 						{

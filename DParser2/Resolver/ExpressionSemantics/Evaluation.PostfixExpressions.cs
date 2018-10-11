@@ -10,53 +10,42 @@ namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public partial class Evaluation
 	{
-		bool? returnBaseTypeOnly;
-
 		public ISymbolValue VisitPostfixExpression_Methodcall(PostfixExpression_MethodCall call)
 		{
-			var returnBaseTypeOnly = !this.returnBaseTypeOnly.HasValue ? 
-				!ctxt.Options.HasFlag(ResolutionOptions.ReturnMethodReferencesOnly) : 
-				this.returnBaseTypeOnly.Value;
-			this.returnBaseTypeOnly = null;
-
-			List<ISemantic> callArguments;
-			ISymbolValue delegValue;
+			var callArguments = new List<ISymbolValue>();
+			var callArgumentTypes = new List<AbstractType>();
+			if (call.ArgumentCount > 0)
+			{
+				foreach (var arg in call.Arguments)
+				{
+					var callArgument = evaluationState != null
+						? EvaluateValue(arg, evaluationState)
+						: EvaluateValue(arg, ctxt);
+					callArguments.Add(callArgument);
+					callArgumentTypes.Add(AbstractType.Get(callArgument));
+				}
+			}
 
 			// Deduce template parameters later on
-			IEnumerable<AbstractType> baseExpression;
-			TemplateInstanceExpression tix;
+			GetRawCallOverloads(ctxt, call, out var baseExpression, out var tix);
 
-			GetRawCallOverloads(ctxt, call, out baseExpression, out tix);
+			var argTypeFilteredOverloads =
+				EvalMethodCall(baseExpression, tix, ctxt, call, callArgumentTypes, false, evaluationState);
 
-			var argTypeFilteredOverloads = EvalMethodCall(baseExpression, tix, ctxt, call, out callArguments, out delegValue, returnBaseTypeOnly, ValueProvider);
-
-			if (delegValue != null)
-				return delegValue;
 			if (argTypeFilteredOverloads == null)
 				return null;
 
-			// Convert ISemantic[] to ISymbolValue[]
-			var args = new List<ISymbolValue>(callArguments != null ? callArguments.Count : 0);
-
-			if(callArguments != null)
-				foreach (var a in callArguments)
-					args.Add(a as ISymbolValue);
-
 			// Execute/Evaluate the variable contents etc.
-			return TryDoCTFEOrGetValueRefs(argTypeFilteredOverloads, call.PostfixForeExpression, args);
+			return TryDoCTFEOrGetValueRefs(argTypeFilteredOverloads, call.PostfixForeExpression, callArguments);
 		}
 
 		public static AbstractType EvalMethodCall(IEnumerable<AbstractType> baseExpression, TemplateInstanceExpression tix,
 			ResolutionContext ctxt, 
-			PostfixExpression_MethodCall call, out List<ISemantic> callArguments, out ISymbolValue delegateValue,
-			bool returnBaseTypeOnly, AbstractSymbolValueProvider ValueProvider = null)
+			PostfixExpression_MethodCall call, List<AbstractType> callArguments,
+			bool returnBaseTypeOnly, StatefulEvaluationContext ValueProvider = null)
 		{
-			delegateValue = null;
-			callArguments = null;
-
-			bool returnInstantly;
-			var methodOverloads = MethodOverloadCandidateSearchVisitor.SearchCandidates (baseExpression, ctxt, ValueProvider, call, 
-			                                                      ref delegateValue, returnBaseTypeOnly, out returnInstantly);
+			var methodOverloads = MethodOverloadCandidateSearchVisitor.SearchCandidates (
+				baseExpression, ctxt, ValueProvider, call, returnBaseTypeOnly, out var returnInstantly);
 
 			if (returnInstantly) {
 				return methodOverloads.Count > 0 ? methodOverloads[0] : null;
@@ -68,9 +57,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var templateMatchedMethodOverloads = TryMatchTemplateArgumentsToOverloads (tix, ctxt, methodOverloads);
 
 			return MethodOverloadsByParameterTypeComparisonFilter.FilterOverloads (call,
-				templateMatchedMethodOverloads, ctxt,
-				ValueProvider, returnBaseTypeOnly,
-				out callArguments, ref delegateValue);
+				templateMatchedMethodOverloads, ctxt, ValueProvider, returnBaseTypeOnly, callArguments);
 		}
 
 		static IEnumerable<AbstractType> TryMatchTemplateArgumentsToOverloads (TemplateInstanceExpression tix, ResolutionContext ctxt, IEnumerable<AbstractType> methodOverloads)
@@ -125,7 +112,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// Also handles UFCS - so if filtering is wanted, the function becom
 		/// </summary>
 		public static List<R> EvalPostfixAccessExpression<R>(ExpressionVisitor<R> vis, ResolutionContext ctxt,PostfixExpression_Access acc,
-			ISemantic resultBase = null, bool EvalAndFilterOverloads = true, bool ResolveImmediateBaseType = true, AbstractSymbolValueProvider ValueProvider = null)
+			ISemantic resultBase = null, bool EvalAndFilterOverloads = true, bool ResolveImmediateBaseType = true, StatefulEvaluationContext ValueProvider = null)
 			where R : class,ISemantic
 		{
 			if (acc == null)
@@ -162,9 +149,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			else if (acc.AccessExpression is IdentifierExpression id)
 			{
-				if (ValueProvider != null && EvalAndFilterOverloads && baseExpression != null)
+				if (EvalAndFilterOverloads)
 				{
-					var staticPropResult = StaticProperties.TryEvalPropertyValue(ValueProvider, baseExpression, id.IdHash);
+					var staticPropResult = StaticProperties.TryEvalPropertyValue(ctxt, baseExpression, id.IdHash);
 					if (staticPropResult != null)
 						return new List<R> { (R) staticPropResult };
 				}
@@ -188,29 +175,32 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 
 			// If evaluation active and the access expression is stand-alone, return a single item only.
-			if (EvalAndFilterOverloads && ValueProvider != null)
-				return new List<R> { (R)new Evaluation(ValueProvider).TryDoCTFEOrGetValueRefs(
+			if (!EvalAndFilterOverloads || typeof(AbstractType).IsAssignableFrom(typeof(R)))
+				return overloads as List<R>;
+
+			var evaluation = ValueProvider != null ? new Evaluation(ValueProvider) : new Evaluation(ctxt);
+			return new List<R>
+			{
+				(R) evaluation.TryDoCTFEOrGetValueRefs(
 					AmbiguousType.Get(overloads),
 					acc.AccessExpression,
-					new[] { baseExpression as ISymbolValue })
-				};
-
-			return overloads as List<R>;
+					new List<ISymbolValue> {baseExpression as ISymbolValue})
+			};
 		}
 
 		ISymbolValue EvalForeExpression(PostfixExpression ex)
 		{
 			var foreValue = ex.PostfixForeExpression?.Accept(this);
 
-			if (readonlyEvaluation && foreValue is VariableValue value)
-				return ValueProvider[value.Variable];
+			if (readonlyEvaluation && foreValue is VariableValue variableValue)
+				return EvaluateVariableValue(variableValue);
 
 			return foreValue;
 		}
 
 		public ISymbolValue Visit(PostfixExpression_Access ex)
 		{
-			var r = EvalPostfixAccessExpression(this, ctxt, ex, null, true, ValueProvider:ValueProvider);
+			var r = EvalPostfixAccessExpression(this, ctxt, ex, null, true, ValueProvider:evaluationState);
 			ctxt.CheckForSingleResult(r, ex);
 
 			return r != null && r.Count > 0 ? r[0] : null;
@@ -257,21 +247,21 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return foreExpression;
 		}
 
+		private int currentArrayLength = -1;
+
 		ISymbolValue AccessArrayAtIndex(PostfixExpression_ArrayAccess x, ISymbolValue foreExpression, PostfixExpression_ArrayAccess.IndexArgument ix)
 		{
 			//TODO: Access pointer arrays(?)
 
-			if (foreExpression is ArrayValue) // ArrayValue must be checked first due to inheritance!
+			if (foreExpression is ArrayValue av) // ArrayValue must be checked first due to inheritance!
 			{
-				var av = foreExpression as ArrayValue;
-
 				// Make $ operand available
-				var arrLen_Backup = ValueProvider.CurrentArrayLength;
-				ValueProvider.CurrentArrayLength = av.Length;
+				var arrLen_Backup = currentArrayLength;
+				currentArrayLength = av.Length;
 
 				var n = ix.Expression.Accept(this) as PrimitiveValue;
 
-				ValueProvider.CurrentArrayLength = arrLen_Backup;
+				currentArrayLength = arrLen_Backup;
 
 				if (n == null)
 				{
@@ -279,7 +269,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					return null;
 				}
 
-				int i = 0;
+				int i;
 				try
 				{
 					i = Convert.ToInt32(n.Value);
@@ -303,10 +293,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				}
 				else return av.Elements[i];
 			}
-			else if (foreExpression is AssociativeArrayValue)
+			else if (foreExpression is AssociativeArrayValue aa)
 			{
-				var aa = (AssociativeArrayValue)foreExpression;
-
 				var key = ix.Expression.Accept(this) as PrimitiveValue;
 
 				if (key == null)
@@ -347,15 +335,15 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				return foreExpression;
 
 			// Make $ operand available
-			var arrLen_Backup = ValueProvider.CurrentArrayLength;
+			var arrLen_Backup = currentArrayLength;
 			var len = ar.Length;
-			ValueProvider.CurrentArrayLength = len;
+			currentArrayLength = len;
 
 			//TODO: Strip aliases and whatever things may break this
 			var bound_lower = sl.LowerBoundExpression.Accept(this) as PrimitiveValue;
 			var bound_upper = sl.UpperBoundExpression.Accept(this) as PrimitiveValue;
 
-			ValueProvider.CurrentArrayLength = arrLen_Backup;
+			currentArrayLength = arrLen_Backup;
 
 			if (bound_lower == null || bound_upper == null)
 			{

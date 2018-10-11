@@ -15,41 +15,48 @@ namespace Tests.ExpressionEvaluation
 	[TestFixture]
 	public class EvaluationTests
 	{
-		public static AbstractSymbolValueProvider GetDefaultSymbolVP()
+		static ISymbolValue E(string expression, ResolutionContext ctxt = null)
 		{
-			return new StandardValueProvider(ResolutionContext.Create(new LegacyParseCacheView(new string[0]), null));
+			return E(expression, ctxt, out _);
 		}
 
-		public static ISymbolValue E(string expression, AbstractSymbolValueProvider vp=null)
+		static ISymbolValue E(string expression, ResolutionContext ctxt, out VariableValue variableValue)
 		{
-			return Evaluation.EvaluateValue(DParser.ParseExpression(expression), vp ?? GetDefaultSymbolVP());
+			return Evaluation.EvaluateValue(DParser.ParseExpression(expression),
+				ctxt ?? ResolutionTestHelper.CreateDefCtxt(new LegacyParseCacheView(new string[] { }), null),
+				out variableValue);
 		}
 
-		public static PrimitiveValue GetPrimitiveValue(string literalCode,AbstractSymbolValueProvider vp=null)
+		static ISymbolValue E(string expression, StatefulEvaluationContext vp)
 		{
-			var v = E(literalCode,vp ?? GetDefaultSymbolVP());
+			return Evaluation.EvaluateValue(DParser.ParseExpression(expression), vp);
+		}
+
+		static PrimitiveValue GetPrimitiveValue(string literalCode,StatefulEvaluationContext vp=null)
+		{
+			var v = E(literalCode);
 
 			Assert.That(v,Is.TypeOf(typeof(PrimitiveValue)));
 			return (PrimitiveValue)v;
 		}
 
-		public static void TestPrimitive(string literal, int btToken, object val, AbstractSymbolValueProvider vp=null)
+		 static void TestPrimitive(string literal, int btToken, object val)
 		{
-			var pv = GetPrimitiveValue(literal, vp ?? GetDefaultSymbolVP());
+			var pv = GetPrimitiveValue(literal);
 
 			Assert.That(pv.BaseTypeToken, Is.EqualTo(btToken));
 			Assert.That(pv.Value, Is.EqualTo(val));
 		}
 
-		public static void TestString(string literal, string content, bool ProvideObjModule = true)
+		static void TestString(string literal, string content, bool ProvideObjModule = true)
 		{
-			ResolutionContext ctxt = null;
+			ResolutionContext ctxt;
 
 			var block = new DBlockNode();
 			if (ProvideObjModule)
-				ctxt = ResolutionTests.CreateDefCtxt(ResolutionTests.CreateCache(), block);
+				ctxt = ResolutionTestHelper.CreateDefCtxt(ResolutionTestHelper.CreateCache(), block);
 			else
-				ctxt = ResolutionTests.CreateDefCtxt(new LegacyParseCacheView(new string[] { }), block);
+				ctxt = ResolutionTestHelper.CreateDefCtxt(new LegacyParseCacheView(new string[] { }), block);
 
 			var x = DParser.ParseExpression(literal);
 
@@ -88,9 +95,9 @@ namespace Tests.ExpressionEvaluation
 			}
 		}
 
-		public static void TestBool(string literal, bool v = true, AbstractSymbolValueProvider vp =null)
+		static void TestBool(string literal, bool v = true)
 		{
-			var pv = GetPrimitiveValue(literal, vp);
+			var pv = GetPrimitiveValue(literal);
 
 			Assert.AreEqual(DTokens.Bool, pv.BaseTypeToken);
 
@@ -239,58 +246,48 @@ namespace Tests.ExpressionEvaluation
 		[Test]
 		public void TestConstEval()
 		{
-			var pcl = ResolutionTests.CreateCache(@"module modA;
+			var ctxt = ResolutionTestHelper.CreateDefCtxt(@"module modA;
 const a= 234;
 enum b=123;
 const int c=125;
 enum int d=126;
 ");
-			var vp = new StandardValueProvider(ResolutionContext.Create(pcl, null, pcl.FirstPackage()["modA"]));
 
-			var v = E("a", vp);
+			CheckPrimitiveVariableValue("a", ctxt, 234M);
+			CheckPrimitiveVariableValue("b", ctxt, 123M);
+			CheckPrimitiveVariableValue("c", ctxt, 125M);
+			CheckPrimitiveVariableValue("d", ctxt, 126M);
+			CheckPrimitiveValue("d + 4", ctxt, 130M);
+			CheckPrimitiveValue("d + a", ctxt, 360M);
+		}
 
-			Assert.That(v, Is.TypeOf(typeof(VariableValue)));
-			var val = vp[((VariableValue)v).Variable];
+		private static void CheckPrimitiveValue(string expression, ResolutionContext ctxt, decimal targetValue)
+		{
+			var v = E(expression, ctxt);
 
-			Assert.That(val, Is.TypeOf(typeof(PrimitiveValue)));
-			var pv = (PrimitiveValue)val;
+			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			var pv = (PrimitiveValue)v;
+			Assert.AreEqual(pv.Value, targetValue);
+		}
 
-			Assert.AreEqual(pv.Value, 234M);
+		private static void CheckPrimitiveVariableValue(string expression, ResolutionContext ctxt, decimal targetValue)
+		{
+			var v = E(expression, ctxt, out var variableValue);
 
-			v = E("b", vp);
-			val = vp[((VariableValue)v).Variable];
-			pv=(PrimitiveValue)val;
-			Assert.AreEqual(pv.Value, 123M);
-
-			v = E("c", vp);
-			val = vp[((VariableValue)v).Variable];
-			pv = (PrimitiveValue)val;
-			Assert.AreEqual(pv.Value, 125M);
-
-			v = E("d", vp);
-			val = vp[((VariableValue)v).Variable];
-			pv = (PrimitiveValue)val;
-			Assert.AreEqual(pv.Value, 126M);
-
-			pv = E("d + 4", vp) as PrimitiveValue;
-			Assert.IsNotNull(pv);
-			Assert.AreEqual(130M, pv.Value);
-
-			pv = E("d + a", vp) as PrimitiveValue;
-			Assert.IsNotNull(pv);
-			Assert.AreEqual(360M, pv.Value);
+			Assert.That(variableValue, Is.Not.Null);
+			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			var pv = (PrimitiveValue)v;
+			Assert.AreEqual(pv.Value, targetValue);
 		}
 
 		[Test]
 		public void TestArrays()
 		{
-			var vp = new StandardValueProvider(null);
-
-			var v = E("[11,22,33,43][1]", vp);
+			var v = E("[11,22,33,43][1]");
 			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
 			Assert.AreEqual(((PrimitiveValue)v).Value, 22);
 
-			v = E("[11,22,33,44,55,66,77,88,99,100][1..3]", vp);
+			v = E("[11,22,33,44,55,66,77,88,99,100][1..3]");
 
 			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
 			var av=(ArrayValue)v;
@@ -301,9 +298,7 @@ enum int d=126;
 		[Test]
 		public void TestStringAccess()
 		{
-			var vp = new StandardValueProvider(null);
-
-			var v = E("\"asdf\"[1]", vp);
+			var v = E("\"asdf\"[1]");
 			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
 			Assert.AreEqual(((PrimitiveValue)v).Value, (decimal)'s');
 		}
@@ -313,9 +308,7 @@ enum int d=126;
 		{
 			var ctxt = ResolutionTestHelper.CreateDefCtxt("module A; enum stringConstant = \"asdf\";");
 
-			var vp = new StandardValueProvider(ctxt);
-
-			var v = E("stringConstant[1]", vp);
+			var v = E("stringConstant[1]", ctxt);
 			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
 			Assert.AreEqual(((PrimitiveValue)v).Value, (decimal)'s');
 		}
@@ -323,7 +316,7 @@ enum int d=126;
 		[Test]
 		public void TestAccessExpression()
 		{
-			var pcl = ResolutionTests.CreateCache(@"module modA;
+			var ctxt = ResolutionTests.CreateDefCtxt(@"module modA;
 
 class A
 {
@@ -331,41 +324,29 @@ class A
 }
 
 A a;");
-
-			var vp = new StandardValueProvider(ResolutionContext.Create(pcl, null, pcl.FirstPackage()["modA"]));
 			/*
 			var v = E("a.someProp", vp);
 			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
 			Assert.AreEqual(((PrimitiveValue)v).Value,3);
 			*/
-			var v = E("A.someProp", vp);
-			Assert.That(v, Is.TypeOf(typeof(VariableValue)));
-			var vv = vp[((VariableValue)v).Variable] as PrimitiveValue;
-			Assert.AreEqual(3, vv.Value);
+			var v = E("A.someProp", ctxt, out var variableValue);
+			Assert.That(variableValue, Is.Not.Null);
+			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			Assert.AreEqual(((PrimitiveValue)v).Value, 3M);
 		}
 
 		[Test]
 		public void TestCastExpression1()
 		{
-			var ctxt = ResolutionTests.CreateCtxt("A",@"module A;");
-			var vp = new StandardValueProvider (ctxt);
-
-			IExpression x;
-			ISymbolValue v;
-
-			x = DParser.ParseExpression ("cast(ubyte)20");
-			v = Evaluation.EvaluateValue (x, vp);
-
+			var v = E ("cast(ubyte) 20");
 			Assert.That (v, Is.TypeOf (typeof(PrimitiveValue)));
 			Assert.That ((v as PrimitiveValue).BaseTypeToken, Is.EqualTo (DTokens.Ubyte));
 			Assert.That ((v as PrimitiveValue).Value, Is.EqualTo(20M));
 		}
 
-		public static bool EvalIsExpression(string IsExpressionCode, AbstractSymbolValueProvider vp)
+		static bool EvalIsExpression(string IsExpressionCode, ResolutionContext ctxt)
 		{
-			var e = DParser.ParseExpression("is("+IsExpressionCode+")");
-
-			var v = Evaluation.EvaluateValue(e, vp);
+			var v = E("is("+IsExpressionCode+")", ctxt);
 
 			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
 			var pv = (PrimitiveValue)v;
@@ -376,7 +357,7 @@ A a;");
 		[Test]
 		public void TestIsExpression()
 		{
-			var pcl = ResolutionTests.CreateCache(@"module modA;
+			var ctxt = ResolutionTestHelper.CreateDefCtxt(@"module modA;
 class A {}
 class B : A {}
 class C : A {}
@@ -395,23 +376,20 @@ template isDynArg(T) {
         } else static const bool isDynArg = false;
 }
 ");
+			Assert.IsTrue(EvalIsExpression("char*[] T : U[], U : V*, V", ctxt));
+			Assert.IsTrue(EvalIsExpression("string T : U[], U : immutable(V), V : char", ctxt));
+			Assert.IsFalse(EvalIsExpression("int[10] X : X[Y], int Y : 5", ctxt));
 
-			var vp = new StandardValueProvider(ResolutionContext.Create(pcl, null,pcl.FirstPackage()["modA"]));
-
-			Assert.IsTrue(EvalIsExpression("char*[] T : U[], U : V*, V", vp));
-			Assert.IsTrue(EvalIsExpression("string T : U[], U : immutable(V), V : char", vp));
-			Assert.IsFalse(EvalIsExpression("int[10] X : X[Y], int Y : 5",vp));
-
-			Assert.IsTrue(EvalIsExpression("bool : bool", vp));
-			Assert.IsTrue(EvalIsExpression("bool == bool", vp));
-			Assert.IsTrue(EvalIsExpression("C : A", vp));
-			Assert.IsTrue(EvalIsExpression("C : C", vp));
-			Assert.IsFalse(EvalIsExpression("C == A", vp));
-			Assert.IsTrue(EvalIsExpression("immutable(char) == immutable", vp));
-			Assert.IsFalse(EvalIsExpression("string == immutable", vp));
-			Assert.IsTrue(EvalIsExpression("A == class", vp));
-			Assert.IsTrue(EvalIsExpression("typeof(A)", vp));
-			Assert.IsFalse(EvalIsExpression("typeof(D)", vp));
+			Assert.IsTrue(EvalIsExpression("bool : bool", ctxt));
+			Assert.IsTrue(EvalIsExpression("bool == bool", ctxt));
+			Assert.IsTrue(EvalIsExpression("C : A", ctxt));
+			Assert.IsTrue(EvalIsExpression("C : C", ctxt));
+			Assert.IsFalse(EvalIsExpression("C == A", ctxt));
+			Assert.IsTrue(EvalIsExpression("immutable(char) == immutable", ctxt));
+			Assert.IsFalse(EvalIsExpression("string == immutable", ctxt));
+			Assert.IsTrue(EvalIsExpression("A == class", ctxt));
+			Assert.IsTrue(EvalIsExpression("typeof(A)", ctxt));
+			Assert.IsFalse(EvalIsExpression("typeof(D)", ctxt));
 		}
 
 		[Test]
@@ -517,9 +495,8 @@ post;
 		public void HashingTest1()
 		{
 			var hashVis = D_Parser.Dom.Visitors.AstElementHashingVisitor.Instance;
-			var vp = new StandardValueProvider (ResolutionTests.CreateCtxt ("A", "module A;"));
-			var v1 = Evaluation.EvaluateValue (DParser.ParseExpression ("123"), vp);
-			var v2 = Evaluation.EvaluateValue (DParser.ParseExpression ("-123"), vp);
+			var v1 = E ("123");
+			var v2 = E ("-123");
 
 			Assert.That (v1.Accept(hashVis), Is.Not.EqualTo(v2.Accept(hashVis)));
 		}

@@ -57,7 +57,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var v = x.UnaryExpression.Accept(this);
 
 			if(v is VariableValue)
-				v = EvaluateValue(v as VariableValue, ValueProvider);
+				v = EvaluateVariableValue(v as VariableValue);
 
 			if (v is PrimitiveValue)
 			{
@@ -74,7 +74,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var v = x.UnaryExpression.Accept(this);
 			
 			if(v is VariableValue)
-					v = EvaluateValue(v as VariableValue, ValueProvider);
+					v = EvaluateVariableValue(v as VariableValue);
 				var pv = v as PrimitiveValue;
 				if(pv == null){
 					EvalError(x.UnaryExpression, "Expression must be a primitive value",v);
@@ -114,7 +114,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var types = TypeDeclarationResolver.ResolveSingle(uat.Type, ctxt);
 
 			// First off, try to resolve static properties
-			var statProp = StaticProperties.TryEvalPropertyValue(ValueProvider, types, uat.AccessIdentifierHash);
+			var statProp = StaticProperties.TryEvalPropertyValue(ctxt, types, uat.AccessIdentifierHash);
 
 			if (statProp != null)
 				return statProp;

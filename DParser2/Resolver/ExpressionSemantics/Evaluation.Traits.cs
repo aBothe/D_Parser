@@ -24,7 +24,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					ctxt.ContextIndependentOptions = ResolutionOptions.IgnoreAllProtectionAttributes;
 					
 					AbstractType t;
-					var pfa = ExpressionTypeEvaluation.prepareMemberTraitExpression(ctxt, te, out t, ValueProvider);
+					var pfa = ExpressionTypeEvaluation.prepareMemberTraitExpression(ctxt, te, out t, evaluationState);
 					
 					if(pfa != null && t != null)
 					{
@@ -45,12 +45,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					
 					
 				case "getMember":
-					pfa = ExpressionTypeEvaluation.prepareMemberTraitExpression(ctxt, te, out t, ValueProvider);
+					pfa = ExpressionTypeEvaluation.prepareMemberTraitExpression(ctxt, te, out t, evaluationState);
 					
 					if(pfa == null ||t == null)
 						break;
 					
-					var vs = EvalPostfixAccessExpression(this, ctxt, pfa,t, ValueProvider:ValueProvider);
+					var vs = EvalPostfixAccessExpression(this, ctxt, pfa,t, ValueProvider:evaluationState);
 					if(vs == null || vs.Count == 0)
 						return null;
 					return vs[0];
@@ -60,7 +60,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					optionsBackup = ctxt.ContextIndependentOptions;
 					ctxt.ContextIndependentOptions = ResolutionOptions.IgnoreAllProtectionAttributes;
 
-					pfa = ExpressionTypeEvaluation.prepareMemberTraitExpression(ctxt, te, out t, ValueProvider);
+					pfa = ExpressionTypeEvaluation.prepareMemberTraitExpression(ctxt, te, out t, evaluationState);
 
 					if (pfa != null && t != null)
 						vs = EvalPostfixAccessExpression(this, ctxt, pfa, t);

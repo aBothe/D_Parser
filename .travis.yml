@@ -5,12 +5,14 @@ notifications:
   irc: "chat.freenode.net#d.mono-d"
 
 language: csharp
+mono: latest
 solution: DParser2.Unittest.sln
 
 install:
   - nuget restore DParser2.Unittest.sln
-  - nuget install NUnit.Console -Version 3.8.0 -OutputDirectory packages
+  - nuget install NUnit.Console -Version 3.9.0 -OutputDirectory packages
 
 script:
   - msbuild DParser2.Unittest.sln /p:Configuration=Debug
-  - mono ./packages/NUnit.ConsoleRunner.3.8.0/tools/nunit3-console.exe ./Tests/bin/Debug/Tests.dll
+  - mono ./packages/NUnit.ConsoleRunner.3.9.0/tools/nunit3-console.exe ./Tests/bin/Debug/Tests.dll
+  - cat TestResult.xml

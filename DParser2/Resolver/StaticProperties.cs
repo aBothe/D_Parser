@@ -12,7 +12,7 @@ namespace D_Parser.Resolver
 {
 	public static class StaticProperties
 	{
-		public delegate ISymbolValue ValueGetterHandler(AbstractSymbolValueProvider vp, ISemantic baseValue);
+		public delegate ISymbolValue ValueGetterHandler(ResolutionContext ctxt, ISemantic baseValue);
 
 		class StaticPropertyInfo
 		{
@@ -99,11 +99,11 @@ namespace D_Parser.Resolver
 			props.AddProp(new StaticPropertyInfo("alignof", "Variable alignment", DTokens.Uint) { RequireThis = true });
 			props.AddProp(new StaticPropertyInfo("mangleof", "String representing the ‘mangled’ representation of the type", "string"));
 			props.AddProp(new StaticPropertyInfo("stringof", "String representing the source representation of the type", "string") { 
-				ValueGetter = (vp, v) => {
+				ValueGetter = (ctxt, v) => {
 					var t = AbstractType.Get(v);
 					if(t == null)
 						return new NullValue();
-					return new ArrayValue(Evaluation.GetStringLiteralType(vp.ResolutionContext),
+					return new ArrayValue(Evaluation.GetStringLiteralType(ctxt),
 						t is DSymbol symbol ? symbol.Definition.Name : t.ToCode());
 				}
 			});
@@ -142,7 +142,7 @@ namespace D_Parser.Resolver
 			props.AddProp(new StaticPropertyInfo("length", "Array length", DTokens.Int) { 
 				RequireThis = true,
 			ValueGetter = 
-				(vp, v) => {
+				(ctxt, v) => {
 					var av = v as ArrayValue;
 					return new PrimitiveValue(av.Elements != null ? av.Elements.Length : 0); 
 				}});
@@ -275,11 +275,11 @@ namespace D_Parser.Resolver
 
 				ResolvedBaseTypeGetter = (t, ctxt) => GetTupleofTuple(t as UserDefinedType, ctxt),
 
-				ValueGetter = (vp, value) =>
+				ValueGetter = (ctxt, value) =>
 				{
 					if (value is TypeValue typeValue)
 						value = typeValue.RepresentedType;
-					var members = GetTypeMembers(value as UserDefinedType, vp.ResolutionContext);
+					var members = GetTypeMembers(value as UserDefinedType, ctxt);
 					var tupleItems = new ISymbolValue[members.Count];
 
 					for(var memberIndex = 0; memberIndex < members.Count; memberIndex++)
@@ -385,40 +385,40 @@ namespace D_Parser.Resolver
 		static PropOwnerType GetOwnerType(ISemantic t)
 		{
 			if (t is TypeValue)
-				t = (t as TypeValue).RepresentedType;
+				t = ((TypeValue) t).RepresentedType;
 
-			if (t is ArrayValue || t is ArrayType)
-				return PropOwnerType.Array;
-			else if (t is AssociativeArrayValue || t is AssocArrayType)
-				return PropOwnerType.AssocArray;
-			else if (t is DelegateValue || t is DelegateType)
-				return PropOwnerType.Delegate;
-			else if (t is PrimitiveValue || t is PrimitiveType)
+			switch (t)
 			{
-				var tk = t is PrimitiveType ? (t as PrimitiveType).TypeToken : (t as PrimitiveValue).BaseTypeToken;
-				if (DTokensSemanticHelpers.IsBasicType_Integral(tk))
-					return PropOwnerType.Integral;
-				if (DTokensSemanticHelpers.IsBasicType_FloatingPoint(tk))
-					return PropOwnerType.FloatingPoint;
-			}
-			else if (t is InstanceValue || t is ClassType || t is InterfaceType || t is TemplateType)
-				return PropOwnerType.ClassLike;
-			else if (t is StructType)
-				return PropOwnerType.Struct;
-			else if (t is DTuple)
-				return PropOwnerType.TypeTuple;
-			else if (t is TemplateParameterSymbol)
-			{
-				var tps = t as TemplateParameterSymbol;
-				if (tps != null &&
-					(tps.Parameter is TemplateThisParameter ?
-						(tps.Parameter as TemplateThisParameter).FollowParameter : tps.Parameter) is TemplateTupleParameter)
+				case ArrayValue _:
+				case ArrayType _:
+					return PropOwnerType.Array;
+				case AssociativeArrayValue _:
+				case AssocArrayType _:
+					return PropOwnerType.AssocArray;
+				case DelegateValue _:
+				case DelegateType _:
+					return PropOwnerType.Delegate;
+				case PrimitiveValue _:
+				case PrimitiveType _:
+				{
+					var tk = t is PrimitiveType type ? type.TypeToken : (t as PrimitiveValue).BaseTypeToken;
+					if (DTokensSemanticHelpers.IsBasicType_Integral(tk))
+						return PropOwnerType.Integral;
+					if (DTokensSemanticHelpers.IsBasicType_FloatingPoint(tk))
+						return PropOwnerType.FloatingPoint;
+					break;
+				}
+				case ClassType _:
+				case InterfaceType _:
+				case TemplateType _:
+					return PropOwnerType.ClassLike;
+				case StructType _:
+					return PropOwnerType.Struct;
+				case DTuple _:
+				case TemplateParameterSymbol tps when (tps.Parameter is TemplateThisParameter parameter ?
+					parameter.FollowParameter : tps.Parameter) is TemplateTupleParameter:
 					return PropOwnerType.TypeTuple;
-			}
-			else if (t is MemberSymbol)
-			{
-				var ms = (t as MemberSymbol).Definition.Parent as DClassLike;
-				if (ms != null && ms.ClassType == DTokens.Struct)
+				case MemberSymbol symbol when symbol.Definition.Parent is DClassLike ms && ms.ClassType == DTokens.Struct:
 					return PropOwnerType.StructElement;
 			}
 			return PropOwnerType.None;
@@ -436,9 +436,8 @@ namespace D_Parser.Resolver
 			while (t is AliasedType || t is PointerType)
 				t = (t as DerivedDataType).Base;
 
-			var tps = t as TemplateParameterSymbol;
-			if (tps != null && tps.Base == null && 
-				(tps.Parameter is TemplateThisParameter ? (tps.Parameter as TemplateThisParameter).FollowParameter : tps.Parameter) is TemplateTupleParameter)
+			if (t is TemplateParameterSymbol tps && tps.Base == null &&
+				(tps.Parameter is TemplateThisParameter parameter ? parameter.FollowParameter : tps.Parameter) is TemplateTupleParameter)
 				return;
 			else
 				t = DResolver.StripMemberSymbols(t);
@@ -494,15 +493,16 @@ namespace D_Parser.Resolver
 			return null;
 		}
 
-		public static ISymbolValue TryEvalPropertyValue(AbstractSymbolValueProvider vp, ISemantic baseSymbol, int propName)
+		public static ISymbolValue TryEvalPropertyValue(ResolutionContext ctxt, ISemantic baseSymbol, int propName)
 		{
 			var props = Properties[PropOwnerType.Generic];
-			StaticPropertyInfo prop;
 
-			if (props.TryGetValue(propName, out prop) || (Properties.TryGetValue(GetOwnerType(baseSymbol), out props) && props.TryGetValue(propName, out prop)))
+			if (props.TryGetValue(propName, out var prop)
+			    || (Properties.TryGetValue(GetOwnerType(baseSymbol), out props)
+			        && props.TryGetValue(propName, out prop)))
 			{
 				if (prop.ValueGetter != null)
-					return prop.ValueGetter(vp, baseSymbol);
+					return prop.ValueGetter(ctxt, baseSymbol);
 			}
 
 			return null;

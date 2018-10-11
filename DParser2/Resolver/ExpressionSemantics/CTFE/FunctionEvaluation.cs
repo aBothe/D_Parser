@@ -19,21 +19,21 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 	{
 		#region Properties
 
-		readonly InterpretationContext vp;
+		readonly StatefulEvaluationContext _statefulEvaluationContext;
+		private ResolutionContext ResolutionContext => _statefulEvaluationContext.ResolutionContext;
 		ISymbolValue returnedValue;
 
 		#endregion
 
 		#region Constructor/IO
 
-		FunctionEvaluation(MemberSymbol method, AbstractSymbolValueProvider baseValueProvider,
-			Dictionary<DVariable, ISymbolValue> args)
+		FunctionEvaluation(MemberSymbol method, ResolutionContext ctxt, Dictionary<DVariable, ISymbolValue> args)
 		{
-			vp = new InterpretationContext(baseValueProvider);
+			_statefulEvaluationContext = new StatefulEvaluationContext(ctxt);
 			returnedValue = null;
 
 			foreach (var kv in args)
-				vp[kv.Key] = kv.Value;
+				_statefulEvaluationContext.SetLocalValue(kv.Key, kv.Value);
 		}
 
 		/// <summary>
@@ -43,7 +43,7 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 		/// <param name="callArguments"></param>
 		/// <param name="baseValueProvider">Required for evaluating missing default parameters.</param>
 		public static bool AssignCallArgumentsToIC<T>(MemberSymbol mr, IEnumerable<T> callArguments,
-			AbstractSymbolValueProvider baseValueProvider,
+			StatefulEvaluationContext baseValueProvider,
 			out Dictionary<DVariable, T> targetArgs, ResolutionContext ctxt = null) where T : class, ISemantic
 		{
 			var dm = mr.Definition as DMethod;
@@ -100,19 +100,19 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 		}
 
 		public static ISymbolValue Execute(MemberSymbol method, Dictionary<DVariable, ISymbolValue> arguments,
-			AbstractSymbolValueProvider vp)
+			ResolutionContext ctxt)
 		{
-			if (vp.ResolutionContext.CancellationToken.IsCancellationRequested)
+			if (ctxt.CancellationToken.IsCancellationRequested)
 				return null;
 
 			var dm = method.Definition as DMethod;
 
 			if (dm == null || dm.BlockStartLocation.IsEmpty)
 				return new ErrorValue(new EvaluationException("Method either not declared or undefined", method));
-			var eval = new FunctionEvaluation(method, vp, arguments);
+			var eval = new FunctionEvaluation(method, ctxt, arguments);
 			ISymbolValue ret;
 
-			using (vp.ResolutionContext.Push(method))
+			using (ctxt.Push(method))
 			{
 				try
 				{
@@ -120,10 +120,10 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 				}
 				catch (CtfeException ex)
 				{
-					vp.LogError(dm, "Can't execute function at precompile time: " + ex.Message);
+					ctxt.LogError(dm, "Can't execute function at precompile time: " + ex.Message);
 				}
 
-				ret = Evaluation.GetVariableContents(eval.returnedValue, eval.vp);
+				ret = eval.returnedValue;
 			}
 
 			return ret;
@@ -157,7 +157,7 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 		{
 			foreach (var stmt in blockStatement)
 			{
-				if (returnedValue != null || vp.ResolutionContext.CancellationToken.IsCancellationRequested)
+				if (returnedValue != null || ResolutionContext.CancellationToken.IsCancellationRequested)
 					break;
 				stmt.Accept(this);
 			}
@@ -205,7 +205,7 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 
 		public void Visit(ReturnStatement returnStatement)
 		{
-			returnedValue = Evaluation.EvaluateValue(returnStatement.ReturnExpression, vp);
+			returnedValue = Evaluation.EvaluateValue(returnStatement.ReturnExpression, _statefulEvaluationContext);
 		}
 
 		public void Visit(GotoStatement gotoStatement)

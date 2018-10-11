@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
@@ -12,19 +13,29 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	{
 		class CTFEOrValueRefsVisitor : IResolvedTypeVisitor<ISymbolValue>
 		{
-			IExpression idOrTemplateInstance;
-			IEnumerable<ISymbolValue> executionArguments;
-			AbstractSymbolValueProvider ValueProvider;
+			readonly IExpression idOrTemplateInstance;
+			readonly List<ISymbolValue> executionArguments;
+			readonly StatefulEvaluationContext ValueProvider;
+			readonly ResolutionContext ctxt;
 
-			public CTFEOrValueRefsVisitor(AbstractSymbolValueProvider vp,IExpression idOrTemplateInstance, IEnumerable<ISymbolValue> executionArguments = null)
+			public CTFEOrValueRefsVisitor(StatefulEvaluationContext vp, ResolutionContext ctxt,
+				IExpression idOrTemplateInstance,
+				List<ISymbolValue> executionArguments)
 			{
 				ValueProvider = vp;
+				this.ctxt = ctxt;
 				this.idOrTemplateInstance = idOrTemplateInstance;
 				this.executionArguments = executionArguments;
 			}
 
 			public ISymbolValue VisitPrimitiveType(PrimitiveType pt)
 			{
+				if (executionArguments == null || executionArguments.Count != 1)
+					ctxt.LogError(idOrTemplateInstance, "Uniform construction syntax expects exactly one argument");
+				else if(executionArguments[0] is PrimitiveValue primitiveValue)
+					return new PrimitiveValue(primitiveValue.Value, pt, primitiveValue.ImaginaryPart);
+				else
+					ctxt.LogError(idOrTemplateInstance, "Uniform construction syntax expects one built-in scalar value as first argument");
 				return new TypeValue(pt);
 			}
 
@@ -112,10 +123,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				if (mr.Definition is DMethod)
 				{
 					Dictionary<DVariable, ISymbolValue> targetArgs;
-					if(!FunctionEvaluation.AssignCallArgumentsToIC(mr, executionArguments, ValueProvider, out targetArgs))
+					if(!FunctionEvaluation.AssignCallArgumentsToIC(mr, executionArguments,
+						ValueProvider, out targetArgs, ctxt))
 						return null;
 
-					return FunctionEvaluation.Execute(mr, targetArgs, ValueProvider);
+					return FunctionEvaluation.Execute(mr, targetArgs, ctxt);
 				}
 
 				// Are there other types to execute/handle?
@@ -181,9 +193,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// Evaluates the identifier/template instance as usual.
 		/// If the id points to a variable, the initializer/dynamic value will be evaluated using its initializer.
 		/// </summary>
-		ISymbolValue TryDoCTFEOrGetValueRefs(AbstractType r, IExpression idOrTemplateInstance, IEnumerable<ISymbolValue> executionArguments=null)
+		ISymbolValue TryDoCTFEOrGetValueRefs(AbstractType r, IExpression idOrTemplateInstance, List<ISymbolValue> executionArguments=null)
 		{
-			return r?.Accept(new CTFEOrValueRefsVisitor(ValueProvider, idOrTemplateInstance, executionArguments));
+			return r?.Accept(new CTFEOrValueRefsVisitor(evaluationState, ctxt, idOrTemplateInstance, executionArguments));
 		}
 
 		public ISymbolValue Visit(TemplateInstanceExpression tix)

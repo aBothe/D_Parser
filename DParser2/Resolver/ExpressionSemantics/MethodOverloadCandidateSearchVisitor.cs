@@ -13,9 +13,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public static List<AbstractType> SearchCandidates (
 			IEnumerable<AbstractType> baseExpression,
 			ResolutionContext ctxt,
-			AbstractSymbolValueProvider valueProvider,
+			StatefulEvaluationContext valueProvider,
 			PostfixExpression_MethodCall call,
-			ref ISymbolValue delegateValue,
 			bool returnBaseTypeOnly,
 			out bool returnInstantly)
 		{
@@ -37,7 +36,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		}
 
 		readonly ResolutionContext ctxt;
-		readonly AbstractSymbolValueProvider valueProvider;
+		readonly StatefulEvaluationContext valueProvider;
 		readonly PostfixExpression_MethodCall call;
 
 		readonly bool returnBaseTypeOnly;
@@ -47,7 +46,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public ISymbolValue delegateValue;
 
 		MethodOverloadCandidateSearchVisitor (ResolutionContext ctxt,
-			AbstractSymbolValueProvider valueProvider,
+			StatefulEvaluationContext valueProvider,
 			PostfixExpression_MethodCall call,
 			bool returnBaseTypeOnly)
 		{
@@ -193,10 +192,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (mr.Definition is DMethod) {
 				return new [] { mr };
 			}
-			if (mr.Definition is DVariable) {
+			if (mr.Definition is DVariable variable) {
 				// If we've got a variable here, get its base type/value reference
 				if (valueProvider != null) {
-					var dgVal = valueProvider [(DVariable)mr.Definition] as DelegateValue;
+					var dgVal = valueProvider.GetLocalValue(variable) as DelegateValue;
 
 					if (dgVal != null) {
 						return dgVal.Definition.Accept (this);

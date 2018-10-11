@@ -3,7 +3,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public static class SymbolValueComparer
 	{
-		public static bool IsEqual(IExpression ex, IExpression ex2, AbstractSymbolValueProvider vp)
+		public static bool IsEqual(IExpression ex, IExpression ex2, StatefulEvaluationContext vp)
 		{
 			var val_x1 = Evaluation.EvaluateValue(ex, vp);
 			var val_x2 = Evaluation.EvaluateValue(ex2, vp);

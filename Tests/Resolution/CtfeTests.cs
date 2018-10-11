@@ -70,5 +70,59 @@ string foo(string s) { return s ~ ""gh""; }
 			Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Int));
 			Assert.That(pv.Value, Is.EqualTo(123M));
 		}
+
+		[Test]
+		[Ignore("CTFE not fully there yet")]
+		public void stdPathDirnameCTFE()
+		{
+			var ctxt = ResolutionTestHelper.CreateDefCtxt(@"
+string _dirName(string s)
+{
+    string p = s;
+    while (p.length > 0)
+    {
+        if (p[$-1] == '/' || p[$-1] == '\\')
+            return p[0..$-1];
+        p = p[0..$-1];
+    }
+    return s;
+}
+
+enum dir = _dirName(""dir/someFile"");
+enum dir_windows = _dirName(""dir\someFile"");
+enum filename = dir ~ ""/myFile"";
+");
+
+			{
+				var x = DParser.ParseExpression("dir");
+				var v = Evaluation.EvaluateValue(x, ctxt);
+
+				Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+				var av = v as ArrayValue;
+				Assert.That(av.IsString);
+				Assert.That(av.StringValue, Is.EqualTo("dir"));
+			}
+
+			{
+				// Mind caching issues!
+				var x = DParser.ParseExpression("dir_windows");
+				var v = Evaluation.EvaluateValue(x, ctxt);
+
+				Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+				var av = v as ArrayValue;
+				Assert.That(av.IsString);
+				Assert.That(av.StringValue, Is.EqualTo("dir"));
+			}
+
+			{
+				var x = DParser.ParseExpression("filename");
+				var v = Evaluation.EvaluateValue(x, ctxt);
+
+				Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+				var av = v as ArrayValue;
+				Assert.That(av.IsString);
+				Assert.That(av.StringValue, Is.EqualTo("dir/myFile"));
+			}
+		}
 	}
 }

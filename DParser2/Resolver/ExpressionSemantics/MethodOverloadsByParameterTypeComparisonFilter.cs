@@ -12,22 +12,16 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			PostfixExpression_MethodCall call,
 			IEnumerable<AbstractType> methodOverloads,
 			ResolutionContext ctxt,
-			AbstractSymbolValueProvider valueProvider,
+			StatefulEvaluationContext valueProvider,
 			bool returnBaseTypeOnly,
-			out List<ISemantic> callArguments,
-			ref ISymbolValue delegateValue)
+			List<AbstractType> callArguments)
 		{
-			callArguments = GetCallArgumentsTypes(ctxt, call, valueProvider);
-
 			var visitor = new OverloadFilterVisitor(call, ctxt, valueProvider, returnBaseTypeOnly, callArguments);
 
 			foreach (var ov in methodOverloads)
 			{
 				ov.Accept(visitor);
 			}
-
-			if(visitor.delegateValue != null)
-				delegateValue = visitor.delegateValue;
 
 			// Prefer untemplated methods over templated ones
 			if (visitor.untemplatedMethodResult != null)
@@ -36,43 +30,25 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return AmbiguousType.Get(visitor.argTypeFilteredOverloads);
 		}
 
-		static List<ISemantic> GetCallArgumentsTypes(ResolutionContext ctxt, PostfixExpression_MethodCall call, AbstractSymbolValueProvider ValueProvider)
-		{
-			var callArguments = new List<ISemantic>();
-			if (call.Arguments != null)
-			{
-				if (ValueProvider != null)
-				{
-					foreach (var arg in call.Arguments)
-						callArguments.Add(Evaluation.EvaluateValue(arg, ValueProvider));
-				}
-				else
-					foreach (var arg in call.Arguments)
-						callArguments.Add(ExpressionTypeEvaluation.EvaluateType(arg, ctxt));
-			}
-			return callArguments;
-		}
-
 		class OverloadFilterVisitor : IResolvedTypeVisitor
 		{
 			readonly PostfixExpression_MethodCall call;
-			ResolutionContext ctxt;
-			AbstractSymbolValueProvider valueProvider;
-			bool returnBaseTypeOnly;
-			List<ISemantic> callArguments;
+			readonly ResolutionContext ctxt;
+			readonly StatefulEvaluationContext valueProvider;
+			readonly bool returnBaseTypeOnly;
+			readonly List<AbstractType> callArguments;
 
 			bool hasHandledUfcsResultBefore = false;
 
 			public AbstractType untemplatedMethodResult;
-			public ISymbolValue delegateValue;
 			public readonly List<AbstractType> argTypeFilteredOverloads = new List<AbstractType>();
 
 			public OverloadFilterVisitor(
 				PostfixExpression_MethodCall call,
 				ResolutionContext ctxt,
-				AbstractSymbolValueProvider valueProvider,
+				StatefulEvaluationContext valueProvider,
 				bool returnBaseTypeOnly,
-				List<ISemantic> callArguments)
+				List<AbstractType> callArguments)
 			{
 				this.call = call;
 				this.ctxt = ctxt;
@@ -88,12 +64,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				if (dm == null)
 					return;
 
-				ISemantic firstUfcsArg;
-				bool isUfcs = UFCSResolver.IsUfcsResult(ms, out firstUfcsArg);
+				bool isUfcs = UFCSResolver.IsUfcsResult(ms, out var firstUfcsArg);
 				// In the case of an ufcs, insert the first argument into the CallArguments list
 				if (isUfcs && !hasHandledUfcsResultBefore)
 				{
-					callArguments.Insert(0, firstUfcsArg);
+					callArguments.Insert(0, AbstractType.Get(firstUfcsArg));
 					hasHandledUfcsResultBefore = true;
 				}
 				else if (!isUfcs && hasHandledUfcsResultBefore) // In the rare case of having a ufcs result occuring _after_ a normal member result, remove the initial arg again
@@ -182,7 +157,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 
 			static bool TryHandleMethodArgumentTuple(ResolutionContext ctxt, ref bool add,
-			List<ISemantic> callArguments,
+			List<AbstractType> callArguments,
 			DMethod dm,
 			DeducedTypeDictionary deducedTypeDict, int currentParameter, ref int currentArg)
 			{
@@ -264,7 +239,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				else
 				{
 					// - If there was no explicit initialization, put all arguments' types into a type tuple
-					var argsToTake = new ISemantic[argCountToHandle];
+					var argsToTake = new AbstractType[argCountToHandle];
 					callArguments.CopyTo(currentArg, argsToTake, 0, argsToTake.Length);
 					currentArg += argsToTake.Length;
 					var tt = new DTuple(argsToTake);
@@ -315,20 +290,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			/// <param name="ov"></param>
 			public void VisitPrimitiveType(PrimitiveType ov)
 			{
-				if (valueProvider != null)
-				{
-					if (callArguments == null || callArguments.Count != 1)
-						valueProvider.LogError(call, "Uniform construction syntax expects exactly one argument");
-					else
-					{
-						PrimitiveValue pv;
-						if ((pv = callArguments[0] as PrimitiveValue) == null)
-							valueProvider.LogError(call, "Uniform construction syntax expects one built-in scalar value as first argument");
-						else
-							delegateValue = new PrimitiveValue(pv.Value, ov as PrimitiveType, pv.ImaginaryPart);
-					}
-				}
-
 				argTypeFilteredOverloads.Add(ov);
 			}
 
