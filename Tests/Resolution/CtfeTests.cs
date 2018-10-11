@@ -72,6 +72,7 @@ string foo(string s) { return s ~ ""gh""; }
 		}
 
 		[Test]
+		[Ignore("CTFE not fully there yet")]
 		public void stdPathDirnameCTFE()
 		{
 			var ctxt = ResolutionTestHelper.CreateDefCtxt(@"
