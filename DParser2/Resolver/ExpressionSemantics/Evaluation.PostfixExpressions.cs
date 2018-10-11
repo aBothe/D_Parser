@@ -10,15 +10,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public partial class Evaluation
 	{
-		bool? returnBaseTypeOnly;
-
 		public ISymbolValue VisitPostfixExpression_Methodcall(PostfixExpression_MethodCall call)
 		{
-			var returnBaseTypeOnly = !this.returnBaseTypeOnly.HasValue ? 
-				!ctxt.Options.HasFlag(ResolutionOptions.ReturnMethodReferencesOnly) : 
-				this.returnBaseTypeOnly.Value;
-			this.returnBaseTypeOnly = null;
-
 			var callArguments = new List<ISymbolValue>();
 			var callArgument_Semantic = new List<ISemantic>();
 			if (call.ArgumentCount > 0)
@@ -41,7 +34,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			GetRawCallOverloads(ctxt, call, out baseExpression, out tix);
 
-			var argTypeFilteredOverloads = EvalMethodCall(baseExpression, tix, ctxt, call, callArgument_Semantic, out delegValue, returnBaseTypeOnly, evaluationState);
+			var argTypeFilteredOverloads = EvalMethodCall(baseExpression, tix, ctxt, call, callArgument_Semantic, out delegValue, false, evaluationState);
 
 			if (delegValue != null)
 				return delegValue;
