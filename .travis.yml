@@ -5,6 +5,7 @@ notifications:
   irc: "chat.freenode.net#d.mono-d"
 
 language: csharp
+mono: latest
 solution: DParser2.Unittest.sln
 
 install:
@@ -14,3 +15,4 @@ install:
 script:
   - msbuild DParser2.Unittest.sln /p:Configuration=Debug
   - mono ./packages/NUnit.ConsoleRunner.3.9.0/tools/nunit3-console.exe ./Tests/bin/Debug/Tests.dll
+  - cat TestResult.xml
