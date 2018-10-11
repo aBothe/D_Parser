@@ -14,8 +14,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			ResolutionContext ctxt,
 			StatefulEvaluationContext valueProvider,
 			bool returnBaseTypeOnly,
-			List<ISemantic> callArguments,
-			ref ISymbolValue delegateValue)
+			List<ISemantic> callArguments)
 		{
 			var visitor = new OverloadFilterVisitor(call, ctxt, valueProvider, returnBaseTypeOnly, callArguments);
 
@@ -23,9 +22,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			{
 				ov.Accept(visitor);
 			}
-
-			if(visitor.delegateValue != null)
-				delegateValue = visitor.delegateValue;
 
 			// Prefer untemplated methods over templated ones
 			if (visitor.untemplatedMethodResult != null)
@@ -45,7 +41,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			bool hasHandledUfcsResultBefore = false;
 
 			public AbstractType untemplatedMethodResult;
-			public ISymbolValue delegateValue;
 			public readonly List<AbstractType> argTypeFilteredOverloads = new List<AbstractType>();
 
 			public OverloadFilterVisitor(

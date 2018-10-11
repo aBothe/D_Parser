@@ -125,8 +125,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		#region Method (overloads)
 		public AbstractType VisitPostfixExpression_Methodcall(PostfixExpression_MethodCall call)
 		{
-			ISymbolValue delegValue;
-
 			IEnumerable<AbstractType> baseExpression;
 			TemplateInstanceExpression tix;
 
@@ -137,7 +135,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				foreach (var arg in call.Arguments)
 					callArguments.Add(EvaluateType(arg, ctxt));
 
-			return Evaluation.EvalMethodCall(baseExpression, tix, ctxt, call, callArguments, out delegValue, !TryReturnMethodReferenceOnly);
+			return Evaluation.EvalMethodCall(baseExpression, tix, ctxt, call, callArguments, !TryReturnMethodReferenceOnly);
 		}
 
 		AbstractType TryPretendMethodExecution(IEnumerable<AbstractType> possibleOverloads, ISyntaxRegion typeBase = null, IEnumerable<AbstractType> args = null)
@@ -145,8 +143,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var allowedOverloads = new List<AbstractType>();
 			foreach (var overload in possibleOverloads)
 			{
-				var ms = DResolver.StripAliasedTypes(overload) as MemberSymbol;
-				if (ms != null)
+				if (DResolver.StripAliasedTypes(overload) is MemberSymbol ms)
 				{
 					var executionResult = TryPretendMethodExecution_(ms, args);
 					if (executionResult != null)

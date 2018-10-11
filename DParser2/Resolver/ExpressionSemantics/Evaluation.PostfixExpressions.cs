@@ -26,18 +26,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				}
 			}
 
-			ISymbolValue delegValue;
-
 			// Deduce template parameters later on
-			IEnumerable<AbstractType> baseExpression;
-			TemplateInstanceExpression tix;
+			GetRawCallOverloads(ctxt, call, out var baseExpression, out var tix);
 
-			GetRawCallOverloads(ctxt, call, out baseExpression, out tix);
+			var argTypeFilteredOverloads =
+				EvalMethodCall(baseExpression, tix, ctxt, call, callArgument_Semantic, false, evaluationState);
 
-			var argTypeFilteredOverloads = EvalMethodCall(baseExpression, tix, ctxt, call, callArgument_Semantic, out delegValue, false, evaluationState);
-
-			if (delegValue != null)
-				return delegValue;
 			if (argTypeFilteredOverloads == null)
 				return null;
 
@@ -47,14 +41,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public static AbstractType EvalMethodCall(IEnumerable<AbstractType> baseExpression, TemplateInstanceExpression tix,
 			ResolutionContext ctxt, 
-			PostfixExpression_MethodCall call, List<ISemantic> callArguments, out ISymbolValue delegateValue,
+			PostfixExpression_MethodCall call, List<ISemantic> callArguments,
 			bool returnBaseTypeOnly, StatefulEvaluationContext ValueProvider = null)
 		{
-			delegateValue = null;
-
-			bool returnInstantly;
-			var methodOverloads = MethodOverloadCandidateSearchVisitor.SearchCandidates (baseExpression, ctxt, ValueProvider, call, 
-			                                                      ref delegateValue, returnBaseTypeOnly, out returnInstantly);
+			var methodOverloads = MethodOverloadCandidateSearchVisitor.SearchCandidates (
+				baseExpression, ctxt, ValueProvider, call, returnBaseTypeOnly, out var returnInstantly);
 
 			if (returnInstantly) {
 				return methodOverloads.Count > 0 ? methodOverloads[0] : null;
@@ -66,9 +57,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var templateMatchedMethodOverloads = TryMatchTemplateArgumentsToOverloads (tix, ctxt, methodOverloads);
 
 			return MethodOverloadsByParameterTypeComparisonFilter.FilterOverloads (call,
-				templateMatchedMethodOverloads, ctxt,
-				ValueProvider, returnBaseTypeOnly,
-				callArguments, ref delegateValue);
+				templateMatchedMethodOverloads, ctxt, ValueProvider, returnBaseTypeOnly, callArguments);
 		}
 
 		static IEnumerable<AbstractType> TryMatchTemplateArgumentsToOverloads (TemplateInstanceExpression tix, ResolutionContext ctxt, IEnumerable<AbstractType> methodOverloads)

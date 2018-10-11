@@ -15,7 +15,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			ResolutionContext ctxt,
 			StatefulEvaluationContext valueProvider,
 			PostfixExpression_MethodCall call,
-			ref ISymbolValue delegateValue,
 			bool returnBaseTypeOnly,
 			out bool returnInstantly)
 		{
