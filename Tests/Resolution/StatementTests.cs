@@ -41,6 +41,108 @@ Cl** cl;
 		}
 
 		[Test]
+		public void ForeachIteratorType_BackFrontMembers()
+		{
+			var ctxt = CreateDefCtxt(@"module A;
+struct SomeType {}
+class FrontTier(EntryType) {
+	void front(int abc);
+	EntryType front() { };
+}
+
+struct BackTier {
+	string back();
+	void back(string asd);
+}
+
+FrontTier!SomeType frontier;
+BackTier backtier;
+
+void foo() {
+	foreach(e; frontier) {
+		e;
+	}
+}
+
+void bar() {
+	foreach_reverse(e; backtier) {
+		e;
+	}
+}");
+
+			{
+				var foo = N<DMethod>(ctxt, "A.foo");
+				var e_statement = S(foo, 0, 0, 0) as ExpressionStatement;
+				var t = ExpressionTypeEvaluation.EvaluateType(e_statement.Expression, ctxt);
+
+				Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+				var ms = t as MemberSymbol;
+				Assert.That(ms.Base, Is.TypeOf(typeof(TemplateParameterSymbol)));
+				var tps = ms.Base as TemplateParameterSymbol;
+				Assert.That(tps.Base, Is.TypeOf(typeof(StructType)));
+			}
+
+			{
+				var bar = N<DMethod>(ctxt, "A.bar");
+				var e_statement = S(bar, 0, 0, 0) as ExpressionStatement;
+				var t = ExpressionTypeEvaluation.EvaluateType(e_statement.Expression, ctxt);
+
+				Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+				var ms = t as MemberSymbol;
+				Assert.That(ms.Base, Is.TypeOf(typeof(ArrayType)));
+				var at = ms.Base as ArrayType;
+				Assert.That(at.IsString, Is.True);
+			}
+		}
+
+		[Test]
+		public void ForeachIteratorType_OpApply()
+		{
+			var ctxt = CreateDefCtxt(@"module A;
+class Foo { int opApply(scope int delegate(ref uint) dg); }
+class Bar(T) { int opApplyReverse(scope int delegate(ref T) dg); }
+
+Foo frontier;
+Bar!string backtier;
+
+void foo() {
+	foreach(e; frontier) {
+		e;
+	}
+}
+
+void bar() {
+	foreach_reverse(e; backtier) {
+		e;
+	}
+}");
+
+			{
+				var foo = N<DMethod>(ctxt, "A.foo");
+				var e_statement = S(foo, 0, 0, 0) as ExpressionStatement;
+				var t = ExpressionTypeEvaluation.EvaluateType(e_statement.Expression, ctxt);
+
+				Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+				var ms = t as MemberSymbol;
+				Assert.That(ms.Base, Is.TypeOf(typeof(PrimitiveType)));
+			}
+
+			{
+				var bar = N<DMethod>(ctxt, "A.bar");
+				var e_statement = S(bar, 0, 0, 0) as ExpressionStatement;
+				var t = ExpressionTypeEvaluation.EvaluateType(e_statement.Expression, ctxt);
+
+				Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+				var ms = t as MemberSymbol;
+				Assert.That(ms.Base, Is.TypeOf(typeof(TemplateParameterSymbol)));
+				var tps = ms.Base as TemplateParameterSymbol;
+				Assert.That(tps.Base, Is.TypeOf(typeof(ArrayType)));
+				var at = tps.Base as ArrayType;
+				Assert.That(at.IsString, Is.True);
+			}
+		}
+
+		[Test]
 		public void TryCatch()
 		{
 			var ctxt = CreateCtxt("A", @"module A;

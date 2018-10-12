@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
 using D_Parser.Parser;
+using D_Parser.Resolver.ASTScanner;
 using D_Parser.Resolver.ExpressionSemantics;
 
 namespace D_Parser.Resolver.TypeResolution
@@ -32,8 +34,6 @@ namespace D_Parser.Resolver.TypeResolution
 			var symbolDefinition = symbol.Definition;
 			BumpResolutionStackLevel(symbolDefinition);
 
-			var visitor = new DSymbolBaseTypeResolver(ctxt, typeBase);
-
 			try
 			{
 				if (HasntReachedResolutionStackPeak(symbolDefinition))
@@ -43,7 +43,7 @@ namespace D_Parser.Resolver.TypeResolution
 						: CanResolveBase(symbolDefinition, ctxt))
 					{
 						using (ctxt.Push(symbol))
-							return symbol.Accept(visitor);
+							return symbol.Accept(new DSymbolBaseTypeResolver(ctxt, typeBase));
 					}
 				}
 				return symbol;
@@ -87,7 +87,7 @@ namespace D_Parser.Resolver.TypeResolution
 			}
 			return true;
 		}
-		public static bool CanResolveBase(INode m, ResolutionContext ctxt)
+		static bool CanResolveBase(INode m, ResolutionContext ctxt)
 		{
 			return ((ctxt.Options & ResolutionOptions.DontResolveBaseTypes) != ResolutionOptions.DontResolveBaseTypes)
 					&& (!(m.Type is IdentifierDeclaration)
@@ -274,7 +274,7 @@ namespace D_Parser.Resolver.TypeResolution
 		/// </summary>
 		static AbstractType GetForeachIteratorType(DVariable i, ResolutionContext ctxt)
 		{
-			var r = new List<AbstractType>();
+			List<AbstractType> multipleIteratorTypes = new List<AbstractType>();
 			var curMethod = ctxt.ScopedBlock as DMethod;
 			var loc = ctxt.CurrentContext.Caret;
 			loc = new CodeLocation(loc.Column - 1, loc.Line); // SearchStmtDeeplyAt only checks '<' EndLocation, we may need to have '<=' though due to completion offsets.
@@ -292,130 +292,127 @@ namespace D_Parser.Resolver.TypeResolution
 				else
 					curStmt = curStmt.Parent;
 
-				if (curStmt is ForeachStatement)
+				if (curStmt is ForeachStatement fe)
+					GetForeachStatmentIteratorType(i, ctxt, fe, multipleIteratorTypes);
+			}
+
+			return AmbiguousType.Get(multipleIteratorTypes);
+		}
+
+		private static void GetForeachStatmentIteratorType(DVariable iteratorVariable, ResolutionContext ctxt,
+			ForeachStatement fe, List<AbstractType> multipleIteratorTypes)
+		{
+			if (fe.ForeachTypeList == null)
+				return;
+
+			// If the searched variable is declared in the header
+			int iteratorIndex = -1;
+
+			for (int j = 0; j < fe.ForeachTypeList.Length; j++)
+				if (fe.ForeachTypeList[j] == iteratorVariable)
 				{
-					var fe = (ForeachStatement)curStmt;
+					iteratorIndex = j;
+					break;
+				}
 
-					if (fe.ForeachTypeList == null)
+			if (iteratorIndex == -1)
+				return;
+
+			bool keyIsSearched = iteratorIndex == 0 && fe.ForeachTypeList.Length > 1;
+
+			// foreach(var k, var v; 0 .. 9)
+			if (keyIsSearched && fe.IsRangeStatement)
+			{
+				// -- it's static type int, of course(?)
+				multipleIteratorTypes.Add(new PrimitiveType(DTokens.Int));
+			}
+
+			if (fe.Aggregate == null)
+				return;
+
+			var aggregateType = ExpressionTypeEvaluation.EvaluateType(fe.Aggregate, ctxt);
+
+			aggregateType = DResolver.StripMemberSymbols(aggregateType);
+
+			if (aggregateType == null)
+				return;
+
+			// The most common way to do a foreach
+			if (aggregateType is AssocArrayType ar)
+			{
+				multipleIteratorTypes.Add(keyIsSearched ? ar.KeyType : ar.ValueType);
+			}
+			else if (aggregateType is PointerType type)
+				multipleIteratorTypes.AddRange(AmbiguousType.TryDissolve(keyIsSearched
+					? TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration("size_t"), ctxt, false)
+					: type.Base));
+			else if (aggregateType is UserDefinedType tr)
+			{
+				if (keyIsSearched || !(tr.Definition is IBlockNode definition))
+					return;
+
+				var foreachIteratorType = TryResolveForeachIteratorForStructsWithRanges(ctxt, fe, tr);
+				if (foreachIteratorType != null)
+					multipleIteratorTypes.Add(foreachIteratorType);
+				else
+					multipleIteratorTypes.AddRange(GetForeachIteratorTypeViaOpApply(ctxt, fe, tr, iteratorIndex));
+			}
+		}
+
+		/// <summary>
+		/// https://dlang.org/spec/statement.html#foreach_over_struct_and_classes
+		/// </summary>
+		private static IEnumerable<AbstractType> GetForeachIteratorTypeViaOpApply(ResolutionContext ctxt, ForeachStatement fe,
+			UserDefinedType tr, int iteratorIndex)
+		{
+			var backFrontIdToLookUp = new IdentifierExpression(fe.IsReverse ? "opApplyReverse" : "opApply");
+			var iterPropertyTypes = ExpressionTypeEvaluation.GetOverloads(backFrontIdToLookUp, ctxt, tr);
+			if (iterPropertyTypes.Count == 0)
+				return Enumerable.Empty<AbstractType>();
+
+			var iteratorBaseTypes = new List<AbstractType>();
+			foreach (var iterPropertyType in iterPropertyTypes)
+			{
+				if (iterPropertyType is MemberSymbol mr)
+				{
+					if (!(mr.Definition is DMethod dm) || dm.Parameters.Count != 1)
 						continue;
 
-					// If the searched variable is declared in the header
-					int iteratorIndex = -1;
-
-					for (int j = 0; j < fe.ForeachTypeList.Length; j++)
-						if (fe.ForeachTypeList[j] == i)
-						{
-							iteratorIndex = j;
-							break;
-						}
-
-					if (iteratorIndex == -1)
+					if (!(dm.Parameters[0].Type is DelegateDeclaration dg)
+					    || dg.Parameters.Count != fe.ForeachTypeList.Length)
 						continue;
 
-					bool keyIsSearched = iteratorIndex == 0 && fe.ForeachTypeList.Length > 1;
+					AbstractType paramType;
+					using (ctxt.Push(mr))
+						paramType = TypeDeclarationResolver.ResolveSingle(dg.Parameters[iteratorIndex].Type, ctxt);
 
+					if (paramType != null)
+						iteratorBaseTypes.Add(paramType);
 
-					// foreach(var k, var v; 0 .. 9)
-					if (keyIsSearched && fe.IsRangeStatement)
-					{
-						// -- it's static type int, of course(?)
-						return new PrimitiveType(DTokens.Int);
-					}
-
-					if (fe.Aggregate == null)
-						return null;
-
-					var aggregateType = ExpressionTypeEvaluation.EvaluateType(fe.Aggregate, ctxt);
-
-					aggregateType = DResolver.StripMemberSymbols(aggregateType);
-
-					if (aggregateType == null)
-						return null;
-
-					// The most common way to do a foreach
-					if (aggregateType is AssocArrayType)
-					{
-						var ar = (AssocArrayType)aggregateType;
-
-						return keyIsSearched ? ar.KeyType : ar.ValueType;
-					}
-					else if (aggregateType is PointerType)
-						return keyIsSearched ? TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration("size_t"), ctxt, false /* Generally, size_t isn't templated or such..so for performance, step through additional filtering */) : (aggregateType as PointerType).Base;
-					else if (aggregateType is UserDefinedType)
-					{
-						var tr = (UserDefinedType)aggregateType;
-
-						if (keyIsSearched || !(tr.Definition is IBlockNode))
-							continue;
-
-						bool foundIterPropertyMatch = false;
-						#region Foreach over Structs and Classes with Ranges
-
-						// Enlist all 'back'/'front' members
-						var iterPropertyTypes = new List<AbstractType>();
-
-						foreach (var n in (IBlockNode)tr.Definition)
-							if (fe.IsReverse ? n.Name == "back" : n.Name == "front")
-								iterPropertyTypes.Add(TypeDeclarationResolver.HandleNodeMatch(n, ctxt));
-
-						foreach (var iterPropType in iterPropertyTypes)
-							if (iterPropType is MemberSymbol)
-							{
-								foundIterPropertyMatch = true;
-
-								var itp = (MemberSymbol)iterPropType;
-
-								// Only take non-parameterized methods
-								if (itp.Definition is DMethod && ((DMethod)itp.Definition).Parameters.Count != 0)
-									continue;
-
-								// Handle its base type [return type] as iterator type
-								if (itp.Base != null)
-									r.Add(itp.Base);
-
-								foundIterPropertyMatch = true;
-							}
-
-						if (foundIterPropertyMatch)
-							continue;
-						#endregion
-
-						#region Foreach over Structs and Classes with opApply
-						iterPropertyTypes.Clear();
-						r.Clear();
-
-						foreach (var n in (IBlockNode)tr.Definition)
-							if (n is DMethod &&
-								(fe.IsReverse ? n.Name == "opApplyReverse" : n.Name == "opApply"))
-								iterPropertyTypes.Add(TypeDeclarationResolver.HandleNodeMatch(n, ctxt));
-
-						foreach (var iterPropertyType in iterPropertyTypes)
-							if (iterPropertyType is MemberSymbol)
-							{
-								var mr = (MemberSymbol)iterPropertyType;
-								var dm = mr.Definition as DMethod;
-
-								if (dm == null || dm.Parameters.Count != 1)
-									continue;
-
-								var dg = dm.Parameters[0].Type as DelegateDeclaration;
-
-								if (dg == null || dg.Parameters.Count != fe.ForeachTypeList.Length)
-									continue;
-
-								var paramType = TypeDeclarationResolver.ResolveSingle(dg.Parameters[iteratorIndex].Type, ctxt);
-
-								if (paramType != null)
-									r.Add(paramType);
-							}
-						#endregion
-					}
-
-					return AmbiguousType.Get(r);
 				}
 			}
 
-			return null;
+			return iteratorBaseTypes;
+		}
+
+		/// <summary>
+		/// https://dlang.org/spec/statement.html#foreach-with-ranges
+		/// </summary>
+		private static AbstractType TryResolveForeachIteratorForStructsWithRanges(ResolutionContext ctxt,
+			ForeachStatement fe, UserDefinedType tr)
+		{
+			var backFrontIdToLookUp = new IdentifierExpression(fe.IsReverse ? "back" : "front");
+			var iterPropertyTypes = ExpressionTypeEvaluation.GetOverloads(backFrontIdToLookUp, ctxt, tr);
+			if (iterPropertyTypes.Count == 0)
+				return null;
+
+			var artificialCallExpression = new PostfixExpression_MethodCall
+			{
+				PostfixForeExpression = backFrontIdToLookUp
+			};
+
+			return Evaluation.EvalMethodCall(iterPropertyTypes, null, ctxt, artificialCallExpression,
+				new List<AbstractType>(), true);
 		}
 
 		public DSymbol VisitTemplateParameterSymbol(TemplateParameterSymbol t)
