@@ -51,8 +51,7 @@ namespace D_Parser.Completion.ToolTips
 
 		public string GenTooltipSignature(AbstractType t, bool templateParamCompletion = false, int currentMethodParam = -1)
 		{
-			var ds = t as DSymbol;
-			if (ds != null)
+			if (t is DSymbol ds)
 			{
 				if (currentMethodParam >= 0 && !templateParamCompletion && ds.Definition is DVariable && ds.Base != null)
 					return GenTooltipSignature(ds.Base, false, currentMethodParam);
@@ -60,16 +59,16 @@ namespace D_Parser.Completion.ToolTips
 				return GenTooltipSignature(ds.Definition, templateParamCompletion, currentMethodParam, DTypeToTypeDeclVisitor.GenerateTypeDecl(ds.Base), new DeducedTypeDictionary(ds));
 			}
 
-			if (t is PackageSymbol)
+			if (t is PackageSymbol symbol)
 			{
-				var pack = (t as PackageSymbol).Package;
+				var pack = symbol.Package;
 				return "(package) " + pack.ToString();
 			}
 
-			if (t is DelegateType)
+			if (t is DelegateType type)
 			{
 				var sb = new StringBuilder();
-				GenDelegateSignature(t as DelegateType, sb, templateParamCompletion, currentMethodParam);
+				GenDelegateSignature(type, sb, templateParamCompletion, currentMethodParam);
 				return sb.ToString();
 			}
 
@@ -81,55 +80,58 @@ namespace D_Parser.Completion.ToolTips
 		{
 			var sb = new StringBuilder();
 
-			if (dn is DMethod)
-            {
-				AppendMethod(dn as DMethod, sb, templateParamCompletion, currentMethodParam, baseType, deducedTypes);
-            }
-			else if (dn is DModule)
+			switch (dn)
 			{
-				sb.Append("(module) ").Append((dn as DModule).ModuleName);
+				case DMethod dm:
+					AppendMethod(dm, sb, templateParamCompletion, currentMethodParam, baseType, deducedTypes);
+					break;
+				case DModule module:
+					sb.Append("(module) ").Append(module.ModuleName);
+					break;
+				case DClassLike dc:
+					AppendClassLike(dc, sb, deducedTypes);
+					break;
+				case DEnum dEnum:
+					AppendEnum(dEnum, sb, baseType, deducedTypes);
+					break;
+				case DVariable dvar:
+				{
+					if (dvar.IsParameter)
+						sb.Append("(parameter) ");
+					else if (dvar.IsLocal)
+						sb.Append("(local variable) ");
+					else if (dvar.IsAlias)
+						sb.Append("(alias) ");
+
+					AttributesTypeAndName(dn, sb, baseType, -1, deducedTypes);
+
+					if (dvar.Initializer != null)
+						if (dvar.IsConst || dvar.IsAlias || dvar is DEnumValue || dvar.ContainsAnyAttribute(DTokens.Immutable))
+							sb.Append(" = ").Append(dvar.Initializer.ToString());
+
+					if (dvar.IsAlias && dvar.Type != null)
+						sb.Append(" : ").Append(dvar.Type.ToString());
+					break;
+				}
+				default:
+				{
+					if (dn != null)
+					{
+						AttributesTypeAndName(dn, sb, baseType, -1, deducedTypes);
+					}
+
+					break;
+				}
 			}
-			else if (dn is DClassLike)
-            {
-				AppendClassLike(dn as DClassLike, sb, deducedTypes);
-            }
-			else if (dn is DEnum)
-            {
-                AppendEnum(dn as DEnum, sb, baseType, deducedTypes);
-            }
-			else if (dn is DVariable)
-            {
-                var dvar = dn as DVariable;
-                if (dvar.IsParameter)
-                    sb.Append("(parameter) ");
-                else if (dvar.IsLocal)
-                    sb.Append("(local variable) ");
-                else if (dvar.IsAlias)
-                    sb.Append("(alias) ");
-
-				AttributesTypeAndName(dn, sb, baseType, -1, deducedTypes);
-
-                if (dvar.Initializer != null)
-                    if (dvar.IsConst || dvar.IsAlias || dvar is DEnumValue || dvar.ContainsAnyAttribute(DTokens.Immutable))
-                        sb.Append(" = ").Append(dvar.Initializer.ToString());
-
-                if (dvar.IsAlias && dvar.Type != null)
-                    sb.Append(" : ").Append(dvar.Type.ToString());
-            }
-			else if (dn != null)
-            {
-                AttributesTypeAndName(dn, sb, baseType, -1, deducedTypes);
-            }
 			return sb.ToString();
 		}
 
 		void GenDelegateSignature(DelegateType dt, StringBuilder sb, bool templArgs = false, int curArg = -1)
 		{
-			if (dt.delegateTypeBase is FunctionLiteral)
-				AppendMethod((dt.delegateTypeBase as FunctionLiteral).AnonymousMethod, sb, templArgs, curArg, DTypeToTypeDeclVisitor.GenerateTypeDecl(dt.ReturnType));
-			else if (dt.delegateTypeBase is DelegateDeclaration)
+			if (dt.delegateTypeBase is FunctionLiteral literal)
+				AppendMethod(literal.AnonymousMethod, sb, templArgs, curArg, DTypeToTypeDeclVisitor.GenerateTypeDecl(dt.ReturnType));
+			else if (dt.delegateTypeBase is DelegateDeclaration delegateDecl)
 			{
-				var delegateDecl = dt.delegateTypeBase as DelegateDeclaration;
 				AppendAttributes(delegateDecl.Modifiers, sb);
 
 				if (dt.ReturnType != null)
@@ -193,7 +195,8 @@ namespace D_Parser.Completion.ToolTips
 
 				var indexBackup = sb.Length;
 
-				var isOpt = (this.SignatureFlags & TooltipSignatureFlags.NoDefaultParams) == 0 && parm is DVariable && (parm as DVariable).Initializer != null;
+				var isOpt = (this.SignatureFlags & TooltipSignatureFlags.NoDefaultParams) == 0
+				            && parm is DVariable variable && variable.Initializer != null;
 
 				if (isOpt && addSqareBrackets)
 					sb.Append('[');
@@ -317,7 +320,7 @@ namespace D_Parser.Completion.ToolTips
 					var param = dn.TemplateParameters[i];
 					if (param != null)
 					{
-						var tps = deducedTypes != null ? deducedTypes[param] : null;
+						var tps = deducedTypes?[param];
 
 						string str;
 
@@ -346,8 +349,7 @@ namespace D_Parser.Completion.ToolTips
 			if (attr is DeclarationCondition)
 				return false;
 
-			var mod = attr as Modifier;
-			if (showStorageClasses || mod == null)
+			if (showStorageClasses || !(attr is Modifier mod))
 				return true;
 
 			switch (mod.Token)
@@ -362,12 +364,12 @@ namespace D_Parser.Completion.ToolTips
 
 		void AppendAttributes(IEnumerable<DAttribute> attributes, StringBuilder sb, bool showStorageClasses = true)
 		{
-			if (attributes != null)
-			{
-				foreach (var attr in attributes)
-					if (CanShowAttribute(attr, showStorageClasses))
-						sb.Append(DCodeToMarkup(attr.ToString())).Append(' ');
-			}
+			if (attributes == null)
+				return;
+
+			foreach (var attr in attributes)
+				if (CanShowAttribute(attr, showStorageClasses))
+					sb.Append(DCodeToMarkup(attr.ToString())).Append(' ');
 		}
 
 		void AppendAttributes(DNode dn, StringBuilder sb, bool showStorageClasses = true)
