@@ -69,12 +69,10 @@ namespace D_Parser.Completion.ToolTips
 					return;
 				}
 
-				if (match.Index < 1)
-					summary = null;
-				else
+				if (match.Index > 0)
 					summary = HandleSummary (desc.Substring (0, match.Index - 1));
 
-				int k = 0;
+				int k;
 				while ((k = match.Index + match.Length) < desc.Length)
 				{
 					var nextMatch = ddocSectionRegex.Match(desc, k);
@@ -92,7 +90,7 @@ namespace D_Parser.Completion.ToolTips
 			}
 		}
 
-		string HandleSummary(string desc)
+		private string HandleSummary(string desc)
 		{
 			var firstParagraphMatch = summaryFirstParagraphFilter.Match (desc);
 
@@ -107,7 +105,7 @@ namespace D_Parser.Completion.ToolTips
 			return desc.Trim();
 		}
 
-		void AssignToCategories(Dictionary<string, string> cats, string catName, string rawContent)
+		private void AssignToCategories(Dictionary<string, string> cats, string catName, string rawContent)
 		{
 			var n = catName.ToLower(System.Globalization.CultureInfo.InvariantCulture);
 
@@ -124,11 +122,10 @@ namespace D_Parser.Completion.ToolTips
 			}
 		}
 
-		static System.Text.RegularExpressions.Regex summaryFirstParagraphFilter = new System.Text.RegularExpressions.Regex(
-			@"\n\s*\n",
+		static readonly Regex summaryFirstParagraphFilter = new Regex(@"\n\s*\n",
 			RegexOptions.Compiled | RegexOptions.Multiline);
 
-		static System.Text.RegularExpressions.Regex paramsSectionRegex = new System.Text.RegularExpressions.Regex(
+		static readonly System.Text.RegularExpressions.Regex paramsSectionRegex = new Regex(
 			@"^\s*(?<name>[\w_]+)\s*=\s*(?<desc>(.|\n(?!\s*[\w_]+\s*=))*)\s*",
 			RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.ExplicitCapture);
 
@@ -136,7 +133,7 @@ namespace D_Parser.Completion.ToolTips
 		{
 			var sb = new StringBuilder();
 
-			foreach (System.Text.RegularExpressions.Match match in paramsSectionRegex.Matches(rawContent))
+			foreach (Match match in paramsSectionRegex.Matches(rawContent))
 			{
 				if (!match.Success)
 					continue;
@@ -170,10 +167,10 @@ namespace D_Parser.Completion.ToolTips
 
 			return DCodeToMarkup (categoryContent.Substring (i, lastI - i));
 		}*/
-		static System.Text.RegularExpressions.Regex ddocSectionRegex = new System.Text.RegularExpressions.Regex(
-																		   @"^\s*(?<cat>[\w][\w\d_]*):", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.ExplicitCapture);
+		private static readonly Regex ddocSectionRegex = new Regex(@"^\s*(?<cat>[\w][\w\d_]*):",
+			RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.ExplicitCapture);
 
-		public string DDocToMarkup(string ddoc)
+		string DDocToMarkup(string ddoc)
 		{
 			if (ddoc == null)
 				return string.Empty;
@@ -182,12 +179,9 @@ namespace D_Parser.Completion.ToolTips
 			int i = 0, len = 0;
 			while (i < ddoc.Length)
 			{
-
-				string macroName;
-				Dictionary<string, string> parameters;
 				var k = i + len;
 
-				DDocParser.FindNextMacro(ddoc, i + len, out i, out len, out macroName, out parameters);
+				DDocParser.FindNextMacro(ddoc, i + len, out i, out len, out var macroName, out var parameters);
 
 				if (i < 0)
 				{
@@ -198,61 +192,55 @@ namespace D_Parser.Completion.ToolTips
 				while (k < i)
 					sb.Append(ddoc[k++]);
 
-				var firstParam = parameters != null ? parameters["$0"] : null;
-
-				//TODO: Have proper macro infrastructure
-				switch (macroName)
+				if (macroName == "BR")
 				{
-					case "I":
-						if (firstParam != null)
-							AppendFormat(DDocToMarkup(firstParam), sb, FormatFlags.Italic);
-						break;
-					case "U":
-						if (firstParam != null)
-							AppendFormat(DDocToMarkup(firstParam), sb, FormatFlags.Underline);
-						break;
-					case "B":
-						if (firstParam != null)
-							AppendFormat(DDocToMarkup(firstParam), sb, FormatFlags.Bold);
-						break;
-					case "D_CODE":
-					case "D":
-						if (firstParam != null)
-							sb.Append(DCodeToMarkup(DDocToMarkup(firstParam)));
-						break;
-					case "BR":
-						sb.AppendLine();
-						break;
-					case "RED":
-						if (firstParam != null)
-							AppendFormat(DDocToMarkup(firstParam), sb, FormatFlags.Color, 1.0);
-						break;
-					case "BLUE":
-						if (firstParam != null)
-							AppendFormat(DDocToMarkup(firstParam), sb, FormatFlags.Color, 0, 0, 1.0);
-						break;
-					case "GREEN":
-						if (firstParam != null)
-							AppendFormat(DDocToMarkup(firstParam), sb, FormatFlags.Color, 0, 1, 0);
-						break;
-					case "YELLOW":
-						if (firstParam != null)
-							AppendFormat(DDocToMarkup(firstParam), sb, FormatFlags.Color, 1, 1, 0);
-						break;
-					case "BLACK":
-						if (firstParam != null)
-							AppendFormat(DDocToMarkup(firstParam), sb, FormatFlags.Color);
-						break;
-					case "WHITE":
-						if (firstParam != null)
-							AppendFormat(DDocToMarkup(firstParam), sb, FormatFlags.Color, 1, 1, 1);
-						break;
-					default:
-						if (firstParam != null)
-						{
-							sb.Append(DDocToMarkup(firstParam));
-						}
-						break;
+					sb.AppendLine();
+					continue;
+				}
+
+				var firstParam = parameters?["$0"];
+
+				if (firstParam != null)
+				{
+					var firstParamMarkup = DDocToMarkup(firstParam);
+					//TODO: Have proper macro infrastructure
+					switch (macroName)
+					{
+						case "I":
+								AppendFormat(firstParamMarkup, sb, FormatFlags.Italic);
+							break;
+						case "U":
+								AppendFormat(firstParamMarkup, sb, FormatFlags.Underline);
+							break;
+						case "B":
+								AppendFormat(firstParamMarkup, sb, FormatFlags.Bold);
+							break;
+						case "D_CODE":
+						case "D":
+								sb.Append(DCodeToMarkup(firstParamMarkup));
+							break;
+						case "RED":
+								AppendFormat(firstParamMarkup, sb, FormatFlags.Color, 1.0);
+							break;
+						case "BLUE":
+								AppendFormat(firstParamMarkup, sb, FormatFlags.Color, 0, 0, 1.0);
+							break;
+						case "GREEN":
+								AppendFormat(firstParamMarkup, sb, FormatFlags.Color, 0, 1, 0);
+							break;
+						case "YELLOW":
+								AppendFormat(firstParamMarkup, sb, FormatFlags.Color, 1, 1, 0);
+							break;
+						case "BLACK":
+								AppendFormat(firstParamMarkup, sb, FormatFlags.Color);
+							break;
+						case "WHITE":
+								AppendFormat(firstParamMarkup, sb, FormatFlags.Color, 1, 1, 1);
+							break;
+						default:
+							sb.Append(firstParamMarkup);
+							break;
+					}
 				}
 			}
 
@@ -263,7 +251,8 @@ namespace D_Parser.Completion.ToolTips
 		}
 		#endregion
 
-		protected virtual void AppendFormat(string content, StringBuilder sb, FormatFlags flags, double r = 0.0, double g = 0.0, double b = 0.0)
+		protected virtual void AppendFormat(string content, StringBuilder sb, FormatFlags flags,
+			double r = 0.0, double g = 0.0, double b = 0.0)
 		{
 			if (flags == FormatFlags.None)
 			{
@@ -281,14 +270,13 @@ namespace D_Parser.Completion.ToolTips
 				sb.Append(" underline='single'");
 			if ((flags & FormatFlags.Color) != 0)
 			{
-				sb.Append(string.Format(" color='#{0:x2}{1:x2}{2:x2}'",
-					(int)(r * 255.0), (int)(g * 255.0), (int)(b * 255.0)));
+				sb.Append($" color='#{(int) (r * 255.0):x2}{(int) (g * 255.0):x2}{(int) (b * 255.0):x2}'");
 			}
 
 			sb.Append('>').Append(content).Append("</span>");
 		}
 
-		public virtual string DCodeToMarkup(string code)
+		protected virtual string DCodeToMarkup(string code)
 		{
 			return code;
 		}
