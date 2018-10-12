@@ -41,6 +41,7 @@ namespace Tests
 			Assert.AreEqual("a\nlolol", (e as StringLiteralExpression).Value);
 		}
 
+		[Test]
 		public void ParseEmptyCharLiteral()
 		{
 			var e = DParser.ParseExpression("['': false, '&': true, '=': true]");
@@ -1307,6 +1308,7 @@ void anonClassFoo()
 
 		#region DDoc
 
+		[Test]
 		public void DDocMacros()
 		{
 			var frstParam = "a\"s\"";
