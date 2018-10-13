@@ -8,19 +8,6 @@ using System.Linq;
 
 namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 {
-	internal class CtfeException : EvaluationException
-	{
-		public CtfeException(IExpression x, string Message, params ISemantic[] LastSubresults)
-			: base(x, Message, LastSubresults)
-		{
-		}
-
-		public CtfeException(string Message, params ISemantic[] LastSubresults)
-			: base(Message, LastSubresults)
-		{
-		}
-	}
-
 	internal class FunctionEvaluation : StatementVisitor
 	{
 		class ReturnInterrupt : Exception
@@ -308,6 +295,14 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 
 		public void Visit(DeclarationStatement declarationStatement)
 		{
+			foreach (var declaration in declarationStatement.Declarations)
+			{
+				if (declaration is DVariable variable)
+				{
+					var initialValue = EvaluateExpression(variable.Initializer);
+					_statefulEvaluationContext.SetLocalValue(variable, initialValue);
+				}
+			}
 		}
 
 		public void Visit(TemplateMixin templateMixin)

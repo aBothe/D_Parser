@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using D_Parser.Dom;
+using D_Parser.Resolver.ExpressionSemantics.Exceptions;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
@@ -18,7 +19,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			ResolutionContext.LogError (new EvaluationError(involvedSyntaxObject, msg, temporaryResults));
 		}
 
-		public ISymbolValue GetLocalValue(DVariable variable) => _locals[variable];
+		public ISymbolValue GetLocalValue(DVariable variable)
+		{
+			if (_locals.TryGetValue(variable, out var content) && content != null)
+				return content;
+			throw new VariableNotInitializedException("Variable " + variable.Name + " not defined");
+		}
+
 		public void SetLocalValue(DVariable variable, ISymbolValue value) => _locals[variable] = value;
 
 		public ICollection<KeyValuePair<DVariable, ISymbolValue>> GetAllLocals()

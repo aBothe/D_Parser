@@ -1,6 +1,7 @@
 ﻿using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
 using D_Parser.Resolver.ExpressionSemantics;
+using D_Parser.Resolver.ExpressionSemantics.Exceptions;
 using NUnit.Framework;
 using Tests.ExpressionEvaluation;
 
@@ -208,6 +209,42 @@ int keks(int a) {
 			Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Int));
 			Assert.That(pv.Value, Is.EqualTo(130m));
 		}
+
+		[Test]
+		public void VariableDeclarationDefinition()
+		{
+			var ctxt = CreateDefCtxt(@"module A;
+string keks() {
+	auto p = `asdf`;
+	return p;
+}");
+
+			var x = DParser.ParseExpression("keks()");
+			var v = Evaluation.EvaluateValue(x, ctxt);
+
+			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+			var av = v as ArrayValue;
+			Assert.That(av.IsString);
+			Assert.That(av.StringValue, Is.EqualTo("asdf"));
+		}
+
+		[Test]
+		public void VariableDeclarationDefinition_UndefinedValue()
+		{
+			var ctxt = CreateDefCtxt(@"module A;
+string keks() {
+	string p;
+	return p;
+}");
+
+			var x = DParser.ParseExpression("keks()");
+			var v = Evaluation.EvaluateValue(x, ctxt);
+
+			Assert.That(v, Is.TypeOf(typeof(ErrorValue)));
+			var ev = v as ErrorValue;
+			Assert.That(ev.Errors[0], Is.TypeOf(typeof(VariableNotInitializedException)));
+		}
+
 
 		[Test]
 		[Ignore("CTFE not fully there yet")]
