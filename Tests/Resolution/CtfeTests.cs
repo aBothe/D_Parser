@@ -157,6 +157,59 @@ void returnvoid() {
 		}
 
 		[Test]
+		public void ReturnVariableContent()
+		{
+			var ctxt = CreateDefCtxt(@"module A;
+int keks(int a) {
+	return a;
+}");
+
+			var x = DParser.ParseExpression("keks(123)");
+			var v = Evaluation.EvaluateValue(x, ctxt);
+
+			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			var pv = v as PrimitiveValue;
+			Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Int));
+			Assert.That(pv.Value, Is.EqualTo(123m));
+		}
+
+		[Test]
+		public void VariableValueAssignment()
+		{
+			var ctxt = CreateDefCtxt(@"module A;
+int keks(int a) {
+	a = 123;
+	return a;
+}");
+
+			var x = DParser.ParseExpression("keks(0)");
+			var v = Evaluation.EvaluateValue(x, ctxt);
+
+			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			var pv = v as PrimitiveValue;
+			Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Int));
+			Assert.That(pv.Value, Is.EqualTo(123m));
+		}
+
+		[Test]
+		public void VariableValueAssignment2()
+		{
+			var ctxt = CreateDefCtxt(@"module A;
+int keks(int a) {
+	a = 137 + -a;
+	return a;
+}");
+
+			var x = DParser.ParseExpression("keks(7)");
+			var v = Evaluation.EvaluateValue(x, ctxt);
+
+			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			var pv = v as PrimitiveValue;
+			Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Int));
+			Assert.That(pv.Value, Is.EqualTo(130m));
+		}
+
+		[Test]
 		[Ignore("CTFE not fully there yet")]
 		public void stdPathDirnameCTFE()
 		{

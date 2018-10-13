@@ -128,7 +128,7 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 				{
 					return returnInterrupt.returnedValue;
 				}
-				catch (CtfeException ex)
+				catch (EvaluationException ex)
 				{
 					ctxt.LogError(dm, "Can't execute function at precompile time: " + ex.Message);
 					return new ErrorValue(ex);
@@ -189,7 +189,7 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 				ifStatement.ElseStatement?.Accept(this);
 		}
 
-		bool IsTruthy(ISymbolValue v)
+		private static bool IsTruthy(ISymbolValue v)
 		{
 			switch (v)
 			{
@@ -246,6 +246,10 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 			var returnValue = returnStatement.ReturnExpression != null
 				? EvaluateExpression(returnStatement.ReturnExpression)
 				: new VoidValue();
+
+			if (returnValue is VariableValue variableValue)
+				returnValue = _statefulEvaluationContext.GetLocalValue(variableValue.Variable);
+
 			throw new ReturnInterrupt(returnValue);
 		}
 
@@ -299,6 +303,7 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 
 		public void Visit(ExpressionStatement expressionStatement)
 		{
+			EvaluateExpression(expressionStatement.Expression);
 		}
 
 		public void Visit(DeclarationStatement declarationStatement)

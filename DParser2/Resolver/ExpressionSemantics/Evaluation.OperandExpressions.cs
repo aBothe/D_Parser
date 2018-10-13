@@ -71,23 +71,25 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public ISymbolValue Visit(AssignExpression x)
 		{
-			var lValue = this.lValue ?? (x.LeftOperand != null ? x.LeftOperand.Accept(this) : null);
+			var lValue = this.lValue ?? x.LeftOperand?.Accept(this);
 			this.lValue = null;
+
+			if (lValue != null && !readonlyEvaluation)
+			{
+				var rValue = this.rValue ?? x.RightOperand?.Accept(this);
+				this.rValue = null;
+
+				lValue.Accept(new LeftValueSetterVisitor(evaluationState, rValue));
+				return lValue;
+			}
 			this.rValue = null;
-
-			var l = TryGetValue(lValue);
-
-			//TODO
-
-			this.rValue = null;
-
 			return null;
 		}
 
 		ISymbolValue E_BoolOp(OperatorBasedExpression x)
 		{
-			var lValue = this.lValue ?? (x.LeftOperand != null ? x.LeftOperand.Accept(this) : null);
-			var rValue = this.rValue ?? (x.RightOperand != null ? x.RightOperand.Accept(this) : null);
+			var lValue = this.lValue ?? x.LeftOperand?.Accept(this);
+			var rValue = this.rValue ?? x.RightOperand?.Accept(this);
 
 			this.lValue = null;
 			this.rValue = null;
@@ -444,7 +446,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return new ArrayValue(lastArrayType, elements.ToArray());
 		}
 
-		ISymbolValue TryGetValue(ISemantic s)
+		private ISymbolValue TryGetValue(ISemantic s)
 		{
 			if (s is VariableValue value)
 				return EvaluateVariableValue(value);

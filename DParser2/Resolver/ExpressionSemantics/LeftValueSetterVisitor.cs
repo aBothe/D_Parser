@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
-	class LeftValueSetterVisitor : ISymbolValueVisitor
+	internal class LeftValueSetterVisitor : ISymbolValueVisitor
 	{
 		private readonly StatefulEvaluationContext state;
 		private readonly ISymbolValue valueToSet;
@@ -15,22 +15,26 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public void VisitVariableValue(VariableValue v)
 		{
-			if(v is ArrayPointer arrayPointer)
-				SetArrayPointerValue(arrayPointer);
-			else if(v is AssocArrayPointer assocArrayPointer)
-				SetAssocArrayPointer(assocArrayPointer);
-			else
-				state.SetLocalValue(v.Variable, valueToSet);
+			switch (v)
+			{
+				case ArrayPointer arrayPointer:
+					SetArrayPointerValue(arrayPointer);
+					break;
+				case AssocArrayPointer assocArrayPointer:
+					SetAssocArrayPointer(assocArrayPointer);
+					break;
+				default:
+					state.SetLocalValue(v.Variable, valueToSet);
+					break;
+			}
 		}
 
-		void SetArrayPointerValue(ArrayPointer ap)
+		private void SetArrayPointerValue(ArrayPointer ap)
 		{
 			var oldV = state.GetLocalValue(ap.Variable);
 
-			if (oldV is ArrayValue)
+			if (oldV is ArrayValue av)
 			{
-				var av = (ArrayValue)oldV;
-
 				//TODO: Immutability checks
 
 				if (av.IsString)
@@ -62,16 +66,14 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 		}
 
-		void SetAssocArrayPointer(AssocArrayPointer assocArrayPointer)
+		private void SetAssocArrayPointer(AssocArrayPointer assocArrayPointer)
 		{
 			var oldV = state.GetLocalValue(assocArrayPointer.Variable);
 
-			if (oldV is AssociativeArrayValue)
+			if (oldV is AssociativeArrayValue aa)
 			{
 				if (assocArrayPointer.Key != null)
 				{
-					var aa = (AssociativeArrayValue)oldV;
-
 					int itemToReplace = -1;
 
 					for (int i = 0; i < aa.Elements.Count; i++)

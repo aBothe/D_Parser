@@ -26,7 +26,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			ArrayType _t = null;
 
-			if (ctxt != null && ctxt.ScopedBlock != null)
+			if (ctxt?.ScopedBlock != null)
 			{
 				var obj = ctxt.ParseCache.LookupModuleName(ctxt.ScopedBlock.NodeRoot as DModule, "object").FirstOrDefault();
 
