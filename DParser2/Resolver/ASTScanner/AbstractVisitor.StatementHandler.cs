@@ -709,31 +709,43 @@ namespace D_Parser.Resolver.ASTScanner
 				{
 					var aggregate = Evaluation.EvaluateValue(s.Aggregate, ctxt);
 
-					if (aggregate is AssociativeArrayValue)
+					switch (aggregate)
 					{
-						var aa = aggregate as AssociativeArrayValue;
-						return aa.Elements;
-					}
-					else if (aggregate is ArrayValue)
-					{
-						var av = aggregate as ArrayValue;
-						IEnumerable<ISymbolValue> values;
-						if (av.IsString)
+						case AssociativeArrayValue aa:
+							return aa.Elements;
+						case DTuple tuple:
 						{
-							var arrayType = av.RepresentedType as ArrayType;
-							values = new StringCharValuesEnumerable((PrimitiveType)arrayType.ValueType, av.StringValue);
+							var typeValues = new List<ISymbolValue>();
+							if (tuple.IsTypeTuple)
+							{
+								foreach (var semantic in tuple.Items)
+									typeValues.Add(new TypeValue((AbstractType) semantic));
+							}
+							else
+							{
+								foreach (var semantic in tuple.Items)
+									typeValues.Add((ISymbolValue) semantic);
+							}
+							return new IndexKeyExtendingEnumerable(typeValues);
 						}
-						else if (av.Elements != null)
-							values = av.Elements;
-						else
-							values = Enumerable.Empty<ISymbolValue>();
+						case ArrayValue av:
+						{
+							IEnumerable<ISymbolValue> values;
+							if (av.IsString)
+							{
+								var arrayType = av.RepresentedType as ArrayType;
+								values = new StringCharValuesEnumerable((PrimitiveType)arrayType.ValueType, av.StringValue);
+							}
+							else if (av.Elements != null)
+								values = av.Elements;
+							else
+								values = Enumerable.Empty<ISymbolValue>();
 
-						return new IndexKeyExtendingEnumerable(values);
-					}
-					else
-					{
-						ctxt.LogError(s, "aggregate must be (optionally associative) array");
-						return null;
+							return new IndexKeyExtendingEnumerable(values);
+						}
+						default:
+							ctxt.LogError(s, "aggregate must be (optionally associative) array");
+							return null;
 					}
 				}
 			}

@@ -194,18 +194,19 @@ namespace D_Parser.Resolver
 
 		public void VisitDTuple(DTuple t)
 		{
-			sb.Append('(');
-
-			if (t.Items != null && t.Items.Length != 0)
+			sb.Append("tuple(");
+			if (t.Items != null && t.Items.Length > 0)
 			{
-				foreach (var i in t.Items)
+				foreach (var semantic in t.Items)
 				{
-					if(i is AbstractType)
-						AcceptType(i as AbstractType);
-					sb.Append(',');
+					var type = (AbstractType) semantic;
+					if (type is DSymbol ds)
+						sb.Append(ds.Definition.Name);
+					else
+						AcceptType(type);
+					sb.Append(", ");
 				}
-				if (sb[sb.Length - 1] == ',')
-					sb.Length--;
+				sb.Length = sb.Length - 2;
 			}
 
 			sb.Append(")");

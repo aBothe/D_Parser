@@ -281,11 +281,11 @@ namespace D_Parser.Resolver
 						value = typeValue.RepresentedType;
 					var members = GetTypeMembers(value as UserDefinedType, ctxt);
 					var tupleItems = new ISymbolValue[members.Count];
-
+/*
 					for(var memberIndex = 0; memberIndex < members.Count; memberIndex++)
 						tupleItems[memberIndex] = new TypeValue(members[memberIndex]);
-
-					return new ArrayValue(new ArrayType(new UnknownType(null)), tupleItems);
+*/
+					return new DTuple(members);
 				}
 			});
 

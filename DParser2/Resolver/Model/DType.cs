@@ -850,14 +850,15 @@ namespace D_Parser.Resolver
 	/// <summary>
 	/// A Tuple is not a type, an expression, or a symbol. It is a sequence of any mix of types, expressions or symbols.
 	/// </summary>
-	public class DTuple : AbstractType
+	public class DTuple : AbstractType, ISymbolValue
 	{
 		public readonly ISemantic[] Items;
+		public AbstractType RepresentedType => this;
 
 		public DTuple(IEnumerable<ISemantic> items)
 		{
-			if (items is ISemantic[])
-				Items = (ISemantic[])items;
+			if (items is ISemantic[] semantics)
+				Items = semantics;
 			else if (items != null)
 				Items = items.ToArray();
 		}
@@ -885,6 +886,21 @@ namespace D_Parser.Resolver
 		public override R Accept<R>(IResolvedTypeVisitor<R> vis)
 		{
 			return vis.VisitDTuple(this);
+		}
+
+		public bool Equals(ISymbolValue other)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void Accept(ISymbolValueVisitor vis)
+		{
+			vis.VisitDTuple(this);
+		}
+
+		public TR Accept<TR>(ISymbolValueVisitor<TR> v)
+		{
+			return v.VisitDTuple(this);
 		}
 	}
 }

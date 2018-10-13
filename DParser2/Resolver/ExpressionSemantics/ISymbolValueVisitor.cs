@@ -14,6 +14,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		void VisitTypeOverloadValue(InternalOverloadValue v);
 		void VisitVariableValue(VariableValue v);
 		void VisitTypeValue(TypeValue v);
+		void VisitDTuple(DTuple tuple);
 	}
 
 	public interface ISymbolValueVisitor<R> : IVisitor<R>
@@ -28,5 +29,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		R VisitTypeOverloadValue(InternalOverloadValue v);
 		R VisitVariableValue(VariableValue v);
 		R VisitTypeValue(TypeValue v);
+		R VisitDTuple(DTuple tuple);
 	}
 }

@@ -103,6 +103,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 		}
 
+		public void VisitDTuple(DTuple tuple) => throw new System.NotImplementedException();
 		public void VisitErrorValue(ErrorValue v) => throw new System.NotImplementedException();
 		public void VisitPrimitiveValue(PrimitiveValue v) => throw new System.NotImplementedException();
 		public void VisitVoidValue(VoidValue v) => throw new System.NotImplementedException();

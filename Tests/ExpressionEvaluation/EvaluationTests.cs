@@ -638,6 +638,30 @@ enum isIntOrFloat(F) = is(F == int) || is(F == float);
 			Assert.That(av.StringValue, Is.EqualTo("aa"));
 		}
 
+		[Test]
+		public void StaticProperty_TupleofStringof()
+		{
+			var ctxt = ResolutionTestHelper.CreateDefCtxt(@"module A;
+struct S1 {int a; bool b;}
+struct C1 {string s;}");
+
+			{
+				var v = E("S1.tupleof.stringof", ctxt);
+				Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+				var arrayValue = v as ArrayValue;
+				Assert.That(arrayValue.IsString);
+				Assert.That(arrayValue.StringValue, Is.EqualTo("tuple(a, b)"));
+			}
+
+			{
+				var v = E("C1.tupleof.stringof", ctxt);
+				Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+				var arrayValue = v as ArrayValue;
+				Assert.That(arrayValue.IsString);
+				Assert.That(arrayValue.StringValue, Is.EqualTo("tuple(s)"));
+			}
+		}
+
 		/// <summary>
 		/// https://dlang.org/spec/enum.html#named_enums
 		/// </summary>
