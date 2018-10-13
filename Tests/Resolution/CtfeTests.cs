@@ -2,16 +2,17 @@
 using D_Parser.Parser;
 using D_Parser.Resolver.ExpressionSemantics;
 using NUnit.Framework;
+using Tests.ExpressionEvaluation;
 
 namespace Tests.Resolution
 {
 	[TestFixture]
-	public class CtfeTests
+	public class CtfeTests : ResolutionTestHelper
 	{
 		[Test]
 		public void ReturnStmt()
 		{
-			var ctxt = ResolutionTestHelper.CreateCtxt("A", @"module A;
+			var ctxt = CreateCtxt("A", @"module A;
 string inty(A)() { return ""int y;""; }
 ");
 
@@ -32,7 +33,7 @@ string inty(A)() { return ""int y;""; }
 		[Test]
 		public void ReturnStmt2()
 		{
-			var ctxt = ResolutionTestHelper.CreateCtxt("A", @"module A;
+			var ctxt = CreateCtxt("A", @"module A;
 int foo() { return 123; }
 string foo(string s) { return s ~ ""gh""; }
 ");
@@ -53,7 +54,7 @@ string foo(string s) { return s ~ ""gh""; }
 		[Test]
 		public void ReturnStmt3()
 		{
-			var ctxt = ResolutionTestHelper.CreateCtxt("A", @"module A;
+			var ctxt = CreateCtxt("A", @"module A;
 int foo() { return 123; }
 string foo(string s) { return s ~ ""gh""; }
 ");
@@ -71,11 +72,95 @@ string foo(string s) { return s ~ ""gh""; }
 			Assert.That(pv.Value, Is.EqualTo(123M));
 		}
 
+		private const string ctfe_ifStatement = @"module A;
+bool youDecide(int a) {
+	if(a > 25)
+		return true;
+	else {
+		return false;
+	}
+}";
+
+		[Test]
+		public void IfStatement_PositiveCase()
+		{
+			var ctxt = CreateDefCtxt(ctfe_ifStatement);
+
+			var x = DParser.ParseExpression("youDecide(30)");
+			var v = Evaluation.EvaluateValue(x, ctxt);
+
+			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			var pv = v as PrimitiveValue;
+			Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Bool));
+			Assert.That(pv.Value, Is.EqualTo(1m));
+		}
+
+		[Test]
+		public void IfStatement_ElseCase()
+		{
+			var ctxt = CreateDefCtxt(ctfe_ifStatement);
+
+			var x = DParser.ParseExpression("youDecide(0)");
+			var v = Evaluation.EvaluateValue(x, ctxt);
+
+			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			var pv = v as PrimitiveValue;
+			Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Bool));
+			Assert.That(pv.Value, Is.EqualTo(0m));
+		}
+
+		[Test]
+		public void WhileStatement()
+		{
+			var ctxt = CreateDefCtxt(@"module A;
+int whileReturn() {
+	while(true){
+		return 3;
+	}
+	return 1;
+}");
+
+			var x = DParser.ParseExpression("whileReturn()");
+			var v = Evaluation.EvaluateValue(x, ctxt);
+
+			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			var pv = v as PrimitiveValue;
+			Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Int));
+			Assert.That(pv.Value, Is.EqualTo(3m));
+		}
+
+		[Test]
+		public void VoidReturnValue_ImplicitReturn()
+		{
+			var ctxt = CreateDefCtxt(@"module A;
+void returnvoid() {
+}");
+
+			var x = DParser.ParseExpression("returnvoid()");
+			var v = Evaluation.EvaluateValue(x, ctxt);
+
+			Assert.That(v, Is.TypeOf(typeof(VoidValue)));
+		}
+
+		[Test]
+		public void VoidReturnValue_ExplicitReturn()
+		{
+			var ctxt = CreateDefCtxt(@"module A;
+void returnvoid() {
+	return;
+}");
+
+			var x = DParser.ParseExpression("returnvoid()");
+			var v = Evaluation.EvaluateValue(x, ctxt);
+
+			Assert.That(v, Is.TypeOf(typeof(VoidValue)));
+		}
+
 		[Test]
 		[Ignore("CTFE not fully there yet")]
 		public void stdPathDirnameCTFE()
 		{
-			var ctxt = ResolutionTestHelper.CreateDefCtxt(@"
+			var ctxt = CreateDefCtxt(@"
 string _dirName(string s)
 {
     string p = s;

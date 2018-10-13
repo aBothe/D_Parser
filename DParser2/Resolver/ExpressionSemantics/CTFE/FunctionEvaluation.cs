@@ -8,29 +8,38 @@ using System.Linq;
 
 namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 {
-	public class CtfeException : Exception
+	internal class CtfeException : EvaluationException
 	{
-		public CtfeException(string msg = null) : base(msg)
+		public CtfeException(IExpression x, string Message, params ISemantic[] LastSubresults)
+			: base(x, Message, LastSubresults)
+		{
+		}
+
+		public CtfeException(string Message, params ISemantic[] LastSubresults)
+			: base(Message, LastSubresults)
 		{
 		}
 	}
 
-	public class FunctionEvaluation : StatementVisitor
+	internal class FunctionEvaluation : StatementVisitor
 	{
-		#region Properties
+		class ReturnInterrupt : Exception
+		{
+			public readonly ISymbolValue returnedValue;
+
+			public ReturnInterrupt(ISymbolValue returnedValue)
+			{
+				this.returnedValue = returnedValue;
+			}
+		}
 
 		readonly StatefulEvaluationContext _statefulEvaluationContext;
 		private ResolutionContext ResolutionContext => _statefulEvaluationContext.ResolutionContext;
-		ISymbolValue returnedValue;
-
-		#endregion
 
 		#region Constructor/IO
-
 		FunctionEvaluation(MemberSymbol method, ResolutionContext ctxt, Dictionary<DVariable, ISymbolValue> args)
 		{
 			_statefulEvaluationContext = new StatefulEvaluationContext(ctxt);
-			returnedValue = null;
 
 			foreach (var kv in args)
 				_statefulEvaluationContext.SetLocalValue(kv.Key, kv.Value);
@@ -105,33 +114,39 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 			if (ctxt.CancellationToken.IsCancellationRequested)
 				return null;
 
-			var dm = method.Definition as DMethod;
-
-			if (dm == null || dm.BlockStartLocation.IsEmpty)
+			if (!(method.Definition is DMethod dm) || dm.BlockStartLocation.IsEmpty)
 				return new ErrorValue(new EvaluationException("Method either not declared or undefined", method));
-			var eval = new FunctionEvaluation(method, ctxt, arguments);
-			ISymbolValue ret;
 
 			using (ctxt.Push(method))
 			{
 				try
 				{
-					dm.Body.Accept(eval);
+					dm.Body.Accept(new FunctionEvaluation(method, ctxt, arguments));
+					return new VoidValue();
+				}
+				catch (ReturnInterrupt returnInterrupt)
+				{
+					return returnInterrupt.returnedValue;
 				}
 				catch (CtfeException ex)
 				{
 					ctxt.LogError(dm, "Can't execute function at precompile time: " + ex.Message);
+					return new ErrorValue(ex);
 				}
-
-				ret = eval.returnedValue;
 			}
-
-			return ret;
-
-			//return new ErrorValue(new EvaluationException("CTFE is not implemented yet."));
 		}
 
 		#endregion
+
+		ISymbolValue EvaluateExpression(IExpression x)
+		{
+			return Evaluation.EvaluateValue(x, _statefulEvaluationContext);
+		}
+
+		void CheckTimeout()
+		{
+			ResolutionContext.CancellationToken.ThrowIfCancellationRequested();
+		}
 
 		public void Visit(ModuleStatement moduleStatement)
 		{
@@ -157,8 +172,7 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 		{
 			foreach (var stmt in blockStatement)
 			{
-				if (returnedValue != null || ResolutionContext.CancellationToken.IsCancellationRequested)
-					break;
+				CheckTimeout();
 				stmt.Accept(this);
 			}
 		}
@@ -169,10 +183,34 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 
 		public void Visit(IfStatement ifStatement)
 		{
+			if(IsTruthy(EvaluateExpression(ifStatement.IfCondition)))
+				ifStatement.ThenStatement?.Accept(this);
+			else
+				ifStatement.ElseStatement?.Accept(this);
+		}
+
+		bool IsTruthy(ISymbolValue v)
+		{
+			switch (v)
+			{
+				case PrimitiveValue pv:
+					return pv.Value != 0m;
+				/*case ReferenceValue referenceValue:
+					if (referenceValue.ReferencedNode is DVariable variable)
+						return IsTruthy(_statefulEvaluationContext.GetLocalValue(variable));
+					throw new CtfeException("INVALID_REFERNCE", v);*/
+				default:
+					throw new CtfeException("NOT_IMPLEMENTED", v);
+			}
 		}
 
 		public void Visit(WhileStatement whileStatement)
 		{
+			while (IsTruthy(EvaluateExpression(whileStatement.Condition)))
+			{
+				CheckTimeout();
+				whileStatement.ScopedStatement?.Accept(this);
+			}
 		}
 
 		public void Visit(ForStatement forStatement)
@@ -205,7 +243,10 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 
 		public void Visit(ReturnStatement returnStatement)
 		{
-			returnedValue = Evaluation.EvaluateValue(returnStatement.ReturnExpression, _statefulEvaluationContext);
+			var returnValue = returnStatement.ReturnExpression != null
+				? EvaluateExpression(returnStatement.ReturnExpression)
+				: new VoidValue();
+			throw new ReturnInterrupt(returnValue);
 		}
 
 		public void Visit(GotoStatement gotoStatement)
