@@ -245,6 +245,22 @@ string keks() {
 			Assert.That(ev.Errors[0], Is.TypeOf(typeof(VariableNotInitializedException)));
 		}
 
+		[Test]
+		public void VariableArrayIndexAccessing()
+		{
+			var ctxt = CreateDefCtxt(@"module A;
+auto keks(string s) {
+	return s[$-1];
+}");
+
+			var x = DParser.ParseExpression("keks(`asdf`)");
+			var v = Evaluation.EvaluateValue(x, ctxt);
+
+			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			var pv = v as PrimitiveValue;
+			Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Char));
+			Assert.That(pv.Value, Is.EqualTo((decimal)'f'));
+		}
 
 		[Test]
 		[Ignore("CTFE not fully there yet")]

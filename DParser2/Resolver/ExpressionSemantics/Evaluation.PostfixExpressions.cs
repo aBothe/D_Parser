@@ -251,6 +251,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		ISymbolValue AccessArrayAtIndex(PostfixExpression_ArrayAccess x, ISymbolValue foreExpression, PostfixExpression_ArrayAccess.IndexArgument ix)
 		{
+			foreExpression = TryGetValue(foreExpression);
 			//TODO: Access pointer arrays(?)
 
 			if (foreExpression is ArrayValue av) // ArrayValue must be checked first due to inheritance!
