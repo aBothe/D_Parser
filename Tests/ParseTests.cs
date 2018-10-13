@@ -159,6 +159,30 @@ auto sourceCode = q{~this(){}}c;
 		}
 
 		[Test]
+		public void TestAsmOperands()
+		{
+			var mod = DParser.ParseString (@"int foo(int x, int y)
+{
+    asm
+    {
+db 5,6,0x83;   // insert bytes 0x05, 0x06, and 0x83 into code
+ds 0x1234;     // insert bytes 0x34, 0x12
+di 0x1234;     // insert bytes 0x34, 0x12, 0x00, 0x00
+dl 0x1234;     // insert bytes 0x34, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+df 1.234;      // insert float 1.234
+dd 1.234;      // insert double 1.234
+de 1.234;      // insert real 1.234
+db ""abc"";      // insert bytes 0x61, 0x62, and 0x63
+ds ""abc"";      // insert bytes 0x61, 0x00, 0x62, 0x00, 0x63, 0x00
+
+mov EAX,x << 2;
+mov y, EAX + 1;
+    }
+}");
+			Assert.That (mod.ParseErrors.Count, Is.EqualTo (0));
+		}
+
+		[Test]
 		public void TestStaticIfElseSyntaxError()
 		{
 			var mod = DParser.ParseString (@"
@@ -1135,18 +1159,6 @@ void foo()
 			var m = DParser.ParseString(@"alias str = immutable(char)[];");
 
 			Assert.AreEqual(0, m.ParseErrors.Count);
-		}
-		
-		[Test]
-		public void Demangling()
-		{
-			ITypeDeclaration q;
-			var ctxt = ResolutionTests.CreateCtxt ("std.stdio", @"module std.stdio;
-			void writeln() {}");
-			bool isCFun;
-			var t = Demangler.Demangle("_D3std5stdio35__T7writelnTC3std6stream4FileTAAyaZ7writelnFC3std6stream4FileAAyaZv", ctxt, out q, out isCFun);
-
-			Assert.IsFalse (isCFun);
 		}
 
 		[Test]
