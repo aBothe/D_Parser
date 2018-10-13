@@ -81,7 +81,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					return null;
 				}
 				
-				return new PrimitiveValue(!IsFalseZeroOrNull(pv));		
+				return new PrimitiveValue(!IsFalsy(pv));
 		}
 
 		public ISymbolValue Visit(UnaryExpression_Mul x)

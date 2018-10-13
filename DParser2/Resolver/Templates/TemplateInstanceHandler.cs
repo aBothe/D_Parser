@@ -170,7 +170,7 @@ namespace D_Parser.Resolver.Templates
 					try
 					{
 						var v = Evaluation.EvaluateValue(ds.Definition.TemplateConstraint, ctxt);
-						if (!Evaluation.IsFalseZeroOrNull(v))
+						if (!Evaluation.IsFalsy(v))
 							templateConstraintFilteredOverloads.Add(ds);
 					}
 					catch { } //TODO: Handle eval exceptions

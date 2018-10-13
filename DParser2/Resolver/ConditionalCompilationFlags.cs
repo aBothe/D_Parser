@@ -132,7 +132,7 @@ namespace D_Parser.Resolver
 				conditionsBeingChecked.Remove(sc);
 			}
 			//System.Threading.Interlocked.Decrement(ref stk);
-			return !Evaluation.IsFalseZeroOrNull(v); //TODO: Just because the expression evaluation isn't working properly currently, let it return true to have it e.g. in the completion list
+			return !Evaluation.IsFalsy(v); //TODO: Just because the expression evaluation isn't working properly currently, let it return true to have it e.g. in the completion list
 		}
 	}
 

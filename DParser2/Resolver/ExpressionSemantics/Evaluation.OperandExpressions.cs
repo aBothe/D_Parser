@@ -104,10 +104,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				// If the left operand is false, then the right operand is evaluated. 
 				// If the result type of the OrOrExpression is bool then the result 
 				// of the expression is the right operand converted to type bool.
-				return new PrimitiveValue(!(IsFalseZeroOrNull(l) && IsFalseZeroOrNull(r)));
+				return new PrimitiveValue(!(IsFalsy(l) && IsFalsy(r)));
 			}
 			else if (x is AndAndExpression)
-				return new PrimitiveValue(!IsFalseZeroOrNull(l) && !IsFalseZeroOrNull(r));
+				return new PrimitiveValue(!IsFalsy(l) && !IsFalsy(r));
 			else if (x is IdentityExpression)
 			{
 				// http://dlang.org/expression.html#IdentityExpression
@@ -557,7 +557,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			var b = x.OrOrExpression?.Accept(this);
 
-			if (IsFalseZeroOrNull(b))
+			if (IsFalsy(b))
 				return x.FalseCaseExpression?.Accept(this);
 
 			return x.TrueCaseExpression?.Accept(this);

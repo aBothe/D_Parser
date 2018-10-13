@@ -174,7 +174,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			*/
 
 			// Otherwise, if the result is false, an AssertError is thrown
-			if (IsFalseZeroOrNull(assertVal))
+			if (IsFalsy(assertVal))
 			{
 				string assertMsg = "";
 

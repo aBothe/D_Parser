@@ -235,19 +235,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return x.Expression.Accept(this);
 		}
 
-		public static bool IsFalseZeroOrNull(ISymbolValue v)
+		public static bool IsFalsy(ISymbolValue v)
 		{
-			var pv = v as PrimitiveValue;
-			if (pv != null)
-				try
-				{
-					return pv.Value == 0m;
-				}
-				catch { }
-			else
-				return v is NullValue;
-
-			return v != null;
+			if (v is PrimitiveValue pv)
+				return pv.Value == 0m;
+			return v is NullValue;
 		}
 	}
 }
