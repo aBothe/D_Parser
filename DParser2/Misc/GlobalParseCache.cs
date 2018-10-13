@@ -26,6 +26,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -80,7 +81,7 @@ namespace D_Parser.Misc
 	/// Threadsafe global parse cache.
 	/// Central storage of scanned directories.
 	/// </summary>
-	public sealed class GlobalParseCache
+	public static class GlobalParseCache
 	{
 		#region Properties
 
@@ -127,10 +128,6 @@ namespace D_Parser.Misc
 		/// </summary>
 		internal readonly static ConditionalWeakTable<string, DModule> fileLookup = new ConditionalWeakTable<string, DModule> ();
 		public static ParseFinishedHandler ParseTaskFinished;
-
-		private GlobalParseCache ()
-		{
-		}
 
 		#endregion
 
@@ -250,7 +247,7 @@ namespace D_Parser.Misc
 		public static void BeginAddOrUpdatePaths (IEnumerable<string> basePaths, bool skipFunctionBodies = false, ParseFinishedHandler finishedHandler = null)
 		{
 			if (basePaths == null)
-				throw new ArgumentNullException ("basePaths");
+				throw new ArgumentNullException (nameof(basePaths));
 
 			GC.Collect ();
 
@@ -269,13 +266,14 @@ namespace D_Parser.Misc
 				return;
 			}
 
-			if (System.Diagnostics.Debugger.IsAttached)
-			{
-				Console.WriteLine("BeginAddOrUpdatePaths: ");
-				foreach (var p in basePaths)
-					Console.WriteLine(p);
-				Console.WriteLine("---------");
-			}
+#if TRACE
+			Trace.WriteLine("BeginAddOrUpdatePaths: ");
+			Trace.Indent();
+			foreach (var p in basePaths)
+				Trace.WriteLine(p);
+			Trace.Unindent();
+			Trace.WriteLine("---------");
+#endif
 
 			var countObj = new ParseSubtaskContainer (c, finishedHandler);
 
@@ -333,8 +331,7 @@ namespace D_Parser.Misc
 					}
 
 					// Check if it's necessary to reparse the directory
-					RootPackage oldRoot;
-					if (ParsedDirectories.TryGetValue (path, out oldRoot) &&
+					if (ParsedDirectories.TryGetValue (path, out var oldRoot) &&
 						oldRoot.LastParseTime >= Directory.GetLastWriteTimeUtc (path)) {
 						noticeFinish (new ParseIntermediate (statIm, oldRoot, string.Empty));
 						continue;
@@ -563,14 +560,11 @@ namespace D_Parser.Misc
 		public static ModulePackage GetPackage (string physicalRootPath, string subPackageName=null)
 		{
 			if (string.IsNullOrEmpty (physicalRootPath))
-				throw new ArgumentNullException ("physicalRootPath");
+				throw new ArgumentNullException (nameof(physicalRootPath));
 
 			var pack = ParsedDirectories.GetOrAdd (physicalRootPath, (RootPackage)null) as ModulePackage;
 
-			if (pack != null)
-				pack = pack.GetOrCreateSubPackage (subPackageName);
-
-			return pack;
+			return pack?.GetOrCreateSubPackage (subPackageName);
 		}
 
 		public static ModulePackage GetOrCreatePackageByDirectory (string physicalPackagePath, bool create = false)
@@ -603,53 +597,44 @@ namespace D_Parser.Misc
 
 			var root = GetRootPackage (module.FileName);
 
-			if (root == null)
-				return null;
-
-			return root.GetOrCreateSubPackage (ModuleNameHelper.ExtractPackageName (module.ModuleName), create);
+			return root?.GetOrCreateSubPackage (ModuleNameHelper.ExtractPackageName (module.ModuleName), create);
 		}
 
 		public static DModule GetModule (string basePath, string moduleName, out ModulePackage pack)
 		{
 			pack = GetPackage (basePath, ModuleNameHelper.ExtractPackageName (moduleName));
 
-			if (pack == null)
-				return null;
-
-			return pack.GetModule (ModuleNameHelper.ExtractModuleName (moduleName));
+			return pack?.GetModule (ModuleNameHelper.ExtractModuleName (moduleName));
 		}
 
 		public static DModule GetModule (string basePath, string moduleName)
 		{
 			var pack = GetPackage (basePath, ModuleNameHelper.ExtractPackageName (moduleName));
 
-			if (pack == null)
-				return null;
-
-			return pack.GetModule (ModuleNameHelper.ExtractModuleName (moduleName));
+			return pack?.GetModule (ModuleNameHelper.ExtractModuleName (moduleName));
 		}
 
 		public static DModule GetModule (string file)
 		{
-			DModule ret;
-			if (!fileLookup.TryGetValue (file, out ret)) {
-				foreach (var kv in ParsedDirectories) {
-					if (!file.StartsWith (kv.Key))
-						continue;
+			if (fileLookup.TryGetValue(file, out var ret))
+				return ret;
 
-					var modName = DModule.GetModuleName (kv.Key, file);
-					var pack = kv.Value.GetOrCreateSubPackage (ModuleNameHelper.ExtractPackageName (modName));
+			foreach (var kv in ParsedDirectories) {
+				if (!file.StartsWith (kv.Key))
+					continue;
 
-					if (pack != null)
-                        ret = pack.GetModule(ModuleNameHelper.ExtractModuleName(modName));
-					break;
-				}
+				var modName = DModule.GetModuleName (kv.Key, file);
+				var pack = kv.Value.GetOrCreateSubPackage (ModuleNameHelper.ExtractPackageName (modName));
+
+				if (pack != null)
+					ret = pack.GetModule(ModuleNameHelper.ExtractModuleName(modName));
+				break;
 			}
 
 			return ret;
 		}
 
-		public static IEnumerable<ModulePackage> EnumPackagesRecursively (bool includeRoots,params string[] basePaths)
+		public static List<ModulePackage> EnumPackagesRecursively (bool includeRoots,params string[] basePaths)
 		{
 			var l = new List<ModulePackage>();
 			foreach (var path in basePaths)
@@ -668,15 +653,16 @@ namespace D_Parser.Misc
 
 		public static void EnumPackagesRecursively(ModulePackage pack, List<ModulePackage> list)
 		{
-			if (pack != null)
-				foreach (var kv in pack.packages)
-				{
-					list.Add(kv.Value);
-					EnumPackagesRecursively(kv.Value, list);
-				}
+			if (pack == null) return;
+
+			foreach (var kv in pack.packages)
+			{
+				list.Add(kv.Value);
+				EnumPackagesRecursively(kv.Value, list);
+			}
 		}
 
-		public static IEnumerable<DModule> EnumModulesRecursively (string basePath, string packageName=null)
+		public static List<DModule> EnumModulesRecursively (string basePath, string packageName=null)
 		{
 			var l = new List<DModule>();
 			var pack = GetRootPackage(basePath);
@@ -721,8 +707,7 @@ namespace D_Parser.Misc
 			var file = module.FileName;
 
 			// Check if a module is already in the file lookup
-			DModule oldMod;
-			if (file != null && fileLookup.TryGetValue (file, out oldMod)) {
+			if (file != null && fileLookup.TryGetValue (file, out var oldMod)) {
 				RemoveModule (oldMod);
 				oldMod = null;
 			}
@@ -739,8 +724,7 @@ namespace D_Parser.Misc
 
 		public static bool RemoveModule (string basePath, string moduleName)
 		{
-			ModulePackage pack;
-			return RemoveModule (GetModule (basePath, moduleName, out pack), pack);
+			return RemoveModule (GetModule (basePath, moduleName, out var pack), pack);
 		}
 
 		public static bool RemoveModule (DModule module)

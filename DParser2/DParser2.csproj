@@ -93,15 +93,16 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Completion\MethodOverrideCompletionProvider.cs" />
-    <Compile Include="Completion\NodeTooltipRepresentationGen.cs" />
     <Compile Include="Completion\Providers\AttributeCompletionProvider.cs" />
     <Compile Include="Completion\Providers\CtrlSpaceCompletionProvider.cs" />
     <Compile Include="Completion\Providers\ImportStatementCompletionProvider.cs" />
     <Compile Include="Completion\Providers\MemberCompletionProvider.cs" />
+    <Compile Include="Completion\Providers\MethodOverrideCompletionProvider.cs" />
     <Compile Include="Completion\Providers\ModuleStatementCompletionProvider.cs" />
     <Compile Include="Completion\Providers\SelectiveImportCompletionProvider.cs" />
     <Compile Include="Completion\Providers\StructInitializerCompletion.cs" />
+    <Compile Include="Completion\ToolTips\NodeTooltipRepresentationGen.cs" />
+    <Compile Include="Completion\ToolTips\NodeTooltipRepresentationGen.Headers.cs" />
     <Compile Include="Dom\AbstractTypeDeclaration.cs" />
     <Compile Include="Dom\Expressions\ScalarConstantExpression.cs" />
     <Compile Include="Dom\Expressions\StringLiteralExpression.cs" />
@@ -370,9 +371,7 @@
   <ItemGroup>
     <Content Include="readme.txt" />
   </ItemGroup>
-  <ItemGroup />
   <ItemGroup>
-    <Compile Include="Completion\NodeTooltipRepresentationGen.Headers.cs" />
     <None Include="license.txt" />
     <None Include="Misc\ParseLog.cs" />
     <None Include="Formatting\Indent\DIndentEngine.cs" />
