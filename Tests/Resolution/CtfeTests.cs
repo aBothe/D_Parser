@@ -263,6 +263,52 @@ auto keks(string s) {
 		}
 
 		[Test]
+		public void ArraySlicing()
+		{
+			var ctxt = CreateDefCtxt(@"module A;
+string keks(string p) {
+	return p[0 .. $-1];
+}");
+
+			var x = DParser.ParseExpression("keks(`asdf`)");
+			var v = Evaluation.EvaluateValue(x, ctxt);
+
+			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+			var av = v as ArrayValue;
+			Assert.That(av.IsString);
+			Assert.That(av.StringValue, Is.EqualTo("asd"));
+		}
+
+		[Test]
+		public void ArrayIndexComparison()
+		{
+			var ctxt = CreateDefCtxt(@"module A;
+auto keks(string s) {
+	return s[$-1] == 'f';
+}");
+
+			{
+				var x = DParser.ParseExpression("keks(`asdf`)");
+				var v = Evaluation.EvaluateValue(x, ctxt);
+
+				Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+				var pv = v as PrimitiveValue;
+				Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Bool));
+				Assert.That(pv.Value, Is.EqualTo(1m));
+			}
+
+			{
+				var x = DParser.ParseExpression("keks(`asd`)");
+				var v = Evaluation.EvaluateValue(x, ctxt);
+
+				Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+				var pv = v as PrimitiveValue;
+				Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Bool));
+				Assert.That(pv.Value, Is.EqualTo(0m));
+			}
+		}
+
+		[Test]
 		[Ignore("CTFE not fully there yet")]
 		public void stdPathDirnameCTFE()
 		{

@@ -235,8 +235,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					if (arg == null)
 						continue;
 
-					if (arg is PostfixExpression_ArrayAccess.SliceArgument)
-						foreExpression = SliceArray (x, foreExpression, arg as PostfixExpression_ArrayAccess.SliceArgument);
+					if (arg is PostfixExpression_ArrayAccess.SliceArgument argument)
+						foreExpression = SliceArray (x, foreExpression, argument);
 					else
 						foreExpression = AccessArrayAtIndex (x, foreExpression, arg);
 
@@ -322,6 +322,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		ISymbolValue SliceArray(IExpression x,ISymbolValue foreExpression, PostfixExpression_ArrayAccess.SliceArgument sl)
 		{
+			foreExpression = TryGetValue(foreExpression);
+
 			if (!(foreExpression is ArrayValue))
 			{
 				EvalError(x, "Must be an array");
