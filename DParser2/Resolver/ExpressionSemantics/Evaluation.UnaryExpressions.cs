@@ -114,7 +114,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var types = TypeDeclarationResolver.ResolveSingle(uat.Type, ctxt);
 
 			// First off, try to resolve static properties
-			var statProp = StaticProperties.TryEvalPropertyValue(ctxt, types, uat.AccessIdentifierHash);
+			var statProp = StaticProperties.TryEvalPropertyValue(ctxt, evaluationState,
+				new TypeValue(types), uat.AccessIdentifierHash);
 
 			if (statProp != null)
 				return statProp;

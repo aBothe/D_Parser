@@ -283,6 +283,23 @@ auto keks(string s) {
 		}
 
 		[Test]
+		public void ArrayLength()
+		{
+			var ctxt = CreateDefCtxt(@"module A;
+auto keks(string s) {
+	return s.length;
+}");
+
+			var x = DParser.ParseExpression("keks(`asdf`)");
+			var v = Evaluation.EvaluateValue(x, ctxt);
+
+			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			var pv = v as PrimitiveValue;
+			Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Int));
+			Assert.That(pv.Value, Is.EqualTo(4m));
+		}
+
+		[Test]
 		public void ArraySlicing()
 		{
 			var ctxt = CreateDefCtxt(@"module A;

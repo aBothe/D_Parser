@@ -151,7 +151,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			{
 				if (EvalAndFilterOverloads)
 				{
-					var staticPropResult = StaticProperties.TryEvalPropertyValue(ctxt, baseExpression, id.IdHash);
+					ISemantic staticPropResult;
+					if (ValueProvider != null)
+						staticPropResult = StaticProperties.TryEvalPropertyValue(ctxt, ValueProvider,
+							(ISymbolValue)baseExpression, id.IdHash);
+					else
+						staticPropResult = StaticProperties.TryEvalPropertyType(ctxt, AbstractType.Get(baseExpression), id.IdHash);
+
 					if (staticPropResult != null)
 						return new List<R> { (R) staticPropResult };
 				}

@@ -12,7 +12,8 @@ namespace D_Parser.Resolver
 {
 	public static class StaticProperties
 	{
-		public delegate ISymbolValue ValueGetterHandler(ResolutionContext ctxt, ISemantic baseValue);
+		public delegate ISymbolValue ValueGetterHandler(ResolutionContext ctxt,
+			StatefulEvaluationContext state, ISymbolValue baseValue);
 
 		class StaticPropertyInfo
 		{
@@ -99,7 +100,7 @@ namespace D_Parser.Resolver
 			props.AddProp(new StaticPropertyInfo("alignof", "Variable alignment", DTokens.Uint) { RequireThis = true });
 			props.AddProp(new StaticPropertyInfo("mangleof", "String representing the ‘mangled’ representation of the type", "string"));
 			props.AddProp(new StaticPropertyInfo("stringof", "String representing the source representation of the type", "string") { 
-				ValueGetter = (ctxt, v) => {
+				ValueGetter = (ctxt, state, v) => {
 					var t = AbstractType.Get(v);
 					if(t == null)
 						return new NullValue();
@@ -142,9 +143,12 @@ namespace D_Parser.Resolver
 			props.AddProp(new StaticPropertyInfo("length", "Array length", DTokens.Int) { 
 				RequireThis = true,
 			ValueGetter = 
-				(ctxt, v) => {
+				(ctxt, state, v) =>
+				{
+					if (v is VariableValue vv)
+						v = state.GetLocalValue(vv.Variable);
 					var av = v as ArrayValue;
-					return new PrimitiveValue(av.Elements != null ? av.Elements.Length : 0); 
+					return new PrimitiveValue(av?.Length ?? 0);
 				}});
 
 			props.AddProp(new StaticPropertyInfo("dup", "Create a dynamic array of the same size and copy the contents of the array into it.") { TypeGetter = help_ReflectType, ResolvedBaseTypeGetter = help_ReflectResolvedType, RequireThis = true });
@@ -215,11 +219,11 @@ namespace D_Parser.Resolver
 			props.AddProp(new StaticPropertyInfo("length", "Returns number of values in the type tuple.", "size_t") { 
 				RequireThis = true,
 				ValueGetter = 
-				(vp, v) => {
+				(ctxt, state, v) => {
 					var tt = v as DTuple;
-					if (tt == null && v is TypeValue)
-						tt = (v as TypeValue).RepresentedType as DTuple;
-					return tt != null ? new PrimitiveValue(tt.Items == null ? 0 : tt.Items.Length) : null; 
+					if (tt == null && v is TypeValue value)
+						tt = value.RepresentedType as DTuple;
+					return tt != null ? new PrimitiveValue(tt.Items?.Length ?? 0) : null;
 				} });
 
 
@@ -275,16 +279,9 @@ namespace D_Parser.Resolver
 
 				ResolvedBaseTypeGetter = (t, ctxt) => GetTupleofTuple(t as UserDefinedType, ctxt),
 
-				ValueGetter = (ctxt, value) =>
+				ValueGetter = (ctxt, state, value) =>
 				{
-					if (value is TypeValue typeValue)
-						value = typeValue.RepresentedType;
-					var members = GetTypeMembers(value as UserDefinedType, ctxt);
-					var tupleItems = new ISymbolValue[members.Count];
-/*
-					for(var memberIndex = 0; memberIndex < members.Count; memberIndex++)
-						tupleItems[memberIndex] = new TypeValue(members[memberIndex]);
-*/
+					var members = GetTypeMembers(AbstractType.Get(value) as UserDefinedType, ctxt);
 					return new DTuple(members);
 				}
 			});
@@ -384,8 +381,7 @@ namespace D_Parser.Resolver
 		#region I/O
 		static PropOwnerType GetOwnerType(ISemantic t)
 		{
-			if (t is TypeValue)
-				t = ((TypeValue) t).RepresentedType;
+			t = AbstractType.Get(t);
 
 			switch (t)
 			{
@@ -420,6 +416,8 @@ namespace D_Parser.Resolver
 					return PropOwnerType.TypeTuple;
 				case MemberSymbol symbol when symbol.Definition.Parent is DClassLike ms && ms.ClassType == DTokens.Struct:
 					return PropOwnerType.StructElement;
+				case MemberSymbol symbol:
+					return GetOwnerType(symbol.Base);
 			}
 			return PropOwnerType.None;
 		}
@@ -493,7 +491,8 @@ namespace D_Parser.Resolver
 			return null;
 		}
 
-		public static ISymbolValue TryEvalPropertyValue(ResolutionContext ctxt, ISemantic baseSymbol, int propName)
+		public static ISymbolValue TryEvalPropertyValue(ResolutionContext ctxt, StatefulEvaluationContext state,
+			ISymbolValue baseSymbol, int propName)
 		{
 			var props = Properties[PropOwnerType.Generic];
 
@@ -502,7 +501,7 @@ namespace D_Parser.Resolver
 			        && props.TryGetValue(propName, out prop)))
 			{
 				if (prop.ValueGetter != null)
-					return prop.ValueGetter(ctxt, baseSymbol);
+					return prop.ValueGetter(ctxt, state, baseSymbol);
 			}
 
 			return null;
