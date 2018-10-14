@@ -452,5 +452,24 @@ void baz() { fooByAccident(); }
 			var ev = v as ErrorValue;
 			Assert.That(ev.Errors[0], Is.TypeOf(typeof(EvaluationStackOverflowException)));
 		}
+
+		[Test]
+		public void AccessingOuterScopedConsts()
+		{
+			var ctxt = CreateDefCtxt(@"module A;
+string keks(string p) {
+	return myConst;
+}
+const myConst = `asdf`;
+");
+
+			var x = DParser.ParseExpression("keks(`fooo`)");
+			var v = Evaluation.EvaluateValue(x, ctxt);
+
+			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+			var av = v as ArrayValue;
+			Assert.That(av.IsString);
+			Assert.That(av.StringValue, Is.EqualTo("asdf"));
+		}
 	}
 }

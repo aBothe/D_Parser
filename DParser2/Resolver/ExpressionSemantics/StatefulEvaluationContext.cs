@@ -26,6 +26,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			if (_locals.TryGetValue(variable, out var content) && content != null)
 				return content;
+			if (variable.IsConst)
+				return Evaluation.EvaluateValue(variable.Initializer, ResolutionContext);
 			throw new VariableNotInitializedException("Variable " + variable.Name + " not defined");
 		}
 
