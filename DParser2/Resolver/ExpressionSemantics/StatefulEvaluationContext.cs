@@ -7,8 +7,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 {
 	public class StatefulEvaluationContext
 	{
-		private int callStackDepth;
-		const int MAX_CALLSTACK_DEPTH = 30;
 		private readonly Dictionary<DVariable, ISymbolValue> _locals = new Dictionary<DVariable, ISymbolValue>();
 		public readonly ResolutionContext ResolutionContext;
 
@@ -36,23 +34,6 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		public ICollection<KeyValuePair<DVariable, ISymbolValue>> GetAllLocals()
 		{
 			return _locals;
-		}
-
-		private class CallStackDisposable : IDisposable
-		{
-			private readonly StatefulEvaluationContext _state;
-
-			public CallStackDisposable(StatefulEvaluationContext state) => this._state = state;
-			public void Dispose() => _state.callStackDepth--;
-		}
-
-		public IDisposable PushCallStack()
-		{
-			if (callStackDepth >= MAX_CALLSTACK_DEPTH)
-				throw new EvaluationStackOverflowException("Stack overflow");
-
-			callStackDepth++;
-			return new CallStackDisposable(this);
 		}
 	}
 }

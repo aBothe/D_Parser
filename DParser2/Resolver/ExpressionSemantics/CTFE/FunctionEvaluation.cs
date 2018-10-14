@@ -105,8 +105,8 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 			if (!(method.Definition is DMethod dm) || dm.BlockStartLocation.IsEmpty)
 				throw new EvaluationException("Method either not declared or undefined", method);
 
-			using(state?.PushCallStack())
-			using (ctxt.Push(method))
+			using(ctxt.PushEvaluationCallStack())
+			using(ctxt.Push(method))
 			{
 				try
 				{

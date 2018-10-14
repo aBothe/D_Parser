@@ -471,5 +471,22 @@ const myConst = `asdf`;
 			Assert.That(av.IsString);
 			Assert.That(av.StringValue, Is.EqualTo("asdf"));
 		}
+
+		[Test]
+		public void StackOverflowPrevention_ConstOuterVariable()
+		{
+			var ctxt = CreateDefCtxt(@"module A;
+const int someConst = fooByAccident();
+int fooByAccident() { return bar(); }
+void bar() { return someConst; }
+");
+
+			var x = DParser.ParseExpression("fooByAccident()");
+			var v = Evaluation.EvaluateValue(x, ctxt);
+
+			Assert.That(v, Is.TypeOf(typeof(ErrorValue)));
+			var ev = v as ErrorValue;
+			Assert.That(ev.Errors[0], Is.TypeOf(typeof(EvaluationStackOverflowException)));
+		}
 	}
 }

@@ -10,6 +10,7 @@ using D_Parser.Resolver.ASTScanner;
 using System;
 using System.Threading;
 using D_Parser.Resolver.ExpressionSemantics;
+using D_Parser.Resolver.ExpressionSemantics.Exceptions;
 
 namespace D_Parser.Resolver
 {
@@ -42,6 +43,8 @@ namespace D_Parser.Resolver
 					yield return stack [i];
 			}
 		}
+		private int evaluationCallStackDepth;
+		const int MAX_CALLSTACK_DEPTH = 30;
 
 		readonly ThreadLocal<ResolutionOptions> contextIndependentOptions = new ThreadLocal<ResolutionOptions> (() => ResolutionOptions.Default);
 		public ResolutionOptions ContextIndependentOptions { 
@@ -314,6 +317,23 @@ namespace D_Parser.Resolver
 			}
 
 			return false;
+		}
+
+		private class CallStackDisposable : IDisposable
+		{
+			private readonly ResolutionContext _state;
+
+			public CallStackDisposable(ResolutionContext state) => _state = state;
+			public void Dispose() => _state.evaluationCallStackDepth--;
+		}
+
+		public IDisposable PushEvaluationCallStack()
+		{
+			if (evaluationCallStackDepth >= MAX_CALLSTACK_DEPTH)
+				throw new EvaluationStackOverflowException("Stack overflow");
+
+			evaluationCallStackDepth++;
+			return new CallStackDisposable(this);
 		}
 		#endregion
 
