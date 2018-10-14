@@ -152,9 +152,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				if (EvalAndFilterOverloads)
 				{
 					ISemantic staticPropResult;
-					if (ValueProvider != null)
+					if (typeof(ISymbolValue).IsAssignableFrom(typeof(R)))
 						staticPropResult = StaticProperties.TryEvalPropertyValue(ctxt, ValueProvider,
-							(ISymbolValue)baseExpression, id.IdHash);
+							baseExpression, id.IdHash);
 					else
 						staticPropResult = StaticProperties.TryEvalPropertyType(ctxt, AbstractType.Get(baseExpression), id.IdHash);
 

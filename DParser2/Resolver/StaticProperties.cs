@@ -492,7 +492,7 @@ namespace D_Parser.Resolver
 		}
 
 		public static ISymbolValue TryEvalPropertyValue(ResolutionContext ctxt, StatefulEvaluationContext state,
-			ISymbolValue baseSymbol, int propName)
+			ISemantic baseSymbol, int propName)
 		{
 			var props = Properties[PropOwnerType.Generic];
 
@@ -501,7 +501,8 @@ namespace D_Parser.Resolver
 			        && props.TryGetValue(propName, out prop)))
 			{
 				if (prop.ValueGetter != null)
-					return prop.ValueGetter(ctxt, state, baseSymbol);
+					return prop.ValueGetter(ctxt, state, baseSymbol is ISymbolValue symbolValue
+						? symbolValue : new TypeValue(baseSymbol as AbstractType));
 			}
 
 			return null;
