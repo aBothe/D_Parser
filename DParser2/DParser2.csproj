@@ -166,6 +166,7 @@
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.OperandExpressions.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Evaluation.UnaryExpressions.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Exceptions\CtfeException.cs" />
+    <Compile Include="Resolver\ExpressionSemantics\Exceptions\EvaluationStackOverflowException.cs" />
     <Compile Include="Resolver\ExpressionSemantics\Exceptions\VariableNotInitializedException.cs" />
     <Compile Include="Resolver\ExpressionSemantics\ExpressionTypeEvaluation.cs" />
     <Compile Include="Resolver\ExpressionSemantics\ISymbolValue.cs" />

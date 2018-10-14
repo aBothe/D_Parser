@@ -116,22 +116,32 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			public ISymbolValue VisitMemberSymbol(MemberSymbol mr)
 			{
-				if (mr.Definition is DVariable)
-					return new VariableValue(mr);
-
-				// If we've got a function here, execute it
-				if (mr.Definition is DMethod)
+				switch (mr.Definition)
 				{
-					Dictionary<DVariable, ISymbolValue> targetArgs;
-					if(!FunctionEvaluation.AssignCallArgumentsToIC(mr, executionArguments,
-						ValueProvider, out targetArgs, ctxt))
+					case DVariable _:
+						return new VariableValue(mr);
+					// If we've got a function here, execute it
+					case DMethod _:
+					{
+						if(!FunctionEvaluation.AssignCallArgumentsToIC(mr, executionArguments,
+							ValueProvider, out var targetArgs, ctxt))
+							return null;
+
+						try
+						{
+							return FunctionEvaluation.Execute(mr, targetArgs, ctxt, ValueProvider);
+						}
+						catch (EvaluationException e)
+						{
+							if (ValueProvider != null)
+								throw;
+							return new ErrorValue(e);
+						}
+					}
+					default:
+						// Are there other types to execute/handle?
 						return null;
-
-					return FunctionEvaluation.Execute(mr, targetArgs, ctxt);
 				}
-
-				// Are there other types to execute/handle?
-				return null;
 			}
 
 			public ISymbolValue VisitTemplateParameterSymbol(TemplateParameterSymbol tps)

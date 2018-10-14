@@ -24,9 +24,10 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 		private ResolutionContext ResolutionContext => _statefulEvaluationContext.ResolutionContext;
 
 		#region Constructor/IO
-		FunctionEvaluation(MemberSymbol method, ResolutionContext ctxt, Dictionary<DVariable, ISymbolValue> args)
+		FunctionEvaluation(MemberSymbol method, ResolutionContext ctxt,
+			StatefulEvaluationContext state, Dictionary<DVariable, ISymbolValue> args)
 		{
-			_statefulEvaluationContext = new StatefulEvaluationContext(ctxt);
+			_statefulEvaluationContext = state ?? new StatefulEvaluationContext(ctxt);
 
 			foreach (var kv in args)
 				_statefulEvaluationContext.SetLocalValue(kv.Key, kv.Value);
@@ -96,29 +97,25 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 		}
 
 		public static ISymbolValue Execute(MemberSymbol method, Dictionary<DVariable, ISymbolValue> arguments,
-			ResolutionContext ctxt)
+			ResolutionContext ctxt, StatefulEvaluationContext state)
 		{
 			if (ctxt.CancellationToken.IsCancellationRequested)
 				return null;
 
 			if (!(method.Definition is DMethod dm) || dm.BlockStartLocation.IsEmpty)
-				return new ErrorValue(new EvaluationException("Method either not declared or undefined", method));
+				throw new EvaluationException("Method either not declared or undefined", method);
 
+			using(state?.PushCallStack())
 			using (ctxt.Push(method))
 			{
 				try
 				{
-					dm.Body.Accept(new FunctionEvaluation(method, ctxt, arguments));
+					dm.Body.Accept(new FunctionEvaluation(method, ctxt, state, arguments));
 					return new VoidValue();
 				}
 				catch (ReturnInterrupt returnInterrupt)
 				{
 					return returnInterrupt.returnedValue;
-				}
-				catch (EvaluationException ex)
-				{
-					ctxt.LogError(dm, "Can't execute function at precompile time: " + ex.Message);
-					return new ErrorValue(ex);
 				}
 			}
 		}

@@ -345,10 +345,7 @@ auto keks(string s) {
 			}
 		}
 
-		[Test]
-		public void StdPathDirnameCTFE()
-		{
-			var ctxt = CreateDefCtxt(@"module A;
+		private const string dirnameCode = @"module A;
 string _dirName(string s)
 {
     string p = s;
@@ -361,41 +358,99 @@ string _dirName(string s)
     return s;
 }
 
-enum dir = _dirName(""dir/someFile"");
+enum dir = _dirName(""myDir/someFile"");
 enum dir_windows = _dirName(""dir\someFile"");
 enum filename = dir ~ ""/myFile"";
+";
+
+		[Test]
+		public void StdPathDirnameCTFE()
+		{
+			var ctxt = CreateDefCtxt(dirnameCode);
+
+			var x = DParser.ParseExpression("_dirName(`myDir/someFile`)");
+			var v = Evaluation.EvaluateValue(x, ctxt);
+
+			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+			var av = v as ArrayValue;
+			Assert.That(av.IsString);
+			Assert.That(av.StringValue, Is.EqualTo("myDir"));
+		}
+
+		[Test]
+		public void StdPathDirnameCTFE2()
+		{
+			var ctxt = CreateDefCtxt(dirnameCode);
+
+			var x = DParser.ParseExpression("dir_windows");
+			var v = Evaluation.EvaluateValue(x, ctxt);
+
+			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+			var av = v as ArrayValue;
+			Assert.That(av.IsString);
+			Assert.That(av.StringValue, Is.EqualTo("dir"));
+		}
+
+		[Test]
+		public void StdPathDirnameCTFE3()
+		{
+			var ctxt = CreateDefCtxt(dirnameCode);
+
+			var x = DParser.ParseExpression("filename");
+			var v = Evaluation.EvaluateValue(x, ctxt);
+
+			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+			var av = v as ArrayValue;
+			Assert.That(av.IsString);
+			Assert.That(av.StringValue, Is.EqualTo("myDir/myFile"));
+		}
+
+		[Test]
+		public void StdPathDirnameCTFE4()
+		{
+			var ctxt = CreateDefCtxt(dirnameCode);
+
+			var x = DParser.ParseExpression("dir");
+			var v = Evaluation.EvaluateValue(x, ctxt);
+
+			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+			var av = v as ArrayValue;
+			Assert.That(av.IsString);
+			Assert.That(av.StringValue, Is.EqualTo("myDir"));
+		}
+
+		[Test]
+		public void StackOverflowPrevention()
+		{
+			var ctxt = CreateDefCtxt(@"module A;
+void fooByAccident() { bar(); }
+void bar() { baz(); }
+void baz() { fooByAccident(); }
 ");
 
-			{
-				var x = DParser.ParseExpression("_dirName(`myDir/someFile`)");
-				var v = Evaluation.EvaluateValue(x, ctxt);
+			var x = DParser.ParseExpression("fooByAccident()");
+			var v = Evaluation.EvaluateValue(x, ctxt);
 
-				Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
-				var av = v as ArrayValue;
-				Assert.That(av.IsString);
-				Assert.That(av.StringValue, Is.EqualTo("myDir"));
-			}
+			Assert.That(v, Is.TypeOf(typeof(ErrorValue)));
+			var ev = v as ErrorValue;
+			Assert.That(ev.Errors[0], Is.TypeOf(typeof(EvaluationStackOverflowException)));
+		}
 
-			{
-				// Mind caching issues!
-				var x = DParser.ParseExpression("dir_windows");
-				var v = Evaluation.EvaluateValue(x, ctxt);
+		[Test]
+		public void StackOverflowPrevention2()
+		{
+			var ctxt = CreateDefCtxt(@"module A;
+void fooByAccident() { bar(); }
+void bar() { while(true) baz(); }
+void baz() { fooByAccident(); }
+");
 
-				Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
-				var av = v as ArrayValue;
-				Assert.That(av.IsString);
-				Assert.That(av.StringValue, Is.EqualTo("dir"));
-			}
+			var x = DParser.ParseExpression("fooByAccident()");
+			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			{
-				var x = DParser.ParseExpression("filename");
-				var v = Evaluation.EvaluateValue(x, ctxt);
-
-				Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
-				var av = v as ArrayValue;
-				Assert.That(av.IsString);
-				Assert.That(av.StringValue, Is.EqualTo("dir/myFile"));
-			}
+			Assert.That(v, Is.TypeOf(typeof(ErrorValue)));
+			var ev = v as ErrorValue;
+			Assert.That(ev.Errors[0], Is.TypeOf(typeof(EvaluationStackOverflowException)));
 		}
 	}
 }
