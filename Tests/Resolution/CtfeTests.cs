@@ -229,6 +229,26 @@ string keks() {
 		}
 
 		[Test]
+		public void VariableUnrefencingWhileAssigning()
+		{
+			var ctxt = CreateDefCtxt(@"module A;
+string keks() {
+	auto p = `asdf`;
+	auto s = p;
+	p = ``;
+	return s;
+}");
+
+			var x = DParser.ParseExpression("keks()");
+			var v = Evaluation.EvaluateValue(x, ctxt);
+
+			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+			var av = v as ArrayValue;
+			Assert.That(av.IsString);
+			Assert.That(av.StringValue, Is.EqualTo("asdf"));
+		}
+
+		[Test]
 		public void VariableDeclarationDefinition_UndefinedValue()
 		{
 			var ctxt = CreateDefCtxt(@"module A;

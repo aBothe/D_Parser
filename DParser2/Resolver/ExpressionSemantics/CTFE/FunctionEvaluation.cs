@@ -300,6 +300,8 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 				if (declaration is DVariable variable)
 				{
 					var initialValue = EvaluateExpression(variable.Initializer);
+					if (initialValue is VariableValue variableValue)
+						initialValue = _statefulEvaluationContext.GetLocalValue(variableValue.Variable);
 					_statefulEvaluationContext.SetLocalValue(variable, initialValue);
 				}
 			}
