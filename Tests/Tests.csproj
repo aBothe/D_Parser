@@ -79,10 +79,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CompletionTests.cs" />
+    <Compile Include="ExpressionEvaluation\CtfeTests.cs" />
     <Compile Include="ExpressionEvaluation\TraitsEvaluationTests.cs" />
     <Compile Include="Misc\DemanglerTests.cs" />
     <Compile Include="Misc\GlobalParseCacheTests.cs" />
-    <Compile Include="Resolution\CtfeTests.cs" />
     <Compile Include="ExpressionEvaluation\EvaluationTests.cs" />
     <Compile Include="FormatterTests.cs" />
     <Compile Include="IndentationTests.cs" />
