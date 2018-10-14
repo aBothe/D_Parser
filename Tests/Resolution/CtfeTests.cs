@@ -346,10 +346,9 @@ auto keks(string s) {
 		}
 
 		[Test]
-		[Ignore("CTFE not fully there yet")]
-		public void stdPathDirnameCTFE()
+		public void StdPathDirnameCTFE()
 		{
-			var ctxt = CreateDefCtxt(@"
+			var ctxt = CreateDefCtxt(@"module A;
 string _dirName(string s)
 {
     string p = s;
@@ -368,13 +367,13 @@ enum filename = dir ~ ""/myFile"";
 ");
 
 			{
-				var x = DParser.ParseExpression("dir");
+				var x = DParser.ParseExpression("_dirName(`myDir/someFile`)");
 				var v = Evaluation.EvaluateValue(x, ctxt);
 
 				Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
 				var av = v as ArrayValue;
 				Assert.That(av.IsString);
-				Assert.That(av.StringValue, Is.EqualTo("dir"));
+				Assert.That(av.StringValue, Is.EqualTo("myDir"));
 			}
 
 			{
