@@ -4,6 +4,7 @@ using System.Linq;
 using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
 using D_Parser.Dom;
+using D_Parser.Resolver.Model;
 using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Resolver.ExpressionSemantics
@@ -12,17 +13,18 @@ namespace D_Parser.Resolver.ExpressionSemantics
 	{
 		public ISymbolValue Visit(NewExpression nex)
 		{
-			return TryDoCTFEOrGetValueRefs(ExpressionTypeEvaluation.EvaluateType(nex, ctxt), nex);
+			var instanceType = ExpressionTypeEvaluation.EvaluateType(nex, ctxt);
+			var instance = new ComplexValue(instanceType);
+			return instance;
 		}
 
 		public ISymbolValue Visit(CastExpression ce)
 		{
-			var toCast = ce.UnaryExpression != null ? ce.UnaryExpression.Accept (this) : null;
+			var toCast = ce.UnaryExpression?.Accept (this);
 			var targetType = ce.Type != null ? TypeDeclarationResolver.ResolveSingle(ce.Type, ctxt) : null;
 
 			var pv = toCast as PrimitiveValue;
-			var pt = targetType as PrimitiveType;
-			if (pv != null && pt != null) {
+			if (pv != null && targetType is PrimitiveType pt) {
 				//TODO: Truncate value bytes if required and/or treat Value/ImaginaryPart in any way!
 				return new PrimitiveValue(pt.TypeToken, pv.Value, pv.ImaginaryPart, pt.Modifiers);
 			}

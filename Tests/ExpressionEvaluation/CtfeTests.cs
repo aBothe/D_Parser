@@ -1,11 +1,12 @@
 ﻿using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
+using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.ExpressionSemantics.Exceptions;
+using D_Parser.Resolver.Model;
 using NUnit.Framework;
-using Tests.ExpressionEvaluation;
 
-namespace Tests.Resolution
+namespace Tests.ExpressionEvaluation
 {
 	[TestFixture]
 	public class CtfeTests : ResolutionTestHelper
@@ -25,7 +26,7 @@ string inty(A)() { return ""int y;""; }
 			x = DParser.ParseExpression("inty!(\"asdf\")");
 			v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+			Assert.That(v, Is.TypeOf<ArrayValue>());
 			av = v as ArrayValue;
 			Assert.That(av.IsString, Is.True);
 			Assert.That(av.StringValue, Is.EqualTo("int y;"));
@@ -46,7 +47,7 @@ string foo(string s) { return s ~ ""gh""; }
 			x = DParser.ParseExpression("foo(\"asdf\")");
 			v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+			Assert.That(v, Is.TypeOf<ArrayValue>());
 			av = v as ArrayValue;
 			Assert.That(av.IsString, Is.True);
 			Assert.That(av.StringValue, Is.EqualTo("asdfgh"));
@@ -67,7 +68,7 @@ string foo(string s) { return s ~ ""gh""; }
 			x = DParser.ParseExpression("foo");
 			v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			Assert.That(v, Is.TypeOf<PrimitiveValue>());
 			pv = v as PrimitiveValue;
 			Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Int));
 			Assert.That(pv.Value, Is.EqualTo(123M));
@@ -90,7 +91,7 @@ bool youDecide(int a) {
 			var x = DParser.ParseExpression("youDecide(30)");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			Assert.That(v, Is.TypeOf<PrimitiveValue>());
 			var pv = v as PrimitiveValue;
 			Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Bool));
 			Assert.That(pv.Value, Is.EqualTo(1m));
@@ -104,7 +105,7 @@ bool youDecide(int a) {
 			var x = DParser.ParseExpression("youDecide(0)");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			Assert.That(v, Is.TypeOf<PrimitiveValue>());
 			var pv = v as PrimitiveValue;
 			Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Bool));
 			Assert.That(pv.Value, Is.EqualTo(0m));
@@ -124,7 +125,7 @@ int whileReturn() {
 			var x = DParser.ParseExpression("whileReturn()");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			Assert.That(v, Is.TypeOf<PrimitiveValue>());
 			var pv = v as PrimitiveValue;
 			Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Int));
 			Assert.That(pv.Value, Is.EqualTo(3m));
@@ -140,7 +141,7 @@ void returnvoid() {
 			var x = DParser.ParseExpression("returnvoid()");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(VoidValue)));
+			Assert.That(v, Is.TypeOf<VoidValue>());
 		}
 
 		[Test]
@@ -154,7 +155,7 @@ void returnvoid() {
 			var x = DParser.ParseExpression("returnvoid()");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(VoidValue)));
+			Assert.That(v, Is.TypeOf<VoidValue>());
 		}
 
 		[Test]
@@ -168,7 +169,7 @@ int keks(int a) {
 			var x = DParser.ParseExpression("keks(123)");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			Assert.That(v, Is.TypeOf<PrimitiveValue>());
 			var pv = v as PrimitiveValue;
 			Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Int));
 			Assert.That(pv.Value, Is.EqualTo(123m));
@@ -186,7 +187,7 @@ int keks(int a) {
 			var x = DParser.ParseExpression("keks(0)");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			Assert.That(v, Is.TypeOf<PrimitiveValue>());
 			var pv = v as PrimitiveValue;
 			Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Int));
 			Assert.That(pv.Value, Is.EqualTo(123m));
@@ -204,7 +205,7 @@ int keks(int a) {
 			var x = DParser.ParseExpression("keks(7)");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			Assert.That(v, Is.TypeOf<PrimitiveValue>());
 			var pv = v as PrimitiveValue;
 			Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Int));
 			Assert.That(pv.Value, Is.EqualTo(130m));
@@ -222,7 +223,7 @@ string keks() {
 			var x = DParser.ParseExpression("keks()");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+			Assert.That(v, Is.TypeOf<ArrayValue>());
 			var av = v as ArrayValue;
 			Assert.That(av.IsString);
 			Assert.That(av.StringValue, Is.EqualTo("asdf"));
@@ -242,7 +243,7 @@ string keks() {
 			var x = DParser.ParseExpression("keks()");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+			Assert.That(v, Is.TypeOf<ArrayValue>());
 			var av = v as ArrayValue;
 			Assert.That(av.IsString);
 			Assert.That(av.StringValue, Is.EqualTo("asdf"));
@@ -260,9 +261,9 @@ string keks() {
 			var x = DParser.ParseExpression("keks()");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(ErrorValue)));
+			Assert.That(v, Is.TypeOf<ErrorValue>());
 			var ev = v as ErrorValue;
-			Assert.That(ev.Errors[0], Is.TypeOf(typeof(VariableNotInitializedException)));
+			Assert.That(ev.Errors[0], Is.TypeOf<VariableNotInitializedException>());
 		}
 
 		[Test]
@@ -276,7 +277,7 @@ auto keks(string s) {
 			var x = DParser.ParseExpression("keks(`asdf`)");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			Assert.That(v, Is.TypeOf<PrimitiveValue>());
 			var pv = v as PrimitiveValue;
 			Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Char));
 			Assert.That(pv.Value, Is.EqualTo((decimal)'f'));
@@ -293,7 +294,7 @@ auto keks(string s) {
 			var x = DParser.ParseExpression("keks(`asdf`)");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			Assert.That(v, Is.TypeOf<PrimitiveValue>());
 			var pv = v as PrimitiveValue;
 			Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Int));
 			Assert.That(pv.Value, Is.EqualTo(4m));
@@ -310,7 +311,7 @@ string keks(string p) {
 			var x = DParser.ParseExpression("keks(`asdf`)");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+			Assert.That(v, Is.TypeOf<ArrayValue>());
 			var av = v as ArrayValue;
 			Assert.That(av.IsString);
 			Assert.That(av.StringValue, Is.EqualTo("asd"));
@@ -328,7 +329,7 @@ auto keks(string s) {
 				var x = DParser.ParseExpression("keks(`asdf`)");
 				var v = Evaluation.EvaluateValue(x, ctxt);
 
-				Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+				Assert.That(v, Is.TypeOf<PrimitiveValue>());
 				var pv = v as PrimitiveValue;
 				Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Bool));
 				Assert.That(pv.Value, Is.EqualTo(1m));
@@ -338,7 +339,7 @@ auto keks(string s) {
 				var x = DParser.ParseExpression("keks(`asd`)");
 				var v = Evaluation.EvaluateValue(x, ctxt);
 
-				Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+				Assert.That(v, Is.TypeOf<PrimitiveValue>());
 				var pv = v as PrimitiveValue;
 				Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Bool));
 				Assert.That(pv.Value, Is.EqualTo(0m));
@@ -371,7 +372,7 @@ enum filename = dir ~ ""/myFile"";
 			var x = DParser.ParseExpression("_dirName(`myDir/someFile`)");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+			Assert.That(v, Is.TypeOf<ArrayValue>());
 			var av = v as ArrayValue;
 			Assert.That(av.IsString);
 			Assert.That(av.StringValue, Is.EqualTo("myDir"));
@@ -385,7 +386,7 @@ enum filename = dir ~ ""/myFile"";
 			var x = DParser.ParseExpression("dir_windows");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+			Assert.That(v, Is.TypeOf<ArrayValue>());
 			var av = v as ArrayValue;
 			Assert.That(av.IsString);
 			Assert.That(av.StringValue, Is.EqualTo("dir"));
@@ -399,7 +400,7 @@ enum filename = dir ~ ""/myFile"";
 			var x = DParser.ParseExpression("filename");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+			Assert.That(v, Is.TypeOf<ArrayValue>());
 			var av = v as ArrayValue;
 			Assert.That(av.IsString);
 			Assert.That(av.StringValue, Is.EqualTo("myDir/myFile"));
@@ -413,7 +414,7 @@ enum filename = dir ~ ""/myFile"";
 			var x = DParser.ParseExpression("dir");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+			Assert.That(v, Is.TypeOf<ArrayValue>());
 			var av = v as ArrayValue;
 			Assert.That(av.IsString);
 			Assert.That(av.StringValue, Is.EqualTo("myDir"));
@@ -431,9 +432,9 @@ void baz() { fooByAccident(); }
 			var x = DParser.ParseExpression("fooByAccident()");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(ErrorValue)));
+			Assert.That(v, Is.TypeOf<ErrorValue>());
 			var ev = v as ErrorValue;
-			Assert.That(ev.Errors[0], Is.TypeOf(typeof(EvaluationStackOverflowException)));
+			Assert.That(ev.Errors[0], Is.TypeOf<EvaluationStackOverflowException>());
 		}
 
 		[Test]
@@ -448,9 +449,9 @@ void baz() { fooByAccident(); }
 			var x = DParser.ParseExpression("fooByAccident()");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(ErrorValue)));
+			Assert.That(v, Is.TypeOf<ErrorValue>());
 			var ev = v as ErrorValue;
-			Assert.That(ev.Errors[0], Is.TypeOf(typeof(EvaluationStackOverflowException)));
+			Assert.That(ev.Errors[0], Is.TypeOf<EvaluationStackOverflowException>());
 		}
 
 		[Test]
@@ -466,7 +467,7 @@ const myConst = `asdf`;
 			var x = DParser.ParseExpression("keks(`fooo`)");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+			Assert.That(v, Is.TypeOf<ArrayValue>());
 			var av = v as ArrayValue;
 			Assert.That(av.IsString);
 			Assert.That(av.StringValue, Is.EqualTo("asdf"));
@@ -484,9 +485,27 @@ void bar() { return someConst; }
 			var x = DParser.ParseExpression("fooByAccident()");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(ErrorValue)));
+			Assert.That(v, Is.TypeOf<ErrorValue>());
 			var ev = v as ErrorValue;
-			Assert.That(ev.Errors[0], Is.TypeOf(typeof(EvaluationStackOverflowException)));
+			Assert.That(ev.Errors[0], Is.TypeOf<EvaluationStackOverflowException>());
+		}
+
+		[Test]
+		public void ClassInstance()
+		{
+			var ctxt = CreateDefCtxt(@"module A;
+class MyClass { }
+MyClass keks() {
+	return new MyClass();
+}
+");
+
+			var x = DParser.ParseExpression("keks()");
+			var v = Evaluation.EvaluateValue(x, ctxt);
+
+			Assert.That(v, Is.TypeOf<ComplexValue>());
+			var cv = v as ComplexValue;
+			Assert.That(cv.RepresentedType, Is.TypeOf<ClassType>());
 		}
 	}
 }
