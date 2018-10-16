@@ -7,6 +7,7 @@ notifications:
 language: csharp
 mono: latest
 solution: DParser2.Unittest.sln
+cache: bundler
 
 install:
   - nuget restore DParser2.Unittest.sln
@@ -14,5 +15,8 @@ install:
 
 script:
   - msbuild DParser2.Unittest.sln /p:Configuration=Debug
-  - mono ./packages/NUnit.ConsoleRunner.3.9.0/tools/nunit3-console.exe ./Tests/bin/Debug/Tests.dll
-  - cat TestResult.xml
+  - mono ./packages/NUnit.ConsoleRunner.3.9.0/tools/nunit3-console.exe ./Tests/bin/Debug/Tests.dll /out:stdout.log /err:stderr.log
+  - echo \n\n\n
+  - cat stdout.log
+  - echo \n\n\n
+  - cat stderr.log
