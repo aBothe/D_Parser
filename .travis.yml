@@ -15,5 +15,5 @@ install:
 
 script:
   - msbuild DParser2.Unittest.sln /p:Configuration=Debug
-  - mono ./packages/NUnit.ConsoleRunner.3.9.0/tools/nunit3-console.exe /out:stdout.log /trace ./Tests/bin/Debug/Tests.dll
+  - mono ./packages/NUnit.ConsoleRunner.3.9.0/tools/nunit3-console.exe /out:stdout.log ./Tests/bin/Debug/Tests.dll
   - cat stdout.log
