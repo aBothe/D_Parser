@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 {
-	internal class FunctionEvaluation : StatementVisitor
+	internal class FunctionEvaluation : IStatementVisitor
 	{
 		class ReturnInterrupt : Exception
 		{

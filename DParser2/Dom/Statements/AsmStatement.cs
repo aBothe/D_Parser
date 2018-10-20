@@ -24,7 +24,7 @@ namespace D_Parser.Dom.Statements
 
 		public override IEnumerable<IStatement> SubStatements { get { return Instructions; } }
 
-		public override void Accept(StatementVisitor vis) { vis.VisitAsmStatement(this); }
+		public override void Accept(IStatementVisitor vis) { vis.VisitAsmStatement(this); }
 		public override R Accept<R>(StatementVisitor<R> vis) { return vis.VisitAsmStatement(this); }
 	}
 }

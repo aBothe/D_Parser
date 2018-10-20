@@ -1,5 +1,4 @@
-﻿using D_Parser.Dom;
-using D_Parser.Dom.Expressions;
+﻿using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
 
 namespace D_Parser.Dom
@@ -9,26 +8,22 @@ namespace D_Parser.Dom
 	public interface IVisitor<out R, ParameterType> { }
 
 	public interface DVisitor : 
-		NodeVisitor, 
+		NodeVisitor,
 		MetaDeclarationVisitor,
 		TemplateParameterVisitor,
-		StatementVisitor, 
-		ExpressionVisitor, 
+		IStatementVisitor,
+		ExpressionVisitor,
 		TypeDeclarationVisitor
-	{
-		
-	}
+	{}
 
 	public interface DVisitor<out R> : 
 		NodeVisitor<R>,
 		MetaDeclarationVisitor<R>,
 		TemplateParameterVisitor<R>,
-		StatementVisitor<R>, 
-		ExpressionVisitor<R>, 
+		StatementVisitor<R>,
+		ExpressionVisitor<R>,
 		TypeDeclarationVisitor<R>
-	{
-
-	}
+	{}
 
 	public interface NodeVisitor : IVisitor
 	{
@@ -140,7 +135,7 @@ namespace D_Parser.Dom
 		R Visit(TemplateTupleParameter tp, ParameterType parameter);
 	}
 
-	public interface StatementVisitor : IVisitor
+	public interface IStatementVisitor : IVisitor
 	{
 		void Visit(ModuleStatement s);
 		void Visit(ImportStatement s);

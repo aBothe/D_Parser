@@ -14,7 +14,7 @@ namespace D_Parser.Dom
 			return "module " + (ModuleName==null ? "" : ModuleName.ToString());
 		}
 
-		public override void Accept(StatementVisitor vis)
+		public override void Accept(IStatementVisitor vis)
 		{
 			vis.Visit(this);
 		}
@@ -36,7 +36,7 @@ namespace D_Parser.Dom
 		public bool IsStatic;
 		public bool IsPublic;
 
-		public class Import : IVisitable<StatementVisitor>
+		public class Import : IVisitable<IStatementVisitor>
 		{
 			/// <summary>
 			/// import io=std.stdio;
@@ -54,7 +54,7 @@ namespace D_Parser.Dom
 				return r;
 			}
 
-			public void Accept (StatementVisitor vis)
+			public void Accept (IStatementVisitor vis)
 			{
 				vis.VisitImport (this);
 			}
@@ -65,7 +65,7 @@ namespace D_Parser.Dom
 			}
 		}
 
-		public class ImportBinding : IVisitable<StatementVisitor>
+		public class ImportBinding : IVisitable<IStatementVisitor>
 		{
 			public IdentifierDeclaration Symbol;
 			public IdentifierDeclaration Alias;
@@ -86,7 +86,7 @@ namespace D_Parser.Dom
 				return Alias + " = " + Symbol;
 			}
 
-			public void Accept (StatementVisitor vis)
+			public void Accept (IStatementVisitor vis)
 			{
 				vis.VisitImport (this);
 			}
@@ -97,7 +97,7 @@ namespace D_Parser.Dom
 			}
 		}
 
-		public class ImportBindings : IVisitable<StatementVisitor>
+		public class ImportBindings : IVisitable<IStatementVisitor>
 		{
 			public Import Module;
 
@@ -127,7 +127,7 @@ namespace D_Parser.Dom
 				return sb.ToString();
 			}
 
-			public void Accept (StatementVisitor vis)
+			public void Accept (IStatementVisitor vis)
 			{
 				vis.VisitImport (this);
 			}
@@ -167,7 +167,7 @@ namespace D_Parser.Dom
 			return sb.ToString();
 		}
 
-		public override void Accept(StatementVisitor vis)
+		public override void Accept(IStatementVisitor vis)
 		{
 			vis.Visit(this);
 		}

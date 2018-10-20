@@ -2263,7 +2263,7 @@ namespace D_Parser.Dom.Statements
 			return ret;
 		}
 
-		public override void Accept(StatementVisitor vis) { vis.VisitAsmInstructionStatement(this); }
+		public override void Accept(IStatementVisitor vis) { vis.VisitAsmInstructionStatement(this); }
 		public override R Accept<R>(StatementVisitor<R> vis) { return vis.VisitAsmInstructionStatement(this); }
 
 		public bool IsJmpFamily

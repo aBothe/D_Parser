@@ -17,7 +17,7 @@ namespace D_Parser.Dom.Statements
 			get { return new[]{ ReturnExpression }; }
 		}
 
-		public override void Accept(StatementVisitor vis)
+		public override void Accept(IStatementVisitor vis)
 		{
 			vis.Visit(this);
 		}

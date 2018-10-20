@@ -27,7 +27,7 @@ namespace D_Parser.Dom.Statements
 			get { return string.IsNullOrEmpty(Identifier) ? null : new[] { new IdentifierExpression(Identifier) }; }
 		}
 
-		public override void Accept(StatementVisitor vis)
+		public override void Accept(IStatementVisitor vis)
 		{
 			vis.Visit(this);
 		}

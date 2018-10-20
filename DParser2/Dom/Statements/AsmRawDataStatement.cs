@@ -98,7 +98,7 @@ namespace D_Parser.Dom.Statements
 			return sb.ToString();
 		}
 
-		public override void Accept(StatementVisitor vis) { vis.VisitAsmRawDataStatement(this); }
+		public override void Accept(IStatementVisitor vis) { vis.VisitAsmRawDataStatement(this); }
 		public override R Accept<R>(StatementVisitor<R> vis) { return vis.VisitAsmRawDataStatement(this); }
 	}
 }

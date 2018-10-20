@@ -52,7 +52,7 @@ namespace D_Parser.Dom.Statements
 			return ToCode();
 		}
 
-		public abstract void Accept(StatementVisitor vis);
+		public abstract void Accept(IStatementVisitor vis);
 
 		public abstract R Accept<R>(StatementVisitor<R> vis);
 	}

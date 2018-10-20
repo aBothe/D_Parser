@@ -18,7 +18,7 @@ namespace D_Parser.Dom.Statements
 				return "align " + ValueExpression.ToString();
 		}
 
-		public override void Accept(StatementVisitor vis) { vis.VisitAsmAlignStatement(this); }
+		public override void Accept(IStatementVisitor vis) { vis.VisitAsmAlignStatement(this); }
 		public override R Accept<R>(StatementVisitor<R> vis) { return vis.VisitAsmAlignStatement(this); }
 	}
 }

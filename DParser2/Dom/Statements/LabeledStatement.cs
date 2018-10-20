@@ -21,7 +21,7 @@ namespace D_Parser.Dom.Statements
 			return Identifier + ":";
 		}
 
-		public override void Accept(StatementVisitor vis)
+		public override void Accept(IStatementVisitor vis)
 		{
 			vis.Visit(this);
 		}

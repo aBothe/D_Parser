@@ -48,7 +48,7 @@ namespace D_Parser.Dom.Statements
 			get { return CaseExpression != null ? new[] { CaseExpression } : null; }
 		}
 
-		public override void Accept(StatementVisitor vis)
+		public override void Accept(IStatementVisitor vis)
 		{
 			vis.Visit(this);
 		}

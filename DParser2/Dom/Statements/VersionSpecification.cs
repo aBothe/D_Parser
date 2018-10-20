@@ -12,7 +12,7 @@ namespace D_Parser.Dom.Statements
 			return "version = " + (SpecifiedId ?? SpecifiedNumber.ToString()) + ";";
 		}
 
-		public override void Accept(StatementVisitor vis)
+		public override void Accept(IStatementVisitor vis)
 		{
 			vis.Visit(this);
 		}

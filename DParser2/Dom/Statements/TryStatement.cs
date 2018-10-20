@@ -38,7 +38,7 @@ namespace D_Parser.Dom.Statements
 			return ret;
 		}
 
-		public override void Accept(StatementVisitor vis)
+		public override void Accept(IStatementVisitor vis)
 		{
 			vis.Visit(this);
 		}
@@ -68,7 +68,7 @@ namespace D_Parser.Dom.Statements
 				}
 			}
 
-			public override void Accept(StatementVisitor vis)
+			public override void Accept(IStatementVisitor vis)
 			{
 				vis.Visit(this);
 			}
@@ -86,7 +86,7 @@ namespace D_Parser.Dom.Statements
 				return "finally" + (ScopedStatement != null ? (' ' + ScopedStatement.ToCode()) : "");
 			}
 
-			public override void Accept(StatementVisitor vis)
+			public override void Accept(IStatementVisitor vis)
 			{
 				vis.Visit(this);
 			}

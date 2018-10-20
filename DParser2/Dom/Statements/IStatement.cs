@@ -2,7 +2,7 @@
 
 namespace D_Parser.Dom.Statements
 {
-	public interface IStatement : ISyntaxRegion, IVisitable<StatementVisitor>
+	public interface IStatement : ISyntaxRegion, IVisitable<IStatementVisitor>
 	{
 		new CodeLocation Location { get; set; }
 
