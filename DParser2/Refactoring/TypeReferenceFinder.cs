@@ -46,7 +46,9 @@ namespace D_Parser.Refactoring
 		Struct = DTokens.Struct,
 		TemplateTypeParameter = DTokens.Not,
 		Variable = DTokens.Void,
-		Alias = DTokens.Alias
+		Alias = DTokens.Alias,
+		Module = DTokens.Module,
+		Method = DTokens.Function,
 	}
 
 	public class TypeReferenceFinder : AbstractResolutionVisitor
@@ -55,7 +57,7 @@ namespace D_Parser.Refactoring
 		Dictionary<DeclarationCondition,int> handledConditions = new Dictionary<DeclarationCondition,int>();
 		readonly List<ISyntaxRegion> invalidConditionalCodeRegions;
 		readonly Dictionary<IBlockNode, Dictionary<int,byte>> TypeCache = new Dictionary<IBlockNode, Dictionary<int,byte>>();
-		//DModule ast;
+		List<DModule> importStack = new List<DModule>();
 		Dictionary<int, Dictionary<ISyntaxRegion,byte>> Matches = new Dictionary<int, Dictionary<ISyntaxRegion,byte>>();
 		#endregion
 
@@ -76,6 +78,7 @@ namespace D_Parser.Refactoring
 			ctxt.ContextIndependentOptions |= ResolutionOptions.IgnoreDeclarationConditions;
 
 			var typeRefFinder = new TypeReferenceFinder(ctxt, invalidConditionalCodeRegions);
+			typeRefFinder.importStack.Add(ed.SyntaxTree);
 
 			CodeCompletion.DoTimeoutableCompletionTask(null, ctxt, () => ed.SyntaxTree.Accept(typeRefFinder), cancelToken);
 
@@ -97,7 +100,7 @@ namespace D_Parser.Refactoring
 
 			public byte Visit(DMethod n)
 			{
-				return 0;
+				return (byte)TypeReferenceKind.Method;
 			}
 
 			public byte Visit(DClassLike n)
@@ -112,7 +115,7 @@ namespace D_Parser.Refactoring
 
 			public byte Visit(DModule n)
 			{
-				return 0;
+				return (byte)TypeReferenceKind.Module;
 			}
 
 			public byte Visit(DBlockNode dBlockNode)
@@ -198,6 +201,11 @@ namespace D_Parser.Refactoring
 
 		static readonly NodeTypeDeterminer TypeDet = new NodeTypeDeterminer();
 
+		bool inRootModule()
+		{
+			return importStack.Count <= 1;
+		}
+
 		/// <summary>
 		/// Used for caching available types.
 		/// </summary>
@@ -206,7 +214,8 @@ namespace D_Parser.Refactoring
 			Dictionary<int,byte> dd = null;
 			if (ctxt.CancellationToken.IsCancellationRequested)
 				return;
-			foreach (var n in ItemEnumeration.EnumScopedBlockChildren(ctxt, MemberFilter.Types | MemberFilter.Enums | MemberFilter.TypeParameters | MemberFilter.Variables))
+			var filter = MemberFilter.Types | MemberFilter.Enums | MemberFilter.TypeParameters | MemberFilter.Variables;
+			foreach (var n in ItemEnumeration.EnumScopedBlockChildren(ctxt, filter))
 			{
 				if (n.NameHash != 0) {
 					if (dd == null && !TypeCache.TryGetValue (bn, out dd))
@@ -221,9 +230,9 @@ namespace D_Parser.Refactoring
 		{
 			if (CheckNode(n))
 			{
-				byte type;
-				if (DoPrimaryIdCheck(n.NameHash, out type))
-					AddResult(n, type);
+				if (inRootModule())
+					if (DoPrimaryIdCheck(n.NameHash, out byte type))
+						AddResult(n, type);
 
 				base.VisitDNode(n);
 			}
@@ -245,13 +254,70 @@ namespace D_Parser.Refactoring
 				if (metaBlockEnumGotElements)
 					ContinueEnumStaticStatements (en, block.EndLocation);
 
-				byte type;
-				if (DoPrimaryIdCheck(block.NameHash, out type))
-					AddResult(block, type);
+				if (inRootModule())
+					if (DoPrimaryIdCheck(block.NameHash, out byte type))
+						AddResult(block, type);
 
 				base.VisitDNode(block);
 				VisitChildren(block);
 			}
+		}
+
+		public override void Visit(ImportStatement istmt)
+		{
+			// do not recurse into private imports
+			if (importStack.Count > 1 && !istmt.IsPublic)
+				return;
+			base.Visit(istmt);
+		}
+
+		public override void VisitImport(ImportStatement.ImportBindings ibind)
+		{
+			if (ctxt.ParseCache != null && importStack.Count > 0)
+			{
+				var curmod = importStack[importStack.Count - 1];
+				var modules = ctxt.ParseCache.LookupModuleName(curmod, ibind.Module.ToString());
+				foreach (var mod in modules)
+				{
+					if (!importStack.Contains(mod))
+					{
+						importStack.Add(mod);
+						mod.Accept(this);
+						importStack.Remove(mod);
+					}
+
+					// TODO: refine	for static and renamed import
+					Dictionary<int,byte> curtc = null;
+					if (!TypeCache.TryGetValue(curmod, out curtc))
+						TypeCache[curmod] = curtc = new Dictionary<int, byte>();
+
+					Dictionary<int, byte> tc = null;
+					if (TypeCache.TryGetValue(mod, out tc))
+					{
+						if (ibind.SelectedSymbols != null)
+						{
+							foreach (var sym in ibind.SelectedSymbols)
+							{
+								int key = sym.Symbol.IdHash;
+								if (tc.TryGetValue(key, out byte type))
+								{
+									if (sym.Alias != null)
+										key = sym.Alias.IdHash;
+									curtc[key] = type;
+								}
+							}
+						}
+						else
+						{
+							// transfer all toplevel symbols
+							foreach (var node in tc)
+								if (!curtc.ContainsKey(node.Key))
+									curtc[node.Key] = node.Value;
+						}
+					}
+				}
+			}
+			base.VisitImport(ibind);
 		}
 
 		public override void VisitChildren (StatementContainingStatement stmt)
@@ -337,6 +403,9 @@ namespace D_Parser.Refactoring
 
 		public override void Visit (DMethod dm)
 		{
+			if (!inRootModule())
+				return;
+
 			base.Visit (dm);
 			Dictionary<int,byte> tc;
 			if (!TypeCache.TryGetValue (dm, out tc))
@@ -349,23 +418,24 @@ namespace D_Parser.Refactoring
 
 		public override void VisitTemplateParameter (TemplateParameter tp)
 		{
-			AddResult (tp, (byte)TypeReferenceKind.TemplateTypeParameter);
+			if (inRootModule())
+				AddResult(tp, (byte)TypeReferenceKind.TemplateTypeParameter);
 		}
 
 		public override void Visit (TemplateInstanceExpression x)
 		{
-			byte type;
-			if (DoPrimaryIdCheck(x.TemplateIdHash, out type))
-				AddResult(x, type);
+			if (inRootModule())
+				if (DoPrimaryIdCheck(x.TemplateIdHash, out byte type))
+					AddResult(x, type);
 
 			base.Visit (x);
 		}
 
 		public override void Visit (IdentifierDeclaration td)
 		{
-			byte type;
-			if (DoPrimaryIdCheck(td.IdHash, out type))
-				AddResult(td, type);
+			if (inRootModule())
+				if (DoPrimaryIdCheck(td.IdHash, out byte type))
+					AddResult(td, type);
 
 			base.Visit (td);
 		}
@@ -373,9 +443,9 @@ namespace D_Parser.Refactoring
 		public override void Visit (IdentifierExpression x)
 		{
 			//TODO: If there is a type result, try to resolve x (or postfix-access expressions etc.) to find out whether it's overwritten by some local non-type
-			byte type;
-			if (DoPrimaryIdCheck(x.IdHash, out type))
-				AddResult(x, type);
+			if (inRootModule())
+				if (DoPrimaryIdCheck(x.IdHash, out byte type))
+					AddResult(x, type);
 
 			base.Visit (x);
 		}

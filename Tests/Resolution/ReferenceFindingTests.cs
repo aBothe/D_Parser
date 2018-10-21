@@ -45,6 +45,8 @@ void main()
 		public void TypeRefFinding()
 		{
 			var modA = DParser.ParseString(@"module modA;
+import modB;
+
 class A(T)
 {
 	int n;
@@ -59,17 +61,40 @@ void main()
 	A.prop = 3;
 	int b = A.prop + 4;
 	A!double.statA.statA = new A!double();
+
+	structB s;
+	s.fieldB = 1;
 }
 ");
+			var modB = DParser.ParseString(@"module modB;
+struct structB
+{
+	int fieldB;
+}
+");
+			var rootpkgs = new RootPackage[1];
+			var rootpkg = new MutableRootPackage();
+			rootpkg.AddModule(modB);
+			rootpkgs[0] = rootpkg;
 
 			var ed = new EditorData { 
 				SyntaxTree = modA,
-				ParseCache = new LegacyParseCacheView(new RootPackage[0])
+				ParseCache = new LegacyParseCacheView(rootpkgs)
 			};
 
 			var res = TypeReferenceFinder.Scan(ed, System.Threading.CancellationToken.None, null);
 
 			Assert.That(res.Count, Is.GreaterThan(6));
+			Assert.True(typeRefContainsId(res, "structB"));
+		}
+
+		private bool typeRefContainsId(Dictionary<int, Dictionary<ISyntaxRegion, byte>> refs, string id)
+		{
+			foreach (var line in refs)
+				foreach (var idref in line.Value)
+					if (idref.Key.ToString() == id)
+						return true;
+			return false;
 		}
 	}
 }
