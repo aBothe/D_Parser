@@ -227,13 +227,13 @@ namespace D_Parser.Misc
 
 		class ParseIntermediate
 		{
-			public readonly StatIntermediate im;
+			public readonly StatIntermediate Statistics;
 			public readonly RootPackage root;
 			public readonly string file;
 
 			public ParseIntermediate (StatIntermediate im, RootPackage r, string f)
 			{
-				this.im = im;
+				this.Statistics = im;
 				root = r;
 				file = f;
 			}
@@ -395,7 +395,7 @@ namespace D_Parser.Misc
 					if (stopParsing)
 						break;
 
-					var im = p.im;
+					var im = p.Statistics;
 
 					if (p.file.EndsWith (phobosDFile) || p.file.EndsWith (indexDFile)) {
 						if (Interlocked.Decrement (ref im.remainingFiles) <= 0)
@@ -456,14 +456,15 @@ namespace D_Parser.Misc
 
 		static void noticeFinish (ParseIntermediate p)
 		{
-			var im = p.im;
+			var im = p.Statistics;
 
 			im.sw.Stop ();
-			im.completed.Set ();
 
-			if (!string.IsNullOrEmpty (p.im.basePath) && p.root != null) {
+			if (!string.IsNullOrEmpty (p.Statistics.basePath) && p.root != null) {
 				ParsedDirectories [im.basePath] = p.root;
 			}
+
+			im.completed.Set();
 
 			var pf = new ParsingFinishedEventArgs (im.basePath, p.root, im.actualTimeNeeded, im.ActualParseTimeNeeded, im.totalFiles);
 
@@ -472,8 +473,8 @@ namespace D_Parser.Misc
 			criticalPreparationSection.WaitOne ();
 			var subTasks = im.parseSubTasksUntilFinished.ToArray ();
 
-			if(p.im.basePath != null)
-				ParseStatistics.Remove (p.im.basePath);
+			if(p.Statistics.basePath != null)
+				ParseStatistics.Remove (p.Statistics.basePath);
 
 			criticalPreparationSection.Set ();
 

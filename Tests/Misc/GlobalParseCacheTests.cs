@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using D_Parser.Dom;
 using D_Parser.Misc;
 using D_Parser.Parser;
@@ -22,6 +23,7 @@ namespace Tests.Misc
 
 				File.WriteAllText(tempModulePath, @"module modA; void bar();");
 				GlobalParseCache.BeginAddOrUpdatePaths(tempDirectory);
+				Thread.Sleep(500);
 				Assert.That(GlobalParseCache.WaitForFinish(10000));
 
 				var module = GlobalParseCache.GetModule(tempDirectory, "modA");
@@ -30,6 +32,7 @@ namespace Tests.Misc
 				File.Delete(tempModulePath);
 				File.WriteAllText(tempModulePath, @"module modA; void baz();");
 				GlobalParseCache.BeginAddOrUpdatePaths(tempDirectory);
+				Thread.Sleep(500);
 				Assert.That(GlobalParseCache.WaitForFinish(10000));
 
 				module = GlobalParseCache.GetModule(tempDirectory, "modA");

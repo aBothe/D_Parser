@@ -57,7 +57,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public string ToCode ()
 		{
-			return "<Evaluation Error>";
+			return ToString();
 		}
 		public bool Equals (ISymbolValue other)
 		{
@@ -74,10 +74,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			sb.AppendLine ("Evaluation errors:");
 
 			foreach (var err in Errors) {
-				if(err.EvaluatedExpression != null)
-					sb.AppendLine(err.EvaluatedExpression.ToString());
-				sb.AppendLine(err.Message);
-				sb.AppendLine();
+				sb.AppendLine(err.ToString());
 			}
 
 			return sb.ToString().TrimEnd();

@@ -15,6 +15,11 @@ namespace D_Parser.Resolver
 			this.SyntacticalContext = syntacticalObj;
 			this.Message = message;
 		}
+
+		public override string ToString()
+		{
+			return Message + (SyntacticalContext != null ? ("\nContext: " + SyntacticalContext) : "");
+		}
 	}
 
 	public class EvaluationError : ResolutionError
