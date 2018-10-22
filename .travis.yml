@@ -14,6 +14,6 @@ install:
   - nuget install NUnit.Console -Version 3.9.0 -OutputDirectory packages
 
 script:
-  - msbuild DParser2.Unittest.sln /p:Configuration=Debug
+  - msbuild /p:Configuration=Debug "/p:Platform=Any CPU" DParser2.Unittest.sln
   - mono ./packages/NUnit.ConsoleRunner.3.9.0/tools/nunit3-console.exe /out:stdout.log ./Tests/bin/Debug/Tests.dll
   - cat stdout.log

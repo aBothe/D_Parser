@@ -309,7 +309,7 @@ enum int d=126;
 			var ctxt = ResolutionTestHelper.CreateDefCtxt("module A; enum stringConstant = \"asdf\";");
 
 			var v = E("stringConstant[1]", ctxt);
-			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)), () => v?.ToCode());
 			Assert.AreEqual(((PrimitiveValue)v).Value, (decimal)'s');
 		}
 
