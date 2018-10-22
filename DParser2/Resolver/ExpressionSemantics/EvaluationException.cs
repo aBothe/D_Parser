@@ -14,6 +14,11 @@ namespace D_Parser.Resolver
 		public DParserException(ISyntaxRegion x,string Msg)	:base(Msg) {
 			Location = x;
 		}
+
+		public override string ToString()
+		{
+			return (Location != null ? (Location + ":") : "") + base.ToString();
+		}
 	}
 
 	public class ResolutionException : DParserException

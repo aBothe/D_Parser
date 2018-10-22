@@ -687,7 +687,7 @@ enum
 				var x = DParser.ParseExpression("E0");
 				var v = Evaluation.EvaluateValue(x, ctxt);
 
-				Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+				Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)), () => v?.ToString());
 				var pv = v as PrimitiveValue;
 				Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Int));
 				Assert.That(pv.Value, Is.EqualTo(0d));
@@ -701,7 +701,7 @@ enum
 				var x = DParser.ParseExpression("E8");
 				var v = Evaluation.EvaluateValue(x, ctxt);
 
-				Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+				Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)), () => v?.ToString());
 				var pv = v as PrimitiveValue;
 				Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Int));
 				Assert.That(pv.Value, Is.EqualTo(8d));
@@ -715,7 +715,7 @@ enum
 				var x = DParser.ParseExpression("E8_5");
 				var v = Evaluation.EvaluateValue(x, ctxt);
 
-				Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+				Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)), () => v?.ToString());
 				var pv = v as PrimitiveValue;
 				Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Int));
 				Assert.That(pv.Value, Is.EqualTo(9d));
@@ -729,7 +729,7 @@ enum
 				var x = DParser.ParseExpression("E9");
 				var v = Evaluation.EvaluateValue(x, ctxt);
 
-				Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+				Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)), () => v?.ToString());
 				var pv = v as PrimitiveValue;
 				Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Int));
 				Assert.That(pv.Value, Is.EqualTo(9d));
@@ -748,7 +748,7 @@ E2
 				var x = DParser.ParseExpression("E2");
 				var v = Evaluation.EvaluateValue(x, ctxt);
 
-				Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+				Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)), () => v?.ToString());
 				var pv = v as PrimitiveValue;
 				Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Int));
 				Assert.That(pv.Value, Is.EqualTo(2d));

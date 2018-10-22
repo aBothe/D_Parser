@@ -628,7 +628,7 @@ static foreach(i; 97 .. 100) {
 				var x = DParser.ParseExpression("var" + (char)i);
 				var v = Evaluation.EvaluateValue(x, ctxt);
 
-				Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+				Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)), () => v?.ToString());
 				Assert.That((v as PrimitiveValue).Value, Is.EqualTo(i));
 			}
 		}
@@ -667,13 +667,13 @@ static foreach(index, value; staticArray) {
 			x = DParser.ParseExpression("vara");
 			v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)), () => v?.ToString());
 			Assert.That((v as PrimitiveValue).Value, Is.EqualTo(0));
 
 			x = DParser.ParseExpression("varb");
 			v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)), () => v?.ToString());
 			Assert.That((v as PrimitiveValue).Value, Is.EqualTo(1));
 		}
 
@@ -691,7 +691,7 @@ static foreach(index, value; ['a':'0','b':'1','c':'2','d':'3','e':'4','f':'5']) 
 				var x = DParser.ParseExpression("var" + i);
 				var v = Evaluation.EvaluateValue(x, ctxt);
 
-				Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+				Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)), () => v?.ToString());
 				Assert.That((v as PrimitiveValue).Value, Is.EqualTo('a'+i));
 			}
 		}
