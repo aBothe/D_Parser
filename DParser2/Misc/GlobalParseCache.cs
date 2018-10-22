@@ -350,23 +350,17 @@ namespace D_Parser.Misc
 							LastParseTime =	Directory.GetLastWriteTimeUtc(path)
 						};
 
-						if (statIm.totalFiles == 0)
-						{
-							noticeFinish(new FileParseQueueEntry(statIm, newRoot,	string.Empty));
-							continue;
-						}
-
 						parseThreadStartEvent.Set();
 
+						var entriesToPush = new FileParseQueueEntry[files.Length + ifiles.Length];
+						var nextEntryToSet = 0;
+						foreach	(var file in files)
+							entriesToPush[nextEntryToSet++] = new FileParseQueueEntry(statIm, newRoot, file);
+						foreach	(var ifile in ifiles)
+							entriesToPush[nextEntryToSet++] = new FileParseQueueEntry(statIm, newRoot, ifile);
+						queue.PushRange(entriesToPush);
+
 						LaunchParseThreads();
-
-						if (files.Length !=	0)
-							foreach	(string	file in	files)
-								queue.Push(new FileParseQueueEntry(statIm, newRoot, file));
-
-						if (ifiles.Length != 0)
-							foreach	(string	ifile in ifiles)
-								queue.Push(new FileParseQueueEntry(statIm, newRoot, ifile));
 					}
 					catch (System.UnauthorizedAccessException)
 					{
@@ -382,11 +376,15 @@ namespace D_Parser.Misc
 
 		static void parseTh ()
 		{
+			var someFileParseEntries = new FileParseQueueEntry[5];
+			var sw = new Stopwatch ();
 			for(;;) {
 				if (queue.IsEmpty && !parseThreadStartEvent.WaitOne (ThreadWaitTimeout))
 					return;
 
-				while (queue.TryPop(out var p)) {
+				for (int readEntries = queue.TryPopRange(someFileParseEntries); readEntries > 0; readEntries--)
+				{
+					var p = someFileParseEntries[readEntries - 1];
 					if (stopParsing)
 						break;
 
@@ -398,13 +396,11 @@ namespace D_Parser.Misc
 						continue;
 					}
 
-					var sw = new System.Diagnostics.Stopwatch ();
-
 					DModule ast;
 					try{
 						var code = File.ReadAllText (p.file);
 
-						sw.Start ();
+						sw.Restart();
 
 						// If no debugger attached, save time + memory by skipping function bodies
 						ast = DParser.ParseString (code, im.skipFunctionBodies, true, TaskTokens);
@@ -493,7 +489,7 @@ namespace D_Parser.Misc
 		{
 			StatIntermediate im;
 			if (!ParseStatistics.TryGetValue (basePath, out im))
-				return false;
+				return WaitForFinish(millisecondsToWait);
 
 			if (millisecondsToWait < 0)
 				return im.completed.WaitOne ();

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
-using D_Parser.Resolver;
 
 namespace D_Parser.Resolver
 {
@@ -69,7 +68,7 @@ namespace D_Parser.Resolver
 
 	public class AssertException : EvaluationException
 	{
-		public AssertException(AssertExpression ae, string optAssertMessage="") : base(ae, "Assert returned false. "+optAssertMessage) { }
+		public AssertException(AssertExpression ae, string optAssertMessage="") : base(ae, "Assert returned false. " + optAssertMessage) { }
 	}
 
 	public class WrongEvaluationArgException : Exception
