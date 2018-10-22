@@ -87,16 +87,16 @@ namespace D_Parser.Misc
 
 		public static readonly int NumThreads = Environment.ProcessorCount - 1 > 0 ? (Environment.ProcessorCount - 1 <= 3 ? Environment.ProcessorCount - 1 : 3) : 1;
 		static Thread preparationThread;
-		static AutoResetEvent preparationThreadStartEvent = new AutoResetEvent (false);
-		static AutoResetEvent criticalPreparationSection = new AutoResetEvent(true);
-		static ManualResetEvent parseThreadStartEvent = new ManualResetEvent (false);
-		static Thread[] threads = new Thread[NumThreads];
+		static readonly AutoResetEvent preparationThreadStartEvent = new AutoResetEvent (false);
+		static readonly AutoResetEvent criticalPreparationSection = new AutoResetEvent(true);
+		static readonly ManualResetEvent parseThreadStartEvent = new ManualResetEvent (false);
+		static readonly Thread[] threads = new Thread[NumThreads];
 
 		class PathQueueArgs
 		{
-			public string basePath;
-			public bool skipFunctionBodies;
-			public ParseSubtaskContainer finished_untilCount;
+			public readonly string basePath;
+			public readonly bool skipFunctionBodies;
+			public readonly ParseSubtaskContainer finished_untilCount;
 
 			public PathQueueArgs (string p, bool s, ParseSubtaskContainer hc)
 			{
@@ -107,9 +107,9 @@ namespace D_Parser.Misc
 		}
 
 		static readonly ConcurrentStack<PathQueueArgs> basePathQueue = new ConcurrentStack<PathQueueArgs> ();
-		static readonly ConcurrentStack<ParseIntermediate> queue = new ConcurrentStack<ParseIntermediate> ();
 		static int parsingThreads = 0;
-		static ManualResetEvent parseCompletedEvent = new ManualResetEvent (true);
+		static readonly ConcurrentStack<FileParseQueueEntry> queue = new ConcurrentStack<FileParseQueueEntry> ();
+		static readonly ManualResetEvent parseCompletedEvent = new ManualResetEvent (true);
 		static bool stopParsing;
 
 		public static bool IsParsing {
@@ -225,13 +225,13 @@ namespace D_Parser.Misc
 			}
 		}
 
-		class ParseIntermediate
+		class FileParseQueueEntry
 		{
 			public readonly StatIntermediate Statistics;
 			public readonly RootPackage root;
 			public readonly string file;
 
-			public ParseIntermediate (StatIntermediate im, RootPackage r, string f)
+			public FileParseQueueEntry (StatIntermediate im, RootPackage r, string f)
 			{
 				this.Statistics = im;
 				root = r;
@@ -262,7 +262,7 @@ namespace D_Parser.Misc
 					im.parseSubTasksUntilFinished.Add (new ParseSubtaskContainer(1,finishedHandler));
 				im.completed.Set ();
 				Interlocked.Increment (ref parsingThreads);
-				noticeFinish (new ParseIntermediate (im, null, null));
+				noticeFinish (new FileParseQueueEntry(im, null, null));
 				return;
 			}
 
@@ -294,11 +294,7 @@ namespace D_Parser.Misc
 				if (basePathQueue.IsEmpty && !preparationThreadStartEvent.WaitOne (ThreadWaitTimeout))
 					return;
 
-				PathQueueArgs tup;
-				while (basePathQueue.TryPop(out tup)) {
-					if (stopParsing)
-						break;
-
+				while (basePathQueue.TryPop(out var tup) && !stopParsing) {
 					var path = tup.basePath;
 					if (!Directory.Exists (path))
 						continue; // Is it okay to directly skip it w/o calling noticeFinished?
@@ -333,7 +329,7 @@ namespace D_Parser.Misc
 					// Check if it's necessary to reparse the directory
 					if (ParsedDirectories.TryGetValue (path, out var oldRoot) &&
 						oldRoot.LastParseTime >= Directory.GetLastWriteTimeUtc (path)) {
-						noticeFinish (new ParseIntermediate (statIm, oldRoot, string.Empty));
+						noticeFinish (new FileParseQueueEntry (statIm, oldRoot, string.Empty));
 						continue;
 					}
 
@@ -356,7 +352,7 @@ namespace D_Parser.Misc
 
 						if (statIm.totalFiles == 0)
 						{
-							noticeFinish(new ParseIntermediate(statIm, newRoot,	string.Empty));
+							noticeFinish(new FileParseQueueEntry(statIm, newRoot,	string.Empty));
 							continue;
 						}
 
@@ -366,11 +362,11 @@ namespace D_Parser.Misc
 
 						if (files.Length !=	0)
 							foreach	(string	file in	files)
-								queue.Push(new ParseIntermediate(statIm, newRoot, file));
+								queue.Push(new FileParseQueueEntry(statIm, newRoot, file));
 
 						if (ifiles.Length != 0)
 							foreach	(string	ifile in ifiles)
-								queue.Push(new ParseIntermediate(statIm, newRoot, ifile));
+								queue.Push(new FileParseQueueEntry(statIm, newRoot, ifile));
 					}
 					catch (System.UnauthorizedAccessException)
 					{
@@ -390,8 +386,7 @@ namespace D_Parser.Misc
 				if (queue.IsEmpty && !parseThreadStartEvent.WaitOne (ThreadWaitTimeout))
 					return;
 
-				ParseIntermediate p;
-				while (queue.TryPop(out p)) {
+				while (queue.TryPop(out var p)) {
 					if (stopParsing)
 						break;
 
@@ -440,7 +435,7 @@ namespace D_Parser.Misc
 			}
 		}
 
-		private static void AddParsedModuleToParseIntermediate(ParseIntermediate p, StatIntermediate im, DModule ast)
+		private static void AddParsedModuleToParseIntermediate(FileParseQueueEntry p, StatIntermediate im, DModule ast)
 		{
 			ast.FileName = p.file;
 
@@ -454,7 +449,7 @@ namespace D_Parser.Misc
 				.AddModule(ast);
 		}
 
-		static void noticeFinish (ParseIntermediate p)
+		static void noticeFinish (FileParseQueueEntry p)
 		{
 			var im = p.Statistics;
 
@@ -529,8 +524,7 @@ namespace D_Parser.Misc
 
 		public static StatIntermediate GetParseStatistics (string basePath)
 		{
-			StatIntermediate im;
-			ParseStatistics.TryGetValue (basePath, out im);
+			ParseStatistics.TryGetValue (basePath, out var im);
 			return im;
 		}
 
