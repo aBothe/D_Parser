@@ -88,41 +88,16 @@ namespace D_Parser.Misc
 		public static readonly int NumThreads = Environment.ProcessorCount - 1 > 0 ? (Environment.ProcessorCount - 1 <= 3 ? Environment.ProcessorCount - 1 : 3) : 1;
 		static Thread preparationThread;
 		static readonly AutoResetEvent preparationThreadStartEvent = new AutoResetEvent (false);
-		static readonly AutoResetEvent criticalPreparationSection = new AutoResetEvent(true);
 		static readonly ManualResetEvent parseThreadStartEvent = new ManualResetEvent (false);
 		static readonly Thread[] threads = new Thread[NumThreads];
 
-		class PathQueueArgs
-		{
-			public readonly string basePath;
-			public readonly bool skipFunctionBodies;
-			public readonly ParseSubtaskContainer finished_untilCount;
-
-			public PathQueueArgs (string p, bool s, ParseSubtaskContainer hc)
-			{
-				basePath = p;
-				skipFunctionBodies = s;
-				finished_untilCount = hc;
-			}
-		}
-
-		static readonly ConcurrentStack<PathQueueArgs> basePathQueue = new ConcurrentStack<PathQueueArgs> ();
-		static int parsingThreads = 0;
+		static readonly ConcurrentStack<ParseStatisticsHandle> basePathQueue = new ConcurrentStack<ParseStatisticsHandle> ();
 		static readonly ConcurrentStack<FileParseQueueEntry> queue = new ConcurrentStack<FileParseQueueEntry> ();
-		static readonly ManualResetEvent parseCompletedEvent = new ManualResetEvent (true);
-		static bool stopParsing;
-
-		public static bool IsParsing {
-			get{ return parsingThreads > 0; }
-		}
-
-		public static string[] TaskTokens = null;
 
 		/// <summary>
 		/// Contains phys path -> RootPackage relationships.
 		/// </summary>
 		static readonly ConcurrentDictionary<string, RootPackage> ParsedDirectories = new ConcurrentDictionary<string, RootPackage> ();
-		static readonly Dictionary<string, StatIntermediate> ParseStatistics = new Dictionary<string, StatIntermediate> ();
 		/// <summary>
 		/// Lookup that is used for fast filename-AST lookup. Do NOT modify, it'll be done inside the ModulePackage instances.
 		/// </summary>
@@ -170,68 +145,81 @@ namespace D_Parser.Misc
 
 		internal class ParseSubtaskContainer
 		{
-			public ParseSubtaskContainer (int i, ParseFinishedHandler f)
+			public ParseSubtaskContainer (int remainingPathsToBeParsed, ParseFinishedHandler f,
+				CancellationToken cancellationToken)
 			{
-				this.i = i;
-				this.finishedHandler = f;
+				RemainingPathsToBeParsed = remainingPathsToBeParsed;
+				finishedHandler = f;
+				CancellationToken = cancellationToken;
 			}
 
-			public ParseFinishedHandler finishedHandler;
-			public int i;
+			public readonly ParseFinishedHandler finishedHandler;
+			public CancellationToken CancellationToken;
+			public int RemainingPathsToBeParsed;
 		}
 
-		public class StatIntermediate
+		public class ParseStatisticsHandle
 		{
-			public bool skipFunctionBodies;
-			public string basePath;
-			public int totalFiles;
-			public int remainingFiles;
+			public readonly bool skipFunctionBodies;
+			public readonly string[] TaskTokens;
+			public readonly string basePath;
+			public int totalFiles { get; internal set; }
+			internal int remainingFiles;
+			public int RemainingFiles => remainingFiles;
+			internal long totalMilliseconds;
 			/// <summary>
 			/// Theroetical time needed for parsing all files in one sequence.
 			/// </summary>
-			public long totalMilliseconds;
-			/// <summary>
-			/// Stores an integer!
-			/// </summary>
-			internal readonly List<ParseSubtaskContainer> parseSubTasksUntilFinished = new List<ParseSubtaskContainer>();
-			internal ManualResetEvent completed = new ManualResetEvent (false);
-			internal System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch ();
+			public long TotalMilliseconds => totalMilliseconds;
+
+			internal readonly ManualResetEvent completed = new ManualResetEvent (false);
+			internal readonly Stopwatch sw = new Stopwatch ();
+			internal readonly ParseSubtaskContainer pathsParsingHandle;
+
+			internal ParseStatisticsHandle(string basePath, bool skipFunctionBodies,
+				string[] taskTokens, ParseSubtaskContainer pathsParsingHandle)
+			{
+				this.basePath = basePath;
+				this.skipFunctionBodies = skipFunctionBodies;
+				this.pathsParsingHandle = pathsParsingHandle;
+				TaskTokens = taskTokens;
+			}
 
 			/// <summary>
 			/// The time one had to wait until the parse task finished. Milliseconds.
 			/// </summary>
-			public long actualTimeNeeded {
-				get{ return sw.ElapsedMilliseconds; }
-			}
+			public long actualTimeNeeded => sw.ElapsedMilliseconds;
 
 			/// <summary>
 			/// The time one had to wait until the actual parse process (which excludes file content loading, thread synchronizing etc) finished. Milliseconds.
 			/// </summary>
-			public long ActualParseTimeNeeded
-			{
-				get{
-					return totalMilliseconds / NumThreads;
-				}
-			}
+			public long ActualParseTimeNeeded => totalMilliseconds / NumThreads;
+
+			public double ParseProgess => 1.0 - (totalFiles < 1 ? 0.0 : (remainingFiles / totalFiles));
 
 			public override bool Equals (object obj)
 			{
-				return obj is StatIntermediate && (obj as StatIntermediate).basePath == basePath;
+				return obj is ParseStatisticsHandle intermediate && intermediate.basePath == basePath;
 			}
 
 			public override int GetHashCode ()
 			{
 				return basePath != null ? basePath.GetHashCode () : base.GetHashCode();
 			}
+
+			public bool WaitForCompletion(int millisecondTimeout = -1)
+			{
+				return millisecondTimeout == -1 ? completed.WaitOne() : completed.WaitOne(millisecondTimeout);
+			}
 		}
 
 		class FileParseQueueEntry
 		{
-			public readonly StatIntermediate Statistics;
+			public readonly ParseStatisticsHandle Statistics;
 			public readonly RootPackage root;
 			public readonly string file;
 
-			public FileParseQueueEntry (StatIntermediate im, RootPackage r, string f)
+			public FileParseQueueEntry (ParseStatisticsHandle im, RootPackage r, string f)
 			{
 				this.Statistics = im;
 				root = r;
@@ -239,32 +227,19 @@ namespace D_Parser.Misc
 			}
 		}
 
-		public static void BeginAddOrUpdatePaths (params string[] basePaths)
+		public static List<ParseStatisticsHandle> BeginAddOrUpdatePaths (params string[] basePaths)
 		{
-			BeginAddOrUpdatePaths ((IEnumerable<string>)basePaths);
+			return BeginAddOrUpdatePaths ((IEnumerable<string>)basePaths);
 		}
 
-		public static void BeginAddOrUpdatePaths (IEnumerable<string> basePaths, bool skipFunctionBodies = false, ParseFinishedHandler finishedHandler = null)
+		public static List<ParseStatisticsHandle> BeginAddOrUpdatePaths (IEnumerable<string> basePaths,
+			bool skipFunctionBodies = false, ParseFinishedHandler finishedHandler = null, string[] taskTokens = null,
+			CancellationToken? cancellationToken = null)
 		{
 			if (basePaths == null)
 				throw new ArgumentNullException (nameof(basePaths));
 
 			GC.Collect ();
-
-			parseCompletedEvent.Reset ();
-			stopParsing = false;
-
-			var c = basePaths.Count ();
-
-			if (c == 0) {
-				var im = new StatIntermediate();
-				if(finishedHandler!=null)
-					im.parseSubTasksUntilFinished.Add (new ParseSubtaskContainer(1,finishedHandler));
-				im.completed.Set ();
-				Interlocked.Increment (ref parsingThreads);
-				noticeFinish (new FileParseQueueEntry(im, null, null));
-				return;
-			}
 
 #if TRACE
 			Trace.WriteLine("BeginAddOrUpdatePaths: ");
@@ -275,15 +250,28 @@ namespace D_Parser.Misc
 			Trace.WriteLine("---------");
 #endif
 
-			var countObj = new ParseSubtaskContainer (c, finishedHandler);
+			var countObj = new ParseSubtaskContainer (basePaths.Count (), finishedHandler,
+				cancellationToken ?? CancellationToken.None);
+			var parsedPathsStatistics = new List<ParseStatisticsHandle>();
 
-			foreach (var path in basePaths) {
-				Interlocked.Increment (ref parsingThreads);
-				basePathQueue.Push (new PathQueueArgs (path, skipFunctionBodies, countObj));
+			foreach (var path in basePaths)
+			{
+				var handle = new ParseStatisticsHandle(path, skipFunctionBodies, taskTokens, countObj);
+				parsedPathsStatistics.Add(handle);
+				basePathQueue.Push (handle);
 			}
-			preparationThreadStartEvent.Set ();
 
-			LaunchPreparationThread ();
+			if (parsedPathsStatistics.Count == 0)
+			{
+				noticeFinish(new ParseStatisticsHandle(null, false, null, countObj), null);
+			}
+			else
+			{
+				preparationThreadStartEvent.Set ();
+				LaunchPreparationThread ();
+			}
+
+			return parsedPathsStatistics;
 		}
 
 		const int ThreadWaitTimeout = 5000;
@@ -294,78 +282,54 @@ namespace D_Parser.Misc
 				if (basePathQueue.IsEmpty && !preparationThreadStartEvent.WaitOne (ThreadWaitTimeout))
 					return;
 
-				while (basePathQueue.TryPop(out var tup) && !stopParsing) {
-					var path = tup.basePath;
-					if (!Directory.Exists (path))
-						continue; // Is it okay to directly skip it w/o calling noticeFinished?
-
-					StatIntermediate statIm;
-
-					// Check if path is being parsed currently.
+				while (basePathQueue.TryPop(out var statIm)) {
+					var path = statIm.basePath;
+					if (!Directory.Exists(path))
 					{
-						criticalPreparationSection.WaitOne ();
-
-						if (ParseStatistics.TryGetValue (path, out statIm)) {
-							if(tup.finished_untilCount != null)
-								statIm.parseSubTasksUntilFinished.Add (tup.finished_untilCount);
-
-							if (Interlocked.Decrement (ref parsingThreads) < 1)
-								throw new InvalidOperationException ("Race-condition during parse process: There must be two or more parse tasks active!");
-
-							criticalPreparationSection.Set ();
-							continue;
-						}
-
-						ParseStatistics [path] = statIm = new StatIntermediate { 
-							skipFunctionBodies = tup.skipFunctionBodies, 
-							basePath = path,
-						};
-						if(tup.finished_untilCount != null)
-							statIm.parseSubTasksUntilFinished.Add (tup.finished_untilCount);
-
-						criticalPreparationSection.Set ();
+						noticeFinish (statIm, null);
+						continue;
 					}
 
 					// Check if it's necessary to reparse the directory
 					if (ParsedDirectories.TryGetValue (path, out var oldRoot) &&
 						oldRoot.LastParseTime >= Directory.GetLastWriteTimeUtc (path)) {
-						noticeFinish (new FileParseQueueEntry (statIm, oldRoot, string.Empty));
+						noticeFinish (statIm, oldRoot);
 						continue;
 					}
 
 					statIm.sw.Restart ();
 
+					string[] files, ifiles;
 					try
 					{
 						//ISSUE: wild card character ? seems to	behave differently across platforms
 						// msdn: ->	Exactly	zero or	one	character.
 						// monodocs: ->	Exactly	one	character.
-						var	files =	Directory.GetFiles(path, "*.d",	SearchOption.AllDirectories);
-						var	ifiles = Directory.GetFiles(path, "*.di", SearchOption.AllDirectories);
-
-						statIm.totalFiles =	statIm.remainingFiles =	files.Length + ifiles.Length;
-
-						var	newRoot	= new RootPackage
-						{
-							LastParseTime =	Directory.GetLastWriteTimeUtc(path)
-						};
-
-						parseThreadStartEvent.Set();
-
-						var entriesToPush = new FileParseQueueEntry[files.Length + ifiles.Length];
-						var nextEntryToSet = 0;
-						foreach	(var file in files)
-							entriesToPush[nextEntryToSet++] = new FileParseQueueEntry(statIm, newRoot, file);
-						foreach	(var ifile in ifiles)
-							entriesToPush[nextEntryToSet++] = new FileParseQueueEntry(statIm, newRoot, ifile);
-						queue.PushRange(entriesToPush);
-
-						LaunchParseThreads();
+						files =	Directory.GetFiles(path, "*.d",	SearchOption.AllDirectories);
+						ifiles = Directory.GetFiles(path, "*.di", SearchOption.AllDirectories);
 					}
-					catch (System.UnauthorizedAccessException)
+					catch (UnauthorizedAccessException)
 					{
-						// ignore inaccessible files/directories
+						files = new string[0];
+						ifiles = new string[0];
 					}
+
+					statIm.totalFiles = statIm.remainingFiles = files.Length + ifiles.Length;
+
+					var newRoot = new RootPackage { LastParseTime = Directory.GetLastWriteTimeUtc(path)};
+
+					parseThreadStartEvent.Set();
+
+					var entriesToPush = new FileParseQueueEntry[files.Length + ifiles.Length];
+					var nextEntryToSet = 0;
+					foreach	(var file in files)
+						entriesToPush[nextEntryToSet++] = new FileParseQueueEntry(statIm, newRoot, file);
+					foreach	(var ifile in ifiles)
+						entriesToPush[nextEntryToSet++] = new FileParseQueueEntry(statIm, newRoot, ifile);
+					queue.PushRange(entriesToPush);
+
+					LaunchParseThreads();
+
 					parseThreadStartEvent.Reset ();
 				}
 			}
@@ -377,7 +341,6 @@ namespace D_Parser.Misc
 		static void parseTh ()
 		{
 			var someFileParseEntries = new FileParseQueueEntry[5];
-			var sw = new Stopwatch ();
 			for(;;) {
 				if (queue.IsEmpty && !parseThreadStartEvent.WaitOne (ThreadWaitTimeout))
 					return;
@@ -385,53 +348,58 @@ namespace D_Parser.Misc
 				for (int readEntries = queue.TryPopRange(someFileParseEntries); readEntries > 0; readEntries--)
 				{
 					var p = someFileParseEntries[readEntries - 1];
-					if (stopParsing)
-						break;
 
-					var im = p.Statistics;
+					ParseSingleFileQueueEntry(p);
 
-					if (p.file.EndsWith (phobosDFile) || p.file.EndsWith (indexDFile)) {
-						if (Interlocked.Decrement (ref im.remainingFiles) <= 0)
-							noticeFinish (p);
-						continue;
-					}
-
-					DModule ast;
-					try{
-						var code = File.ReadAllText (p.file);
-
-						sw.Restart();
-
-						// If no debugger attached, save time + memory by skipping function bodies
-						ast = DParser.ParseString (code, im.skipFunctionBodies, true, TaskTokens);
-					}
-					catch(Exception ex) {
-						ast = null;
-
-						Console.WriteLine ("Exception occurred on \"" + p.file + "\":");
-						Console.WriteLine (ex.Message);
-						Console.WriteLine ("-------------------------------");
-						Console.WriteLine ("Stacktrace");
-						Console.WriteLine (ex.StackTrace);
-						Console.WriteLine ("-------------------------------");
-					}
-
-					sw.Stop ();
-
-					Interlocked.Add (ref im.totalMilliseconds, sw.ElapsedMilliseconds);
-
-					if (ast != null)
-					{
-						AddParsedModuleToParseIntermediate(p, im, ast);
-					}
-
-					if (Interlocked.Decrement (ref im.remainingFiles) <= 0)
-						noticeFinish (p);
+					if (Interlocked.Decrement (ref p.Statistics.remainingFiles) <= 0)
+						noticeFinish (p.Statistics, p.root);
 				}
 			}
 		}
 
-		private static void AddParsedModuleToParseIntermediate(FileParseQueueEntry p, StatIntermediate im, DModule ast)
+		private static void ParseSingleFileQueueEntry(FileParseQueueEntry p)
+		{
+			if (p.file.EndsWith(phobosDFile) || p.file.EndsWith(indexDFile))
+				return;
+
+			var im = p.Statistics;
+			if (im.pathsParsingHandle.CancellationToken.IsCancellationRequested)
+				return;
+
+			var sw = new Stopwatch();
+			DModule ast;
+			try
+			{
+				var code = File.ReadAllText(p.file);
+
+				sw.Restart();
+
+				// If no debugger attached, save time + memory by skipping function bodies
+				ast = DParser.ParseString(code, im.skipFunctionBodies, true, im.TaskTokens);
+			}
+			catch (Exception ex)
+			{
+				ast = null;
+
+				Console.WriteLine("Exception occurred on \"" + p.file + "\":");
+				Console.WriteLine(ex.Message);
+				Console.WriteLine("-------------------------------");
+				Console.WriteLine("Stacktrace");
+				Console.WriteLine(ex.StackTrace);
+				Console.WriteLine("-------------------------------");
+			}
+
+			sw.Stop();
+
+			Interlocked.Add(ref im.totalMilliseconds, sw.ElapsedMilliseconds);
+
+			if (ast != null)
+			{
+				AddParsedModuleToParseIntermediate(p, im, ast);
+			}
+		}
+
+		private static void AddParsedModuleToParseIntermediate(FileParseQueueEntry p, ParseStatisticsHandle im, DModule ast)
 		{
 			ast.FileName = p.file;
 
@@ -445,90 +413,28 @@ namespace D_Parser.Misc
 				.AddModule(ast);
 		}
 
-		static void noticeFinish (FileParseQueueEntry p)
+		static void noticeFinish (ParseStatisticsHandle statisticsHandle, RootPackage newRootPackage)
 		{
-			var im = p.Statistics;
+			var im = statisticsHandle;
 
 			im.sw.Stop ();
 
-			if (!string.IsNullOrEmpty (p.Statistics.basePath) && p.root != null) {
-				ParsedDirectories [im.basePath] = p.root;
+			if (!string.IsNullOrEmpty (im.basePath) && newRootPackage != null) {
+				ParsedDirectories [im.basePath] = newRootPackage;
 			}
-
 			im.completed.Set();
 
-			var pf = new ParsingFinishedEventArgs (im.basePath, p.root, im.actualTimeNeeded, im.ActualParseTimeNeeded, im.totalFiles);
-
+			var pf = new ParsingFinishedEventArgs (im.basePath, newRootPackage,
+				im.actualTimeNeeded, im.ActualParseTimeNeeded, im.totalFiles);
 			ParseTaskFinished?.Invoke(pf);
 
-			criticalPreparationSection.WaitOne ();
-			var subTasks = im.parseSubTasksUntilFinished.ToArray ();
-
-			if(p.Statistics.basePath != null)
-				ParseStatistics.Remove (p.Statistics.basePath);
-
-			criticalPreparationSection.Set ();
-
-			foreach(var subtask in subTasks) {
-				if (Interlocked.Decrement (ref subtask.i) < 1)
-					subtask.finishedHandler?.Invoke (pf); // Generic issue: The wrong statistics will be passed, if we fire the event for a task which was added some time afterwards
-			}
-
-			if (Interlocked.Decrement (ref parsingThreads) <= 0)
-				parseCompletedEvent.Set ();
-		}
-
-		public static bool WaitForFinish (int millisecondsToWait = -1)
-		{
-			if (millisecondsToWait < 0)
-				return parseCompletedEvent.WaitOne ();
-			return parseCompletedEvent.WaitOne (millisecondsToWait);
-		}
-
-		public static bool WaitForFinish (string basePath, int millisecondsToWait = -1)
-		{
-			StatIntermediate im;
-			if (!ParseStatistics.TryGetValue (basePath, out im))
-				return WaitForFinish(millisecondsToWait);
-
-			if (millisecondsToWait < 0)
-				return im.completed.WaitOne ();
-			return im.completed.WaitOne (millisecondsToWait);
-		}
-
-		/// <summary>
-		/// Stops the scanning. If discardProgress is true, caches will be cleared.
-		/// </summary>
-		public static void StopScanning (bool discardProgress = false)
-		{
-			stopParsing = true;
-			basePathQueue.Clear ();
-			queue.Clear ();
-		}
-
-		/// <summary>
-		/// Returns the parse progress factor (from 0.0 to 1.0); NaN if there's no such directory being scanned.
-		/// </summary>
-		public static double GetParseProgress (string basePath)
-		{
-			StatIntermediate im;
-			if (!ParseStatistics.TryGetValue (basePath, out im))
-				return double.NaN;
-
-			return 1.0 - (im.totalFiles < 1 ? 0.0 : (im.remainingFiles / im.totalFiles));
-		}
-
-		public static StatIntermediate GetParseStatistics (string basePath)
-		{
-			ParseStatistics.TryGetValue (basePath, out var im);
-			return im;
+			if (Interlocked.Decrement (ref im.pathsParsingHandle.RemainingPathsToBeParsed) < 1)
+				im.pathsParsingHandle.finishedHandler?.Invoke (pf);
 		}
 
 		public static bool RemoveRoot (string basePath)
 		{
-			RootPackage r;
-			ParseStatistics.Remove (basePath);
-			return ParsedDirectories.TryRemove (basePath, out r);
+			return ParsedDirectories.TryRemove (basePath, out _);
 		}
 
 		#endregion

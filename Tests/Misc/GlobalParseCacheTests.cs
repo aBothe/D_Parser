@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using D_Parser.Dom;
 using D_Parser.Misc;
 using D_Parser.Parser;
@@ -22,16 +21,16 @@ namespace Tests.Misc
 				var tempModulePath = Path.Combine(tempDirectory, "modA.d");
 
 				File.WriteAllText(tempModulePath, @"module modA; void bar();");
-				GlobalParseCache.BeginAddOrUpdatePaths(tempDirectory);
-				Assert.That(GlobalParseCache.WaitForFinish(10000));
+				var stats = GlobalParseCache.BeginAddOrUpdatePaths(tempDirectory)[0];
+				Assert.That(stats.WaitForCompletion(10000));
 
 				var module = GlobalParseCache.GetModule(tempDirectory, "modA");
 				Assert.That(module.Children["bar"].Count(), Is.EqualTo(1));
 
 				File.Delete(tempModulePath);
 				File.WriteAllText(tempModulePath, @"module modA; void baz();");
-				GlobalParseCache.BeginAddOrUpdatePaths(tempDirectory);
-				Assert.That(GlobalParseCache.WaitForFinish(10000));
+				stats = GlobalParseCache.BeginAddOrUpdatePaths(tempDirectory)[0];
+				Assert.That(stats.WaitForCompletion(10000));
 
 				module = GlobalParseCache.GetModule(tempDirectory, "modA");
 				Assert.That(module.Children["bar"].Count(), Is.EqualTo(0));
@@ -54,8 +53,8 @@ namespace Tests.Misc
 				var tempModulePath = Path.Combine(tempDirectory, "modA.d");
 
 				File.WriteAllText(tempModulePath, @"module modA; void bar();");
-				GlobalParseCache.BeginAddOrUpdatePaths(tempDirectory);
-				Assert.That(GlobalParseCache.WaitForFinish(10000));
+				var stats = GlobalParseCache.BeginAddOrUpdatePaths(tempDirectory)[0];
+				Assert.That(stats.WaitForCompletion(10000));
 
 				var module = GlobalParseCache.GetModule(tempDirectory, "modA");
 				Assert.That(module.Children["bar"].Count(), Is.EqualTo(1));
@@ -79,9 +78,9 @@ namespace Tests.Misc
 		public void ParseEmptyDirectoryList()
 		{
 			int callbackInvokeCount = 0;
-			GlobalParseCache.BeginAddOrUpdatePaths(Enumerable.Empty<string>(), false,
+			var stats = GlobalParseCache.BeginAddOrUpdatePaths(Enumerable.Empty<string>(), false,
 				ea => callbackInvokeCount++);
-			Assert.That(GlobalParseCache.WaitForFinish(10000));
+			Assert.That(stats.Count, Is.EqualTo(0));
 			Assert.That(callbackInvokeCount, Is.EqualTo(1));
 		}
 
@@ -99,8 +98,8 @@ namespace Tests.Misc
 
 				File.WriteAllText(tempModulePath, @"module modB; void bar();");
 				File.WriteAllText(tempModuleCPath, @"module sub.modC; void keks();");
-				GlobalParseCache.BeginAddOrUpdatePaths(tempDirectory);
-				Assert.That(GlobalParseCache.WaitForFinish(10000));
+				var stats = GlobalParseCache.BeginAddOrUpdatePaths(tempDirectory)[0];
+				Assert.That(stats.WaitForCompletion(10000));
 
 				Assert.That(GlobalParseCache.GetModule(tempModulePath).ModuleName, Is.EqualTo("modB"));
 				Assert.That(GlobalParseCache.GetModule(tempDirectory, "sub.modC", out var pack).ModuleName,

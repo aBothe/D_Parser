@@ -974,9 +974,9 @@ void main() {
 			var dir = "/usr/include/d";
 
 			GlobalParseCache.ParseTaskFinished += pc_FinishedParsing;
-			GlobalParseCache.BeginAddOrUpdatePaths (new[] { dir }, false);
+			var statHandle = GlobalParseCache.BeginAddOrUpdatePaths (new[] { dir }, false)[0];
 
-			GlobalParseCache.WaitForFinish();
+			Assert.That(statHandle.WaitForCompletion(60 * 1000));
 
 			return new LegacyParseCacheView(new[]{dir});
 		}
