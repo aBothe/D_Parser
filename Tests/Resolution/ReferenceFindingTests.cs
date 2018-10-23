@@ -54,7 +54,19 @@ class A(T)
 	static A!float statA;
 }
 
-void main()
+class ClassName {}
+interface InterfaceName {}
+struct StructName { int FieldName; }
+union UnionName {}
+enum { AnonEnumValue }
+enum EnumName { EnumValue }
+template TemplateName(TemplateParameter) { TemplateParameter name; }
+
+enum constant = 1;
+shared sharedVar;
+__gshared gsharedVar;
+
+void main(string args[])
 {
 	auto a = new A!int();
 	a.n;
@@ -62,12 +74,12 @@ void main()
 	int b = A.prop + 4;
 	A!double.statA.statA = new A!double();
 
-	structB s;
-	s.fieldB = 1;
+	StructB localVar;
+	localVar.fieldB = 1;
 }
 ");
 			var modB = DParser.ParseString(@"module modB;
-struct structB
+struct StructB
 {
 	int fieldB;
 }
@@ -82,19 +94,49 @@ struct structB
 				ParseCache = new LegacyParseCacheView(rootpkgs)
 			};
 
-			var res = TypeReferenceFinder.Scan(ed, System.Threading.CancellationToken.None, null);
+			// no timeout
+			var cancelTokenSource = new System.Threading.CancellationTokenSource();
+			var res = TypeReferenceFinder.Scan(ed, cancelTokenSource.Token, null);
 
 			Assert.That(res.Count, Is.GreaterThan(6));
-			Assert.True(typeRefContainsId(res, "structB"));
+			Assert.AreEqual((byte)TypeReferenceKind.Class          , typeRefId(res, "ClassName"));
+			Assert.AreEqual((byte)TypeReferenceKind.Interface      , typeRefId(res, "InterfaceName"));
+			Assert.AreEqual((byte)TypeReferenceKind.Struct         , typeRefId(res, "StructName"));
+			Assert.AreEqual((byte)TypeReferenceKind.Union          , typeRefId(res, "UnionName"));
+			Assert.AreEqual((byte)TypeReferenceKind.EnumValue      , typeRefId(res, "AnonEnumValue"));
+			Assert.AreEqual((byte)TypeReferenceKind.Enum           , typeRefId(res, "EnumName"));
+			Assert.AreEqual((byte)TypeReferenceKind.EnumValue      , typeRefId(res, "EnumValue"));
+
+			Assert.AreEqual((byte)TypeReferenceKind.Class          , typeRefId(res, "A"));
+			Assert.AreEqual((byte)TypeReferenceKind.Template       , typeRefId(res, "TemplateName"));
+			Assert.AreEqual((byte)TypeReferenceKind.TemplateTypeParameter, typeRefId(res, "TemplateParameter"));
+
+			Assert.AreEqual((byte)TypeReferenceKind.LocalVariable  , typeRefId(res, "localVar"));
+			Assert.AreEqual((byte)TypeReferenceKind.SharedVariable , typeRefId(res, "sharedVar"));
+			Assert.AreEqual((byte)TypeReferenceKind.GSharedVariable, typeRefId(res, "gsharedVar"));
+			Assert.AreEqual((byte)TypeReferenceKind.Constant       , typeRefId(res, "constant"));
+			Assert.AreEqual((byte)TypeReferenceKind.MemberVariable , typeRefId(res, "FieldName"));
+			Assert.AreEqual((byte)TypeReferenceKind.ParameterVariable, typeRefId(res, "args"));
+
+			Assert.AreEqual((byte)TypeReferenceKind.Struct         , typeRefId(res, "StructB"));
 		}
 
-		private bool typeRefContainsId(Dictionary<int, Dictionary<ISyntaxRegion, byte>> refs, string id)
+		private byte typeRefId(Dictionary<int, Dictionary<ISyntaxRegion, byte>> refs, string id)
 		{
 			foreach (var line in refs)
 				foreach (var idref in line.Value)
-					if (idref.Key.ToString() == id)
-						return true;
-			return false;
+				{
+					var sr = idref.Key;
+					if (sr is INode && (sr as INode).Name == id)
+						return idref.Value;
+					if (sr is TemplateParameter && (sr as TemplateParameter).Name == id)
+						return idref.Value;
+					if (sr is IdentifierDeclaration && (sr as IdentifierDeclaration).Id == id)
+						return idref.Value;
+					if (sr.ToString() == id)
+						return idref.Value;
+				}
+			return 0;
 		}
 	}
 }
