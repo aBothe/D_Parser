@@ -3,7 +3,7 @@
   <PropertyGroup>
     <ProjectGuid>{20ACEA79-DB1A-4F64-92D0-D31B4221CECB}</ProjectGuid>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Exe</OutputType>
     <RootNamespace>TestTool</RootNamespace>
     <AssemblyName>TestTool</AssemblyName>
@@ -34,11 +34,6 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <WarningLevel>4</WarningLevel>
-    <EnvironmentVariables>
-      <EnvironmentVariables>
-        <Variable name="PATH" value="/home/lx/Dokumente/Projects/NUnit-2.6.2/bin:$PATH" />
-      </EnvironmentVariables>
-    </EnvironmentVariables>
     <LangVersion>Latest</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
