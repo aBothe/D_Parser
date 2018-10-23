@@ -44,11 +44,22 @@ namespace D_Parser.Refactoring
 		Template = DTokens.Template,
 		Class = DTokens.Class,
 		Struct = DTokens.Struct,
+		Union = DTokens.Union,
 		TemplateTypeParameter = DTokens.Not,
+
+		Constant = DTokens.Const,
+		LocalVariable = DTokens.Auto,
+		ParameterVariable = DTokens.In,
+		TLSVariable = DTokens.Static,
+		SharedVariable = DTokens.Shared,
+		GSharedVariable = DTokens.__gshared,
+		MemberVariable = DTokens.Final,
 		Variable = DTokens.Void,
+
 		Alias = DTokens.Alias,
 		Module = DTokens.Module,
-		Method = DTokens.Function,
+		Function = DTokens.Function,
+		Method = DTokens.Delegate,
 	}
 
 	public class TypeReferenceFinder : AbstractResolutionVisitor
@@ -95,7 +106,23 @@ namespace D_Parser.Refactoring
 
 			public byte VisitDVariable(DVariable n)
 			{
-				return n.IsAlias && !n.IsAliasThis ? (byte)TypeReferenceKind.Alias : (byte)TypeReferenceKind.Variable;
+				if (n.IsAlias && !n.IsAliasThis)
+					return (byte)TypeReferenceKind.Alias;
+				if (n.ContainsAnyAttribute(DTokens.Enum))
+					return (byte)TypeReferenceKind.Constant;
+				if (n.IsParameter)
+					return (byte)TypeReferenceKind.ParameterVariable;
+				if (n.ContainsAnyAttribute(DTokens.__gshared))
+					return (byte)TypeReferenceKind.GSharedVariable;
+				if (n.ContainsAnyAttribute(DTokens.Shared))
+					return (byte)TypeReferenceKind.SharedVariable;
+				if (n.IsStatic)
+					return (byte)TypeReferenceKind.TLSVariable;
+				if (n.IsLocal)
+					return (byte)TypeReferenceKind.LocalVariable;
+				if (n.Parent is DClassLike)
+					return (byte)TypeReferenceKind.MemberVariable;
+				return (byte)TypeReferenceKind.Variable;
 			}
 
 			public byte Visit(DMethod n)
@@ -214,7 +241,7 @@ namespace D_Parser.Refactoring
 			Dictionary<int,byte> dd = null;
 			if (ctxt.CancellationToken.IsCancellationRequested)
 				return;
-			var filter = MemberFilter.Types | MemberFilter.Enums | MemberFilter.TypeParameters | MemberFilter.Variables;
+			var filter = MemberFilter.Types | MemberFilter.Enums | MemberFilter.TypeParameters | MemberFilter.Variables | MemberFilter.Methods;
 			foreach (var n in ItemEnumeration.EnumScopedBlockChildren(ctxt, filter))
 			{
 				if (n.NameHash != 0) {
@@ -592,6 +619,22 @@ namespace D_Parser.Refactoring
 			retCode = ((ret || (!(c is NegatedDeclarationCondition) && ctxt.CompilationEnvironment.IsMatching(c, null))) ? 1 : -1);
 			handledConditions[c] = retCode;
 			return retCode;
+		}
+
+		public override void Visit(DeclarationStatement declarationStatement)
+		{
+			var bn = ctxt.ScopedBlock;
+			Dictionary<int, byte> dd = null;
+			if (dd == null && !TypeCache.TryGetValue(bn, out dd))
+				TypeCache[bn] = dd = new Dictionary<int, byte>();
+
+			foreach (var declaration in declarationStatement.Declarations)
+			{
+				if (declaration is DVariable variable)
+					if (declaration.NameHash != 0)
+						dd[declaration.NameHash] = declaration.Accept(TypeDet);
+			}
+			base.Visit(declarationStatement);
 		}
 	}
 }
