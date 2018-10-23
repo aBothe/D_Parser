@@ -234,7 +234,7 @@ namespace D_Parser.Resolver.TypeResolution
 				return new ModuleSymbol(mod);
 			}
 
-			public AbstractType Visit(DBlockNode dBlockNode) => throw new NotImplementedException();
+			public AbstractType Visit(DBlockNode dBlockNode) { throw new NotImplementedException(); }
 
 			public AbstractType Visit(TemplateParameter.Node tpn)
 			{
@@ -261,15 +261,15 @@ namespace D_Parser.Resolver.TypeResolution
 				return VisitAliasDefinition(importSymbolAlias);
 			}
 			
-			public AbstractType VisitAttribute(Modifier attr) => throw new NotImplementedException();
-			public AbstractType VisitAttribute(DeprecatedAttribute a) => throw new NotImplementedException();
-			public AbstractType VisitAttribute(PragmaAttribute attr) => throw new NotImplementedException();
-			public AbstractType VisitAttribute(BuiltInAtAttribute a) => throw new NotImplementedException();
-			public AbstractType VisitAttribute(UserDeclarationAttribute a) => throw new NotImplementedException();
-			public AbstractType VisitAttribute(VersionCondition a) => throw new NotImplementedException();
-			public AbstractType VisitAttribute(DebugCondition a) => throw new NotImplementedException();
-			public AbstractType VisitAttribute(StaticIfCondition a) => throw new NotImplementedException();
-			public AbstractType VisitAttribute(NegatedDeclarationCondition a) => throw new NotImplementedException();
+			public AbstractType VisitAttribute(Modifier attr) { throw new NotImplementedException(); }
+			public AbstractType VisitAttribute(DeprecatedAttribute a) { throw new NotImplementedException(); }
+			public AbstractType VisitAttribute(PragmaAttribute attr) { throw new NotImplementedException(); }
+			public AbstractType VisitAttribute(BuiltInAtAttribute a) { throw new NotImplementedException(); }
+			public AbstractType VisitAttribute(UserDeclarationAttribute a) { throw new NotImplementedException(); }
+			public AbstractType VisitAttribute(VersionCondition a) { throw new NotImplementedException(); }
+			public AbstractType VisitAttribute(DebugCondition a) { throw new NotImplementedException(); }
+			public AbstractType VisitAttribute(StaticIfCondition a) { throw new NotImplementedException(); }
+			public AbstractType VisitAttribute(NegatedDeclarationCondition a) { throw new NotImplementedException(); }
 		}
 
 		public static AbstractType HandleNodeMatch(

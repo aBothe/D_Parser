@@ -51,7 +51,8 @@ namespace D_Parser.Completion.ToolTips
 
 		public string GenTooltipSignature(AbstractType t, bool templateParamCompletion = false, int currentMethodParam = -1)
 		{
-			if (t is DSymbol ds)
+			var ds = t as DSymbol;
+			if (ds != null)
 			{
 				if (currentMethodParam >= 0 && !templateParamCompletion && ds.Definition is DVariable && ds.Base != null)
 					return GenTooltipSignature(ds.Base, false, currentMethodParam);
@@ -59,13 +60,15 @@ namespace D_Parser.Completion.ToolTips
 				return GenTooltipSignature(ds.Definition, templateParamCompletion, currentMethodParam, DTypeToTypeDeclVisitor.GenerateTypeDecl(ds.Base), new DeducedTypeDictionary(ds));
 			}
 
-			if (t is PackageSymbol symbol)
+			var symbol = t as PackageSymbol;
+			if (symbol != null)
 			{
 				var pack = symbol.Package;
 				return "(package) " + pack.ToString();
 			}
 
-			if (t is DelegateType type)
+			var type = t as DelegateType;
+			if (type != null)
 			{
 				var sb = new StringBuilder();
 				GenDelegateSignature(type, sb, templateParamCompletion, currentMethodParam);
@@ -80,22 +83,17 @@ namespace D_Parser.Completion.ToolTips
 		{
 			var sb = new StringBuilder();
 
-			switch (dn)
-			{
-				case DMethod dm:
-					AppendMethod(dm, sb, templateParamCompletion, currentMethodParam, baseType, deducedTypes);
-					break;
-				case DModule module:
-					sb.Append("(module) ").Append(module.ModuleName);
-					break;
-				case DClassLike dc:
-					AppendClassLike(dc, sb, deducedTypes);
-					break;
-				case DEnum dEnum:
-					AppendEnum(dEnum, sb, baseType, deducedTypes);
-					break;
-				case DVariable dvar:
+			if(dn is DMethod)
+					AppendMethod(dn as DMethod, sb, templateParamCompletion, currentMethodParam, baseType, deducedTypes);
+			else if(dn is DModule)
+				sb.Append("(module) ").Append((dn as DModule).ModuleName);
+			else if(dn is DClassLike)
+				AppendClassLike(dn as DClassLike, sb, deducedTypes);
+			else if(dn is DEnum)
+				AppendEnum(dn as DEnum, sb, baseType, deducedTypes);
+			else if(dn is DVariable)
 				{
+				var dvar = dn as DVariable;
 					if (dvar.IsParameter)
 						sb.Append("(parameter) ");
 					else if (dvar.IsLocal)
@@ -111,27 +109,25 @@ namespace D_Parser.Completion.ToolTips
 
 					if (dvar.IsAlias && dvar.Type != null)
 						sb.Append(" : ").Append(dvar.Type.ToString());
-					break;
 				}
-				default:
+				else
 				{
 					if (dn != null)
 					{
 						AttributesTypeAndName(dn, sb, baseType, -1, deducedTypes);
 					}
-
-					break;
 				}
-			}
+
 			return sb.ToString();
 		}
 
 		void GenDelegateSignature(DelegateType dt, StringBuilder sb, bool templArgs = false, int curArg = -1)
 		{
-			if (dt.delegateTypeBase is FunctionLiteral literal)
-				AppendMethod(literal.AnonymousMethod, sb, templArgs, curArg, DTypeToTypeDeclVisitor.GenerateTypeDecl(dt.ReturnType));
-			else if (dt.delegateTypeBase is DelegateDeclaration delegateDecl)
+			if (dt.delegateTypeBase is FunctionLiteral)
+				AppendMethod((dt.delegateTypeBase as FunctionLiteral).AnonymousMethod, sb, templArgs, curArg, DTypeToTypeDeclVisitor.GenerateTypeDecl(dt.ReturnType));
+			else if (dt.delegateTypeBase is DelegateDeclaration)
 			{
+				var delegateDecl = dt.delegateTypeBase as DelegateDeclaration;
 				AppendAttributes(delegateDecl.Modifiers, sb);
 
 				if (dt.ReturnType != null)
@@ -196,7 +192,7 @@ namespace D_Parser.Completion.ToolTips
 				var indexBackup = sb.Length;
 
 				var isOpt = (this.SignatureFlags & TooltipSignatureFlags.NoDefaultParams) == 0
-				            && parm is DVariable variable && variable.Initializer != null;
+				            && parm is DVariable && (parm as DVariable).Initializer != null;
 
 				if (isOpt && addSqareBrackets)
 					sb.Append('[');
@@ -349,10 +345,10 @@ namespace D_Parser.Completion.ToolTips
 			if (attr is DeclarationCondition)
 				return false;
 
-			if (showStorageClasses || !(attr is Modifier mod))
+			if (showStorageClasses || !(attr is Modifier))
 				return true;
 
-			switch (mod.Token)
+			switch ((attr as Modifier).Token)
 			{
 				case DTokens.Auto:
 				case DTokens.Enum:

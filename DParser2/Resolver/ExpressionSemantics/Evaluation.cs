@@ -67,7 +67,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		/// </summary>
 		public static ISymbolValue EvaluateValue (IExpression x, ResolutionContext ctxt)
 		{
-			return EvaluateValue(x, ctxt, out _);
+			VariableValue variableValue;
+			return EvaluateValue(x, ctxt, out variableValue);
 		}
 
 		/// <summary>
@@ -89,15 +90,15 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			var v = x.Accept(evaluation);
 
-			if (!(v is VariableValue variableValue))
+			if (!(v is VariableValue))
 			{
 				if(v == null && evaluation.Errors.Count != 0)
 					return new ErrorValue(evaluation.Errors.ToArray());
 				return v;
 			}
 
-			evaluatedVariableValue = variableValue;
-			return new Evaluation(ctxt).EvaluateVariableValue(variableValue);
+			evaluatedVariableValue = v as VariableValue;
+			return new Evaluation(ctxt).EvaluateVariableValue(evaluatedVariableValue);
 		}
 
 		public static ISymbolValue EvaluateValue(IExpression x, StatefulEvaluationContext vp)
@@ -126,7 +127,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (ctxt != null && ctxt.CancellationToken.IsCancellationRequested)
 				return v;
 
-			if(v.RepresentedType is TemplateParameterSymbol tps && tps.ParameterValue != null)
+			var tps = v.RepresentedType as TemplateParameterSymbol;
+			if(tps != null && tps.ParameterValue != null)
 			{
 				return tps.ParameterValue;
 			}
@@ -144,7 +146,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (!variable.IsConst)
 				return new ErrorValue(new EvaluationException(variable + " must have a constant initializer"));
 
-			if (variable is DEnumValue enumValueVariable && enumValueVariable.Initializer == null)
+			var enumValueVariable = variable as DEnumValue;
+			if (enumValueVariable != null && enumValueVariable.Initializer == null)
 				return EvaluateNonInitializedEnumValue(enumValueVariable);
 
 			return variable.Initializer?.Accept(this);
@@ -237,8 +240,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public static bool IsFalsy(ISymbolValue v)
 		{
-			if (v is PrimitiveValue pv)
-				return pv.Value == 0m;
+			if (v is PrimitiveValue)
+				return (v as PrimitiveValue).Value == 0m;
 			return v is NullValue;
 		}
 	}

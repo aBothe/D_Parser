@@ -181,7 +181,9 @@ namespace D_Parser.Completion.ToolTips
 			{
 				var k = i + len;
 
-				DDocParser.FindNextMacro(ddoc, i + len, out i, out len, out var macroName, out var parameters);
+				string macroName;
+				Dictionary<string, string> parameters;
+				DDocParser.FindNextMacro(ddoc, i + len, out i, out len, out macroName, out parameters);
 
 				if (i < 0)
 				{

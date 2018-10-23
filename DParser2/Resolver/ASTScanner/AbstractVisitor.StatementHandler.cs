@@ -709,12 +709,13 @@ namespace D_Parser.Resolver.ASTScanner
 				{
 					var aggregate = Evaluation.EvaluateValue(s.Aggregate, ctxt);
 
-					switch (aggregate)
+					if(aggregate is AssociativeArrayValue)
 					{
-						case AssociativeArrayValue aa:
-							return aa.Elements;
-						case DTuple tuple:
-						{
+						return (aggregate as AssociativeArrayValue).Elements;
+					}
+					if(aggregate is DTuple)
+					{
+						var tuple = aggregate as DTuple;
 							var typeValues = new List<ISymbolValue>();
 							if (tuple.IsTypeTuple)
 							{
@@ -726,10 +727,12 @@ namespace D_Parser.Resolver.ASTScanner
 								foreach (var semantic in tuple.Items)
 									typeValues.Add((ISymbolValue) semantic);
 							}
-							return new IndexKeyExtendingEnumerable(typeValues);
-						}
-						case ArrayValue av:
+						return new IndexKeyExtendingEnumerable(typeValues);
+					}
+
+						if(aggregate is ArrayValue)
 						{
+						var av = aggregate as ArrayValue;
 							IEnumerable<ISymbolValue> values;
 							if (av.IsString)
 							{
@@ -743,10 +746,10 @@ namespace D_Parser.Resolver.ASTScanner
 
 							return new IndexKeyExtendingEnumerable(values);
 						}
-						default:
+
 							ctxt.LogError(s, "aggregate must be (optionally associative) array");
 							return null;
-					}
+					
 				}
 			}
 

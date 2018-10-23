@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace D_Parser.Resolver.ExpressionSemantics
@@ -15,26 +16,21 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public void VisitVariableValue(VariableValue v)
 		{
-			switch (v)
-			{
-				case ArrayPointer arrayPointer:
-					SetArrayPointerValue(arrayPointer);
-					break;
-				case AssocArrayPointer assocArrayPointer:
-					SetAssocArrayPointer(assocArrayPointer);
-					break;
-				default:
-					state.SetLocalValue(v.Variable, valueToSet);
-					break;
-			}
+			if (v is ArrayPointer)
+				SetArrayPointerValue(v as ArrayPointer);
+			else if(v is AssocArrayPointer)
+				SetAssocArrayPointer(v as AssocArrayPointer);
+			else
+				state.SetLocalValue(v.Variable, valueToSet);
 		}
 
 		private void SetArrayPointerValue(ArrayPointer ap)
 		{
 			var oldV = state.GetLocalValue(ap.Variable);
 
-			if (oldV is ArrayValue av)
+			if (oldV is ArrayValue)
 			{
+				var av = oldV as ArrayValue;
 				//TODO: Immutability checks
 
 				if (av.IsString)
@@ -70,8 +66,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			var oldV = state.GetLocalValue(assocArrayPointer.Variable);
 
-			if (oldV is AssociativeArrayValue aa)
+			if (oldV is AssociativeArrayValue)
 			{
+				var aa = oldV as AssociativeArrayValue;
 				if (assocArrayPointer.Key != null)
 				{
 					int itemToReplace = -1;
@@ -105,15 +102,15 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 		}
 
-		public void VisitDTuple(DTuple tuple) => throw new System.NotImplementedException();
-		public void VisitErrorValue(ErrorValue v) => throw new System.NotImplementedException();
-		public void VisitPrimitiveValue(PrimitiveValue v) => throw new System.NotImplementedException();
-		public void VisitVoidValue(VoidValue v) => throw new System.NotImplementedException();
-		public void VisitArrayValue(ArrayValue v) => throw new System.NotImplementedException();
-		public void VisitAssociativeArrayValue(AssociativeArrayValue v) => throw new System.NotImplementedException();
-		public void VisitDelegateValue(DelegateValue v) => throw new System.NotImplementedException();
-		public void VisitNullValue(NullValue v) => throw new System.NotImplementedException();
-		public void VisitTypeOverloadValue(InternalOverloadValue v) => throw new System.NotImplementedException();
-		public void VisitTypeValue(TypeValue v) => throw new System.NotImplementedException();
+		public void VisitDTuple(DTuple tuple) { throw new NotImplementedException(); }
+		public void VisitErrorValue(ErrorValue v) { throw new NotImplementedException(); }
+		public void VisitPrimitiveValue(PrimitiveValue v) { throw new NotImplementedException(); }
+		public void VisitVoidValue(VoidValue v) { throw new NotImplementedException(); }
+		public void VisitArrayValue(ArrayValue v) { throw new NotImplementedException(); }
+		public void VisitAssociativeArrayValue(AssociativeArrayValue v) { throw new NotImplementedException(); }
+		public void VisitDelegateValue(DelegateValue v) { throw new NotImplementedException(); }
+		public void VisitNullValue(NullValue v) { throw new NotImplementedException(); }
+		public void VisitTypeOverloadValue(InternalOverloadValue v) { throw new NotImplementedException(); }
+		public void VisitTypeValue(TypeValue v) { throw new NotImplementedException(); }
 	}
 }

@@ -729,7 +729,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					ctxt.CurrentContext.RemoveParamTypesFromPreferredLocals (udt);
 			}
 
-			if (foreExpression is AssocArrayType ar)
+			var ar = foreExpression as AssocArrayType;
+			var pt = foreExpression as PointerType;
+			if (ar != null)
 			{
 				/*
 				 * myType_Array[0] -- returns TypeResult myType
@@ -746,17 +748,18 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			 * 
 			 * a[0] = 12;
 			 */
-			else if (foreExpression is PointerType type)
+			else if (pt != null)
 			{
-				var b = type.Base;
+				var b = pt.Base;
 				if (b != null)
 					b.NonStaticAccess = true;
 				return b;
 			}
 			//return new ArrayAccessSymbol(x,((PointerType)foreExpression).Base);
 
-			else if (foreExpression is DTuple tt)
+			else if (foreExpression is DTuple)
 			{
+				var tt = foreExpression as DTuple;
 				var idx = Evaluation.EvaluateValue(ix.Expression, ctxt) as PrimitiveValue;
 
 				if (tt.Items == null)
@@ -786,7 +789,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		private AbstractType SliceArray(PostfixExpression_ArrayAccess x, AbstractType foreExpression, PostfixExpression_ArrayAccess.SliceArgument sl)
 		{
-			if (!(DResolver.StripMemberSymbols(foreExpression) is UserDefinedType udt))
+			var udt = DResolver.StripMemberSymbols(foreExpression) as UserDefinedType;
+			if (udt == null)
 				return foreExpression;
 
 			// TODO: Make suitable for multi-dimensional access
@@ -821,7 +825,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		private static List<AbstractType> ResolveIdentifier(IntermediateIdType id, ResolutionContext ctxt)
 		{
-			if (!id.ModuleScoped && ctxt.GetTemplateParam(id.IdHash, out var dedTemplateParam))
+			TemplateParameterSymbol dedTemplateParam;
+			if (!id.ModuleScoped && ctxt.GetTemplateParam(id.IdHash, out dedTemplateParam))
 				return ResolveAlreadyResolvedTemplateParameter(id, ctxt, dedTemplateParam);
 
 			if ((ctxt.Options & ResolutionOptions.DontResolveBaseClasses | ResolutionOptions.DontResolveBaseTypes) == 0)
@@ -859,8 +864,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		private static List<AbstractType> ResolveAlreadyResolvedTemplateParameter(IntermediateIdType id, ResolutionContext ctxt, TemplateParameterSymbol dedTemplateParam)
 		{
-			if (id is TemplateInstanceExpression tix
-			    && dedTemplateParam.Base != null
+			var tix = id as TemplateInstanceExpression;
+			if (tix != null && dedTemplateParam.Base != null
 			    && (ctxt.Options & ResolutionOptions.NoTemplateParameterDeduction) == 0)
 			{
 				var cloneOptions = new ResolvedTypeCloner.CloneOptions();
@@ -963,7 +968,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					symbols.Add(n);
 
 					// Put priority on locals
-					if (n is DVariable variable && variable.IsLocal)
+					var variable = n as DVariable;
+					if (variable != null && variable.IsLocal)
 					{
 						newRes.Clear();
 						newRes.Add(rb);
@@ -1110,7 +1116,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					while (!(classDef is DClassLike) && classDef != null)
 						classDef = classDef.Parent as IBlockNode;
 
-					if (classDef is DClassLike like)
+					var like = classDef as DClassLike;
+					if (like != null)
 					{
 						var tr = ClassInterfaceResolver.ResolveClassOrInterface(like, ctxt, x, true);
 
@@ -1358,8 +1365,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				{
 					var litEx = te.Arguments[1].AssignExpression;
 					var v = vp != null ? Evaluation.EvaluateValue(litEx, vp) : Evaluation.EvaluateValue(litEx, ctxt);
-					
-					if (v is ArrayValue av && av.IsString)
+
+					var av = v as ArrayValue;
+					if (av != null && av.IsString)
 					{
 						// Mock up a postfix_access expression to ensure static properties & ufcs methods are checked either
 						return new PostfixExpression_Access

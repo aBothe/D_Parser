@@ -88,8 +88,9 @@ namespace D_Parser.Resolver
 
 				using (ctxt.Push(mx.ParentNode, mx.Location))
 				{
+					Tuple<VariableValue, ISyntaxRegion> cacheTuple;
 					mixinCacheItem = ctxt.MixinCache.TryGetType(mx);
-					if (mixinCacheItem != null && mixinCacheItem.TryGetValue(parentNode, out var cacheTuple))
+					if (mixinCacheItem != null && mixinCacheItem.TryGetValue(parentNode, out cacheTuple))
 					{
 						evaluatedVariable = cacheTuple.Item1;
 						return cacheTuple.Item2;
@@ -101,7 +102,8 @@ namespace D_Parser.Resolver
 			}
 
 			// Ensure it's a string literal
-			if (v is ArrayValue av && av.IsString) {
+			var av = v as ArrayValue;
+			if (av != null && av.IsString) {
 				ISyntaxRegion parsedCode;
 				if (takeStmtCache) {
 					parsedCode = DParser.ParseBlockStatement ("{" + av.StringValue + "}", mx.ParentNode);
@@ -113,7 +115,8 @@ namespace D_Parser.Resolver
 
 					foreach (var ch in ast) {
 						if (mx.Attributes != null) {
-							if (ch is DNode dn) {
+							if (ch is DNode) {
+								var dn = ch as DNode;
 								if (dn.Attributes == null)
 									dn.Attributes = new List<DAttribute> (mx.Attributes);
 								else
@@ -143,8 +146,8 @@ namespace D_Parser.Resolver
 				return parsedCode;
 			}
 
-			if(v is VariableValue value)
-				ctxt.MixinCache.Add(new MixinCacheItem(parentNode, value, null), mx);
+			if(v is VariableValue)
+				ctxt.MixinCache.Add(new MixinCacheItem(parentNode, v as VariableValue, null), mx);
 			return null;
 		}
 

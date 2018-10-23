@@ -27,7 +27,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			}
 
 			// Deduce template parameters later on
-			GetRawCallOverloads(ctxt, call, out var baseExpression, out var tix);
+			IEnumerable<AbstractType> baseExpression;
+			TemplateInstanceExpression tix;
+			GetRawCallOverloads(ctxt, call, out baseExpression, out tix);
 
 			var argTypeFilteredOverloads =
 				EvalMethodCall(baseExpression, tix, ctxt, call, callArgumentTypes, false, evaluationState);
@@ -44,8 +46,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			PostfixExpression_MethodCall call, List<AbstractType> callArguments,
 			bool returnBaseTypeOnly, StatefulEvaluationContext ValueProvider = null)
 		{
+			bool returnInstantly;
 			var methodOverloads = MethodOverloadCandidateSearchVisitor.SearchCandidates (
-				baseExpression, ctxt, ValueProvider, call, returnBaseTypeOnly, out var returnInstantly);
+				baseExpression, ctxt, ValueProvider, call, returnBaseTypeOnly, out returnInstantly);
 
 			if (returnInstantly) {
 				return methodOverloads.Count > 0 ? methodOverloads[0] : null;
@@ -134,8 +137,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			
 			List<AbstractType> overloads;
 			var optBackup = ctxt.CurrentContext.ContextDependentOptions;
-			
-			if (acc.AccessExpression is TemplateInstanceExpression tix)
+
+			var tix = acc.AccessExpression as TemplateInstanceExpression;
+			if (null != tix)
 			{
 				if (!ResolveImmediateBaseType)
 					ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.DontResolveBaseTypes;
@@ -147,8 +151,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					ctxt.CurrentContext.ContextDependentOptions = optBackup;
 			}
 
-			else if (acc.AccessExpression is IdentifierExpression id)
+			else if (acc.AccessExpression is IdentifierExpression)
 			{
+				var id = acc.AccessExpression as IdentifierExpression;
 				if (EvalAndFilterOverloads)
 				{
 					ISemantic staticPropResult;
@@ -198,8 +203,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			var foreValue = ex.PostfixForeExpression?.Accept(this);
 
-			if (readonlyEvaluation && foreValue is VariableValue variableValue)
-				return EvaluateVariableValue(variableValue);
+			if (readonlyEvaluation && foreValue is VariableValue)
+				return EvaluateVariableValue(foreValue as VariableValue);
 
 			return foreValue;
 		}
@@ -241,8 +246,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					if (arg == null)
 						continue;
 
-					if (arg is PostfixExpression_ArrayAccess.SliceArgument argument)
-						foreExpression = SliceArray (x, foreExpression, argument);
+					if (arg is PostfixExpression_ArrayAccess.SliceArgument)
+						foreExpression = SliceArray (x, foreExpression, arg as PostfixExpression_ArrayAccess.SliceArgument);
 					else
 						foreExpression = AccessArrayAtIndex (x, foreExpression, arg);
 
@@ -260,8 +265,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			foreExpression = TryGetValue(foreExpression);
 			//TODO: Access pointer arrays(?)
 
-			if (foreExpression is ArrayValue av) // ArrayValue must be checked first due to inheritance!
+			if (foreExpression is ArrayValue) // ArrayValue must be checked first due to inheritance!
 			{
+				var av = foreExpression as ArrayValue;
 				// Make $ operand available
 				var arrLen_Backup = currentArrayLength;
 				currentArrayLength = av.Length;
@@ -300,8 +306,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				}
 				else return av.Elements[i];
 			}
-			else if (foreExpression is AssociativeArrayValue aa)
+			else if (foreExpression is AssociativeArrayValue)
 			{
+				var aa = foreExpression as AssociativeArrayValue;
 				var key = ix.Expression.Accept(this) as PrimitiveValue;
 
 				if (key == null)

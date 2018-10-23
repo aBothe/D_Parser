@@ -207,7 +207,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			var ev = vp != null ? new Evaluation(vp) : new Evaluation(ctxt);
 
-			return x.AssignExpression?.Accept(ev) is ArrayValue v && v.IsString ? v.StringValue : null;
+			if (x.AssignExpression == null)
+				return null;
+
+			var v = x.AssignExpression.Accept(ev) as ArrayValue;
+			return v != null && v.IsString ? v.StringValue : null;
 		}
 
 		public ISymbolValue Visit(MixinExpression x)

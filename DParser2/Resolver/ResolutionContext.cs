@@ -323,7 +323,7 @@ namespace D_Parser.Resolver
 		{
 			private readonly ResolutionContext _state;
 
-			public CallStackDisposable(ResolutionContext state) => _state = state;
+			public CallStackDisposable(ResolutionContext state) { _state = state; }
 			public void Dispose() => _state.evaluationCallStackDepth--;
 		}
 

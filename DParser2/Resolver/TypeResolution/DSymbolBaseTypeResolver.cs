@@ -292,8 +292,8 @@ namespace D_Parser.Resolver.TypeResolution
 				else
 					curStmt = curStmt.Parent;
 
-				if (curStmt is ForeachStatement fe)
-					GetForeachStatmentIteratorType(i, ctxt, fe, multipleIteratorTypes);
+				if (curStmt is ForeachStatement)
+					GetForeachStatmentIteratorType(i, ctxt, curStmt as ForeachStatement, multipleIteratorTypes);
 			}
 
 			return AmbiguousType.Get(multipleIteratorTypes);
@@ -338,17 +338,19 @@ namespace D_Parser.Resolver.TypeResolution
 				return;
 
 			// The most common way to do a foreach
-			if (aggregateType is AssocArrayType ar)
+			if (aggregateType is AssocArrayType)
 			{
+				var ar = aggregateType as AssocArrayType;
 				multipleIteratorTypes.Add(keyIsSearched ? ar.KeyType : ar.ValueType);
 			}
-			else if (aggregateType is PointerType type)
+			else if (aggregateType is PointerType)
 				multipleIteratorTypes.AddRange(AmbiguousType.TryDissolve(keyIsSearched
 					? TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration("size_t"), ctxt, false)
-					: type.Base));
-			else if (aggregateType is UserDefinedType tr)
+					: (aggregateType as PointerType).Base));
+			else if (aggregateType is UserDefinedType)
 			{
-				if (keyIsSearched || !(tr.Definition is IBlockNode definition))
+				var tr = aggregateType as UserDefinedType;
+				if (keyIsSearched || !(tr.Definition is IBlockNode))
 					return;
 
 				var foreachIteratorType = TryResolveForeachIteratorForStructsWithRanges(ctxt, fe, tr);
@@ -373,18 +375,20 @@ namespace D_Parser.Resolver.TypeResolution
 			var iteratorBaseTypes = new List<AbstractType>();
 			foreach (var iterPropertyType in iterPropertyTypes)
 			{
-				if (iterPropertyType is MemberSymbol mr)
+				if (iterPropertyType is MemberSymbol)
 				{
-					if (!(mr.Definition is DMethod dm) || dm.Parameters.Count != 1)
+					var mr = iterPropertyType as MemberSymbol;
+					var dm = mr.Definition as DMethod;
+					if (dm == null || dm.Parameters.Count != 1)
 						continue;
 
-					if (!(dm.Parameters[0].Type is DelegateDeclaration dg)
-					    || dg.Parameters.Count != fe.ForeachTypeList.Length)
+					if (!(dm.Parameters[0].Type is DelegateDeclaration)
+					    || (dm.Parameters[0].Type as DelegateDeclaration).Parameters.Count != fe.ForeachTypeList.Length)
 						continue;
 
 					AbstractType paramType;
 					using (ctxt.Push(mr))
-						paramType = TypeDeclarationResolver.ResolveSingle(dg.Parameters[iteratorIndex].Type, ctxt);
+						paramType = TypeDeclarationResolver.ResolveSingle((dm.Parameters[0].Type as DelegateDeclaration).Parameters[iteratorIndex].Type, ctxt);
 
 					if (paramType != null)
 						iteratorBaseTypes.Add(paramType);
@@ -447,19 +451,19 @@ namespace D_Parser.Resolver.TypeResolution
 		public DSymbol VisitModuleSymbol(ModuleSymbol t) => t;
 
 		// Not usually being returned by NodeMatchHandleVisitor:
-		public DSymbol VisitStaticProperty(StaticProperty t) => throw new NotImplementedException();
+		public DSymbol VisitStaticProperty(StaticProperty t) { throw new NotImplementedException(); }
 
 		// Not a DSymbol:
-		public DSymbol VisitUnknownType(UnknownType t) => throw new NotImplementedException();
-		public DSymbol VisitDelegateCallSymbol(DelegateCallSymbol t) => throw new NotImplementedException();
-		public DSymbol VisitDelegateType(DelegateType t) => throw new NotImplementedException();
-		public DSymbol VisitDTuple(DTuple t) => throw new NotImplementedException();
-		public DSymbol VisitAmbigousType(AmbiguousType t) => throw new NotImplementedException();
-		public DSymbol VisitArrayAccessSymbol(ArrayAccessSymbol t) => throw new NotImplementedException();
-		public DSymbol VisitArrayType(ArrayType t) => throw new NotImplementedException();
-		public DSymbol VisitAssocArrayType(AssocArrayType t) => throw new NotImplementedException();
-		public DSymbol VisitPackageSymbol(PackageSymbol t) => throw new NotImplementedException();
-		public DSymbol VisitPointerType(PointerType t) => throw new NotImplementedException();
-		public DSymbol VisitPrimitiveType(PrimitiveType t) => throw new NotImplementedException();
+		public DSymbol VisitUnknownType(UnknownType t) { throw new NotImplementedException(); }
+		public DSymbol VisitDelegateCallSymbol(DelegateCallSymbol t) { throw new NotImplementedException(); }
+		public DSymbol VisitDelegateType(DelegateType t) { throw new NotImplementedException(); }
+		public DSymbol VisitDTuple(DTuple t) { throw new NotImplementedException(); }
+		public DSymbol VisitAmbigousType(AmbiguousType t) { throw new NotImplementedException(); }
+		public DSymbol VisitArrayAccessSymbol(ArrayAccessSymbol t) { throw new NotImplementedException(); }
+		public DSymbol VisitArrayType(ArrayType t) { throw new NotImplementedException(); }
+		public DSymbol VisitAssocArrayType(AssocArrayType t) { throw new NotImplementedException(); }
+		public DSymbol VisitPackageSymbol(PackageSymbol t) { throw new NotImplementedException(); }
+		public DSymbol VisitPointerType(PointerType t) { throw new NotImplementedException(); }
+		public DSymbol VisitPrimitiveType(PrimitiveType t) { throw new NotImplementedException(); }
 	}
 }

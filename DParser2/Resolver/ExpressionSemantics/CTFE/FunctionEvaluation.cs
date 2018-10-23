@@ -101,7 +101,8 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 			if (ctxt.CancellationToken.IsCancellationRequested)
 				return null;
 
-			if (!(method.Definition is DMethod dm) || dm.BlockStartLocation.IsEmpty)
+			var dm = method.Definition as DMethod;
+			if (dm == null || dm.BlockStartLocation.IsEmpty)
 				throw new EvaluationException("Method either not declared or undefined", method);
 
 			using(ctxt.PushEvaluationCallStack())
@@ -174,17 +175,16 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 
 		private static bool IsTruthy(ISymbolValue v)
 		{
-			switch (v)
+			if(v is PrimitiveValue)
 			{
-				case PrimitiveValue pv:
-					return pv.Value != 0m;
+				var pv = v as PrimitiveValue;
+				return pv.Value != 0m;
 				/*case ReferenceValue referenceValue:
 					if (referenceValue.ReferencedNode is DVariable variable)
 						return IsTruthy(_statefulEvaluationContext.GetLocalValue(variable));
 					throw new CtfeException("INVALID_REFERNCE", v);*/
-				default:
-					throw new CtfeException("NOT_IMPLEMENTED", v);
 			}
+			throw new CtfeException("NOT_IMPLEMENTED", v);
 		}
 
 		public void Visit(WhileStatement whileStatement)
@@ -230,8 +230,8 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 				? EvaluateExpression(returnStatement.ReturnExpression)
 				: new VoidValue();
 
-			if (returnValue is VariableValue variableValue)
-				returnValue = _statefulEvaluationContext.GetLocalValue(variableValue.Variable);
+			if (returnValue is VariableValue)
+				returnValue = _statefulEvaluationContext.GetLocalValue((returnValue as VariableValue).Variable);
 
 			throw new ReturnInterrupt(returnValue);
 		}
@@ -293,11 +293,12 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 		{
 			foreach (var declaration in declarationStatement.Declarations)
 			{
-				if (declaration is DVariable variable)
+				if (declaration is DVariable)
 				{
+					var variable = declaration as DVariable;
 					var initialValue = EvaluateExpression(variable.Initializer);
-					if (initialValue is VariableValue variableValue)
-						initialValue = _statefulEvaluationContext.GetLocalValue(variableValue.Variable);
+					if (initialValue is VariableValue)
+						initialValue = _statefulEvaluationContext.GetLocalValue((initialValue as VariableValue).Variable);
 					_statefulEvaluationContext.SetLocalValue(variable, initialValue);
 				}
 			}

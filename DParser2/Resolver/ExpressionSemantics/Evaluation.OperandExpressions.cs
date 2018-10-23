@@ -424,8 +424,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			while(catQueue.Count != 0)
 			{
 				var e = catQueue.Dequeue();
-
-				if(e is ArrayValue av)
+				var av = e as ArrayValue;
+				if (av != null)
 				{
 					if(av.IsString)
 						elements.Add(av);
@@ -448,7 +448,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		private ISymbolValue TryGetValue(ISemantic s)
 		{
-			if (s is VariableValue value)
+			var value = s as VariableValue;
+			if (value != null)
 				return EvaluateVariableValue(value);
 
 			return s as ISymbolValue;

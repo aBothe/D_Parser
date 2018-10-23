@@ -32,8 +32,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			{
 				if (executionArguments == null || executionArguments.Count != 1)
 					ctxt.LogError(idOrTemplateInstance, "Uniform construction syntax expects exactly one argument");
-				else if(executionArguments[0] is PrimitiveValue primitiveValue)
+				else if (executionArguments[0] is PrimitiveValue) {
+					var primitiveValue = executionArguments[0] as PrimitiveValue;
 					return new PrimitiveValue(primitiveValue.Value, pt, primitiveValue.ImaginaryPart);
+				}
 				else
 					ctxt.LogError(idOrTemplateInstance, "Uniform construction syntax expects one built-in scalar value as first argument");
 				return new TypeValue(pt);
@@ -116,15 +118,14 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			public ISymbolValue VisitMemberSymbol(MemberSymbol mr)
 			{
-				switch (mr.Definition)
-				{
-					case DVariable _:
+				if(mr.Definition is DVariable)
 						return new VariableValue(mr);
 					// If we've got a function here, execute it
-					case DMethod _:
+				if(mr.Definition is DMethod)
 					{
+					Dictionary<DVariable, ISymbolValue> targetArgs;
 						if(!FunctionEvaluation.AssignCallArgumentsToIC(mr, executionArguments,
-							ValueProvider, out var targetArgs, ctxt))
+							ValueProvider, out targetArgs, ctxt))
 							return null;
 
 						try
@@ -138,10 +139,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							return new ErrorValue(e);
 						}
 					}
-					default:
 						// Are there other types to execute/handle?
 						return null;
-				}
 			}
 
 			public ISymbolValue VisitTemplateParameterSymbol(TemplateParameterSymbol tps)

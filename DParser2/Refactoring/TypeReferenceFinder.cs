@@ -230,8 +230,9 @@ namespace D_Parser.Refactoring
 		{
 			if (CheckNode(n))
 			{
+				byte type;
 				if (inRootModule())
-					if (DoPrimaryIdCheck(n.NameHash, out byte type))
+					if (DoPrimaryIdCheck(n.NameHash, out type))
 						AddResult(n, type);
 
 				base.VisitDNode(n);
@@ -253,9 +254,9 @@ namespace D_Parser.Refactoring
 
 				if (metaBlockEnumGotElements)
 					ContinueEnumStaticStatements (en, block.EndLocation);
-
+				byte type;
 				if (inRootModule())
-					if (DoPrimaryIdCheck(block.NameHash, out byte type))
+					if (DoPrimaryIdCheck(block.NameHash, out type))
 						AddResult(block, type);
 
 				base.VisitDNode(block);
@@ -299,7 +300,8 @@ namespace D_Parser.Refactoring
 							foreach (var sym in ibind.SelectedSymbols)
 							{
 								int key = sym.Symbol.IdHash;
-								if (tc.TryGetValue(key, out byte type))
+								byte type;
+								if (tc.TryGetValue(key, out type))
 								{
 									if (sym.Alias != null)
 										key = sym.Alias.IdHash;
@@ -424,8 +426,9 @@ namespace D_Parser.Refactoring
 
 		public override void Visit (TemplateInstanceExpression x)
 		{
+			byte type;
 			if (inRootModule())
-				if (DoPrimaryIdCheck(x.TemplateIdHash, out byte type))
+				if (DoPrimaryIdCheck(x.TemplateIdHash, out type))
 					AddResult(x, type);
 
 			base.Visit (x);
@@ -433,8 +436,9 @@ namespace D_Parser.Refactoring
 
 		public override void Visit (IdentifierDeclaration td)
 		{
+			byte type;
 			if (inRootModule())
-				if (DoPrimaryIdCheck(td.IdHash, out byte type))
+				if (DoPrimaryIdCheck(td.IdHash, out type))
 					AddResult(td, type);
 
 			base.Visit (td);
@@ -442,9 +446,10 @@ namespace D_Parser.Refactoring
 
 		public override void Visit (IdentifierExpression x)
 		{
+			byte type;
 			//TODO: If there is a type result, try to resolve x (or postfix-access expressions etc.) to find out whether it's overwritten by some local non-type
 			if (inRootModule())
-				if (DoPrimaryIdCheck(x.IdHash, out byte type))
+				if (DoPrimaryIdCheck(x.IdHash, out type))
 					AddResult(x, type);
 
 			base.Visit (x);

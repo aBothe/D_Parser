@@ -22,7 +22,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public ISymbolValue GetLocalValue(DVariable variable)
 		{
-			if (_locals.TryGetValue(variable, out var content) && content != null)
+			ISymbolValue content;
+			if (_locals.TryGetValue(variable, out content) && content != null)
 				return content;
 			if (variable.IsConst)
 				return Evaluation.EvaluateValue(variable.Initializer, ResolutionContext);

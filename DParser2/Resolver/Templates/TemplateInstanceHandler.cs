@@ -33,9 +33,9 @@ namespace D_Parser.Resolver.Templates
 					var aliasThisParam = arg is IntermediateIdType
 							&& IsTemplateAliasParameterAtIndex(rawOverloadList, currentTemplateArgumentIndex);
 
-					if (!aliasThisParam && arg is IExpression expression)
+					if (!aliasThisParam && arg is IExpression)
 					{
-						ISemantic v = Evaluation.EvaluateValue(expression, ctxt);
+						ISemantic v = Evaluation.EvaluateValue(arg as IExpression, ctxt);
 						v = StripValueTypeWrappers(v);
 						templateArguments.Add(v);
 					}
@@ -44,19 +44,21 @@ namespace D_Parser.Resolver.Templates
 						AbstractType res;
 						if (aliasThisParam)
 							res = AmbiguousType.Get(ExpressionTypeEvaluation.GetOverloads(arg as IntermediateIdType, ctxt, null, false));
-						else if (arg is ITypeDeclaration td)
-							res = TypeDeclarationResolver.ResolveSingle(td, ctxt);
+						else if (arg is ITypeDeclaration)
+							res = TypeDeclarationResolver.ResolveSingle(arg as ITypeDeclaration, ctxt);
 						else
 							throw new ArgumentNullException("arg");
 
-						if (res is AmbiguousType amb)
+						if (res is AmbiguousType)
 						{
 							// Error
-							res = amb.Overloads[0];
+							res = (res as AmbiguousType).Overloads[0];
 						}
 
-						if (res is MemberSymbol mr && mr.Definition is DVariable dv)
+						var mr = res as MemberSymbol;
+						if (null != mr && mr.Definition is DVariable)
 						{
+							var dv = mr.Definition as DVariable;
 							if (dv.IsAlias || dv.Initializer == null)
 							{
 								templateArguments.Add(mr);

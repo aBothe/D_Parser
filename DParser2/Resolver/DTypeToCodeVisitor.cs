@@ -200,7 +200,8 @@ namespace D_Parser.Resolver
 				foreach (var semantic in t.Items)
 				{
 					var type = (AbstractType) semantic;
-					if (type is DSymbol ds)
+					var ds = type as DSymbol;
+					if (ds != null)
 						sb.Append(ds.Definition.Name);
 					else
 						AcceptType(type);

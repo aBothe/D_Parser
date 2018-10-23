@@ -83,7 +83,8 @@ namespace D_Parser.Resolver
 
 		public static AbstractType Get(ISemantic s)
 		{
-			if (s is ISymbolValue value)
+			var value = s as ISymbolValue;
+			if (value != null)
 				return value.RepresentedType;
 			
 			return s as AbstractType;
@@ -857,7 +858,8 @@ namespace D_Parser.Resolver
 
 		public DTuple(IEnumerable<ISemantic> items)
 		{
-			if (items is ISemantic[] semantics)
+			var semantics = items as ISemantic[];
+			if (semantics != null)
 				Items = semantics;
 			else if (items != null)
 				Items = items.ToArray();
