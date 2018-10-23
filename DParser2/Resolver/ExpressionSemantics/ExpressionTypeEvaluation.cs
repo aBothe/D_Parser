@@ -143,7 +143,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var allowedOverloads = new List<AbstractType>();
 			foreach (var overload in possibleOverloads)
 			{
-				if (DResolver.StripAliasedTypes(overload) is MemberSymbol ms)
+				var ms = DResolver.StripAliasedTypes(overload) as MemberSymbol;
+				if (ms != null)
 				{
 					var executionResult = TryPretendMethodExecution_(ms, args);
 					if (executionResult != null)
@@ -687,7 +688,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		private AbstractType AccessArrayAtIndex(PostfixExpression_ArrayAccess x, AbstractType foreExpression, PostfixExpression_ArrayAccess.IndexArgument ix,ref int arg_i)
 		{
-			if (foreExpression is TemplateIntermediateType tit)
+			var tit = foreExpression as TemplateIntermediateType;
+			if (tit != null)
 			{
 				//TODO: Wtf is this?
 
@@ -706,7 +708,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				foreExpression = tit;
 			}
 
-			if (foreExpression is UserDefinedType udt) {
+			var udt = foreExpression as UserDefinedType;
+			if (udt != null) {
 				ctxt.CurrentContext.IntroduceTemplateParameterTypes (udt);
 
 				//Search opIndex overloads and try to match them to the given indexing arguments.

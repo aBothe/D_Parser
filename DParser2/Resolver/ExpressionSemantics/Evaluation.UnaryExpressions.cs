@@ -24,7 +24,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var targetType = ce.Type != null ? TypeDeclarationResolver.ResolveSingle(ce.Type, ctxt) : null;
 
 			var pv = toCast as PrimitiveValue;
-			if (pv != null && targetType is PrimitiveType pt) {
+			PrimitiveType pt;
+			if (pv != null && (pt = targetType as PrimitiveType) != null) {
 				//TODO: Truncate value bytes if required and/or treat Value/ImaginaryPart in any way!
 				return new PrimitiveValue(pt.TypeToken, pv.Value, pv.ImaginaryPart, pt.Modifiers);
 			}

@@ -294,7 +294,8 @@ namespace D_Parser.Misc
 				if (basePathQueue.IsEmpty && !preparationThreadStartEvent.WaitOne (ThreadWaitTimeout))
 					return;
 
-				while (basePathQueue.TryPop(out var tup) && !stopParsing) {
+				PathQueueArgs tup;
+				while (basePathQueue.TryPop(out tup) && !stopParsing) {
 					var path = tup.basePath;
 					if (!Directory.Exists (path))
 						continue; // Is it okay to directly skip it w/o calling noticeFinished?
@@ -327,7 +328,8 @@ namespace D_Parser.Misc
 					}
 
 					// Check if it's necessary to reparse the directory
-					if (ParsedDirectories.TryGetValue (path, out var oldRoot) &&
+					RootPackage oldRoot;
+					if (ParsedDirectories.TryGetValue (path, out oldRoot) &&
 						oldRoot.LastParseTime >= Directory.GetLastWriteTimeUtc (path)) {
 						noticeFinish (new FileParseQueueEntry (statIm, oldRoot, string.Empty));
 						continue;
@@ -520,7 +522,8 @@ namespace D_Parser.Misc
 
 		public static StatIntermediate GetParseStatistics (string basePath)
 		{
-			ParseStatistics.TryGetValue (basePath, out var im);
+			StatIntermediate im;
+			ParseStatistics.TryGetValue (basePath, out im);
 			return im;
 		}
 
@@ -607,7 +610,8 @@ namespace D_Parser.Misc
 
 		public static DModule GetModule (string file)
 		{
-			if (fileLookup.TryGetValue(file, out var ret))
+			DModule ret;
+			if (fileLookup.TryGetValue(file, out ret))
 				return ret;
 
 			foreach (var kv in ParsedDirectories) {
@@ -698,7 +702,8 @@ namespace D_Parser.Misc
 			var file = module.FileName;
 
 			// Check if a module is already in the file lookup
-			if (file != null && fileLookup.TryGetValue (file, out var oldMod)) {
+			DModule oldMod;
+			if (file != null && fileLookup.TryGetValue (file, out oldMod)) {
 				RemoveModule (oldMod);
 				oldMod = null;
 			}
@@ -715,7 +720,8 @@ namespace D_Parser.Misc
 
 		public static bool RemoveModule (string basePath, string moduleName)
 		{
-			return RemoveModule (GetModule (basePath, moduleName, out var pack), pack);
+			ModulePackage pack;
+			return RemoveModule (GetModule (basePath, moduleName, out pack), pack);
 		}
 
 		public static bool RemoveModule (DModule module)

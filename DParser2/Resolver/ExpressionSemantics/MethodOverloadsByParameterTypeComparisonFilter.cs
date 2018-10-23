@@ -64,7 +64,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				if (dm == null)
 					return;
 
-				bool isUfcs = UFCSResolver.IsUfcsResult(ms, out var firstUfcsArg);
+				ISemantic firstUfcsArg;
+				bool isUfcs = UFCSResolver.IsUfcsResult(ms, out firstUfcsArg);
 				// In the case of an ufcs, insert the first argument into the CallArguments list
 				if (isUfcs && !hasHandledUfcsResultBefore)
 				{

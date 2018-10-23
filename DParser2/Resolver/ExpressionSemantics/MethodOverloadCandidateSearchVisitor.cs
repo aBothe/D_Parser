@@ -192,7 +192,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (mr.Definition is DMethod) {
 				return new [] { mr };
 			}
-			if (mr.Definition is DVariable variable) {
+			var variable = mr.Definition as DVariable;
+			if (variable != null) {
 				// If we've got a variable here, get its base type/value reference
 				if (valueProvider != null) {
 					var dgVal = valueProvider.GetLocalValue(variable) as DelegateValue;
