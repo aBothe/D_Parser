@@ -54,7 +54,7 @@ class A(T)
 	static A!float statA;
 }
 
-class ClassName {}
+class ClassName { void MethodName(); }
 interface InterfaceName {}
 struct StructName { int FieldName; }
 union UnionName {}
@@ -117,6 +117,9 @@ struct StructB
 			Assert.AreEqual((byte)TypeReferenceKind.Constant       , typeRefId(res, "constant"));
 			Assert.AreEqual((byte)TypeReferenceKind.MemberVariable , typeRefId(res, "FieldName"));
 			Assert.AreEqual((byte)TypeReferenceKind.ParameterVariable, typeRefId(res, "args"));
+
+			Assert.AreEqual((byte)TypeReferenceKind.Function       , typeRefId(res, "main"));
+			Assert.AreEqual((byte)TypeReferenceKind.Method         , typeRefId(res, "MethodName"));
 
 			Assert.AreEqual((byte)TypeReferenceKind.Struct         , typeRefId(res, "StructB"));
 		}

@@ -127,7 +127,10 @@ namespace D_Parser.Refactoring
 
 			public byte Visit(DMethod n)
 			{
-				return (byte)TypeReferenceKind.Method;
+				if (n.Parent is DClassLike)
+					return (byte)TypeReferenceKind.Method;
+				else
+					return (byte)TypeReferenceKind.Function;
 			}
 
 			public byte Visit(DClassLike n)
@@ -432,6 +435,12 @@ namespace D_Parser.Refactoring
 		{
 			if (!inRootModule())
 				return;
+
+			var bn = ctxt.ScopedBlock;
+			Dictionary<int, byte> dd = null;
+			if (dd == null && !TypeCache.TryGetValue(bn, out dd))
+				TypeCache[bn] = dd = new Dictionary<int, byte>();
+			dd[dm.NameHash] = dm.Accept(TypeDet);
 
 			base.Visit (dm);
 			Dictionary<int,byte> tc;
