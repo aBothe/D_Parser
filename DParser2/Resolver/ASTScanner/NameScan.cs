@@ -50,17 +50,15 @@ namespace D_Parser.Resolver.ASTScanner
 		public static List<AbstractType> SearchAndResolve(ResolutionContext ctxt, CodeLocation caret, int nameHash, ISyntaxRegion idObject=null)
 		{
 			NameScan scan = null;
-			if (idObject !=	null)
+			if (idObject != null)
 				scan = ctxt.NameScanCache.TryGetType(idObject, nameHash);
 
-			if (scan ==	null)
+			if (scan == null)
 			{
-				scan = new NameScan(ctxt, nameHash,	idObject);
+				scan = new NameScan(ctxt, nameHash, idObject);
+				ctxt.NameScanCache.Add(scan, idObject, nameHash);
 
 				scan.IterateThroughScopeLayers(caret);
-
-				if (idObject !=	null)
-					ctxt.NameScanCache.Add(scan, idObject, nameHash);
 			}
 			return scan.GetMatches();
 		}

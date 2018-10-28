@@ -13,7 +13,7 @@ namespace TestTool
 {
 	class Program
 	{
-		const string traceFile = "trace.log";
+		static readonly string traceFile = "trace.log";
 
 		public static void Main (string[] args)
 		{

@@ -12,7 +12,7 @@ namespace TestTool
 {
 	public class BotanProfil
 	{
-		const string srcDir = "/home/lx/Desktop/dump/D/botan-master/source";
+		static readonly string srcDir = "/home/lx/Desktop/dump/D/botan-master/source";
 		static readonly string[] versions = new[]{"SHA2_32", "SHA2_64", "MD4", "MD5", "SHA1", "CRC24", "PBKDF1", "PBKDF2", "CTR_BE", "HMAC", 
 			"EMSA1", "EMSA1_BSI", "EMSA_X931", "EMSA_PKCS1", "EMSA_PSSR", "EMSA_RAW", "EME_OAEP", "EME_PKCS1v15", "PBE_PKCSv20", 
 			"Self_Tests", "ECB", "CBC", "XTS", "OFB", "CFB", 

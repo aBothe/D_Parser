@@ -720,5 +720,28 @@ S2 s2;
 
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
 		}
+
+		[Test]
+		public void StaticForeach_AliasSeq()
+		{
+			var ctxt = CreateDefCtxt(@"module A;
+import std.meta : AliasSeq;
+deprecated(`Please use std.complex`)
+static foreach (Num; AliasSeq!(cfloat, cdouble, creal, ifloat, idouble, ireal))
+{
+	auto abs(Num z) @safe pure nothrow @nogc
+	{
+		enum m = Num.alignof;
+		return m;
+	}
+}", @"module std.meta;
+template AliasSeq(TList...)
+{
+    alias AliasSeq = TList;
+}");
+			var x = DParser.ParseExpression("abs");
+			var t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+			Assert.That(t, Is.TypeOf<MemberSymbol>());
+		}
 	}
 }
