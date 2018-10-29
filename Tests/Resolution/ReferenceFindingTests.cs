@@ -35,7 +35,7 @@ void main()
 ");
 			var ctxt = ResolutionContext.Create(pcl, null, pcl.FirstPackage()["modA"]);
 
-			var refs = ReferencesFinder.SearchModuleForASTNodeReferences(pcl.FirstPackage()["modA"]["A"].First(),ctxt) as List<ISyntaxRegion>;
+			var refs = ReferencesFinder.SearchModuleForASTNodeReferences(pcl.FirstPackage()["modA"]["A"].First(), ctxt) as List<ISyntaxRegion>;
 
 			Assert.IsNotNull(refs);
 			Assert.AreEqual(8, refs.Count);
@@ -76,12 +76,15 @@ void main(string args[])
 
 	StructB localVar;
 	localVar.fieldB = 1;
+	localVar.getFieldB();
+	int markLine, fieldB = localVar.fieldB;
 }
 ");
 			var modB = DParser.ParseString(@"module modB;
 struct StructB
 {
 	int fieldB;
+	int getFieldB() { return fieldB; }
 }
 ");
 			var rootpkgs = new RootPackage[1];
@@ -89,7 +92,8 @@ struct StructB
 			rootpkg.AddModule(modB);
 			rootpkgs[0] = rootpkg;
 
-			var ed = new EditorData { 
+			var ed = new EditorData
+			{
 				SyntaxTree = modA,
 				ParseCache = new LegacyParseCacheView(rootpkgs)
 			};
@@ -122,6 +126,28 @@ struct StructB
 			Assert.AreEqual(TypeReferenceKind.Method         , typeRefId(res, "MethodName"));
 
 			Assert.AreEqual(TypeReferenceKind.Struct         , typeRefId(res, "StructB"));
+			Assert.AreEqual(TypeReferenceKind.MemberVariable,  typeRefId(res, "fieldB"));
+			Assert.AreEqual(TypeReferenceKind.Method,          typeRefId(res, "getFieldB"));
+
+			var line = findRefLine(res, "markLine");
+			Assert.AreEqual(4, line.Count());
+			var arr = line.ToArray();
+			System.Array.Sort(arr, new TypeReferenceLocationComparer());
+			Assert.AreEqual(TypeReferenceKind.LocalVariable,  arr[0].Value); // markLine
+			Assert.AreEqual(TypeReferenceKind.LocalVariable,  arr[1].Value); // fieldB
+			Assert.AreEqual(TypeReferenceKind.LocalVariable,  arr[2].Value); // localVar
+			Assert.AreEqual(TypeReferenceKind.MemberVariable, arr[3].Value); // fieldB
+		}
+
+		class TypeReferenceLocationComparer : Comparer<KeyValuePair<ISyntaxRegion, TypeReferenceKind>>
+		{
+			public override int Compare(KeyValuePair<ISyntaxRegion, TypeReferenceKind> x,
+			                            KeyValuePair<ISyntaxRegion, TypeReferenceKind> y)
+			{
+				if (x.Key.Location == y.Key.Location)
+					return 0;
+				return x.Key.Location < y.Key.Location ? -1 : 1;
+			}
 		}
 
 		private TypeReferenceKind typeRefId(Dictionary<int, Dictionary<ISyntaxRegion, TypeReferenceKind>> refs, string id)
@@ -140,6 +166,18 @@ struct StructB
 						return idref.Value;
 				}
 			return 0;
+		}
+
+		private Dictionary<ISyntaxRegion, TypeReferenceKind> findRefLine(Dictionary<int, Dictionary<ISyntaxRegion, TypeReferenceKind>> refs, string id)
+		{
+			foreach (var line in refs)
+				foreach (var idref in line.Value)
+				{
+					var sr = idref.Key;
+					if (sr is INode && (sr as INode).Name == id)
+						return line.Value;
+				}
+			return null;
 		}
 	}
 }
