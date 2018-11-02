@@ -38,28 +38,30 @@ namespace D_Parser.Refactoring
 {
 	public enum TypeReferenceKind : byte
 	{
-		Interface = DTokens.Interface,
-		Enum = DTokens.Enum,
-		EnumValue = DTokens.Else,
-		Template = DTokens.Template,
-		Class = DTokens.Class,
-		Struct = DTokens.Struct,
-		Union = DTokens.Union,
-		TemplateTypeParameter = DTokens.Not,
+		Unknown,
 
-		Constant = DTokens.Const,
-		LocalVariable = DTokens.Auto,
-		ParameterVariable = DTokens.In,
-		TLSVariable = DTokens.Static,
-		SharedVariable = DTokens.Shared,
-		GSharedVariable = DTokens.__gshared,
-		MemberVariable = DTokens.Final,
-		Variable = DTokens.Void,
+		Interface,
+		Enum,
+		EnumValue,
+		Template,
+		Class,
+		Struct,
+		Union,
+		TemplateTypeParameter,
 
-		Alias = DTokens.Alias,
-		Module = DTokens.Module,
-		Function = DTokens.Function,
-		Method = DTokens.Delegate,
+		Constant,
+		LocalVariable,
+		ParameterVariable,
+		TLSVariable,
+		SharedVariable,
+		GSharedVariable,
+		MemberVariable,
+		Variable,
+
+		Alias,
+		Module,
+		Function,
+		Method,
 	}
 
 	public class TypeReferenceFinder : AbstractResolutionVisitor
@@ -67,9 +69,9 @@ namespace D_Parser.Refactoring
 		#region Properties
 		Dictionary<DeclarationCondition,int> handledConditions = new Dictionary<DeclarationCondition,int>();
 		readonly List<ISyntaxRegion> invalidConditionalCodeRegions;
-		readonly Dictionary<IBlockNode, Dictionary<int,byte>> TypeCache = new Dictionary<IBlockNode, Dictionary<int,byte>>();
+		readonly Dictionary<IBlockNode, Dictionary<int, TypeReferenceKind>> TypeCache = new Dictionary<IBlockNode, Dictionary<int, TypeReferenceKind>>();
 		List<DModule> importStack = new List<DModule>();
-		Dictionary<int, Dictionary<ISyntaxRegion,byte>> Matches = new Dictionary<int, Dictionary<ISyntaxRegion,byte>>();
+		Dictionary<int, Dictionary<ISyntaxRegion, TypeReferenceKind>> Matches = new Dictionary<int, Dictionary<ISyntaxRegion, TypeReferenceKind>>();
 		#endregion
 
 		#region Constructor / IO
@@ -78,10 +80,10 @@ namespace D_Parser.Refactoring
 			this.invalidConditionalCodeRegions = i;
 		}
 
-		public static Dictionary<int, Dictionary<ISyntaxRegion, byte>> Scan(IEditorData ed, CancellationToken cancelToken, List<ISyntaxRegion> invalidConditionalCodeRegions = null)
+		public static Dictionary<int, Dictionary<ISyntaxRegion, TypeReferenceKind>> Scan(IEditorData ed, CancellationToken cancelToken, List<ISyntaxRegion> invalidConditionalCodeRegions = null)
 		{
 			if (ed == null || ed.SyntaxTree == null)
-				return new Dictionary<int, Dictionary<ISyntaxRegion,byte>>();
+				return new Dictionary<int, Dictionary<ISyntaxRegion, TypeReferenceKind>>();
 
 			var ctxt = ResolutionContext.Create(ed, false);
 
@@ -97,135 +99,143 @@ namespace D_Parser.Refactoring
 		}
 		#endregion
 
-		struct NodeTypeDeterminer : NodeVisitor<byte>
+		struct NodeTypeDeterminer : NodeVisitor<TypeReferenceKind>
 		{
-			public byte Visit(DEnumValue n)
+			public TypeReferenceKind Visit(DEnumValue n)
 			{
-				return (byte)TypeReferenceKind.EnumValue;
+				return TypeReferenceKind.EnumValue;
 			}
 
-			public byte VisitDVariable(DVariable n)
+			public TypeReferenceKind VisitDVariable(DVariable n)
 			{
 				if (n.IsAlias && !n.IsAliasThis)
-					return (byte)TypeReferenceKind.Alias;
+					return TypeReferenceKind.Alias;
 				if (n.ContainsAnyAttribute(DTokens.Enum))
-					return (byte)TypeReferenceKind.Constant;
+					return TypeReferenceKind.Constant;
 				if (n.IsParameter)
-					return (byte)TypeReferenceKind.ParameterVariable;
+					return TypeReferenceKind.ParameterVariable;
 				if (n.ContainsAnyAttribute(DTokens.__gshared))
-					return (byte)TypeReferenceKind.GSharedVariable;
+					return TypeReferenceKind.GSharedVariable;
 				if (n.ContainsAnyAttribute(DTokens.Shared))
-					return (byte)TypeReferenceKind.SharedVariable;
+					return TypeReferenceKind.SharedVariable;
 				if (n.IsStatic)
-					return (byte)TypeReferenceKind.TLSVariable;
+					return TypeReferenceKind.TLSVariable;
 				if (n.IsLocal)
-					return (byte)TypeReferenceKind.LocalVariable;
+					return TypeReferenceKind.LocalVariable;
 				if (n.Parent is DClassLike)
-					return (byte)TypeReferenceKind.MemberVariable;
-				return (byte)TypeReferenceKind.Variable;
+					return TypeReferenceKind.MemberVariable;
+				return TypeReferenceKind.Variable;
 			}
 
-			public byte Visit(DMethod n)
+			public TypeReferenceKind Visit(DMethod n)
 			{
 				if (n.Parent is DClassLike)
-					return (byte)TypeReferenceKind.Method;
+					return TypeReferenceKind.Method;
 				else
-					return (byte)TypeReferenceKind.Function;
+					return TypeReferenceKind.Function;
 			}
 
-			public byte Visit(DClassLike n)
+			public TypeReferenceKind Visit(DClassLike n)
 			{
-				return n.ClassType;
+				switch (n.ClassType)
+				{
+					default:
+					case DTokens.Class:     return TypeReferenceKind.Class;
+					case DTokens.Struct:    return TypeReferenceKind.Struct;
+					case DTokens.Union:     return TypeReferenceKind.Union;
+					case DTokens.Interface: return TypeReferenceKind.Interface;
+					case DTokens.Template:  return TypeReferenceKind.Template;
+				}
 			}
 
-			public byte Visit(DEnum n)
+			public TypeReferenceKind Visit(DEnum n)
 			{
-				return (byte)TypeReferenceKind.Enum;
+				return TypeReferenceKind.Enum;
 			}
 
-			public byte Visit(DModule n)
+			public TypeReferenceKind Visit(DModule n)
 			{
-				return (byte)TypeReferenceKind.Module;
+				return TypeReferenceKind.Module;
 			}
 
-			public byte Visit(DBlockNode dBlockNode)
+			public TypeReferenceKind Visit(DBlockNode dBlockNode)
 			{
 				return 0;
 			}
 
-			public byte Visit(TemplateParameter.Node templateParameterNode)
+			public TypeReferenceKind Visit(TemplateParameter.Node templateParameterNode)
 			{
-				return (byte)TypeReferenceKind.TemplateTypeParameter;
+				return TypeReferenceKind.TemplateTypeParameter;
 			}
 
-			public byte Visit(NamedTemplateMixinNode n)
+			public TypeReferenceKind Visit(NamedTemplateMixinNode n)
 			{
-				return (byte)TypeReferenceKind.Template;
+				return TypeReferenceKind.Template;
 			}
 
-			public byte VisitAttribute(Modifier attr)
+			public TypeReferenceKind VisitAttribute(Modifier attr)
 			{
 				throw new NotImplementedException();
 			}
 
-			public byte VisitAttribute(DeprecatedAttribute a)
+			public TypeReferenceKind VisitAttribute(DeprecatedAttribute a)
 			{
 				throw new NotImplementedException();
 			}
 
-			public byte VisitAttribute(PragmaAttribute attr)
+			public TypeReferenceKind VisitAttribute(PragmaAttribute attr)
 			{
 				throw new NotImplementedException();
 			}
 
-			public byte VisitAttribute(BuiltInAtAttribute a)
+			public TypeReferenceKind VisitAttribute(BuiltInAtAttribute a)
 			{
 				throw new NotImplementedException();
 			}
 
-			public byte VisitAttribute(UserDeclarationAttribute a)
+			public TypeReferenceKind VisitAttribute(UserDeclarationAttribute a)
 			{
 				throw new NotImplementedException();
 			}
 
-			public byte VisitAttribute(VersionCondition a)
+			public TypeReferenceKind VisitAttribute(VersionCondition a)
 			{
 				throw new NotImplementedException();
 			}
 
-			public byte VisitAttribute(DebugCondition a)
+			public TypeReferenceKind VisitAttribute(DebugCondition a)
 			{
 				throw new NotImplementedException();
 			}
 
-			public byte VisitAttribute(StaticIfCondition a)
+			public TypeReferenceKind VisitAttribute(StaticIfCondition a)
 			{
 				throw new NotImplementedException();
 			}
 
-			public byte VisitAttribute(NegatedDeclarationCondition a)
+			public TypeReferenceKind VisitAttribute(NegatedDeclarationCondition a)
 			{
 				throw new NotImplementedException();
 			}
 
-			public byte Visit(EponymousTemplate ep)
+			public TypeReferenceKind Visit(EponymousTemplate ep)
 			{
-				return (byte)TypeReferenceKind.Template;
+				return TypeReferenceKind.Template;
 			}
 
-			public byte Visit(ModuleAliasNode moduleAliasNode)
+			public TypeReferenceKind Visit(ModuleAliasNode moduleAliasNode)
 			{
-				return (byte)TypeReferenceKind.Alias;
+				return TypeReferenceKind.Alias;
 			}
 
-			public byte Visit(ImportSymbolNode importSymbolNode)
+			public TypeReferenceKind Visit(ImportSymbolNode importSymbolNode)
 			{
-				return (byte)TypeReferenceKind.Alias;
+				return TypeReferenceKind.Alias;
 			}
 
-			public byte Visit(ImportSymbolAlias importSymbolAlias)
+			public TypeReferenceKind Visit(ImportSymbolAlias importSymbolAlias)
 			{
-				return (byte)TypeReferenceKind.Alias;
+				return TypeReferenceKind.Alias;
 			}
 		}
 
@@ -241,7 +251,7 @@ namespace D_Parser.Refactoring
 		/// </summary>
 		protected override void OnScopedBlockChanged (IBlockNode bn)
 		{
-			Dictionary<int,byte> dd = null;
+			Dictionary<int, TypeReferenceKind> dd = null;
 			if (ctxt.CancellationToken.IsCancellationRequested)
 				return;
 			var filter = MemberFilter.Types | MemberFilter.Enums | MemberFilter.TypeParameters | MemberFilter.Variables | MemberFilter.Methods;
@@ -249,7 +259,7 @@ namespace D_Parser.Refactoring
 			{
 				if (n.NameHash != 0) {
 					if (dd == null && !TypeCache.TryGetValue (bn, out dd))
-						TypeCache [bn] = dd = new Dictionary<int,byte> ();
+						TypeCache [bn] = dd = new Dictionary<int, TypeReferenceKind> ();
 
 					dd[n.NameHash] = n.Accept(TypeDet);
 				}
@@ -261,7 +271,7 @@ namespace D_Parser.Refactoring
 			if (CheckNode(n))
 			{
 				if (inRootModule())
-					if (DoPrimaryIdCheck(n.NameHash, out byte type))
+					if (DoPrimaryIdCheck(n.NameHash, out TypeReferenceKind type))
 						AddResult(n, type);
 
 				base.VisitDNode(n);
@@ -285,7 +295,7 @@ namespace D_Parser.Refactoring
 					ContinueEnumStaticStatements (en, block.EndLocation);
 
 				if (inRootModule())
-					if (DoPrimaryIdCheck(block.NameHash, out byte type))
+					if (DoPrimaryIdCheck(block.NameHash, out TypeReferenceKind type))
 						AddResult(block, type);
 
 				base.VisitDNode(block);
@@ -317,11 +327,11 @@ namespace D_Parser.Refactoring
 					}
 
 					// TODO: refine	for static and renamed import
-					Dictionary<int,byte> curtc = null;
+					Dictionary<int, TypeReferenceKind> curtc = null;
 					if (!TypeCache.TryGetValue(curmod, out curtc))
-						TypeCache[curmod] = curtc = new Dictionary<int, byte>();
+						TypeCache[curmod] = curtc = new Dictionary<int, TypeReferenceKind>();
 
-					Dictionary<int, byte> tc = null;
+					Dictionary<int, TypeReferenceKind> tc = null;
 					if (TypeCache.TryGetValue(mod, out tc))
 					{
 						if (ibind.SelectedSymbols != null)
@@ -329,7 +339,7 @@ namespace D_Parser.Refactoring
 							foreach (var sym in ibind.SelectedSymbols)
 							{
 								int key = sym.Symbol.IdHash;
-								if (tc.TryGetValue(key, out byte type))
+								if (tc.TryGetValue(key, out TypeReferenceKind type))
 								{
 									if (sym.Alias != null)
 										key = sym.Alias.IdHash;
@@ -437,13 +447,13 @@ namespace D_Parser.Refactoring
 				return;
 
 			var bn = ctxt.ScopedBlock;
-			Dictionary<int, byte> dd = null;
+			Dictionary<int, TypeReferenceKind> dd = null;
 			if (dd == null && !TypeCache.TryGetValue(bn, out dd))
-				TypeCache[bn] = dd = new Dictionary<int, byte>();
+				TypeCache[bn] = dd = new Dictionary<int, TypeReferenceKind>();
 			dd[dm.NameHash] = dm.Accept(TypeDet);
 
 			base.Visit (dm);
-			Dictionary<int,byte> tc;
+			Dictionary<int, TypeReferenceKind> tc;
 			if (!TypeCache.TryGetValue (dm, out tc))
 				return;
 
@@ -455,13 +465,13 @@ namespace D_Parser.Refactoring
 		public override void VisitTemplateParameter (TemplateParameter tp)
 		{
 			if (inRootModule())
-				AddResult(tp, (byte)TypeReferenceKind.TemplateTypeParameter);
+				AddResult(tp, (TypeReferenceKind)TypeReferenceKind.TemplateTypeParameter);
 		}
 
 		public override void Visit (TemplateInstanceExpression x)
 		{
 			if (inRootModule())
-				if (DoPrimaryIdCheck(x.TemplateIdHash, out byte type))
+				if (DoPrimaryIdCheck(x.TemplateIdHash, out TypeReferenceKind type))
 					AddResult(x, type);
 
 			base.Visit (x);
@@ -470,7 +480,7 @@ namespace D_Parser.Refactoring
 		public override void Visit (IdentifierDeclaration td)
 		{
 			if (inRootModule())
-				if (DoPrimaryIdCheck(td.IdHash, out byte type))
+				if (DoPrimaryIdCheck(td.IdHash, out TypeReferenceKind type))
 					AddResult(td, type);
 
 			base.Visit (td);
@@ -480,7 +490,7 @@ namespace D_Parser.Refactoring
 		{
 			//TODO: If there is a type result, try to resolve x (or postfix-access expressions etc.) to find out whether it's overwritten by some local non-type
 			if (inRootModule())
-				if (DoPrimaryIdCheck(x.IdHash, out byte type))
+				if (DoPrimaryIdCheck(x.IdHash, out TypeReferenceKind type))
 					AddResult(x, type);
 
 			base.Visit (x);
@@ -492,20 +502,20 @@ namespace D_Parser.Refactoring
 			base.Visit (x);
 		}
 		
-		void AddResult(INode n, byte type)
+		void AddResult(INode n, TypeReferenceKind type)
 		{
-			Dictionary<ISyntaxRegion,byte> l;
+			Dictionary<ISyntaxRegion, TypeReferenceKind> l;
 			if(!Matches.TryGetValue(n.NameLocation.Line, out l))
-				Matches[n.NameLocation.Line] = l = new Dictionary<ISyntaxRegion,byte>();
+				Matches[n.NameLocation.Line] = l = new Dictionary<ISyntaxRegion, TypeReferenceKind>();
 
 			l[n] = type;
 		}
 
-		void AddResult(ISyntaxRegion sr, byte type)
+		void AddResult(ISyntaxRegion sr, TypeReferenceKind type)
 		{
-			Dictionary<ISyntaxRegion,byte> l;
+			Dictionary<ISyntaxRegion, TypeReferenceKind> l;
 			if(!Matches.TryGetValue(sr.Location.Line, out l))
-				Matches[sr.Location.Line] = l = new Dictionary<ISyntaxRegion,byte>();
+				Matches[sr.Location.Line] = l = new Dictionary<ISyntaxRegion, TypeReferenceKind>();
 
 			l[sr] = type;
 		}
@@ -513,10 +523,10 @@ namespace D_Parser.Refactoring
 		/// <summary>
 		/// Returns true if a type called 'id' exists in the current scope
 		/// </summary>
-		bool DoPrimaryIdCheck(int id, out byte type)
+		bool DoPrimaryIdCheck(int id, out TypeReferenceKind type)
 		{
 			if (id != 0) {
-				Dictionary<int,byte> tc;
+				Dictionary<int, TypeReferenceKind> tc;
 				var bn = ctxt.ScopedBlock;
 
 				while (bn != null) {
@@ -633,9 +643,9 @@ namespace D_Parser.Refactoring
 		public override void Visit(DeclarationStatement declarationStatement)
 		{
 			var bn = ctxt.ScopedBlock;
-			Dictionary<int, byte> dd = null;
+			Dictionary<int, TypeReferenceKind> dd = null;
 			if (dd == null && !TypeCache.TryGetValue(bn, out dd))
-				TypeCache[bn] = dd = new Dictionary<int, byte>();
+				TypeCache[bn] = dd = new Dictionary<int, TypeReferenceKind>();
 
 			foreach (var declaration in declarationStatement.Declarations)
 			{
