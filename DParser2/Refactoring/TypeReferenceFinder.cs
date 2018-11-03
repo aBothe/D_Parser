@@ -74,19 +74,22 @@ namespace D_Parser.Refactoring
 		List<DModule> importStack = new List<DModule>();
 		Dictionary<int, Dictionary<ISyntaxRegion, TypeReferenceKind>> Matches = new Dictionary<int, Dictionary<ISyntaxRegion, TypeReferenceKind>>();
 		IEditorData editorData;
-		NodeTypeDeterminer nodeTypeDet;
-		TypeTypeDeterminer typeTypeDet;
+		readonly NodeTypeDeterminer nodeTypeDet;
+		readonly TypeTypeDeterminer typeTypeDet;
+		bool resolveTypes;
 		#endregion
 
 		#region Constructor / IO
-		protected TypeReferenceFinder (ResolutionContext ctxt, List<ISyntaxRegion> i) : base(ctxt)
+		protected TypeReferenceFinder (ResolutionContext ctxt, List<ISyntaxRegion> i, bool resolveTypes) : base(ctxt)
 		{
 			this.invalidConditionalCodeRegions = i;
+			this.resolveTypes = resolveTypes;
 			nodeTypeDet = new NodeTypeDeterminer(this);
 			typeTypeDet = new TypeTypeDeterminer(this);
 		}
 
-		public static Dictionary<int, Dictionary<ISyntaxRegion, TypeReferenceKind>> Scan(IEditorData ed, CancellationToken cancelToken, List<ISyntaxRegion> invalidConditionalCodeRegions = null)
+		public static Dictionary<int, Dictionary<ISyntaxRegion, TypeReferenceKind>>
+			Scan(IEditorData ed, CancellationToken cancelToken, bool resolveTypes, List<ISyntaxRegion> invalidConditionalCodeRegions = null)
 		{
 			if (ed == null || ed.SyntaxTree == null)
 				return new Dictionary<int, Dictionary<ISyntaxRegion, TypeReferenceKind>>();
@@ -94,9 +97,10 @@ namespace D_Parser.Refactoring
 			var ctxt = ResolutionContext.Create(ed, false);
 
 			// Since it's just about enumerating, not checking types, ignore any conditions
-			ctxt.ContextIndependentOptions |= ResolutionOptions.IgnoreDeclarationConditions;
+			if (!resolveTypes)
+				ctxt.ContextIndependentOptions |= ResolutionOptions.IgnoreDeclarationConditions;
 
-			var typeRefFinder = new TypeReferenceFinder(ctxt, invalidConditionalCodeRegions);
+			var typeRefFinder = new TypeReferenceFinder(ctxt, invalidConditionalCodeRegions, resolveTypes);
 			typeRefFinder.importStack.Add(ed.SyntaxTree);
 			typeRefFinder.editorData = ed;
 			CodeCompletion.DoTimeoutableCompletionTask(null, ctxt, () => ed.SyntaxTree.Accept(typeRefFinder), cancelToken);
@@ -105,7 +109,7 @@ namespace D_Parser.Refactoring
 		}
 		#endregion
 
-		class NodeTypeDeterminer : NodeVisitor<TypeReferenceKind>
+		struct NodeTypeDeterminer : NodeVisitor<TypeReferenceKind>
 		{
 			private TypeReferenceFinder refFinder;
 
@@ -123,7 +127,7 @@ namespace D_Parser.Refactoring
 			{
 				if (n.IsAlias && !n.IsAliasThis)
 				{
-					if (n.Type != null)
+					if (n.Type != null && refFinder.resolveTypes)
 					{
 						var type = LooseResolution.ResolveTypeLoosely(refFinder.editorData, n.Type, out _, false);
 						if (type != null)
@@ -564,12 +568,14 @@ namespace D_Parser.Refactoring
 				var id = x.AccessExpression as IdentifierExpression;
 				if (id != null)
 				{
-					var type = LooseResolution.ResolveTypeLoosely(editorData, x, out _, false);
-					if(type != null)
+					var kind = TypeReferenceKind.MemberVariable;
+					if (resolveTypes)
 					{
-						var kind = type.Accept(typeTypeDet);
-						AddResult(id, kind);
+						var type = LooseResolution.ResolveTypeLoosely(editorData, x, out _, false);
+						if(type != null)
+							kind = type.Accept(typeTypeDet);
 					}
+					AddResult(id, kind);
 				}
 			}
 		}

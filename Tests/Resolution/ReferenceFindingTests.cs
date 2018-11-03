@@ -103,7 +103,7 @@ struct StructB
 
 			// no timeout
 			var cancelTokenSource = new System.Threading.CancellationTokenSource();
-			var res = TypeReferenceFinder.Scan(ed, cancelTokenSource.Token, null);
+			var res = TypeReferenceFinder.Scan(ed, cancelTokenSource.Token, true, null);
 
 			Assert.That(res.Count, Is.GreaterThan(6));
 			Assert.AreEqual(TypeReferenceKind.Class          , typeRefId(res, "ClassName"));
