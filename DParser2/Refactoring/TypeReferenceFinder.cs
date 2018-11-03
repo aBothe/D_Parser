@@ -74,12 +74,16 @@ namespace D_Parser.Refactoring
 		List<DModule> importStack = new List<DModule>();
 		Dictionary<int, Dictionary<ISyntaxRegion, TypeReferenceKind>> Matches = new Dictionary<int, Dictionary<ISyntaxRegion, TypeReferenceKind>>();
 		IEditorData editorData;
+		NodeTypeDeterminer nodeTypeDet;
+		TypeTypeDeterminer typeTypeDet;
 		#endregion
 
 		#region Constructor / IO
 		protected TypeReferenceFinder (ResolutionContext ctxt, List<ISyntaxRegion> i) : base(ctxt)
 		{
 			this.invalidConditionalCodeRegions = i;
+			nodeTypeDet = new NodeTypeDeterminer(this);
+			typeTypeDet = new TypeTypeDeterminer(this);
 		}
 
 		public static Dictionary<int, Dictionary<ISyntaxRegion, TypeReferenceKind>> Scan(IEditorData ed, CancellationToken cancelToken, List<ISyntaxRegion> invalidConditionalCodeRegions = null)
@@ -101,8 +105,15 @@ namespace D_Parser.Refactoring
 		}
 		#endregion
 
-		struct NodeTypeDeterminer : NodeVisitor<TypeReferenceKind>
+		class NodeTypeDeterminer : NodeVisitor<TypeReferenceKind>
 		{
+			private TypeReferenceFinder refFinder;
+
+			public NodeTypeDeterminer(TypeReferenceFinder rf)
+			{
+				refFinder = rf;
+			}
+
 			public TypeReferenceKind Visit(DEnumValue n)
 			{
 				return TypeReferenceKind.EnumValue;
@@ -111,7 +122,15 @@ namespace D_Parser.Refactoring
 			public TypeReferenceKind VisitDVariable(DVariable n)
 			{
 				if (n.IsAlias && !n.IsAliasThis)
+				{
+					if (n.Type != null)
+					{
+						var type = LooseResolution.ResolveTypeLoosely(refFinder.editorData, n.Type, out _, false);
+						if (type != null)
+							return type.Accept(refFinder.typeTypeDet);
+					}
 					return TypeReferenceKind.Alias;
+				}
 				if (n.ContainsAnyAttribute(DTokens.Enum))
 					return TypeReferenceKind.Constant;
 				if (n.IsParameter)
@@ -241,10 +260,15 @@ namespace D_Parser.Refactoring
 			}
 		}
 
-		static readonly NodeTypeDeterminer TypeDet = new NodeTypeDeterminer();
-
 		struct TypeTypeDeterminer : IResolvedTypeVisitor<TypeReferenceKind>
 		{
+			private TypeReferenceFinder refFinder;
+
+			public TypeTypeDeterminer(TypeReferenceFinder typeReferenceFinder)
+			{
+				refFinder = typeReferenceFinder;
+			}
+
 			public TypeReferenceKind VisitPrimitiveType(PrimitiveType t) => TypeReferenceKind.BasicType;
 			public TypeReferenceKind VisitPointerType(PointerType t) => TypeReferenceKind.BasicType;
 			public TypeReferenceKind VisitArrayType(ArrayType t) => TypeReferenceKind.BasicType;
@@ -264,7 +288,7 @@ namespace D_Parser.Refactoring
 			public TypeReferenceKind VisitMemberSymbol(MemberSymbol t)
 			{
 				if (t.Definition != null)
-					return t.Definition.Accept(TypeDet);
+					return t.Definition.Accept(refFinder.nodeTypeDet);
 				return TypeReferenceKind.BasicType;
 			}
 			public TypeReferenceKind VisitTemplateParameterSymbol(TemplateParameterSymbol t) => TypeReferenceKind.TemplateTypeParameter;
@@ -276,8 +300,6 @@ namespace D_Parser.Refactoring
 			public TypeReferenceKind VisitUnknownType(UnknownType t) => TypeReferenceKind.BasicType;
 			public TypeReferenceKind VisitAmbigousType(AmbiguousType t) => TypeReferenceKind.BasicType;
 		}
-
-		static readonly TypeTypeDeterminer TypeDet2 = new TypeTypeDeterminer();
 
 		bool inRootModule()
 		{
@@ -299,7 +321,7 @@ namespace D_Parser.Refactoring
 					if (dd == null && !TypeCache.TryGetValue (bn, out dd))
 						TypeCache [bn] = dd = new Dictionary<int, TypeReferenceKind> ();
 
-					dd[n.NameHash] = n.Accept(TypeDet);
+					dd[n.NameHash] = n.Accept(nodeTypeDet);
 				}
 			}
 		}
@@ -488,7 +510,7 @@ namespace D_Parser.Refactoring
 			Dictionary<int, TypeReferenceKind> dd = null;
 			if (dd == null && !TypeCache.TryGetValue(bn, out dd))
 				TypeCache[bn] = dd = new Dictionary<int, TypeReferenceKind>();
-			dd[dm.NameHash] = dm.Accept(TypeDet);
+			dd[dm.NameHash] = dm.Accept(nodeTypeDet);
 
 			base.Visit (dm);
 			Dictionary<int, TypeReferenceKind> tc;
@@ -545,7 +567,7 @@ namespace D_Parser.Refactoring
 					var type = LooseResolution.ResolveTypeLoosely(editorData, x, out _, false);
 					if(type != null)
 					{
-						var kind = type.Accept(TypeDet2);
+						var kind = type.Accept(typeTypeDet);
 						AddResult(id, kind);
 					}
 				}
@@ -701,7 +723,7 @@ namespace D_Parser.Refactoring
 			{
 				if (declaration is DVariable variable)
 					if (declaration.NameHash != 0)
-						dd[declaration.NameHash] = declaration.Accept(TypeDet);
+						dd[declaration.NameHash] = declaration.Accept(nodeTypeDet);
 			}
 			base.Visit(declarationStatement);
 		}

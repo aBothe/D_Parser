@@ -66,6 +66,9 @@ enum constant = 1;
 shared sharedVar;
 __gshared gsharedVar;
 
+alias AliasName = StructB;
+alias int* PINT;
+
 void main(string args[])
 {
 	auto a = new A!int();
@@ -125,9 +128,11 @@ struct StructB
 			Assert.AreEqual(TypeReferenceKind.Function       , typeRefId(res, "main"));
 			Assert.AreEqual(TypeReferenceKind.Method         , typeRefId(res, "MethodName"));
 
+			Assert.AreEqual(TypeReferenceKind.Struct         , typeRefId(res, "AliasName"));
+			Assert.AreEqual(TypeReferenceKind.BasicType      , typeRefId(res, "PINT"));
 			Assert.AreEqual(TypeReferenceKind.Struct         , typeRefId(res, "StructB"));
-			Assert.AreEqual(TypeReferenceKind.MemberVariable,  typeRefId(res, "fieldB"));
-			Assert.AreEqual(TypeReferenceKind.Method,          typeRefId(res, "getFieldB"));
+			Assert.AreEqual(TypeReferenceKind.MemberVariable , typeRefId(res, "fieldB"));
+			Assert.AreEqual(TypeReferenceKind.Method         , typeRefId(res, "getFieldB"));
 
 			var line = findRefLine(res, "markLine");
 			Assert.AreEqual(4, line.Count());
