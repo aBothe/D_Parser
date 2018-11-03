@@ -99,32 +99,32 @@ struct StructB
 			var res = TypeReferenceFinder.Scan(ed, cancelTokenSource.Token, null);
 
 			Assert.That(res.Count, Is.GreaterThan(6));
-			Assert.AreEqual((byte)TypeReferenceKind.Class          , typeRefId(res, "ClassName"));
-			Assert.AreEqual((byte)TypeReferenceKind.Interface      , typeRefId(res, "InterfaceName"));
-			Assert.AreEqual((byte)TypeReferenceKind.Struct         , typeRefId(res, "StructName"));
-			Assert.AreEqual((byte)TypeReferenceKind.Union          , typeRefId(res, "UnionName"));
-			Assert.AreEqual((byte)TypeReferenceKind.EnumValue      , typeRefId(res, "AnonEnumValue"));
-			Assert.AreEqual((byte)TypeReferenceKind.Enum           , typeRefId(res, "EnumName"));
-			Assert.AreEqual((byte)TypeReferenceKind.EnumValue      , typeRefId(res, "EnumValue"));
+			Assert.AreEqual(TypeReferenceKind.Class          , typeRefId(res, "ClassName"));
+			Assert.AreEqual(TypeReferenceKind.Interface      , typeRefId(res, "InterfaceName"));
+			Assert.AreEqual(TypeReferenceKind.Struct         , typeRefId(res, "StructName"));
+			Assert.AreEqual(TypeReferenceKind.Union          , typeRefId(res, "UnionName"));
+			Assert.AreEqual(TypeReferenceKind.EnumValue      , typeRefId(res, "AnonEnumValue"));
+			Assert.AreEqual(TypeReferenceKind.Enum           , typeRefId(res, "EnumName"));
+			Assert.AreEqual(TypeReferenceKind.EnumValue      , typeRefId(res, "EnumValue"));
 
-			Assert.AreEqual((byte)TypeReferenceKind.Class          , typeRefId(res, "A"));
-			Assert.AreEqual((byte)TypeReferenceKind.Template       , typeRefId(res, "TemplateName"));
-			Assert.AreEqual((byte)TypeReferenceKind.TemplateTypeParameter, typeRefId(res, "TemplateParameter"));
+			Assert.AreEqual(TypeReferenceKind.Class          , typeRefId(res, "A"));
+			Assert.AreEqual(TypeReferenceKind.Template       , typeRefId(res, "TemplateName"));
+			Assert.AreEqual(TypeReferenceKind.TemplateTypeParameter, typeRefId(res, "TemplateParameter"));
 
-			Assert.AreEqual((byte)TypeReferenceKind.LocalVariable  , typeRefId(res, "localVar"));
-			Assert.AreEqual((byte)TypeReferenceKind.SharedVariable , typeRefId(res, "sharedVar"));
-			Assert.AreEqual((byte)TypeReferenceKind.GSharedVariable, typeRefId(res, "gsharedVar"));
-			Assert.AreEqual((byte)TypeReferenceKind.Constant       , typeRefId(res, "constant"));
-			Assert.AreEqual((byte)TypeReferenceKind.MemberVariable , typeRefId(res, "FieldName"));
-			Assert.AreEqual((byte)TypeReferenceKind.ParameterVariable, typeRefId(res, "args"));
+			Assert.AreEqual(TypeReferenceKind.LocalVariable  , typeRefId(res, "localVar"));
+			Assert.AreEqual(TypeReferenceKind.SharedVariable , typeRefId(res, "sharedVar"));
+			Assert.AreEqual(TypeReferenceKind.GSharedVariable, typeRefId(res, "gsharedVar"));
+			Assert.AreEqual(TypeReferenceKind.Constant       , typeRefId(res, "constant"));
+			Assert.AreEqual(TypeReferenceKind.MemberVariable , typeRefId(res, "FieldName"));
+			Assert.AreEqual(TypeReferenceKind.ParameterVariable, typeRefId(res, "args"));
 
-			Assert.AreEqual((byte)TypeReferenceKind.Function       , typeRefId(res, "main"));
-			Assert.AreEqual((byte)TypeReferenceKind.Method         , typeRefId(res, "MethodName"));
+			Assert.AreEqual(TypeReferenceKind.Function       , typeRefId(res, "main"));
+			Assert.AreEqual(TypeReferenceKind.Method         , typeRefId(res, "MethodName"));
 
-			Assert.AreEqual((byte)TypeReferenceKind.Struct         , typeRefId(res, "StructB"));
+			Assert.AreEqual(TypeReferenceKind.Struct         , typeRefId(res, "StructB"));
 		}
 
-		private byte typeRefId(Dictionary<int, Dictionary<ISyntaxRegion, byte>> refs, string id)
+		private TypeReferenceKind typeRefId(Dictionary<int, Dictionary<ISyntaxRegion, TypeReferenceKind>> refs, string id)
 		{
 			foreach (var line in refs)
 				foreach (var idref in line.Value)
