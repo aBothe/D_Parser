@@ -62,6 +62,7 @@ namespace D_Parser.Refactoring
 		Module,
 		Function,
 		Method,
+		BasicType,
 	}
 
 	public class TypeReferenceFinder : AbstractResolutionVisitor
@@ -72,15 +73,23 @@ namespace D_Parser.Refactoring
 		readonly Dictionary<IBlockNode, Dictionary<int, TypeReferenceKind>> TypeCache = new Dictionary<IBlockNode, Dictionary<int, TypeReferenceKind>>();
 		List<DModule> importStack = new List<DModule>();
 		Dictionary<int, Dictionary<ISyntaxRegion, TypeReferenceKind>> Matches = new Dictionary<int, Dictionary<ISyntaxRegion, TypeReferenceKind>>();
+		IEditorData editorData;
+		readonly NodeTypeDeterminer nodeTypeDet;
+		readonly TypeTypeDeterminer typeTypeDet;
+		bool resolveTypes;
 		#endregion
 
 		#region Constructor / IO
-		protected TypeReferenceFinder (ResolutionContext ctxt, List<ISyntaxRegion> i) : base(ctxt)
+		protected TypeReferenceFinder (ResolutionContext ctxt, List<ISyntaxRegion> i, bool resolveTypes) : base(ctxt)
 		{
 			this.invalidConditionalCodeRegions = i;
+			this.resolveTypes = resolveTypes;
+			nodeTypeDet = new NodeTypeDeterminer(this);
+			typeTypeDet = new TypeTypeDeterminer(this);
 		}
 
-		public static Dictionary<int, Dictionary<ISyntaxRegion, TypeReferenceKind>> Scan(IEditorData ed, CancellationToken cancelToken, List<ISyntaxRegion> invalidConditionalCodeRegions = null)
+		public static Dictionary<int, Dictionary<ISyntaxRegion, TypeReferenceKind>>
+			Scan(IEditorData ed, CancellationToken cancelToken, bool resolveTypes, List<ISyntaxRegion> invalidConditionalCodeRegions = null)
 		{
 			if (ed == null || ed.SyntaxTree == null)
 				return new Dictionary<int, Dictionary<ISyntaxRegion, TypeReferenceKind>>();
@@ -88,11 +97,12 @@ namespace D_Parser.Refactoring
 			var ctxt = ResolutionContext.Create(ed, false);
 
 			// Since it's just about enumerating, not checking types, ignore any conditions
-			ctxt.ContextIndependentOptions |= ResolutionOptions.IgnoreDeclarationConditions;
+			if (!resolveTypes)
+				ctxt.ContextIndependentOptions |= ResolutionOptions.IgnoreDeclarationConditions;
 
-			var typeRefFinder = new TypeReferenceFinder(ctxt, invalidConditionalCodeRegions);
+			var typeRefFinder = new TypeReferenceFinder(ctxt, invalidConditionalCodeRegions, resolveTypes);
 			typeRefFinder.importStack.Add(ed.SyntaxTree);
-
+			typeRefFinder.editorData = ed;
 			CodeCompletion.DoTimeoutableCompletionTask(null, ctxt, () => ed.SyntaxTree.Accept(typeRefFinder), cancelToken);
 
 			return typeRefFinder.Matches;
@@ -101,6 +111,13 @@ namespace D_Parser.Refactoring
 
 		struct NodeTypeDeterminer : NodeVisitor<TypeReferenceKind>
 		{
+			private TypeReferenceFinder refFinder;
+
+			public NodeTypeDeterminer(TypeReferenceFinder rf)
+			{
+				refFinder = rf;
+			}
+
 			public TypeReferenceKind Visit(DEnumValue n)
 			{
 				return TypeReferenceKind.EnumValue;
@@ -109,7 +126,15 @@ namespace D_Parser.Refactoring
 			public TypeReferenceKind VisitDVariable(DVariable n)
 			{
 				if (n.IsAlias && !n.IsAliasThis)
+				{
+					if (n.Type != null && refFinder.resolveTypes)
+					{
+						var type = LooseResolution.ResolveTypeLoosely(refFinder.editorData, n.Type, out _, false);
+						if (type != null)
+							return type.Accept(refFinder.typeTypeDet);
+					}
 					return TypeReferenceKind.Alias;
+				}
 				if (n.ContainsAnyAttribute(DTokens.Enum))
 					return TypeReferenceKind.Constant;
 				if (n.IsParameter)
@@ -239,7 +264,46 @@ namespace D_Parser.Refactoring
 			}
 		}
 
-		static readonly NodeTypeDeterminer TypeDet = new NodeTypeDeterminer();
+		struct TypeTypeDeterminer : IResolvedTypeVisitor<TypeReferenceKind>
+		{
+			private TypeReferenceFinder refFinder;
+
+			public TypeTypeDeterminer(TypeReferenceFinder typeReferenceFinder)
+			{
+				refFinder = typeReferenceFinder;
+			}
+
+			public TypeReferenceKind VisitPrimitiveType(PrimitiveType t) => TypeReferenceKind.BasicType;
+			public TypeReferenceKind VisitPointerType(PointerType t) => TypeReferenceKind.BasicType;
+			public TypeReferenceKind VisitArrayType(ArrayType t) => TypeReferenceKind.BasicType;
+			public TypeReferenceKind VisitAssocArrayType(AssocArrayType t) => TypeReferenceKind.BasicType;
+			public TypeReferenceKind VisitDelegateCallSymbol(DelegateCallSymbol t) => TypeReferenceKind.BasicType;
+			public TypeReferenceKind VisitDelegateType(DelegateType t) => TypeReferenceKind.BasicType;
+			public TypeReferenceKind VisitAliasedType(AliasedType t) => TypeReferenceKind.BasicType;
+			public TypeReferenceKind VisitEnumType(EnumType t) => TypeReferenceKind.Enum;
+			public TypeReferenceKind VisitStructType(StructType t) => TypeReferenceKind.Struct;
+			public TypeReferenceKind VisitUnionType(UnionType t) => TypeReferenceKind.Union;
+			public TypeReferenceKind VisitClassType(ClassType t) => TypeReferenceKind.Class;
+			public TypeReferenceKind VisitInterfaceType(InterfaceType t) => TypeReferenceKind.Interface;
+			public TypeReferenceKind VisitTemplateType(TemplateType t) => TypeReferenceKind.Template;
+			public TypeReferenceKind VisitMixinTemplateType(MixinTemplateType t) => TypeReferenceKind.Template;
+			public TypeReferenceKind VisitEponymousTemplateType(EponymousTemplateType t) => TypeReferenceKind.Template;
+			public TypeReferenceKind VisitStaticProperty(StaticProperty t) => TypeReferenceKind.BasicType;
+			public TypeReferenceKind VisitMemberSymbol(MemberSymbol t)
+			{
+				if (t.Definition != null)
+					return t.Definition.Accept(refFinder.nodeTypeDet);
+				return TypeReferenceKind.BasicType;
+			}
+			public TypeReferenceKind VisitTemplateParameterSymbol(TemplateParameterSymbol t) => TypeReferenceKind.TemplateTypeParameter;
+			public TypeReferenceKind VisitArrayAccessSymbol(ArrayAccessSymbol t) => TypeReferenceKind.BasicType;
+			public TypeReferenceKind VisitModuleSymbol(ModuleSymbol t) => TypeReferenceKind.Module;
+			public TypeReferenceKind VisitPackageSymbol(PackageSymbol t) => TypeReferenceKind.Module;
+			public TypeReferenceKind VisitDTuple(DTuple t) => TypeReferenceKind.BasicType;
+
+			public TypeReferenceKind VisitUnknownType(UnknownType t) => TypeReferenceKind.BasicType;
+			public TypeReferenceKind VisitAmbigousType(AmbiguousType t) => TypeReferenceKind.BasicType;
+		}
 
 		bool inRootModule()
 		{
@@ -261,7 +325,7 @@ namespace D_Parser.Refactoring
 					if (dd == null && !TypeCache.TryGetValue (bn, out dd))
 						TypeCache [bn] = dd = new Dictionary<int, TypeReferenceKind> ();
 
-					dd[n.NameHash] = n.Accept(TypeDet);
+					dd[n.NameHash] = n.Accept(nodeTypeDet);
 				}
 			}
 		}
@@ -450,7 +514,7 @@ namespace D_Parser.Refactoring
 			Dictionary<int, TypeReferenceKind> dd = null;
 			if (dd == null && !TypeCache.TryGetValue(bn, out dd))
 				TypeCache[bn] = dd = new Dictionary<int, TypeReferenceKind>();
-			dd[dm.NameHash] = dm.Accept(TypeDet);
+			dd[dm.NameHash] = dm.Accept(nodeTypeDet);
 
 			base.Visit (dm);
 			Dictionary<int, TypeReferenceKind> tc;
@@ -498,8 +562,22 @@ namespace D_Parser.Refactoring
 
 		public override void Visit (PostfixExpression_Access x)
 		{
-			// q.AddRange(DoPrimaryIdCheck(x));
-			base.Visit (x);
+			VisitPostfixExpression(x);
+			if (inRootModule())
+			{
+				var id = x.AccessExpression as IdentifierExpression;
+				if (id != null)
+				{
+					var kind = TypeReferenceKind.MemberVariable;
+					if (resolveTypes)
+					{
+						var type = LooseResolution.ResolveTypeLoosely(editorData, x, out _, false);
+						if(type != null)
+							kind = type.Accept(typeTypeDet);
+					}
+					AddResult(id, kind);
+				}
+			}
 		}
 		
 		void AddResult(INode n, TypeReferenceKind type)
@@ -651,7 +729,7 @@ namespace D_Parser.Refactoring
 			{
 				if (declaration is DVariable variable)
 					if (declaration.NameHash != 0)
-						dd[declaration.NameHash] = declaration.Accept(TypeDet);
+						dd[declaration.NameHash] = declaration.Accept(nodeTypeDet);
 			}
 			base.Visit(declarationStatement);
 		}
