@@ -96,6 +96,7 @@ namespace D_Parser.Completion.Providers
 			DTokens.Delegate,
 			DTokens.Mixin,
 			DTokens.Typeid,
+			DTokens.Typeof,
 			DTokens.__traits,
 			DTokens.__DATE__,
 			DTokens.__FILE__,
