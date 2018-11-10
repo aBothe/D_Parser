@@ -279,7 +279,6 @@ namespace D_Parser.Parser
 				case DTokens.Export:
 				case DTokens.Shared:
 				case DTokens.Final:
-				case DTokens.Virtual:
 				case DTokens.Invariant:
 				case DTokens.Immutable:
 				case DTokens.Pure:

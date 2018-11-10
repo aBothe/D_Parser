@@ -311,7 +311,6 @@ namespace D_Parser.Parser.Implementations
 				{
 					switch ((attr as Modifier).Token)
 					{
-						case DTokens.Virtual:
 						case DTokens.Final:
 							continue;
 					}

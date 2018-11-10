@@ -229,9 +229,7 @@ namespace D_Parser.Parser
 		public const string IncompleteId = "<Incomplete>";
 		public static readonly int IncompleteIdHash = IncompleteId.GetHashCode();
 
-		public const byte Virtual = 185;
-
-		public const byte MaxToken = 186;
+		public const byte MaxToken = 185;
 
 
 		static readonly Dictionary<byte, string> Keywords = new Dictionary<byte, string> {
@@ -355,7 +353,6 @@ namespace D_Parser.Parser
 			{ Ushort, "ushort" },
 
 			{ Version, "version" },
-			{ Virtual, "virtual" },
 			{ Void, "void" },
 			{ Volatile, "volatile" },
 
