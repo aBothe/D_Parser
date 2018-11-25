@@ -318,19 +318,22 @@ namespace D_Parser.Misc
 
 					var newRoot = new RootPackage { LastParseTime = Directory.GetLastWriteTimeUtc(path)};
 
-					parseThreadStartEvent.Set();
+					if (statIm.totalFiles > 0) // PushRange causes ArgumentOutOfRangeException if range is empty
+					{
+						parseThreadStartEvent.Set();
 
-					var entriesToPush = new FileParseQueueEntry[files.Length + ifiles.Length];
-					var nextEntryToSet = 0;
-					foreach	(var file in files)
-						entriesToPush[nextEntryToSet++] = new FileParseQueueEntry(statIm, newRoot, file);
-					foreach	(var ifile in ifiles)
-						entriesToPush[nextEntryToSet++] = new FileParseQueueEntry(statIm, newRoot, ifile);
-					queue.PushRange(entriesToPush);
+						var entriesToPush = new FileParseQueueEntry[files.Length + ifiles.Length];
+						var nextEntryToSet = 0;
+						foreach (var file in files)
+							entriesToPush[nextEntryToSet++] = new FileParseQueueEntry(statIm, newRoot, file);
+						foreach (var ifile in ifiles)
+							entriesToPush[nextEntryToSet++] = new FileParseQueueEntry(statIm, newRoot, ifile);
+						queue.PushRange(entriesToPush);
 
-					LaunchParseThreads();
+						LaunchParseThreads();
 
-					parseThreadStartEvent.Reset ();
+						parseThreadStartEvent.Reset ();
+					}
 				}
 			}
 		}
