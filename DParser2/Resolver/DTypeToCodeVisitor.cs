@@ -199,11 +199,18 @@ namespace D_Parser.Resolver
 			{
 				foreach (var semantic in t.Items)
 				{
-					var type = (AbstractType) semantic;
-					if (type is DSymbol ds)
-						sb.Append(ds.Definition.Name);
+					if (semantic == null)
+						sb.Append("<null>");
+					else if (semantic is AbstractType)
+					{
+						var type = (AbstractType)semantic;
+						if (type is DSymbol ds)
+							sb.Append(ds.Definition.Name);
+						else
+							AcceptType(type);
+					}
 					else
-						AcceptType(type);
+						sb.Append(semantic.ToString());
 					sb.Append(", ");
 				}
 				sb.Length = sb.Length - 2;

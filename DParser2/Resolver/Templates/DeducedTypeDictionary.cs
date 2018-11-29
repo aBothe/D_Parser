@@ -36,7 +36,8 @@ namespace D_Parser.Resolver.Templates
 				return;
 
 			foreach (var tps in tpss)
-				Remove (tps.Parameter);
+				if (tps != null)
+					Remove (tps.Parameter);
 		}
 
 		public void AddDefault(IEnumerable<TemplateParameter> templateParameters)
