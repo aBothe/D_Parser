@@ -5,6 +5,7 @@ using D_Parser.Parser;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Text;
+using System.Globalization;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
@@ -60,6 +61,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			return new PrimitiveValue(baseType, baseTypeMod);
 		}
 
+		static NumberFormatInfo nfi = System.Globalization.NumberFormatInfo.InvariantInfo;
+
 		public override string ToCode()
 		{
 			switch (BaseTypeToken)
@@ -74,7 +77,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					return Char.ConvertFromUtf32((int)Value);
 			}
 
-			return Value.ToString() + (ImaginaryPart == 0 ? "" : ("+"+ImaginaryPart.ToString()+"i"));
+			return Value.ToString(nfi) + (ImaginaryPart == 0 ? "" : ("+"+ImaginaryPart.ToString()+"i"));
 		}
 
 		public override void Accept(ISymbolValueVisitor vis)

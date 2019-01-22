@@ -49,6 +49,20 @@ namespace D_Parser.Completion.ToolTips
     {
 		public TooltipSignatureFlags SignatureFlags;
 
+		public ITypeDeclaration ApplyDefinitionModifiers(ITypeDeclaration decl, DNode definition)
+		{
+			if (definition.ContainsAnyAttribute(DTokens.Immutable))
+				decl = new MemberFunctionAttributeDecl(DTokens.Immutable) { InnerType = decl };
+			else if (definition.ContainsAnyAttribute(DTokens.Const))
+				decl = new MemberFunctionAttributeDecl(DTokens.Const) { InnerType = decl };
+			else if (definition.ContainsAnyAttribute(DTokens.InOut))
+				decl = new MemberFunctionAttributeDecl(DTokens.InOut) { InnerType = decl };
+
+			if (definition.ContainsAnyAttribute(DTokens.Shared) && !definition.ContainsAnyAttribute(DTokens.Immutable))
+				decl = new MemberFunctionAttributeDecl(DTokens.Shared) { InnerType = decl };
+			return decl;
+		}
+
 		public string GenTooltipSignature(AbstractType t, bool templateParamCompletion = false, int currentMethodParam = -1)
 		{
 			if (t is DSymbol ds)
@@ -56,7 +70,10 @@ namespace D_Parser.Completion.ToolTips
 				if (currentMethodParam >= 0 && !templateParamCompletion && ds.Definition is DVariable && ds.Base != null)
 					return GenTooltipSignature(ds.Base, false, currentMethodParam);
 
-				return GenTooltipSignature(ds.Definition, templateParamCompletion, currentMethodParam, DTypeToTypeDeclVisitor.GenerateTypeDecl(ds.Base), new DeducedTypeDictionary(ds));
+				var typedecl = DTypeToTypeDeclVisitor.GenerateTypeDecl(ds.Base);
+				if (ds.Definition != null)
+					typedecl = ApplyDefinitionModifiers(typedecl, ds.Definition);
+				return GenTooltipSignature(ds.Definition, templateParamCompletion, currentMethodParam, typedecl, new DeducedTypeDictionary(ds));
 			}
 
 			if (t is PackageSymbol symbol)
@@ -277,7 +294,7 @@ namespace D_Parser.Completion.ToolTips
 			ITypeDeclaration baseType = null, int highlightTemplateParam = -1,
 			DeducedTypeDictionary deducedTypes = null)
 		{
-            AppendAttributes(dn, sb, baseType == null);
+            AppendAttributes(dn, sb);
 
 			if (dn.Type != null || baseType != null)
 				sb.Append(DCodeToMarkup((baseType ?? dn.Type).ToString(true))).Append(' ');

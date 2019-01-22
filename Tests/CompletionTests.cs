@@ -335,6 +335,9 @@ o[0][0].
 
 			wl = new[]{ (ed.MainPackage["A"]["C"].First() as DClassLike).Children["f"].First() };
 
+			var src = new CancellationTokenSource();
+			src.CancelAfter(500);
+			ed.CancelToken = src.Token;
 			TestCompletionListContents (ed, wl, null);
 		}
 
@@ -408,11 +411,27 @@ void foo(int a, string b) {}");
 			var fooSymbol = new MemberSymbol(foo);
 
 			var signature = tooltipGen.GenTooltipSignature(fooSymbol, false, 1);
-			Assert.That(signature, Is.EqualTo(@"void A.foo(
+			signature = signature.Replace("\r\n", "\n");
+			var expected = @"void A.foo(
   int a,
   <span underline='single'>string b</span>
-)"));
+)".Replace("\r\n", "\n");
+			Assert.That(signature, Is.EqualTo(expected));
 		}
+		[Test]
+		public void TooltipGeneration_Modifiers()
+		{
+			var tooltipGen = new D_Parser.Completion.ToolTips.NodeTooltipRepresentationGen();
+
+			var ctxt = ResolutionTestHelper.CreateDefCtxt(@"module A;
+static private const double eps;");
+
+			var eps = ResolutionTestHelper.N<DVariable>(ctxt, "A.eps");
+
+			var signature = tooltipGen.GenTooltipSignature(eps, false, 1);
+			Assert.That(signature, Is.EqualTo(@"private static const(double) A.eps"));
+		}
+
 
 		[Test]
 		public void TooltipGeneration_MethodDDoc_SimpleSummary()
