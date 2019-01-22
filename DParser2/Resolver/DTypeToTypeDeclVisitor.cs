@@ -23,9 +23,20 @@ namespace D_Parser.Resolver
 
 			var td = t.Accept(this);
 
-			if(t.HasModifiers){
-				foreach(byte modifier in t.Modifiers){
-					td = new MemberFunctionAttributeDecl (modifier) { InnerType = td };
+			if(t.HasModifiers)
+			{
+				foreach(byte modifier in t.Modifiers)
+				{
+					// only type modifier, no storage classes
+					switch (modifier)
+					{
+						case DTokens.Immutable:
+						case DTokens.Const:
+						case DTokens.InOut:
+						case DTokens.Shared:
+							td = new MemberFunctionAttributeDecl(modifier) { InnerType = td };
+							break;
+					}
 				}
 			}
 
