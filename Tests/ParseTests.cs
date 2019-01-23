@@ -1317,6 +1317,52 @@ void anonClassFoo()
 			Assert.That (mod.ParseErrors.Count, Is.EqualTo (0));
 		}
 
+		[Test]
+		public void EnumAttributes()
+		{
+			var m = DParser.ParseString(@"enum E { @disable Dis, deprecated Dep, @1234 uda }");
+
+			Assert.AreEqual(0, m.ParseErrors.Count);
+
+			var E = m["E"].First() as DNode;
+			Assert.That(E is DEnum);
+
+			var Dis = (E as DEnum)["Dis"].First() as DNode;
+			Assert.That(Dis is DEnumValue);
+			var attr = Dis.Attributes;
+			Assert.That (attr.Count == 1);
+			Assert.That(attr[0] is BuiltInAtAttribute);
+			Assert.That((attr[0] as BuiltInAtAttribute).Kind == BuiltInAtAttribute.BuiltInAttributes.Disable);
+
+			var Dep = (E as DEnum)["Dep"].First() as DNode;
+			Assert.That(Dep is DEnumValue);
+			attr = Dep.Attributes;
+			Assert.That(attr.Count == 1);
+			Assert.That(attr[0] is DeprecatedAttribute);
+
+			var uda = (E as DEnum)["uda"].First() as DNode;
+			Assert.That(uda is DEnumValue);
+			attr = uda.Attributes;
+			Assert.That(attr.Count == 1);
+			Assert.That(attr[0] is AtAttribute);
+		}
+
+		[Test]
+		public void ParameterUDA()
+		{
+			var m = DParser.ParseString(@"void example(@(22) string param) {}");
+
+			Assert.AreEqual(0, m.ParseErrors.Count);
+
+			var ex = m["example"].First() as DNode;
+			Assert.That(ex is DMethod);
+			var parameters = (ex as DMethod).Parameters;
+			Assert.That(parameters.Count == 1);
+			Assert.That(parameters[0] is DVariable);
+			var attr = (parameters[0] as DVariable).Attributes;
+			Assert.That(attr.Count == 1);
+			Assert.That(attr[0] is AtAttribute);
+		}
 
 		#region DDoc
 

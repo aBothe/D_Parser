@@ -191,6 +191,7 @@ namespace D_Parser.Completion.Providers
 			{"isPOD","Takes one argument, which must be a type. It returns true if the type is a POD type, otherwise false."},
 			{"isNested","Takes one argument. It returns true if the argument is a nested type which internally stores a context pointer."},
 			{"isFuture","Takes one argument. It returns true if the argument is a symbol marked with the @future keyword."},
+			{"isDisabled","Takes one argument. It returns true if the argument is and returns true if it is a function declaration marked with @disable."},
 			{"isDeprecated","Takes one argument. It returns true if the argument is a symbol marked with the deprecated keyword."},
 			{"isFloating","Works like isArithmetic, except it's for floating point types (including imaginary and complex types)."},
 			{"isIntegral","Works like isArithmetic, except it's for integral types (including character types)."},
@@ -205,6 +206,7 @@ namespace D_Parser.Completion.Providers
 			{"isStaticFunction","Takes one argument. If that argument is a static function, meaning it has no context pointer, true is returned, otherwise false."},
 			{"isOverrideFunction","Takes one argument. If that argument is a function marked with override, true is returned, otherwise false."},
 			{"isTemplate","Takes one argument. If that argument is a template then true is returned, otherwise false."},
+			{"isZeroInit","Takes one argument which must be a type. If the type's default initializer has no non-zero bits then true is returned, otherwise false."},
 
 			{"isRef","Takes one argument. If that argument is a declaration, true is returned if it is ref, otherwise false."},
 			{"isOut","Takes one argument. If that argument is a declaration, true is returned if it is out, otherwise false."},
@@ -225,6 +227,7 @@ namespace D_Parser.Completion.Providers
 			{"getVirtualFunctions","The same as getVirtualMethods, except that final functions that do not override anything are included."},
 			{"getVirtualMethods","The first argument is a class type or an expression of class type. The second argument is a string that matches the name of one of the functions of that class. The result is a tuple of the virtual overloads of that function. It does not include final functions that do not override anything."},
 			{"getUnitTests","Takes one argument, a symbol of an aggregate. The result is a tuple of all the unit test functions of that aggregate."},
+			{"getTargetInfo","Takes a string key as argument to select the target detail of interest."},
 			{"parent","Takes a single argument which must evaluate to a symbol. The result is the symbol that is the parent of it."},
 			{"classInstanceSize","Takes a single argument, which must evaluate to either a class type or an expression of class type. The result is of type size_t, and the value is the number of bytes in the runtime instance of the class type. It is based on the static type of a class, not the polymorphic type."},
 			{"getVirtualIndex","Takes a single argument which must evaluate to a function. The result is a ptrdiff_t containing the index of that function within the vtable of the parent type."},

@@ -355,6 +355,11 @@ namespace D_Parser.Parser.Implementations
 		{
 			var ev = new DEnumValue() { Location = la.Location, Description = GetComments(), Parent = mye };
 
+			while (laKind == DTokens.Deprecated || laKind == DTokens.At)
+			{
+				parserParts.attributesParser.AttributeSpecifier(mye);
+			}
+
 			if (laKind == DTokens.Identifier && (
 				Lexer.CurrentPeekToken.Kind == DTokens.Assign ||
 				Lexer.CurrentPeekToken.Kind == DTokens.Comma ||
@@ -381,6 +386,8 @@ namespace D_Parser.Parser.Implementations
 				Step();
 				ev.Initializer = parserParts.expressionsParser.AssignExpression(mye);
 			}
+
+			parserParts.declarationParser.ApplyAttributes(ev);
 
 			ev.EndLocation = t.EndLocation;
 			ev.Description += CheckForPostSemicolonComment();

@@ -620,6 +620,8 @@ namespace D_Parser.Dom.Statements
 			[Incomplete]
 			iretd,
 			[Incomplete]
+			iretq,
+			[Incomplete]
 			[ShortValid]
 			ja,
 			[Incomplete]
