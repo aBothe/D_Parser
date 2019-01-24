@@ -87,6 +87,19 @@ namespace Tests
 		}
 
 		[Test]
+		public void Unicode2()
+		{
+			var lex = new Lexer(new StringReader("'😃'")); // 3 byte UTF8, not single word UTF16
+
+			lex.NextToken();
+
+			Assert.That(lex.LexerErrors.Count, Is.EqualTo(0));
+			Assert.That(lex.LookAhead.Kind, Is.EqualTo(DTokens.Literal));
+			Assert.That(lex.LookAhead.LiteralFormat, Is.EqualTo(LiteralFormat.CharLiteral));
+			Assert.That(lex.LookAhead.ToString(), Is.EqualTo("😃"));
+		}
+
+		[Test]
 		public void TestSyntaxError4()
 		{
 			var mod = DParser.ParseString (@"module A;
