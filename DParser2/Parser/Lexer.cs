@@ -1541,6 +1541,15 @@ namespace D_Parser.Parser
 			{
 				return Token(DTokens.Literal, x, y, 2, char.MinValue, "''", LiteralFormat.CharLiteral);
 			}
+			else if (ch >= 0xd800 && ch <= 0xdbff)
+			{
+				int nextch = reader.Read();
+				if (nextch < 0xdc00 || nextch > 0xdfff)
+					OnError(Line, Col, "Invalid unicode character");
+
+				int dchar = (((ch & 0x3ff) << 10) | (nextch & 0x3ff)) + 0x10000;
+				surrogatePair = new String((char)ch, 1) + (char)nextch; // String.Empty.dchar;
+			}
 
 			unchecked
 			{
