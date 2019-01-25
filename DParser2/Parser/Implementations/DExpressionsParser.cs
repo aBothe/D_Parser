@@ -1183,7 +1183,7 @@ namespace D_Parser.Parser.Implementations
 								Expect(DTokens.CloseParenthesis);
 								return callExp;
 							default:
-								if (bt is TypeOfDeclaration || bt is MemberFunctionAttributeDecl)
+								if (bt is TypeOfDeclaration || bt is TraitsDeclaration || bt is MemberFunctionAttributeDecl)
 									return TypeDeclarationExpression.TryWrap(bt);
 								break;
 						}
@@ -1412,7 +1412,7 @@ namespace D_Parser.Parser.Implementations
 				anonymousMethod.EndLocation = la.Location;
 		}
 
-		IExpression TraitsExpression(IBlockNode scope)
+		public IExpression TraitsExpression(IBlockNode scope)
 		{
 			Expect(DTokens.__traits);
 			var ce = new TraitsExpression() { Location = t.Location };

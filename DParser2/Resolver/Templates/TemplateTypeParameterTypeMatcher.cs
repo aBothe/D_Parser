@@ -313,6 +313,13 @@ namespace D_Parser.Resolver.Templates
 
 				return ResultComparer.IsImplicitlyConvertible(r, t_res);
 			}
+			public bool Visit(TraitsDeclaration t, ISemantic rr)
+			{
+				if (CheckForNonFinalArgument(rr))
+					return true;
+
+				throw new System.NotImplementedException (); //TODO
+			}
 
 			public bool Visit(VectorDeclaration v, ISemantic rr)
 			{
