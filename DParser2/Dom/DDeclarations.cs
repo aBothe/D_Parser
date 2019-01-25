@@ -289,7 +289,8 @@ namespace D_Parser.Dom
 
 		public override string ToString(bool IncludesBase)
 		{
-			return (IncludesBase && InnerDeclaration != null ? (InnerDeclaration.ToString() + " ") : "") + "__vector(" + (Id != null ? Id.ToString() : "") + ")";
+			string basetype = Id != null ? Id.ToString() : IdDeclaration != null ? IdDeclaration.ToString() : "";
+			return (IncludesBase && InnerDeclaration != null ? (InnerDeclaration.ToString() + " ") : "") + "__vector(" + basetype + ")";
 		}
 
 		public override void Accept(TypeDeclarationVisitor vis) => vis.Visit(this);
