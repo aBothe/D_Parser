@@ -53,7 +53,7 @@ namespace D_Parser.Dom.Visitors
 
 		static void Hash(ref long h, long prime, long v)	{	h = unchecked(prime * h + v);	}
 
-		static 
+		static
 		void Hash(ref long h, long prime, bool o)			{		Hash (ref h, prime, o ? 3L : 0);						}
 		static
 		void Hash(ref long h, long prime, object o)			{		Hash (ref h, prime, (o != null ? o.GetHashCode() : 0));	}
@@ -97,7 +97,7 @@ namespace D_Parser.Dom.Visitors
 			HashEnum (ref h, prime, n.Attributes);
 
 			return h;
-		}				
+		}
 
 		public long Visit(DEnumValue n)
 		{
@@ -1004,7 +1004,7 @@ namespace D_Parser.Dom.Visitors
 
 		public long Visit(TraitsDeclaration td)
 		{
-			const long prime = 1001593;
+			const long prime = 1001639;
 			var h = VisitTypeDeclaration(td, prime);
 
 			Hash(ref h, prime, td.Expression);
@@ -1028,7 +1028,7 @@ namespace D_Parser.Dom.Visitors
 			return VisitTypeDeclaration(td, 1001629);
 		}
 
-		// const long prime = 1001639;
+		// const long prime = 1001659; // next prime to take
 		#endregion
 
 		#region Resolved Types
@@ -1230,7 +1230,7 @@ namespace D_Parser.Dom.Visitors
 			const long prime = 1001981;
 			var h = VisitAbstractType (t, prime);
 
-			HashEnum (ref h, prime, t.Items, 
+			HashEnum (ref h, prime, t.Items,
 				(o) => o is ISymbolValue ? (o as ISymbolValue).Accept(Instance) : o is AbstractType ? (o as AbstractType).Accept(Instance) : 0, true);
 
 			return h;
@@ -1398,8 +1398,8 @@ namespace D_Parser.Dom.Visitors
 			const long prime = 1002247;
 			var h = VisitExpressionValue (v, prime);
 
-			HashEnum (ref h, prime, v.Elements, (kv) => 
-				((kv.Key != null ? kv.Key.Accept(Instance) : 0) ^ 
+			HashEnum (ref h, prime, v.Elements, (kv) =>
+				((kv.Key != null ? kv.Key.Accept(Instance) : 0) ^
 					(kv.Value != null ? kv.Value.Accept(Instance) : 0))
 			);
 
@@ -1434,7 +1434,7 @@ namespace D_Parser.Dom.Visitors
 
 		long VisitReferenceValue(ReferenceValue v, long prime)
 		{
-			return VisitExpressionValue(v, prime); 
+			return VisitExpressionValue(v, prime);
 		}
 
 		public long VisitVariableValue (VariableValue v)
