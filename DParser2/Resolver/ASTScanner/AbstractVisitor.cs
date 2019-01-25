@@ -145,16 +145,20 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 				var dm = curScope as DMethod;
 
 				// Add 'out' variable if typing in the out test block currently
-				if (dm.OutResultVariable != null && dm.Out != null && dm.GetSubBlockAt(Caret) == dm.Out)
-					HandleItemInternal(new DVariable
-					{ // Create pseudo variable
-						NameHash = dm.OutResultVariable.IdHash,
-						NameLocation = dm.OutResultVariable.Location,
-						Type = dm.Type, // TODO: What to do on auto functions?
-						Parent = dm,
-						Location = dm.OutResultVariable.Location,
-						EndLocation = dm.OutResultVariable.EndLocation
-					}, parms);
+				for (int c = 0; c < dm.Contracts.Count(); c++)
+				{
+					var contract = dm.Contracts[c];
+					if (contract.isOut && contract.OutResultVariable != null && dm.GetSubBlockAt(Caret) == contract.ScopedStatement)
+						HandleItemInternal(new DVariable
+						{ // Create pseudo variable
+							NameHash = contract.OutResultVariable.IdHash,
+							NameLocation = contract.OutResultVariable.Location,
+							Type = dm.Type, // TODO: What to do on auto functions?
+							Parent = dm,
+							Location = contract.OutResultVariable.Location,
+							EndLocation = contract.OutResultVariable.EndLocation
+						}, parms);
+				}
 
 				HandleItems(dm.Parameters, parms);
 

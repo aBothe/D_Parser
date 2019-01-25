@@ -280,7 +280,7 @@ namespace D_Parser.Dom
 	}
 
 	/// <summary>
-	/// typeof(...)
+	/// __traits(...)
 	/// </summary>
 	public class TraitsDeclaration : AbstractTypeDeclaration
 	{

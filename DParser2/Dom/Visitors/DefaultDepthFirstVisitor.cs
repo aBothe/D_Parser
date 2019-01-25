@@ -53,15 +53,10 @@ namespace D_Parser.Dom
 			foreach (var par in n.Parameters)
 				par.Accept(this);
 
-			if (n.In != null)
-				n.In.Accept(this);
+			for (int c = 0; c < n.Contracts.Count; c++)
+				n.Contracts[c].Accept(this);
 			if (n.Body != null)
 				n.Body.Accept(this);
-			if (n.Out != null)
-				n.Out.Accept(this);
-
-			if (n.OutResultVariable != null)
-				n.OutResultVariable.Accept(this);
 		}
 
 		public virtual void Visit(DClassLike n)
@@ -463,6 +458,19 @@ namespace D_Parser.Dom
 			VisitAbstractStmt(s);
 
 			s.Expression.Accept(this);
+		}
+
+		public virtual void Visit(Statements.ContractStatement s)
+		{
+			VisitAbstractStmt(s);
+
+			if (s.Expression != null)
+				s.Expression.Accept(this);
+			else
+				s.ScopedStatement.Accept(this);
+
+			if (s.OutResultVariable != null)
+				s.OutResultVariable.Accept(this);
 		}
 
 		public virtual void Visit(Statements.DeclarationStatement s)

@@ -1394,6 +1394,30 @@ void anonClassFoo()
 			Assert.That(attr[0] is AtAttribute);
 		}
 
+		[Test]
+		public void ParseContracts()
+		{
+			var m = DParser.ParseString(@"module A;
+int fun(int x, int y)
+in(x > 0)
+out(r; r > 0)
+in(y > 0)
+out(; x > y)
+in { assert(y > 0); }
+out(r) { assert(r > 0); }
+out { assert(x > y); }
+do
+{
+	return x + y * y;
+}");
+			Assert.That(m.ParseErrors.Count, Is.EqualTo(0));
+			var fun = m["fun"].First() as DMethod;
+			Assert.That(fun.Contracts.Count == 7);
+			Assert.That(fun.Contracts[0].ToString(), Is.EqualTo("in(x>0)"));
+			Assert.That(fun.Contracts[1].ToString(), Is.EqualTo("out(r; r>0)"));
+			Assert.That(fun.Contracts[3].ToString(), Is.EqualTo("out(; x>y)"));
+		}
+
 		#region DDoc
 
 		[Test]

@@ -451,6 +451,11 @@ namespace D_Parser.Dom.Visitors
 			return 1000697;
 		}
 
+		public long Visit(Statements.ContractStatement contractStatement)
+		{
+			return 1000699; // other PRIME
+		}
+
 		public long Visit(Statements.DeclarationStatement declarationStatement)
 		{
 			return 1000721;

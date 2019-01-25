@@ -170,6 +170,7 @@ namespace D_Parser.Dom
 		void Visit(StatementCondition s);
 		void Visit(VolatileStatement s);
 		void Visit(ExpressionStatement s);
+		void Visit(ContractStatement s);
 		void Visit(DeclarationStatement s);
 		void Visit(TemplateMixin s);
 		void Visit(DebugSpecification s);
@@ -214,6 +215,7 @@ namespace D_Parser.Dom
 		R Visit(StatementCondition s);
 		R Visit(VolatileStatement s);
 		R Visit(ExpressionStatement s);
+		R Visit(ContractStatement s);
 		R Visit(DeclarationStatement s);
 		R Visit(TemplateMixin s);
 		R Visit(DebugSpecification s);
