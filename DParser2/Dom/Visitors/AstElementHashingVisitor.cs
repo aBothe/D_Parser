@@ -995,19 +995,9 @@ namespace D_Parser.Dom.Visitors
 		public long Visit(TypeOfDeclaration td)
 		{
 			const long prime = 1001593;
-			var h = VisitTypeDeclaration(td, prime);
+			var h = VisitTypeDeclaration (td, prime);
 
-			Hash(ref h, prime, td.Expression);
-
-			return h;
-		}
-
-		public long Visit(TraitsDeclaration td)
-		{
-			const long prime = 1001593;
-			var h = VisitTypeDeclaration(td, prime);
-
-			Hash(ref h, prime, td.Expression);
+			Hash (ref h, prime, td.Expression);
 
 			return h;
 		}

@@ -366,7 +366,6 @@ namespace D_Parser.Dom
 		void Visit(PointerDecl td);
 		void Visit(MemberFunctionAttributeDecl td);
 		void Visit(TypeOfDeclaration td);
-		void Visit(TraitsDeclaration td);
 		void Visit(VectorDeclaration td);
 		void Visit(VarArgDecl td);
 
@@ -382,7 +381,6 @@ namespace D_Parser.Dom
 		R Visit(PointerDecl td);
 		R Visit(MemberFunctionAttributeDecl td);
 		R Visit(TypeOfDeclaration td);
-		R Visit(TraitsDeclaration td);
 		R Visit(VectorDeclaration td);
 		R Visit(VarArgDecl td);
 		R Visit(TemplateInstanceExpression td);
@@ -397,7 +395,6 @@ namespace D_Parser.Dom
 		R Visit(PointerDecl td, ParameterType parameter);
 		R Visit(MemberFunctionAttributeDecl td, ParameterType parameter);
 		R Visit(TypeOfDeclaration td, ParameterType parameter);
-		R Visit(TraitsDeclaration td, ParameterType parameter);
 		R Visit(VectorDeclaration td, ParameterType parameter);
 		R Visit(VarArgDecl td, ParameterType parameter);
 		R Visit(TemplateInstanceExpression td, ParameterType parameter);

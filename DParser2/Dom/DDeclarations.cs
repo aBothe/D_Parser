@@ -280,24 +280,6 @@ namespace D_Parser.Dom
 	}
 
 	/// <summary>
-	/// typeof(...)
-	/// </summary>
-	public class TraitsDeclaration : AbstractTypeDeclaration
-	{
-		public IExpression Expression;
-
-		public override string ToString(bool IncludesBase)
-		{
-			return Expression.ToString();
-		}
-
-		public override void Accept(TypeDeclarationVisitor vis) => vis.Visit(this);
-		public override R Accept<R>(TypeDeclarationVisitor<R> vis) => vis.Visit(this);
-		public override R Accept<R, ParameterType>(ITypeDeclarationVisitor<R, ParameterType> vis, ParameterType parameter)
-			=> vis.Visit(this, parameter);
-	}
-
-	/// <summary>
 	/// __vector(...)
 	/// </summary>
 	public class VectorDeclaration : AbstractTypeDeclaration

@@ -478,15 +478,6 @@ namespace D_Parser.Parser.Implementations
 				Step();
 			}
 
-			else if (laKind == DTokens.__traits)
-			{
-				var te = parserParts.expressionsParser.TraitsExpression(scope);
-				td = new TypeOfDeclaration { Location = t.Location, Expression = te };
-				if (laKind != DTokens.Dot)
-					return td;
-				Step();
-			}
-
 			if (AllowWeakTypeParsing && laKind != DTokens.Identifier)
 				return null;
 

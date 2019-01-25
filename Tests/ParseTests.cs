@@ -144,13 +144,6 @@ auto sourceCode = q{~this(){}}c;
 		}
 
 		[Test]
-		public void TestSyntaxError8()
-		{
-			var mod = DParser.ParseString(@"static if (is(__traits(parent, A) : __traits(parent, B))) {}");
-			Assert.That(mod.ParseErrors.Count, Is.EqualTo(0));
-		}
-
-		[Test]
 		public void TestSyntaxError3()
 		{
 			DModule mod;

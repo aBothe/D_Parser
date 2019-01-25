@@ -146,12 +146,6 @@ namespace D_Parser.Resolver.TypeResolution
 			return null;
 		}
 
-		public AbstractType Visit(TraitsDeclaration td)
-		{
-			filterTemplates = true;
-			return null; // TODO
-		}
-
 		public AbstractType Visit (VectorDeclaration td)
 		{
 			filterTemplates = true;

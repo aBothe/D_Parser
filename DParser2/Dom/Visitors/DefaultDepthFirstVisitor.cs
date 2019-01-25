@@ -946,14 +946,6 @@ namespace D_Parser.Dom
 				td.Expression.Accept(this);
 		}
 
-		public virtual void Visit(TraitsDeclaration td)
-		{
-			VisitInner(td);
-
-			if (td.Expression != null)
-				td.Expression.Accept(this);
-		}
-
 		public virtual void Visit(VectorDeclaration td)
 		{
 			VisitInner(td);
