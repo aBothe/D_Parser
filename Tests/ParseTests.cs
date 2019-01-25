@@ -172,6 +172,16 @@ auto sourceCode = q{~this(){}}c;
 		}
 
 		[Test]
+		public void TestIsVector()
+		{
+			var mod = DParser.ParseString(@"alias T = int; static if (is(T == __vector) ) {}");
+			Assert.That(mod.ParseErrors.Count, Is.EqualTo(0));
+
+			var mod2 = DParser.ParseString(@"alias T = int; static if (is(T == __parameters) ) {}");
+			Assert.That(mod2.ParseErrors.Count, Is.EqualTo(0));
+		}
+
+		[Test]
 		public void TestAsmStorageClasses()
 		{
 			var mod = DParser.ParseString (@"void foo() {  asm @nogc nothrow { naked; } }");

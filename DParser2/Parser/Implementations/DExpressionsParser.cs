@@ -1099,6 +1099,8 @@ namespace D_Parser.Parser.Implementations
 						inout
 						shared
 							return
+							__vector
+							__parameters
 					*/
 
 					bool specialTest = false;
@@ -1118,6 +1120,8 @@ namespace D_Parser.Parser.Implementations
 							case DTokens.Immutable:
 							case DTokens.InOut:
 							case DTokens.Shared:
+							case DTokens.__vector:
+							case DTokens.__parameters:
 								specialTest = Peek(1).Kind == DTokens.CloseParenthesis || Lexer.CurrentPeekToken.Kind == DTokens.Comma;
 								break;
 							default:

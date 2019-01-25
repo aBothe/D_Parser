@@ -214,6 +214,22 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							res = retType_;
 					}
 					break;
+
+				case DTokens.__vector:
+					if (typeToCheck is DSymbol)
+					{
+						var vd = (typeToCheck as DSymbol).Definition.Type as VectorDeclaration;
+						if (vd != null)
+						{
+							r = true;
+							if (vd.IdDeclaration != null)
+								res = TypeDeclarationResolver.ResolveSingle(vd.IdDeclaration, ctxt);
+						}
+					}
+					break;
+
+				case DTokens.__parameters: // TODO
+					break;
 			}
 
 			return new Tuple<bool, AbstractType>(r, res);

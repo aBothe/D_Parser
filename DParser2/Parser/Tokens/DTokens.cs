@@ -229,7 +229,9 @@ namespace D_Parser.Parser
 		public const string IncompleteId = "<Incomplete>";
 		public static readonly int IncompleteIdHash = IncompleteId.GetHashCode();
 
-		public const byte MaxToken = 185;
+		public const byte __parameters = 185;
+
+		public const byte MaxToken = 186;
 
 
 		static readonly Dictionary<byte, string> Keywords = new Dictionary<byte, string> {
@@ -237,6 +239,7 @@ namespace D_Parser.Parser
 			// {__thread, "__thread"},
 			{ __traits, "__traits" },
 			{ __vector, "__vector" },
+			{ __parameters, "__parameters" },
 
 			{ __LINE__, "__LINE__" },
 			{ __FILE__, "__FILE__" },

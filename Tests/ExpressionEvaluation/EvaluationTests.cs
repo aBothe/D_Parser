@@ -470,7 +470,37 @@ post;
 			Assert.That(ds.Base, Is.TypeOf(typeof(PrimitiveType)));
 			Assert.That(!(ds.Base as PrimitiveType).HasModifiers);
 		}
-		
+
+		[Test]
+		public void IsExpressionVector()
+		{
+			var ctxt = ResolutionTests.CreateCtxt("A", @"module A;
+alias int4 = int[4];
+alias float4 = __vector(float[4]);
+static if(is(float4 == __vector) { enum float4_isvector = true; }
+static if(is(int4 == __vector) {} else { enum int4_isvector = false; }
+");
+
+			IExpression x;
+			AbstractType t;
+			DSymbol ds;
+			ISymbolValue v;
+
+			x = DParser.ParseExpression("float4_isvector");
+			(x as IdentifierExpression).Location = new CodeLocation(2, 3);
+			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
+			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			v = Evaluation.EvaluateValue(x, ctxt);
+			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			Assert.That((v as PrimitiveValue).Value, Is.EqualTo(1m));
+
+			x = DParser.ParseExpression("int4_isvector");
+			(x as IdentifierExpression).Location = new CodeLocation(2, 3);
+			v = Evaluation.EvaluateValue(x, ctxt);
+			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
+			Assert.That((v as PrimitiveValue).Value, Is.EqualTo(0m));
+		}
+
 		[Test]
 		public void HashingTests()
 		{
