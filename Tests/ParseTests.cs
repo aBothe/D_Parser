@@ -1401,8 +1401,8 @@ void anonClassFoo()
 int fun(int x, int y)
 in(x > 0)
 out(r; r > 0)
-in(y > 0)
-out(; x > y)
+in(y > 0, `message`)
+out(; x > y, to!string(x))
 in { assert(y > 0); }
 out(r) { assert(r > 0); }
 out { assert(x > y); }
@@ -1414,8 +1414,9 @@ do
 			var fun = m["fun"].First() as DMethod;
 			Assert.That(fun.Contracts.Count == 7);
 			Assert.That(fun.Contracts[0].ToString(), Is.EqualTo("in(x>0)"));
-			Assert.That(fun.Contracts[1].ToString(), Is.EqualTo("out(r; r>0)"));
-			Assert.That(fun.Contracts[3].ToString(), Is.EqualTo("out(; x>y)"));
+			Assert.That(fun.Contracts[1].ToString(), Is.EqualTo("out(r;r>0)"));
+			Assert.That(fun.Contracts[2].ToString(), Is.EqualTo("in(y>0,r\"message\")"));
+			Assert.That(fun.Contracts[3].ToString(), Is.EqualTo("out(;x>y,to!string(x))"));
 		}
 
 		#region DDoc

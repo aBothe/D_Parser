@@ -653,7 +653,7 @@ namespace D_Parser.Resolver.ASTScanner
 
 			public bool Visit(ContractStatement s)
 			{
-				if (s.Expression != null)
+				if (s.Condition != null)
 					return VisitExpressionStmt(s);
 				else
 					return VisitSubStatements(s);

@@ -446,7 +446,12 @@ namespace D_Parser.Parser.Implementations
 					{
 						// in(expr)
 						Step();
-						contractStmt.Expression = parserParts.expressionsParser.Expression(par);
+						contractStmt.Condition = parserParts.expressionsParser.Expression(par);
+						if (laKind == DTokens.Comma)
+						{
+							Step();
+							contractStmt.Message = parserParts.expressionsParser.Expression(par);
+						}
 						Expect(DTokens.CloseParenthesis);
 					}
 					else
@@ -470,7 +475,12 @@ namespace D_Parser.Parser.Implementations
 						{
 							// out(res; expr)
 							Step();
-							contractStmt.Expression = parserParts.expressionsParser.Expression(par);
+							contractStmt.Condition = parserParts.expressionsParser.Expression(par);
+							if (laKind == DTokens.Comma)
+							{
+								Step();
+								contractStmt.Message = parserParts.expressionsParser.Expression(par);
+							}
 							Expect(DTokens.CloseParenthesis);
 						}
 						else

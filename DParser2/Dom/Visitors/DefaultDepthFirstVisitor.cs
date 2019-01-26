@@ -464,9 +464,11 @@ namespace D_Parser.Dom
 		{
 			VisitAbstractStmt(s);
 
-			if (s.Expression != null)
-				s.Expression.Accept(this);
-			else
+			if (s.Condition != null)
+				s.Condition.Accept(this);
+			if (s.Message != null)
+				s.Message.Accept(this);
+			if (s.ScopedStatement != null)
 				s.ScopedStatement.Accept(this);
 
 			if (s.OutResultVariable != null)

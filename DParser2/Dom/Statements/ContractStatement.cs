@@ -5,21 +5,25 @@ namespace D_Parser.Dom.Statements
 {
 	public class ContractStatement : StatementContainingStatement, IExpressionContainingStatement
 	{
-		public IExpression Expression;
+		public IExpression Condition;
+		public IExpression Message;
 		public bool isOut; // true for Out
 		public IdentifierDeclaration OutResultVariable;
 
 		public override string ToCode()
 		{
 			string s = isOut ? "out" : "in";
-			if (Expression != null)
+			if (Condition != null)
 			{
 				s += "(";
 				if (OutResultVariable != null)
 					s += OutResultVariable.ToString();
 				if (isOut)
-					s += "; ";
-				s += Expression.ToString() + ")";
+					s += ";";
+				s += Condition.ToString();
+				if (Message != null)
+					s += "," + Message.ToString();
+				s += ")";
 			}
 			else if (ScopedStatement != null)
 			{
@@ -32,7 +36,13 @@ namespace D_Parser.Dom.Statements
 
 		public IExpression[] SubExpressions
 		{
-			get { return Expression != null ? new[] { Expression } : new Expression[0]; }
+			get {
+				if (Condition != null && Message != null)
+					return new[] { Condition, Message };
+				if (Condition != null)
+					return new[] { Condition };
+				return new Expression[0];
+			}
 		}
 
 		public override void Accept(IStatementVisitor vis)
