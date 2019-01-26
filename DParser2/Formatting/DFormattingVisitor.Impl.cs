@@ -230,12 +230,10 @@ namespace D_Parser.Formatting
 			}
 			
 			// Visit body parts
-			if (n.In != null)
-				n.In.Accept (this);
+			for (int c = 0; c < n.Contracts.Count; c++)
+				n.Contracts[c].Accept (this);
 			if (n.Body != null)
 				n.Body.Accept (this);
-			if (n.Out != null)
-				n.Out.Accept (this);
 
 			if (!n.IsAnonymous)
 				EnsureBlankLinesAfter (n.EndLocation, policy.LinesAfterNode);

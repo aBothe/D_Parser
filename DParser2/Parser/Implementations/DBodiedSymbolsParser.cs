@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using D_Parser.Dom;
+using D_Parser.Dom.Statements;
 
 namespace D_Parser.Parser.Implementations
 {
@@ -434,35 +435,68 @@ namespace D_Parser.Parser.Implementations
 			var stk_Backup = BlockAttributes;
 			BlockAttributes = new Stack<DAttribute>();
 
-			while (
-				(laKind == DTokens.In && par.In == null) ||
-				(laKind == DTokens.Out && par.Out == null))
+			while (laKind == DTokens.In || laKind == DTokens.Out)
 			{
-				if (laKind == DTokens.In)
+				bool inOut = laKind == DTokens.Out;
+				Step();
+				var contractStmt = new ContractStatement() { isOut = inOut, Location = t.Location };
+				if (!inOut)
 				{
-					Step();
-					par.InToken = t.Location;
-
-					par.In = parserParts.statementParser.BlockStatement(par);
-				}
-
-				if (laKind == DTokens.Out)
-				{
-					Step();
-					par.OutToken = t.Location;
-
 					if (laKind == DTokens.OpenParenthesis)
 					{
+						// in(expr)
 						Step();
-						if (Expect(DTokens.Identifier))
+						contractStmt.Condition = parserParts.expressionsParser.Expression(par);
+						if (laKind == DTokens.Comma)
 						{
-							par.OutResultVariable = new IdentifierDeclaration(t.Value) { Location = t.Location, EndLocation = t.EndLocation };
+							Step();
+							contractStmt.Message = parserParts.expressionsParser.Expression(par);
 						}
 						Expect(DTokens.CloseParenthesis);
 					}
-
-					par.Out = parserParts.statementParser.BlockStatement(par);
+					else
+					{
+						// in { stmt; }
+						contractStmt.ScopedStatement = parserParts.statementParser.BlockStatement(par);
+					}
 				}
+				else
+				{
+					if (laKind == DTokens.OpenParenthesis)
+					{
+						Step();
+						if (laKind == DTokens.Identifier)
+						{
+							// out(res
+							Step();
+							contractStmt.OutResultVariable = new IdentifierDeclaration(t.Value) { Location = t.Location, EndLocation = t.EndLocation };
+						}
+						if (laKind == DTokens.Semicolon)
+						{
+							// out(res; expr)
+							Step();
+							contractStmt.Condition = parserParts.expressionsParser.Expression(par);
+							if (laKind == DTokens.Comma)
+							{
+								Step();
+								contractStmt.Message = parserParts.expressionsParser.Expression(par);
+							}
+							Expect(DTokens.CloseParenthesis);
+						}
+						else
+						{
+							// out(res) { stmt; }
+							Expect(DTokens.CloseParenthesis);
+							contractStmt.ScopedStatement = parserParts.statementParser.BlockStatement(par);
+						}
+					}
+					else
+					{
+						// out { stmt; }
+						contractStmt.ScopedStatement = parserParts.statementParser.BlockStatement(par);
+					}
+				}
+				par.Contracts.Add(contractStmt);
 			}
 
 			// Although there can be in&out constraints, there doesn't have to be a direct body definition. Used on abstract class/interface methods.
@@ -472,8 +506,7 @@ namespace D_Parser.Parser.Implementations
 				par.BodyToken = t.Location;
 			}
 
-			if ((par.In == null && par.Out == null) ||
-				laKind == DTokens.OpenCurlyBrace)
+			if (par.Contracts.Count == 0 || laKind == DTokens.OpenCurlyBrace)
 			{
 				par.Body = parserParts.statementParser.BlockStatement(par);
 			}

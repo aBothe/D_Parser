@@ -289,6 +289,10 @@ namespace D_Parser.Resolver.ExpressionSemantics.CTFE
 			EvaluateExpression(expressionStatement.Expression);
 		}
 
+		public void Visit(ContractStatement contractStatement)
+		{
+		}
+
 		public void Visit(DeclarationStatement declarationStatement)
 		{
 			foreach (var declaration in declarationStatement.Declarations)

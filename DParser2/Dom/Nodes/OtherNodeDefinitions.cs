@@ -71,9 +71,6 @@ namespace D_Parser.Dom
 		public readonly List<INode> Parameters = new List<INode>();
 		public MethodType SpecialType = MethodType.Normal;
 
-		BlockStatement _In;
-		BlockStatement _Out;
-		public IdentifierDeclaration OutResultVariable;
 		BlockStatement _Body;
 
 		readonly NodeDictionary children;
@@ -91,14 +88,15 @@ namespace D_Parser.Dom
 
 		public BlockStatement GetSubBlockAt(CodeLocation Where)
 		{
-			if (_In != null && _In.Location <= Where && _In.EndLocation >= Where)
-				return _In;
-
-			if (_Out != null && _Out.Location <= Where && _Out.EndLocation >= Where)
-				return _Out;
-
 			if (_Body != null && _Body.Location <= Where && _Body.EndLocation >= Where)
 				return _Body;
+
+			for (int c = 0; c < Contracts.Count; c++)
+			{
+				var contract = Contracts[c].ScopedStatement;
+				if (contract != null && contract.Location <= Where && contract.EndLocation >= Where)
+					return contract as BlockStatement;
+			}
 
 			return null;
 		}
@@ -112,8 +110,8 @@ namespace D_Parser.Dom
 				Parameters.Clear();
 				Parameters.AddRange(dm.Parameters);
 				SpecialType = dm.SpecialType;
-				_In = dm._In;
-				_Out = dm._Out;
+				Contracts.Clear();
+				Contracts.AddRange(dm.Contracts);
 				_Body = dm._Body;
 				children.Clear ();
 				children.AddRange(dm.children);
@@ -126,8 +124,7 @@ namespace D_Parser.Dom
 		public CodeLocation OutToken;
 		public CodeLocation BodyToken;
 		
-		public BlockStatement In { get { return _In; } set { _In = value; } }
-		public BlockStatement Out { get { return _Out; } set { _Out = value; } }
+		public List<ContractStatement> Contracts = new List<ContractStatement>();
 		public BlockStatement Body { get { return _Body; } set { _Body = value; } }
 
 		public NodeDictionary Children
@@ -163,13 +160,9 @@ namespace D_Parser.Dom
 		{
 			get
 			{
-				if (_In != null && _Out != null)
-					return _In.Location < _Out.Location ? _In.Location : _Out.Location;
-				else if (_In != null)
-					return _In.Location;
-				else if (_Out != null)
-					return _Out.Location;
-				else if (_Body != null)
+				if (Contracts.Count > 0)
+					return Contracts[0].Location;
+				if (_Body != null)
 					return _Body.Location;
 
 				return CodeLocation.Empty;

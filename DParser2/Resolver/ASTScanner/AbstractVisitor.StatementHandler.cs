@@ -651,6 +651,14 @@ namespace D_Parser.Resolver.ASTScanner
 				return VisitExpressionStmt(s);
 			}
 
+			public bool Visit(ContractStatement s)
+			{
+				if (s.Condition != null)
+					return VisitExpressionStmt(s);
+				else
+					return VisitSubStatements(s);
+			}
+
 			public bool Visit(DeclarationStatement s)
 			{
 				if (s.Declarations != null)
