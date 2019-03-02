@@ -98,7 +98,27 @@ namespace D_Parser.Resolver
 		void VisitDSymbol(DSymbol t)
 		{
 			var def = t.Definition;
-			sb.Append(def != null ? def.ToString(false, true) : "<Node object no longer exists>");
+			if (def == null)
+				sb.Append("<Node object no longer exists>");
+			else
+			{
+				sb.Append(def.Name);
+				if (def.TemplateParameters != null)
+				{
+					// TODO: to match dmd, do not emit "()" if argument is
+					//  string, basic type, single (unresolved) identifier,
+					//  number, "null" or "this"
+					sb.Append("!(");
+					if (t.DeducedTypes.Count() > 0)
+						AcceptType(t.DeducedTypes[0]);
+					for (int i = 1; i < t.DeducedTypes.Count(); i++)
+					{
+						sb.Append(", ");
+						AcceptType(t.DeducedTypes[i]);
+					}
+					sb.Append(")");
+				}
+			}
 		}
 
 		public void VisitAliasedType(AliasedType t)

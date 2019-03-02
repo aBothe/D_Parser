@@ -104,8 +104,8 @@ namespace D_Parser.Resolver
 					var t = AbstractType.Get(v);
 					if(t == null)
 						return new NullValue();
-					return new ArrayValue(Evaluation.GetStringLiteralType(ctxt),
-						t is DSymbol symbol ? symbol.Definition.Name : t.ToCode());
+					var code = DTypeToCodeVisitor.GenerateCode(t, false);
+					return new ArrayValue(Evaluation.GetStringLiteralType(ctxt), code);
 				}
 			});
 
