@@ -673,7 +673,10 @@ enum isIntOrFloat(F) = is(F == int) || is(F == float);
 		{
 			var ctxt = ResolutionTestHelper.CreateDefCtxt(@"module A;
 struct S1 {int a; bool b;}
-struct C1 {string s;}");
+struct C1 {string s;}
+struct T1(A) {A x; }
+alias AL1 = T1!int;
+alias AL2 = T1!AL1;");
 
 			{
 				var v = E("S1.tupleof.stringof", ctxt);
@@ -689,6 +692,22 @@ struct C1 {string s;}");
 				var arrayValue = v as ArrayValue;
 				Assert.That(arrayValue.IsString);
 				Assert.That(arrayValue.StringValue, Is.EqualTo("tuple(s)"));
+			}
+
+			{
+				var v = E("AL1.stringof", ctxt);
+				Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+				var arrayValue = v as ArrayValue;
+				Assert.That(arrayValue.IsString);
+				Assert.That(arrayValue.StringValue, Is.EqualTo("T1!(int)"));
+			}
+
+			{
+				var v = E("AL2.stringof", ctxt);
+				Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+				var arrayValue = v as ArrayValue;
+				Assert.That(arrayValue.IsString);
+				Assert.That(arrayValue.StringValue, Is.EqualTo("T1!(T1!(int))"));
 			}
 		}
 
