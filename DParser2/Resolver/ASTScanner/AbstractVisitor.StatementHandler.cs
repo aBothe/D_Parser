@@ -763,7 +763,15 @@ namespace D_Parser.Resolver.ASTScanner
 				if(s.ForeachTypeList == null || s.ForeachTypeList.Length == 0)
 					return Visit(s as ForeachStatement);
 
-				var  keyValues = DetermineForeachKeyValuePairs(s);
+				if (!caretInsensitive)
+				{
+					if (s.IsRangeStatement && Caret < s.UpperAggregate.EndLocation)
+						return false;
+					else if (!s.IsRangeStatement && Caret < s.Aggregate.EndLocation)
+						return false;
+				}
+
+				var keyValues = DetermineForeachKeyValuePairs(s);
 				if(keyValues == null)
 					return Visit(s as ForeachStatement);
 

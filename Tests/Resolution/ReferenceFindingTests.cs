@@ -184,5 +184,32 @@ struct StructB
 				}
 			return null;
 		}
+
+		[Test]
+		public void StaticForeach_StackOverflow()
+		{
+			var modA = DParser.ParseString(@"module modA;
+alias PageBits = size_t[4];
+
+void sweep()
+{
+    Pool* pool = null;
+    static foreach (w; 0 .. PageBits.length) {
+	}
+
+    if (pool.data) {}
+}");
+			var rootpkgs = new RootPackage[0];
+			var ed = new EditorData
+			{
+				SyntaxTree = modA,
+				ParseCache = new LegacyParseCacheView(rootpkgs)
+			};
+
+			// no timeout
+			var cancelTokenSource = new System.Threading.CancellationTokenSource();
+			var res = TypeReferenceFinder.Scan(ed, cancelTokenSource.Token, true, null);
+			Assert.That(res.Count, Is.GreaterThan(4)); // PageBits, sweep, pool, PageBits?, data
+		}
 	}
 }
