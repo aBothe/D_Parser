@@ -223,8 +223,8 @@ namespace D_Parser.Resolver.Templates
 		{
 			var l = new List<ISemantic>();
 
-			if (parameter is DTuple)
-				foreach (var arg in (parameter as DTuple).Items)
+			if (parameter is DTuple tpl && tpl.Items != null)
+				foreach (var arg in tpl.Items)
 					if (arg is DTuple) // If a type tuple was given already, add its items instead of the tuple itself
 					{
 						var tt = arg as DTuple;

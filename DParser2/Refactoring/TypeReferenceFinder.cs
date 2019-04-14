@@ -571,9 +571,16 @@ namespace D_Parser.Refactoring
 					var kind = TypeReferenceKind.MemberVariable;
 					if (resolveTypes)
 					{
-						var type = LooseResolution.ResolveTypeLoosely(editorData, x, out _, false);
-						if(type != null)
-							kind = type.Accept(typeTypeDet);
+						try
+						{
+							var type = LooseResolution.ResolveTypeLoosely(editorData, x, out _, false);
+							if (type != null)
+								kind = type.Accept(typeTypeDet);
+						}
+						catch (Exception)
+						{
+							// avoid cancelling everything if it fails for some, e.g. System.NotImplementedException
+						}
 					}
 					AddResult(id, kind);
 				}

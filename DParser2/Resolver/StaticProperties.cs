@@ -145,7 +145,7 @@ namespace D_Parser.Resolver
 			ValueGetter = 
 				(ctxt, state, v) =>
 				{
-					if (v is VariableValue vv)
+					if (state != null && v is VariableValue vv)
 						v = state.GetLocalValue(vv.Variable);
 					var av = v as ArrayValue;
 					return new PrimitiveValue(av?.Length ?? 0);
@@ -414,7 +414,7 @@ namespace D_Parser.Resolver
 				case TemplateParameterSymbol tps when (tps.Parameter is TemplateThisParameter parameter ?
 					parameter.FollowParameter : tps.Parameter) is TemplateTupleParameter:
 					return PropOwnerType.TypeTuple;
-				case MemberSymbol symbol when symbol.Definition.Parent is DClassLike ms && ms.ClassType == DTokens.Struct:
+				case MemberSymbol symbol when symbol.Definition?.Parent is DClassLike ms && ms.ClassType == DTokens.Struct:
 					return PropOwnerType.StructElement;
 				case MemberSymbol symbol:
 					return GetOwnerType(symbol.Base);
@@ -431,6 +431,9 @@ namespace D_Parser.Resolver
 
 		static void GetLookedUpType(ref AbstractType t)
 		{
+			while (t is MemberSymbol ms && ms.Base != null)
+				t = ms.Base;
+
 			while (t is AliasedType || t is PointerType)
 				t = (t as DerivedDataType).Base;
 
