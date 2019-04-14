@@ -7,6 +7,8 @@ namespace D_Parser.Dom.Statements
     {
         public DAttribute[] Attributes { get; set; }
 
+        public bool inSemanticAnalysis = false;
+
         public override string ToCode()
         {
             return "static " + base.ToCode();
