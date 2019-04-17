@@ -711,6 +711,22 @@ alias AL2 = T1!AL1;");
 			}
 		}
 
+		[Test]
+		[Ignore("TODO")]
+		public void StaticProperty_AlignOf()
+		{
+			var ctxt = ResolutionTestHelper.CreateDefCtxt(@"module A;
+class B(TemplateParam){
+enum align_of = TemplateParam.alignof;
+}
+B!int b;");
+			var x = DParser.ParseExpression("b.align_of");
+			var v = Evaluation.EvaluateValue(x, ctxt);
+			Assert.That(v, Is.TypeOf<PrimitiveValue>());
+			var pv = v as PrimitiveValue;
+			Assert.That(pv.Value, Is.EqualTo(4m));
+		}
+
 		/// <summary>
 		/// https://dlang.org/spec/enum.html#named_enums
 		/// </summary>
