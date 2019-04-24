@@ -211,5 +211,28 @@ void sweep()
 			var res = TypeReferenceFinder.Scan(ed, cancelTokenSource.Token, true, null);
 			Assert.That(res.Count, Is.GreaterThan(4)); // PageBits, sweep, pool, PageBits?, data
 		}
+
+		[Test]
+		public void StaticForeach_StackOverflowDecl()
+		{
+			var modA = DParser.ParseString(@"module modA;
+alias PageBits = size_t[4];
+
+static foreach (w; 0 .. PageBits.length) {
+	alias X = typeof(xy);
+}
+");
+			var rootpkgs = new RootPackage[0];
+			var ed = new EditorData
+			{
+				SyntaxTree = modA,
+				ParseCache = new LegacyParseCacheView(rootpkgs)
+			};
+
+			// no timeout
+			var cancelTokenSource = new System.Threading.CancellationTokenSource();
+			var res = TypeReferenceFinder.Scan(ed, cancelTokenSource.Token, true, null);
+			Assert.That(res.Count, Is.GreaterThan(2)); // X, PageBits, length
+		}
 	}
 }
