@@ -36,6 +36,8 @@ using System.Threading;
 
 namespace D_Parser.Refactoring
 {
+	using TypeReferenceDictionary = Dictionary<int, LazyTypeReferenceKind>;
+
 	public enum TypeReferenceKind : byte
 	{
 		Unknown,
@@ -60,9 +62,42 @@ namespace D_Parser.Refactoring
 
 		Alias,
 		Module,
+		Package = Module, // TODO
 		Function,
 		Method,
 		BasicType,
+	}
+
+	struct LazyTypeReferenceKind
+	{
+		private TypeReferenceKind kind;
+		private TypeReferenceFinder refFinder;
+		private DVariable node;
+
+		public LazyTypeReferenceKind(TypeReferenceKind k, TypeReferenceFinder finder, DVariable n)
+		{
+			kind = k;
+			refFinder = finder;
+			node = n;
+		}
+
+		public TypeReferenceKind get()
+		{
+			if (refFinder != null && node != null)
+			{
+				TypeReferenceKind k = refFinder.ResolveNodeType(node);
+				refFinder = null;
+				node = null;
+				if (k != TypeReferenceKind.Unknown)
+					kind = k;
+			}
+			return kind;
+		}
+
+		public static implicit operator LazyTypeReferenceKind(TypeReferenceKind k)
+		{
+			return new LazyTypeReferenceKind(k, null, null);
+		}
 	}
 
 	public class TypeReferenceFinder : AbstractResolutionVisitor
@@ -70,7 +105,7 @@ namespace D_Parser.Refactoring
 		#region Properties
 		Dictionary<DeclarationCondition,int> handledConditions = new Dictionary<DeclarationCondition,int>();
 		readonly List<ISyntaxRegion> invalidConditionalCodeRegions;
-		readonly Dictionary<IBlockNode, Dictionary<int, TypeReferenceKind>> TypeCache = new Dictionary<IBlockNode, Dictionary<int, TypeReferenceKind>>();
+		readonly Dictionary<IBlockNode, TypeReferenceDictionary> TypeCache = new Dictionary<IBlockNode, TypeReferenceDictionary>();
 		List<DModule> importStack = new List<DModule>();
 		Dictionary<int, Dictionary<ISyntaxRegion, TypeReferenceKind>> Matches = new Dictionary<int, Dictionary<ISyntaxRegion, TypeReferenceKind>>();
 		IEditorData editorData;
@@ -109,7 +144,7 @@ namespace D_Parser.Refactoring
 		}
 		#endregion
 
-		struct NodeTypeDeterminer : NodeVisitor<TypeReferenceKind>
+		struct NodeTypeDeterminer : NodeVisitor<LazyTypeReferenceKind>
 		{
 			private TypeReferenceFinder refFinder;
 
@@ -118,23 +153,15 @@ namespace D_Parser.Refactoring
 				refFinder = rf;
 			}
 
-			public TypeReferenceKind Visit(DEnumValue n)
+			public LazyTypeReferenceKind Visit(DEnumValue n)
 			{
 				return TypeReferenceKind.EnumValue;
 			}
 
-			public TypeReferenceKind VisitDVariable(DVariable n)
+			public LazyTypeReferenceKind VisitDVariable(DVariable n)
 			{
 				if (n.IsAlias && !n.IsAliasThis)
-				{
-					if (n.Type != null && refFinder.resolveTypes)
-					{
-						var type = LooseResolution.ResolveTypeLoosely(refFinder.editorData, n.Type, out _, false);
-						if (type != null)
-							return type.Accept(refFinder.typeTypeDet);
-					}
-					return TypeReferenceKind.Alias;
-				}
+					return new LazyTypeReferenceKind(TypeReferenceKind.Alias, refFinder, n);
 				if (n.ContainsAnyAttribute(DTokens.Enum))
 					return TypeReferenceKind.Constant;
 				if (n.IsParameter)
@@ -152,7 +179,7 @@ namespace D_Parser.Refactoring
 				return TypeReferenceKind.Variable;
 			}
 
-			public TypeReferenceKind Visit(DMethod n)
+			public LazyTypeReferenceKind Visit(DMethod n)
 			{
 				if (n.Parent is DClassLike)
 					return TypeReferenceKind.Method;
@@ -160,7 +187,7 @@ namespace D_Parser.Refactoring
 					return TypeReferenceKind.Function;
 			}
 
-			public TypeReferenceKind Visit(DClassLike n)
+			public LazyTypeReferenceKind Visit(DClassLike n)
 			{
 				switch (n.ClassType)
 				{
@@ -173,98 +200,98 @@ namespace D_Parser.Refactoring
 				}
 			}
 
-			public TypeReferenceKind Visit(DEnum n)
+			public LazyTypeReferenceKind Visit(DEnum n)
 			{
 				return TypeReferenceKind.Enum;
 			}
 
-			public TypeReferenceKind Visit(DModule n)
+			public LazyTypeReferenceKind Visit(DModule n)
 			{
 				return TypeReferenceKind.Module;
 			}
 
-			public TypeReferenceKind Visit(DBlockNode dBlockNode)
+			public LazyTypeReferenceKind Visit(DBlockNode dBlockNode)
 			{
-				return 0;
+				return TypeReferenceKind.Function; // TODO
 			}
 
-			public TypeReferenceKind Visit(TemplateParameter.Node templateParameterNode)
+			public LazyTypeReferenceKind Visit(TemplateParameter.Node templateParameterNode)
 			{
 				return TypeReferenceKind.TemplateTypeParameter;
 			}
 
-			public TypeReferenceKind Visit(NamedTemplateMixinNode n)
+			public LazyTypeReferenceKind Visit(NamedTemplateMixinNode n)
 			{
 				return TypeReferenceKind.Template;
 			}
 
-			public TypeReferenceKind VisitAttribute(Modifier attr)
+			public LazyTypeReferenceKind VisitAttribute(Modifier attr)
 			{
 				throw new NotImplementedException();
 			}
 
-			public TypeReferenceKind VisitAttribute(DeprecatedAttribute a)
+			public LazyTypeReferenceKind VisitAttribute(DeprecatedAttribute a)
 			{
 				throw new NotImplementedException();
 			}
 
-			public TypeReferenceKind VisitAttribute(PragmaAttribute attr)
+			public LazyTypeReferenceKind VisitAttribute(PragmaAttribute attr)
 			{
 				throw new NotImplementedException();
 			}
 
-			public TypeReferenceKind VisitAttribute(BuiltInAtAttribute a)
+			public LazyTypeReferenceKind VisitAttribute(BuiltInAtAttribute a)
 			{
 				throw new NotImplementedException();
 			}
 
-			public TypeReferenceKind VisitAttribute(UserDeclarationAttribute a)
+			public LazyTypeReferenceKind VisitAttribute(UserDeclarationAttribute a)
 			{
 				throw new NotImplementedException();
 			}
 
-			public TypeReferenceKind VisitAttribute(VersionCondition a)
+			public LazyTypeReferenceKind VisitAttribute(VersionCondition a)
 			{
 				throw new NotImplementedException();
 			}
 
-			public TypeReferenceKind VisitAttribute(DebugCondition a)
+			public LazyTypeReferenceKind VisitAttribute(DebugCondition a)
 			{
 				throw new NotImplementedException();
 			}
 
-			public TypeReferenceKind VisitAttribute(StaticIfCondition a)
+			public LazyTypeReferenceKind VisitAttribute(StaticIfCondition a)
 			{
 				throw new NotImplementedException();
 			}
 
-			public TypeReferenceKind VisitAttribute(NegatedDeclarationCondition a)
+			public LazyTypeReferenceKind VisitAttribute(NegatedDeclarationCondition a)
 			{
 				throw new NotImplementedException();
 			}
 
-			public TypeReferenceKind Visit(EponymousTemplate ep)
+			public LazyTypeReferenceKind Visit(EponymousTemplate ep)
 			{
 				return TypeReferenceKind.Template;
 			}
 
-			public TypeReferenceKind Visit(ModuleAliasNode moduleAliasNode)
+			public LazyTypeReferenceKind Visit(ModuleAliasNode moduleAliasNode)
 			{
 				return TypeReferenceKind.Alias;
 			}
 
-			public TypeReferenceKind Visit(ImportSymbolNode importSymbolNode)
+			public LazyTypeReferenceKind Visit(ImportSymbolNode importSymbolNode)
 			{
 				return TypeReferenceKind.Alias;
 			}
 
-			public TypeReferenceKind Visit(ImportSymbolAlias importSymbolAlias)
+			public LazyTypeReferenceKind Visit(ImportSymbolAlias importSymbolAlias)
 			{
 				return TypeReferenceKind.Alias;
 			}
 		}
 
-		struct TypeTypeDeterminer : IResolvedTypeVisitor<TypeReferenceKind>
+		struct TypeTypeDeterminer : IResolvedTypeVisitor<LazyTypeReferenceKind>
 		{
 			private TypeReferenceFinder refFinder;
 
@@ -273,36 +300,36 @@ namespace D_Parser.Refactoring
 				refFinder = typeReferenceFinder;
 			}
 
-			public TypeReferenceKind VisitPrimitiveType(PrimitiveType t) => TypeReferenceKind.BasicType;
-			public TypeReferenceKind VisitPointerType(PointerType t) => TypeReferenceKind.BasicType;
-			public TypeReferenceKind VisitArrayType(ArrayType t) => TypeReferenceKind.BasicType;
-			public TypeReferenceKind VisitAssocArrayType(AssocArrayType t) => TypeReferenceKind.BasicType;
-			public TypeReferenceKind VisitDelegateCallSymbol(DelegateCallSymbol t) => TypeReferenceKind.BasicType;
-			public TypeReferenceKind VisitDelegateType(DelegateType t) => TypeReferenceKind.BasicType;
-			public TypeReferenceKind VisitAliasedType(AliasedType t) => TypeReferenceKind.BasicType;
-			public TypeReferenceKind VisitEnumType(EnumType t) => TypeReferenceKind.Enum;
-			public TypeReferenceKind VisitStructType(StructType t) => TypeReferenceKind.Struct;
-			public TypeReferenceKind VisitUnionType(UnionType t) => TypeReferenceKind.Union;
-			public TypeReferenceKind VisitClassType(ClassType t) => TypeReferenceKind.Class;
-			public TypeReferenceKind VisitInterfaceType(InterfaceType t) => TypeReferenceKind.Interface;
-			public TypeReferenceKind VisitTemplateType(TemplateType t) => TypeReferenceKind.Template;
-			public TypeReferenceKind VisitMixinTemplateType(MixinTemplateType t) => TypeReferenceKind.Template;
-			public TypeReferenceKind VisitEponymousTemplateType(EponymousTemplateType t) => TypeReferenceKind.Template;
-			public TypeReferenceKind VisitStaticProperty(StaticProperty t) => TypeReferenceKind.BasicType;
-			public TypeReferenceKind VisitMemberSymbol(MemberSymbol t)
+			public LazyTypeReferenceKind VisitPrimitiveType(PrimitiveType t) => TypeReferenceKind.BasicType;
+			public LazyTypeReferenceKind VisitPointerType(PointerType t) => TypeReferenceKind.BasicType;
+			public LazyTypeReferenceKind VisitArrayType(ArrayType t) => TypeReferenceKind.BasicType;
+			public LazyTypeReferenceKind VisitAssocArrayType(AssocArrayType t) => TypeReferenceKind.BasicType;
+			public LazyTypeReferenceKind VisitDelegateCallSymbol(DelegateCallSymbol t) => TypeReferenceKind.BasicType;
+			public LazyTypeReferenceKind VisitDelegateType(DelegateType t) => TypeReferenceKind.BasicType;
+			public LazyTypeReferenceKind VisitAliasedType(AliasedType t) => TypeReferenceKind.BasicType;
+			public LazyTypeReferenceKind VisitEnumType(EnumType t) => TypeReferenceKind.Enum;
+			public LazyTypeReferenceKind VisitStructType(StructType t) => TypeReferenceKind.Struct;
+			public LazyTypeReferenceKind VisitUnionType(UnionType t) => TypeReferenceKind.Union;
+			public LazyTypeReferenceKind VisitClassType(ClassType t) => TypeReferenceKind.Class;
+			public LazyTypeReferenceKind VisitInterfaceType(InterfaceType t) => TypeReferenceKind.Interface;
+			public LazyTypeReferenceKind VisitTemplateType(TemplateType t) => TypeReferenceKind.Template;
+			public LazyTypeReferenceKind VisitMixinTemplateType(MixinTemplateType t) => TypeReferenceKind.Template;
+			public LazyTypeReferenceKind VisitEponymousTemplateType(EponymousTemplateType t) => TypeReferenceKind.Template;
+			public LazyTypeReferenceKind VisitStaticProperty(StaticProperty t) => TypeReferenceKind.BasicType;
+			public LazyTypeReferenceKind VisitMemberSymbol(MemberSymbol t)
 			{
 				if (t.Definition != null)
 					return t.Definition.Accept(refFinder.nodeTypeDet);
 				return TypeReferenceKind.BasicType;
 			}
-			public TypeReferenceKind VisitTemplateParameterSymbol(TemplateParameterSymbol t) => TypeReferenceKind.TemplateTypeParameter;
-			public TypeReferenceKind VisitArrayAccessSymbol(ArrayAccessSymbol t) => TypeReferenceKind.BasicType;
-			public TypeReferenceKind VisitModuleSymbol(ModuleSymbol t) => TypeReferenceKind.Module;
-			public TypeReferenceKind VisitPackageSymbol(PackageSymbol t) => TypeReferenceKind.Module;
-			public TypeReferenceKind VisitDTuple(DTuple t) => TypeReferenceKind.BasicType;
+			public LazyTypeReferenceKind VisitTemplateParameterSymbol(TemplateParameterSymbol t) => TypeReferenceKind.TemplateTypeParameter;
+			public LazyTypeReferenceKind VisitArrayAccessSymbol(ArrayAccessSymbol t) => TypeReferenceKind.BasicType;
+			public LazyTypeReferenceKind VisitModuleSymbol(ModuleSymbol t) => TypeReferenceKind.Module;
+			public LazyTypeReferenceKind VisitPackageSymbol(PackageSymbol t) => TypeReferenceKind.Module;
+			public LazyTypeReferenceKind VisitDTuple(DTuple t) => TypeReferenceKind.BasicType;
 
-			public TypeReferenceKind VisitUnknownType(UnknownType t) => TypeReferenceKind.BasicType;
-			public TypeReferenceKind VisitAmbigousType(AmbiguousType t) => TypeReferenceKind.BasicType;
+			public LazyTypeReferenceKind VisitUnknownType(UnknownType t) => TypeReferenceKind.BasicType;
+			public LazyTypeReferenceKind VisitAmbigousType(AmbiguousType t) => TypeReferenceKind.BasicType;
 		}
 
 		bool inRootModule()
@@ -315,15 +342,16 @@ namespace D_Parser.Refactoring
 		/// </summary>
 		protected override void OnScopedBlockChanged (IBlockNode bn)
 		{
-			Dictionary<int, TypeReferenceKind> dd = null;
+			TypeReferenceDictionary dd = null;
 			if (ctxt.CancellationToken.IsCancellationRequested)
 				return;
 			var filter = MemberFilter.Types | MemberFilter.Enums | MemberFilter.TypeParameters | MemberFilter.Variables | MemberFilter.Methods;
-			foreach (var n in ItemEnumeration.EnumScopedBlockChildren(ctxt, filter))
+			var children = ItemEnumeration.EnumScopedBlockChildren(ctxt, filter);
+			foreach (var n in children)
 			{
 				if (n.NameHash != 0) {
 					if (dd == null && !TypeCache.TryGetValue (bn, out dd))
-						TypeCache [bn] = dd = new Dictionary<int, TypeReferenceKind> ();
+						TypeCache [bn] = dd = new TypeReferenceDictionary ();
 
 					dd[n.NameHash] = n.Accept(nodeTypeDet);
 				}
@@ -367,6 +395,33 @@ namespace D_Parser.Refactoring
 			}
 		}
 
+		private void AddModuleResult(ITypeDeclaration modname)
+		{
+			AddResult(modname, TypeReferenceKind.Module);
+			for (var inner = modname.InnerDeclaration; inner != null; inner = inner.InnerDeclaration)
+				AddResult(inner, TypeReferenceKind.Package);
+		}
+		public override void Visit(ModuleStatement mstmt)
+		{
+			if (inRootModule())
+				if (mstmt.ModuleName != null)
+					AddModuleResult(mstmt.ModuleName);
+
+			base.Visit(mstmt);
+		}
+
+		public override void VisitImport(ImportStatement.Import imp)
+		{
+			if (inRootModule())
+			{
+				if (imp.ModuleAlias != null)
+					AddResult(imp.ModuleAlias, TypeReferenceKind.Module);
+				if (imp.ModuleIdentifier != null)
+					AddModuleResult(imp.ModuleIdentifier);
+			}
+			base.VisitImport(imp);
+		}
+
 		public override void Visit(ImportStatement istmt)
 		{
 			// do not recurse into private imports
@@ -377,9 +432,9 @@ namespace D_Parser.Refactoring
 
 		public override void VisitImport(ImportStatement.ImportBindings ibind)
 		{
-			if (ctxt.ParseCache != null && importStack.Count > 0)
+			var curmod = importStack.Count > 0 ? importStack[importStack.Count - 1] : editorData.SyntaxTree;
+			if (ctxt.ParseCache != null)
 			{
-				var curmod = importStack[importStack.Count - 1];
 				var modules = ctxt.ParseCache.LookupModuleName(curmod, ibind.Module.ToString());
 				foreach (var mod in modules)
 				{
@@ -391,11 +446,11 @@ namespace D_Parser.Refactoring
 					}
 
 					// TODO: refine	for static and renamed import
-					Dictionary<int, TypeReferenceKind> curtc = null;
+					TypeReferenceDictionary curtc = null;
 					if (!TypeCache.TryGetValue(curmod, out curtc))
-						TypeCache[curmod] = curtc = new Dictionary<int, TypeReferenceKind>();
+						TypeCache[curmod] = curtc = new TypeReferenceDictionary();
 
-					Dictionary<int, TypeReferenceKind> tc = null;
+					TypeReferenceDictionary tc = null;
 					if (TypeCache.TryGetValue(mod, out tc))
 					{
 						if (ibind.SelectedSymbols != null)
@@ -403,11 +458,11 @@ namespace D_Parser.Refactoring
 							foreach (var sym in ibind.SelectedSymbols)
 							{
 								int key = sym.Symbol.IdHash;
-								if (tc.TryGetValue(key, out TypeReferenceKind type))
+								if (tc.TryGetValue(key, out LazyTypeReferenceKind type))
 								{
 									if (sym.Alias != null)
 										key = sym.Alias.IdHash;
-									curtc[key] = type;
+									curtc[key] = type.get();
 								}
 							}
 						}
@@ -511,25 +566,25 @@ namespace D_Parser.Refactoring
 				return;
 
 			var bn = ctxt.ScopedBlock;
-			Dictionary<int, TypeReferenceKind> dd = null;
+			TypeReferenceDictionary dd = null;
 			if (dd == null && !TypeCache.TryGetValue(bn, out dd))
-				TypeCache[bn] = dd = new Dictionary<int, TypeReferenceKind>();
+				TypeCache[bn] = dd = new TypeReferenceDictionary();
 			dd[dm.NameHash] = dm.Accept(nodeTypeDet);
 
 			base.Visit (dm);
-			Dictionary<int, TypeReferenceKind> tc;
+			TypeReferenceDictionary tc;
 			if (!TypeCache.TryGetValue (dm, out tc))
 				return;
 
 			// Reset locals
 			foreach (var n in dm.Parameters)
-				tc [n.NameHash] = 0;
+				tc [n.NameHash] = TypeReferenceKind.Unknown;
 		}
 
 		public override void VisitTemplateParameter (TemplateParameter tp)
 		{
 			if (inRootModule())
-				AddResult(tp, (TypeReferenceKind)TypeReferenceKind.TemplateTypeParameter);
+				AddResult(tp, TypeReferenceKind.TemplateTypeParameter);
 		}
 
 		public override void Visit (TemplateInstanceExpression x)
@@ -575,7 +630,7 @@ namespace D_Parser.Refactoring
 						{
 							var type = LooseResolution.ResolveTypeLoosely(editorData, x, out _, false);
 							if (type != null)
-								kind = type.Accept(typeTypeDet);
+								kind = type.Accept(typeTypeDet).get();
 						}
 						catch (Exception)
 						{
@@ -611,14 +666,16 @@ namespace D_Parser.Refactoring
 		bool DoPrimaryIdCheck(int id, out TypeReferenceKind type)
 		{
 			if (id != 0) {
-				Dictionary<int, TypeReferenceKind> tc;
+				TypeReferenceDictionary tc;
 				var bn = ctxt.ScopedBlock;
 
 				while (bn != null) {
-					if (TypeCache.TryGetValue (bn, out tc) && tc.TryGetValue (id, out type))
+					if (TypeCache.TryGetValue (bn, out tc) && tc.TryGetValue (id, out LazyTypeReferenceKind lkind))
+					{
+						type = lkind.get();
 						return true;
-					else
-						bn = bn.Parent as IBlockNode;
+					}
+					bn = bn.Parent as IBlockNode;
 				}
 			}
 			type = 0;
@@ -663,6 +720,18 @@ namespace D_Parser.Refactoring
 			}
 			
 			base.VisitAttributeMetaDeclarationBlock(a);
+		}
+
+		public TypeReferenceKind ResolveNodeType(INode node)
+		{
+			TypeReferenceKind kind = TypeReferenceKind.Unknown;
+			if (resolveTypes && node.Type != null)
+			{
+				var type = LooseResolution.ResolveTypeLoosely(editorData, node.Type, out _, false);
+				if (type != null)
+					kind = type.Accept(typeTypeDet).get();
+			}
+			return kind;
 		}
 
 		bool CheckNode(DNode n)
@@ -728,9 +797,9 @@ namespace D_Parser.Refactoring
 		public override void Visit(DeclarationStatement declarationStatement)
 		{
 			var bn = ctxt.ScopedBlock;
-			Dictionary<int, TypeReferenceKind> dd = null;
+			TypeReferenceDictionary dd = null;
 			if (dd == null && !TypeCache.TryGetValue(bn, out dd))
-				TypeCache[bn] = dd = new Dictionary<int, TypeReferenceKind>();
+				TypeCache[bn] = dd = new TypeReferenceDictionary();
 
 			foreach (var declaration in declarationStatement.Declarations)
 			{

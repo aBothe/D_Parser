@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using D_Parser.Parser;
@@ -144,6 +145,43 @@ struct StructB
 			Assert.AreEqual(TypeReferenceKind.MemberVariable, arr[3].Value); // fieldB
 		}
 
+		[Test]
+		public void TypeRefPackage()
+		{
+			var modA = DParser.ParseString(@"module test.modA;
+import imp.pkg;
+imp.pkg.PKG p;
+imp.pkg.MOD m;
+");
+			var modB = DParser.ParseString(@"module imp.pkg;
+public import imp.pkg.mod;
+alias PKG = int;
+");
+			var modC = DParser.ParseString(@"module imp.pkg.mod;
+alias MOD = long;
+");
+			var rootpkgs = new RootPackage[1];
+			var rootpkg = new MutableRootPackage();
+			rootpkg.AddModule(modB);
+			rootpkg.AddModule(modC);
+			rootpkgs[0] = rootpkg;
+
+			modB.FileName = Path.Combine("imp", "pkg", "package.d");
+			modC.FileName = Path.Combine("imp", "pkg", "mod.d");
+
+			var ed = new EditorData
+			{
+				SyntaxTree = modA,
+				ParseCache = new LegacyParseCacheView(rootpkgs)
+			};
+
+			// no timeout
+			var cancelTokenSource = new System.Threading.CancellationTokenSource();
+			var res = TypeReferenceFinder.Scan(ed, cancelTokenSource.Token, true, null);
+
+			Assert.That(res.Count, Is.EqualTo(4)); // at least 2 on 4 lines
+		}
+
 		class TypeReferenceLocationComparer : Comparer<KeyValuePair<ISyntaxRegion, TypeReferenceKind>>
 		{
 			public override int Compare(KeyValuePair<ISyntaxRegion, TypeReferenceKind> x,
@@ -198,6 +236,32 @@ void sweep()
 	}
 
     if (pool.data) {}
+}");
+			var rootpkgs = new RootPackage[0];
+			var ed = new EditorData
+			{
+				SyntaxTree = modA,
+				ParseCache = new LegacyParseCacheView(rootpkgs)
+			};
+
+			// no timeout
+			var cancelTokenSource = new System.Threading.CancellationTokenSource();
+			var res = TypeReferenceFinder.Scan(ed, cancelTokenSource.Token, true, null);
+			Assert.That(res.Count, Is.GreaterThan(4)); // PageBits, sweep, pool, PageBits?, data
+		}
+
+		[Test]
+		public void ValueProvider()
+		{
+			var modA = DParser.ParseString(@"module modA;
+@safe unittest
+{
+	int[] src = [1, 5, 8, 9, 10, 1, 2, 0];
+	auto dest = new int[src.length];
+	auto rem = src.copy(dest);
+ 
+	assert(dest[0.. $ -rem.length] == [ 1, 5, 9, 1 ]);
+}
 }");
 			var rootpkgs = new RootPackage[0];
 			var ed = new EditorData
