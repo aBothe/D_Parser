@@ -771,37 +771,46 @@ namespace D_Parser.Resolver.ASTScanner
 						return false;
 				}
 
-				var keyValues = DetermineForeachKeyValuePairs(s);
-				if(keyValues == null)
-					return Visit(s as ForeachStatement);
-
-				var valueHoldingIterator = s.ForeachTypeList.Length > 1 ? s.ForeachTypeList[1] : s.ForeachTypeList[0];
-				var keyHoldingIterator = s.ForeachTypeList.Length > 1 ? s.ForeachTypeList[0] : null;
-
-				var pseudoValueTemplateParameter = new TemplateValueParameter(valueHoldingIterator.NameHash, valueHoldingIterator.NameLocation, valueHoldingIterator.Parent as DNode).Representation;
-				var pseudoKeyTemplateParameter = keyHoldingIterator != null ? new TemplateValueParameter(keyHoldingIterator.NameHash, keyHoldingIterator.NameLocation, keyHoldingIterator.Parent as DNode).Representation : null;
-
-				var deducedTypes = ctxt.CurrentContext.DeducedTemplateParameters;
-
-				foreach (var kv in keyValues)
+				if (s.inSemanticAnalysis)
+					return false;
+				try
 				{
-					// Set iterator/optinal key variables as template parameter
-					deducedTypes[pseudoValueTemplateParameter.TemplateParameter] = new TemplateParameterSymbol(pseudoValueTemplateParameter, kv.Value);
-					if(pseudoKeyTemplateParameter != null)
-						deducedTypes[pseudoKeyTemplateParameter.TemplateParameter] = new TemplateParameterSymbol(pseudoKeyTemplateParameter, kv.Key);
+					s.inSemanticAnalysis = true;
+					var keyValues = DetermineForeachKeyValuePairs(s);
+					if (keyValues == null)
+						return Visit(s as ForeachStatement);
 
-					if (s.ScopedStatement.Accept(this))
-						break;
+					var valueHoldingIterator = s.ForeachTypeList.Length > 1 ? s.ForeachTypeList[1] : s.ForeachTypeList[0];
+					var keyHoldingIterator = s.ForeachTypeList.Length > 1 ? s.ForeachTypeList[0] : null;
 
-					if (v.ctxt.CancellationToken.IsCancellationRequested ||
-						v.StopEnumerationOnNextScope)
-						break;
+					var pseudoValueTemplateParameter = new TemplateValueParameter(valueHoldingIterator.NameHash, valueHoldingIterator.NameLocation, valueHoldingIterator.Parent as DNode).Representation;
+					var pseudoKeyTemplateParameter = keyHoldingIterator != null ? new TemplateValueParameter(keyHoldingIterator.NameHash, keyHoldingIterator.NameLocation, keyHoldingIterator.Parent as DNode).Representation : null;
+
+					var deducedTypes = ctxt.CurrentContext.DeducedTemplateParameters;
+
+					foreach (var kv in keyValues)
+					{
+						// Set iterator/optinal key variables as template parameter
+						deducedTypes[pseudoValueTemplateParameter.TemplateParameter] = new TemplateParameterSymbol(pseudoValueTemplateParameter, kv.Value);
+						if (pseudoKeyTemplateParameter != null)
+							deducedTypes[pseudoKeyTemplateParameter.TemplateParameter] = new TemplateParameterSymbol(pseudoKeyTemplateParameter, kv.Key);
+
+						if (s.ScopedStatement.Accept(this))
+							break;
+
+						if (v.ctxt.CancellationToken.IsCancellationRequested ||
+							v.StopEnumerationOnNextScope)
+							break;
+					}
+
+					deducedTypes.Remove(pseudoValueTemplateParameter.TemplateParameter);
+					if (pseudoKeyTemplateParameter != null)
+						deducedTypes.Remove(pseudoKeyTemplateParameter.TemplateParameter);
 				}
-
-				deducedTypes.Remove(pseudoValueTemplateParameter.TemplateParameter);
-				if(pseudoKeyTemplateParameter != null)
-					deducedTypes.Remove(pseudoKeyTemplateParameter.TemplateParameter);
-
+				finally
+				{
+					s.inSemanticAnalysis = false;
+				}
 				return false;
 			}
 
