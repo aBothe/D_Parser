@@ -202,9 +202,10 @@ to avoid op­er­a­tions which are for­bid­den at com­pile time.",
 			}*/
 
 			List<InterfaceType> interfaces = null;
-
-			while(udt!= null)
+			List<UserDefinedType> visitedUdts = new List<UserDefinedType> ();
+			while(udt!= null && !visitedUdts.Contains(udt))
 			{
+				visitedUdts.Add(udt);
 				parms.resolvedCurScope = udt;
 
 				scanChildren (udt.Definition as DBlockNode, parms);

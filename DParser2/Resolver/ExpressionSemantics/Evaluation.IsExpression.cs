@@ -84,7 +84,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (retTrue)
 			{
 				foreach (var kv in tpl_params)
-					ctxt.CurrentContext.DeducedTemplateParameters[kv.Key] = kv.Value;
+					if (kv.Key != null && kv.Value != null)
+						ctxt.CurrentContext.DeducedTemplateParameters[kv.Key] = kv.Value;
 			}
 
 			return retTrue;
@@ -182,7 +183,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 					{
 						var udt = ClassInterfaceResolver.ResolveClassOrInterface(dc, ctxt, null, true) as ClassType;
 
-						if (r = udt.Base != null && ResultComparer.IsEqual(typeToCheck, udt.Base))
+						if (r = udt?.Base != null && ResultComparer.IsEqual(typeToCheck, udt.Base))
 						{
 							var l = new List<AbstractType>();
 							if (udt.Base != null)

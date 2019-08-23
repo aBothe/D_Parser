@@ -22,14 +22,18 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			var candidateSearchVisitor = new MethodOverloadCandidateSearchVisitor (ctxt, valueProvider, call, returnBaseTypeOnly);
 			var methodOverloads = new List<AbstractType> ();
 
-			foreach (AbstractType b in baseExpression) {
-				if (ctxt.CancellationToken.IsCancellationRequested)
-					break;
+			if (baseExpression != null)
+				foreach (AbstractType b in baseExpression) {
+					if (ctxt.CancellationToken.IsCancellationRequested)
+						break;
 
-				if (b != null) {
-					methodOverloads.AddRange (b.Accept (candidateSearchVisitor));
+					if (b != null)
+					{
+						var acc = b.Accept(candidateSearchVisitor);
+						if (acc != null && acc.Count() > 0)
+							methodOverloads.AddRange (acc);
+					}
 				}
-			}
 
 			returnInstantly = candidateSearchVisitor.returnInstantly;
 			return methodOverloads;
@@ -207,6 +211,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				}
 
 				var bt = mr.Base ?? TypeDeclarationResolver.ResolveSingle (mr.Definition.Type, ctxt);
+				if (bt == null)
+					return HandleInvalidTypes(mr);
 
 				bool requireStaticItems_Backup = requireStaticItems;
 
@@ -275,6 +281,13 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public IEnumerable<AbstractType> VisitTemplateParameterSymbol (TemplateParameterSymbol t)
 		{
+			if (t.Base == null)
+			{
+#if TRACE
+				Trace.WriteLine ("MethodOverloadCandidateSearch: Couldn't handle " + t + ", no Base");
+#endif
+				yield break;
+			}
 			yield return t.Base;
 		}
 

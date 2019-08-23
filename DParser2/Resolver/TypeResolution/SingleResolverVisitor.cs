@@ -104,7 +104,7 @@ namespace D_Parser.Resolver.TypeResolution
 		public AbstractType Visit (PointerDecl td)
 		{
 			filterTemplates = true;
-			var ptrBaseTypes = td.InnerDeclaration.Accept(this);
+			var ptrBaseTypes = td.InnerDeclaration?.Accept(this);
 
 			if (ptrBaseTypes != null)
 				ptrBaseTypes.NonStaticAccess = true;

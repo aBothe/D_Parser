@@ -232,11 +232,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			switch (id.Format)
 			{
 				case Parser.LiteralFormat.CharLiteral:
-					var tk = id.Subformat == LiteralSubformat.Utf32 ? DTokens.Dchar :
-						id.Subformat == LiteralSubformat.Utf16 ? DTokens.Wchar :
-						DTokens.Char;
-
-					return new PrimitiveValue(tk, Convert.ToDecimal((int)(char)id.Value));
+					if (id.Subformat == LiteralSubformat.Utf16)
+						return new PrimitiveValue(DTokens.Dchar, char.ConvertToUtf32(id.Value.ToString(), 0));
+					else if(id.Subformat == LiteralSubformat.Utf32)
+						return new PrimitiveValue(DTokens.Wchar, char.ConvertToUtf32(id.Value.ToString(), 0));
+					return new PrimitiveValue(DTokens.Char, Convert.ToDecimal((int)(char)id.Value));
 
 				case LiteralFormat.FloatingPoint | LiteralFormat.Scalar:
 					var im = id.Subformat.HasFlag(LiteralSubformat.Imaginary);

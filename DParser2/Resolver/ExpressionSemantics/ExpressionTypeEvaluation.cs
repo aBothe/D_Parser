@@ -141,6 +141,9 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		AbstractType TryPretendMethodExecution(IEnumerable<AbstractType> possibleOverloads, ISyntaxRegion typeBase = null, IEnumerable<AbstractType> args = null)
 		{
 			var allowedOverloads = new List<AbstractType>();
+			if (possibleOverloads == null)
+				return AmbiguousType.Get(allowedOverloads);
+
 			foreach (var overload in possibleOverloads)
 			{
 				if (DResolver.StripAliasedTypes(overload) is MemberSymbol ms)
