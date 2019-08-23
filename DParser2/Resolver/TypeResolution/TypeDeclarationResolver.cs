@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
+using D_Parser.Misc;
 using D_Parser.Parser;
 using D_Parser.Resolver.ASTScanner;
 using D_Parser.Resolver.Templates;
@@ -64,7 +65,21 @@ namespace D_Parser.Resolver.TypeResolution
 						r.Add(new PackageSymbol(pack));
 				}
 				else if (b is ModuleSymbol)
+				{
 					r.AddRange(SingleNodeNameScan.SearchChildrenAndResolve(ctxt, b as ModuleSymbol, nextIdentifierHash, typeIdObject));
+					// "package.d" can be both a module and a package
+					var mod = (b as ModuleSymbol).Definition;
+					var root = GlobalParseCache.GetRootPackage(mod.FileName);
+					var pack = root?.GetSubPackage(mod.ModuleName);
+					if (pack != null)
+					{
+						var accessedModule = pack.GetModule(nextIdentifierHash);
+						if (accessedModule != null)
+							r.Add(new ModuleSymbol(accessedModule, b as PackageSymbol));
+						else if ((pack = pack.GetPackage(nextIdentifierHash)) != null)
+							r.Add(new PackageSymbol(pack));
+					}
+				}
 				else
 				{
 					var statProp = StaticProperties.TryEvalPropertyType(ctxt, b, nextIdentifierHash);
@@ -176,8 +191,9 @@ namespace D_Parser.Resolver.TypeResolution
 					prev = cf;
 
 					foreach (var kv in cf.DeducedTemplateParameters)
-						if (!n.ContainsTemplateParameter(kv.Value.Parameter))
-							parameterSymbols.Add(kv.Value);
+						if (kv.Value != null)
+							if (!n.ContainsTemplateParameter(kv.Value.Parameter))
+								parameterSymbols.Add(kv.Value);
 				}
 				return parameterSymbols;
 			}
