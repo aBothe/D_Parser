@@ -63,38 +63,40 @@ namespace D_Parser.Completion.ToolTips
 			return decl;
 		}
 
-		public string GenTooltipSignature(AbstractType t, bool templateParamCompletion = false, int currentMethodParam = -1)
+		public string GenTooltipSignature(AbstractType t, bool templateParamCompletion = false,
+		                                  int currentMethodParam = -1, bool quoteCode = false)
 		{
 			if (t is DSymbol ds)
 			{
 				if (currentMethodParam >= 0 && !templateParamCompletion && ds.Definition is DVariable && ds.Base != null)
-					return GenTooltipSignature(ds.Base, false, currentMethodParam);
+					return GenTooltipSignature(ds.Base, false, currentMethodParam, quoteCode);
 
 				var typedecl = DTypeToTypeDeclVisitor.GenerateTypeDecl(ds.Base);
 				if (ds.Definition != null)
 					typedecl = ApplyDefinitionModifiers(typedecl, ds.Definition);
-				return GenTooltipSignature(ds.Definition, templateParamCompletion, currentMethodParam, typedecl, new DeducedTypeDictionary(ds));
+				return GenTooltipSignature(ds.Definition, templateParamCompletion, currentMethodParam, quoteCode, typedecl, new DeducedTypeDictionary(ds));
 			}
 
 			if (t is PackageSymbol symbol)
 			{
 				var pack = symbol.Package;
-				return "(package) " + pack.ToString();
+				return "(package) " + QuoteCode(quoteCode, pack.ToString());
 			}
 
 			if (t is DelegateType type)
 			{
 				var sb = new StringBuilder();
 				GenDelegateSignature(type, sb, templateParamCompletion, currentMethodParam);
-				return sb.ToString();
+				return QuoteCode(quoteCode, sb.ToString());
 			}
 
-			return DCodeToMarkup(t != null ? t.ToCode(true) : "null");
+			return QuoteCode(quoteCode, DCodeToMarkup(t != null ? t.ToCode(true) : "null"));
 		}
 
-		public string GenTooltipSignature(DNode dn, bool templateParamCompletion = false,
-			int currentMethodParam = -1, ITypeDeclaration baseType = null, DeducedTypeDictionary deducedTypes = null)
+		public string GenTooltipSignature(DNode dn, bool templateParamCompletion = false, int currentMethodParam = -1,
+			bool quoteCode = false, ITypeDeclaration baseType = null, DeducedTypeDictionary deducedTypes = null)
 		{
+			string kind = "";
 			var sb = new StringBuilder();
 
 			switch (dn)
@@ -103,7 +105,8 @@ namespace D_Parser.Completion.ToolTips
 					AppendMethod(dm, sb, templateParamCompletion, currentMethodParam, baseType, deducedTypes);
 					break;
 				case DModule module:
-					sb.Append("(module) ").Append(module.ModuleName);
+					kind = "(module) ";
+					sb.Append(module.ModuleName);
 					break;
 				case DClassLike dc:
 					AppendClassLike(dc, sb, deducedTypes);
@@ -114,11 +117,11 @@ namespace D_Parser.Completion.ToolTips
 				case DVariable dvar:
 				{
 					if (dvar.IsParameter)
-						sb.Append("(parameter) ");
+						kind = "(parameter) ";
 					else if (dvar.IsLocal)
-						sb.Append("(local variable) ");
+						kind = "(local variable) ";
 					else if (dvar.IsAlias)
-						sb.Append("(alias) ");
+						kind = "(alias) ";
 
 					AttributesTypeAndName(dn, sb, baseType, -1, deducedTypes);
 
@@ -127,7 +130,7 @@ namespace D_Parser.Completion.ToolTips
 							sb.Append(" = ").Append(dvar.Initializer.ToString());
 
 					if (dvar.IsAlias && dvar.Type != null)
-						sb.Append(" : ").Append(dvar.Type.ToString());
+						sb.Append(" = ").Append(dvar.Type.ToString());
 					break;
 				}
 				default:
@@ -140,7 +143,7 @@ namespace D_Parser.Completion.ToolTips
 					break;
 				}
 			}
-			return sb.ToString();
+			return kind + QuoteCode(quoteCode, sb.ToString());
 		}
 
 		void GenDelegateSignature(DelegateType dt, StringBuilder sb, bool templArgs = false, int curArg = -1)
@@ -398,6 +401,13 @@ namespace D_Parser.Completion.ToolTips
 		{
 			if (sb[sb.Length - 1] == c)
 				sb.Remove(sb.Length - 1, 1);
+		}
+
+		static string QuoteCode(bool quote, string s)
+		{
+			if (!quote || String.IsNullOrEmpty(s))
+				return s;
+			return "`" + s + "`";
 		}
     }
 }
