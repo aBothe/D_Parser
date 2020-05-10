@@ -364,7 +364,6 @@
     <Content Include="readme.txt" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="license.txt" />
     <None Include="Misc\ParseLog.cs" />
     <None Include="Formatting\Indent\DIndentEngine.cs" />
     <None Include="Formatting\Indent\IndentStates.cs" />
