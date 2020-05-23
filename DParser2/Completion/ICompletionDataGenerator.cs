@@ -38,5 +38,11 @@ namespace D_Parser.Completion
 		/// After this message has been sent, other completion items may still be added!
 		/// </summary>
 		void NotifyTimeout();
+
+		/// <summary>
+		/// Used for calculating the text region that shall be replaced on a completion commit.
+		/// Can be null.
+		/// </summary>
+		ISyntaxRegion TriggerSyntaxRegion { set; }
 	}
 }
