@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
@@ -753,7 +751,7 @@ namespace D_Parser.Parser.Implementations
 								EndLocation = t.EndLocation
 							};
 						else if (IsEOF)
-							pea.AccessExpression = new TokenExpression(DTokens.Incomplete);
+							pea.AccessExpression = new TokenExpression(DTokens.Incomplete, t.EndLocation, t.EndLocation);
 
 						pea.EndLocation = t.EndLocation;
 						break;
@@ -831,8 +829,8 @@ namespace D_Parser.Parser.Implementations
 				Step();
 				if (IsEOF)
 				{
-					var dot = new TokenExpression(DTokens.Dot) { Location = t.Location, EndLocation = t.EndLocation };
-					return new PostfixExpression_Access { PostfixForeExpression = dot, AccessExpression = new TokenExpression(DTokens.Incomplete) };
+					var dot = new TokenExpression(DTokens.Dot, t.Location, t.EndLocation);
+					return new PostfixExpression_Access { PostfixForeExpression = dot, AccessExpression = new TokenExpression(DTokens.Incomplete, t.EndLocation, t.EndLocation) };
 				}
 			}
 
@@ -863,11 +861,7 @@ namespace D_Parser.Parser.Implementations
 				// Dollar (== Array length expression)
 				case DTokens.Dollar:
 					Step();
-					return new TokenExpression(t.Kind)
-					{
-						Location = t.Location,
-						EndLocation = t.EndLocation
-					};
+					return new TokenExpression(t.Kind, t.Location, t.EndLocation);
 				case DTokens.Identifier:
 					Step();
 					return new IdentifierExpression(t.Value)
@@ -883,11 +877,7 @@ namespace D_Parser.Parser.Implementations
 				case DTokens.True:
 				case DTokens.False:
 					Step();
-					return new TokenExpression(t.Kind)
-					{
-						Location = t.Location,
-						EndLocation = t.EndLocation
-					};
+					return new TokenExpression(t.Kind, t.Location, t.EndLocation);
 				case DTokens.OpenParenthesis:
 					if (IsFunctionLiteral())
 						goto case DTokens.Function;
@@ -1173,7 +1163,7 @@ namespace D_Parser.Parser.Implementations
 									return new PostfixExpression_Access()
 									{
 										PostfixForeExpression = TypeDeclarationExpression.TryWrap(bt),
-										AccessExpression = IsEOF ? new TokenExpression(DTokens.Incomplete) as IExpression
+										AccessExpression = IsEOF ? new TokenExpression(DTokens.Incomplete, t.EndLocation, t.EndLocation) as IExpression
 										: new IdentifierExpression(t.Value) { Location = t.Location, EndLocation = t.EndLocation },
 										EndLocation = t.EndLocation
 									};
@@ -1200,12 +1190,12 @@ namespace D_Parser.Parser.Implementations
 						Step();
 
 					if (IsEOF)
-						return new TokenExpression(DTokens.Incomplete) { Location = t.Location, EndLocation = t.Location };
+						return new TokenExpression(DTokens.Incomplete, t.EndLocation, t.EndLocation);
 
 					// Don't know why, in rare situations, t tends to be null..
 					if (t == null)
 						return null;
-					return new TokenExpression() { Location = t.Location, EndLocation = t.EndLocation };
+					return new TokenExpression(DTokens.INVALID,t.EndLocation, t.EndLocation);
 			}
 		}
 
