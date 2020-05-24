@@ -54,7 +54,7 @@ namespace Tests
 		public static LegacyParseCacheView CreateCache(out DModule firstModule, params string[] moduleCodes)
 		{
 			var modules = moduleCodes.Select(moduleCode => DParser.ParseString(moduleCode)).ToList();
-			firstModule = modules[0];
+			firstModule = modules.FirstOrDefault();
 			modules.Add(ObjectModule);
 
 			return new LegacyParseCacheView(new[] { new MutableRootPackage(modules.ToArray()) });
