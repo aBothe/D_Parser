@@ -604,6 +604,8 @@ void foo(int a, string b) {}");
 			{
 				throw new OperationCanceledException();
 			}
+
+			public ISyntaxRegion TriggerSyntaxRegion { get; set; }
 		}
 
 		public static INode GetNode(EditorData ed, string id, ref ResolutionContext ctxt)
