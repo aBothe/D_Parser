@@ -393,6 +393,46 @@ foo(§
 			Assert.That (con.suggestedItem, Is.EqualTo ("myE"));
 		}
 
+		[Test]
+		public void TriggerOnBegunMemberName_ReturnsListOfMembersWithPreselectionSuggestion()
+		{
+			var ed = GenEditorData (@"module A;
+class AClass {int propertyA;}
+void foo(AClass a) {
+a.prop§
+}");
+
+			var modA = ed.MainPackage.GetModule("A");
+			var wl = new []
+			{
+				ResolutionTestHelper.GetChildNode (modA, "AClass.propertyA"),
+				ResolutionTestHelper.GetChildNode (modA, "foo")
+			};
+
+			var cdg = TestCompletionListContents (ed, wl, null);
+			Assert.AreEqual("prop", cdg.suggestedItem);
+			Assert.AreEqual("a.prop", cdg.TriggerSyntaxRegion.ToString());
+		}
+
+		[Test]
+		public void TriggerOnBegunMemberName2_ReturnsListOfMembersWithPreselectionSuggestion()
+		{
+			var ed = GenEditorData (@"module A;
+class AClass {class BType{}}
+AClass.B§ b;
+");
+
+			var modA = ed.MainPackage.GetModule("A");
+			var wl = new []
+			{
+				ResolutionTestHelper.GetChildNode (modA, "AClass.BType")
+			};
+
+			var cdg = TestCompletionListContents (ed, wl, null);
+			Assert.AreEqual("B", cdg.suggestedItem);
+			Assert.AreEqual("AClass.B", cdg.TriggerSyntaxRegion.ToString());
+		}
+
 		#region Test lowlevel
 		public static class Does
 		{

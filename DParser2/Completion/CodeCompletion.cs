@@ -1,4 +1,4 @@
-﻿//
+//
 // CompletionService.cs
 //
 // Author:
@@ -95,10 +95,6 @@ namespace D_Parser.Completion
 						// if a letter was typed, off-1 is the char before the typed letter..
 						return false;
 				}
-				// If typing a begun identifier, return immediately
-				else if ((Lexer.IsIdentifierPart(enteredChar) || enteredChar == '\0') &&
-					Lexer.IsIdentifierPart(Editor.ModuleCode[Editor.CaretOffset - 1]))
-					return false;
 			}
 
 			return true;

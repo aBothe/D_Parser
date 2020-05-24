@@ -1,4 +1,4 @@
-﻿//
+//
 // CompletionProviderVisitor.cs
 //
 // Author:
@@ -106,8 +106,15 @@ namespace D_Parser.Completion
 		{
 			if (n.NameHash == DTokens.IncompleteIdHash) {
 				if (n.ContainsAnyAttribute(DTokens.Override))
+				{
 					prv = new MethodOverrideCompletionProvider(n, cdgen);
-				else
+				}
+				else if (n.Type is IdentifierDeclaration id && id.EndLocation == ed.CaretLocation)
+				{
+					cdgen.SetSuggestedItem(id.Id);
+					cdgen.TriggerSyntaxRegion = id;
+					prv = new MemberCompletionProvider(cdgen, id.InnerDeclaration, scopedBlock);
+				} else
 					explicitlyNoCompletion = true;
 				halt = true;
 			}
@@ -188,11 +195,11 @@ namespace D_Parser.Completion
 			
 			VisitTemplateParameter(p);
 
-			if (!halt && p.Type != null)
-				p.Type.Accept(this);
+			if (!halt)
+				p.Type?.Accept(this);
 
-			if (!halt && p.SpecializationExpression != null) //TODO have a special completion case for specialization completion
-				p.SpecializationExpression.Accept(this);
+			if (!halt) //TODO have a special completion case for specialization completion
+				p.SpecializationExpression?.Accept(this);
 
 			if (!halt && p.DefaultExpression != null)
 			{
