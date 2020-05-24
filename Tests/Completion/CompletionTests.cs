@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading;
 using D_Parser;
 using D_Parser.Completion;
@@ -53,10 +53,10 @@ void main(){
 		[Test]
 		public void ModuleCompletion()
 		{
-			var code = @"module 
+			var code = @"module §
 ";
 
-			var ed = GenEditorData (1, 8, code);
+			var ed = GenEditorData (code);
 			ed.SyntaxTree.ModuleName = "asdf";
 			TestCompletionListContents (ed, new[]{ ed.SyntaxTree }, new INode[0]);
 		}
@@ -95,9 +95,9 @@ new K().
 		{
 			var code =@"module A;
 void main() {
-foreach( 
+foreach(§ 
 }";
-			var ed = GenEditorData (3, 9, code);
+			var ed = GenEditorData (code);
 			var g = new TestCompletionDataGen (null, null);
 			Assert.That(CodeCompletion.GenerateCompletionData (ed, g, 'a', true), Is.True);
 		}
@@ -139,12 +139,12 @@ foreach(cur; p_args)
 			var code = @"module A;
 void main() {Cl** ii;
 foreach(i;ii)
-i.
+i.§
 }
 
 struct Cl { int a; }
 ";
-			var ed = GenEditorData(4, 3, code);
+			var ed = GenEditorData(code);
 
 			var a = (ed.MainPackage["A"]["Cl"].First() as DClassLike)["a"].First() as DVariable;
 
@@ -157,10 +157,10 @@ struct Cl { int a; }
 		{
 			var code = @"module A;
 struct SomeStruct {ubyte a; static void read() {
-
+§
 }}
 ";
-			var ed = GenEditorData(3, 1, code);
+			var ed = GenEditorData(code);
 
 			var SomeStruct = (ed.MainPackage ["A"] ["SomeStruct"].First () as DClassLike);
 			var a = SomeStruct["a"].First() as DVariable;
@@ -174,9 +174,9 @@ struct SomeStruct {ubyte a; static void read() {
 		{
 			var code = @"module A;
 void main() {
-auto 
+auto§ 
 }";
-			var ed = GenEditorData(3, 5, code);
+			var ed = GenEditorData(code);
 			var g = new TestCompletionDataGen(null, null);
 			Assert.That(CodeCompletion.GenerateCompletionData(ed, g, 'a', true), Is.False);
 		}
@@ -319,17 +319,14 @@ void main(){
 		[Test]
 		public void ArrayAccessCompletion()
 		{
-			TestsEditorData ed;
 			INode[] wl;
-
-			var s = @"module A;
+			
+			var ed = GenEditorData (@"module A;
 class C { int f; }
 void main() { C[][] o;
 o[0][0].
-
-}";
-
-			ed = GenEditorData (5, 1, s);
+§
+}");
 
 			wl = new[]{ (ed.MainPackage["A"]["C"].First() as DClassLike).Children["f"].First() };
 
@@ -349,11 +346,11 @@ o[0][0].
 import ArrayMod;
 void foo(Array!byte array) {
 array.
-
+§
 }";
 			var arrayDefModule = @"module ArrayMod; class Array(T) { void dooMagic() {} }";
 
-			ed = GenEditorData (5, 1, s, arrayDefModule);
+			ed = GenEditorData (s, arrayDefModule);
 
 			wl = new [] { ResolutionTests.GetChildNode (ed.MainPackage.GetModule ("ArrayMod"), "Array.dooMagic") };
 
@@ -370,9 +367,9 @@ array.
 
 			var s = @"module A;
 class Class { static int statInt; int normal; }
-void main() { Class. }";
+void main() { Class.§ }";
 
-			ed = GenEditorData (3, 21, s);
+			ed = GenEditorData (s);
 
 			wl = new[]{ GetNode(ed, "A.Class.statInt", ref ctxt) };
 			bl = new[]{ GetNode(ed, "A.Class.normal", ref ctxt) };
@@ -388,9 +385,9 @@ void main() { Class. }";
 
 			var s = @"module A; enum myE { } void foo(myE e);
 void main() {
-foo(
+foo(§
 }";
-			ed = GenEditorData (3, 5, s);
+			ed = GenEditorData (s);
 
 			var con = TestCompletionListContents (ed);
 			Assert.That (con.suggestedItem, Is.EqualTo ("myE"));
@@ -457,6 +454,20 @@ foo(
 		private class TestsEditorData : EditorData
 		{
 			public MutableRootPackage MainPackage => (ParseCache as LegacyParseCacheView).FirstPackage();
+		}
+		
+		/// <summary>
+		/// Use § as caret indicator!
+		/// </summary>
+		private static TestsEditorData GenEditorData(string focusedModuleCode, params string[] otherModuleCodes)
+		{
+			int caretOffset = focusedModuleCode.IndexOf('§');
+			Assert.IsTrue(caretOffset != -1);
+			focusedModuleCode = focusedModuleCode.Substring(0, caretOffset) +
+			                    focusedModuleCode.Substring(caretOffset + 1);
+			var caret = DocumentHelper.OffsetToLocation(focusedModuleCode, caretOffset);
+
+			return GenEditorData(caret.Line, caret.Column, focusedModuleCode, otherModuleCodes);
 		}
 
 		private static TestsEditorData GenEditorData(int caretLine, int caretPos,string focusedModuleCode,params string[] otherModuleCodes)
