@@ -1,7 +1,7 @@
-﻿using D_Parser.Parser;
+﻿using D_Parser.Dom;
+using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
-
 using NUnit.Framework;
 
 namespace Tests.ExpressionEvaluation
@@ -12,7 +12,7 @@ namespace Tests.ExpressionEvaluation
 		[Test]
 		public void Traits()
 		{
-			var pcl = ResolutionTestHelper.CreateCache(@"module A;
+			var pcl = ResolutionTestHelper.CreateCache(out DModule m, @"module A;
 int i;
 string s;
 
@@ -57,7 +57,7 @@ template Tmpl(){
 	void bar();
 }
 ", @"module std.someStd;");
-			var ctxt = ResolutionTestHelper.CreateDefCtxt(pcl, pcl.FirstPackage()["A"], null);
+			var ctxt = ResolutionTestHelper.CreateDefCtxt(pcl, m, null);
 
 			BoolTrait(ctxt, "isArithmetic, int");
 			BoolTrait(ctxt, "isArithmetic, i, i+1, int");

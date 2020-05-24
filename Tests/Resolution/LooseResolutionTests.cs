@@ -14,7 +14,7 @@ namespace Tests.Resolution
 		[Test]
 		public void LooseResolution2()
 		{
-			var pcw = CreateCache(@"module A;
+			var pcw = CreateCache(out DModule A, @"module A;
 import pack.B;
 
 void x(){
@@ -30,7 +30,6 @@ private int privInt;
 }
 class C { class Nested { int someDeepVariable; } }");
 
-			var A = pcw.FirstPackage()["A"];
 			var x = A["x"].First() as DMethod;
 
 			IEditorData ed;
@@ -60,7 +59,7 @@ class C { class Nested { int someDeepVariable; } }");
 		[Test]
 		public void LooseNodeResolution()
 		{
-			var pcw = CreateCache(@"module A;
+			var pcw = CreateCache(out DModule A, @"module A;
 import pack.B;
 
 void x(){
@@ -77,7 +76,6 @@ private int privInt;
 }
 ");
 
-			var A = pcw.FirstPackage()["A"];
 			var x = A["x"].First() as DMethod;
 
 			IEditorData ed;

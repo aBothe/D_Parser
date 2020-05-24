@@ -494,9 +494,7 @@ void foo(int a, string b) {}");
 
 					code += "\n";
 
-					var m = DParser.ParseString (code);
-					var cache = ResolutionTests.CreateCache ();
-					cache.FirstPackage().AddModule (m);
+					var cache = ResolutionTestHelper.CreateCache (out DModule m, code);
 
 					var ed = new EditorData{ 
 						ModuleCode = code, 
@@ -513,11 +511,11 @@ void foo(int a, string b) {}");
 				}
 			}
 
-			public readonly static TriggerConstraint Trigger = new TriggerConstraint();
+			public static readonly TriggerConstraint Trigger = new TriggerConstraint();
 
 			public static class Not
 			{
-				public readonly static TriggerConstraint Trigger = new TriggerConstraint (true);
+				public static readonly TriggerConstraint Trigger = new TriggerConstraint (true);
 			}
 		}
 
@@ -622,14 +620,14 @@ void foo(int a, string b) {}");
 			return n;
 		}
 
-		public class TestsEditorData : EditorData
+		private class TestsEditorData : EditorData
 		{
-			public MutableRootPackage MainPackage { get{ return (ParseCache as LegacyParseCacheView).FirstPackage(); } }
+			public MutableRootPackage MainPackage => (ParseCache as LegacyParseCacheView).FirstPackage();
 		}
 
-		public static TestsEditorData GenEditorData(int caretLine, int caretPos,string focusedModuleCode,params string[] otherModuleCodes)
+		private static TestsEditorData GenEditorData(int caretLine, int caretPos,string focusedModuleCode,params string[] otherModuleCodes)
 		{
-			var cache = ResolutionTests.CreateCache (otherModuleCodes);
+			var cache = ResolutionTestHelper.CreateCache (out _, otherModuleCodes);
 			var ed = new TestsEditorData { ParseCache = cache };
 			ed.CancelToken = CancellationToken.None;
 
@@ -638,7 +636,7 @@ void foo(int a, string b) {}");
 			return ed;
 		}
 
-		public static void UpdateEditorData(TestsEditorData ed,int caretLine, int caretPos, string focusedModuleCode)
+		private static void UpdateEditorData(TestsEditorData ed,int caretLine, int caretPos, string focusedModuleCode)
 		{
 			var mod = DParser.ParseString (focusedModuleCode);
 
@@ -650,7 +648,7 @@ void foo(int a, string b) {}");
 			ed.CaretOffset = DocumentHelper.LocationToOffset (focusedModuleCode, caretLine, caretPos);
 		}
 
-		public static TestCompletionDataGen TestCompletionListContents(IEditorData ed, INode[] itemWhiteList = null, INode[] itemBlackList = null, char trigger = '\0')
+		private static TestCompletionDataGen TestCompletionListContents(IEditorData ed, INode[] itemWhiteList = null, INode[] itemBlackList = null, char trigger = '\0')
 		{
 			var gen = new TestCompletionDataGen (itemWhiteList, itemBlackList);
 			Assert.That (CodeCompletion.GenerateCompletionData (ed, gen, trigger), Is.True);

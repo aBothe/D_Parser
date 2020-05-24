@@ -1,12 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using NUnit.Framework;
-using D_Parser.Parser;
-using D_Parser.Dom;
-using D_Parser.Resolver;
-using D_Parser.Refactoring;
 using D_Parser.Completion;
+using D_Parser.Dom;
 using D_Parser.Misc;
+using D_Parser.Parser;
+using D_Parser.Refactoring;
+using D_Parser.Resolver;
+using NUnit.Framework;
 
 namespace Tests.Resolution
 {
@@ -16,7 +16,7 @@ namespace Tests.Resolution
 		[Test]
 		public void Test1()
 		{
-			var pcl = ResolutionTests.CreateCache(@"module modA;
+			var pcl = ResolutionTestHelper.CreateCache(out DModule m, @"module modA;
 
 class A(T = int)
 {
@@ -33,9 +33,9 @@ void main()
 	A.statA.statA = new A!float(); // 15
 }
 ");
-			var ctxt = ResolutionContext.Create(pcl, null, pcl.FirstPackage()["modA"]);
+			var ctxt = ResolutionContext.Create(pcl, null, m);
 
-			var refs = ReferencesFinder.SearchModuleForASTNodeReferences(pcl.FirstPackage()["modA"]["A"].First(), ctxt) as List<ISyntaxRegion>;
+			var refs = ReferencesFinder.SearchModuleForASTNodeReferences(m["A"].First(), ctxt) as List<ISyntaxRegion>;
 
 			Assert.IsNotNull(refs);
 			Assert.AreEqual(8, refs.Count);

@@ -1,13 +1,12 @@
 ﻿using System.Linq;
-
+using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
+using D_Parser.Misc;
 using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
 using NUnit.Framework;
-using D_Parser.Dom;
-using D_Parser.Misc;
 using Tests.Resolution;
 
 namespace Tests.ExpressionEvaluation
@@ -54,7 +53,7 @@ namespace Tests.ExpressionEvaluation
 
 			var block = new DBlockNode();
 			if (ProvideObjModule)
-				ctxt = ResolutionTestHelper.CreateDefCtxt(ResolutionTestHelper.CreateCache(), block);
+				ctxt = ResolutionTestHelper.CreateDefCtxt(ResolutionTestHelper.CreateCache(out _), block);
 			else
 				ctxt = ResolutionTestHelper.CreateDefCtxt(new LegacyParseCacheView(new string[] { }), block);
 
@@ -645,8 +644,8 @@ enum isIntOrFloat(F) = is(F == int) || is(F == float);
 		[Test]
 		public void ResolveStringAndToString()
 		{
-			var pcl = ResolutionTestHelper.CreateCache(@"module modA;");
-			var ctxt = ResolutionTestHelper.CreateDefCtxt(pcl, pcl.FirstPackage()["modA"]);
+			var pcl = ResolutionTestHelper.CreateCache(out DModule modA, @"module modA;");
+			var ctxt = ResolutionTestHelper.CreateDefCtxt(pcl, modA);
 
 			var ts = ResolutionTestHelper.RS("string", ctxt);
 			Assert.That(ts, Is.TypeOf(typeof(ArrayType)));

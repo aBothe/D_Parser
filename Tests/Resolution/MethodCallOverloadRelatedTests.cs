@@ -157,7 +157,7 @@ double* foo(string s, string ss);
 		[Test]
 		public void TestOverloads1()
 		{
-			var pcl = CreateCache(@"module modA;
+			var pcl = CreateCache(out DModule m, @"module modA;
 
 int foo(int i) {}
 
@@ -172,7 +172,7 @@ class A
 }
 
 ");
-			var A = pcl.FirstPackage()["modA"]["A"].First() as DClassLike;
+			var A = m["A"].First() as DClassLike;
 			var bar = A["bar"].First() as DMethod;
 			var ctxt = CreateDefCtxt(pcl, bar, bar.Body);
 

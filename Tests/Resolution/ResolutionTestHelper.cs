@@ -51,11 +51,6 @@ namespace Tests
 						alias int size_t;
 						class Exception { string msg; }");
 
-		public static LegacyParseCacheView CreateCache(params string[] moduleCodes)
-		{
-			return CreateCache(out _, moduleCodes);
-		}
-		
 		public static LegacyParseCacheView CreateCache(out DModule firstModule, params string[] moduleCodes)
 		{
 			var modules = moduleCodes.Select(moduleCode => DParser.ParseString(moduleCode)).ToList();
@@ -95,13 +90,13 @@ namespace Tests
 
 		public static ResolutionContext CreateCtxt(string scopedModule, params string[] modules)
 		{
-			var pcl = CreateCache(modules);
+			var pcl = CreateCache(out _, modules);
 			return CreateDefCtxt(pcl, pcl.FirstPackage()[scopedModule]);
 		}
 
 		public static ResolutionContext CreateDefCtxt(string scopedModule, out DModule mod, params string[] modules)
 		{
-			var pcl = CreateCache(modules);
+			var pcl = CreateCache(out _, modules);
 			mod = pcl.FirstPackage()[scopedModule];
 
 			return CreateDefCtxt(pcl, mod);

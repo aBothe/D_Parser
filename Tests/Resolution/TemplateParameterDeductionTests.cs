@@ -17,7 +17,7 @@ namespace Tests.Resolution
 		[Test]
 		public void BasicResolution2()
 		{
-			var pcl = CreateCache(@"module A;
+			var ctxt = CreateDefCtxt(@"module A;
 struct Thing(T)
 {
 	public T property;
@@ -26,8 +26,6 @@ struct Thing(T)
 alias Thing!(int) IntThing;
 alias Thing SomeThing;
 ");
-
-			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["A"]);
 
 			IExpression ex;
 			AbstractType t;
@@ -48,7 +46,7 @@ alias Thing SomeThing;
 		[Test]
 		public void BasicResolution3()
 		{
-			var pcl = CreateCache(@"module A;
+			var ctxt = CreateDefCtxt(@"module A;
 struct Thing(T)
 {
 	public T property;
@@ -57,8 +55,6 @@ struct Thing(T)
 alias Thing!(int) IntThing;
 alias Thing SomeThing;
 ");
-
-			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["A"]);
 
 			IExpression ex;
 			AbstractType t;
@@ -80,11 +76,9 @@ alias Thing SomeThing;
 		[Test]
 		public void BasicResolution4()
 		{
-			var pcl = CreateCache(@"module A;
+			var ctxt = CreateDefCtxt(@"module A;
 class Blupp : Blah!(Blupp) {}
 class Blah(T){ T b; }");
-
-			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["A"]);
 
 			var ex = DParser.ParseExpression("Blah!Blupp");
 			var t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
@@ -94,8 +88,7 @@ class Blah(T){ T b; }");
 		[Test]
 		public void TestParamDeduction1()
 		{
-
-			var pcl = CreateCache(@"module modA;
+			var ctxt = CreateDefCtxt(@"module modA;
 
 //void foo(T:MyClass!E,E)(T t) {}
 int foo(Y,T)(Y y, T t) {}
@@ -118,8 +111,6 @@ const int a=3;
 int b=4;
 ");
 
-			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["modA"]);
-
 			var instanceExpr = DParser.ParseExpression("(new MyClass!int).tvar");
 
 			Assert.That(instanceExpr, Is.TypeOf(typeof(PostfixExpression_Access)));
@@ -140,12 +131,10 @@ int b=4;
 		[Test]
 		public void TestParamDeduction2()
 		{
-			var pcl = CreateCache(@"
+			var ctxt = CreateDefCtxt(@"
 module modA;
 T foo(T)() {}
 ");
-
-			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["modA"]);
 
 			var call = DParser.ParseExpression("foo!int()");
 			var bt = ExpressionTypeEvaluation.EvaluateType(call, ctxt);
@@ -161,7 +150,7 @@ T foo(T)() {}
 		[Test]
 		public void TestParamDeduction3()
 		{
-			var pcl = CreateCache(@"module modA;
+			var ctxt = CreateDefCtxt(@"module modA;
 
 class A {}
 class A2 {}
@@ -169,16 +158,13 @@ class A2 {}
 class B(T){
 	class C(T2) : T {} 
 }");
-
-			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["modA"]);
-
 			var inst = DParser.ParseExpression("(new B!A).new C!A2"); // TODO
 		}
 
 		[Test]
 		public void TestParamDeduction4()
 		{
-			var ctxt = CreateCtxt("modA", @"module modA;
+			var ctxt = CreateDefCtxt(@"module modA;
 
 void fo(T:U[], U)(T o) {}
 void f(T:U[n], U,int n)(T o) {}
@@ -238,7 +224,7 @@ int delegate(int b) myDeleg;
 		[Test]
 		public void TestParamDeduction5()
 		{
-			var pcl = CreateCache(@"module modA;
+			var pcl = CreateCache(out DModule mod, @"module modA;
 struct Params{}
 class IConn ( P ){}
 class Conn : IConn!(Params){}
@@ -248,7 +234,6 @@ class ConcreteRegistry : Registry!(Conn){}
 class IClient ( P, R : IRegistry!(P) ){}
 class Client : IClient!(Params, ConcreteRegistry){}");
 
-			var mod = pcl.FirstPackage()["modA"];
 			var Client = mod["Client"].First() as DClassLike;
 			var ctxt = CreateDefCtxt(pcl, mod);
 
@@ -279,13 +264,12 @@ class Client : IClient!(Params, ConcreteRegistry){}");
 		[Test]
 		public void TestParamDeduction6()
 		{
-			var pcl = CreateCache(@"module modA;
+			var pcl = CreateCache(out DModule mod, @"module modA;
 class A(T) {}
 class B : A!int{}
 class C(U: A!int){}
 class D : C!B {}");
 
-			var mod = pcl.FirstPackage()["modA"];
 			var ctxt = CreateDefCtxt(pcl, mod);
 
 			var res = TypeDeclarationResolver.HandleNodeMatch(mod["D"].First(), ctxt);
@@ -301,11 +285,10 @@ class D : C!B {}");
 		[Test]
 		public void TestParamDeduction7()
 		{
-			var pcl = CreateCache(@"module A;
+			var pcl = CreateCache(out DModule A, @"module A;
 U genA(U)();
 T delegate(T dgParam) genDelegate(T)();");
 
-			var A = pcl.FirstPackage()["A"];
 			var ctxt = CreateDefCtxt(pcl, A);
 
 			var ex = DParser.ParseExpression("genDelegate!int()");
@@ -323,7 +306,7 @@ T delegate(T dgParam) genDelegate(T)();");
 		[Test]
 		public void TestParamDeduction8_Appender()
 		{
-			var pcl = CreateCache(@"module A;
+			var pcl = CreateCache(out DModule A, @"module A;
 double[] darr;
 struct Appender(A:E[],E) { A data; }
 
@@ -331,8 +314,6 @@ Appender!(E[]) appender(A : E[], E)(A array = null)
 {
     return Appender!(E[])(array);
 }");
-
-			var A = pcl.FirstPackage()["A"];
 			var ctxt = CreateDefCtxt(pcl, A);
 
 			var ex = DParser.ParseExpression("new Appender!(double[])(darr)");
@@ -477,13 +458,12 @@ V foo3(V)(V v) {}");
 		[Test]
 		public void TemplateParamDeduction11()
 		{
-			var pcl = CreateCache(@"module modA;
+			var ctxt = CreateDefCtxt(@"module modA;
 Appender!(E[]) appender(A : E[], E)(A array = null) { return Appender!(E[])(array); }
 struct Appender(A : T[], T) {
 	this(T[] arr){}
 }
 ");
-			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["modA"]);
 
 			var ex = DParser.ParseExpression("appender!(int[])()");
 			var t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
@@ -497,7 +477,7 @@ struct Appender(A : T[], T) {
 		[Test]
 		public void TemplateParamDeduction12()
 		{
-			var pcl = CreateCache(@"module modA;
+			var pcl = CreateCache(out DModule modA, @"module modA;
 template Tmpl(T)
 {
 	enum Tmpl = false;
@@ -514,7 +494,6 @@ template tt(alias U)
 
 int sym;
 ");
-			var modA = pcl.FirstPackage()["modA"];
 			var ctxt = CreateDefCtxt(pcl, modA);
 
 			var ex = DParser.ParseExpression("Tmpl!sym");
@@ -537,7 +516,7 @@ int sym;
 		[Test]
 		public void TemplateParamDeduction13()
 		{
-			var ctxt = CreateCtxt("modA", @"module modA;
+			var ctxt = CreateDefCtxt(@"module modA;
 class A(S:string) {}
 class A(T){}
 
@@ -562,7 +541,7 @@ class C(U: A!W, W){ W item; }
 		[Test]
 		public void TemplateParamDeduction14()
 		{
-			var ctxt = CreateCtxt("modA", @"module modA;
+			var ctxt = CreateDefCtxt(@"module modA;
 class A(S:string) {}
 
 class C(U: A!W, W){ W item; }
@@ -583,7 +562,7 @@ class C(U: A!W, W){ W item; }
 		[Test]
 		public void DefaultTemplateParamType()
 		{
-			var ctxt = CreateCtxt("A", @"module A;
+			var ctxt = CreateDefCtxt(@"module A;
 struct StringNumPair(T = string, U = long){
     T m_str;
     U m_num;
@@ -610,7 +589,7 @@ struct StringNumPair(T = string, U = long){
 		[Test]
 		public void TemplateArgAsBasetype()
 		{
-			var ctxt = CreateCtxt("A", @"module A;
+			var ctxt = CreateDefCtxt(@"module A;
 class A(T) { T t; }
 class B(Z) : A!Z {}
 
@@ -632,7 +611,7 @@ B!int b;");
 		[Test]
 		public void TemplateTypeTuple1()
 		{
-			var pcl = CreateCache(@"module modA;
+			var ctxt = CreateDefCtxt(@"module modA;
 template Print(A ...) { 
 	void print() { 
 		writefln(""args are "", A); 
@@ -652,9 +631,6 @@ void main() {
 	Print!(1,'a',6.8).print(); // prints: args are 1a6.8 
 	Write!(int, char, double).write(1, 'a', 6.8); // prints: args are 1a6.8
 }");
-
-			var modA = pcl.FirstPackage()["modA"];
-			var ctxt = CreateDefCtxt(pcl, modA);
 
 			var x = DParser.ParseExpression("Print!(1,'a',6.8)");
 			var t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
@@ -700,13 +676,12 @@ void main() {
 		[Test]
 		public void EmptyTypeTuple()
 		{
-			var pcl = CreateCache(@"module A;
+			var ctxt = CreateDefCtxt(@"module A;
 enum E {A,B}
 
 int writeln(T...)(T t)
 {
 }");
-			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["A"]);
 
 			IExpression ex;
 			AbstractType x;
@@ -727,7 +702,7 @@ int writeln(T...)(T t)
 		[Test]
 		public void TypeTupleAsArgument()
 		{
-			var pcl = CreateCache(@"module A;
+			var pcl = CreateCache(out DModule modA, @"module A;
 template bar(T...) {
     static if(T.length == 1) {
         enum bar = ['a','g','h'];
@@ -739,7 +714,7 @@ template bar(T...) {
 auto foo() {
     
 }");
-			var foo = pcl.FirstPackage()["A"]["foo"].First() as DMethod;
+			var foo = modA["foo"].First() as DMethod;
 			var ctxt = CreateDefCtxt(pcl, foo, foo.Body);
 
 			var ex = DParser.ParseExpression("bar!int");
@@ -758,13 +733,11 @@ auto foo() {
 		[Test]
 		public void IdentifierOnlyTemplateDeduction()
 		{
-			var pcl = CreateCache(@"module A;
+			var ctxt = CreateDefCtxt(@"module A;
 class Too(T:int)
 { int foo1;}
 class Too(T:float)
 { int foo2;}");
-
-			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["A"]);
 
 			var ex = DParser.ParseExpression("Too");
 			var t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
@@ -787,7 +760,7 @@ class Too(T:float)
 		[Test]
 		public void TemplateParameterPrototypeRecognition()
 		{
-			var pcl = CreateCache(@"module A;
+			var pcl = CreateCache(out DModule modA, @"module A;
 static int tmplFoo(T)() {}
 static int[] tmplFoo2(T : U[], U)(int oo) {}
 static int* tmplBar(T)(T t) {}
@@ -801,7 +774,7 @@ void foo(FU)(FU u)
 }");
 			IExpression ex;
 
-			var foo = pcl.FirstPackage()["A"]["foo"].First() as DMethod;
+			var foo = modA["foo"].First() as DMethod;
 			var ctxt = CreateDefCtxt(pcl, foo, foo.Body);
 			var subSt = foo.Body.SubStatements as List<IStatement>;
 
@@ -835,7 +808,7 @@ void foo(FU)(FU u)
 		[Test]
 		public void TemplateParameterPrototypeRecognition1()
 		{
-			var pcl = CreateCache(@"module A;
+			var pcl = CreateCache(out DModule modA, @"module A;
 static int tmplFoo(T)() {}
 static int[] tmplFoo2(T : U[], U)(int oo) {}
 static int* tmplBar(T)(T t) {}
@@ -845,7 +818,7 @@ void foo(U)(U u)
 	tmplFoo!U;
 }");
 
-			var foo = pcl.FirstPackage()["A"]["foo"].First() as DMethod;
+			var foo = modA["foo"].First() as DMethod;
 			var ctxt = CreateDefCtxt(pcl, foo, foo.Body);
 			var subSt = foo.Body.SubStatements as List<IStatement>;
 
@@ -861,7 +834,7 @@ void foo(U)(U u)
 		[Test]
 		public void TemplateAliasing()
 		{
-			var pcl = CreateCache(@"module m;
+			var ctxt = CreateDefCtxt(@"module m;
 template Foo(A)
 {
 	A Foo;
@@ -882,8 +855,6 @@ template Baz(B)
 	else
 		B[] Baz;
 }");
-
-			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["m"]);
 
 			DToken tk;
 			var td = DParser.ParseBasicType("Foo!int", out tk);

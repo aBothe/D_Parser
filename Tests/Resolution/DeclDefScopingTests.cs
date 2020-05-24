@@ -18,7 +18,7 @@ namespace Tests.Resolution
 		[Test]
 		public void BasicResolution0()
 		{
-			var pcl = CreateCache(
+			var pcl = CreateCache(out DModule modA,
 @"module modA; import modC;", // Searching for 'T' will always deliver the definition from A, never from B
 @"module modB; import modC, modD;", // Searching for 'T' will result in an ambigous definition, independently of any kinds of restricting constraints!
 @"module modC; 
@@ -53,7 +53,7 @@ void asdf(int* ni=23) {
 	}
 }");
 
-			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["modA"]);
+			var ctxt = CreateDefCtxt(pcl, modA);
 
 			var t = R("T", ctxt);
 			Assert.That(t.Count, Is.EqualTo(1));
@@ -119,7 +119,7 @@ class baseFoo
 		[Test]
 		public void BasicResolution1()
 		{
-			var pcl = CreateCache(@"module A;
+			var pcl = CreateCache(out DModule m, @"module A;
 
 int globalVar;
 enum enumSym = null;
@@ -154,7 +154,7 @@ void foo()
 	o.statBase;
 	o.baseB;
 }", @"module B; import A; cl inst;");
-			var foo = pcl.FirstPackage()["A"]["foo"].First() as DMethod;
+			var foo = m["foo"].First() as DMethod;
 			var ctxt = CreateDefCtxt(pcl, foo, foo.Body.Location);
 			var subSt = foo.Body.SubStatements as List<IStatement>;
 
@@ -378,10 +378,10 @@ struct Foo
 		[Test]
 		public void Imports2()
 		{
-			var pcl = CreateCache(@"module A; import B;", @"module B; import C;", @"module C; public import D;", @"module D; void foo(){}",
+			var pcl = CreateCache(out DModule m, @"module A; import B;", @"module B; import C;", @"module C; public import D;", @"module D; void foo(){}",
 								 @"module E; import F;", @"module F; public import C;");
 
-			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["A"]);
+			var ctxt = CreateDefCtxt(pcl, m);
 
 			var t = R("foo", ctxt);
 			Assert.That(t.Count, Is.EqualTo(0));
@@ -458,9 +458,7 @@ void main()
 		[Test]
 		public void ExplicitModuleNames()
 		{
-			var pcl = CreateCache(@"module A; void aFoo();", @"module std.B; void bFoo();", @"module C;");
-
-			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["C"]);
+			var ctxt = CreateCtxt("C", @"module A; void aFoo();", @"module std.B; void bFoo();", @"module C;");
 
 			DToken tk;
 			var id = DParser.ParseBasicType("A.aFoo", out tk);
@@ -494,15 +492,7 @@ void main()
 		[Test]
 		public void TestMultiModuleResolution1()
 		{
-			var pcl = CreateCache(
-				@"module modC;
-				class C { void fooC(); }",
-
-				@"module modB;
-				import modC;
-				class B:C{}",
-
-				@"module modA;
+			var pcl = CreateCache(out DModule modA, @"module modA;
 				import modB;
 			
 				class A:B{	
@@ -510,9 +500,16 @@ void main()
 							fooC(); // Note that modC wasn't imported publically! Anyway, we're still able to access this method!
 							// So, the resolver must know that there is a class C.
 						}
-				}");
+				}",
 
-			var A = pcl.FirstPackage()["modA"]["A"].First() as DClassLike;
+				@"module modC;
+				class C { void fooC(); }",
+
+				@"module modB;
+				import modC;
+				class B:C{}");
+
+			var A = modA["A"].First() as DClassLike;
 			var bar = A["bar"].First() as DMethod;
 			var call_fooC = bar.Body.SubStatements.First();
 
@@ -537,11 +534,7 @@ void main()
 		[Test]
 		public void TestProtectedNestedType()
 		{
-			var pcl = CreateCache(
-				@"module packA.modA;
-				class C { private class B { int a; } }",
-
-				@"module modB;
+			var pcl = CreateCache(out DModule A, @"module modB;
 				import packA.modA;
 				A ca;
 				class A:C{	
@@ -549,9 +542,10 @@ void main()
 void foo(ref B bf) {
 	x;
 }
-				}");
+				}",
+				@"module packA.modA;
+				class C { private class B { int a; } }");
 
-			var A = pcl.FirstPackage()["modB"];
 			var foo = (A["A"].First() as DClassLike)["foo"].First() as DMethod;
 			var ctxt = CreateDefCtxt(pcl, foo, foo.Body.SubStatements.ElementAt(0).Location);
 
@@ -570,7 +564,7 @@ void foo(ref B bf) {
 		[Test]
 		public void SwitchLocals()
 		{
-			var pcl = CreateCache(@"module A;
+			var pcl = CreateCache(out DModule A, @"module A;
 void foo()
 {
 	int i=0;
@@ -584,7 +578,6 @@ void foo()
 	}
 }");
 
-			var A = pcl.FirstPackage()["A"];
 			var foo = A["foo"].First() as DMethod;
 			var case1 = ((foo.Body.SubStatements.ElementAt(1) as SwitchStatement).ScopedStatement as BlockStatement).SubStatements.ElementAt(1) as SwitchStatement.CaseStatement;
 			var colStmt = case1.SubStatements.ElementAt(1) as ExpressionStatement;
