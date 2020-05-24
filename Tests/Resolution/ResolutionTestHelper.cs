@@ -43,7 +43,7 @@ namespace Tests
 
 	public class ResolutionTestHelper
 	{
-		public static DModule objMod = DParser.ParseString(@"module object;
+		private static readonly DModule ObjectModule = DParser.ParseString(@"module object;
 						alias immutable(char)[] string;
 						alias immutable(wchar)[] wstring;
 						alias immutable(dchar)[] dstring;
@@ -53,12 +53,16 @@ namespace Tests
 
 		public static LegacyParseCacheView CreateCache(params string[] moduleCodes)
 		{
-			var r = new MutableRootPackage(objMod);
+			return CreateCache(out _, moduleCodes);
+		}
+		
+		public static LegacyParseCacheView CreateCache(out DModule firstModule, params string[] moduleCodes)
+		{
+			var modules = moduleCodes.Select(moduleCode => DParser.ParseString(moduleCode)).ToList();
+			firstModule = modules[0];
+			modules.Add(ObjectModule);
 
-			foreach (var code in moduleCodes)
-				r.AddModule(DParser.ParseString(code));
-
-			return new LegacyParseCacheView(new[] { r });
+			return new LegacyParseCacheView(new[] { new MutableRootPackage(modules.ToArray()) });
 		}
 
 		public static ResolutionContext CreateDefCtxt(ParseCacheView pcl, IBlockNode scope, IStatement stmt = null)
@@ -85,8 +89,8 @@ namespace Tests
 
 		public static ResolutionContext CreateDefCtxt(params string[] modules)
 		{
-			var pcl = CreateCache(modules);
-			return CreateDefCtxt(pcl, pcl.FirstPackage().GetModules().First());
+			var pcl = CreateCache(out DModule firstModule,modules);
+			return CreateDefCtxt(pcl, firstModule);
 		}
 
 		public static ResolutionContext CreateCtxt(string scopedModule, params string[] modules)
