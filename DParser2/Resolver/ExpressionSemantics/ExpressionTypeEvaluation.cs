@@ -1,14 +1,14 @@
-﻿using D_Parser.Dom;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
 using D_Parser.Resolver.ASTScanner;
 using D_Parser.Resolver.ExpressionSemantics.CTFE;
-using D_Parser.Resolver.TypeResolution;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using D_Parser.Resolver.Templates;
+using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Resolver.ExpressionSemantics
 {
@@ -211,12 +211,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			IEnumerable<AbstractType> overloads;
 
-			if (foreExpression is IntermediateIdType)
-				overloads = GetOverloads(foreExpression as IntermediateIdType, ctxt, null, !(foreExpression is IdentifierExpression));
-			else if (foreExpression is PostfixExpression_Access)
-				overloads = GetAccessedOverloads(foreExpression as PostfixExpression_Access, ctxt, null, false);
-			else if (foreExpression is TokenExpression)
-				overloads = GetResolvedConstructorOverloads((TokenExpression)foreExpression, ctxt);
+			if (foreExpression is IntermediateIdType type)
+				overloads = GetOverloads(type, ctxt, null, !(type is IdentifierExpression));
+			else if (foreExpression is PostfixExpression_Access access)
+				overloads = GetAccessedOverloads(access, ctxt, null, false);
+			else if (foreExpression is TokenExpression expression)
+				overloads = GetResolvedConstructorOverloads(expression, ctxt);
 			else
 				overloads = AmbiguousType.TryDissolve(EvaluateType(foreExpression, ctxt, false));
 
@@ -234,9 +234,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		private static void GetUnfilteredMethodOverloads_Helper(IExpression foreExpression, ResolutionContext ctxt, IExpression supExpression, List<AbstractType> l, ref bool staticOnly, AbstractType ov)
 		{
 			var t = ov;
-			if (ov is MemberSymbol)
+			if (ov is MemberSymbol ms)
 			{
-				var ms = ov as MemberSymbol;
 				if (ms.Definition is Dom.DMethod)
 				{
 					l.Add(ms);
@@ -247,10 +246,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				t = ms.Base;
 			}
 
-			if (t is TemplateIntermediateType)
+			if (t is TemplateIntermediateType tit)
 			{
-				var tit = t as TemplateIntermediateType;
-
 				var m = TypeDeclarationResolver.HandleNodeMatches(
 					GetOpCalls(tit, staticOnly), ctxt,
 					null, supExpression ?? foreExpression);
@@ -289,10 +286,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			if (tk.Token == DTokens.This || tk.Token == DTokens.Super)
 			{
-				var classRef = EvaluateType(tk, ctxt) as TemplateIntermediateType;
-
-				if (classRef != null)
-					return D_Parser.Resolver.TypeResolution.TypeDeclarationResolver.HandleNodeMatches(GetConstructors(classRef), ctxt, classRef, tk);
+				if (EvaluateType(tk, ctxt) is TemplateIntermediateType classRef)
+					return TypeDeclarationResolver.HandleNodeMatches(GetConstructors(classRef), ctxt, classRef, tk);
 			}
 			return null;
 		}
@@ -309,8 +304,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			foreach (var m in ct.Definition[DMethod.ConstructorIdentifier])
 			{
 				// Not to forget: 'this' aliases are also possible - so keep checking for m being a genuine ctor
-				var dm = m as DMethod;
-				if (dm != null && dm.SpecialType == DMethod.MethodType.Constructor)
+				if (m is DMethod dm && dm.SpecialType == DMethod.MethodType.Constructor)
 				{
 					yield return dm;
 					foundExplicitCtor = true;
@@ -346,11 +340,10 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 					foreach (var member in ct.Definition)
 					{
-						var dv = member as DVariable;
-						if (dv != null &&
-							!dv.IsStatic &&
-							!dv.IsAlias &&
-							!dv.IsConst) //TODO dunno if public-ness of items is required..
+						if (member is DVariable dv &&
+						    !dv.IsStatic &&
+						    !dv.IsAlias &&
+						    !dv.IsConst) //TODO dunno if public-ness of items is required..
 							dm.Parameters.Add(dv);
 					}
 
@@ -365,8 +358,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			if (opCall != null)
 				foreach (var call in opCall)
 				{
-					var dm = call as DMethod;
-					if (dm != null && (!staticOnly || dm.IsStatic))
+					if (call is DMethod dm && (!staticOnly || dm.IsStatic))
 						yield return dm;
 				}
 		}
@@ -376,12 +368,12 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		#region Infix (op-based) expressions
 		AbstractType OpExpressionType(OperatorBasedExpression x)
 		{
-			var t = x.LeftOperand != null ? x.LeftOperand.Accept(this) : null;
+			var t = x.LeftOperand?.Accept(this);
 
 			if (t != null)
 				return t;
 
-			return x.RightOperand != null ? x.RightOperand.Accept(this) : null;
+			return x.RightOperand?.Accept(this);
 		}
 
 		public AbstractType Visit(AssignExpression x)
@@ -436,7 +428,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 		public AbstractType Visit(InExpression x)
 		{
-			return x.RightOperand != null ? x.RightOperand.Accept(this) : null;
+			return x.RightOperand?.Accept(this);
 		}
 
 		public AbstractType Visit(ShiftExpression x)
@@ -564,9 +556,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 
 			foreach (var t in AmbiguousType.TryDissolve(possibleTypes))
 			{
-				var ct = t as TemplateIntermediateType;
-				if (ct != null &&
-					!ct.Definition.ContainsAnyAttribute(DTokens.Abstract))
+				if (t is TemplateIntermediateType ct &&
+				    !ct.Definition.ContainsAnyAttribute(DTokens.Abstract))
 					foreach (var ctor in GetConstructors(ct)){
 						// Omit all ctors that won't return the adequate 
 						if (ct.HasModifiers)
@@ -579,8 +570,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 							bool skip = false;
 							foreach (var attr in ctor.Attributes)
 							{
-								var mod = attr as Modifier;
-								if (mod != null)
+								if (attr is Modifier mod)
 								{
 									switch (mod.Token)
 									{
@@ -679,8 +669,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				if (foreExpression == null)
 					break;
 
-				if (arg is PostfixExpression_ArrayAccess.SliceArgument)
-					foreExpression = SliceArray (x, foreExpression, arg as PostfixExpression_ArrayAccess.SliceArgument);
+				if (arg is PostfixExpression_ArrayAccess.SliceArgument sliceArgument)
+					foreExpression = SliceArray (x, foreExpression, sliceArgument);
 				else
 					foreExpression = AccessArrayAtIndex (x, foreExpression, arg,ref arg_i);
 			}
@@ -698,7 +688,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				var ch = tit.Definition[DVariable.AliasThisIdentifierHash];
 				if (ch != null)
 				{
-					foreach (DVariable aliasThis in ch)
+					foreach (var aliasThis in ch)
 					{
 						foreExpression = DResolver.StripMemberSymbols(TypeDeclarationResolver.HandleNodeMatch(aliasThis, ctxt, foreExpression));
 						if (foreExpression != null)
@@ -1034,7 +1024,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		#region Primitive expressions
 		public AbstractType Visit(Expression ex)
 		{
-			return ex.Expressions.Count == 0 ? null : ex.Expressions[ex.Expressions.Count - 1].Accept(this);
+			return ex.Expressions.Count == 0 ? null : ex.Expressions[^1].Accept(this);
 		}
 
 		public AbstractType Visit(AnonymousClassExpression x)
