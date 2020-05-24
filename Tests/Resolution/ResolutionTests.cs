@@ -6,6 +6,7 @@ using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
 using NUnit.Framework;
+using Tests.Completion;
 
 namespace Tests.Resolution
 {

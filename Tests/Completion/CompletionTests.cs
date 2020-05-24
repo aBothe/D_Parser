@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading;
 using D_Parser;
 using D_Parser.Completion;
@@ -15,7 +13,7 @@ using NUnit.Framework;
 using NUnit.Framework.Constraints;
 using Tests.Resolution;
 
-namespace Tests
+namespace Tests.Completion
 {
 	/// <summary>
 	/// Description of CompletionTests.
@@ -398,83 +396,6 @@ foo(
 			Assert.That (con.suggestedItem, Is.EqualTo ("myE"));
 		}
 
-		[Test]
-		public void TooltipGeneration_MethodSignature()
-		{
-			var tooltipGen = new D_Parser.Completion.ToolTips.NodeTooltipRepresentationGen();
-
-			var ctxt = ResolutionTestHelper.CreateDefCtxt(@"module A;
-void foo(int a, string b) {}");
-
-			var foo = ResolutionTestHelper.N<DMethod>(ctxt, "A.foo");
-
-			var fooSymbol = new MemberSymbol(foo);
-
-			var signature = tooltipGen.GenTooltipSignature(fooSymbol, false, 1);
-			signature = signature.Replace("\r\n", "\n");
-			var expected = @"void A.foo(
-  int a,
-  <span underline='single'>string b</span>
-)".Replace("\r\n", "\n");
-			Assert.That(signature, Is.EqualTo(expected));
-		}
-		[Test]
-		public void TooltipGeneration_Modifiers()
-		{
-			var tooltipGen = new D_Parser.Completion.ToolTips.NodeTooltipRepresentationGen();
-
-			var ctxt = ResolutionTestHelper.CreateDefCtxt(@"module A;
-static private const double eps;");
-
-			var eps = ResolutionTestHelper.N<DVariable>(ctxt, "A.eps");
-
-			var signature = tooltipGen.GenTooltipSignature(eps, false, 1);
-			Assert.That(signature, Is.EqualTo(@"private static const(double) A.eps"));
-		}
-
-
-		[Test]
-		public void TooltipGeneration_MethodDDoc_SimpleSummary()
-		{
-			var tooltipGen = new D_Parser.Completion.ToolTips.NodeTooltipRepresentationGen();
-
-			var ctxt = ResolutionTestHelper.CreateDefCtxt(@"module A;
-/// Does magic.
-void foo(int a, string b) {}");
-
-			var foo = ResolutionTestHelper.N<DMethod>(ctxt, "A.foo");
-
-			tooltipGen.GenToolTipBody(foo, out var summary, out var categories);
-			Assert.That(summary, Is.EqualTo(@"Does magic."));
-		}
-
-		[Test]
-		public void TooltipGeneration_MethodDDoc_Categories()
-		{
-			var tooltipGen = new D_Parser.Completion.ToolTips.NodeTooltipRepresentationGen();
-
-			var ctxt = ResolutionTestHelper.CreateDefCtxt(@"module A;
-/**
- * Read the file.
- * Returns: The contents of the file.
- *
- * License: xyz
- *
- * Params:
- *      x =     is for this
- *              and not for that
- *      y =     is for that
- */
-void foo(int a, string b) {}");
-
-			var foo = ResolutionTestHelper.N<DMethod>(ctxt, "A.foo");
-
-			tooltipGen.GenToolTipBody(foo, out var summary, out var categories);
-			Assert.That(categories.Count, Is.EqualTo(2));
-			Assert.That(categories.ContainsKey("Returns"));
-			Assert.That(categories.ContainsKey("Params"));
-		}
-
 		#region Test lowlevel
 		public static class Does
 		{
@@ -517,93 +438,6 @@ void foo(int a, string b) {}");
 			{
 				public static readonly TriggerConstraint Trigger = new TriggerConstraint (true);
 			}
-		}
-
-		public class TestCompletionDataGen : ICompletionDataGenerator
-		{
-			public TestCompletionDataGen(INode[] whiteList, INode[] blackList)
-			{
-				if(whiteList != null){
-					remainingWhiteList= new List<INode>(whiteList);
-					this.whiteList = new List<INode>(whiteList);
-				}
-				if(blackList != null)
-					this.blackList = new List<INode>(blackList);
-			}
-
-			public List<INode> remainingWhiteList;
-			public List<INode> whiteList;
-			public List<INode> blackList;
-			public string suggestedItem;
-
-			#region ICompletionDataGenerator implementation
-
-			public void SetSuggestedItem (string item)
-			{
-				suggestedItem = item;
-			}
-
-			public void AddCodeGeneratingNodeItem (INode node, string codeToGenerate)
-			{
-
-			}
-
-			public List<byte> Tokens = new List<byte> ();
-			public void Add (byte Token)
-			{
-				Tokens.Add (Token);
-			}
-
-			public List<string> Attributes = new List<string> ();
-			public void AddPropertyAttribute (string AttributeText)
-			{
-				Attributes.Add (AttributeText);
-			}
-
-			public void AddTextItem (string Text, string Description)
-			{
-
-			}
-
-			public void AddIconItem (string iconName, string text, string description)
-			{
-
-			}
-
-			public List<INode> addedItems = new List<INode> ();
-			public void Add (INode n)
-			{
-				if (blackList != null && blackList.Contains(n))
-					Assert.Fail();
-
-				if (whiteList != null && whiteList.Contains(n) && !remainingWhiteList.Remove(n))
-					Assert.Fail (n + " occurred at least twice!");
-
-				addedItems.Add (n);
-			}
-
-			public void AddModule (DModule module, string nameOverride = null)
-			{
-				this.Add (module);
-			}
-
-			public List<string> Packages = new List<string> ();
-			public void AddPackage (string packageName)
-			{
-				Packages.Add (packageName);
-			}
-
-			#endregion
-
-			public bool HasRemainingItems { get{ return remainingWhiteList != null && remainingWhiteList.Count > 0; } }
-
-
-			public void NotifyTimeout()
-			{
-				throw new OperationCanceledException();
-			}
-
-			public ISyntaxRegion TriggerSyntaxRegion { get; set; }
 		}
 
 		public static INode GetNode(EditorData ed, string id, ref ResolutionContext ctxt)
