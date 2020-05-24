@@ -110,11 +110,11 @@ namespace Tests.ExpressionEvaluation
 		public void Test2_066UCSnytax()
 		{
 			var x = DParser.ParseExpression("short(3)");
-			var v = Evaluation.EvaluateValue(x, ResolutionTests.CreateDefCtxt());
+			var v = Evaluation.EvaluateValue(x, ResolutionTestHelper.CreateDefCtxt(""));
 
 			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
-			Assert.That((v as PrimitiveValue).BaseTypeToken, Is.EqualTo(DTokens.Short));
-			Assert.That((v as PrimitiveValue).Value, Is.EqualTo(3m));
+			Assert.That(((PrimitiveValue) v).BaseTypeToken, Is.EqualTo(DTokens.Short));
+			Assert.That(((PrimitiveValue) v).Value, Is.EqualTo(3m));
 		}
 
 		[Test]

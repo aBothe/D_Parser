@@ -1041,7 +1041,7 @@ Cls inst;
 		[Test]
 		public void AliasThisOnNonInstances()
 		{
-			var ctxt = CreateCtxt("A", @"module A;
+			var ctxt = CreateDefCtxt(@"module A;
 struct S1 { int a; }
 struct S2(T) {
 	int b;
@@ -1064,7 +1064,7 @@ S2!S1 s;
 		[Test]
 		public void TypeofIntSize()
 		{
-			var ctxt = CreateDefCtxt();
+			var ctxt = CreateDefCtxt("");
 
 			ITypeDeclaration td;
 			AbstractType t;
