@@ -1,4 +1,4 @@
-//
+﻿//
 // CompletionService.cs
 //
 // Author:
@@ -23,17 +23,15 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using D_Parser.Completion;
-using D_Parser.Parser;
-using D_Parser.Dom;
-using D_Parser.Dom.Statements;
-using D_Parser.Dom.Expressions;
-using D_Parser.Resolver.TypeResolution;
-using D_Parser.Resolver;
+
 using System;
-using System.Threading.Tasks;
 using System.Threading;
-using D_Parser.Misc;
+using D_Parser.Dom;
+using D_Parser.Dom.Expressions;
+using D_Parser.Dom.Statements;
+using D_Parser.Parser;
+using D_Parser.Resolver;
+using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Completion
 {//TODO: Flexible lambda completion
@@ -62,12 +60,12 @@ namespace D_Parser.Completion
 			}
 
 			var complVis = new CompletionProviderVisitor (completionDataGen, editor, triggerChar) { scopedBlock = _b };
-			if (sr is INode)
-				(sr as INode).Accept (complVis);
-			else if (sr is IStatement)
-				(sr as IStatement).Accept (complVis);
-			else if (sr is IExpression)
-				(sr as IExpression).Accept (complVis);
+			if (sr is INode node)
+				node.Accept (complVis);
+			else if (sr is IStatement statement)
+				statement.Accept (complVis);
+			else if (sr is IExpression expression)
+				expression.Accept (complVis);
 
 			if (complVis.GeneratedProvider == null)
 				return false;
@@ -113,13 +111,12 @@ namespace D_Parser.Completion
 				return null;
 
 			// class asd : |
-			if (currentScope is IBlockNode && (currentScope as IBlockNode).BlockStartLocation > editor.CaretLocation)
+			if (currentScope.BlockStartLocation > editor.CaretLocation)
 				currentScope = currentScope.Parent as IBlockNode;
 
 			BlockStatement blockStmt;
 			// Always skip lambdas as they're too quirky for accurate scope calculation // ISSUE: May be other anon symbols too?
-			var dm = currentScope as DMethod;
-			if (dm != null && (dm.SpecialType & DMethod.MethodType.Lambda) != 0)
+			if (currentScope is DMethod dm && (dm.SpecialType & DMethod.MethodType.Lambda) != 0)
 				currentScope = dm.Parent as IBlockNode;
 
 			if (currentScope is DMethod &&
@@ -187,8 +184,8 @@ namespace D_Parser.Completion
 
 			ac ();
 
-			if (cts.IsCancellationRequested && cdgen != null)
-				cdgen.NotifyTimeout ();
+			if (cts.IsCancellationRequested)
+				cdgen?.NotifyTimeout ();
 		}
 	}
 }

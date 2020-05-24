@@ -1,4 +1,4 @@
-//
+﻿//
 // CompletionProviderVisitor.cs
 //
 // Author:
@@ -89,7 +89,7 @@ namespace D_Parser.Completion
 			if (!halt)
 				shownKeywords.Push(BlockMemberFilter);
 
-			var en = block.GetEnumerator ();
+			using var en = block.GetEnumerator ();
 			while (!halt && en.MoveNext ()) {
 				if (en.Current.Location > ed.CaretLocation) {
 					halt = true;
@@ -573,7 +573,7 @@ namespace D_Parser.Completion
 
 		private static bool IsIncompleteExpression(IExpression x)
 		{
-			return x is TokenExpression && (x as TokenExpression).Token == DTokens.Incomplete;
+			return x is TokenExpression expression && expression.Token == DTokens.Incomplete;
 		}
 
 		public override void Visit (PostfixExpression_Access x)

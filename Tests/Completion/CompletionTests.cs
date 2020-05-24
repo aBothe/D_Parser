@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using System.Threading;
 using D_Parser;
 using D_Parser.Completion;
@@ -389,7 +389,7 @@ foo(§
 }";
 			ed = GenEditorData (s);
 
-			var con = TestCompletionListContents (ed);
+			var con = TestCompletionListContents (ed, null, null);
 			Assert.That (con.suggestedItem, Is.EqualTo ("myE"));
 		}
 
@@ -533,7 +533,7 @@ AClass.B§ b;
 			ed.CaretOffset = DocumentHelper.LocationToOffset (focusedModuleCode, caretLine, caretPos);
 		}
 
-		private static TestCompletionDataGen TestCompletionListContents(IEditorData ed, INode[] itemWhiteList = null, INode[] itemBlackList = null, char trigger = '\0')
+		private static TestCompletionDataGen TestCompletionListContents(IEditorData ed, INode[] itemWhiteList, INode[] itemBlackList, char trigger = '\0')
 		{
 			var gen = new TestCompletionDataGen (itemWhiteList, itemBlackList);
 			Assert.That (CodeCompletion.GenerateCompletionData (ed, gen, trigger), Is.True);
