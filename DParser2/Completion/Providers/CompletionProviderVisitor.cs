@@ -1,4 +1,4 @@
-//
+﻿//
 // CompletionProviderVisitor.cs
 //
 // Author:
@@ -118,8 +118,11 @@ namespace D_Parser.Completion
 					cdgen.SetSuggestedItem(id.Id);
 					cdgen.TriggerSyntaxRegion = id;
 					prv = new MemberCompletionProvider(cdgen, id.InnerDeclaration, scopedBlock);
-				} else
-					explicitlyNoCompletion = true;
+				}
+				else
+				{
+					prv = new VariableNameSuggestionCompletionProvider(cdgen, n);
+				}
 				halt = true;
 			}
 			else
@@ -394,7 +397,6 @@ namespace D_Parser.Completion
 				{
 					TrySuggestPreselection(x);
 					cdgen.TriggerSyntaxRegion = x.Arguments[^1];
-					prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, shownKeywords.Count == 0 ? MemberFilter.All | MemberFilter.ExpressionKeywords : shownKeywords.Peek());
 				}
 			}
 			else

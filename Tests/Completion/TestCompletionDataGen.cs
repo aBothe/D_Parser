@@ -10,19 +10,15 @@ namespace Tests.Completion
     {
         public TestCompletionDataGen(INode[] whiteList, INode[] blackList)
         {
-            if (whiteList != null)
-            {
-                remainingWhiteList = new List<INode>(whiteList);
-                this.whiteList = new List<INode>(whiteList);
-            }
-
-            if (blackList != null)
-                this.blackList = new List<INode>(blackList);
+            _remainingWhiteList = new List<INode>(whiteList ?? new INode[0]);
+            _whiteList = new List<INode>(whiteList ?? new INode[0]);
+            _blackList = new List<INode>(blackList ?? new INode[0]);
         }
 
-        public List<INode> remainingWhiteList;
-        public List<INode> whiteList;
-        public List<INode> blackList;
+        private readonly List<INode> _remainingWhiteList;
+        private readonly List<INode> _whiteList;
+        private readonly List<INode> _blackList;
+        public readonly List<string> AddedTextItems = new List<string>();
         public string suggestedItem;
 
         #region ICompletionDataGenerator implementation
@@ -50,25 +46,26 @@ namespace Tests.Completion
             Attributes.Add(AttributeText);
         }
 
-        public void AddTextItem(string Text, string Description)
+        public void AddTextItem(string text, string Description)
         {
+            AddedTextItems.Add(text);
         }
 
         public void AddIconItem(string iconName, string text, string description)
         {
         }
 
-        public readonly List<INode> addedItems = new List<INode>();
+        public readonly List<INode> AddedItems = new List<INode>();
 
         public void Add(INode n)
         {
-            if (blackList != null && blackList.Contains(n))
+            if (_blackList.Contains(n))
                 Assert.Fail();
 
-            if (whiteList != null && whiteList.Contains(n) && !remainingWhiteList.Remove(n))
+            if (_whiteList.Contains(n) && !_remainingWhiteList.Remove(n))
                 Assert.Fail(n + " occurred at least twice!");
 
-            addedItems.Add(n);
+            AddedItems.Add(n);
         }
 
         public void AddModule(DModule module, string nameOverride = null)
@@ -85,7 +82,7 @@ namespace Tests.Completion
 
         #endregion
 
-        public bool HasRemainingItems => remainingWhiteList != null && remainingWhiteList.Count > 0;
+        public bool HasRemainingItems => _remainingWhiteList.Count > 0;
 
 
         public void NotifyTimeout()

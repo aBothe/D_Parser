@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading;
 using D_Parser;
 using D_Parser.Completion;
@@ -83,11 +83,11 @@ new K().
 			var gen = TestCompletionListContents(ed, null, null);
 
 			var foo = ed.SyntaxTree["foo"].First() as DVariable;
-			Assert.That (gen.addedItems, Has.No.Member (foo));
+			Assert.That (gen.AddedItems, Has.No.Member (foo));
 			var K = (DClassLike)ed.SyntaxTree["K"].First();
-			Assert.That (gen.addedItems, Has.No.Member (K));
+			Assert.That (gen.AddedItems, Has.No.Member (K));
 			var member = (DVariable)K["member"].First();
-			Assert.That (gen.addedItems, Has.Member (member));
+			Assert.That (gen.AddedItems, Has.Member (member));
 		}
 
 		[Test]
