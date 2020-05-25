@@ -29,6 +29,7 @@ using D_Parser.Parser;
 
 namespace D_Parser.Formatting.Indent
 {
+#if IGNORE
 	class DIndentEngine : IStateMachineIndentEngine
 	{
 		#region Properties
@@ -327,5 +328,6 @@ namespace D_Parser.Formatting.Indent
 		}
 		#endregion
 	}
+#endif
 }
 

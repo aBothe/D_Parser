@@ -11,9 +11,9 @@ cache: bundler
 
 install:
   - nuget restore DParser2.Unittest.sln
-  - nuget install NUnit.Console -Version 3.9.0 -OutputDirectory packages
+  - nuget install NUnit.Console -Version 3.11.1 -OutputDirectory packages
 
 script:
   - msbuild /p:Configuration=Debug "/p:Platform=Any CPU" DParser2.Unittest.sln
-  - mono ./packages/NUnit.ConsoleRunner.3.9.0/tools/nunit3-console.exe /out:stdout.log ./Tests/bin/Debug/Tests.dll
+  - mono ./packages/NUnit.ConsoleRunner.3.11.1/tools/nunit3-console.exe /out:stdout.log ./Tests/bin/Debug/netcoreapp3.0/Tests.dll
   - cat stdout.log

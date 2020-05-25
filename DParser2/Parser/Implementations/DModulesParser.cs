@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-
 using D_Parser.Dom;
 using D_Parser.Dom.Statements;
 
@@ -560,7 +559,7 @@ namespace D_Parser.Parser.Implementations
 				if (Expect(DTokens.Identifier))
 					td = new IdentifierDeclaration(t.Value) { Location = t.Location, EndLocation = t.EndLocation, InnerDeclaration = td };
 				else if (IsEOF)
-					td = new IdentifierDeclaration(DTokens.IncompleteIdHash) { InnerDeclaration = td };
+					td = new IdentifierDeclaration(DTokens.IncompleteIdHash) { InnerDeclaration = td, Location = t.Location, EndLocation = t.EndLocation };
 			}
 
 			return td;

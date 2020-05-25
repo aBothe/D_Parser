@@ -4,19 +4,16 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
-
+using D_Parser;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
 using D_Parser.Misc;
-using D_Parser.Misc.Mangling;
 using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
 using NUnit.Framework;
-using D_Parser;
-using Tests.Resolution;
 
 namespace Tests
 {
@@ -1020,7 +1017,7 @@ void main() {
 		public void ParsePerformance1()
 		{
 			//var pc = ParsePhobos(false);
-			var pcl = ResolutionTests.CreateCache(@"module modA;
+			var pcl = ResolutionTestHelper.CreateCache(out DModule m, @"module modA;
 
 import std.stdio, std.array;
 
@@ -1073,7 +1070,7 @@ void main()
 			//pcl.Add(pc);
 
 			var sw = new Stopwatch();
-			var main = pcl.FirstPackage()["modA"]["main"].First() as DMethod;
+			var main = m["main"].First() as DMethod;
 			Assert.AreEqual(0, (pcl.FirstPackage()["modA"] as DModule).ParseErrors.Count);
 			var s = main.Body.SubStatements.Last() as IExpressionContainingStatement;
 			var ctxt = ResolutionContext.Create(pcl, null, main, s.Location);

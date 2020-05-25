@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
@@ -84,7 +83,7 @@ namespace D_Parser.Parser.Implementations
 						var parentStatement = noStatement ? s : l[l.Count - 1];
 						var args = new List<IExpression>();
 						if (IsEOF)
-							args.Add(new TokenExpression(DTokens.Incomplete));
+							args.Add(new TokenExpression(DTokens.Incomplete, t.EndLocation, t.EndLocation));
 						else if (laKind != DTokens.Semicolon)
 						{
 							while (true)
@@ -105,7 +104,7 @@ namespace D_Parser.Parser.Implementations
 									continue;
 								}
 								if (IsEOF)
-									args.Add(new TokenExpression(DTokens.Incomplete));
+									args.Add(new TokenExpression(DTokens.Incomplete, t.EndLocation, t.EndLocation));
 								if (!Expect(DTokens.Semicolon))
 								{
 									while (laKind != DTokens.Semicolon && laKind != DTokens.CloseCurlyBrace && !IsEOF)
@@ -434,13 +433,13 @@ namespace D_Parser.Parser.Implementations
 					if (ins == null || (!ins.IsJmpFamily && ins.Operation != AsmInstructionStatement.OpCode.call))
 						SynErr(DTokens.Dollar, "The $ operator is only valid on jmp and call instructions!");
 					Step();
-					return new TokenExpression(t.Kind) { Location = t.Location, EndLocation = t.EndLocation };
+					return new TokenExpression(t.Kind, t.Location, t.EndLocation);
 				case DTokens.Literal:
 					Step();
 					return new ScalarConstantExpression(t.LiteralValue, t.LiteralFormat, t.Subformat) { Location = t.Location, EndLocation = t.EndLocation };
 				case DTokens.This:
 					Step();
-					return new TokenExpression(DTokens.This) { Location = t.Location, EndLocation = t.EndLocation };
+					return new TokenExpression(DTokens.This, t.Location, t.EndLocation);
 
 				// AsmTypePrefix
 				case DTokens.Byte:
@@ -452,7 +451,7 @@ namespace D_Parser.Parser.Implementations
 
 				case DTokens.__LOCAL_SIZE:
 					Step();
-					return new TokenExpression(t.Kind) { Location = t.Location, EndLocation = t.EndLocation };
+					return new TokenExpression(t.Kind, t.Location, t.EndLocation);
 				case DTokens.Identifier:
 					Step();
 					if (AsmRegisterExpression.IsRegister(t.Value))
@@ -495,7 +494,7 @@ namespace D_Parser.Parser.Implementations
 								if (AsmRegisterExpression.IsRegister(reg))
 									return new AsmRegisterExpression() { Location = t.Location, EndLocation = t.EndLocation, Register = string.Intern(reg) };
 								SynErr(DTokens.Identifier, "Unknown register!");
-								return IsEOF ? new TokenExpression(DTokens.Incomplete) : null;
+								return IsEOF ? new TokenExpression(DTokens.Incomplete, t.EndLocation, t.EndLocation) : null;
 						}
 					}
 					else
@@ -507,7 +506,7 @@ namespace D_Parser.Parser.Implementations
 							if (Expect(DTokens.Identifier))
 								outer = new PostfixExpression_Access() { AccessExpression = new IdentifierExpression(t.Value), PostfixForeExpression = outer };
 							else
-								outer = new TokenExpression(DTokens.Incomplete);
+								outer = new TokenExpression(DTokens.Incomplete, t.EndLocation, t.EndLocation);
 							Step();
 						}
 						return outer;
@@ -516,7 +515,7 @@ namespace D_Parser.Parser.Implementations
 					SynErr(DTokens.Identifier, "Expected a $, literal or an identifier!");
 					Step();
 					if (IsEOF)
-						return new TokenExpression(DTokens.Incomplete);
+						return new TokenExpression(DTokens.Incomplete, t.EndLocation, t.EndLocation);
 					return null;
 			}
 		}

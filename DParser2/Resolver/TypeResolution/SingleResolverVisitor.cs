@@ -132,7 +132,7 @@ namespace D_Parser.Resolver.TypeResolution
 		{
 			filterTemplates = true;
 			// typeof(return)
-			if (typeOf.Expression is TokenExpression && (typeOf.Expression as TokenExpression).Token == DTokens.Return)
+			if (typeOf.Expression is TokenExpression expression && expression.Token == DTokens.Return)
 			{
 				return TypeDeclarationResolver.HandleNodeMatch(ctxt.ScopedBlock, ctxt, null, typeOf);
 			}

@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using D_Parser.Completion;
+﻿using D_Parser.Completion;
 using D_Parser.Dom;
 using System;
 
@@ -20,6 +19,8 @@ namespace ExaustiveCompletionTester
 		{
 			throw new OperationCanceledException();
 		}
+
+		public ISyntaxRegion TriggerSyntaxRegion { get; set; }
 		public void SetSuggestedItem(string item) { }
 	}
 

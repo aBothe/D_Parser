@@ -1,132 +1,24 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\packages\NUnit3TestAdapter.3.10.0\build\net35\NUnit3TestAdapter.props" Condition="Exists('..\packages\NUnit3TestAdapter.3.10.0\build\net35\NUnit3TestAdapter.props')" />
-  <Import Project="..\packages\NUnit.3.10.1\build\NUnit.props" Condition="Exists('..\packages\NUnit.3.10.1\build\NUnit.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{F6C093DA-4643-4063-8587-E61C1F38779B}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <RootNamespace>Tests</RootNamespace>
-    <AssemblyName>Tests</AssemblyName>
-    <SourceAnalysisOverrideSettingsFile>C:\Users\alex\AppData\Roaming\ICSharpCode/SharpDevelop4\Settings.SourceAnalysis</SourceAnalysisOverrideSettingsFile>
-    <SignAssembly>False</SignAssembly>
-    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
-    <AllowUnsafeBlocks>False</AllowUnsafeBlocks>
-    <NoStdLib>False</NoStdLib>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <UseMSBuildEngine>False</UseMSBuildEngine>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugType>full</DebugType>
-    <Optimize>False</Optimize>
-    <OutputPath>bin\Debug</OutputPath>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <ConsolePause>False</ConsolePause>
-    <DebugSymbols>True</DebugSymbols>
-    <RegisterForComInterop>False</RegisterForComInterop>
-    <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
-    <BaseAddress>4194304</BaseAddress>
-    <FileAlignment>4096</FileAlignment>
-    <DefineConstants>DEBUG;</DefineConstants>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <LangVersion>Latest</LangVersion>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>full</DebugType>
-    <Optimize>True</Optimize>
-    <OutputPath>bin\Release</OutputPath>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <ConsolePause>False</ConsolePause>
-    <DebugSymbols>True</DebugSymbols>
-    <RegisterForComInterop>False</RegisterForComInterop>
-    <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
-    <BaseAddress>4194304</BaseAddress>
-    <FileAlignment>4096</FileAlignment>
-    <StartAction>Project</StartAction>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <LangVersion>Latest</LangVersion>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-    <DefineConstants>DEBUG;</DefineConstants>
-    <CheckForOverflowUnderflow>False</CheckForOverflowUnderflow>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Platform)' == 'AnyCPU' ">
-    <RegisterForComInterop>False</RegisterForComInterop>
-    <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
-    <BaseAddress>4194304</BaseAddress>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <FileAlignment>4096</FileAlignment>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-    <CheckForOverflowUnderflow>False</CheckForOverflowUnderflow>
-    <StartAction>Project</StartAction>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
-    <OutputPath>bin\x86\Debug\</OutputPath>
-    <PlatformTarget>x86</PlatformTarget>
-    <LangVersion>Latest</LangVersion>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="nunit.framework">
-      <HintPath>..\packages\NUnit.3.10.1\lib\net45\nunit.framework.dll</HintPath>
-    </Reference>
+    <PackageReference Include="nunit" Version="3.12.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="3.15.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.4.0" />
   </ItemGroup>
+
   <ItemGroup>
-    <Compile Include="CompletionTests.cs" />
-    <Compile Include="ExpressionEvaluation\CtfeTests.cs" />
-    <Compile Include="ExpressionEvaluation\TraitsEvaluationTests.cs" />
-    <Compile Include="Misc\DemanglerTests.cs" />
-    <Compile Include="Misc\GlobalParseCacheTests.cs" />
-    <Compile Include="ExpressionEvaluation\EvaluationTests.cs" />
-    <Compile Include="FormatterTests.cs" />
-    <Compile Include="IndentationTests.cs" />
-    <Compile Include="Resolution\DeclarationConstraintsTests.cs" />
-    <Compile Include="Resolution\DeclDefScopingTests.cs" />
-    <Compile Include="Resolution\ImplicitConversionTests.cs" />
-    <Compile Include="ParseTests.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Resolution\LooseResolutionTests.cs" />
-    <Compile Include="Resolution\MixinResolutionTests.cs" />
-    <Compile Include="Resolution\OperatorOverloadingTests.cs" />
-    <Compile Include="Resolution\ReferenceFindingTests.cs" />
-    <Compile Include="Resolution\ResolutionTestHelper.cs" />
-    <Compile Include="Resolution\ResolutionTests.cs" />
-    <Compile Include="Resolution\StatementTests.cs" />
-    <Compile Include="Resolution\TemplateMixinResolutionTests.cs" />
-    <Compile Include="Resolution\TemplateParameterDeductionTests.cs" />
-    <Compile Include="Resolution\UFCSTests.cs" />
-    <Compile Include="Resolution\MethodCallOverloadRelatedTests.cs" />
+    <ProjectReference Include="..\DParser2\DParser2.csproj" />
   </ItemGroup>
+
   <ItemGroup>
-    <ProjectReference Include="..\DParser2\DParser2.csproj">
-      <Project>{0290A229-9AA1-41C3-B525-CAFB86D8BC42}</Project>
-      <Name>DParser2</Name>
-    </ProjectReference>
+    <None Remove="formatterTests.txt" />
+    <EmbeddedResource Include="formatterTests.txt" />
   </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="formatterTests.txt">
-      <LogicalName>formatterTests</LogicalName>
-    </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
-    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>Dieses Projekt verweist auf mindestens ein NuGet-Paket, das auf diesem Computer fehlt. Verwenden Sie die Wiederherstellung von NuGet-Paketen, um die fehlenden Dateien herunterzuladen. Weitere Informationen finden Sie unter "http://go.microsoft.com/fwlink/?LinkID=322105". Die fehlende Datei ist "{0}".</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\packages\NUnit3TestAdapter.3.10.0\build\net35\NUnit3TestAdapter.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\NUnit3TestAdapter.3.10.0\build\net35\NUnit3TestAdapter.props'))" />
-  </Target>
+
 </Project>

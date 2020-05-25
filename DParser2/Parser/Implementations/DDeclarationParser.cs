@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 
@@ -1233,7 +1232,7 @@ namespace D_Parser.Parser.Implementations
 				if (laKind == DTokens.Return)
 				{
 					Step();
-					md.Expression = new TokenExpression(DTokens.Return) { Location = t.Location, EndLocation = t.EndLocation };
+					md.Expression = new TokenExpression(DTokens.Return, t.Location, t.EndLocation);
 				}
 				else
 					md.Expression = parserParts.expressionsParser.Expression(scope);

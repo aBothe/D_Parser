@@ -31,18 +31,16 @@ namespace D_Parser.Resolver.TypeResolution
 			{
 				var b = TryPostDeduceAliasDefinition(b_, typeIdObject, ctxt);
 
-				if (b is PointerType)
-					b = (b as DerivedDataType).Base;
+				if (b is PointerType type)
+					b = type.Base;
 
-				if (b is UserDefinedType)
+				if (b is UserDefinedType udt)
 				{
-					var udt = b as UserDefinedType;
-
-					using (b is MixinTemplateType || udt is TemplateType ? ctxt.Push(udt) : null)
+					using (udt is MixinTemplateType || udt is TemplateType ? ctxt.Push(udt) : null)
 					{
 						r.AddRange(SingleNodeNameScan.SearchChildrenAndResolve(ctxt, udt, nextIdentifierHash, typeIdObject));
 
-						var statProp = StaticProperties.TryEvalPropertyType(ctxt, b, nextIdentifierHash);
+						var statProp = StaticProperties.TryEvalPropertyType(ctxt, udt, nextIdentifierHash);
 						if (statProp != null)
 							r.Add(statProp);
 
@@ -54,28 +52,28 @@ namespace D_Parser.Resolver.TypeResolution
 							r.AddRange(UFCSResolver.TryResolveUFCS(b, nextIdentifierHash, ctxt.ScopedBlock != udt.Definition && typeIdObject != null ? typeIdObject.Location : ctxt.ScopedBlock.BlockStartLocation, ctxt, typeIdObject));
 					}
 				}
-				else if (b is PackageSymbol)
+				else if (b is PackageSymbol packageSymbol)
 				{
-					var pack = (b as PackageSymbol).Package;
+					var pack = packageSymbol.Package;
 
 					var accessedModule = pack.GetModule(nextIdentifierHash);
 					if (accessedModule != null)
-						r.Add(new ModuleSymbol(accessedModule, b as PackageSymbol));
+						r.Add(new ModuleSymbol(accessedModule, packageSymbol));
 					else if ((pack = pack.GetPackage(nextIdentifierHash)) != null)
 						r.Add(new PackageSymbol(pack));
 				}
-				else if (b is ModuleSymbol)
+				else if (b is ModuleSymbol moduleSymbol)
 				{
-					r.AddRange(SingleNodeNameScan.SearchChildrenAndResolve(ctxt, b as ModuleSymbol, nextIdentifierHash, typeIdObject));
+					r.AddRange(SingleNodeNameScan.SearchChildrenAndResolve(ctxt, moduleSymbol, nextIdentifierHash, typeIdObject));
 					// "package.d" can be both a module and a package
-					var mod = (b as ModuleSymbol).Definition;
+					var mod = moduleSymbol.Definition;
 					var root = GlobalParseCache.GetRootPackage(mod.FileName);
 					var pack = root?.GetSubPackage(mod.ModuleName);
 					if (pack != null)
 					{
 						var accessedModule = pack.GetModule(nextIdentifierHash);
 						if (accessedModule != null)
-							r.Add(new ModuleSymbol(accessedModule, b as PackageSymbol));
+							r.Add(new ModuleSymbol(accessedModule, new PackageSymbol(pack)));
 						else if ((pack = pack.GetPackage(nextIdentifierHash)) != null)
 							r.Add(new PackageSymbol(pack));
 					}
@@ -87,7 +85,7 @@ namespace D_Parser.Resolver.TypeResolution
 						r.Add(statProp);
 
 					if(r.Count == 0 && ufcsItem) // Only if there hasn't been a result yet?
-						r.AddRange(UFCSResolver.TryResolveUFCS (b, nextIdentifierHash, typeIdObject != null ? typeIdObject.Location : ctxt.ScopedBlock.BlockStartLocation, ctxt, typeIdObject));
+						r.AddRange(UFCSResolver.TryResolveUFCS (b, nextIdentifierHash, typeIdObject?.Location ?? ctxt.ScopedBlock.BlockStartLocation, ctxt, typeIdObject));
 				}
 			}
 
@@ -96,7 +94,7 @@ namespace D_Parser.Resolver.TypeResolution
 
 		public static AbstractType ResolveSingle(ITypeDeclaration declaration, ResolutionContext ctxt, bool filterTemplates = true)
 		{
-			return declaration == null ? null : declaration.Accept (new SingleResolverVisitor (ctxt, filterTemplates));
+			return declaration?.Accept (new SingleResolverVisitor (ctxt, filterTemplates));
 		}
 
 		[ThreadStatic]
@@ -104,33 +102,31 @@ namespace D_Parser.Resolver.TypeResolution
 
 		internal static AbstractType TryPostDeduceAliasDefinition(AbstractType b, ISyntaxRegion typeBase, ResolutionContext ctxt)
 		{
-			if (typeBase != null && b is AliasedType
+			if (typeBase != null && b is AliasedType @alias
 				&& (ctxt.Options & ResolutionOptions.DontResolveAliases) == 0)
 			{
 				if (aliasDeductionStack == null)
 					aliasDeductionStack = new Stack<ISyntaxRegion>();
 				else if (aliasDeductionStack.Contains(typeBase))
-					return b;
+					return @alias;
 				aliasDeductionStack.Push(typeBase);
 				try
 				{
-					var alias = b as AliasedType;
-
 					IEnumerable<AbstractType> aliasBase;
-					if (alias.Base == null)
+					if (@alias.Base == null)
 					{
-						using (ctxt.Push(alias))
+						using (ctxt.Push(@alias))
 						{
-							var t = DSymbolBaseTypeResolver.ResolveDVariableBaseType(alias.Definition, ctxt, true);
+							var t = DSymbolBaseTypeResolver.ResolveDVariableBaseType(@alias.Definition, ctxt, true);
 							aliasBase = t != null ? AmbiguousType.TryDissolve(t) : new[] { b };
 						}
 					}
 					else
-						aliasBase = AmbiguousType.TryDissolve(alias.Base);
+						aliasBase = AmbiguousType.TryDissolve(@alias.Base);
 
 					IEnumerable<AbstractType> bases;
-					if (typeBase is TemplateInstanceExpression)
-						bases = TemplateInstanceHandler.DeduceParamsAndFilterOverloads(aliasBase, typeBase as TemplateInstanceExpression, ctxt, false);
+					if (typeBase is TemplateInstanceExpression @base)
+						bases = TemplateInstanceHandler.DeduceParamsAndFilterOverloads(aliasBase, @base, ctxt, false);
 					else
 						bases = TemplateInstanceHandler.DeduceParamsAndFilterOverloads(aliasBase, Enumerable.Empty<ISemantic>(), false, ctxt);
 
@@ -296,8 +292,8 @@ namespace D_Parser.Resolver.TypeResolution
 		{
 			var noBaseResolvedType = HandleNodeMatch_NoBaseTypeResolution(m, ctxt, resultBase, typeBase);
 
-			if (noBaseResolvedType is DSymbol)
-				return DSymbolBaseTypeResolver.ResolveBaseType(noBaseResolvedType as DSymbol, ctxt, typeBase);
+			if (noBaseResolvedType is DSymbol type)
+				return DSymbolBaseTypeResolver.ResolveBaseType(type, ctxt, typeBase);
 			return noBaseResolvedType;
 		}
 
@@ -308,10 +304,10 @@ namespace D_Parser.Resolver.TypeResolution
 			ISyntaxRegion typeBase)
 		{
 			IDisposable disp;
-			CodeLocation loc = typeBase != null ? typeBase.Location : m.Location;
+			CodeLocation loc = typeBase?.Location ?? m.Location;
 
-			if (resultBase is DSymbol)
-				disp = ctxt.Push(resultBase as DSymbol, loc);
+			if (resultBase is DSymbol ds)
+				disp = ctxt.Push(ds, loc);
 			else
 				disp = ctxt.Push(m, loc);
 
@@ -323,14 +319,7 @@ namespace D_Parser.Resolver.TypeResolution
 			IEnumerable<INode> matches,
 			ResolutionContext ctxt,
 			AbstractType resultBase = null,
-			ISyntaxRegion typeDeclaration = null)
-		{
-			var rl = new List<AbstractType>();
-
-			foreach (var m in matches)
-				rl.Add(HandleNodeMatch(m, ctxt, resultBase, typeDeclaration));
-
-			return rl;
-		}
+			ISyntaxRegion typeDeclaration = null) =>
+			matches.Select(m => HandleNodeMatch(m, ctxt, resultBase, typeDeclaration)).ToList();
 	}
 }

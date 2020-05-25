@@ -1,19 +1,20 @@
-﻿using System;
-using D_Parser.Parser;
+﻿using D_Parser.Parser;
 
 namespace D_Parser.Dom.Expressions
 {
 	public class TokenExpression : PrimaryExpression
 	{
-		public byte Token = DTokens.INVALID;
+		public readonly byte Token;
 
-		public TokenExpression()
+		public TokenExpression(byte token)
 		{
+			Token = token;
 		}
-
-		public TokenExpression(byte T)
+		
+		public TokenExpression(byte token, CodeLocation startLocation, CodeLocation endLocation) : this(token)
 		{
-			Token = T;
+			Location = startLocation;
+			EndLocation = endLocation;
 		}
 
 		public override string ToString()
@@ -24,13 +25,11 @@ namespace D_Parser.Dom.Expressions
 		public CodeLocation Location
 		{
 			get;
-			set;
 		}
 
 		public CodeLocation EndLocation
 		{
 			get;
-			set;
 		}
 
 		public void Accept(ExpressionVisitor vis)

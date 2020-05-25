@@ -28,6 +28,7 @@ using System;
 
 namespace D_Parser.Formatting.Indent
 {
+#if IGNORE
 	/// <summary>
 	///     The base class for all indentation states. 
 	///     Each state defines the logic for indentation based on chars that
@@ -221,5 +222,6 @@ namespace D_Parser.Formatting.Indent
 
 		#endregion
 	}
+#endif
 }
 

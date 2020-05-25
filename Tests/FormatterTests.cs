@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text;
-
 using D_Parser.Formatting;
 using NUnit.Framework;
 
@@ -23,7 +22,7 @@ namespace Tests
 			var sb = new StringBuilder();
 			var l = new List<Tuple<string,string>>();
 			
-			using(var st = Assembly.GetExecutingAssembly().GetManifestResourceStream("formatterTests")){
+			using(var st = Assembly.GetExecutingAssembly().GetManifestResourceStream("Tests.formatterTests.txt")){
 				using(var r = new StreamReader(st))
 				{
 					int n;

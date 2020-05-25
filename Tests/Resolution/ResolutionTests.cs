@@ -1,17 +1,12 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-
+﻿using System.Linq;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
 using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
-using D_Parser.Resolver.TypeResolution;
 using NUnit.Framework;
-using System.IO;
-using D_Parser.Completion;
-using NUnit.Framework.Constraints;
+using Tests.Completion;
 
 namespace Tests.Resolution
 {
@@ -22,7 +17,7 @@ namespace Tests.Resolution
 		public void Test2_066UCSnytax()
 		{
 			var x = DParser.ParseExpression("creal(3)");
-			var t = ExpressionTypeEvaluation.EvaluateType(x, CreateDefCtxt());
+			var t = ExpressionTypeEvaluation.EvaluateType(x, CreateDefCtxt(""));
 
 			Assert.That(t, Is.TypeOf(typeof(PrimitiveType)));
 			Assert.That((t as PrimitiveType).TypeToken, Is.EqualTo(DTokens.Creal));
@@ -140,7 +135,7 @@ S s;
 		[Test]
 		public void ArrayIndexer()
 		{
-			var pcl = CreateCache(@"module A;
+			var ctxt = CreateDefCtxt(@"module A;
 class Obj
 {
 	int myProp;
@@ -151,7 +146,6 @@ auto o = new Obj();
 Obj[][] oo;
 ");
 			
-			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["A"]);
 			var myProp = CompletionTests.GetNode (null, "Obj.myProp", ref ctxt);
 			var myPropConstraint = new IsDefinition (myProp);
 
@@ -254,7 +248,7 @@ int[] arr2 = arr[1 .. 2];");
 		[Test]
 		public void Ctors()
 		{
-			var pcl = CreateCache(@"module modA;
+			var pcl = CreateCache(out DModule m, @"module modA;
 
 class A {}
 class B : A{
@@ -263,7 +257,7 @@ class B : A{
 	}
 }");
 
-			var B = pcl.FirstPackage()["modA"]["B"].First() as DClassLike;
+			var B = m["B"].First() as DClassLike;
 			var this_ = (DMethod)B[DMethod.ConstructorIdentifier].First();
 			var ctxt = CreateDefCtxt(pcl, this_);
 

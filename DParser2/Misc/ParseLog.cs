@@ -7,6 +7,7 @@ using D_Parser.Dom;
 
 namespace D_Parser.Misc
 {
+#if IGNORE
 	public class ParseLog
 	{
 		StreamWriter sw;
@@ -71,4 +72,5 @@ namespace D_Parser.Misc
 				Write(kv.Value);
 		}
 	}
+#endif
 }

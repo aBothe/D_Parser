@@ -43,7 +43,7 @@ namespace Tests
 
 	public class ResolutionTestHelper
 	{
-		public static DModule objMod = DParser.ParseString(@"module object;
+		private static readonly DModule ObjectModule = DParser.ParseString(@"module object;
 						alias immutable(char)[] string;
 						alias immutable(wchar)[] wstring;
 						alias immutable(dchar)[] dstring;
@@ -51,14 +51,13 @@ namespace Tests
 						alias int size_t;
 						class Exception { string msg; }");
 
-		public static LegacyParseCacheView CreateCache(params string[] moduleCodes)
+		public static LegacyParseCacheView CreateCache(out DModule firstModule, params string[] moduleCodes)
 		{
-			var r = new MutableRootPackage(objMod);
+			var modules = moduleCodes.Select(moduleCode => DParser.ParseString(moduleCode)).ToList();
+			firstModule = modules.FirstOrDefault();
+			modules.Add(ObjectModule);
 
-			foreach (var code in moduleCodes)
-				r.AddModule(DParser.ParseString(code));
-
-			return new LegacyParseCacheView(new[] { r });
+			return new LegacyParseCacheView(new[] { new MutableRootPackage(modules.ToArray()) });
 		}
 
 		public static ResolutionContext CreateDefCtxt(ParseCacheView pcl, IBlockNode scope, IStatement stmt = null)
@@ -85,19 +84,19 @@ namespace Tests
 
 		public static ResolutionContext CreateDefCtxt(params string[] modules)
 		{
-			var pcl = CreateCache(modules);
-			return CreateDefCtxt(pcl, pcl.FirstPackage().GetModules().First());
+			var pcl = CreateCache(out DModule firstModule,modules);
+			return CreateDefCtxt(pcl, firstModule);
 		}
 
 		public static ResolutionContext CreateCtxt(string scopedModule, params string[] modules)
 		{
-			var pcl = CreateCache(modules);
+			var pcl = CreateCache(out _, modules);
 			return CreateDefCtxt(pcl, pcl.FirstPackage()[scopedModule]);
 		}
 
 		public static ResolutionContext CreateDefCtxt(string scopedModule, out DModule mod, params string[] modules)
 		{
-			var pcl = CreateCache(modules);
+			var pcl = CreateCache(out _, modules);
 			mod = pcl.FirstPackage()[scopedModule];
 
 			return CreateDefCtxt(pcl, mod);

@@ -1,11 +1,9 @@
 ﻿using System.Linq;
-
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
-
 using NUnit.Framework;
 
 namespace Tests.Resolution
@@ -21,12 +19,12 @@ namespace Tests.Resolution
 		[Test]
 		public void ClassInheritanceTest()
 		{
-			var pcl = ResolutionTests.CreateCache(@"module modA;
+			var pcl = ResolutionTests.CreateCache(out DModule m, @"module modA;
 				class A{}
 				class B:A {}
 				class C:A {}
 				class D:C {}");
-			var ctxt = ResolutionContext.Create(pcl, null, pcl.FirstPackage()["modA"]);
+			var ctxt = ResolutionContext.Create(pcl, null, m);
 
 			var A = GetType("A",ctxt);
 			var B = GetType("B", ctxt);
@@ -55,7 +53,7 @@ namespace Tests.Resolution
 		[Test]
 		public void InterfaceInheritanceTest()
 		{
-			var pcl = ResolutionTests.CreateCache(@"module modA;
+			var pcl = ResolutionTestHelper.CreateCache(out DModule m, @"module modA;
 				class A {}
 				class B {}
 
@@ -70,7 +68,7 @@ namespace Tests.Resolution
 
 				class G : A, IC {}
 				class H : B, ID {}");
-			var ctxt = ResolutionContext.Create(pcl, null, pcl.FirstPackage()["modA"]);
+			var ctxt = ResolutionContext.Create(pcl, null, m);
 
 			var A = GetType("A", ctxt);
 			var B = GetType("B", ctxt);
@@ -114,12 +112,12 @@ namespace Tests.Resolution
 		[Test]
 		public void TestTemplateDeductionAsConversion()
 		{
-			var pcl = ResolutionTests.CreateCache(@"module modA;
+			var pcl = ResolutionTestHelper.CreateCache(out DModule m, @"module modA;
 void foo(T:T)(T[] t) {}
 
 int[] p=[1,2,3,4,5];
 ");
-			var ctxt = ResolutionContext.Create(pcl, null, pcl.FirstPackage()["modA"]);
+			var ctxt = ResolutionContext.Create(pcl, null, m);
 
 			var foo = pcl.FirstPackage()["modA"]["foo"].First() as DMethod;
 			using (ctxt.Push(foo, foo.Body.Location))

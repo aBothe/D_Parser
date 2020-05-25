@@ -17,7 +17,7 @@ namespace Tests.Resolution
 		[Test]
 		public void DeclCond1()
 		{
-			var pcl = CreateCache(@"module m;
+			var pcl = CreateCache(out DModule module, @"module m;
 
 version = A;
 
@@ -49,7 +49,7 @@ version(C)
 ", @"module b; int pubB;",
 @"module c; int pubC;");
 
-			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["m"]);
+			var ctxt = CreateDefCtxt(pcl, module);
 
 			// Test basic version-dependent resolution
 			var ms = R("f", ctxt);
@@ -232,7 +232,7 @@ alias bar aliasTwo;
 		[Test]
 		public void AliasThis()
 		{
-			var pcl = CreateCache(@"
+			var pcl = CreateCache(out DModule mod, @"
 module A;
 
 class cl
@@ -253,7 +253,6 @@ cl clInst;
 notherClass ncl;
 ");
 
-			var mod = pcl.FirstPackage()["A"];
 			var ctxt = ResolutionContext.Create(pcl, null, mod);
 
 			var x = DParser.ParseExpression("clInst.a");
@@ -285,7 +284,7 @@ notherClass ncl;
 		[Test]
 		public void DeclCond2()
 		{
-			var pcl = CreateCache(@"module m;
+			var pcl = CreateCache(out DModule m, @"module m;
 
 version(X)
 	int x;
@@ -355,8 +354,6 @@ debug(4)
 	int dbg_f;
 
 ");
-
-			var m = pcl.FirstPackage()["m"];
 			var A = m["A"].First() as DClassLike;
 			var foo = A["foo"].First() as DMethod;
 			var subst = foo.Body.SubStatements as List<IStatement>;
@@ -420,7 +417,7 @@ debug(4)
 		[Test]
 		public void DeclCond3()
 		{
-			var pcl = CreateCache(@"module m;
+			var pcl = CreateCache(out DModule mod, @"module m;
 version = X;
 
 version(X)
@@ -463,7 +460,6 @@ void main()
 	dbg;
 	noDbg;
 }");
-			var mod = pcl.FirstPackage()["m"];
 			var ctxt = CreateDefCtxt(pcl, mod, mod.EndLocation);
 
 			var x = R("a", ctxt);
@@ -591,7 +587,7 @@ int xx3;
 		[Test]
 		public void DeclConstraints()
 		{
-			var pcl = CreateCache(@"module A;
+			var pcl = CreateCache(out DModule A, @"module A;
 
 const i = 12;
 
@@ -615,9 +611,6 @@ static if(Templ!float)
 	int d;
 else
 	int e;");
-
-			var A = pcl.FirstPackage()["A"];
-
 			var ctxt = CreateDefCtxt(pcl, A);
 
 			var x = R("a", ctxt);
@@ -645,9 +638,7 @@ else
 		[Test]
 		public void DeclConditions2()
 		{
-			var pcl = ResolutionTests.CreateCache(@"module A;
-class cl{}",
-@"module B;
+			var pcl = CreateCache(out DModule B, @"module B;
 
 class home {}
 
@@ -657,11 +648,11 @@ static if(is(typeof(home)))
 	import A;
 
 void bar();
-",
+", @"module A;
+class cl{}",
+
 @"module C;
 class imp{}");
-
-			var B = (DModule)pcl.FirstPackage()["B"];
 			var ctxt = CreateDefCtxt(pcl, B["bar"].First() as DMethod);
 
 			var x = R("imp", ctxt);
@@ -674,13 +665,12 @@ class imp{}");
 		[Test]
 		public void DeclConstraints3()
 		{
-			var pcl = CreateCache(@"module A;
+			var pcl = CreateCache(out DModule A, @"module A;
 class cl(T) if(is(T==int))
 {}
 
 class aa(T) if(is(T==float)) {}
 class aa(T) if(is(T==int)) {}");
-			var A = pcl.FirstPackage()["A"];
 			var ctxt = CreateDefCtxt(pcl, A);
 
 			var x = TypeDeclarationResolver.ResolveSingle(new IdentifierDeclaration("cl"), ctxt);
@@ -1051,7 +1041,7 @@ Cls inst;
 		[Test]
 		public void AliasThisOnNonInstances()
 		{
-			var ctxt = CreateCtxt("A", @"module A;
+			var ctxt = CreateDefCtxt(@"module A;
 struct S1 { int a; }
 struct S2(T) {
 	int b;
@@ -1074,7 +1064,7 @@ S2!S1 s;
 		[Test]
 		public void TypeofIntSize()
 		{
-			var ctxt = CreateDefCtxt();
+			var ctxt = CreateDefCtxt("");
 
 			ITypeDeclaration td;
 			AbstractType t;

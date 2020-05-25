@@ -16,7 +16,7 @@ namespace Tests.Resolution
 		[Test]
 		public void TemplateMixins1()
 		{
-			var pcl = ResolutionTests.CreateCache(@"module A;
+			var ctxt = CreateDefCtxt(@"module A;
 mixin template Mx(T)
 {
 	T myFoo;
@@ -31,9 +31,6 @@ mixin Mx!int;
 
 mixin Mx1 myMx;
 mixin Mx!float myTempMx;");
-
-			var A = pcl.FirstPackage()["A"];
-			var ctxt = ResolutionTests.CreateDefCtxt(pcl, A);
 
 			var ex = DParser.ParseExpression("someProp");
 			var x = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
@@ -63,7 +60,7 @@ mixin Mx!float myTempMx;");
 		[Test]
 		public void TemplateMixins2()
 		{
-			var pcl = ResolutionTests.CreateCache(@"module A;
+			var ctxt = CreateDefCtxt(@"module A;
 mixin template Foo() {
   int[] func() { writefln(""Foo.func()""); }
 }
@@ -84,9 +81,6 @@ void test() {
   b.func();      // calls Code.func()
 }");
 
-			var A = pcl.FirstPackage()["A"];
-			var ctxt = ResolutionTests.CreateDefCtxt(pcl, A);
-
 			var ex = DParser.ParseExpression("(new Code()).func");
 			var x = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			Assert.That(x, Is.TypeOf(typeof(PrimitiveType)));
@@ -99,7 +93,7 @@ void test() {
 		[Test]
 		public void TemplateMixins3()
 		{
-			var pcl = ResolutionTests.CreateCache(@"module A;
+			var pcl = CreateCache(out DModule A, @"module A;
 mixin template Singleton(I) {
 	static I getInstance() {}
 	
@@ -124,9 +118,8 @@ void foo() {
 	localDerp;
 	arrayTest[0];
 }");
-			var A = pcl.FirstPackage()["A"];
 			var foo = A["foo"].First() as DMethod;
-			var ctxt = ResolutionTests.CreateDefCtxt(pcl, foo, foo.Body);
+			var ctxt = CreateDefCtxt(pcl, foo, foo.Body);
 			var subSt = foo.Body.SubStatements as List<IStatement>;
 
 			var t = ExpressionTypeEvaluation.EvaluateType((subSt[0] as ExpressionStatement).Expression, ctxt);
@@ -161,16 +154,15 @@ void foo() {
 		[Test]
 		public void TemplateMixins4()
 		{
-			var pcl = ResolutionTests.CreateCache(@"module A;
+			var pcl = CreateCache(out DModule B,
+				@"module B; import A; mixin mixedInImports; class cl{ void bar(){  } }",
+				@"module A;
 mixin template mixedInImports()
 {
 	import C;
-}", @"module B; import A; mixin mixedInImports; class cl{ void bar(){  } }",
-												  @"module C;
+}", @"module C;
 void CFoo() {}");
-
-			var B = pcl.FirstPackage()["B"];
-			var ctxt = ResolutionTests.CreateDefCtxt(pcl, B);
+			var ctxt = CreateDefCtxt(pcl, B);
 
 			var t = RS("CFoo", ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));

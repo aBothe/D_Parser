@@ -23,12 +23,13 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
+using System.Collections.Generic;
+using D_Parser.Completion.Providers;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
 using D_Parser.Parser;
-using System.Collections.Generic;
-using D_Parser.Completion.Providers;
 using D_Parser.Resolver.ASTScanner;
 
 namespace D_Parser.Completion
@@ -88,7 +89,7 @@ namespace D_Parser.Completion
 			if (!halt)
 				shownKeywords.Push(BlockMemberFilter);
 
-			var en = block.GetEnumerator ();
+			using var en = block.GetEnumerator ();
 			while (!halt && en.MoveNext ()) {
 				if (en.Current.Location > ed.CaretLocation) {
 					halt = true;
@@ -105,8 +106,15 @@ namespace D_Parser.Completion
 		{
 			if (n.NameHash == DTokens.IncompleteIdHash) {
 				if (n.ContainsAnyAttribute(DTokens.Override))
+				{
 					prv = new MethodOverrideCompletionProvider(n, cdgen);
-				else
+				}
+				else if (n.Type is IdentifierDeclaration id && id.EndLocation == ed.CaretLocation)
+				{
+					cdgen.SetSuggestedItem(id.Id);
+					cdgen.TriggerSyntaxRegion = id;
+					prv = new MemberCompletionProvider(cdgen, id.InnerDeclaration, scopedBlock);
+				} else
 					explicitlyNoCompletion = true;
 				halt = true;
 			}
@@ -187,11 +195,11 @@ namespace D_Parser.Completion
 			
 			VisitTemplateParameter(p);
 
-			if (!halt && p.Type != null)
-				p.Type.Accept(this);
+			if (!halt)
+				p.Type?.Accept(this);
 
-			if (!halt && p.SpecializationExpression != null) //TODO have a special completion case for specialization completion
-				p.SpecializationExpression.Accept(this);
+			if (!halt) //TODO have a special completion case for specialization completion
+				p.SpecializationExpression?.Accept(this);
 
 			if (!halt && p.DefaultExpression != null)
 			{
@@ -206,7 +214,9 @@ namespace D_Parser.Completion
 		#region TypeDeclarations
 		public override void Visit (DTokenDeclaration td)
 		{
-			if (td.Token == DTokens.Incomplete) {
+			if (td.Token == DTokens.Incomplete)
+			{
+				cdgen.TriggerSyntaxRegion = td;
 				if (handlesBaseClasses) {
 					MemberFilter vis;
 					if (handledClass.ClassType == DTokens.Interface)
@@ -229,19 +239,22 @@ namespace D_Parser.Completion
 		{
 			if (td.IdHash == DTokens.IncompleteIdHash) {
 				halt = true;
-				if(td.InnerDeclaration != null)
+				if (td.InnerDeclaration != null)
+				{
+					cdgen.TriggerSyntaxRegion = td.InnerDeclaration;
 					prv = new MemberCompletionProvider (cdgen, td.InnerDeclaration, scopedBlock);
+				}
 			}
 			else
 				base.Visit (td);
 		}
 
-		public static bool IsIncompleteDeclaration(ITypeDeclaration x)
+		private static bool IsIncompleteDeclaration(ITypeDeclaration x)
 		{
-			if(x is DTokenDeclaration)
-				return (x as DTokenDeclaration).Token == DTokens.Incomplete;
-			if(x is IdentifierDeclaration)
-				return (x as IdentifierDeclaration).IdHash == DTokens.IncompleteIdHash;
+			if (x is DTokenDeclaration declaration)
+				return declaration.Token == DTokens.Incomplete;
+			if (x is IdentifierDeclaration identifierDeclaration)
+				return identifierDeclaration.IdHash == DTokens.IncompleteIdHash;
 			return false;
 		}
 		#endregion
@@ -249,8 +262,9 @@ namespace D_Parser.Completion
 		#region Attributes
 		public override void VisitAttribute (Modifier a)
 		{
-			string c;
-			if (a.ContentHash == DTokens.IncompleteIdHash || ((c = a.LiteralContent as string) != null && c.EndsWith(DTokens.IncompleteId))) {
+			if (a.ContentHash == DTokens.IncompleteIdHash || (a.LiteralContent is string c && c.EndsWith(DTokens.IncompleteId)))
+			{
+				cdgen.TriggerSyntaxRegion = a;
 				prv = new AttributeCompletionProvider (a,cdgen);
 				halt = true;
 			}
@@ -260,7 +274,9 @@ namespace D_Parser.Completion
 
 		public override void Visit (ScopeGuardStatement s)
 		{
-			if (s.GuardedScope == DTokens.IncompleteId) {
+			if (s.GuardedScope == DTokens.IncompleteId)
+			{
+				cdgen.TriggerSyntaxRegion = s;
 				prv = new ScopeAttributeCompletionProvider (cdgen);
 				halt = true;
 			}
@@ -272,7 +288,9 @@ namespace D_Parser.Completion
 		{
 			if (a.Arguments != null && 
 				a.Arguments.Length>0 &&
-				IsIncompleteExpression (a.Arguments[a.Arguments.Length-1])) {
+				IsIncompleteExpression (a.Arguments[^1]))
+			{
+				cdgen.TriggerSyntaxRegion = a.Arguments[^1];
 				prv = new PragmaCompletionProvider (a,cdgen);
 				halt = true;
 			}
@@ -284,7 +302,9 @@ namespace D_Parser.Completion
 		{
 			if (a.AttributeExpression != null && 
 				a.AttributeExpression.Length>0 &&
-				IsIncompleteExpression (a.AttributeExpression[0])) {
+				IsIncompleteExpression (a.AttributeExpression[0]))
+			{
+				cdgen.TriggerSyntaxRegion = a.AttributeExpression[0];
 				prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, 
 					MemberFilter.BuiltInPropertyAttributes | MemberFilter.Methods | MemberFilter.Variables | MemberFilter.Types);
 				halt = true;
@@ -297,6 +317,7 @@ namespace D_Parser.Completion
 		{
 			if (vis.VersionIdHash == DTokens.IncompleteIdHash) {
 				halt = true;
+				cdgen.TriggerSyntaxRegion = vis;
 				prv = new VersionSpecificationCompletionProvider (cdgen);
 			}
 			else
@@ -307,6 +328,7 @@ namespace D_Parser.Completion
 		{
 			if (c.DebugIdHash == DTokens.IncompleteIdHash) {
 				halt = true;
+				cdgen.TriggerSyntaxRegion = c;
 				prv = new DebugSpecificationCompletionProvider(cdgen);
 			}
 			else
@@ -368,7 +390,9 @@ namespace D_Parser.Completion
 
 		public override void Visit (ModuleStatement s)
 		{
-			if (IsIncompleteDeclaration (s.ModuleName)) {
+			if (IsIncompleteDeclaration (s.ModuleName))
+			{
+				cdgen.TriggerSyntaxRegion = s.ModuleName;
 				prv = new ModuleStatementCompletionProvider (cdgen);
 				halt = true;
 			}
@@ -381,6 +405,7 @@ namespace D_Parser.Completion
 		{
 			if (IsIncompleteDeclaration(i.ModuleIdentifier))
 			{
+				cdgen.TriggerSyntaxRegion = i.ModuleIdentifier;
 				prv = new ImportStatementCompletionProvider(cdgen, i);
 				halt = true;
 			}
@@ -394,7 +419,9 @@ namespace D_Parser.Completion
 		public override void VisitImport (ImportStatement.ImportBinding i)
 		{
 			if (!halt) {
-				if (IsIncompleteDeclaration (i.Symbol)) {
+				if (IsIncompleteDeclaration (i.Symbol))
+				{
+					cdgen.TriggerSyntaxRegion = i.Symbol;
 					prv = new SelectiveImportCompletionProvider (cdgen, curImport);
 					halt = true;
 				} else
@@ -414,8 +441,7 @@ namespace D_Parser.Completion
 		{
 			var decls = s.Declarations;
 			if (decls != null && decls.Length > 0) {
-				var lastDecl = decls [decls.Length - 1] as DNode; 
-				if (lastDecl != null && lastDecl.NameHash == DTokens.IncompleteIdHash) {
+				if (decls [^1] is DNode lastDecl && lastDecl.NameHash == DTokens.IncompleteIdHash) {
 					halt = true;
 					// Probably a more common case to have 'auto |' not completed
 					explicitlyNoCompletion = lastDecl.Type != null || (lastDecl.Attributes != null && lastDecl.Attributes.Count != 0);
@@ -437,10 +463,10 @@ namespace D_Parser.Completion
 
 		public override void Visit (BreakStatement s)
 		{
-			if(s.IdentifierHash == DTokens.IncompleteIdHash) {
-
+			if(s.IdentifierHash == DTokens.IncompleteIdHash)
+			{
+				cdgen.TriggerSyntaxRegion = s;
 				prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, MemberFilter.Labels);
-
 				halt = true;
 			}
 			else
@@ -450,9 +476,8 @@ namespace D_Parser.Completion
 		public override void Visit (ContinueStatement s)
 		{
 			if(s.IdentifierHash == DTokens.IncompleteIdHash) {
-
+				cdgen.TriggerSyntaxRegion = s;
 				prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, MemberFilter.Labels);
-
 				halt = true;
 			}
 			else
@@ -463,7 +488,7 @@ namespace D_Parser.Completion
 		{
 			if(s.StmtType == GotoStatement.GotoStmtType.Identifier &&
 				s.LabelIdentifierHash == DTokens.IncompleteIdHash) {
-
+				cdgen.TriggerSyntaxRegion = s;
 				prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, MemberFilter.Labels);
 
 				halt = true;
@@ -484,6 +509,7 @@ namespace D_Parser.Completion
 			scopedStatement = s;
 			if (s.Operation == AsmInstructionStatement.OpCode.__UNKNOWN__)
 			{
+				cdgen.TriggerSyntaxRegion = s;
 				prv = new InlineAsmCompletionProvider(s, cdgen);
 				halt = true;
 			}
@@ -502,6 +528,7 @@ namespace D_Parser.Completion
 		public override void Visit (VersionSpecification s)
 		{
 			if (s.SpecifiedId == DTokens.IncompleteId) {
+				cdgen.TriggerSyntaxRegion = s;
 				prv = new VersionSpecificationCompletionProvider(cdgen);
 				halt = true;
 			}
@@ -510,6 +537,7 @@ namespace D_Parser.Completion
 		public override void Visit (DebugSpecification s)
 		{
 			if (s.SpecifiedId == DTokens.IncompleteId) {
+				cdgen.TriggerSyntaxRegion = s;
 				prv = new DebugSpecificationCompletionProvider(cdgen);
 				halt = true;
 			}
@@ -531,6 +559,7 @@ namespace D_Parser.Completion
 		public override void Visit (TokenExpression e)
 		{
 			if (e.Token == DTokens.Incomplete) {
+				cdgen.TriggerSyntaxRegion = e;
 				halt = true;
 				const MemberFilter BaseAsmFlags = MemberFilter.Classes | MemberFilter.StructsAndUnions | MemberFilter.Enums | MemberFilter.Methods | MemberFilter.TypeParameters | MemberFilter.Types | MemberFilter.Variables;
 				if (scopedStatement is AsmStatement || scopedStatement is AsmInstructionStatement)
@@ -542,16 +571,17 @@ namespace D_Parser.Completion
 			}
 		}
 
-		public static bool IsIncompleteExpression(IExpression x)
+		private static bool IsIncompleteExpression(IExpression x)
 		{
-			return x is TokenExpression && (x as TokenExpression).Token == DTokens.Incomplete;
+			return x is TokenExpression expression && expression.Token == DTokens.Incomplete;
 		}
 
 		public override void Visit (PostfixExpression_Access x)
 		{
 			if (IsIncompleteExpression(x.AccessExpression)) {
+				cdgen.TriggerSyntaxRegion = x.AccessExpression;
 				halt = true;
-				if (x.PostfixForeExpression is TokenExpression && (x.PostfixForeExpression as TokenExpression).Token == DTokens.Dot)
+				if (x.PostfixForeExpression is TokenExpression expression && expression.Token == DTokens.Dot)
 				{
 					// Handle module-scoped things:
 					// When typing a dot without anything following, trigger completion and show types, methods and vars that are located in the module & import scope
@@ -568,6 +598,7 @@ namespace D_Parser.Completion
 		{
 			if(x.Keyword == DTokens.IncompleteId)
 			{
+				cdgen.TriggerSyntaxRegion = x;
 				prv = new TraitsExpressionCompletionProvider(cdgen);
 				halt = true;
 			}
@@ -579,6 +610,7 @@ namespace D_Parser.Completion
 		{
 			if (IsIncompleteDeclaration (x.Type)) {
 				halt = true;
+				cdgen.TriggerSyntaxRegion = x.Type;
 				prv = new CtrlSpaceCompletionProvider (cdgen, scopedBlock, MemberFilter.Types | MemberFilter.TypeParameters);
 			}
 			else
@@ -596,6 +628,7 @@ namespace D_Parser.Completion
 			}
 			else if (x.TypeSpecializationToken == DTokens.Incomplete)
 			{
+				cdgen.TriggerSyntaxRegion = x;
 				prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, MemberFilter.Types | MemberFilter.ExpressionKeywords | MemberFilter.StatementBlockKeywords);
 				halt = true;
 			}
@@ -607,9 +640,10 @@ namespace D_Parser.Completion
 		{
 			if (initializedNode != null && init.MemberInitializers != null && init.MemberInitializers.Length != 0)
 			{
-				var lastMemberInit = init.MemberInitializers[init.MemberInitializers.Length - 1];
+				var lastMemberInit = init.MemberInitializers[^1];
 				if (lastMemberInit.MemberNameHash == DTokens.IncompleteIdHash)
 				{
+					cdgen.TriggerSyntaxRegion = lastMemberInit;
 					prv = new StructInitializerCompletion(cdgen,initializedNode, init);
 					halt = true;
 					return;

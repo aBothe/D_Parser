@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading;
 using D_Parser;
 using D_Parser.Completion;
@@ -15,7 +13,7 @@ using NUnit.Framework;
 using NUnit.Framework.Constraints;
 using Tests.Resolution;
 
-namespace Tests
+namespace Tests.Completion
 {
 	/// <summary>
 	/// Description of CompletionTests.
@@ -55,10 +53,10 @@ void main(){
 		[Test]
 		public void ModuleCompletion()
 		{
-			var code = @"module 
+			var code = @"module §
 ";
 
-			var ed = GenEditorData (1, 8, code);
+			var ed = GenEditorData (code);
 			ed.SyntaxTree.ModuleName = "asdf";
 			TestCompletionListContents (ed, new[]{ ed.SyntaxTree }, new INode[0]);
 		}
@@ -97,9 +95,9 @@ new K().
 		{
 			var code =@"module A;
 void main() {
-foreach( 
+foreach(§ 
 }";
-			var ed = GenEditorData (3, 9, code);
+			var ed = GenEditorData (code);
 			var g = new TestCompletionDataGen (null, null);
 			Assert.That(CodeCompletion.GenerateCompletionData (ed, g, 'a', true), Is.True);
 		}
@@ -141,12 +139,12 @@ foreach(cur; p_args)
 			var code = @"module A;
 void main() {Cl** ii;
 foreach(i;ii)
-i.
+i.§
 }
 
 struct Cl { int a; }
 ";
-			var ed = GenEditorData(4, 3, code);
+			var ed = GenEditorData(code);
 
 			var a = (ed.MainPackage["A"]["Cl"].First() as DClassLike)["a"].First() as DVariable;
 
@@ -159,10 +157,10 @@ struct Cl { int a; }
 		{
 			var code = @"module A;
 struct SomeStruct {ubyte a; static void read() {
-
+§
 }}
 ";
-			var ed = GenEditorData(3, 1, code);
+			var ed = GenEditorData(code);
 
 			var SomeStruct = (ed.MainPackage ["A"] ["SomeStruct"].First () as DClassLike);
 			var a = SomeStruct["a"].First() as DVariable;
@@ -176,9 +174,9 @@ struct SomeStruct {ubyte a; static void read() {
 		{
 			var code = @"module A;
 void main() {
-auto 
+auto§ 
 }";
-			var ed = GenEditorData(3, 5, code);
+			var ed = GenEditorData(code);
 			var g = new TestCompletionDataGen(null, null);
 			Assert.That(CodeCompletion.GenerateCompletionData(ed, g, 'a', true), Is.False);
 		}
@@ -321,17 +319,14 @@ void main(){
 		[Test]
 		public void ArrayAccessCompletion()
 		{
-			TestsEditorData ed;
 			INode[] wl;
-
-			var s = @"module A;
+			
+			var ed = GenEditorData (@"module A;
 class C { int f; }
 void main() { C[][] o;
 o[0][0].
-
-}";
-
-			ed = GenEditorData (5, 1, s);
+§
+}");
 
 			wl = new[]{ (ed.MainPackage["A"]["C"].First() as DClassLike).Children["f"].First() };
 
@@ -351,11 +346,11 @@ o[0][0].
 import ArrayMod;
 void foo(Array!byte array) {
 array.
-
+§
 }";
 			var arrayDefModule = @"module ArrayMod; class Array(T) { void dooMagic() {} }";
 
-			ed = GenEditorData (5, 1, s, arrayDefModule);
+			ed = GenEditorData (s, arrayDefModule);
 
 			wl = new [] { ResolutionTests.GetChildNode (ed.MainPackage.GetModule ("ArrayMod"), "Array.dooMagic") };
 
@@ -372,9 +367,9 @@ array.
 
 			var s = @"module A;
 class Class { static int statInt; int normal; }
-void main() { Class. }";
+void main() { Class.§ }";
 
-			ed = GenEditorData (3, 21, s);
+			ed = GenEditorData (s);
 
 			wl = new[]{ GetNode(ed, "A.Class.statInt", ref ctxt) };
 			bl = new[]{ GetNode(ed, "A.Class.normal", ref ctxt) };
@@ -390,89 +385,52 @@ void main() { Class. }";
 
 			var s = @"module A; enum myE { } void foo(myE e);
 void main() {
-foo(
+foo(§
 }";
-			ed = GenEditorData (3, 5, s);
+			ed = GenEditorData (s);
 
-			var con = TestCompletionListContents (ed);
+			var con = TestCompletionListContents (ed, null, null);
 			Assert.That (con.suggestedItem, Is.EqualTo ("myE"));
 		}
 
 		[Test]
-		public void TooltipGeneration_MethodSignature()
+		public void TriggerOnBegunMemberName_ReturnsListOfMembersWithPreselectionSuggestion()
 		{
-			var tooltipGen = new D_Parser.Completion.ToolTips.NodeTooltipRepresentationGen();
+			var ed = GenEditorData (@"module A;
+class AClass {int propertyA;}
+void foo(AClass a) {
+a.prop§
+}");
 
-			var ctxt = ResolutionTestHelper.CreateDefCtxt(@"module A;
-void foo(int a, string b) {}");
+			var modA = ed.MainPackage.GetModule("A");
+			var wl = new []
+			{
+				ResolutionTestHelper.GetChildNode (modA, "AClass.propertyA"),
+				ResolutionTestHelper.GetChildNode (modA, "foo")
+			};
 
-			var foo = ResolutionTestHelper.N<DMethod>(ctxt, "A.foo");
-
-			var fooSymbol = new MemberSymbol(foo);
-
-			var signature = tooltipGen.GenTooltipSignature(fooSymbol, false, 1);
-			signature = signature.Replace("\r\n", "\n");
-			var expected = @"void A.foo(
-  int a,
-  <span underline='single'>string b</span>
-)".Replace("\r\n", "\n");
-			Assert.That(signature, Is.EqualTo(expected));
-		}
-		[Test]
-		public void TooltipGeneration_Modifiers()
-		{
-			var tooltipGen = new D_Parser.Completion.ToolTips.NodeTooltipRepresentationGen();
-
-			var ctxt = ResolutionTestHelper.CreateDefCtxt(@"module A;
-static private const double eps;");
-
-			var eps = ResolutionTestHelper.N<DVariable>(ctxt, "A.eps");
-
-			var signature = tooltipGen.GenTooltipSignature(eps, false, 1);
-			Assert.That(signature, Is.EqualTo(@"private static const(double) A.eps"));
-		}
-
-
-		[Test]
-		public void TooltipGeneration_MethodDDoc_SimpleSummary()
-		{
-			var tooltipGen = new D_Parser.Completion.ToolTips.NodeTooltipRepresentationGen();
-
-			var ctxt = ResolutionTestHelper.CreateDefCtxt(@"module A;
-/// Does magic.
-void foo(int a, string b) {}");
-
-			var foo = ResolutionTestHelper.N<DMethod>(ctxt, "A.foo");
-
-			tooltipGen.GenToolTipBody(foo, out var summary, out var categories);
-			Assert.That(summary, Is.EqualTo(@"Does magic."));
+			var cdg = TestCompletionListContents (ed, wl, null);
+			Assert.AreEqual("prop", cdg.suggestedItem);
+			Assert.AreEqual("a.prop", cdg.TriggerSyntaxRegion.ToString());
 		}
 
 		[Test]
-		public void TooltipGeneration_MethodDDoc_Categories()
+		public void TriggerOnBegunMemberName2_ReturnsListOfMembersWithPreselectionSuggestion()
 		{
-			var tooltipGen = new D_Parser.Completion.ToolTips.NodeTooltipRepresentationGen();
+			var ed = GenEditorData (@"module A;
+class AClass {class BType{}}
+AClass.B§ b;
+");
 
-			var ctxt = ResolutionTestHelper.CreateDefCtxt(@"module A;
-/**
- * Read the file.
- * Returns: The contents of the file.
- *
- * License: xyz
- *
- * Params:
- *      x =     is for this
- *              and not for that
- *      y =     is for that
- */
-void foo(int a, string b) {}");
+			var modA = ed.MainPackage.GetModule("A");
+			var wl = new []
+			{
+				ResolutionTestHelper.GetChildNode (modA, "AClass.BType")
+			};
 
-			var foo = ResolutionTestHelper.N<DMethod>(ctxt, "A.foo");
-
-			tooltipGen.GenToolTipBody(foo, out var summary, out var categories);
-			Assert.That(categories.Count, Is.EqualTo(2));
-			Assert.That(categories.ContainsKey("Returns"));
-			Assert.That(categories.ContainsKey("Params"));
+			var cdg = TestCompletionListContents (ed, wl, null);
+			Assert.AreEqual("B", cdg.suggestedItem);
+			Assert.AreEqual("AClass.B", cdg.TriggerSyntaxRegion.ToString());
 		}
 
 		#region Test lowlevel
@@ -494,9 +452,7 @@ void foo(int a, string b) {}");
 
 					code += "\n";
 
-					var m = DParser.ParseString (code);
-					var cache = ResolutionTests.CreateCache ();
-					cache.FirstPackage().AddModule (m);
+					var cache = ResolutionTestHelper.CreateCache (out DModule m, code);
 
 					var ed = new EditorData{ 
 						ModuleCode = code, 
@@ -513,96 +469,11 @@ void foo(int a, string b) {}");
 				}
 			}
 
-			public readonly static TriggerConstraint Trigger = new TriggerConstraint();
+			public static readonly TriggerConstraint Trigger = new TriggerConstraint();
 
 			public static class Not
 			{
-				public readonly static TriggerConstraint Trigger = new TriggerConstraint (true);
-			}
-		}
-
-		public class TestCompletionDataGen : ICompletionDataGenerator
-		{
-			public TestCompletionDataGen(INode[] whiteList, INode[] blackList)
-			{
-				if(whiteList != null){
-					remainingWhiteList= new List<INode>(whiteList);
-					this.whiteList = new List<INode>(whiteList);
-				}
-				if(blackList != null)
-					this.blackList = new List<INode>(blackList);
-			}
-
-			public List<INode> remainingWhiteList;
-			public List<INode> whiteList;
-			public List<INode> blackList;
-			public string suggestedItem;
-
-			#region ICompletionDataGenerator implementation
-
-			public void SetSuggestedItem (string item)
-			{
-				suggestedItem = item;
-			}
-
-			public void AddCodeGeneratingNodeItem (INode node, string codeToGenerate)
-			{
-
-			}
-
-			public List<byte> Tokens = new List<byte> ();
-			public void Add (byte Token)
-			{
-				Tokens.Add (Token);
-			}
-
-			public List<string> Attributes = new List<string> ();
-			public void AddPropertyAttribute (string AttributeText)
-			{
-				Attributes.Add (AttributeText);
-			}
-
-			public void AddTextItem (string Text, string Description)
-			{
-
-			}
-
-			public void AddIconItem (string iconName, string text, string description)
-			{
-
-			}
-
-			public List<INode> addedItems = new List<INode> ();
-			public void Add (INode n)
-			{
-				if (blackList != null && blackList.Contains(n))
-					Assert.Fail();
-
-				if (whiteList != null && whiteList.Contains(n) && !remainingWhiteList.Remove(n))
-					Assert.Fail (n + " occurred at least twice!");
-
-				addedItems.Add (n);
-			}
-
-			public void AddModule (DModule module, string nameOverride = null)
-			{
-				this.Add (module);
-			}
-
-			public List<string> Packages = new List<string> ();
-			public void AddPackage (string packageName)
-			{
-				Packages.Add (packageName);
-			}
-
-			#endregion
-
-			public bool HasRemainingItems { get{ return remainingWhiteList != null && remainingWhiteList.Count > 0; } }
-
-
-			public void NotifyTimeout()
-			{
-				throw new OperationCanceledException();
+				public static readonly TriggerConstraint Trigger = new TriggerConstraint (true);
 			}
 		}
 
@@ -620,14 +491,28 @@ void foo(int a, string b) {}");
 			return n;
 		}
 
-		public class TestsEditorData : EditorData
+		private class TestsEditorData : EditorData
 		{
-			public MutableRootPackage MainPackage { get{ return (ParseCache as LegacyParseCacheView).FirstPackage(); } }
+			public MutableRootPackage MainPackage => (ParseCache as LegacyParseCacheView).FirstPackage();
+		}
+		
+		/// <summary>
+		/// Use § as caret indicator!
+		/// </summary>
+		private static TestsEditorData GenEditorData(string focusedModuleCode, params string[] otherModuleCodes)
+		{
+			int caretOffset = focusedModuleCode.IndexOf('§');
+			Assert.IsTrue(caretOffset != -1);
+			focusedModuleCode = focusedModuleCode.Substring(0, caretOffset) +
+			                    focusedModuleCode.Substring(caretOffset + 1);
+			var caret = DocumentHelper.OffsetToLocation(focusedModuleCode, caretOffset);
+
+			return GenEditorData(caret.Line, caret.Column, focusedModuleCode, otherModuleCodes);
 		}
 
-		public static TestsEditorData GenEditorData(int caretLine, int caretPos,string focusedModuleCode,params string[] otherModuleCodes)
+		private static TestsEditorData GenEditorData(int caretLine, int caretPos,string focusedModuleCode,params string[] otherModuleCodes)
 		{
-			var cache = ResolutionTests.CreateCache (otherModuleCodes);
+			var cache = ResolutionTestHelper.CreateCache (out _, otherModuleCodes);
 			var ed = new TestsEditorData { ParseCache = cache };
 			ed.CancelToken = CancellationToken.None;
 
@@ -636,7 +521,7 @@ void foo(int a, string b) {}");
 			return ed;
 		}
 
-		public static void UpdateEditorData(TestsEditorData ed,int caretLine, int caretPos, string focusedModuleCode)
+		private static void UpdateEditorData(TestsEditorData ed,int caretLine, int caretPos, string focusedModuleCode)
 		{
 			var mod = DParser.ParseString (focusedModuleCode);
 
@@ -648,7 +533,7 @@ void foo(int a, string b) {}");
 			ed.CaretOffset = DocumentHelper.LocationToOffset (focusedModuleCode, caretLine, caretPos);
 		}
 
-		public static TestCompletionDataGen TestCompletionListContents(IEditorData ed, INode[] itemWhiteList = null, INode[] itemBlackList = null, char trigger = '\0')
+		private static TestCompletionDataGen TestCompletionListContents(IEditorData ed, INode[] itemWhiteList, INode[] itemBlackList, char trigger = '\0')
 		{
 			var gen = new TestCompletionDataGen (itemWhiteList, itemBlackList);
 			Assert.That (CodeCompletion.GenerateCompletionData (ed, gen, trigger), Is.True);

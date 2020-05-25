@@ -63,7 +63,7 @@ ClassB!bool cc;
 		[Test]
 		public void Mixins1()
 		{
-			var pcl = ResolutionTests.CreateCache(@"module A;
+			var pcl = CreateCache(out DModule A, @"module A;
 private mixin(""int privA;"");
 package mixin(""int packA;"");
 private int privAA;
@@ -75,7 +75,7 @@ mixin(""int x; int ""~""y""~"";"");",
 import A;",
 												 @"module C; import A;");
 
-			var ctxt = ResolutionTests.CreateDefCtxt(pcl, pcl.FirstPackage()["A"]);
+			var ctxt = CreateDefCtxt(pcl, A);
 
 			var x = R("x", ctxt);
 			Assert.That(x.Count, Is.EqualTo(1));
@@ -115,7 +115,7 @@ import A;",
 		[Test]
 		public void Mixins2()
 		{
-			var pcl = ResolutionTests.CreateCache(@"module A; 
+			var pcl = CreateCache(out DModule A, @"module A; 
 
 void main()
 {
@@ -127,7 +127,6 @@ void main()
 }
 ");
 
-			var A = pcl.FirstPackage()["A"];
 			var main = A["main"].First() as DMethod;
 			var stmt = main.Body.SubStatements.ElementAt(1);
 			var ctxt = ResolutionTests.CreateDefCtxt(pcl, main, stmt);
@@ -142,7 +141,7 @@ void main()
 		[Test]
 		public void Mixins3()
 		{
-			var ctxt = ResolutionTests.CreateDefCtxt(@"module A;
+			var ctxt = CreateDefCtxt(@"module A;
 template Temp(string v)
 {
 	mixin(v);
@@ -167,12 +166,11 @@ class cl
 		[Test]
 		public void Mixins4()
 		{
-			var pcl = ResolutionTests.CreateCache(@"module A; enum mixinStuff = q{import C;};",
-												  @"module B; import A; mixin(mixinStuff); class cl{ void bar(){  } }",
-												  @"module C; void CFoo() {}");
-
-			var B = pcl.FirstPackage()["B"];
-			var ctxt = ResolutionTests.CreateDefCtxt(pcl, B);
+			var pcl = CreateCache(out DModule B,
+				@"module B; import A; mixin(mixinStuff); class cl{ void bar(){  } }",
+				@"module A; enum mixinStuff = q{import C;};",
+				@"module C; void CFoo() {}");
+			var ctxt = CreateDefCtxt(pcl, B);
 
 			var t = RS("CFoo", ctxt);
 			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
@@ -189,7 +187,7 @@ class cl
 		[Test]
 		public void Mixins5()
 		{
-			var pcl = ResolutionTests.CreateCache(@"module A;
+			var pcl = CreateCache(out DModule A, @"module A;
 mixin(""template mxT(string n) { enum mxT = n; }"");
 mixin(""class ""~mxT!(""myClass"")~"" {}"");
 ", @"module B;
@@ -197,7 +195,7 @@ mixin(""class ""~mxT!(""myClass"")~"" {}"");
 mixin(""template mxT(string n) { enum mxT = n; }"");
 ");
 
-			var ctxt = ResolutionTests.CreateDefCtxt(pcl, pcl.FirstPackage()["A"]);
+			var ctxt = CreateDefCtxt(pcl, A);
 
 			var t = RS("myClass", ctxt);
 			Assert.That(t, Is.TypeOf(typeof(ClassType)));
@@ -211,7 +209,7 @@ mixin(""template mxT(string n) { enum mxT = n; }"");
 		[Test]
 		public void StaticProperty_Stringof()
 		{
-			var ctxt = CreateCtxt("A", @"module A;
+			var ctxt = CreateDefCtxt(@"module A;
 interface IUnknown {}
 
 public template uuid(T, immutable char[] g) {
@@ -243,7 +241,7 @@ public template uuid(T, immutable char[] g) {
 		[Test]
 		public void Mixins7()
 		{
-			var ctxt = CreateCtxt("A", @"module A;
+			var ctxt = CreateDefCtxt(@"module A;
 mixin template mix_test() {int a;}
 
 class C {
@@ -266,15 +264,13 @@ C c;
 		[Test]
 		public void NestedMixins()
 		{
-			var pcl = CreateCache(@"module A;
+			var ctxt = CreateDefCtxt(@"module A;
 mixin(""template mxT1(string n) { enum mxT1 = n; }"");
 mixin(mxT1!(""template"")~"" mxT2(string n) { enum mxT2 = n; }"");
 mixin(""template mxT3(string n) { ""~mxT2!(""enum"")~"" mxT3 = n; }"");
 
 mixin(""template mxT4(""~mxT3!(""string"")~"" n) { enum mxT4 = n; }"");
 mixin(""class ""~mxT4!(""myClass"")~"" {}"");"");");
-
-			var ctxt = CreateDefCtxt(pcl, pcl.FirstPackage()["A"]);
 
 			var t = RS("mxT1", ctxt);
 			Assert.That(t, Is.TypeOf(typeof(TemplateType)));

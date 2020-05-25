@@ -1,13 +1,12 @@
 ﻿using System.Linq;
-
+using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
+using D_Parser.Misc;
 using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
 using NUnit.Framework;
-using D_Parser.Dom;
-using D_Parser.Misc;
 using Tests.Resolution;
 
 namespace Tests.ExpressionEvaluation
@@ -54,7 +53,7 @@ namespace Tests.ExpressionEvaluation
 
 			var block = new DBlockNode();
 			if (ProvideObjModule)
-				ctxt = ResolutionTestHelper.CreateDefCtxt(ResolutionTestHelper.CreateCache(), block);
+				ctxt = ResolutionTestHelper.CreateDefCtxt(ResolutionTestHelper.CreateCache(out _), block);
 			else
 				ctxt = ResolutionTestHelper.CreateDefCtxt(new LegacyParseCacheView(new string[] { }), block);
 
@@ -111,11 +110,11 @@ namespace Tests.ExpressionEvaluation
 		public void Test2_066UCSnytax()
 		{
 			var x = DParser.ParseExpression("short(3)");
-			var v = Evaluation.EvaluateValue(x, ResolutionTests.CreateDefCtxt());
+			var v = Evaluation.EvaluateValue(x, ResolutionTestHelper.CreateDefCtxt(""));
 
 			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
-			Assert.That((v as PrimitiveValue).BaseTypeToken, Is.EqualTo(DTokens.Short));
-			Assert.That((v as PrimitiveValue).Value, Is.EqualTo(3m));
+			Assert.That(((PrimitiveValue) v).BaseTypeToken, Is.EqualTo(DTokens.Short));
+			Assert.That(((PrimitiveValue) v).Value, Is.EqualTo(3m));
 		}
 
 		[Test]
@@ -645,8 +644,8 @@ enum isIntOrFloat(F) = is(F == int) || is(F == float);
 		[Test]
 		public void ResolveStringAndToString()
 		{
-			var pcl = ResolutionTestHelper.CreateCache(@"module modA;");
-			var ctxt = ResolutionTestHelper.CreateDefCtxt(pcl, pcl.FirstPackage()["modA"]);
+			var pcl = ResolutionTestHelper.CreateCache(out DModule modA, @"module modA;");
+			var ctxt = ResolutionTestHelper.CreateDefCtxt(pcl, modA);
 
 			var ts = ResolutionTestHelper.RS("string", ctxt);
 			Assert.That(ts, Is.TypeOf(typeof(ArrayType)));
@@ -709,6 +708,22 @@ alias AL2 = T1!AL1;");
 				Assert.That(arrayValue.IsString);
 				Assert.That(arrayValue.StringValue, Is.EqualTo("T1!(T1!(int))"));
 			}
+		}
+
+		[Test]
+		[Ignore("TODO")]
+		public void StaticProperty_AlignOf()
+		{
+			var ctxt = ResolutionTestHelper.CreateDefCtxt(@"module A;
+class B(TemplateParam){
+enum align_of = TemplateParam.alignof;
+}
+B!int b;");
+			var x = DParser.ParseExpression("b.align_of");
+			var v = Evaluation.EvaluateValue(x, ctxt);
+			Assert.That(v, Is.TypeOf<PrimitiveValue>());
+			var pv = v as PrimitiveValue;
+			Assert.That(pv.Value, Is.EqualTo(4m));
 		}
 
 		/// <summary>
