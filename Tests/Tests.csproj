@@ -1,9 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.0</TargetFramework>
-
-    <IsPackable>false</IsPackable>
+    <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,5 +17,4 @@
     <None Remove="formatterTests.txt" />
     <EmbeddedResource Include="formatterTests.txt" />
   </ItemGroup>
-
 </Project>
