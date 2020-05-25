@@ -14,5 +14,5 @@ install:
   - dotnet restore
 
 script:
-  - msbuild /p:Configuration=Debug "/p:Platform=Any CPU" DParser2.Unittest.sln
+  - dotnet build /p:Configuration=Debug "/p:Platform=Any CPU"
   - dotnet test ./Tests/bin/Debug/netcoreapp3.0/Tests.dll
