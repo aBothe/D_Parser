@@ -5,15 +5,14 @@ notifications:
   irc: "chat.freenode.net#d.mono-d"
 
 language: csharp
-mono: latest
+mono: none
+dotnet: 3.1.103
 solution: DParser2.Unittest.sln
 cache: bundler
 
 install:
-  - nuget restore DParser2.Unittest.sln
-  - nuget install NUnit.Console -Version 3.11.1 -OutputDirectory packages
+  - dotnet restore
 
 script:
   - msbuild /p:Configuration=Debug "/p:Platform=Any CPU" DParser2.Unittest.sln
-  - mono ./packages/NUnit.ConsoleRunner.3.11.1/tools/nunit3-console.exe /out:stdout.log ./Tests/bin/Debug/netstandard2.0/Tests.dll
-  - cat stdout.log
+  - dotnet test ./Tests/bin/Debug/netcoreapp3.0/Tests.dll
