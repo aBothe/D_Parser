@@ -1,15 +1,15 @@
 using D_Parser.Dom;
 using D_Parser.Misc.Mangling;
 using D_Parser.Resolver;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Tests.Resolution;
 
 namespace Tests.Misc
 {
-	[TestFixture]
+	[TestClass]
 	public class DemanglerTests
 	{
-		[Test]
+		[TestMethod]
 		public void Demangling_writeln()
 		{
 			ITypeDeclaration q;

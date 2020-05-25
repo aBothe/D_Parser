@@ -4,14 +4,14 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 using D_Parser.Formatting;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests
 {
-	[TestFixture]
+	[TestClass]
 	public class FormatterTests
 	{
-		[Test]
+		[TestMethod]
 		public void Formatting()
 		{
 			var o = DFormattingOptions.CreateDStandard();

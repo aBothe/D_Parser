@@ -1,16 +1,16 @@
 ﻿using System;
 using D_Parser;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests
 {
-	[TestFixture]
+	[TestClass]
 	public class IndentationTests
 	{
 		const int TabSize = 4;
 		const string TabToSpaceRepresentation = "    ";
 
-		[Test]
+		[TestMethod]
 		public void Indentation1()
 		{
 			TestLastLine("", 0);
@@ -166,7 +166,7 @@ lol(); ger++;
 		}
 
 		[Ignore("Formatting not finally done")]
-		[Test]
+		[TestMethod]
 		public void IndentationTODO()
 		{
 			TestLastLine(@"writeln,
@@ -182,7 +182,7 @@ lol(); ger++;
 		B", 2*TabSize);
 		}
 
-		[Test]
+		[TestMethod]
 		public void SwitchIndentation()
 		{
 			TestLastLine(@"foo() {
@@ -236,7 +236,7 @@ lol(); ger++;
 		asdf;", 2*TabSize);
 		}
 
-		[Test]
+		[TestMethod]
 		public void Indentation2()
 		{
 			TestLastLine(@"foo()
@@ -435,7 +435,7 @@ void main(string[] args)
 		}
 
 		[Ignore("not totally configurable yet")]
-		[Test]
+		[TestMethod]
 		public void TestIndenter()
 		{
 			TestLastLine(@"foo()
@@ -469,7 +469,7 @@ body", 0);
 		/// <summary>
 		/// https://github.com/aBothe/Mono-D/issues/576
 		/// </summary>
-		[Test]
+		[TestMethod]
 		public void TestIssue576()
 		{
 			TestLastLine(@"void foo() {

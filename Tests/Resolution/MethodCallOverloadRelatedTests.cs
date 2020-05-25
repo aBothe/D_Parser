@@ -4,14 +4,14 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Resolution
 {
-	[TestFixture]
+	[TestClass]
 	public class MethodCallOverloadRelatedTests : ResolutionTestHelper
 	{
-		[Test]
+		[TestMethod]
 		public void ConstAttributedSymbolType ()
 		{
 			AbstractType t;
@@ -26,16 +26,16 @@ namespace Tests.Resolution
 
 			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 
-			Assert.That (t, Is.TypeOf<MemberSymbol> ());
+			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
 			var baseType = ((MemberSymbol)t).Base;
 
-			Assert.That (baseType, Is.TypeOf<ClassType> ());
+			Assert.IsInstanceOfType(baseType, typeof(ClassType));
 			var objectClass = baseType as ClassType;
 
-			Assert.That (objectClass.HasModifier (DTokens.Const));
+			Assert.IsTrue (objectClass.HasModifier (DTokens.Const));
 		}
 
-		[Test]
+		[TestMethod]
 		public void ConstAttributedSymbolType_MemberFunctionAttributeDecl(){
 			AbstractType t;
 			IExpression x;
@@ -49,13 +49,13 @@ namespace Tests.Resolution
 
 			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 
-			Assert.That (t, Is.TypeOf<MemberSymbol>());
+			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
 			var baseType = ((MemberSymbol)t).Base;
 
-			Assert.That (baseType, Is.TypeOf<ClassType> ());
+			Assert.IsInstanceOfType(baseType, typeof(ClassType));
 			var objectClass = baseType as ClassType;
 
-			Assert.That (objectClass.HasModifier (DTokens.Const));
+			Assert.IsTrue (objectClass.HasModifier (DTokens.Const));
 		}
 
 		readonly string constNonConstParamDistinguishingSOcode = @"module A;
@@ -74,7 +74,7 @@ Object o,o2;
 const Object co,co2;
 ";
 
-		[Test]
+		[TestMethod]
 		public void ConstNonConstParamDistinguishingSO()
 		{
 			AbstractType t;
@@ -87,19 +87,19 @@ const Object co,co2;
 			B = N<DClassLike>(A, "B");
 			opEquals1 = B.Children[0] as DMethod;
 			opEquals2 = B.Children[1] as DMethod;
-			Assert.That(opEquals1, Is.Not.Null);
-			Assert.That(opEquals2, Is.Not.Null);
+			Assert.IsNotNull(opEquals1);
+			Assert.IsNotNull(opEquals2);
 
 			x = DParser.ParseExpression("b.opEquals(o,o2)");
 
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false);
-			Assert.That(t, Is.TypeOf<MemberSymbol>());
-			Assert.That((t as MemberSymbol).Definition, Is.SameAs(opEquals1));
+			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.AreSame(opEquals1, (t as MemberSymbol).Definition);
 
-			Assert.That((t as MemberSymbol).Base, Is.TypeOf<PrimitiveType>());
+			Assert.IsInstanceOfType((t as MemberSymbol).Base, typeof(PrimitiveType));
 		}
 
-		[Test]
+		[TestMethod]
 		public void ConstNonConstParamDistinguishingSO2 ()
 		{
 			AbstractType t2;
@@ -112,20 +112,20 @@ const Object co,co2;
 			B = N<DClassLike> (A, "B");
 			opEquals1 = B.Children [0] as DMethod;
 			opEquals2 = B.Children [1] as DMethod;
-			Assert.That (opEquals1, Is.Not.Null);
-			Assert.That (opEquals2, Is.Not.Null);
+			Assert.IsNotNull(opEquals1);
+			Assert.IsNotNull(opEquals2);
 
 			x2 = DParser.ParseExpression ("b.opEquals(co,co2)");
 
 			t2 = ExpressionTypeEvaluation.EvaluateType (x2, ctxt, false);
-			Assert.That (t2, Is.TypeOf<MemberSymbol> ());
-			Assert.That ((t2 as MemberSymbol).Definition, Is.SameAs (opEquals2));
+			Assert.IsInstanceOfType(t2, typeof(MemberSymbol));
+			Assert.AreSame(opEquals2, (t2 as MemberSymbol).Definition);
 
-			Assert.That ((t2 as MemberSymbol).Base, Is.TypeOf<PrimitiveType> ());
+			Assert.IsInstanceOfType((t2 as MemberSymbol).Base, typeof(PrimitiveType));
 
 		}
 
-		[Test]
+		[TestMethod]
 		public void ParamArgMatching1()
 		{
 			var ctxt = CreateCtxt("A", @"module A;
@@ -143,18 +143,18 @@ double* foo(string s, string ss);
 
 			x = DParser.ParseExpression("foo(\"derp\",mye.a)");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.That(t, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.IsInstanceOfType(t, typeof(PrimitiveType));
 
 			x = DParser.ParseExpression("foo(\"derp\",\"yeah\")");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.That(t, Is.TypeOf(typeof(PointerType)));
+			Assert.IsInstanceOfType(t, typeof(PointerType));
 
 			x = DParser.ParseExpression("foo(\"derp\",1.2)");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.That(t, Is.Null);
+			Assert.IsNull(t);
 		}
 
-		[Test]
+		[TestMethod]
 		public void TestOverloads1()
 		{
 			var pcl = CreateCache(out DModule m, @"module modA;
@@ -180,14 +180,14 @@ class A
 
 			var t = ExpressionTypeEvaluation.EvaluateType(e, ctxt, false);
 
-			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
 			Assert.AreEqual(pcl.FirstPackage()["modA"]["foo"].First(), ((MemberSymbol)t).Definition);
 		}
 
 		/// <summary>
 		/// Templated and non-template functions can now be overloaded against each other:
 		/// </summary>
-		[Test]
+		[TestMethod]
 		public void TestOverloads2()
 		{
 			var ctxt = CreateCtxt("A", @"module A;
@@ -201,26 +201,26 @@ long longVar = 10L;");
 			x = DParser.ParseExpression("foo(100)");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.That(t, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.IsInstanceOfType(t, typeof(PrimitiveType));
 
 			x = DParser.ParseExpression("foo(\"asdf\")");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.That(t, Is.TypeOf(typeof(PointerType)));
+			Assert.IsInstanceOfType(t, typeof(PointerType));
 
 			// Integer literal 10L can be converted to int without loss of precisions.
 			// Then the call matches to foo(int n).
 			x = DParser.ParseExpression("foo(10L)");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.That(t, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.IsInstanceOfType(t, typeof(PrimitiveType));
 
 			// A runtime variable 'num' typed long is not implicitly convertible to int.
 			// Then the call matches to foo(T)(T t).
 			x = DParser.ParseExpression("foo(longVar)");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.That(t, Is.TypeOf(typeof(PointerType)));
+			Assert.IsInstanceOfType(t, typeof(PointerType));
 		}
 
 	}

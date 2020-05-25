@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Dom.Expressions;
@@ -6,10 +6,10 @@ using D_Parser.Resolver.ExpressionSemantics;
 
 namespace Tests
 {
-	[TestFixture]
+	[TestClass]
 	public class UFCSTests
 	{
-		[Test]
+		[TestMethod]
 		public void BasicResolution()
 		{
 			var ctxt = ResolutionTestHelper.CreateCtxt("modA",@"module modA;
@@ -25,19 +25,19 @@ int globI;
 
 			x = DParser.ParseExpression ("globStr.foo()");
 			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
-			Assert.That (t, Is.TypeOf (typeof(ArrayType)));
+			Assert.IsInstanceOfType(t, typeof(ArrayType));
 
 			x = DParser.ParseExpression ("globI.foo()");
 			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
-			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
+			Assert.IsInstanceOfType(t, typeof(PrimitiveType));
 
 			x = DParser.ParseExpression ("globStr.writeln()");
 			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
-			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
-			Assert.That ((t as PrimitiveType).TypeToken, Is.EqualTo(DTokens.Void));
+			Assert.IsInstanceOfType(t, typeof(PrimitiveType));
+			Assert.AreEqual(DTokens.Void, (t as PrimitiveType).TypeToken);
 		}
 
-		[Test]
+		[TestMethod]
 		public void AccessUFCS()
 		{
 			var ctxt = ResolutionTestHelper.CreateCtxt("A", @"module A;
@@ -54,13 +54,13 @@ int a;
 			AbstractType t;
 
 			x = DParser.ParseExpression("a.to!string()");
-			Assert.That(x, Is.TypeOf(typeof(PostfixExpression_MethodCall)));
+			Assert.IsInstanceOfType(x, typeof(PostfixExpression_MethodCall));
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.That(t, Is.TypeOf(typeof(TemplateParameterSymbol)));
-			Assert.That((t as TemplateParameterSymbol).Base, Is.TypeOf(typeof(ArrayType)));
+			Assert.IsInstanceOfType(t, typeof(TemplateParameterSymbol));
+			Assert.IsInstanceOfType((t as TemplateParameterSymbol).Base, typeof(ArrayType));
 		}
 
-		[Test]
+		[TestMethod]
 		public void NoParenthesesUfcsCall()
 		{
 			var ctxt = ResolutionTestHelper.CreateCtxt("A", @"module A;
@@ -75,11 +75,11 @@ string foo(string s) { return s ~ ""gh""; }
 			x = DParser.ParseExpression("\"asdf\".foo");
 			v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+			Assert.IsInstanceOfType(v, typeof(ArrayValue));
 			av = v as ArrayValue;
 
-			Assert.That(av.IsString);
-			Assert.That(av.StringValue, Is.EqualTo("asdfgh"));
+			Assert.IsTrue(av.IsString);
+			Assert.AreEqual("asdfgh", av.StringValue);
 		}
 
 	}

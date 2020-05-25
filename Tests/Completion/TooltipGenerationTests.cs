@@ -1,12 +1,12 @@
 using D_Parser.Dom;
 using D_Parser.Resolver;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Completion
 {
     public class TooltipGenerationTests
     {
-        [Test]
+        [TestMethod]
 		public void TooltipGeneration_MethodSignature()
 		{
 			var tooltipGen = new D_Parser.Completion.ToolTips.NodeTooltipRepresentationGen();
@@ -24,9 +24,9 @@ void foo(int a, string b) {}");
   int a,
   <span underline='single'>string b</span>
 )".Replace("\r\n", "\n");
-			Assert.That(signature, Is.EqualTo(expected));
+			Assert.AreEqual(expected, signature);
 		}
-		[Test]
+		[TestMethod]
 		public void TooltipGeneration_Modifiers()
 		{
 			var tooltipGen = new D_Parser.Completion.ToolTips.NodeTooltipRepresentationGen();
@@ -37,11 +37,11 @@ static private const double eps;");
 			var eps = ResolutionTestHelper.N<DVariable>(ctxt, "A.eps");
 
 			var signature = tooltipGen.GenTooltipSignature(eps, false, 1);
-			Assert.That(signature, Is.EqualTo(@"private static const(double) A.eps"));
+			Assert.AreEqual(@"private static const(double) A.eps", signature);
 		}
 
 
-		[Test]
+		[TestMethod]
 		public void TooltipGeneration_MethodDDoc_SimpleSummary()
 		{
 			var tooltipGen = new D_Parser.Completion.ToolTips.NodeTooltipRepresentationGen();
@@ -53,10 +53,10 @@ void foo(int a, string b) {}");
 			var foo = ResolutionTestHelper.N<DMethod>(ctxt, "A.foo");
 
 			tooltipGen.GenToolTipBody(foo, out var summary, out var categories);
-			Assert.That(summary, Is.EqualTo(@"Does magic."));
+			Assert.AreEqual(@"Does magic.", summary);
 		}
 
-		[Test]
+		[TestMethod]
 		public void TooltipGeneration_MethodDDoc_Categories()
 		{
 			var tooltipGen = new D_Parser.Completion.ToolTips.NodeTooltipRepresentationGen();
@@ -78,9 +78,9 @@ void foo(int a, string b) {}");
 			var foo = ResolutionTestHelper.N<DMethod>(ctxt, "A.foo");
 
 			tooltipGen.GenToolTipBody(foo, out var summary, out var categories);
-			Assert.That(categories.Count, Is.EqualTo(2));
-			Assert.That(categories.ContainsKey("Returns"));
-			Assert.That(categories.ContainsKey("Params"));
+			Assert.AreEqual(2, categories.Count);
+			Assert.IsTrue(categories.ContainsKey("Returns"));
+			Assert.IsTrue(categories.ContainsKey("Params"));
 		}
     }
 }

@@ -4,14 +4,14 @@ using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
 using D_Parser.Resolver;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Resolution
 {
-	[TestFixture]
+	[TestClass]
 	public class LooseResolutionTests : ResolutionTestHelper
 	{
-		[Test]
+		[TestMethod]
 		public void LooseResolution2()
 		{
 			var pcw = CreateCache(out DModule A, @"module A;
@@ -40,23 +40,23 @@ class C { class Nested { int someDeepVariable; } }");
 			ed = new EditorData { SyntaxTree = A, ParseCache = pcw, CaretLocation = sr.EndLocation };
 			t = LooseResolution.SearchNodesByName(ref sr, ed) as DSymbol;
 
-			Assert.That(t, Is.TypeOf(typeof(ClassType)));
-			Assert.That(sr, Is.TypeOf(typeof(IdentifierExpression)));
+			Assert.IsInstanceOfType(t, typeof(ClassType));
+			Assert.IsInstanceOfType(sr, typeof(IdentifierExpression));
 
 			sr = (S(x, 0) as ExpressionStatement).Expression;
 			ed = new EditorData { SyntaxTree = A, ParseCache = pcw, CaretLocation = sr.EndLocation };
 			t = LooseResolution.SearchNodesByName(ref sr, ed) as DSymbol;
 
-			Assert.That(t, Is.TypeOf(typeof(ClassType)));
+			Assert.IsInstanceOfType(t, typeof(ClassType));
 
 			sr = (S(x, 1) as ExpressionStatement).Expression;
 			ed = new EditorData { SyntaxTree = A, ParseCache = pcw, CaretLocation = sr.EndLocation };
 			t = LooseResolution.SearchNodesByName(ref sr, ed) as DSymbol;
 
-			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
 		}
 
-		[Test]
+		[TestMethod]
 		public void LooseNodeResolution()
 		{
 			var pcw = CreateCache(out DModule A, @"module A;
@@ -87,32 +87,32 @@ private int privInt;
 			ed = new EditorData { SyntaxTree = A, ParseCache = pcw, CaretLocation = (S(x, 3) as ExpressionStatement).Expression.EndLocation };
 			t = LooseResolution.ResolveTypeLoosely(ed, out attempt, out sr) as DSymbol;
 
-			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
-			Assert.That(t.Definition, Is.TypeOf(typeof(DVariable)));
-			Assert.That(attempt, Is.EqualTo(LooseResolution.NodeResolutionAttempt.RawSymbolLookup));
+			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOfType(t.Definition, typeof(DVariable));
+			Assert.AreEqual(LooseResolution.NodeResolutionAttempt.RawSymbolLookup, attempt);
 
 
 			ed = new EditorData { SyntaxTree = A, ParseCache = pcw, CaretLocation = (S(x, 2) as ExpressionStatement).Expression.EndLocation };
 			t = LooseResolution.ResolveTypeLoosely(ed, out attempt, out sr) as DSymbol;
 
-			Assert.That(t, Is.TypeOf(typeof(ClassType)));
-			Assert.That(attempt, Is.EqualTo(LooseResolution.NodeResolutionAttempt.RawSymbolLookup));
+			Assert.IsInstanceOfType(t, typeof(ClassType));
+			Assert.AreEqual(LooseResolution.NodeResolutionAttempt.RawSymbolLookup, attempt);
 
 
 			ed = new EditorData { SyntaxTree = A, ParseCache = pcw, CaretLocation = (S(x, 1) as ExpressionStatement).Expression.EndLocation };
 			t = LooseResolution.ResolveTypeLoosely(ed, out attempt, out sr) as DSymbol;
 
-			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
-			Assert.That(t.Definition, Is.TypeOf(typeof(DMethod)));
-			Assert.That(attempt, Is.EqualTo(LooseResolution.NodeResolutionAttempt.RawSymbolLookup));
+			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOfType(t.Definition, typeof(DMethod));
+			Assert.AreEqual(LooseResolution.NodeResolutionAttempt.RawSymbolLookup, attempt);
 
 
 			ed = new EditorData { SyntaxTree = A, ParseCache = pcw, CaretLocation = (S(x, 0) as ExpressionStatement).Expression.EndLocation };
 			t = LooseResolution.ResolveTypeLoosely(ed, out attempt, out sr) as DSymbol;
 
-			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
-			Assert.That(t.Definition, Is.TypeOf(typeof(DMethod)));
-			Assert.That(attempt, Is.EqualTo(LooseResolution.NodeResolutionAttempt.RawSymbolLookup));
+			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOfType(t.Definition, typeof(DMethod));
+			Assert.AreEqual(LooseResolution.NodeResolutionAttempt.RawSymbolLookup, attempt);
 		}
 	}
 }

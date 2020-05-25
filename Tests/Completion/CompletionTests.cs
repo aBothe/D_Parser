@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading;
 using D_Parser;
@@ -10,8 +11,7 @@ using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
-using NUnit.Framework;
-using NUnit.Framework.Constraints;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Tests.Resolution;
 
 namespace Tests.Completion
@@ -19,9 +19,10 @@ namespace Tests.Completion
 	/// <summary>
 	/// Description of CompletionTests.
 	/// </summary>
+	[TestClass]
 	public class CompletionTests
 	{
-		[Test]
+		[TestMethod]
 		public void ForStatement()
 		{
 			var code = @"module A; // 1
@@ -51,7 +52,7 @@ void main(){
 			//TODO
 		}
 
-		[Test]
+		[TestMethod]
 		public void ModuleCompletion()
 		{
 			var code = @"module §
@@ -62,7 +63,7 @@ void main(){
 			TestCompletionListContents (ed, new[]{ ed.SyntaxTree }, new INode[0]);
 		}
 
-		[Test]
+		[TestMethod]
 		public void MemberCompletion()
 		{
 			var code = @"module A;
@@ -84,14 +85,14 @@ new K().
 			var gen = TestCompletionListContents(ed, null, null);
 
 			var foo = ed.SyntaxTree["foo"].First() as DVariable;
-			Assert.That (gen.AddedItems, Has.No.Member (foo));
+			Assert.IsFalse(gen.AddedItems.Contains(foo));
 			var K = (DClassLike)ed.SyntaxTree["K"].First();
-			Assert.That (gen.AddedItems, Has.No.Member (K));
+			Assert.IsFalse(gen.AddedItems.Contains(K));
 			var member = (DVariable)K["member"].First();
-			Assert.That (gen.AddedItems, Has.Member (member));
+			Assert.IsTrue(gen.AddedItems.Contains(member));
 		}
 
-		[Test]
+		[TestMethod]
 		public void ForeachCompletion()
 		{
 			var code =@"module A;
@@ -100,10 +101,10 @@ foreach(§
 }";
 			var ed = GenEditorData (code);
 			var g = new TestCompletionDataGen (null, null);
-			Assert.That(CodeCompletion.GenerateCompletionData (ed, g, 'a', true), Is.True);
+			Assert.IsTrue(CodeCompletion.GenerateCompletionData (ed, g, 'a', true));
 		}
 
-		[Test]
+		[TestMethod]
 		public void ForeachIteratorVarArg()
 		{
 			var code = @"module A;
@@ -125,16 +126,16 @@ foreach(cur; p_args)
 			MemberSymbol ms;
 
 			t = ExpressionTypeEvaluation.EvaluateType (cur, ctxt);
-			Assert.That (t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
 			ms = (MemberSymbol)t;
 
-			Assert.That (ms.Base, Is.TypeOf(typeof(TemplateParameterSymbol)));
+			Assert.IsInstanceOfType(ms.Base, typeof(TemplateParameterSymbol));
 			t = (ms.Base as TemplateParameterSymbol).Base;
 
-			Assert.That (t, Is.TypeOf(typeof(StructType)));
+			Assert.IsInstanceOfType(t, typeof(StructType));
 		}
 
-		[Test]
+		[TestMethod]
 		public void ForeachIteratorCompletion()
 		{
 			var code = @"module A;
@@ -150,10 +151,10 @@ struct Cl { int a; }
 			var a = (ed.MainPackage["A"]["Cl"].First() as DClassLike)["a"].First() as DVariable;
 
 			var g = new TestCompletionDataGen(new[]{ a }, null);
-			Assert.That(CodeCompletion.GenerateCompletionData(ed, g, 'a', true), Is.True);
+			Assert.IsTrue(CodeCompletion.GenerateCompletionData(ed, g, 'a', true));
 		}
 
-		[Test]
+		[TestMethod]
 		public void NonStaticCompletion1()
 		{
 			var code = @"module A;
@@ -167,10 +168,10 @@ struct SomeStruct {ubyte a; static void read() {
 			var a = SomeStruct["a"].First() as DVariable;
 			var read = SomeStruct ["read"].First () as DMethod;
 			var g = new TestCompletionDataGen(new[]{ read },new[]{ a });
-			Assert.That(CodeCompletion.GenerateCompletionData(ed, g, '\0', true), Is.True);
+			Assert.IsTrue(CodeCompletion.GenerateCompletionData(ed, g, '\0', true));
 		}
 
-		[Test]
+		[TestMethod]
 		public void AutoCompletion()
 		{
 			var code = @"module A;
@@ -179,10 +180,10 @@ auto§
 }";
 			var ed = GenEditorData(code);
 			var g = new TestCompletionDataGen(null, null);
-			Assert.That(CodeCompletion.GenerateCompletionData(ed, g, 'a', true), Is.False);
+			Assert.IsFalse(CodeCompletion.GenerateCompletionData(ed, g, 'a', true));
 		}
 
-		[Test]
+		[TestMethod]
 		public void IncrementalParsing_()
 		{
 			var code=@"module A;
@@ -194,7 +195,7 @@ void main() {}";
 			var foo = m ["foo"].First () as DVariable;
 
 			var b = ASTSearchHelper.SearchBlockAt (m, new CodeLocation (11, 3));
-			Assert.That (b, Is.SameAs (main));
+			Assert.AreSame(main, b);
 
 			code = @"module A;
 int foo;
@@ -207,13 +208,13 @@ string ) {
 			var newMod = IncrementalParsing.UpdateBlockPartly (m, code, DocumentHelper.LocationToOffset (code, caret), caret, out _u);
 
 			var main2 = newMod ["main"].First () as DMethod;
-			Assert.That (main, Is.Not.SameAs (main2));
-			Assert.That (main2.Parameters.Count, Is.EqualTo (1));
-			Assert.That (main2.Parameters [0].Type, Is.Not.Null);
-			Assert.That (main2.Parameters [0].NameHash, Is.EqualTo(DTokens.IncompleteIdHash));
+			Assert.AreNotSame(main2, main);
+			Assert.AreEqual(1, main2.Parameters.Count);
+			Assert.IsNotNull(main2.Parameters [0].Type);
+			Assert.AreEqual(DTokens.IncompleteIdHash, main2.Parameters [0].NameHash);
 		}
 
-		[Test]
+		[TestMethod]
 		public void IncrementalParsing_Lambdas()
 		{
 			var code=@"module A;
@@ -227,7 +228,7 @@ void main() {
 			var foo = m ["foo"].First () as DVariable;
 
 			var b = ASTSearchHelper.SearchBlockAt (m, new CodeLocation (1, 4));
-			Assert.That (b, Is.SameAs (main));
+			Assert.AreSame(main, b);
 			var stmt = main.Body;
 
 			code = @"module A;
@@ -241,13 +242,13 @@ int a;
 			var newMain = IncrementalParsing.UpdateBlockPartly (stmt, code, DocumentHelper.LocationToOffset (code, caret), caret, out _u) as DMethod;
 
 			var lambda = newMain.Children [0] as DMethod;
-			Assert.That (lambda, Is.Not.Null);
-			Assert.That (lambda.Parameters.Count, Is.EqualTo (1));
-			Assert.That (lambda.Parameters [0].Type, Is.Not.Null);
-			Assert.That (lambda.Parameters [0].Name, Is.EqualTo("b"));
+			Assert.IsNotNull(lambda);
+			Assert.AreEqual(1, lambda.Parameters.Count);
+			Assert.IsNotNull(lambda.Parameters [0].Type);
+			Assert.AreEqual("b", lambda.Parameters [0].Name);
 		}
 
-		[Test]
+		[TestMethod]
 		public void IncrementalParsing_LambdaParameters()
 		{
 			var code=@"module A;
@@ -261,7 +262,7 @@ void main() {
 			var foo = m ["foo"].First () as DVariable;
 
 			var b = ASTSearchHelper.SearchBlockAt (m, new CodeLocation (1, 4));
-			Assert.That (b, Is.SameAs (main));
+			Assert.AreSame(main, b);
 
 			code = @"module A;
 int foo;
@@ -274,48 +275,49 @@ int a;
 			var newMod = IncrementalParsing.UpdateBlockPartly (main.Body, code, DocumentHelper.LocationToOffset (code, caret), caret, out _u) as DMethod;
 
 			var lambda = newMod.Children [0] as DMethod;
-			Assert.That (lambda, Is.Not.Null);
-			Assert.That (lambda.Parameters.Count, Is.EqualTo (1));
-			Assert.That (lambda.Parameters [0].Type, Is.Not.Null);
-			Assert.That (lambda.Parameters [0].NameHash, Is.EqualTo(DTokens.IncompleteIdHash));
+			Assert.IsNotNull(lambda);
+			Assert.AreEqual(1, lambda.Parameters.Count);
+			Assert.IsNotNull(lambda.Parameters [0].Type);
+			Assert.AreEqual(DTokens.IncompleteIdHash, lambda.Parameters [0].NameHash);
 		}
 
-		[Test]
+		[TestMethod]
 		public void CompletionTrigger()
 		{
-			Assert.That (@"module ", Does.Trigger);
-			Assert.That (@"import ", Does.Trigger);
-			Assert.That (@"import std.stdio : ", Does.Trigger);
+			Assert.IsTrue (@"module ".DoesTriggerCompletion());
+			Assert.IsTrue (@"import ".DoesTriggerCompletion());
+			Assert.IsTrue (@"import std.stdio : ".DoesTriggerCompletion());
 
-			Assert.That (@"alias ", Does.Trigger);
-			Assert.That (@"immutable ",Does.Not.Trigger);
-			Assert.That (@"scope ",Does.Not.Trigger);
-			Assert.That (@"auto ", Does.Not.Trigger);
-			Assert.That (@"const( ", Does.Trigger);
+			Assert.IsTrue (@"alias ".DoesTriggerCompletion());
+			Assert.IsFalse(@"immutable ".DoesTriggerCompletion());
+			Assert.IsFalse (@"scope ".DoesTriggerCompletion());
+			Assert.IsFalse (@"auto ".DoesTriggerCompletion());
+			Assert.IsTrue (@"const( ".DoesTriggerCompletion());
 
-			Assert.That(@"class A : ", Does.Trigger);
-			Assert.That(@"class A(T) : ", Does.Trigger);
-			Assert.That (@"class A(T) if(is( ", Does.Trigger);
-			Assert.That (@"class A(T) if(is(int  ", Does.Not.Trigger);
-			Assert.That (@"class A(", Does.Not.Trigger);
-			Assert.That (@"class A(string ", Does.Not.Trigger);
-			Assert.That (@"class A(alias ", Does.Not.Trigger);
+			Assert.IsTrue(@"class A : ".DoesTriggerCompletion());
+			Assert.IsTrue(@"class A(T) : ".DoesTriggerCompletion());
+			Assert.IsTrue (@"class A(T) if(is( ".DoesTriggerCompletion());
+			Assert.IsFalse (@"class A(T) if(is(int  ".DoesTriggerCompletion());
+			Assert.IsFalse (@"class A(".DoesTriggerCompletion());
+			Assert.IsFalse (@"class A(string ".DoesTriggerCompletion());
+			Assert.IsFalse (@"class A(alias ".DoesTriggerCompletion());
 
-			Assert.That(@"void main(", Does.Trigger);
-			Assert.That(@"void main(string[", Does.Trigger);
+			Assert.IsTrue(@"void main(".DoesTriggerCompletion());
+			Assert.IsTrue(@"void main(string[".DoesTriggerCompletion());
 
-			Assert.That(@"class A {int b;}
+			Assert.IsTrue(@"class A {int b;}
 void main(){
 	Class cl;
-	if(cl.", Does.Trigger);
+	if(cl.".DoesTriggerCompletion());
 		}
 
-		[TestCase("alias string §")]
-		[TestCase("int §")]
-		[TestCase("class §")]
-		[TestCase("enum §")]
-		[TestCase("enum { §")]
-		[TestCase("void main(string* §")]
+		[DataTestMethod]
+		[DataRow("alias string §")]
+		[DataRow("int §")]
+		[DataRow("class §")]
+		[DataRow("enum §")]
+		[DataRow("enum { §")]
+		[DataRow("void main(string* §")]
 		public void DeclarationCompletion_TriggersButShowsNoEntries(string code)
 		{
 			var ed = GenEditorData(code);
@@ -325,7 +327,7 @@ void main(){
 			Assert.IsTrue(gen.IsEmpty);
 		}
 
-		[Test]
+		[TestMethod]
 		public void ArrayAccessCompletion()
 		{
 			INode[] wl;
@@ -345,7 +347,7 @@ o[0][0].
 			TestCompletionListContents (ed, wl, null);
 		}
 
-		[Test]
+		[TestMethod]
 		public void MissingClassMembersOnParameter ()
 		{
 			TestsEditorData ed;
@@ -366,7 +368,7 @@ array.
 			TestCompletionListContents (ed, wl, null);
 		}
 
-		[Test]
+		[TestMethod]
 		public void StaticMemberCompletion()
 		{
 			TestsEditorData ed;
@@ -386,7 +388,7 @@ void main() { Class.§ }";
 			TestCompletionListContents (ed, wl, bl);
 		}
 		
-		[Test]
+		[TestMethod]
 		public void CompletionSuggestion_WithBasicMethodParameter_SuggestsEnumTypeName()
 		{
 			var s = @"module A; enum myE { } void foo(myE e);
@@ -396,10 +398,10 @@ foo(§
 			var ed = GenEditorData (s);
 
 			var con = TestCompletionListContents (ed, null, null);
-			Assert.That (con.suggestedItem, Is.EqualTo ("myE"));
+			Assert.AreEqual("myE", con.suggestedItem);
 		}
 
-		[Test]
+		[TestMethod]
 		public void CompletionSuggestion_WithTemplateParameter_SuggestsEnumTypeName()
 		{
 			var s = @"module A; enum myE { } void foo(T)(T e);
@@ -409,10 +411,10 @@ foo!myE(§
 			var ed = GenEditorData (s);
 
 			var con = TestCompletionListContents (ed, null, null);
-			Assert.That (con.suggestedItem, Is.EqualTo ("myE"));
+			Assert.AreEqual("myE", con.suggestedItem);
 		}
 		
-		[Test]
+		[TestMethod]
 		[Ignore("not implemented yet")]
 		public void MethodParameterCompletion_SuggestsFirstAvailableThingOfParameterMatchingType()
 		{
@@ -426,10 +428,10 @@ foo!AClass(§
 			var ed = GenEditorData (s);
 
 			var con = TestCompletionListContents (ed, null, null);
-			Assert.That (con.suggestedItem, Is.EqualTo ("someInstance"));
+			Assert.AreEqual("someInstance", con.suggestedItem);
 		}
 		
-		[Test]
+		[TestMethod]
 		public void Completion_OnMethodParameterDeclarations_ShowCtrlSpaceCompletion()
 		{
 			var s = @"module A; enum myE { } void foo(T)(T e);
@@ -441,7 +443,7 @@ void subFoo(§) {}
 			var con = TestCompletionListContents (ed, new[]{ GetNode(ed, "A.myE", ref ctxt) }, null);
 		}
 
-		[Test]
+		[TestMethod]
 		public void TriggerOnBegunMemberName_OnMethodCall_SuggestsEnumTypeName()
 		{
 			var s = @"module A; enum myE { } void foo(T)(T e);
@@ -451,10 +453,10 @@ foo!myE(m§
 			var ed = GenEditorData (s);
 
 			var con = TestCompletionListContents (ed, null, null);
-			Assert.That (con.suggestedItem, Is.EqualTo ("m"));
+			Assert.AreEqual("m", con.suggestedItem);
 		}
 
-		[Test]
+		[TestMethod]
 		public void TriggerOnBegunMemberName_ReturnsListOfMembersWithPreselectionSuggestion()
 		{
 			var ed = GenEditorData (@"module A;
@@ -475,7 +477,7 @@ a.prop§
 			Assert.AreEqual("a.prop", cdg.TriggerSyntaxRegion.ToString());
 		}
 
-		[Test]
+		[TestMethod]
 		public void TriggerOnBegunMemberName2_ReturnsListOfMembersWithPreselectionSuggestion()
 		{
 			var ed = GenEditorData (@"module A;
@@ -494,7 +496,7 @@ AClass.B§ b;
 			Assert.AreEqual("AClass.B", cdg.TriggerSyntaxRegion.ToString());
 		}
 
-		[Test]
+		[TestMethod]
 		public void TriggerOnVariableName_SuggestsNewVariableName()
 		{
 			var ed = GenEditorData(@"module A;
@@ -503,57 +505,14 @@ AClass §
 ");
 			
 			var gen = new TestCompletionDataGen (null, null);
-			Assert.That (CodeCompletion.GenerateCompletionData (ed, gen, '\0'), Is.True);
+			Assert.IsTrue(CodeCompletion.GenerateCompletionData (ed, gen, '\0'));
 			
-			Assert.IsEmpty(gen.AddedItems);
+			Assert.IsTrue(gen.AddedItems.Count == 0);
 			Assert.AreEqual("aClass", gen.suggestedItem);
-			Assert.AreEqual(new List<string> { "aClass" }, gen.AddedTextItems);
+			Assert.AreEqual("aClass", string.Join(",",gen.AddedTextItems));
 		}
 
 		#region Test lowlevel
-		public static class Does
-		{
-			public class TriggerConstraint : Constraint
-			{
-				readonly bool neg;
-				public TriggerConstraint(bool neg = false)
-				{
-					this.neg = neg;
-				}
-
-                public override ConstraintResult ApplyTo<TActual>(TActual actual)
-                {
-					var code = actual as string;
-					if (code == null)
-						return new ConstraintResult(this, actual, false);
-
-					code += "\n";
-
-					var cache = ResolutionTestHelper.CreateCache (out DModule m, code);
-
-					var ed = new EditorData{ 
-						ModuleCode = code, 
-						CaretOffset = code.Length-1, 
-						CaretLocation = DocumentHelper.OffsetToLocation(code,code.Length-1),
-						SyntaxTree = m,
-						ParseCache = cache
-					};
-
-					var gen = new TestCompletionDataGen (null, null);
-					var res = CodeCompletion.GenerateCompletionData (ed, gen, 'a');
-
-					return new ConstraintResult(this, actual, neg ? !res : res);
-				}
-			}
-
-			public static readonly TriggerConstraint Trigger = new TriggerConstraint();
-
-			public static class Not
-			{
-				public static readonly TriggerConstraint Trigger = new TriggerConstraint (true);
-			}
-		}
-
 		public static INode GetNode(EditorData ed, string id, ref ResolutionContext ctxt)
 		{
 			if (ctxt == null)
@@ -564,7 +523,7 @@ AClass §
 			var t = TypeDeclarationResolver.ResolveSingle(bt, ctxt);
 
 			var n = (t as DSymbol).Definition;
-			Assert.That (n, Is.Not.Null);
+			Assert.IsNotNull(n);
 			return n;
 		}
 
@@ -613,9 +572,9 @@ AClass §
 		private static TestCompletionDataGen TestCompletionListContents(IEditorData ed, INode[] itemWhiteList, INode[] itemBlackList, char trigger = '\0')
 		{
 			var gen = new TestCompletionDataGen (itemWhiteList, itemBlackList);
-			Assert.That (CodeCompletion.GenerateCompletionData (ed, gen, trigger), Is.True);
+			Assert.IsTrue(CodeCompletion.GenerateCompletionData (ed, gen, trigger));
 
-			Assert.That (gen.HasRemainingItems, Is.False, "Some items were not enlisted!");
+			Assert.IsFalse(gen.HasRemainingItems, "Some items were not enlisted!");
 			return gen;
 		}
 		#endregion

@@ -2,14 +2,14 @@
 using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.ExpressionEvaluation
 {
-	[TestFixture]
+	[TestClass]
 	public class TraitsEvaluationTests
 	{
-		[Test]
+		[TestMethod]
 		public void Traits()
 		{
 			var pcl = ResolutionTestHelper.CreateCache(out DModule m, @"module A;
@@ -105,50 +105,50 @@ template Tmpl(){
 			var x = DParser.ParseExpression(@"__traits(identifier, C.aso.derp)");
 			var v = D_Parser.Resolver.ExpressionSemantics.Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+			Assert.IsInstanceOfType(v, typeof(ArrayValue));
 			var av = v as ArrayValue;
-			Assert.That(av.IsString, Is.True);
-			Assert.That(av.StringValue, Is.EqualTo("C.aso.derp"));
+			Assert.IsTrue(av.IsString);
+			Assert.AreEqual("C.aso.derp", av.StringValue);
 
 			x = DParser.ParseExpression("__traits(getMember, c, \"foo\")");
 			var t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
 
 
 
 			x = DParser.ParseExpression("__traits(getOverloads, S, \"bar\")");
 			v = D_Parser.Resolver.ExpressionSemantics.Evaluation.EvaluateValue(x, ctxt);
-			Assert.That(v, Is.TypeOf(typeof(TypeValue)));
-			Assert.That((v as TypeValue).RepresentedType, Is.TypeOf(typeof(DTuple)));
+			Assert.IsInstanceOfType(v, typeof(TypeValue));
+			Assert.IsInstanceOfType((v as TypeValue).RepresentedType, typeof(DTuple));
 
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.That(t, Is.TypeOf(typeof(DTuple)));
+			Assert.IsInstanceOfType(t, typeof(DTuple));
 
 
 			x = DParser.ParseExpression("__traits(getProtection, D.privInt)");
 			v = D_Parser.Resolver.ExpressionSemantics.Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+			Assert.IsInstanceOfType(v, typeof(ArrayValue));
 			av = v as ArrayValue;
-			Assert.That(av.IsString, Is.True);
-			Assert.That(av.StringValue, Is.EqualTo("private"));
+			Assert.IsTrue(av.IsString);
+			Assert.AreEqual("private", av.StringValue);
 
 			x = DParser.ParseExpression("__traits(getProtection, D)");
 			v = D_Parser.Resolver.ExpressionSemantics.Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+			Assert.IsInstanceOfType(v, typeof(ArrayValue));
 			av = v as ArrayValue;
-			Assert.That(av.IsString, Is.True);
-			Assert.That(av.StringValue, Is.EqualTo("public"));
+			Assert.IsTrue(av.IsString);
+			Assert.AreEqual("public", av.StringValue);
 
 			x = DParser.ParseExpression("__traits(getProtection, D.packInt)");
 			v = D_Parser.Resolver.ExpressionSemantics.Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
+			Assert.IsInstanceOfType(v, typeof(ArrayValue));
 			av = v as ArrayValue;
-			Assert.That(av.IsString, Is.True);
-			Assert.That(av.StringValue, Is.EqualTo("package"));
+			Assert.IsTrue(av.IsString);
+			Assert.AreEqual("package", av.StringValue);
 
 			BoolTrait(ctxt, "isSame, int, int");
 			BoolTrait(ctxt, "isSame, int, double", false);
@@ -174,9 +174,9 @@ template Tmpl(){
 			var x = DParser.ParseExpression("__traits(" + traitCode + ")");
 			var v = D_Parser.Resolver.ExpressionSemantics.Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf(typeof(PrimitiveValue)));
-			Assert.That((v as PrimitiveValue).BaseTypeToken, Is.EqualTo(DTokens.Bool));
-			Assert.That((v as PrimitiveValue).Value, Is.EqualTo(shallReturnTrue ? 1m : 0m));
+			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
+			Assert.AreEqual(DTokens.Bool, (v as PrimitiveValue).BaseTypeToken);
+			Assert.AreEqual(shallReturnTrue ? 1m : 0m, (v as PrimitiveValue).Value);
 		}
 	}
 }

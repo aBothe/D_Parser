@@ -7,14 +7,14 @@ using D_Parser.Misc;
 using D_Parser.Parser;
 using D_Parser.Refactoring;
 using D_Parser.Resolver;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Resolution
 {
-	[TestFixture]
+	[TestClass]
 	public class ReferenceFindingTests
 	{
-		[Test]
+		[TestMethod]
 		public void Test1()
 		{
 			var pcl = ResolutionTestHelper.CreateCache(out DModule m, @"module modA;
@@ -42,7 +42,7 @@ void main()
 			Assert.AreEqual(8, refs.Count);
 		}
 
-		[Test]
+		[TestMethod]
 		public void TypeRefFinding()
 		{
 			var modA = DParser.ParseString(@"module modA;
@@ -106,7 +106,7 @@ struct StructB
 			var cancelTokenSource = new System.Threading.CancellationTokenSource();
 			var res = TypeReferenceFinder.Scan(ed, cancelTokenSource.Token, true, null);
 
-			Assert.That(res.Count, Is.GreaterThan(6));
+			Assert.IsTrue(res.Count > 6);
 			Assert.AreEqual(TypeReferenceKind.Class          , typeRefId(res, "ClassName"));
 			Assert.AreEqual(TypeReferenceKind.Interface      , typeRefId(res, "InterfaceName"));
 			Assert.AreEqual(TypeReferenceKind.Struct         , typeRefId(res, "StructName"));
@@ -145,7 +145,7 @@ struct StructB
 			Assert.AreEqual(TypeReferenceKind.MemberVariable, arr[3].Value); // fieldB
 		}
 
-		[Test]
+		[TestMethod]
 		public void TypeRefPackage()
 		{
 			var modA = DParser.ParseString(@"module test.modA;
@@ -179,7 +179,7 @@ alias MOD = long;
 			var cancelTokenSource = new System.Threading.CancellationTokenSource();
 			var res = TypeReferenceFinder.Scan(ed, cancelTokenSource.Token, true, null);
 
-			Assert.That(res.Count, Is.EqualTo(4)); // at least 2 on 4 lines
+			Assert.AreEqual(4, res.Count); // at least 2 on 4 lines
 		}
 
 		class TypeReferenceLocationComparer : Comparer<KeyValuePair<ISyntaxRegion, TypeReferenceKind>>
@@ -223,7 +223,7 @@ alias MOD = long;
 			return null;
 		}
 
-		[Test]
+		[TestMethod]
 		public void StaticForeach_StackOverflow()
 		{
 			var modA = DParser.ParseString(@"module modA;
@@ -247,10 +247,10 @@ void sweep()
 			// no timeout
 			var cancelTokenSource = new System.Threading.CancellationTokenSource();
 			var res = TypeReferenceFinder.Scan(ed, cancelTokenSource.Token, true, null);
-			Assert.That(res.Count, Is.GreaterThan(4)); // PageBits, sweep, pool, PageBits?, data
+			Assert.IsTrue(res.Count > 4); // PageBits, sweep, pool, PageBits?, data
 		}
 
-		[Test]
+		[TestMethod]
 		public void StaticForeach_StackOverflowDecl()
 		{
 			var modA = DParser.ParseString(@"module modA;
@@ -270,10 +270,10 @@ static foreach (w; 0 .. PageBits.length) {
 			// no timeout
 			var cancelTokenSource = new System.Threading.CancellationTokenSource();
 			var res = TypeReferenceFinder.Scan(ed, cancelTokenSource.Token, true, null);
-			Assert.That(res.Count, Is.GreaterThan(2)); // X, PageBits, length
+			Assert.IsTrue(res.Count > 2); // X, PageBits, length
 		}
 
-		[Test]
+		[TestMethod]
 		public void ValueProvider()
 		{
 			var modA = DParser.ParseString(@"module modA;
@@ -296,7 +296,7 @@ static foreach (w; 0 .. PageBits.length) {
 			// no timeout
 			var cancelTokenSource = new System.Threading.CancellationTokenSource();
 			var res = TypeReferenceFinder.Scan(ed, cancelTokenSource.Token, true, null);
-			Assert.That(res.Count, Is.GreaterThan(4)); // PageBits, sweep, pool, PageBits?, data
+			Assert.IsTrue(res.Count > 4); // PageBits, sweep, pool, PageBits?, data
 		}
 	}
 }

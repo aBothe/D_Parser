@@ -4,14 +4,14 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Resolution
 {
-	[TestFixture]
+	[TestClass]
 	public class MixinResolutionTests : ResolutionTestHelper
 	{
-		[Test]
+		[TestMethod]
 		public void MixinCache()
 		{
 			var ctxt = CreateCtxt("A", @"module A;
@@ -40,27 +40,27 @@ ClassB!bool cc;
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt) as MemberSymbol;
 			t2 = ExpressionTypeEvaluation.EvaluateType(x, ctxt) as MemberSymbol;
 
-			Assert.That(t.Definition, Is.SameAs(t2.Definition));
+			Assert.AreSame(t2.Definition, t.Definition);
 
 			x = DParser.ParseExpression("ca.intB");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt) as MemberSymbol;
 			t2 = ExpressionTypeEvaluation.EvaluateType(x, ctxt) as MemberSymbol;
 
-			Assert.That(t.Definition, Is.SameAs(t2.Definition));
+			Assert.AreSame(t2.Definition, t.Definition);
 
 			x = DParser.ParseExpression("cb.intC");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt) as MemberSymbol;
 			t2 = ExpressionTypeEvaluation.EvaluateType(x, ctxt) as MemberSymbol;
 
-			Assert.That(t.Definition, Is.SameAs(t2.Definition));
+			Assert.AreSame(t2.Definition, t.Definition);
 
 			x2 = DParser.ParseExpression("cc.intC");
 			t2 = ExpressionTypeEvaluation.EvaluateType(x2, ctxt) as MemberSymbol;
 
-			Assert.That(t.Definition, Is.Not.SameAs(t2.Definition));
+			Assert.AreNotSame(t2.Definition, t.Definition);
 		}
 
-		[Test]
+		[TestMethod]
 		public void Mixins1()
 		{
 			var pcl = CreateCache(out DModule A, @"module A;
@@ -78,41 +78,41 @@ import A;",
 			var ctxt = CreateDefCtxt(pcl, A);
 
 			var x = R("x", ctxt);
-			Assert.That(x.Count, Is.EqualTo(1));
+			Assert.AreEqual(1, x.Count);
 
 			x = R("y", ctxt);
-			Assert.That(x.Count, Is.EqualTo(1));
+			Assert.AreEqual(1, x.Count);
 
 			ctxt.CurrentContext.Set(pcl.FirstPackage()["pack.B"]);
 
 			x = R("x", ctxt);
-			Assert.That(x.Count, Is.EqualTo(1));
+			Assert.AreEqual(1, x.Count);
 
 			x = R("privAA", ctxt);
-			Assert.That(x.Count, Is.EqualTo(0));
+			Assert.AreEqual(0, x.Count);
 
 			x = R("privA", ctxt);
-			Assert.That(x.Count, Is.EqualTo(0));
+			Assert.AreEqual(0, x.Count);
 
 			x = R("packAA", ctxt);
-			Assert.That(x.Count, Is.EqualTo(0));
+			Assert.AreEqual(0, x.Count);
 
 			x = R("packA", ctxt);
-			Assert.That(x.Count, Is.EqualTo(0));
+			Assert.AreEqual(0, x.Count);
 
 			ctxt.CurrentContext.Set(pcl.FirstPackage()["C"]);
 
 			x = R("privA", ctxt);
-			Assert.That(x.Count, Is.EqualTo(0));
+			Assert.AreEqual(0, x.Count);
 
 			x = R("packAA", ctxt);
-			Assert.That(x.Count, Is.EqualTo(1));
+			Assert.AreEqual(1, x.Count);
 
 			x = R("packA", ctxt);
-			Assert.That(x.Count, Is.EqualTo(1));
+			Assert.AreEqual(1, x.Count);
 		}
 
-		[Test]
+		[TestMethod]
 		public void Mixins2()
 		{
 			var pcl = CreateCache(out DModule A, @"module A; 
@@ -132,13 +132,13 @@ void main()
 			var ctxt = ResolutionTests.CreateDefCtxt(pcl, main, stmt);
 
 			var t = RS((ITypeDeclaration)new IdentifierDeclaration("x") { Location = stmt.Location }, ctxt);
-			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
 
 			t = RS((ITypeDeclaration)new IdentifierDeclaration("y") { Location = stmt.Location }, ctxt);
-			Assert.That(t, Is.Null);
+			Assert.IsNull(t);
 		}
 
-		[Test]
+		[TestMethod]
 		public void Mixins3()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
@@ -156,14 +156,14 @@ class cl
 
 			ex = DParser.ParseExpression("(new cl()).someInt");
 			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
-			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
+			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
 
 			ex = DParser.ParseExpression("Temp!\"int Temp;\"");
 			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
-			Assert.That(t, Is.InstanceOf(typeof(MemberSymbol)));
+			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
 		}
 
-		[Test]
+		[TestMethod]
 		public void Mixins4()
 		{
 			var pcl = CreateCache(out DModule B,
@@ -173,18 +173,18 @@ class cl
 			var ctxt = CreateDefCtxt(pcl, B);
 
 			var t = RS("CFoo", ctxt);
-			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
-			Assert.That((t as MemberSymbol).Definition, Is.TypeOf(typeof(DMethod)));
+			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOfType((t as MemberSymbol).Definition, typeof(DMethod));
 
 			var bar = (B["cl"].First() as DClassLike)["bar"].First() as DMethod;
 			ctxt.CurrentContext.Set(bar, bar.Body.Location);
 
 			t = RS("CFoo", ctxt);
-			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
-			Assert.That((t as MemberSymbol).Definition, Is.TypeOf(typeof(DMethod)));
+			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOfType((t as MemberSymbol).Definition, typeof(DMethod));
 		}
 
-		[Test]
+		[TestMethod]
 		public void Mixins5()
 		{
 			var pcl = CreateCache(out DModule A, @"module A;
@@ -198,15 +198,15 @@ mixin(""template mxT(string n) { enum mxT = n; }"");
 			var ctxt = CreateDefCtxt(pcl, A);
 
 			var t = RS("myClass", ctxt);
-			Assert.That(t, Is.TypeOf(typeof(ClassType)));
+			Assert.IsInstanceOfType(t, typeof(ClassType));
 
 			ctxt.CurrentContext.Set(pcl.FirstPackage()["B"]);
 
 			t = RS("myClass", ctxt);
-			Assert.That(t, Is.Null);
+			Assert.IsNull(t);
 		}
 
-		[Test]
+		[TestMethod]
 		public void StaticProperty_Stringof()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
@@ -229,16 +229,15 @@ public template uuid(T, immutable char[] g) {
 			v = D_Parser.Resolver.ExpressionSemantics.Evaluation.EvaluateValue(x, ctxt);
 
 			var av = v as ArrayValue;
-			Assert.That(v, Is.TypeOf(typeof(ArrayValue)));
-			Assert.That(av.IsString);
-			Assert.That(av.StringValue, Is.EqualTo(
-				@"const IID IID_IUnknown={ 0x00000000,0x0000,0x0000,[0xC0,0x00,0x00,0x00,0x00,0x00,0x00,0x46]};"
-				+ "template uuidof(T:IUnknown){"
-				+ "    const IID uuidof ={ 0x00000000,0x0000,0x0000,[0xC0,0x00,0x00,0x00,0x00,0x00,0x00,0x46]};"
-				+ "}"));
+			Assert.IsInstanceOfType(v, typeof(ArrayValue));
+			Assert.IsTrue(av.IsString);
+			Assert.AreEqual(@"const IID IID_IUnknown={ 0x00000000,0x0000,0x0000,[0xC0,0x00,0x00,0x00,0x00,0x00,0x00,0x46]};"
+			                + "template uuidof(T:IUnknown){"
+			                + "    const IID uuidof ={ 0x00000000,0x0000,0x0000,[0xC0,0x00,0x00,0x00,0x00,0x00,0x00,0x46]};"
+			                + "}", av.StringValue);
 		}
 
-		[Test]
+		[TestMethod]
 		public void Mixins7()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
@@ -257,11 +256,11 @@ C c;
 			x = DParser.ParseExpression("c.a");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
-			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOfType((t as MemberSymbol).Base, typeof(PrimitiveType));
 		}
 
-		[Test]
+		[TestMethod]
 		public void NestedMixins()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
@@ -273,19 +272,19 @@ mixin(""template mxT4(""~mxT3!(""string"")~"" n) { enum mxT4 = n; }"");
 mixin(""class ""~mxT4!(""myClass"")~"" {}"");"");");
 
 			var t = RS("mxT1", ctxt);
-			Assert.That(t, Is.TypeOf(typeof(TemplateType)));
+			Assert.IsInstanceOfType(t, typeof(TemplateType));
 
 			t = RS("mxT2", ctxt);
-			Assert.That(t, Is.TypeOf(typeof(TemplateType)));
+			Assert.IsInstanceOfType(t, typeof(TemplateType));
 
 			t = RS("mxT3", ctxt);
-			Assert.That(t, Is.TypeOf(typeof(TemplateType)));
+			Assert.IsInstanceOfType(t, typeof(TemplateType));
 
 			t = RS("mxT4", ctxt);
-			Assert.That(t, Is.TypeOf(typeof(TemplateType)));
+			Assert.IsInstanceOfType(t, typeof(TemplateType));
 
 			t = RS("myClass", ctxt);
-			Assert.That(t, Is.TypeOf(typeof(ClassType)));
+			Assert.IsInstanceOfType(t, typeof(ClassType));
 		}
 	}
 }

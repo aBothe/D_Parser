@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using D_Parser;
+using D_Parser.Completion;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
@@ -10,7 +12,7 @@ using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
-using NUnit.Framework.Constraints;
+using Tests.Completion;
 
 namespace Tests
 {
@@ -25,19 +27,28 @@ namespace Tests
 		{
 			return (ctxt.ParseCache as LegacyParseCacheView).FirstPackage();
 		}
-	}
 
-	class IsDefinition : NUnit.Framework.Constraints.Constraint
-	{
-		readonly INode n;
-		object act;
-
-		public IsDefinition(INode expectedDefinition) { n = expectedDefinition; }
-
-		public override ConstraintResult ApplyTo<TActual>(TActual actual)
+		public static bool IsDefinedIn(this INode n, AbstractType actual)
 		{
-			act = actual;
-			return new ConstraintResult(this, actual, n == actual as INode || (actual is DSymbol && (actual as DSymbol).Definition == n));
+			return actual is DSymbol ds && ds.Definition == n;
+		}
+		
+		public static bool DoesTriggerCompletion(this string code)
+		{
+			code += "\n";
+
+			var cache = ResolutionTestHelper.CreateCache (out DModule m, code);
+
+			var ed = new EditorData{ 
+				ModuleCode = code, 
+				CaretOffset = code.Length-1, 
+				CaretLocation = DocumentHelper.OffsetToLocation(code,code.Length-1),
+				SyntaxTree = m,
+				ParseCache = cache
+			};
+
+			var gen = new TestCompletionDataGen (null, null);
+			return CodeCompletion.GenerateCompletionData (ed, gen, 'a');
 		}
 	}
 

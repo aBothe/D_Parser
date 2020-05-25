@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using D_Parser.Completion;
 using D_Parser.Dom;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Completion
 {

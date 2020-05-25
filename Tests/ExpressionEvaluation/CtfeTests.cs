@@ -4,14 +4,14 @@ using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.ExpressionSemantics.Exceptions;
 using D_Parser.Resolver.Model;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.ExpressionEvaluation
 {
-	[TestFixture]
+	[TestClass]
 	public class CtfeTests : ResolutionTestHelper
 	{
-		[Test]
+		[TestMethod]
 		public void ReturnStmt()
 		{
 			var ctxt = CreateCtxt("A", @"module A;
@@ -26,13 +26,13 @@ string inty(A)() { return ""int y;""; }
 			x = DParser.ParseExpression("inty!(\"asdf\")");
 			v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf<ArrayValue>());
+			Assert.IsInstanceOfType(v, typeof(ArrayValue));
 			av = v as ArrayValue;
-			Assert.That(av.IsString, Is.True);
-			Assert.That(av.StringValue, Is.EqualTo("int y;"));
+			Assert.IsTrue(av.IsString);
+			Assert.AreEqual("int y;", av.StringValue);
 		}
 
-		[Test]
+		[TestMethod]
 		public void ReturnStmt2()
 		{
 			var ctxt = CreateCtxt("A", @"module A;
@@ -47,13 +47,13 @@ string foo(string s) { return s ~ ""gh""; }
 			x = DParser.ParseExpression("foo(\"asdf\")");
 			v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf<ArrayValue>());
+			Assert.IsInstanceOfType(v, typeof(ArrayValue));
 			av = v as ArrayValue;
-			Assert.That(av.IsString, Is.True);
-			Assert.That(av.StringValue, Is.EqualTo("asdfgh"));
+			Assert.IsTrue(av.IsString);
+			Assert.AreEqual("asdfgh", av.StringValue);
 		}
 
-		[Test]
+		[TestMethod]
 		public void ReturnStmt3()
 		{
 			var ctxt = CreateCtxt("A", @"module A;
@@ -68,10 +68,10 @@ string foo(string s) { return s ~ ""gh""; }
 			x = DParser.ParseExpression("foo");
 			v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf<PrimitiveValue>());
+			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
 			pv = v as PrimitiveValue;
-			Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Int));
-			Assert.That(pv.Value, Is.EqualTo(123M));
+			Assert.AreEqual(DTokens.Int, pv.BaseTypeToken);
+			Assert.AreEqual(123M, pv.Value);
 		}
 
 		private const string ctfe_ifStatement = @"module A;
@@ -83,7 +83,7 @@ bool youDecide(int a) {
 	}
 }";
 
-		[Test]
+		[TestMethod]
 		public void IfStatement_PositiveCase()
 		{
 			var ctxt = CreateDefCtxt(ctfe_ifStatement);
@@ -91,13 +91,13 @@ bool youDecide(int a) {
 			var x = DParser.ParseExpression("youDecide(30)");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf<PrimitiveValue>());
+			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
 			var pv = v as PrimitiveValue;
-			Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Bool));
-			Assert.That(pv.Value, Is.EqualTo(1m));
+			Assert.AreEqual(DTokens.Bool, pv.BaseTypeToken);
+			Assert.AreEqual(1m, pv.Value);
 		}
 
-		[Test]
+		[TestMethod]
 		public void IfStatement_ElseCase()
 		{
 			var ctxt = CreateDefCtxt(ctfe_ifStatement);
@@ -105,13 +105,13 @@ bool youDecide(int a) {
 			var x = DParser.ParseExpression("youDecide(0)");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf<PrimitiveValue>());
+			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
 			var pv = v as PrimitiveValue;
-			Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Bool));
-			Assert.That(pv.Value, Is.EqualTo(0m));
+			Assert.AreEqual(DTokens.Bool, pv.BaseTypeToken);
+			Assert.AreEqual(0m, pv.Value);
 		}
 
-		[Test]
+		[TestMethod]
 		public void WhileStatement()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
@@ -125,13 +125,13 @@ int whileReturn() {
 			var x = DParser.ParseExpression("whileReturn()");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf<PrimitiveValue>());
+			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
 			var pv = v as PrimitiveValue;
-			Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Int));
-			Assert.That(pv.Value, Is.EqualTo(3m));
+			Assert.AreEqual(DTokens.Int, pv.BaseTypeToken);
+			Assert.AreEqual(3m, pv.Value);
 		}
 
-		[Test]
+		[TestMethod]
 		public void VoidReturnValue_ImplicitReturn()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
@@ -141,10 +141,10 @@ void returnvoid() {
 			var x = DParser.ParseExpression("returnvoid()");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf<VoidValue>());
+			Assert.IsInstanceOfType(v, typeof(VoidValue));
 		}
 
-		[Test]
+		[TestMethod]
 		public void VoidReturnValue_ExplicitReturn()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
@@ -155,10 +155,10 @@ void returnvoid() {
 			var x = DParser.ParseExpression("returnvoid()");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf<VoidValue>());
+			Assert.IsInstanceOfType(v, typeof(VoidValue));
 		}
 
-		[Test]
+		[TestMethod]
 		public void ReturnVariableContent()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
@@ -169,13 +169,13 @@ int keks(int a) {
 			var x = DParser.ParseExpression("keks(123)");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf<PrimitiveValue>());
+			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
 			var pv = v as PrimitiveValue;
-			Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Int));
-			Assert.That(pv.Value, Is.EqualTo(123m));
+			Assert.AreEqual(DTokens.Int, pv.BaseTypeToken);
+			Assert.AreEqual(123m, pv.Value);
 		}
 
-		[Test]
+		[TestMethod]
 		public void VariableValueAssignment()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
@@ -187,13 +187,13 @@ int keks(int a) {
 			var x = DParser.ParseExpression("keks(0)");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf<PrimitiveValue>());
+			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
 			var pv = v as PrimitiveValue;
-			Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Int));
-			Assert.That(pv.Value, Is.EqualTo(123m));
+			Assert.AreEqual(DTokens.Int, pv.BaseTypeToken);
+			Assert.AreEqual(123m, pv.Value);
 		}
 
-		[Test]
+		[TestMethod]
 		public void VariableValueAssignment2()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
@@ -205,13 +205,13 @@ int keks(int a) {
 			var x = DParser.ParseExpression("keks(7)");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf<PrimitiveValue>());
+			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
 			var pv = v as PrimitiveValue;
-			Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Int));
-			Assert.That(pv.Value, Is.EqualTo(130m));
+			Assert.AreEqual(DTokens.Int, pv.BaseTypeToken);
+			Assert.AreEqual(130m, pv.Value);
 		}
 
-		[Test]
+		[TestMethod]
 		public void VariableDeclarationDefinition()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
@@ -223,13 +223,13 @@ string keks() {
 			var x = DParser.ParseExpression("keks()");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf<ArrayValue>());
+			Assert.IsInstanceOfType(v, typeof(ArrayValue));
 			var av = v as ArrayValue;
-			Assert.That(av.IsString);
-			Assert.That(av.StringValue, Is.EqualTo("asdf"));
+			Assert.IsTrue(av.IsString);
+			Assert.AreEqual("asdf", av.StringValue);
 		}
 
-		[Test]
+		[TestMethod]
 		public void VariableUnrefencingWhileAssigning()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
@@ -243,13 +243,13 @@ string keks() {
 			var x = DParser.ParseExpression("keks()");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf<ArrayValue>());
+			Assert.IsInstanceOfType(v, typeof(ArrayValue));
 			var av = v as ArrayValue;
-			Assert.That(av.IsString);
-			Assert.That(av.StringValue, Is.EqualTo("asdf"));
+			Assert.IsTrue(av.IsString);
+			Assert.AreEqual("asdf", av.StringValue);
 		}
 
-		[Test]
+		[TestMethod]
 		public void VariableDeclarationDefinition_UndefinedValue()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
@@ -261,12 +261,12 @@ string keks() {
 			var x = DParser.ParseExpression("keks()");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf<ErrorValue>());
+			Assert.IsInstanceOfType(v, typeof(ErrorValue));
 			var ev = v as ErrorValue;
-			Assert.That(ev.Errors[0], Is.TypeOf<VariableNotInitializedException>());
+			Assert.IsInstanceOfType(ev.Errors[0], typeof(VariableNotInitializedException));
 		}
 
-		[Test]
+		[TestMethod]
 		public void VariableArrayIndexAccessing()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
@@ -277,13 +277,13 @@ auto keks(string s) {
 			var x = DParser.ParseExpression("keks(`asdf`)");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf<PrimitiveValue>());
+			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
 			var pv = v as PrimitiveValue;
-			Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Char));
-			Assert.That(pv.Value, Is.EqualTo((decimal)'f'));
+			Assert.AreEqual(DTokens.Char, pv.BaseTypeToken);
+			Assert.AreEqual((decimal)'f', pv.Value);
 		}
 
-		[Test]
+		[TestMethod]
 		public void ArrayLength()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
@@ -294,13 +294,13 @@ auto keks(string s) {
 			var x = DParser.ParseExpression("keks(`asdf`)");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf<PrimitiveValue>());
+			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
 			var pv = v as PrimitiveValue;
-			Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Int));
-			Assert.That(pv.Value, Is.EqualTo(4m));
+			Assert.AreEqual(DTokens.Int, pv.BaseTypeToken);
+			Assert.AreEqual(4m, pv.Value);
 		}
 
-		[Test]
+		[TestMethod]
 		public void ArraySlicing()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
@@ -311,13 +311,13 @@ string keks(string p) {
 			var x = DParser.ParseExpression("keks(`asdf`)");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf<ArrayValue>());
+			Assert.IsInstanceOfType(v, typeof(ArrayValue));
 			var av = v as ArrayValue;
-			Assert.That(av.IsString);
-			Assert.That(av.StringValue, Is.EqualTo("asd"));
+			Assert.IsTrue(av.IsString);
+			Assert.AreEqual("asd", av.StringValue);
 		}
 
-		[Test]
+		[TestMethod]
 		public void ArrayIndexComparison()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
@@ -329,20 +329,20 @@ auto keks(string s) {
 				var x = DParser.ParseExpression("keks(`asdf`)");
 				var v = Evaluation.EvaluateValue(x, ctxt);
 
-				Assert.That(v, Is.TypeOf<PrimitiveValue>());
+				Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
 				var pv = v as PrimitiveValue;
-				Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Bool));
-				Assert.That(pv.Value, Is.EqualTo(1m));
+				Assert.AreEqual(DTokens.Bool, pv.BaseTypeToken);
+				Assert.AreEqual(1m, pv.Value);
 			}
 
 			{
 				var x = DParser.ParseExpression("keks(`asd`)");
 				var v = Evaluation.EvaluateValue(x, ctxt);
 
-				Assert.That(v, Is.TypeOf<PrimitiveValue>());
+				Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
 				var pv = v as PrimitiveValue;
-				Assert.That(pv.BaseTypeToken, Is.EqualTo(DTokens.Bool));
-				Assert.That(pv.Value, Is.EqualTo(0m));
+				Assert.AreEqual(DTokens.Bool, pv.BaseTypeToken);
+				Assert.AreEqual(0m, pv.Value);
 			}
 		}
 
@@ -364,7 +364,7 @@ enum dir_windows = _dirName(""dir\someFile"");
 enum filename = dir ~ ""/myFile"";
 ";
 
-		[Test]
+		[TestMethod]
 		public void StdPathDirnameCTFE()
 		{
 			var ctxt = CreateDefCtxt(dirnameCode);
@@ -372,13 +372,13 @@ enum filename = dir ~ ""/myFile"";
 			var x = DParser.ParseExpression("_dirName(`myDir/someFile`)");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf<ArrayValue>());
+			Assert.IsInstanceOfType(v, typeof(ArrayValue));
 			var av = v as ArrayValue;
-			Assert.That(av.IsString);
-			Assert.That(av.StringValue, Is.EqualTo("myDir"));
+			Assert.IsTrue(av.IsString);
+			Assert.AreEqual("myDir", av.StringValue);
 		}
 
-		[Test]
+		[TestMethod]
 		public void StdPathDirnameCTFE2()
 		{
 			var ctxt = CreateDefCtxt(dirnameCode);
@@ -386,13 +386,13 @@ enum filename = dir ~ ""/myFile"";
 			var x = DParser.ParseExpression("dir_windows");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf<ArrayValue>());
+			Assert.IsInstanceOfType(v, typeof(ArrayValue));
 			var av = v as ArrayValue;
-			Assert.That(av.IsString);
-			Assert.That(av.StringValue, Is.EqualTo("dir"));
+			Assert.IsTrue(av.IsString);
+			Assert.AreEqual("dir", av.StringValue);
 		}
 
-		[Test]
+		[TestMethod]
 		public void StdPathDirnameCTFE3()
 		{
 			var ctxt = CreateDefCtxt(dirnameCode);
@@ -400,13 +400,13 @@ enum filename = dir ~ ""/myFile"";
 			var x = DParser.ParseExpression("filename");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf<ArrayValue>());
+			Assert.IsInstanceOfType(v, typeof(ArrayValue));
 			var av = v as ArrayValue;
-			Assert.That(av.IsString);
-			Assert.That(av.StringValue, Is.EqualTo("myDir/myFile"));
+			Assert.IsTrue(av.IsString);
+			Assert.AreEqual("myDir/myFile", av.StringValue);
 		}
 
-		[Test]
+		[TestMethod]
 		public void StdPathDirnameCTFE4()
 		{
 			var ctxt = CreateDefCtxt(dirnameCode);
@@ -414,13 +414,13 @@ enum filename = dir ~ ""/myFile"";
 			var x = DParser.ParseExpression("dir");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf<ArrayValue>());
+			Assert.IsInstanceOfType(v, typeof(ArrayValue));
 			var av = v as ArrayValue;
-			Assert.That(av.IsString);
-			Assert.That(av.StringValue, Is.EqualTo("myDir"));
+			Assert.IsTrue(av.IsString);
+			Assert.AreEqual("myDir", av.StringValue);
 		}
 
-		[Test]
+		[TestMethod]
 		public void StackOverflowPrevention()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
@@ -432,12 +432,12 @@ void baz() { fooByAccident(); }
 			var x = DParser.ParseExpression("fooByAccident()");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf<ErrorValue>());
+			Assert.IsInstanceOfType(v, typeof(ErrorValue));
 			var ev = v as ErrorValue;
-			Assert.That(ev.Errors[0], Is.TypeOf<EvaluationStackOverflowException>());
+			Assert.IsInstanceOfType(ev.Errors[0], typeof(EvaluationStackOverflowException));
 		}
 
-		[Test]
+		[TestMethod]
 		public void StackOverflowPrevention2()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
@@ -449,12 +449,12 @@ void baz() { fooByAccident(); }
 			var x = DParser.ParseExpression("fooByAccident()");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf<ErrorValue>());
+			Assert.IsInstanceOfType(v, typeof(ErrorValue));
 			var ev = v as ErrorValue;
-			Assert.That(ev.Errors[0], Is.TypeOf<EvaluationStackOverflowException>());
+			Assert.IsInstanceOfType(ev.Errors[0], typeof(EvaluationStackOverflowException));
 		}
 
-		[Test]
+		[TestMethod]
 		public void AccessingOuterScopedConsts()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
@@ -467,13 +467,13 @@ const myConst = `asdf`;
 			var x = DParser.ParseExpression("keks(`fooo`)");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf<ArrayValue>());
+			Assert.IsInstanceOfType(v, typeof(ArrayValue));
 			var av = v as ArrayValue;
-			Assert.That(av.IsString);
-			Assert.That(av.StringValue, Is.EqualTo("asdf"));
+			Assert.IsTrue(av.IsString);
+			Assert.AreEqual("asdf", av.StringValue);
 		}
 
-		[Test]
+		[TestMethod]
 		public void StackOverflowPrevention_ConstOuterVariable()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
@@ -485,12 +485,12 @@ void bar() { return someConst; }
 			var x = DParser.ParseExpression("fooByAccident()");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf<ErrorValue>());
+			Assert.IsInstanceOfType(v, typeof(ErrorValue));
 			var ev = v as ErrorValue;
-			Assert.That(ev.Errors[0], Is.TypeOf<EvaluationStackOverflowException>());
+			Assert.IsInstanceOfType(ev.Errors[0], typeof(EvaluationStackOverflowException));
 		}
 
-		[Test]
+		[TestMethod]
 		public void ClassInstance()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
@@ -503,9 +503,9 @@ MyClass keks() {
 			var x = DParser.ParseExpression("keks()");
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.That(v, Is.TypeOf<ComplexValue>());
+			Assert.IsInstanceOfType(v, typeof(ComplexValue));
 			var cv = v as ComplexValue;
-			Assert.That(cv.RepresentedType, Is.TypeOf<ClassType>());
+			Assert.IsInstanceOfType(cv.RepresentedType, typeof(ClassType));
 		}
 	}
 }

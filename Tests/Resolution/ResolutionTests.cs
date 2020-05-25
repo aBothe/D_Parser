@@ -5,25 +5,25 @@ using D_Parser.Dom.Statements;
 using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Tests.Completion;
 
 namespace Tests.Resolution
 {
-	[TestFixture]
+	[TestClass]
 	public class ResolutionTests : ResolutionTestHelper
 	{
-		[Test]
+		[TestMethod]
 		public void Test2_066UCSnytax()
 		{
 			var x = DParser.ParseExpression("creal(3)");
 			var t = ExpressionTypeEvaluation.EvaluateType(x, CreateDefCtxt(""));
 
-			Assert.That(t, Is.TypeOf(typeof(PrimitiveType)));
-			Assert.That((t as PrimitiveType).TypeToken, Is.EqualTo(DTokens.Creal));
+			Assert.IsInstanceOfType(t, typeof(PrimitiveType));
+			Assert.AreEqual(DTokens.Creal, (t as PrimitiveType).TypeToken);
 		}
 
-		[Test]
+		[TestMethod]
 		public void TypePointerInstanceAccessing()
 		{
 			var ctxt = CreateCtxt("A", @"module A;
@@ -36,10 +36,10 @@ Cl* cl;
 			x = DParser.ParseExpression("cl.a");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
+			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
 		}
 
-		[Test]
+		[TestMethod]
 		public void AnonymousClasses()
 		{
 			var ctxt = CreateCtxt("A",@"module A;
@@ -56,11 +56,11 @@ auto n = new class BaseClass {};
 
 			x = DParser.ParseExpression ("n.a");
 			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
-			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
-			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOfType((t as MemberSymbol).Base, typeof(PrimitiveType));
 		}
 
-		[Test]
+		[TestMethod]
 		public void StaticProperties_TupleOf()
 		{
 			var ctxt = CreateCtxt("A", @"module A;
@@ -79,16 +79,16 @@ S s;
 
 			x = DParser.ParseExpression("s.tupleof");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.That(t, Is.TypeOf(typeof(StaticProperty)));
-			Assert.That((t as StaticProperty).Base, Is.TypeOf(typeof(DTuple)));
+			Assert.IsInstanceOfType(t, typeof(StaticProperty));
+			Assert.IsInstanceOfType((t as StaticProperty).Base, typeof(DTuple));
 			var dtuple = (t as StaticProperty).Base as DTuple;
-			Assert.That(dtuple.Items.Length, Is.EqualTo(3));
-			Assert.That(dtuple.Items[0], Is.TypeOf(typeof(PrimitiveType)));
-			Assert.That(dtuple.Items[1], Is.TypeOf(typeof(PointerType)));
-			Assert.That(dtuple.Items[2], Is.TypeOf(typeof(ArrayType)));
+			Assert.AreEqual(3, dtuple.Items.Length);
+			Assert.IsInstanceOfType(dtuple.Items[0], typeof(PrimitiveType));
+			Assert.IsInstanceOfType(dtuple.Items[1], typeof(PointerType));
+			Assert.IsInstanceOfType(dtuple.Items[2], typeof(ArrayType));
 		}
 
-		[Test]
+		[TestMethod]
 		public void ArrayTypes()
 		{
 			var ctxt = CreateCtxt("A", @"module A;");
@@ -99,40 +99,40 @@ S s;
 
 			td = DParser.ParseBasicType("int[int]");
 			aa = RS(td, ctxt) as AssocArrayType;
-			Assert.That(aa, Is.Not.TypeOf(typeof(ArrayType)));
-			Assert.That(aa.KeyType, Is.TypeOf(typeof(PrimitiveType)));
-			Assert.That((aa.KeyType as PrimitiveType).TypeToken, Is.EqualTo(DTokens.Int));
-			Assert.That(aa.ValueType, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.IsNotInstanceOfType(aa, typeof(ArrayType));
+			Assert.IsInstanceOfType(aa.KeyType, typeof(PrimitiveType));
+			Assert.AreEqual(DTokens.Int, (aa.KeyType as PrimitiveType).TypeToken);
+			Assert.IsInstanceOfType(aa.ValueType, typeof(PrimitiveType));
 
 			td = DParser.ParseBasicType("int[short]");
 			aa = RS(td, ctxt) as AssocArrayType;
-			Assert.That(aa, Is.Not.TypeOf(typeof(ArrayType)));
-			Assert.That(aa.KeyType, Is.TypeOf(typeof(PrimitiveType)));
-			Assert.That((aa.KeyType as PrimitiveType).TypeToken, Is.EqualTo(DTokens.Short));
-			Assert.That(aa.ValueType, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.IsNotInstanceOfType(aa, typeof(ArrayType));
+			Assert.IsInstanceOfType(aa.KeyType, typeof(PrimitiveType));
+			Assert.AreEqual(DTokens.Short, (aa.KeyType as PrimitiveType).TypeToken);
+			Assert.IsInstanceOfType(aa.ValueType, typeof(PrimitiveType));
 
 			td = DParser.ParseBasicType("int[string]");
 			aa = RS(td, ctxt) as AssocArrayType;
-			Assert.That(aa, Is.Not.TypeOf(typeof(ArrayType)));
-			Assert.That(aa.KeyType, Is.TypeOf(typeof(ArrayType)));
-			Assert.That((aa.KeyType as ArrayType).IsString);
-			Assert.That(aa.ValueType, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.IsNotInstanceOfType(aa, typeof(ArrayType));
+			Assert.IsInstanceOfType(aa.KeyType, typeof(ArrayType));
+			Assert.IsTrue((aa.KeyType as ArrayType).IsString);
+			Assert.IsInstanceOfType(aa.ValueType, typeof(PrimitiveType));
 			aa = null;
 
 			td = DParser.ParseBasicType("byte[3]");
 			at = RS(td, ctxt) as ArrayType;
-			Assert.That(at.FixedLength, Is.EqualTo(3));
-			Assert.That(at.KeyType, Is.Null);
-			Assert.That(at.ValueType, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.AreEqual(3, at.FixedLength);
+			Assert.IsNull(at.KeyType);
+			Assert.IsInstanceOfType(at.ValueType, typeof(PrimitiveType));
 
 			td = DParser.ParseBasicType("byte[6L]");
 			at = RS(td, ctxt) as ArrayType;
-			Assert.That(at.FixedLength, Is.EqualTo(6));
-			Assert.That(at.KeyType, Is.Null);
-			Assert.That(at.ValueType, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.AreEqual(6, at.FixedLength);
+			Assert.IsNull(at.KeyType);
+			Assert.IsInstanceOfType(at.ValueType, typeof(PrimitiveType));
 		}
 
-		[Test]
+		[TestMethod]
 		public void ArrayIndexer()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
@@ -147,7 +147,6 @@ Obj[][] oo;
 ");
 			
 			var myProp = CompletionTests.GetNode (null, "Obj.myProp", ref ctxt);
-			var myPropConstraint = new IsDefinition (myProp);
 
 			IExpression ex;
 			AbstractType t;
@@ -155,39 +154,39 @@ Obj[][] oo;
 			ex = DParser.ParseExpression("oo[0][0]");
 			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 
-			Assert.That(t, Is.TypeOf(typeof(ArrayAccessSymbol)));
+			Assert.IsInstanceOfType(t, typeof(ArrayAccessSymbol));
 
 			ex = DParser.ParseExpression("oo[0][0].myProp");
 			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 
-			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
-			Assert.That (t, myPropConstraint);
-			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsTrue(myProp.IsDefinedIn(t));
+			Assert.IsInstanceOfType((t as MemberSymbol).Base, typeof(PrimitiveType));
 
 			ex = DParser.ParseExpression("arr[0]");
 			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 
-			Assert.That(t, Is.TypeOf(typeof(ArrayAccessSymbol)));
+			Assert.IsInstanceOfType(t, typeof(ArrayAccessSymbol));
 			
 			ex = DParser.ParseExpression("arr[0].myProp");
 			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			
-			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
-			Assert.That (t, myPropConstraint);
-			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsTrue(myProp.IsDefinedIn(t));
+			Assert.IsInstanceOfType((t as MemberSymbol).Base, typeof(PrimitiveType));
 			
 			ex = DParser.ParseExpression("o.myProp");
 			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
 			
-			Assert.That(t, Is.TypeOf(typeof(MemberSymbol)));
-			Assert.That (t, myPropConstraint);
-			Assert.That((t as MemberSymbol).Base, Is.TypeOf(typeof(PrimitiveType)));
+			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsTrue(myProp.IsDefinedIn(t));
+			Assert.IsInstanceOfType((t as MemberSymbol).Base, typeof(PrimitiveType));
 		}
 
 		/// <summary>
 		/// Array slices are now r-values
 		/// </summary>
-		[Test]
+		[TestMethod]
 		public void ArraySlicesNoRValues()
 		{
 			var ctxt = CreateCtxt("modA", @"module modA;
@@ -205,47 +204,47 @@ int[] arr2 = arr[1 .. 2];");
 			// error, cannot pass r-value by reference
 			x = DParser.ParseExpression("takeRef(arr[1 .. 2])");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			//Assert.That(t, Is.Null);
+			//Assert.IsNull(t);
 
 			// ok
 			x = DParser.ParseExpression ("take(arr)");
 			t = ExpressionTypeEvaluation.EvaluateType (x,ctxt);
-			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
+			Assert.IsInstanceOfType(t, typeof(PrimitiveType));
 
 			x = DParser.ParseExpression ("takeRef(arr)");
 			t = ExpressionTypeEvaluation.EvaluateType (x,ctxt);
-			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
+			Assert.IsInstanceOfType(t, typeof(PrimitiveType));
 
 			x = DParser.ParseExpression ("takeAutoRef(arr)");
 			t = ExpressionTypeEvaluation.EvaluateType (x,ctxt);
-			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
+			Assert.IsInstanceOfType(t, typeof(PrimitiveType));
 
 			// ok, arr2 is a variable
 			x = DParser.ParseExpression ("take(arr2)");
 			t = ExpressionTypeEvaluation.EvaluateType (x,ctxt);
-			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
+			Assert.IsInstanceOfType(t, typeof(PrimitiveType));
 
 			x = DParser.ParseExpression ("takeRef(arr2)");
 			t = ExpressionTypeEvaluation.EvaluateType (x,ctxt);
-			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
+			Assert.IsInstanceOfType(t, typeof(PrimitiveType));
 
 			x = DParser.ParseExpression ("takeAutoRef(arr2)");
 			t = ExpressionTypeEvaluation.EvaluateType (x,ctxt);
-			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
+			Assert.IsInstanceOfType(t, typeof(PrimitiveType));
 
 
 			x = DParser.ParseExpression ("take(arr[1 .. 2])");
 			t = ExpressionTypeEvaluation.EvaluateType (x,ctxt);
-			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
+			Assert.IsInstanceOfType(t, typeof(PrimitiveType));
 
 			
 
 			x = DParser.ParseExpression ("takeAutoRef(arr[1 .. 2])");
 			t = ExpressionTypeEvaluation.EvaluateType (x,ctxt);
-			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
+			Assert.IsInstanceOfType(t, typeof(PrimitiveType));
 		}
 
-		[Test]
+		[TestMethod]
 		public void Ctors()
 		{
 			var pcl = CreateCache(out DModule m, @"module modA;
@@ -264,7 +263,7 @@ class B : A{
 			var super = (this_.Body.SubStatements.First() as IExpressionContainingStatement).SubExpressions[0] as PostfixExpression_MethodCall;
 
 			var t = ExpressionTypeEvaluation.EvaluateType(super.PostfixForeExpression, ctxt);
-			Assert.That(t, Is.TypeOf(typeof(ClassType)));
+			Assert.IsInstanceOfType(t, typeof(ClassType));
 			
 			t = ExpressionTypeEvaluation.EvaluateType(super, ctxt);
 			Assert.IsNull(t);
@@ -273,7 +272,7 @@ class B : A{
 		/// <summary>
 		/// Constructor qualifiers are taken into account when constructing objects
 		/// </summary>
-		[Test]
+		[TestMethod]
 		public void QualifiedConstructors()
 		{
 			var ctxt = CreateCtxt("modA", @"module modA;
@@ -304,75 +303,75 @@ class P
 			x = DParser.ParseExpression ("new C");
 			ctor = ExpressionTypeEvaluation.EvaluateType (x, ctxt, false) as MemberSymbol;
 
-			Assert.That (ctor, Is.Not.Null);
-			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
+			Assert.IsNotNull(ctor);
+			Assert.IsInstanceOfType(ctor.Base, typeof(ClassType));
 			ct = ctor.Base as ClassType;
-			Assert.That (ct.HasModifiers, Is.False);
+			Assert.IsFalse(ct.HasModifiers);
 
 			x = DParser.ParseExpression ("new const C");
 			ctor = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false) as MemberSymbol;
 
-			Assert.That (ctor, Is.Not.Null);
-			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
+			Assert.IsNotNull(ctor);
+			Assert.IsInstanceOfType(ctor.Base, typeof(ClassType));
 			ct = ctor.Base as ClassType;
-			Assert.That (ct.HasModifier (DTokens.Const));
+			Assert.IsTrue (ct.HasModifier (DTokens.Const));
 
 			x = DParser.ParseExpression ("new immutable C");
 			ctor = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false) as MemberSymbol;
 
-			Assert.That (ctor, Is.Not.Null);
-			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
+			Assert.IsNotNull(ctor);
+			Assert.IsInstanceOfType(ctor.Base, typeof(ClassType));
 			ct = ctor.Base as ClassType;
-			Assert.That (ct.HasModifier (DTokens.Immutable));
+			Assert.IsTrue (ct.HasModifier (DTokens.Immutable));
 
 			x = DParser.ParseExpression ("new shared C");
 			ctor = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false) as MemberSymbol;
 
-			Assert.That (ctor, Is.Not.Null);
-			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
+			Assert.IsNotNull(ctor);
+			Assert.IsInstanceOfType(ctor.Base, typeof(ClassType));
 			ct = ctor.Base as ClassType;
-			Assert.That (ct.HasModifier(DTokens.Shared));
+			Assert.IsTrue (ct.HasModifier(DTokens.Shared));
 
 
 
 			x = DParser.ParseExpression ("new P");
 			ctor = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false) as MemberSymbol;
 
-			Assert.That (ctor, Is.Not.Null);
-			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
+			Assert.IsNotNull(ctor);
+			Assert.IsInstanceOfType(ctor.Base, typeof(ClassType));
 			ct = ctor.Base as ClassType;
-			Assert.That (ct.HasModifiers, Is.False);
+			Assert.IsFalse(ct.HasModifiers);
 
 			x = DParser.ParseExpression ("new const P");
 			ctor = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false) as MemberSymbol;
 
-			Assert.That (ctor, Is.Not.Null);
-			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
+			Assert.IsNotNull(ctor);
+			Assert.IsInstanceOfType(ctor.Base, typeof(ClassType));
 			ct = ctor.Base as ClassType;
-			Assert.That (ct.HasModifier (DTokens.Const));
+			Assert.IsTrue (ct.HasModifier (DTokens.Const));
 
 			x = DParser.ParseExpression ("new immutable P");
 			ctor = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false) as MemberSymbol;
 
-			Assert.That (ctor, Is.Not.Null);
-			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
+			Assert.IsNotNull(ctor);
+			Assert.IsInstanceOfType(ctor.Base, typeof(ClassType));
 			ct = ctor.Base as ClassType;
-			Assert.That (ct.HasModifier (DTokens.Immutable));
+			Assert.IsTrue (ct.HasModifier (DTokens.Immutable));
 
 
 
 			x = DParser.ParseExpression ("new const D");
 			ctor = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false) as MemberSymbol;
 
-			Assert.That (ctor, Is.Not.Null);
-			Assert.That(ctor.Base, Is.TypeOf(typeof(ClassType)));
+			Assert.IsNotNull(ctor);
+			Assert.IsInstanceOfType(ctor.Base, typeof(ClassType));
 			ct = ctor.Base as ClassType;
-			Assert.That (ct.HasModifier (DTokens.Const));
+			Assert.IsTrue (ct.HasModifier (DTokens.Const));
 
 			x = DParser.ParseExpression ("new D");
 			ctor = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false) as MemberSymbol;
 
-			Assert.That (ctor, Is.Null);
+			Assert.IsNull(ctor);
 		}
 
 		const string iftiSampleCode = @"module modA;
@@ -391,7 +390,7 @@ auto b_f = B.Foo();
 		/// <summary>
 		/// Implicit Function Template Instantiation now supports enclosing type/scope deduction.
 		/// </summary>
-		[Test]
+		[TestMethod]
 		public void ImprovedIFTI()
 		{
 			var ctxt = CreateCtxt("modA", iftiSampleCode);
@@ -401,15 +400,15 @@ auto b_f = B.Foo();
 			x = DParser.ParseExpression ("call(a, a_f)");
 			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 
-			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
+			Assert.IsInstanceOfType(t, typeof(PrimitiveType));
 
 			x = DParser.ParseExpression ("call(b, b_f)");
 			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 
-			Assert.That (t, Is.TypeOf (typeof(PrimitiveType)));
+			Assert.IsInstanceOfType(t, typeof(PrimitiveType));
 		}
 
-		[Test]
+		[TestMethod]
 		public void ImprovedIFTI2()
 		{
 			var ctxt = CreateCtxt("modA", iftiSampleCode);
@@ -419,10 +418,10 @@ auto b_f = B.Foo();
 			x = DParser.ParseExpression("call(a, b_f)");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.That(t, Is.Null);
+			Assert.IsNull(t);
 		}
 
-		[Test]
+		[TestMethod]
 		public void ImprovedIFTI3()
 		{
 			var ctxt = CreateCtxt("modA", iftiSampleCode);
@@ -432,7 +431,7 @@ auto b_f = B.Foo();
 			x = DParser.ParseExpression("call(b, a_f)");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.That(t, Is.Null);
+			Assert.IsNull(t);
 		}
 	}
 }
