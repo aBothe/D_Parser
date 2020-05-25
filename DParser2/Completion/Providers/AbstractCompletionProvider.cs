@@ -2,13 +2,13 @@
 
 namespace D_Parser.Completion.Providers
 {
-	abstract class AbstractCompletionProvider
+	public abstract class AbstractCompletionProvider
 	{
-		public readonly ICompletionDataGenerator CompletionDataGenerator;
+		protected readonly ICompletionDataGenerator CompletionDataGenerator;
 		
-		protected AbstractCompletionProvider(ICompletionDataGenerator CompletionDataGenerator)
+		protected AbstractCompletionProvider(ICompletionDataGenerator completionDataGenerator)
 		{
-			this.CompletionDataGenerator = CompletionDataGenerator;
+			CompletionDataGenerator = completionDataGenerator;
 		}
 
 		#region Helper Methods
@@ -31,12 +31,9 @@ namespace D_Parser.Completion.Providers
 		}
 		#endregion
 
-		protected abstract void BuildCompletionDataInternal(IEditorData Editor, char enteredChar);
+		protected abstract void BuildCompletionDataInternal(IEditorData editor, char enteredChar);
 
-		public void BuildCompletionData(IEditorData Editor,
-			char enteredChar)
-		{
-			BuildCompletionDataInternal(Editor, enteredChar);
-		}
+		public void BuildCompletionData(IEditorData editor, char enteredChar) =>
+			BuildCompletionDataInternal(editor, enteredChar);
 	}
 }

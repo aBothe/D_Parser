@@ -269,8 +269,7 @@ namespace D_Parser.Parser.Implementations
 			CheckForStorageClasses(Scope);
 
 			// Autodeclaration
-			if (StorageClass == null)
-				StorageClass = DTokensSemanticHelpers.ContainsStorageClass(DeclarationAttributes);
+			StorageClass ??= DTokensSemanticHelpers.ContainsStorageClass(DeclarationAttributes);
 
 			if (laKind == DTokens.Enum)
 			{
@@ -313,17 +312,15 @@ namespace D_Parser.Parser.Implementations
 				 * T!(int, bool, -- ditto
 				 * T!(int) -- now every argument is complete
 				 */
-				var tix = ttd as TemplateInstanceExpression;
-				if (tix != null)
+				if (ttd is TemplateInstanceExpression tix)
 				{
 					if (tix.Arguments == null || tix.Arguments.Length == 0 ||
-						(tix.Arguments[tix.Arguments.Length - 1] is TokenExpression &&
-						(tix.Arguments[tix.Arguments.Length - 1] as TokenExpression).Token == DTokens.INVALID))
+						(tix.Arguments[^1] is TokenExpression tk && tk.Token == DTokens.INVALID))
 					{
 						yield break;
 					}
 				}
-				else if (ttd is MemberFunctionAttributeDecl && (ttd as MemberFunctionAttributeDecl).InnerType == null)
+				else if (ttd is MemberFunctionAttributeDecl decl && decl.InnerType == null)
 				{
 					yield break;
 				}
@@ -347,8 +344,7 @@ namespace D_Parser.Parser.Implementations
 				if (laKind == DTokens.Assign)
 				{
 					var init = Initializer(Scope);
-					var dv = firstNode as DVariable;
-					if (dv != null)
+					if (firstNode is DVariable dv)
 						dv.Initializer = init;
 				}
 				firstNode.EndLocation = t.EndLocation;
@@ -361,10 +357,9 @@ namespace D_Parser.Parser.Implementations
 					Step();
 					if (IsEOF || Expect(DTokens.Identifier))
 					{
-						otherNode = new DVariable();
+						otherNode = new DVariable {Description = initialComment};
 
 						// Note: In DDoc, all declarations that are made at once (e.g. int a,b,c;) get the same pre-declaration-description!
-						otherNode.Description = initialComment;
 
 						otherNode.AssignFrom(firstNode);
 						otherNode.Location = t.Location;
@@ -396,13 +391,13 @@ namespace D_Parser.Parser.Implementations
 			}
 
 			// BasicType Declarator FunctionBody
-			else if (firstNode is DMethod && (parserParts.bodiedSymbolsParser.IsFunctionBody || IsEOF))
+			else if (firstNode is DMethod node && (parserParts.bodiedSymbolsParser.IsFunctionBody || IsEOF))
 			{
-				firstNode.Description += CheckForPostSemicolonComment();
+				node.Description += CheckForPostSemicolonComment();
 
-				parserParts.bodiedSymbolsParser.FunctionBody((DMethod)firstNode);
+				parserParts.bodiedSymbolsParser.FunctionBody(node);
 
-				firstNode.Description += CheckForPostSemicolonComment();
+				node.Description += CheckForPostSemicolonComment();
 
 				yield return firstNode;
 				yield break;
@@ -1017,9 +1012,9 @@ namespace D_Parser.Parser.Implementations
 			if (Parent != null && Parent.SpecialType == DMethod.MethodType.AnonymousDelegate)
 			{
 				foreach (var r in ret)
-					if (r.NameHash == 0 && r.Type is IdentifierDeclaration && r.Type.InnerDeclaration == null)
+					if (r.NameHash == 0 && r.Type is IdentifierDeclaration declaration && declaration.InnerDeclaration == null)
 					{
-						r.NameHash = (r.Type as IdentifierDeclaration).IdHash;
+						r.NameHash = declaration.IdHash;
 						r.Type = null;
 					}
 			}
@@ -1036,7 +1031,7 @@ namespace D_Parser.Parser.Implementations
 
 				if (!HadComma && ret.Count > 0)
 				{
-					var lastParameter = ret[ret.Count - 1];
+					var lastParameter = ret[^1];
 					lastParameter.Type = new VarArgDecl(lastParameter.Type);
 				}
 				else
@@ -1095,8 +1090,7 @@ namespace D_Parser.Parser.Implementations
 
 				var defInit = parserParts.expressionsParser.AssignExpression(Scope);
 
-				var dv = ret as DVariable;
-				if (dv != null)
+				if (ret is DVariable dv)
 					dv.Initializer = defInit;
 			}
 
@@ -1244,7 +1238,7 @@ namespace D_Parser.Parser.Implementations
 
 		VectorDeclaration Vector(IBlockNode scope)
 		{
-			var startLoc = t == null ? new CodeLocation() : t.Location;
+			var startLoc = t?.Location ?? new CodeLocation();
 			Expect(DTokens.__vector);
 			var md = new VectorDeclaration { Location = startLoc };
 
@@ -1268,8 +1262,8 @@ namespace D_Parser.Parser.Implementations
 			if (node.Type != null)
 			{
 				var memberFunctionAttrDecl = node.Type as MemberFunctionAttributeDecl;
-				while (memberFunctionAttrDecl != null && memberFunctionAttrDecl.InnerType is MemberFunctionAttributeDecl)
-					memberFunctionAttrDecl = memberFunctionAttrDecl.InnerType as MemberFunctionAttributeDecl;
+				while (memberFunctionAttrDecl?.InnerType is MemberFunctionAttributeDecl decl)
+					memberFunctionAttrDecl = decl;
 
 				if (memberFunctionAttrDecl != null)
 					memberFunctionAttrDecl.InnerType = td;
@@ -1284,8 +1278,7 @@ namespace D_Parser.Parser.Implementations
 		{
 			var stk = BlockAttributes ? this.BlockAttributes : this.DeclarationAttributes;
 
-			var m = attr as Modifier;
-			if (m != null)
+			if (attr is Modifier m)
 				// If attr would change the accessability of an item, remove all previously found (so the most near attribute that's next to the item is significant)
 				if (DTokensSemanticHelpers.IsVisibilityModifier(m.Token))
 					Modifier.CleanupAccessorAttributes(stk, m.Token);
@@ -1365,8 +1358,7 @@ namespace D_Parser.Parser.Implementations
 
 			for (i = attrs.Count - 1; i >= 0; i--)
 			{
-				var m = attrs[i] as Modifier;
-				if (m != null)
+				if (attrs[i] is Modifier m)
 				{
 					// If accessor already in attribute array, remove it
 					if (DTokensSemanticHelpers.IsVisibilityModifier(m.Token))

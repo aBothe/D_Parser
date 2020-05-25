@@ -19,7 +19,7 @@ namespace D_Parser.Dom.Expressions
 			private set;
 		}
 
-		public string StringValue { get { return Strings.TryGet(IdHash); } }
+		public string StringValue => Strings.TryGet(IdHash);
 
 		public IdentifierExpression(string id)
 		{ 

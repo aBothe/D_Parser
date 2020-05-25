@@ -1,4 +1,4 @@
-﻿//
+//
 // CompletionProviderVisitor.cs
 //
 // Author:
@@ -46,7 +46,7 @@ namespace D_Parser.Completion
 		public IBlockNode scopedBlock;
 		IStatement scopedStatement;
 		Stack<MemberFilter> shownKeywords = new Stack<MemberFilter>();
-		MemberFilter ShownKeywords {get{return shownKeywords.Count != 0 ? shownKeywords.Peek() : 0;}}
+		MemberFilter ShownKeywords => shownKeywords.Count != 0 ? shownKeywords.Peek() : 0;
 
 		readonly char triggerChar;
 		bool explicitlyNoCompletion;
