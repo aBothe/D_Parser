@@ -25,6 +25,7 @@
 // THE SOFTWARE.
 
 using System.Collections.Generic;
+using System.Linq;
 using D_Parser.Completion.Providers;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
@@ -89,13 +90,17 @@ namespace D_Parser.Completion
 			if (!halt)
 				shownKeywords.Push(BlockMemberFilter);
 
-			using var en = block.GetEnumerator ();
-			while (!halt && en.MoveNext ()) {
-				if (en.Current.Location > ed.CaretLocation) {
-					halt = true;
-					return;
+			using (var en = block.GetEnumerator())
+			{
+				while (!halt && en.MoveNext())
+				{
+					if (en.Current.Location > ed.CaretLocation)
+					{
+						halt = true;
+						return;
+					}
+					en.Current.Accept(this);
 				}
-				en.Current.Accept (this);
 			}
 
 			if (!halt)
@@ -288,9 +293,9 @@ namespace D_Parser.Completion
 		{
 			if (a.Arguments != null && 
 				a.Arguments.Length>0 &&
-				IsIncompleteExpression (a.Arguments[^1]))
+				IsIncompleteExpression (a.Arguments.Last()))
 			{
-				cdgen.TriggerSyntaxRegion = a.Arguments[^1];
+				cdgen.TriggerSyntaxRegion = a.Arguments.Last();
 				prv = new PragmaCompletionProvider (a,cdgen);
 				halt = true;
 			}
@@ -441,7 +446,7 @@ namespace D_Parser.Completion
 		{
 			var decls = s.Declarations;
 			if (decls != null && decls.Length > 0) {
-				if (decls [^1] is DNode lastDecl && lastDecl.NameHash == DTokens.IncompleteIdHash) {
+				if (decls.Last() is DNode lastDecl && lastDecl.NameHash == DTokens.IncompleteIdHash) {
 					halt = true;
 					// Probably a more common case to have 'auto |' not completed
 					explicitlyNoCompletion = lastDecl.Type != null || (lastDecl.Attributes != null && lastDecl.Attributes.Count != 0);
@@ -640,7 +645,7 @@ namespace D_Parser.Completion
 		{
 			if (initializedNode != null && init.MemberInitializers != null && init.MemberInitializers.Length != 0)
 			{
-				var lastMemberInit = init.MemberInitializers[^1];
+				var lastMemberInit = init.MemberInitializers.Last();
 				if (lastMemberInit.MemberNameHash == DTokens.IncompleteIdHash)
 				{
 					cdgen.TriggerSyntaxRegion = lastMemberInit;
