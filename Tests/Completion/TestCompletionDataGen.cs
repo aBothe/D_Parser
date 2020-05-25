@@ -32,6 +32,9 @@ namespace Tests.Completion
         {
         }
 
+        public bool IsEmpty => AddedTextItems.Count == 0 && suggestedItem == null && Tokens.Count == 0 &&
+                               Attributes.Count == 0 && AddedItems.Count == 0 && Packages.Count == 0;
+
         public readonly List<byte> Tokens = new List<byte>();
 
         public void Add(byte Token)

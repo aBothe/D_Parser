@@ -1,3 +1,4 @@
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using D_Parser;
@@ -287,33 +288,41 @@ int a;
 			Assert.That (@"import std.stdio : ", Does.Trigger);
 
 			Assert.That (@"alias ", Does.Trigger);
-			Assert.That (@"alias string ", Does.Not.Trigger);
-			Assert.That (@"int ", Does.Not.Trigger);
 			Assert.That (@"immutable ",Does.Not.Trigger);
 			Assert.That (@"scope ",Does.Not.Trigger);
 			Assert.That (@"auto ", Does.Not.Trigger);
 			Assert.That (@"const( ", Does.Trigger);
 
-			Assert.That (@"class ", Does.Not.Trigger);
 			Assert.That(@"class A : ", Does.Trigger);
 			Assert.That(@"class A(T) : ", Does.Trigger);
 			Assert.That (@"class A(T) if(is( ", Does.Trigger);
 			Assert.That (@"class A(T) if(is(int  ", Does.Not.Trigger);
-			//Assert.That (@"class A(", Does.Not.Trigger);
+			Assert.That (@"class A(", Does.Not.Trigger);
 			Assert.That (@"class A(string ", Does.Not.Trigger);
 			Assert.That (@"class A(alias ", Does.Not.Trigger);
 
-			Assert.That (@"enum ", Does.Not.Trigger);
-			Assert.That (@"enum { ", Does.Not.Trigger);
-
 			Assert.That(@"void main(", Does.Trigger);
 			Assert.That(@"void main(string[", Does.Trigger);
-			Assert.That(@"void main(string* ", Does.Not.Trigger);
 
 			Assert.That(@"class A {int b;}
 void main(){
 	Class cl;
 	if(cl.", Does.Trigger);
+		}
+
+		[TestCase("alias string §")]
+		[TestCase("int §")]
+		[TestCase("class §")]
+		[TestCase("enum §")]
+		[TestCase("enum { §")]
+		[TestCase("void main(string* §")]
+		public void DeclarationCompletion_TriggersButShowsNoEntries(string code)
+		{
+			var ed = GenEditorData(code);
+			
+			var gen = new TestCompletionDataGen (null, null);
+			Assert.IsTrue(CodeCompletion.GenerateCompletionData (ed, gen, 'a'));
+			Assert.IsTrue(gen.IsEmpty);
 		}
 
 		[Test]
@@ -404,6 +413,23 @@ foo!myE(§
 		}
 		
 		[Test]
+		[Ignore("not implemented yet")]
+		public void MethodParameterCompletion_SuggestsFirstAvailableThingOfParameterMatchingType()
+		{
+			var s = @"module A; 
+class AClass {}
+AClass someInstance;
+ void foo(T)(T e);
+void main() {
+foo!AClass(§
+}";
+			var ed = GenEditorData (s);
+
+			var con = TestCompletionListContents (ed, null, null);
+			Assert.That (con.suggestedItem, Is.EqualTo ("someInstance"));
+		}
+		
+		[Test]
 		public void Completion_OnMethodParameterDeclarations_ShowCtrlSpaceCompletion()
 		{
 			var s = @"module A; enum myE { } void foo(T)(T e);
@@ -466,6 +492,22 @@ AClass.B§ b;
 			var cdg = TestCompletionListContents (ed, wl, null);
 			Assert.AreEqual("B", cdg.suggestedItem);
 			Assert.AreEqual("AClass.B", cdg.TriggerSyntaxRegion.ToString());
+		}
+
+		[Test]
+		public void TriggerOnVariableName_SuggestsNewVariableName()
+		{
+			var ed = GenEditorData(@"module A;
+class AClass {}
+AClass §
+");
+			
+			var gen = new TestCompletionDataGen (null, null);
+			Assert.That (CodeCompletion.GenerateCompletionData (ed, gen, '\0'), Is.True);
+			
+			Assert.IsEmpty(gen.AddedItems);
+			Assert.AreEqual("aClass", gen.suggestedItem);
+			Assert.AreEqual(new List<string> { "aClass" }, gen.AddedTextItems);
 		}
 
 		#region Test lowlevel
