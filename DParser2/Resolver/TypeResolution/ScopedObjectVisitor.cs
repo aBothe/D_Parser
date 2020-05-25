@@ -18,6 +18,9 @@ namespace D_Parser.Resolver.TypeResolution
 			base.Visit(x);
 			if (IdNearCaret == x.PostfixForeExpression)
 				IdNearCaret = x;
+			else if (IdNearCaret == null)
+				if (x.Location <= caret && (x.EndLocation >= caret || x.EndLocation.IsEmpty))
+					IdNearCaret = x; // on parenthesis or within empty argument list
 		}
 
 		public override void Visit(PostfixExpression_Access x)

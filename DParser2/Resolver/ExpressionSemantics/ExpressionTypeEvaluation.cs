@@ -1025,7 +1025,7 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		#region Primitive expressions
 		public AbstractType Visit(Expression ex)
 		{
-			return ex.Expressions.Count == 0 ? null : ex.Expressions[^1].Accept(this);
+			return ex.Expressions.Count == 0 ? null : ex.Expressions.Last().Accept(this);
 		}
 
 		public AbstractType Visit(AnonymousClassExpression x)

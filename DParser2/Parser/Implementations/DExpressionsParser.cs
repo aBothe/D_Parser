@@ -1104,6 +1104,8 @@ namespace D_Parser.Parser.Implementations
 							case DTokens.Function:
 							case DTokens.Super:
 							case DTokens.Return:
+							case DTokens.Package:
+							case DTokens.Module:
 								specialTest = true;
 								break;
 							case DTokens.Const:

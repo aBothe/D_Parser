@@ -32,6 +32,9 @@ using D_Parser.Dom.Statements;
 using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.TypeResolution;
+#if NET40
+using System.Threading.Tasks;
+#endif
 
 namespace D_Parser.Completion
 {//TODO: Flexible lambda completion
@@ -174,13 +177,13 @@ namespace D_Parser.Completion
 			if (timeout == int.MinValue)
 				timeout = ctxt.CompletionOptions.CompletionTimeout;
 
-			#if NET40
+#if NET40
 			if(timeout > 0)
 				Task.Factory.StartNew(()=>{Thread.Sleep(timeout); cts.Cancel();});
-			#else
+#else
 			if (timeout > 0)
 				cts.CancelAfter (timeout);
-			#endif
+#endif
 
 			ac ();
 
