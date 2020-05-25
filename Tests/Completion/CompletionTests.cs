@@ -378,7 +378,7 @@ void main() { Class.§ }";
 		}
 		
 		[Test]
-		public void CompletionSuggestion_WithBasicMethodParameter_SuggestsParamType()
+		public void CompletionSuggestion_WithBasicMethodParameter_SuggestsEnumTypeName()
 		{
 			var s = @"module A; enum myE { } void foo(myE e);
 void main() {
@@ -391,7 +391,7 @@ foo(§
 		}
 
 		[Test]
-		public void CompletionSuggestion_WithTemplateParameter_SuggestsParamType()
+		public void CompletionSuggestion_WithTemplateParameter_SuggestsEnumTypeName()
 		{
 			var s = @"module A; enum myE { } void foo(T)(T e);
 void main() {
@@ -413,6 +413,19 @@ void subFoo(§) {}
 			var ed = GenEditorData (s);
 			ResolutionContext ctxt = null;
 			var con = TestCompletionListContents (ed, new[]{ GetNode(ed, "A.myE", ref ctxt) }, null);
+		}
+
+		[Test]
+		public void TriggerOnBegunMemberName_OnMethodCall_SuggestsEnumTypeName()
+		{
+			var s = @"module A; enum myE { } void foo(T)(T e);
+void main() {
+foo!myE(m§
+}";
+			var ed = GenEditorData (s);
+
+			var con = TestCompletionListContents (ed, null, null);
+			Assert.That (con.suggestedItem, Is.EqualTo ("m"));
 		}
 
 		[Test]

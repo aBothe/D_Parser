@@ -1,4 +1,4 @@
-//
+﻿//
 // CompletionProviderVisitor.cs
 //
 // Author:
@@ -25,12 +25,16 @@
 // THE SOFTWARE.
 
 using System.Collections.Generic;
+using System.Linq;
 using D_Parser.Completion.Providers;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
 using D_Parser.Parser;
+using D_Parser.Resolver;
 using D_Parser.Resolver.ASTScanner;
+using D_Parser.Resolver.ExpressionSemantics;
+using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Completion
 {//TODO: don't show completion on '0.|'
@@ -679,6 +683,16 @@ namespace D_Parser.Completion
 			}
 
 			base.Visit(init);
+		}
+
+		public override void Visit(IdentifierExpression x)
+		{
+			if (x.EndLocation == ed.CaretLocation)
+			{
+				halt = true;
+				cdgen.TriggerSyntaxRegion = x;
+				cdgen.SetSuggestedItem(x.StringValue);
+			}
 		}
 		#endregion
 	}
