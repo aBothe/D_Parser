@@ -7,14 +7,14 @@ using D_Parser.Misc;
 using D_Parser.Parser;
 using D_Parser.Refactoring;
 using D_Parser.Resolver;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 
 namespace Tests.Resolution
 {
-	[TestClass]
+	[TestFixture]
 	public class ReferenceFindingTests
 	{
-		[TestMethod]
+		[Test]
 		public void Test1()
 		{
 			var pcl = ResolutionTestHelper.CreateCache(out DModule m, @"module modA;
@@ -42,7 +42,7 @@ void main()
 			Assert.AreEqual(8, refs.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void TypeRefFinding()
 		{
 			var modA = DParser.ParseString(@"module modA;
@@ -145,7 +145,7 @@ struct StructB
 			Assert.AreEqual(TypeReferenceKind.MemberVariable, arr[3].Value); // fieldB
 		}
 
-		[TestMethod]
+		[Test]
 		public void TypeRefPackage()
 		{
 			var modA = DParser.ParseString(@"module test.modA;
@@ -223,7 +223,7 @@ alias MOD = long;
 			return null;
 		}
 
-		[TestMethod]
+		[Test]
 		public void StaticForeach_StackOverflow()
 		{
 			var modA = DParser.ParseString(@"module modA;
@@ -250,7 +250,7 @@ void sweep()
 			Assert.IsTrue(res.Count > 4); // PageBits, sweep, pool, PageBits?, data
 		}
 
-		[TestMethod]
+		[Test]
 		public void StaticForeach_StackOverflowDecl()
 		{
 			var modA = DParser.ParseString(@"module modA;
@@ -273,7 +273,7 @@ static foreach (w; 0 .. PageBits.length) {
 			Assert.IsTrue(res.Count > 2); // X, PageBits, length
 		}
 
-		[TestMethod]
+		[Test]
 		public void ValueProvider()
 		{
 			var modA = DParser.ParseString(@"module modA;

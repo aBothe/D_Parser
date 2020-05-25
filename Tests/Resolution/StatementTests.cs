@@ -9,14 +9,14 @@ using D_Parser.Dom.Statements;
 using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 
 namespace Tests.Resolution
 {
-	[TestClass]
+	[TestFixture]
 	public class StatementTests : ResolutionTestHelper
 	{
-		[TestMethod]
+		[Test]
 		public void ForeachIteratorType()
 		{
 			var ctxt = CreateCtxt("A", @"module A;
@@ -36,11 +36,11 @@ Cl** cl;
 			AbstractType t;
 
 			t = ExpressionTypeEvaluation.EvaluateType(c_a, ctxt);
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
-			Assert.IsInstanceOfType((t as DerivedDataType).Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<MemberSymbol>(t);
+			Assert.IsInstanceOf<PrimitiveType>((t as DerivedDataType).Base);
 		}
 
-		[TestMethod]
+		[Test]
 		public void ForeachIteratorType_BackFrontMembers()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
@@ -75,11 +75,11 @@ void bar() {
 				var e_statement = S(foo, 0, 0, 0) as ExpressionStatement;
 				var t = ExpressionTypeEvaluation.EvaluateType(e_statement.Expression, ctxt);
 
-				Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+				Assert.IsInstanceOf<MemberSymbol>(t);
 				var ms = t as MemberSymbol;
-				Assert.IsInstanceOfType(ms.Base, typeof(TemplateParameterSymbol));
+				Assert.IsInstanceOf<TemplateParameterSymbol>(ms.Base);
 				var tps = ms.Base as TemplateParameterSymbol;
-				Assert.IsInstanceOfType(tps.Base, typeof(StructType));
+				Assert.IsInstanceOf<StructType>(tps.Base);
 			}
 
 			{
@@ -87,15 +87,15 @@ void bar() {
 				var e_statement = S(bar, 0, 0, 0) as ExpressionStatement;
 				var t = ExpressionTypeEvaluation.EvaluateType(e_statement.Expression, ctxt);
 
-				Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+				Assert.IsInstanceOf<MemberSymbol>(t);
 				var ms = t as MemberSymbol;
-				Assert.IsInstanceOfType(ms.Base, typeof(ArrayType));
+				Assert.IsInstanceOf<ArrayType>(ms.Base);
 				var at = ms.Base as ArrayType;
 				Assert.IsTrue(at.IsString);
 			}
 		}
 
-		[TestMethod]
+		[Test]
 		public void ForeachIteratorType_OpApply()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
@@ -122,9 +122,9 @@ void bar() {
 				var e_statement = S(foo, 0, 0, 0) as ExpressionStatement;
 				var t = ExpressionTypeEvaluation.EvaluateType(e_statement.Expression, ctxt);
 
-				Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+				Assert.IsInstanceOf<MemberSymbol>(t);
 				var ms = t as MemberSymbol;
-				Assert.IsInstanceOfType(ms.Base, typeof(PrimitiveType));
+				Assert.IsInstanceOf<PrimitiveType>(ms.Base);
 			}
 
 			{
@@ -132,17 +132,17 @@ void bar() {
 				var e_statement = S(bar, 0, 0, 0) as ExpressionStatement;
 				var t = ExpressionTypeEvaluation.EvaluateType(e_statement.Expression, ctxt);
 
-				Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+				Assert.IsInstanceOf<MemberSymbol>(t);
 				var ms = t as MemberSymbol;
-				Assert.IsInstanceOfType(ms.Base, typeof(TemplateParameterSymbol));
+				Assert.IsInstanceOf<TemplateParameterSymbol>(ms.Base);
 				var tps = ms.Base as TemplateParameterSymbol;
-				Assert.IsInstanceOfType(tps.Base, typeof(ArrayType));
+				Assert.IsInstanceOf<ArrayType>(tps.Base);
 				var at = tps.Base as ArrayType;
 				Assert.IsTrue(at.IsString);
 			}
 		}
 
-		[TestMethod]
+		[Test]
 		public void TryCatch()
 		{
 			var ctxt = CreateCtxt("A", @"module A;
@@ -161,12 +161,12 @@ ex;
 			ctxt.Push(main, exStmt.Location);
 			var t = ExpressionTypeEvaluation.EvaluateType(exStmt.Expression, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
 			t = (t as MemberSymbol).Base;
-			Assert.IsInstanceOfType(t, typeof(ClassType));
+			Assert.IsInstanceOf<ClassType>(t);
 		}
 
-		[TestMethod]
+		[Test]
 		public void TryCatch_ImplicitExVarType()
 		{
 			var ctxt = CreateCtxt("A", @"module A;
@@ -185,14 +185,14 @@ ex;
 			ctxt.Push(main, exStmt.Location);
 			var t = ExpressionTypeEvaluation.EvaluateType(exStmt.Expression, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
 			t = (t as MemberSymbol).Base;
-			Assert.IsInstanceOfType(t, typeof(ClassType));
+			Assert.IsInstanceOf<ClassType>(t);
 			var ct = t as ClassType;
 			Assert.AreEqual("Exception", ct.Definition.Name);
 		}
 
-		[TestMethod]
+		[Test]
 		public void WithStmt()
 		{
 			var ctxt = CreateCtxt("A", @"module A;
@@ -232,15 +232,15 @@ with(mc){
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
 			Assert.IsTrue(C_tc.IsDefinedIn(t));
-			Assert.IsInstanceOfType((t as DerivedDataType).Base, typeof(TemplateParameterSymbol));
-			Assert.IsInstanceOfType(((t as DerivedDataType).Base as DerivedDataType).Base, typeof(ArrayType));
+			Assert.IsInstanceOf<TemplateParameterSymbol>((t as DerivedDataType).Base);
+			Assert.IsInstanceOf<ArrayType>(((t as DerivedDataType).Base as DerivedDataType).Base);
 
 			x = DParser.ParseExpression("c");
 			(x as IdentifierExpression).Location = xstmt.Location;
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
 			Assert.IsTrue(C_c.IsDefinedIn(t));
-			Assert.IsInstanceOfType((t as DerivedDataType).Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<PrimitiveType>((t as DerivedDataType).Base);
 
 			x = DParser.ParseExpression("da");
 			(x as IdentifierExpression).Location = xstmt.Location;

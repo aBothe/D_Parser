@@ -1,12 +1,12 @@
 using D_Parser.Dom;
 using D_Parser.Resolver;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 
 namespace Tests.Completion
 {
     public class TooltipGenerationTests
     {
-        [TestMethod]
+        [Test]
 		public void TooltipGeneration_MethodSignature()
 		{
 			var tooltipGen = new D_Parser.Completion.ToolTips.NodeTooltipRepresentationGen();
@@ -26,7 +26,7 @@ void foo(int a, string b) {}");
 )".Replace("\r\n", "\n");
 			Assert.AreEqual(expected, signature);
 		}
-		[TestMethod]
+		[Test]
 		public void TooltipGeneration_Modifiers()
 		{
 			var tooltipGen = new D_Parser.Completion.ToolTips.NodeTooltipRepresentationGen();
@@ -41,7 +41,7 @@ static private const double eps;");
 		}
 
 
-		[TestMethod]
+		[Test]
 		public void TooltipGeneration_MethodDDoc_SimpleSummary()
 		{
 			var tooltipGen = new D_Parser.Completion.ToolTips.NodeTooltipRepresentationGen();
@@ -56,7 +56,7 @@ void foo(int a, string b) {}");
 			Assert.AreEqual(@"Does magic.", summary);
 		}
 
-		[TestMethod]
+		[Test]
 		public void TooltipGeneration_MethodDDoc_Categories()
 		{
 			var tooltipGen = new D_Parser.Completion.ToolTips.NodeTooltipRepresentationGen();

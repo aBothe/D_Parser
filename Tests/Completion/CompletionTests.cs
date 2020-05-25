@@ -11,7 +11,7 @@ using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 using Tests.Resolution;
 
 namespace Tests.Completion
@@ -19,10 +19,10 @@ namespace Tests.Completion
 	/// <summary>
 	/// Description of CompletionTests.
 	/// </summary>
-	[TestClass]
+	[TestFixture]
 	public class CompletionTests
 	{
-		[TestMethod]
+		[Test]
 		public void ForStatement()
 		{
 			var code = @"module A; // 1
@@ -52,7 +52,7 @@ void main(){
 			//TODO
 		}
 
-		[TestMethod]
+		[Test]
 		public void ModuleCompletion()
 		{
 			var code = @"module §
@@ -63,7 +63,7 @@ void main(){
 			TestCompletionListContents (ed, new[]{ ed.SyntaxTree }, new INode[0]);
 		}
 
-		[TestMethod]
+		[Test]
 		public void MemberCompletion()
 		{
 			var code = @"module A;
@@ -92,7 +92,7 @@ new K().
 			Assert.IsTrue(gen.AddedItems.Contains(member));
 		}
 
-		[TestMethod]
+		[Test]
 		public void ForeachCompletion()
 		{
 			var code =@"module A;
@@ -104,7 +104,7 @@ foreach(§
 			Assert.IsTrue(CodeCompletion.GenerateCompletionData (ed, g, 'a', true));
 		}
 
-		[TestMethod]
+		[Test]
 		public void ForeachIteratorVarArg()
 		{
 			var code = @"module A;
@@ -126,16 +126,16 @@ foreach(cur; p_args)
 			MemberSymbol ms;
 
 			t = ExpressionTypeEvaluation.EvaluateType (cur, ctxt);
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
 			ms = (MemberSymbol)t;
 
-			Assert.IsInstanceOfType(ms.Base, typeof(TemplateParameterSymbol));
+			Assert.IsInstanceOf<TemplateParameterSymbol>(ms.Base);
 			t = (ms.Base as TemplateParameterSymbol).Base;
 
-			Assert.IsInstanceOfType(t, typeof(StructType));
+			Assert.IsInstanceOf<StructType>(t);
 		}
 
-		[TestMethod]
+		[Test]
 		public void ForeachIteratorCompletion()
 		{
 			var code = @"module A;
@@ -154,7 +154,7 @@ struct Cl { int a; }
 			Assert.IsTrue(CodeCompletion.GenerateCompletionData(ed, g, 'a', true));
 		}
 
-		[TestMethod]
+		[Test]
 		public void NonStaticCompletion1()
 		{
 			var code = @"module A;
@@ -171,7 +171,7 @@ struct SomeStruct {ubyte a; static void read() {
 			Assert.IsTrue(CodeCompletion.GenerateCompletionData(ed, g, '\0', true));
 		}
 
-		[TestMethod]
+		[Test]
 		public void AutoCompletion()
 		{
 			var code = @"module A;
@@ -183,7 +183,7 @@ auto§
 			Assert.IsFalse(CodeCompletion.GenerateCompletionData(ed, g, 'a', true));
 		}
 
-		[TestMethod]
+		[Test]
 		public void IncrementalParsing_()
 		{
 			var code=@"module A;
@@ -214,7 +214,7 @@ string ) {
 			Assert.AreEqual(DTokens.IncompleteIdHash, main2.Parameters [0].NameHash);
 		}
 
-		[TestMethod]
+		[Test]
 		public void IncrementalParsing_Lambdas()
 		{
 			var code=@"module A;
@@ -248,7 +248,7 @@ int a;
 			Assert.AreEqual("b", lambda.Parameters [0].Name);
 		}
 
-		[TestMethod]
+		[Test]
 		public void IncrementalParsing_LambdaParameters()
 		{
 			var code=@"module A;
@@ -281,7 +281,7 @@ int a;
 			Assert.AreEqual(DTokens.IncompleteIdHash, lambda.Parameters [0].NameHash);
 		}
 
-		[TestMethod]
+		[Test]
 		public void CompletionTrigger()
 		{
 			Assert.IsTrue (@"module ".DoesTriggerCompletion());
@@ -311,13 +311,12 @@ void main(){
 	if(cl.".DoesTriggerCompletion());
 		}
 
-		[DataTestMethod]
-		[DataRow("alias string §")]
-		[DataRow("int §")]
-		[DataRow("class §")]
-		[DataRow("enum §")]
-		[DataRow("enum { §")]
-		[DataRow("void main(string* §")]
+		[TestCase("alias string §")]
+		[TestCase("int §")]
+		[TestCase("class §")]
+		[TestCase("enum §")]
+		[TestCase("enum { §")]
+		[TestCase("void main(string* §")]
 		public void DeclarationCompletion_TriggersButShowsNoEntries(string code)
 		{
 			var ed = GenEditorData(code);
@@ -327,7 +326,7 @@ void main(){
 			Assert.IsTrue(gen.IsEmpty);
 		}
 
-		[TestMethod]
+		[Test]
 		public void ArrayAccessCompletion()
 		{
 			INode[] wl;
@@ -347,7 +346,7 @@ o[0][0].
 			TestCompletionListContents (ed, wl, null);
 		}
 
-		[TestMethod]
+		[Test]
 		public void MissingClassMembersOnParameter ()
 		{
 			TestsEditorData ed;
@@ -368,7 +367,7 @@ array.
 			TestCompletionListContents (ed, wl, null);
 		}
 
-		[TestMethod]
+		[Test]
 		public void StaticMemberCompletion()
 		{
 			TestsEditorData ed;
@@ -388,7 +387,7 @@ void main() { Class.§ }";
 			TestCompletionListContents (ed, wl, bl);
 		}
 		
-		[TestMethod]
+		[Test]
 		public void CompletionSuggestion_WithBasicMethodParameter_SuggestsEnumTypeName()
 		{
 			var s = @"module A; enum myE { } void foo(myE e);
@@ -401,7 +400,7 @@ foo(§
 			Assert.AreEqual("myE", con.suggestedItem);
 		}
 
-		[TestMethod]
+		[Test]
 		public void CompletionSuggestion_WithTemplateParameter_SuggestsEnumTypeName()
 		{
 			var s = @"module A; enum myE { } void foo(T)(T e);
@@ -414,7 +413,7 @@ foo!myE(§
 			Assert.AreEqual("myE", con.suggestedItem);
 		}
 		
-		[TestMethod]
+		[Test]
 		[Ignore("not implemented yet")]
 		public void MethodParameterCompletion_SuggestsFirstAvailableThingOfParameterMatchingType()
 		{
@@ -431,7 +430,7 @@ foo!AClass(§
 			Assert.AreEqual("someInstance", con.suggestedItem);
 		}
 		
-		[TestMethod]
+		[Test]
 		public void Completion_OnMethodParameterDeclarations_ShowCtrlSpaceCompletion()
 		{
 			var s = @"module A; enum myE { } void foo(T)(T e);
@@ -443,7 +442,7 @@ void subFoo(§) {}
 			var con = TestCompletionListContents (ed, new[]{ GetNode(ed, "A.myE", ref ctxt) }, null);
 		}
 
-		[TestMethod]
+		[Test]
 		public void TriggerOnBegunMemberName_OnMethodCall_SuggestsEnumTypeName()
 		{
 			var s = @"module A; enum myE { } void foo(T)(T e);
@@ -456,7 +455,7 @@ foo!myE(m§
 			Assert.AreEqual("m", con.suggestedItem);
 		}
 
-		[TestMethod]
+		[Test]
 		public void TriggerOnBegunMemberName_ReturnsListOfMembersWithPreselectionSuggestion()
 		{
 			var ed = GenEditorData (@"module A;
@@ -477,7 +476,7 @@ a.prop§
 			Assert.AreEqual("a.prop", cdg.TriggerSyntaxRegion.ToString());
 		}
 
-		[TestMethod]
+		[Test]
 		public void TriggerOnBegunMemberName2_ReturnsListOfMembersWithPreselectionSuggestion()
 		{
 			var ed = GenEditorData (@"module A;
@@ -496,7 +495,7 @@ AClass.B§ b;
 			Assert.AreEqual("AClass.B", cdg.TriggerSyntaxRegion.ToString());
 		}
 
-		[TestMethod]
+		[Test]
 		public void TriggerOnVariableName_SuggestsNewVariableName()
 		{
 			var ed = GenEditorData(@"module A;

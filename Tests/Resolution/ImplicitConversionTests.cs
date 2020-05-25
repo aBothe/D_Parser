@@ -4,11 +4,11 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 
 namespace Tests.Resolution
 {
-	[TestClass]
+	[TestFixture]
 	public class ImplicitConversionTests
 	{
 		public static AbstractType GetType(string name, ResolutionContext ctxt)
@@ -16,7 +16,7 @@ namespace Tests.Resolution
 			return ExpressionTypeEvaluation.GetOverloads(new IdentifierExpression(name), ctxt, null, false)[0];
 		}
 
-		[TestMethod]
+		[Test]
 		public void ClassInheritanceTest()
 		{
 			var pcl = ResolutionTests.CreateCache(out DModule m, @"module modA;
@@ -50,7 +50,7 @@ namespace Tests.Resolution
 			Assert.IsTrue(ResultComparer.IsImplicitlyConvertible(D, A));
 		}
 
-		[TestMethod]
+		[Test]
 		public void InterfaceInheritanceTest()
 		{
 			var pcl = ResolutionTestHelper.CreateCache(out DModule m, @"module modA;
@@ -109,7 +109,7 @@ namespace Tests.Resolution
 			
 		}
 
-		[TestMethod]
+		[Test]
 		public void TestTemplateDeductionAsConversion()
 		{
 			var pcl = ResolutionTestHelper.CreateCache(out DModule m, @"module modA;

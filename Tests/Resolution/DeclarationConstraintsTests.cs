@@ -7,14 +7,14 @@ using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 
 namespace Tests.Resolution
 {
-	[TestClass]
+	[TestFixture]
 	public class DeclarationConstraintsTests : ResolutionTestHelper
 	{
-		[TestMethod]
+		[Test]
 		public void DeclCond1()
 		{
 			var pcl = CreateCache(out DModule module, @"module m;
@@ -57,14 +57,14 @@ version(C)
 			var m = ms[0] as MemberSymbol;
 			Assert.IsNotNull(m);
 
-			Assert.IsInstanceOfType(m.Base, typeof(PointerType));
+			Assert.IsInstanceOf<PointerType>(m.Base);
 
 			ms = R("d", ctxt);
 			Assert.AreEqual(1, ms.Count);
 			m = ms[0] as MemberSymbol;
 			Assert.IsNotNull(m);
 
-			Assert.IsInstanceOfType(m.Base, typeof(PointerType));
+			Assert.IsInstanceOf<PointerType>(m.Base);
 
 			ctxt.CurrentContext.Set(ctxt.ScopedBlock.EndLocation);
 			ms = R("a", ctxt);
@@ -72,7 +72,7 @@ version(C)
 			m = ms[0] as MemberSymbol;
 			Assert.IsNotNull(m);
 
-			Assert.IsInstanceOfType(m.Base, typeof(PointerType));
+			Assert.IsInstanceOf<PointerType>(m.Base);
 
 			ms = R("pubB", ctxt);
 			Assert.AreEqual(1, ms.Count);
@@ -81,7 +81,7 @@ version(C)
 			Assert.AreEqual(0, ms.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void NestedTypes()
 		{
 			var ctxt = CreateDefCtxt(@"
@@ -97,11 +97,11 @@ cl clInst;
 
 			var x = DParser.ParseExpression("clInst.inst.b");
 			var v = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.IsInstanceOfType(v, typeof(MemberSymbol));
-			Assert.IsInstanceOfType((v as MemberSymbol).Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<MemberSymbol>(v);
+			Assert.IsInstanceOf<PrimitiveType>((v as MemberSymbol).Base);
 		}
 
-		[TestMethod]
+		[Test]
 		public void IfStmtDeclaredSymbols()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
@@ -116,11 +116,11 @@ if(auto n = 1234)
 			ctxt.CurrentContext.Set(nStmt.Location);
 
 			var t = ExpressionTypeEvaluation.EvaluateType(nStmt, ctxt);
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
-			Assert.IsInstanceOfType((t as MemberSymbol).Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<MemberSymbol>(t);
+			Assert.IsInstanceOf<PrimitiveType>((t as MemberSymbol).Base);
 		}
 
-		[TestMethod]
+		[Test]
 		public void IfStmtPseudoVersion()
 		{
 			var ctxt = CreateCtxt("A", @"module A;
@@ -145,8 +145,8 @@ enum enumB = false;
 			x = DParser.ParseExpression("a");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
-			Assert.IsInstanceOfType((t as MemberSymbol).Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<MemberSymbol>(t);
+			Assert.IsInstanceOf<PrimitiveType>((t as MemberSymbol).Base);
 
 			x = DParser.ParseExpression("b");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
@@ -154,7 +154,7 @@ enum enumB = false;
 			Assert.IsNull(t);
 		}
 
-		[TestMethod]
+		[Test]
 		public void AliasedTemplate_PreferenceOfParameterizedBaseSymbols()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
@@ -170,10 +170,10 @@ alias bar aliasTwo;
 			x = DParser.ParseExpression("aliasOne()");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(PointerType));
+			Assert.IsInstanceOf<PointerType>(t);
 		}
 
-		[TestMethod]
+		[Test]
 		public void AliasedTemplate()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
@@ -189,18 +189,18 @@ alias bar aliasTwo;
 
 			x = DParser.ParseExpression("aliasOne()");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.IsInstanceOfType(t, typeof(ArrayType));
+			Assert.IsInstanceOf<ArrayType>(t);
 
 			x = DParser.ParseExpression("aliasOne!(byte*)");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false);
 
 			ms = t as MemberSymbol;
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
-			Assert.IsInstanceOfType(ms.DeducedTypes[0].Base, typeof(PointerType));
-			Assert.IsInstanceOfType(ms.Base, typeof(ArrayType));
+			Assert.IsInstanceOf<MemberSymbol>(t);
+			Assert.IsInstanceOf<PointerType>(ms.DeducedTypes[0].Base);
+			Assert.IsInstanceOf<ArrayType>(ms.Base);
 		}
 
-		[TestMethod]
+		[Test]
 		public void AliasedTemplate2()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
@@ -216,12 +216,12 @@ alias bar aliasTwo;
 			x = DParser.ParseExpression("aliasTwo");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(PrimitiveType));
+			Assert.IsInstanceOf<PrimitiveType>(t);
 
 			x = DParser.ParseExpression("aliasOne");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(ArrayType));
+			Assert.IsInstanceOf<ArrayType>(t);
 
 			x = DParser.ParseExpression("aliasOne!(byte*,int)");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
@@ -229,7 +229,7 @@ alias bar aliasTwo;
 			Assert.IsNull(t);
 		}
 
-		[TestMethod]
+		[Test]
 		public void AliasThis()
 		{
 			var pcl = CreateCache(out DModule mod, @"
@@ -257,31 +257,31 @@ notherClass ncl;
 
 			var x = DParser.ParseExpression("clInst.a");
 			var v = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.IsInstanceOfType((v as MemberSymbol).Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<PrimitiveType>((v as MemberSymbol).Base);
 
 			x = DParser.ParseExpression("clInst.inst.b");
 			v = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.IsInstanceOfType(v, typeof(MemberSymbol));
-			Assert.IsInstanceOfType((v as MemberSymbol).Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<MemberSymbol>(v);
+			Assert.IsInstanceOf<PrimitiveType>((v as MemberSymbol).Base);
 
 			x = DParser.ParseExpression("clInst.b");
 			v = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.IsInstanceOfType(v, typeof(MemberSymbol));
-			Assert.IsInstanceOfType((v as MemberSymbol).Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<MemberSymbol>(v);
+			Assert.IsInstanceOf<PrimitiveType>((v as MemberSymbol).Base);
 
 			x = DParser.ParseExpression("ncl.arr");
 			v = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.IsInstanceOfType(v, typeof(MemberSymbol));
-			Assert.IsInstanceOfType((v as MemberSymbol).Base, typeof(ArrayType));
+			Assert.IsInstanceOf<MemberSymbol>(v);
+			Assert.IsInstanceOf<ArrayType>((v as MemberSymbol).Base);
 
 			// Test for static properties
 			x = DParser.ParseExpression("ncl.length");
 			v = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.IsInstanceOfType(v, typeof(MemberSymbol));
-			Assert.IsInstanceOfType((v as MemberSymbol).Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<MemberSymbol>(v);
+			Assert.IsInstanceOf<PrimitiveType>((v as MemberSymbol).Base);
 		}
 
-		[TestMethod]
+		[Test]
 		public void DeclCond2()
 		{
 			var pcl = CreateCache(out DModule m, @"module m;
@@ -379,7 +379,7 @@ debug(4)
 
 			ctxt.CurrentContext.Set(ss.Location);
 			var x2 = ExpressionTypeEvaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
-			Assert.IsInstanceOfType(x2, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(x2);
 
 			ctxt.CurrentContext.Set((ss = subst[4]).Location);
 			x2 = ExpressionTypeEvaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
@@ -391,7 +391,7 @@ debug(4)
 
 			ctxt.CurrentContext.Set((ss = subst[6]).Location);
 			x2 = ExpressionTypeEvaluation.EvaluateType(((ExpressionStatement)ss).Expression, ctxt);
-			Assert.IsInstanceOfType(x2, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(x2);
 
 			x = R("dbg_a", ctxt);
 			Assert.AreEqual(1, x.Count);
@@ -414,7 +414,7 @@ debug(4)
 			Assert.AreEqual(0, x.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void DeclCond3()
 		{
 			var pcl = CreateCache(out DModule mod, @"module m;
@@ -494,9 +494,9 @@ void main()
 			DToken tk;
 			var t = RS(DParser.ParseBasicType("T!int", out tk), ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
 			t = ((MemberSymbol)t).Base;
-			Assert.IsInstanceOfType(t, typeof(ArrayType));
+			Assert.IsInstanceOf<ArrayType>(t);
 
 			var main = pcl.FirstPackage()["B"]["main"].First() as DMethod;
 			var subSt = main.Body.SubStatements as List<IStatement>;
@@ -524,7 +524,7 @@ void main()
 			}
 		}
 
-		[TestMethod]
+		[Test]
 		public void DeclCond4()
 		{
 			var ctxt = CreateCtxt("A", @"module A;
@@ -564,16 +564,16 @@ int xx3;
 
 			AbstractType t;
 			t = RS("vy", ctxt);
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
 
 			t = RS("vx", ctxt);
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
 
 
 			ctxt.CurrentContext.Set(A["xx2"].First().Location);
 
 			t = RS("xa", ctxt);
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
 
 			t = RS("xb", ctxt);
 			Assert.IsNull(t);
@@ -584,7 +584,7 @@ int xx3;
 			Assert.IsNull(t);
 		}
 
-		[TestMethod]
+		[Test]
 		public void DeclConstraints()
 		{
 			var pcl = CreateCache(out DModule A, @"module A;
@@ -621,7 +621,7 @@ else
 
 			var v = Evaluation.EvaluateValue(DParser.ParseExpression("Templ!int"), ctxt, out var variableValue);
 			Assert.IsNotNull(variableValue);
-			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
+			Assert.IsInstanceOf<PrimitiveValue>(v);
 			var pv = (PrimitiveValue)v;
 			Assert.AreEqual(1m, pv.Value);
 
@@ -635,7 +635,7 @@ else
 			Assert.AreEqual(1, x.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void DeclConditions2()
 		{
 			var pcl = CreateCache(out DModule B, @"module B;
@@ -662,7 +662,7 @@ class imp{}");
 			Assert.AreEqual(1, x.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void DeclConstraints3()
 		{
 			var pcl = CreateCache(out DModule A, @"module A;
@@ -678,7 +678,7 @@ class aa(T) if(is(T==int)) {}");
 
 			var ex = DParser.ParseAssignExpression("cl!int");
 			x = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
-			Assert.IsNotInstanceOfType(x, typeof(AmbiguousType));
+			Assert.IsNotInstanceOf<AmbiguousType>(x);
 
 			ex = DParser.ParseAssignExpression("cl!float");
 			x = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
@@ -686,14 +686,14 @@ class aa(T) if(is(T==int)) {}");
 
 			ex = DParser.ParseAssignExpression("aa!float");
 			x = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
-			Assert.IsNotInstanceOfType(x, typeof(AmbiguousType));
+			Assert.IsNotInstanceOf<AmbiguousType>(x);
 			var t = x as ClassType;
 			Assert.IsNotNull(t);
 			Assert.AreEqual(A["aa"].First(), t.Definition);
 
 			ex = DParser.ParseAssignExpression("aa!int");
 			x = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
-			Assert.IsNotInstanceOfType(x, typeof(AmbiguousType));
+			Assert.IsNotInstanceOf<AmbiguousType>(x);
 			t = x as ClassType;
 			Assert.IsNotNull(t);
 			Assert.AreEqual((A["aa"] as List<INode>)[1], t.Definition);
@@ -703,7 +703,7 @@ class aa(T) if(is(T==int)) {}");
 			Assert.IsNull(x);
 		}
 
-		[TestMethod]
+		[Test]
 		public void Unqual()
 		{
 			var ctxt = CreateCtxt("A", @"module std.typecons;
@@ -755,20 +755,20 @@ unittest
 
 			td = DParser.ParseBasicType("inst");
 			t = RS(td, ctxt);
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
 			var baseT = (t as MemberSymbol).Base;
-			Assert.IsInstanceOfType(baseT, typeof(TemplateParameterSymbol));
+			Assert.IsInstanceOf<TemplateParameterSymbol>(baseT);
 
 			ctxt.CurrentContext.Set(A);
 
 			td = DParser.ParseBasicType("Unqual!ImmIntArr");
 			t = RS(td, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(TemplateParameterSymbol));
+			Assert.IsInstanceOf<TemplateParameterSymbol>(t);
 			at = (t as TemplateParameterSymbol).Base as ArrayType;
-			Assert.IsInstanceOfType((t as TemplateParameterSymbol).Base, typeof(ArrayType));
+			Assert.IsInstanceOf<ArrayType>((t as TemplateParameterSymbol).Base);
 			pt = at.ValueType as PrimitiveType;
-			Assert.IsInstanceOfType(at.ValueType, typeof(PrimitiveType));
+			Assert.IsInstanceOf<PrimitiveType>(at.ValueType);
 			Assert.IsTrue(pt.HasModifier(DTokens.Immutable));
 			// immutable(int[]) becomes immutable(int)[] ?!
 
@@ -777,17 +777,17 @@ unittest
 			td = DParser.ParseBasicType("Unqual!int");
 			t = RS(td, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(TemplateParameterSymbol));
-			Assert.IsInstanceOfType((t as TemplateParameterSymbol).Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<TemplateParameterSymbol>(t);
+			Assert.IsInstanceOf<PrimitiveType>((t as TemplateParameterSymbol).Base);
 
 			ctxt.CurrentContext.DeducedTemplateParameters.Clear();
 
 			td = DParser.ParseBasicType("Unqual!(const(int))");
 			t = RS(td, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(TemplateParameterSymbol));
+			Assert.IsInstanceOf<TemplateParameterSymbol>(t);
 			pt = (t as TemplateParameterSymbol).Base as PrimitiveType;
-			Assert.IsInstanceOfType((t as TemplateParameterSymbol).Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<PrimitiveType>((t as TemplateParameterSymbol).Base);
 			Assert.IsFalse(pt.HasModifiers);
 
 			ctxt.CurrentContext.DeducedTemplateParameters.Clear();
@@ -795,9 +795,9 @@ unittest
 			td = DParser.ParseBasicType("Unqual!(inout(int))");
 			t = RS(td, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(TemplateParameterSymbol));
+			Assert.IsInstanceOf<TemplateParameterSymbol>(t);
 			pt = (t as TemplateParameterSymbol).Base as PrimitiveType;
-			Assert.IsInstanceOfType((t as TemplateParameterSymbol).Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<PrimitiveType>((t as TemplateParameterSymbol).Base);
 			Assert.IsFalse(pt.HasModifiers);
 
 			ctxt.CurrentContext.DeducedTemplateParameters.Clear();
@@ -805,9 +805,9 @@ unittest
 			td = DParser.ParseBasicType("Unqual!(immutable(int))");
 			t = RS(td, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(TemplateParameterSymbol));
+			Assert.IsInstanceOf<TemplateParameterSymbol>(t);
 			pt = (t as TemplateParameterSymbol).Base as PrimitiveType;
-			Assert.IsInstanceOfType((t as TemplateParameterSymbol).Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<PrimitiveType>((t as TemplateParameterSymbol).Base);
 			Assert.IsFalse(pt.HasModifiers);
 
 			ctxt.CurrentContext.DeducedTemplateParameters.Clear();
@@ -815,9 +815,9 @@ unittest
 			td = DParser.ParseBasicType("Unqual!(shared(int))");
 			t = RS(td, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(TemplateParameterSymbol));
+			Assert.IsInstanceOf<TemplateParameterSymbol>(t);
 			pt = (t as TemplateParameterSymbol).Base as PrimitiveType;
-			Assert.IsInstanceOfType((t as TemplateParameterSymbol).Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<PrimitiveType>((t as TemplateParameterSymbol).Base);
 			Assert.IsFalse(pt.HasModifiers);
 
 			ctxt.CurrentContext.DeducedTemplateParameters.Clear();
@@ -825,9 +825,9 @@ unittest
 			td = DParser.ParseBasicType("Unqual!(const(shared(int)))");
 			t = RS(td, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(TemplateParameterSymbol));
+			Assert.IsInstanceOf<TemplateParameterSymbol>(t);
 			pt = (t as TemplateParameterSymbol).Base as PrimitiveType;
-			Assert.IsInstanceOfType((t as TemplateParameterSymbol).Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<PrimitiveType>((t as TemplateParameterSymbol).Base);
 			Assert.IsFalse(pt.HasModifiers);
 
 			ctxt.CurrentContext.DeducedTemplateParameters.Clear();
@@ -835,13 +835,13 @@ unittest
 			td = DParser.ParseBasicType("Unqual!(shared const int)");
 			t = RS(td, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(TemplateParameterSymbol));
+			Assert.IsInstanceOf<TemplateParameterSymbol>(t);
 			pt = (t as TemplateParameterSymbol).Base as PrimitiveType;
-			Assert.IsInstanceOfType((t as TemplateParameterSymbol).Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<PrimitiveType>((t as TemplateParameterSymbol).Base);
 			Assert.IsFalse(pt.HasModifiers);
 		}
 
-		[TestMethod]
+		[Test]
 		public void MethodParameterTypeResolutionScope()
 		{
 			var ctxt = CreateCtxt("A", @"module A;
@@ -860,7 +860,7 @@ Namespace.UserId uid;
 			x = DParser.ParseExpression("Namespace.getGames(uid)");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(PrimitiveType));
+			Assert.IsInstanceOf<PrimitiveType>(t);
 
 		}
 
@@ -871,7 +871,7 @@ Namespace.UserId uid;
 		/// null-terminated pointers, slicing string literals (not variables!) 
 		/// will now allow the implicit conversion to such a pointer:
 		/// </summary>
-		[TestMethod]
+		[Test]
 		public void StringSliceConvertability()
 		{
 			var ctxt = CreateCtxt("A", @"module A;");
@@ -892,7 +892,7 @@ Namespace.UserId uid;
 			Assert.IsTrue(ResultComparer.IsImplicitlyConvertible(t, constChar, ctxt));
 		}
 
-		[TestMethod]
+		[Test]
 		public void AliasThis2()
 		{
 			var ctxt = CreateCtxt("A", @"module B;
@@ -934,12 +934,12 @@ ConnectionPool!RedisConnection m_connections;
 			x = DParser.ParseExpression("m_connections.lockConnection().bar");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
 			t = (t as DerivedDataType).Base;
-			Assert.IsInstanceOfType(t, typeof(ArrayType));
+			Assert.IsInstanceOf<ArrayType>(t);
 		}
 
-		[TestMethod]
+		[Test]
 		public void AliasThis3()
 		{
 			var ctxt = CreateCtxt("A", @"module A;
@@ -966,11 +966,11 @@ struct CL {
 			x = DParser.ParseExpression("CL.white");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
-			Assert.IsInstanceOfType((t as MemberSymbol).Definition, typeof(DEnumValue));
+			Assert.IsInstanceOf<MemberSymbol>(t);
+			Assert.IsInstanceOf<DEnumValue>((t as MemberSymbol).Definition);
 		}
 
-		[TestMethod]
+		[Test]
 		public void AliasThis4()
 		{
 			var ctxt = CreateCtxt("m", @"module m;
@@ -991,11 +991,11 @@ AliasThis str;
 			x = DParser.ParseExpression("str.hello");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
-			Assert.IsInstanceOfType((t as MemberSymbol).Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<MemberSymbol>(t);
+			Assert.IsInstanceOf<PrimitiveType>((t as MemberSymbol).Base);
 		}
 
-		[TestMethod]
+		[Test]
 		public void AliasThis5()
 		{
 			var ctxt = CreateCtxt("m", @"module m;
@@ -1018,11 +1018,11 @@ AliasThis str;
 			x = DParser.ParseExpression("str.hello");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
-			Assert.IsInstanceOfType((t as MemberSymbol).Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<MemberSymbol>(t);
+			Assert.IsInstanceOf<PrimitiveType>((t as MemberSymbol).Base);
 		}
 
-		[TestMethod]
+		[Test]
 		public void AliasThisSO()
 		{
 			var ctxt = CreateCtxt("A", @"module A;
@@ -1038,7 +1038,7 @@ Cls inst;
 			ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 		}
 
-		[TestMethod]
+		[Test]
 		public void AliasThisOnNonInstances()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
@@ -1057,11 +1057,11 @@ S2!S1 s;
 			x = DParser.ParseExpression("s.a");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
-			Assert.IsInstanceOfType((t as MemberSymbol).Definition, typeof(DVariable));
+			Assert.IsInstanceOf<MemberSymbol>(t);
+			Assert.IsInstanceOf<DVariable>((t as MemberSymbol).Definition);
 		}
 
-		[TestMethod]
+		[Test]
 		public void TypeofIntSize()
 		{
 			var ctxt = CreateDefCtxt("");
@@ -1073,7 +1073,7 @@ S2!S1 s;
 			td = DParser.ParseBasicType("typeof(int.sizeof)", out tk);
 			t = RS(td, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(PrimitiveType));
+			Assert.IsInstanceOf<PrimitiveType>(t);
 			Assert.AreEqual(DTokens.Uint, (t as PrimitiveType).TypeToken);
 		}
 	}

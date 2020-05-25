@@ -4,14 +4,14 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 
 namespace Tests.Resolution
 {
-	[TestClass]
+	[TestFixture]
 	public class OperatorOverloadingTests : ResolutionTestHelper
 	{
-		[TestMethod]
+		[Test]
 		public void opDispatch()
 		{
 			var ctxt = CreateCtxt("A", @"module A;
@@ -64,38 +64,38 @@ void main() {
 
 			using (ctxt.Push(main, stmt_x.Location))
 				ds = ExpressionTypeEvaluation.EvaluateType(x, ctxt) as DSymbol;
-			Assert.IsInstanceOfType(ds, typeof(TemplateParameterSymbol));
-			Assert.IsInstanceOfType(ds.Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<TemplateParameterSymbol>(ds);
+			Assert.IsInstanceOf<PrimitiveType>(ds.Base);
 
 			x = DParser.ParseExpression("s2.bar(s)");
 			ds = ExpressionTypeEvaluation.EvaluateType(x, ctxt) as DSymbol;
-			Assert.IsInstanceOfType(ds, typeof(TemplateParameterSymbol));
-			Assert.IsInstanceOfType(ds.Base, typeof(ClassType));
+			Assert.IsInstanceOf<TemplateParameterSymbol>(ds);
+			Assert.IsInstanceOf<ClassType>(ds.Base);
 
 			x = DParser.ParseExpression("s.foo(123)");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.IsInstanceOfType(t, typeof(PointerType));
+			Assert.IsInstanceOf<PointerType>(t);
 
 			x = DParser.ParseExpression("s.foo");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.IsInstanceOfType(t, typeof(PrimitiveType));
+			Assert.IsInstanceOf<PrimitiveType>(t);
 
 			x = DParser.ParseExpression("D.foo");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
-			Assert.IsInstanceOfType((t as MemberSymbol).Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<MemberSymbol>(t);
+			Assert.IsInstanceOf<PrimitiveType>((t as MemberSymbol).Base);
 
 			v = Evaluation.EvaluateValue(x, ctxt);
-			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
+			Assert.IsInstanceOf<PrimitiveValue>(v);
 			Assert.AreEqual(8m, (v as PrimitiveValue).Value);
 
 			td = DParser.ParseBasicType("D.foo");
 			t = RS(td, ctxt);
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
-			Assert.IsInstanceOfType((t as MemberSymbol).Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<MemberSymbol>(t);
+			Assert.IsInstanceOf<PrimitiveType>((t as MemberSymbol).Base);
 		}
 
-		[TestMethod]
+		[Test]
 		public void opSlice()
 		{
 			var ctxt = CreateCtxt("A", @"module A;
@@ -114,18 +114,18 @@ S!int s;
 
 			x = DParser.ParseExpression("s[]");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.IsInstanceOfType(t, typeof(TemplateParameterSymbol));
-			Assert.IsInstanceOfType((t as DerivedDataType).Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<TemplateParameterSymbol>(t);
+			Assert.IsInstanceOf<PrimitiveType>((t as DerivedDataType).Base);
 
 			x = DParser.ParseExpression("s[1..3]");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.IsInstanceOfType(t, typeof(PointerType));
+			Assert.IsInstanceOf<PointerType>(t);
 			t = (t as PointerType).Base;
-			Assert.IsInstanceOfType(t, typeof(TemplateParameterSymbol));
-			Assert.IsInstanceOfType((t as DerivedDataType).Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<TemplateParameterSymbol>(t);
+			Assert.IsInstanceOf<PrimitiveType>((t as DerivedDataType).Base);
 		}
 
-		[TestMethod]
+		[Test]
 		public void opIndex()
 		{
 			var ctxt = CreateCtxt("A", @"module A;
@@ -144,16 +144,16 @@ S!int s;
 
 			x = DParser.ParseExpression("s[1]");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.IsInstanceOfType(t, typeof(TemplateParameterSymbol));
-			Assert.IsInstanceOfType((t as DerivedDataType).Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<TemplateParameterSymbol>(t);
+			Assert.IsInstanceOf<PrimitiveType>((t as DerivedDataType).Base);
 
 			x = DParser.ParseExpression("s[1,2]");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.IsInstanceOfType(t, typeof(ArrayType));
+			Assert.IsInstanceOf<ArrayType>(t);
 
 			x = DParser.ParseExpression("s[1,2,3]");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.IsInstanceOfType(t, typeof(PointerType));
+			Assert.IsInstanceOf<PointerType>(t);
 		}
 	}
 }

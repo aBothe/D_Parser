@@ -4,14 +4,14 @@ using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
 using D_Parser.Resolver;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 
 namespace Tests.Resolution
 {
-	[TestClass]
+	[TestFixture]
 	public class LooseResolutionTests : ResolutionTestHelper
 	{
-		[TestMethod]
+		[Test]
 		public void LooseResolution2()
 		{
 			var pcw = CreateCache(out DModule A, @"module A;
@@ -40,23 +40,23 @@ class C { class Nested { int someDeepVariable; } }");
 			ed = new EditorData { SyntaxTree = A, ParseCache = pcw, CaretLocation = sr.EndLocation };
 			t = LooseResolution.SearchNodesByName(ref sr, ed) as DSymbol;
 
-			Assert.IsInstanceOfType(t, typeof(ClassType));
-			Assert.IsInstanceOfType(sr, typeof(IdentifierExpression));
+			Assert.IsInstanceOf<ClassType>(t);
+			Assert.IsInstanceOf<IdentifierExpression>(sr);
 
 			sr = (S(x, 0) as ExpressionStatement).Expression;
 			ed = new EditorData { SyntaxTree = A, ParseCache = pcw, CaretLocation = sr.EndLocation };
 			t = LooseResolution.SearchNodesByName(ref sr, ed) as DSymbol;
 
-			Assert.IsInstanceOfType(t, typeof(ClassType));
+			Assert.IsInstanceOf<ClassType>(t);
 
 			sr = (S(x, 1) as ExpressionStatement).Expression;
 			ed = new EditorData { SyntaxTree = A, ParseCache = pcw, CaretLocation = sr.EndLocation };
 			t = LooseResolution.SearchNodesByName(ref sr, ed) as DSymbol;
 
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
 		}
 
-		[TestMethod]
+		[Test]
 		public void LooseNodeResolution()
 		{
 			var pcw = CreateCache(out DModule A, @"module A;
@@ -87,31 +87,31 @@ private int privInt;
 			ed = new EditorData { SyntaxTree = A, ParseCache = pcw, CaretLocation = (S(x, 3) as ExpressionStatement).Expression.EndLocation };
 			t = LooseResolution.ResolveTypeLoosely(ed, out attempt, out sr) as DSymbol;
 
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
-			Assert.IsInstanceOfType(t.Definition, typeof(DVariable));
+			Assert.IsInstanceOf<MemberSymbol>(t);
+			Assert.IsInstanceOf<DVariable>(t.Definition);
 			Assert.AreEqual(LooseResolution.NodeResolutionAttempt.RawSymbolLookup, attempt);
 
 
 			ed = new EditorData { SyntaxTree = A, ParseCache = pcw, CaretLocation = (S(x, 2) as ExpressionStatement).Expression.EndLocation };
 			t = LooseResolution.ResolveTypeLoosely(ed, out attempt, out sr) as DSymbol;
 
-			Assert.IsInstanceOfType(t, typeof(ClassType));
+			Assert.IsInstanceOf<ClassType>(t);
 			Assert.AreEqual(LooseResolution.NodeResolutionAttempt.RawSymbolLookup, attempt);
 
 
 			ed = new EditorData { SyntaxTree = A, ParseCache = pcw, CaretLocation = (S(x, 1) as ExpressionStatement).Expression.EndLocation };
 			t = LooseResolution.ResolveTypeLoosely(ed, out attempt, out sr) as DSymbol;
 
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
-			Assert.IsInstanceOfType(t.Definition, typeof(DMethod));
+			Assert.IsInstanceOf<MemberSymbol>(t);
+			Assert.IsInstanceOf<DMethod>(t.Definition);
 			Assert.AreEqual(LooseResolution.NodeResolutionAttempt.RawSymbolLookup, attempt);
 
 
 			ed = new EditorData { SyntaxTree = A, ParseCache = pcw, CaretLocation = (S(x, 0) as ExpressionStatement).Expression.EndLocation };
 			t = LooseResolution.ResolveTypeLoosely(ed, out attempt, out sr) as DSymbol;
 
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
-			Assert.IsInstanceOfType(t.Definition, typeof(DMethod));
+			Assert.IsInstanceOf<MemberSymbol>(t);
+			Assert.IsInstanceOf<DMethod>(t.Definition);
 			Assert.AreEqual(LooseResolution.NodeResolutionAttempt.RawSymbolLookup, attempt);
 		}
 	}

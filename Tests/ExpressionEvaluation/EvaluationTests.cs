@@ -6,12 +6,12 @@ using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 using Tests.Resolution;
 
 namespace Tests.ExpressionEvaluation
 {
-	[TestClass]
+	[TestFixture]
 	public class EvaluationTests
 	{
 		static ISymbolValue E(string expression, ResolutionContext ctxt = null)
@@ -35,7 +35,7 @@ namespace Tests.ExpressionEvaluation
 		{
 			var v = E(literalCode);
 
-			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
+			Assert.IsInstanceOf<PrimitiveValue>(v);
 			return (PrimitiveValue)v;
 		}
 
@@ -59,21 +59,21 @@ namespace Tests.ExpressionEvaluation
 
 			var x = DParser.ParseExpression(literal);
 
-			Assert.IsInstanceOfType(x, typeof(StringLiteralExpression));
+			Assert.IsInstanceOf<StringLiteralExpression>(x);
 			var id = (StringLiteralExpression)x;
 
 			var v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.IsInstanceOfType(v, typeof(ArrayValue));
+			Assert.IsInstanceOf<ArrayValue>(v);
 			var av = (ArrayValue)v;
 			Assert.IsTrue(av.IsString);
 
 			Assert.AreEqual(av.StringValue, content);
 
-			Assert.IsInstanceOfType(av.RepresentedType, typeof(ArrayType));
+			Assert.IsInstanceOf<ArrayType>(av.RepresentedType);
 			var ar = (ArrayType)av.RepresentedType;
 
-			Assert.IsInstanceOfType(ar.ValueType, typeof(PrimitiveType));
+			Assert.IsInstanceOf<PrimitiveType>(ar.ValueType);
 			var pt = ar.ValueType as PrimitiveType;
 			Assert.IsTrue (pt.HasModifier (DTokens.Immutable));
 
@@ -106,18 +106,18 @@ namespace Tests.ExpressionEvaluation
 				Assert.AreEqual(0M, pv.Value, literal + " must be false");
 		}
 
-		[TestMethod]
+		[Test]
 		public void Test2_066UCSnytax()
 		{
 			var x = DParser.ParseExpression("short(3)");
 			var v = Evaluation.EvaluateValue(x, ResolutionTestHelper.CreateDefCtxt(""));
 
-			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
+			Assert.IsInstanceOf<PrimitiveValue>(v);
 			Assert.AreEqual(DTokens.Short, ((PrimitiveValue) v).BaseTypeToken);
 			Assert.AreEqual(3m, ((PrimitiveValue) v).Value);
 		}
 
-		[TestMethod]
+		[Test]
 		public void TestMathOperations()
 		{
 			TestPrimitive("0", DTokens.Int, 0M);
@@ -134,7 +134,7 @@ namespace Tests.ExpressionEvaluation
 			TestPrimitive("3+5*4", DTokens.Int, 23M);
 		}
 
-		[TestMethod]
+		[Test]
 		public void TestBooleanOps()
 		{
 			TestBool("true");
@@ -197,7 +197,7 @@ namespace Tests.ExpressionEvaluation
 			TestBool("\"def\" != \"abc\"");
 		}
 
-		[TestMethod]
+		[Test]
 		public void TestPrimitives()
 		{
 			TestPrimitive("1", DTokens.Int, 1M);
@@ -222,27 +222,27 @@ namespace Tests.ExpressionEvaluation
 			var ex = DParser.ParseExpression("['a','s','d','f']");
 			var v = Evaluation.EvaluateValue(ex, ctxt);
 
-			Assert.IsInstanceOfType(v, typeof(ArrayValue));
+			Assert.IsInstanceOf<ArrayValue>(v);
 			var ar = (ArrayValue)v;
 			Assert.AreEqual(ar.Elements.Length, 4);
 
 			foreach (var ev in ar.Elements)
-				Assert.IsInstanceOfType(ev, typeof(PrimitiveValue));
+				Assert.IsInstanceOf<PrimitiveValue>(ev);
 
 
 			ex = DParser.ParseExpression("[\"KeyA\":12, \"KeyB\":33, \"KeyC\":44]");
 			v = Evaluation.EvaluateValue(ex, ctxt);
 
-			Assert.IsInstanceOfType(v, typeof(AssociativeArrayValue));
+			Assert.IsInstanceOf<AssociativeArrayValue>(v);
 			var aa = (AssociativeArrayValue)v;
 			Assert.AreEqual(aa.Elements.Count, 3);
 
 			ex = DParser.ParseExpression("(a,b) => a+b");
 			v = Evaluation.EvaluateValue(ex, ctxt);
-			Assert.IsInstanceOfType(v, typeof(DelegateValue));
+			Assert.IsInstanceOf<DelegateValue>(v);
 		}
 
-		[TestMethod]
+		[Test]
 		public void TestConstEval()
 		{
 			var ctxt = ResolutionTestHelper.CreateDefCtxt(@"module modA;
@@ -264,7 +264,7 @@ enum int d=126;
 		{
 			var v = E(expression, ctxt);
 
-			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
+			Assert.IsInstanceOf<PrimitiveValue>(v);
 			var pv = (PrimitiveValue)v;
 			Assert.AreEqual(pv.Value, targetValue);
 		}
@@ -274,45 +274,45 @@ enum int d=126;
 			var v = E(expression, ctxt, out var variableValue);
 
 			Assert.IsNotNull(variableValue);
-			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
+			Assert.IsInstanceOf<PrimitiveValue>(v);
 			var pv = (PrimitiveValue)v;
 			Assert.AreEqual(pv.Value, targetValue);
 		}
 
-		[TestMethod]
+		[Test]
 		public void TestArrays()
 		{
 			var v = E("[11,22,33,43][1]");
-			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
+			Assert.IsInstanceOf<PrimitiveValue>(v);
 			Assert.AreEqual(((PrimitiveValue)v).Value, 22);
 
 			v = E("[11,22,33,44,55,66,77,88,99,100][1..3]");
 
-			Assert.IsInstanceOfType(v, typeof(ArrayValue));
+			Assert.IsInstanceOf<ArrayValue>(v);
 			var av=(ArrayValue)v;
 			Assert.AreEqual(av.Elements.Length,2);
 			Assert.AreEqual((av.Elements[0] as PrimitiveValue).Value,22);
 		}
 
-		[TestMethod]
+		[Test]
 		public void TestStringAccess()
 		{
 			var v = E("\"asdf\"[1]");
-			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
+			Assert.IsInstanceOf<PrimitiveValue>(v);
 			Assert.AreEqual(((PrimitiveValue)v).Value, (decimal)'s');
 		}
 
-		[TestMethod]
+		[Test]
 		public void TestStringAccess2()
 		{
 			var ctxt = ResolutionTestHelper.CreateDefCtxt("module A; enum stringConstant = \"asdf\";");
 
 			var v = E("stringConstant[1]", ctxt);
-			Assert.IsInstanceOfType(v, typeof(PrimitiveValue), v?.ToCode());
+			Assert.IsInstanceOf<PrimitiveValue>(v, v?.ToCode());
 			Assert.AreEqual(((PrimitiveValue)v).Value, (decimal)'s');
 		}
 
-		[TestMethod]
+		[Test]
 		public void TestAccessExpression()
 		{
 			var ctxt = ResolutionTests.CreateDefCtxt(@"module modA;
@@ -325,20 +325,20 @@ class A
 A a;");
 			/*
 			var v = E("a.someProp", vp);
-			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
+			Assert.IsInstanceOf<PrimitiveValue>(v);
 			Assert.AreEqual(((PrimitiveValue)v).Value,3);
 			*/
 			var v = E("A.someProp", ctxt, out var variableValue);
 			Assert.IsNotNull(variableValue);
-			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
+			Assert.IsInstanceOf<PrimitiveValue>(v);
 			Assert.AreEqual(((PrimitiveValue)v).Value, 3M);
 		}
 
-		[TestMethod]
+		[Test]
 		public void TestCastExpression1()
 		{
 			var v = E ("cast(ubyte) 20");
-			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
+			Assert.IsInstanceOf<PrimitiveValue>(v);
 			Assert.AreEqual(DTokens.Ubyte, (v as PrimitiveValue).BaseTypeToken);
 			Assert.AreEqual(20M, (v as PrimitiveValue).Value);
 		}
@@ -347,13 +347,13 @@ A a;");
 		{
 			var v = E("is("+IsExpressionCode+")", ctxt);
 
-			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
+			Assert.IsInstanceOf<PrimitiveValue>(v);
 			var pv = (PrimitiveValue)v;
 			Assert.AreEqual(pv.BaseTypeToken, DTokens.Bool, "Type of 'is(" + IsExpressionCode + ")' result must be bool");
 			return pv.Value == 1M;
 		}
 
-		[TestMethod]
+		[Test]
 		public void TestIsExpression()
 		{
 			var ctxt = ResolutionTestHelper.CreateDefCtxt(@"module modA;
@@ -391,7 +391,7 @@ template isDynArg(T) {
 			Assert.IsFalse(EvalIsExpression("typeof(D)", ctxt));
 		}
 
-		[TestMethod]
+		[Test]
 		public void IsExpressionAlias()
 		{
 			var ctxt = ResolutionTests.CreateCtxt("A", @"module A;
@@ -410,21 +410,21 @@ U derp;
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			ds = t as DSymbol;
 
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
-			Assert.IsInstanceOfType(ds.Base, typeof(TemplateParameterSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
+			Assert.IsInstanceOf<TemplateParameterSymbol>(ds.Base);
 			ds = ds.Base as DSymbol;
-			Assert.IsInstanceOfType(ds.Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<PrimitiveType>(ds.Base);
 			Assert.IsTrue(!(ds.Base as PrimitiveType).HasModifiers);
 
 			ctxt.CurrentContext.DeducedTemplateParameters.Clear();
 
 			var dv = ctxt.MainPackage()["A"]["derp"].First() as DVariable;
 			t = TypeDeclarationResolver.HandleNodeMatch(dv, ctxt);
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
 			Assert.IsNull((t as MemberSymbol).Base);
 		}
 
-		[TestMethod]
+		[Test]
 		public void IsExpressionAlias_InMethod()
 		{
 			var ctxt = ResolutionTests.CreateCtxt("A", @"module A;
@@ -463,14 +463,14 @@ post;
 				t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			ds = t as DSymbol;
 
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
-			Assert.IsInstanceOfType(ds.Base, typeof(TemplateParameterSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
+			Assert.IsInstanceOf<TemplateParameterSymbol>(ds.Base);
 			ds = ds.Base as DSymbol;
-			Assert.IsInstanceOfType(ds.Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<PrimitiveType>(ds.Base);
 			Assert.IsTrue(!(ds.Base as PrimitiveType).HasModifiers);
 		}
 
-		[TestMethod]
+		[Test]
 		public void IsExpressionVector()
 		{
 			var ctxt = ResolutionTests.CreateCtxt("A", @"module A;
@@ -488,19 +488,19 @@ static if(is(int4 == __vector) {} else { enum int4_isvector = false; }
 			x = DParser.ParseExpression("float4_isvector");
 			(x as IdentifierExpression).Location = new CodeLocation(2, 3);
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
 			v = Evaluation.EvaluateValue(x, ctxt);
-			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
+			Assert.IsInstanceOf<PrimitiveValue>(v);
 			Assert.AreEqual(1m, (v as PrimitiveValue).Value);
 
 			x = DParser.ParseExpression("int4_isvector");
 			(x as IdentifierExpression).Location = new CodeLocation(2, 3);
 			v = Evaluation.EvaluateValue(x, ctxt);
-			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
+			Assert.IsInstanceOf<PrimitiveValue>(v);
 			Assert.AreEqual(0m, (v as PrimitiveValue).Value);
 		}
 
-		[TestMethod]
+		[Test]
 		public void HashingTests()
 		{
 			testHash ("2","-2",true);
@@ -527,7 +527,7 @@ static if(is(int4 == __vector) {} else { enum int4_isvector = false; }
 			}
 		}
 
-		[TestMethod]
+		[Test]
 		public void HashingTest1()
 		{
 			var hashVis = D_Parser.Dom.Visitors.AstElementHashingVisitor.Instance;
@@ -537,7 +537,7 @@ static if(is(int4 == __vector) {} else { enum int4_isvector = false; }
 			Assert.AreNotEqual(v2.Accept(hashVis), v1.Accept(hashVis));
 		}
 
-		[TestMethod]
+		[Test]
 		public void AliasedTypeTuple()
 		{
 			var ctxt = ResolutionTests.CreateDefCtxt (@"module A;
@@ -558,28 +558,28 @@ template isIntOrFloat(T)
 
 			x = DParser.ParseExpression ("Tup[2]");
 			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
-			Assert.IsInstanceOfType(t, typeof(ArrayType));
+			Assert.IsInstanceOf<ArrayType>(t);
 
 			x = DParser.ParseExpression ("isIntOrFloat!(Tup[2])");
 			v = Evaluation.EvaluateValue (x, ctxt);
-			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
+			Assert.IsInstanceOf<PrimitiveValue>(v);
 			Assert.AreEqual(0m, (v as PrimitiveValue).Value);
 
 			x = DParser.ParseExpression ("Tup[0]");
 			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
-			Assert.IsInstanceOfType(t, typeof(PrimitiveType));
+			Assert.IsInstanceOf<PrimitiveType>(t);
 
 			x = DParser.ParseExpression ("Tup[1]");
 			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
-			Assert.IsInstanceOfType(t, typeof(PrimitiveType));
+			Assert.IsInstanceOf<PrimitiveType>(t);
 
 			x = DParser.ParseExpression ("isIntOrFloat!(Tup[0])");
 			v = Evaluation.EvaluateValue (x, ctxt);
-			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
+			Assert.IsInstanceOf<PrimitiveValue>(v);
 			Assert.AreNotEqual(0m, (v as PrimitiveValue).Value);
 		}
 
-		[TestMethod] 
+		[Test] 
 		public void EponymousTemplates()
 		{
 			var ctxt = ResolutionTests.CreateDefCtxt (@"module B;
@@ -594,45 +594,45 @@ enum isIntOrFloat(F) = is(F == int) || is(F == float);
 
 			x = DParser.ParseExpression ("isIntOrFloat!(Tup[0])");
 			v = Evaluation.EvaluateValue (x, ctxt);
-			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
+			Assert.IsInstanceOf<PrimitiveValue>(v);
 			Assert.AreNotEqual(0m, (v as PrimitiveValue).Value);
 
 			DToken tk;
 			var td = DParser.ParseBasicType ("Tuple!(int, float, string)", out tk);
 			//t = TypeDeclarationResolver.ResolveSingle (td, ctxt);
-			//Assert.IsInstanceOfType(t, typeof(MemberSymbol));
-			//Assert.IsInstanceOfType((t as MemberSymbol).Base, typeof(DTuple));
+			//Assert.IsInstanceOf<MemberSymbol>(t);
+			//Assert.IsInstanceOf<DTuple>((t as MemberSymbol).Base);
 
 			x = DParser.ParseExpression ("Tup[0]");
 			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
-			Assert.IsInstanceOfType(t, typeof(PrimitiveType));
+			Assert.IsInstanceOf<PrimitiveType>(t);
 
 			x = DParser.ParseExpression ("Tup[1]");
 			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
-			Assert.IsInstanceOfType(t, typeof(PrimitiveType));
+			Assert.IsInstanceOf<PrimitiveType>(t);
 
 			x = DParser.ParseExpression ("Tup[2]");
 			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
-			Assert.IsInstanceOfType(t, typeof(ArrayType));
+			Assert.IsInstanceOf<ArrayType>(t);
 
 
 			x = DParser.ParseExpression ("isIntOrFloat!int");
 			v = Evaluation.EvaluateValue (x, ctxt);
-			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
+			Assert.IsInstanceOf<PrimitiveValue>(v);
 			Assert.AreNotEqual(0m, (v as PrimitiveValue).Value);
 
 			x = DParser.ParseExpression ("isIntOrFloat!float");
 			v = Evaluation.EvaluateValue (x, ctxt);
-			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
+			Assert.IsInstanceOf<PrimitiveValue>(v);
 			Assert.AreNotEqual(0m, (v as PrimitiveValue).Value);
 
 			x = DParser.ParseExpression ("isIntOrFloat!string");
 			v = Evaluation.EvaluateValue (x, ctxt);
-			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
+			Assert.IsInstanceOf<PrimitiveValue>(v);
 			Assert.AreEqual(0m, (v as PrimitiveValue).Value);
 		}
 
-		[TestMethod]
+		[Test]
 		public void PtrStaticProp()
 		{
 			var ctxt = ResolutionTestHelper.CreateCtxt("A", @"module A; ubyte[] arr;");
@@ -642,39 +642,39 @@ enum isIntOrFloat(F) = is(F == int) || is(F == float);
 
 			x = DParser.ParseExpression("arr.ptr");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.IsInstanceOfType(t, typeof(StaticProperty));
+			Assert.IsInstanceOf<StaticProperty>(t);
 			t = (t as StaticProperty).Base;
-			Assert.IsInstanceOfType(t, typeof(PointerType));
-			Assert.IsInstanceOfType((t as PointerType).Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<PointerType>(t);
+			Assert.IsInstanceOf<PrimitiveType>((t as PointerType).Base);
 		}
 
-		[TestMethod]
+		[Test]
 		public void ResolveStringAndToString()
 		{
 			var pcl = ResolutionTestHelper.CreateCache(out DModule modA, @"module modA;");
 			var ctxt = ResolutionTestHelper.CreateDefCtxt(pcl, modA);
 
 			var ts = ResolutionTestHelper.RS("string", ctxt);
-			Assert.IsInstanceOfType(ts, typeof(ArrayType));
+			Assert.IsInstanceOf<ArrayType>(ts);
 
 			var x = DParser.ParseExpression(@"(new Object).toString()");
 			var t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.IsInstanceOfType(t, typeof(ArrayType));
+			Assert.IsInstanceOf<ArrayType>(t);
 		}
 
-		[TestMethod]
+		[Test]
 		public void ImplicitIntToCharConversion()
 		{
 			var x = DParser.ParseExpression("`a` ~ 97");
 			var v = Evaluation.EvaluateValue(x, ResolutionTestHelper.CreateDefCtxt("module A;"));
 
-			Assert.IsInstanceOfType(v, typeof(ArrayValue));
+			Assert.IsInstanceOf<ArrayValue>(v);
 			var av = v as ArrayValue;
 			Assert.IsTrue(av.IsString);
 			Assert.AreEqual("aa", av.StringValue);
 		}
 
-		[TestMethod]
+		[Test]
 		public void StaticProperty_TupleofStringof()
 		{
 			var ctxt = ResolutionTestHelper.CreateDefCtxt(@"module A;
@@ -686,7 +686,7 @@ alias AL2 = T1!AL1;");
 
 			{
 				var v = E("S1.tupleof.stringof", ctxt);
-				Assert.IsInstanceOfType(v, typeof(ArrayValue));
+				Assert.IsInstanceOf<ArrayValue>(v);
 				var arrayValue = v as ArrayValue;
 				Assert.IsTrue(arrayValue.IsString);
 				Assert.AreEqual("tuple(a, b)", arrayValue.StringValue);
@@ -694,7 +694,7 @@ alias AL2 = T1!AL1;");
 
 			{
 				var v = E("C1.tupleof.stringof", ctxt);
-				Assert.IsInstanceOfType(v, typeof(ArrayValue));
+				Assert.IsInstanceOf<ArrayValue>(v);
 				var arrayValue = v as ArrayValue;
 				Assert.IsTrue(arrayValue.IsString);
 				Assert.AreEqual("tuple(s)", arrayValue.StringValue);
@@ -702,7 +702,7 @@ alias AL2 = T1!AL1;");
 
 			{
 				var v = E("AL1.stringof", ctxt);
-				Assert.IsInstanceOfType(v, typeof(ArrayValue));
+				Assert.IsInstanceOf<ArrayValue>(v);
 				var arrayValue = v as ArrayValue;
 				Assert.IsTrue(arrayValue.IsString);
 				Assert.AreEqual("T1!(int)", arrayValue.StringValue);
@@ -710,14 +710,14 @@ alias AL2 = T1!AL1;");
 
 			{
 				var v = E("AL2.stringof", ctxt);
-				Assert.IsInstanceOfType(v, typeof(ArrayValue));
+				Assert.IsInstanceOf<ArrayValue>(v);
 				var arrayValue = v as ArrayValue;
 				Assert.IsTrue(arrayValue.IsString);
 				Assert.AreEqual("T1!(T1!(int))", arrayValue.StringValue);
 			}
 		}
 
-		[TestMethod]
+		[Test]
 		[Ignore("TODO")]
 		public void StaticProperty_AlignOf()
 		{
@@ -728,7 +728,7 @@ enum align_of = TemplateParam.alignof;
 B!int b;");
 			var x = DParser.ParseExpression("b.align_of");
 			var v = Evaluation.EvaluateValue(x, ctxt);
-			Assert.IsInstanceOfType(v, typeof(PrimitiveValue));
+			Assert.IsInstanceOf<PrimitiveValue>(v);
 			var pv = v as PrimitiveValue;
 			Assert.AreEqual(4m, pv.Value);
 		}
@@ -736,7 +736,7 @@ B!int b;");
 		/// <summary>
 		/// https://dlang.org/spec/enum.html#named_enums
 		/// </summary>
-		[TestClass]
+		[TestFixture]
 		public class EnumValueInitializers
 		{
 			private const string enumSampleCode = @"module A;
@@ -750,7 +750,7 @@ enum
     E11 = 11,
 }";
 
-			[TestMethod]
+			[Test]
 			public void EnumValueInitializerDefaults_AssumeFirstValue()
 			{
 				var ctxt = ResolutionTestHelper.CreateDefCtxt(enumSampleCode);
@@ -758,13 +758,13 @@ enum
 				var x = DParser.ParseExpression("E0");
 				var v = Evaluation.EvaluateValue(x, ctxt);
 
-				Assert.IsInstanceOfType(v, typeof(PrimitiveValue), v?.ToString());
+				Assert.IsInstanceOf<PrimitiveValue>(v, v?.ToString());
 				var pv = v as PrimitiveValue;
 				Assert.AreEqual(DTokens.Int, pv.BaseTypeToken);
 				Assert.AreEqual(0m, pv.Value);
 			}
 
-			[TestMethod]
+			[Test]
 			public void EnumValueInitializerDefaults_AssumeMissingInBetweenValue()
 			{
 				var ctxt = ResolutionTestHelper.CreateDefCtxt(enumSampleCode);
@@ -772,13 +772,13 @@ enum
 				var x = DParser.ParseExpression("E8");
 				var v = Evaluation.EvaluateValue(x, ctxt);
 
-				Assert.IsInstanceOfType(v, typeof(PrimitiveValue), v?.ToString());
+				Assert.IsInstanceOf<PrimitiveValue>(v, v?.ToString());
 				var pv = v as PrimitiveValue;
 				Assert.AreEqual(DTokens.Int, pv.BaseTypeToken);
 				Assert.AreEqual(8m, pv.Value);
 			}
 
-			[TestMethod]
+			[Test]
 			public void EnumValueInitializerDefaults_AssumeMissingInBetweenValue2()
 			{
 				var ctxt = ResolutionTestHelper.CreateDefCtxt(enumSampleCode);
@@ -786,13 +786,13 @@ enum
 				var x = DParser.ParseExpression("E8_5");
 				var v = Evaluation.EvaluateValue(x, ctxt);
 
-				Assert.IsInstanceOfType(v, typeof(PrimitiveValue), v?.ToString());
+				Assert.IsInstanceOf<PrimitiveValue>(v, v?.ToString());
 				var pv = v as PrimitiveValue;
 				Assert.AreEqual(DTokens.Int, pv.BaseTypeToken);
 				Assert.AreEqual(9m, pv.Value);
 			}
 
-			[TestMethod]
+			[Test]
 			public void EnumValueInitializerDefaults_RegularInitializer()
 			{
 				var ctxt = ResolutionTestHelper.CreateDefCtxt(enumSampleCode);
@@ -800,13 +800,13 @@ enum
 				var x = DParser.ParseExpression("E9");
 				var v = Evaluation.EvaluateValue(x, ctxt);
 
-				Assert.IsInstanceOfType(v, typeof(PrimitiveValue), v?.ToString());
+				Assert.IsInstanceOf<PrimitiveValue>(v, v?.ToString());
 				var pv = v as PrimitiveValue;
 				Assert.AreEqual(DTokens.Int, pv.BaseTypeToken);
 				Assert.AreEqual(9m, pv.Value);
 			}
 
-			[TestMethod]
+			[Test]
 			public void EnumValueInitializerDefaults_RegularInitializer2()
 			{
 				var ctxt = ResolutionTestHelper.CreateDefCtxt(@"module A;
@@ -819,7 +819,7 @@ E2
 				var x = DParser.ParseExpression("E2");
 				var v = Evaluation.EvaluateValue(x, ctxt);
 
-				Assert.IsInstanceOfType(v, typeof(PrimitiveValue), v?.ToString());
+				Assert.IsInstanceOf<PrimitiveValue>(v, v?.ToString());
 				var pv = v as PrimitiveValue;
 				Assert.AreEqual(DTokens.Int, pv.BaseTypeToken);
 				Assert.AreEqual(2m, pv.Value);

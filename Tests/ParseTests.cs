@@ -13,24 +13,24 @@ using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 
 namespace Tests
 {
-	[TestClass]
+	[TestFixture]
 	public class ParseTests
 	{
-		[TestMethod]
+		[Test]
 		public void RealLiterals()
 		{
 			var e = DParser.ParseExpression("0x1.921fb54442d18469898cc51701b84p+1L");
 			
-			Assert.IsInstanceOfType(e, typeof(ScalarConstantExpression));
+			Assert.IsInstanceOf<ScalarConstantExpression>(e);
 			var id = e as ScalarConstantExpression;
 			Assert.IsTrue(Math.Abs((decimal)id.Value - (decimal)Math.PI) < 0.1M);
 		}
 		
-		[TestMethod]
+		[Test]
 		public void ParseEscapeLiterals()
 		{
 			var e = DParser.ParseExpression(@"`a`\n""lolol""");
@@ -38,28 +38,28 @@ namespace Tests
 			Assert.AreEqual("a\nlolol", (e as StringLiteralExpression).Value);
 		}
 
-		[TestMethod]
+		[Test]
 		public void ParseEmptyCharLiteral()
 		{
 			var e = DParser.ParseExpression("['': false, '&': true, '=': true]");
 
-			Assert.IsInstanceOfType(e, typeof(AssocArrayExpression));
+			Assert.IsInstanceOf<AssocArrayExpression>(e);
 			var aa = (AssocArrayExpression)e;
 
 			Assert.AreEqual(3, aa.Elements.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void RefOnlyMethodDecl()
 		{
 			var mod = DParser.ParseString(@"ref foo(auto const ref char c) {}");
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 			var dm = mod ["foo"].First () as DMethod;
-			Assert.IsInstanceOfType(dm, typeof(DMethod));
+			Assert.IsInstanceOf<DMethod>(dm);
 			Assert.AreEqual("c", dm.Parameters [0].Name);
 		}
 
-		[TestMethod]
+		[Test]
 		public void CharLiteralBug()
 		{
 			string code = "'@@'";
@@ -73,7 +73,7 @@ namespace Tests
 			Assert.AreEqual(LiteralFormat.CharLiteral, lex.LookAhead.LiteralFormat);
 		}
 
-		[TestMethod]
+		[Test]
 		public void Unicode1()
 		{
 			var lex = new Lexer (new StringReader ("'ߞ'"));
@@ -83,7 +83,7 @@ namespace Tests
 			Assert.AreEqual(0, lex.LexerErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void Unicode2()
 		{
 			var lex = new Lexer(new StringReader("'😃'")); // 3 byte UTF8, not single word UTF16
@@ -96,7 +96,7 @@ namespace Tests
 			Assert.AreEqual("😃", lex.LookAhead.ToString());
 		}
 
-		[TestMethod]
+		[Test]
 		public void TestSyntaxError4()
 		{
 			var mod = DParser.ParseString (@"module A;
@@ -108,7 +108,7 @@ class A {
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void TestSyntaxError5()
 		{
 			var mod = DParser.ParseString (@"module A;
@@ -120,7 +120,7 @@ void main(){
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void TestSyntaxError6()
 		{
 			var mod = DParser.ParseString(@"module A;
@@ -131,7 +131,7 @@ void main(){
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void TestSyntaxError7()
 		{
 			var mod = DParser.ParseString(@"module A;
@@ -140,14 +140,14 @@ auto sourceCode = q{~this(){}}c;
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void TestSyntaxError8()
 		{
 			var mod = DParser.ParseString(@"static if (is(__traits(parent, A) : __traits(parent, B))) {}");
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void TestSyntaxError3()
 		{
 			DModule mod;
@@ -168,7 +168,7 @@ auto sourceCode = q{~this(){}}c;
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void TestIsVector()
 		{
 			var mod = DParser.ParseString(@"alias T = int; static if (is(T == __vector) ) {}");
@@ -178,14 +178,14 @@ auto sourceCode = q{~this(){}}c;
 			Assert.AreEqual(0, mod2.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void TestAsmStorageClasses()
 		{
 			var mod = DParser.ParseString (@"void foo() {  asm @nogc nothrow { naked; } }");
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void TestAsmOperands()
 		{
 			var mod = DParser.ParseString (@"int foo(int x, int y)
@@ -209,7 +209,7 @@ mov y, EAX + 1;
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void TestStaticIfElseSyntaxError()
 		{
 			var mod = DParser.ParseString (@"
@@ -237,7 +237,7 @@ else
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void TestSyntaxError1()
 		{
 			DModule mod;
@@ -289,10 +289,10 @@ static assert(is(E11554 == enum));
 void bar();");
 
 			Assert.AreEqual(2, mod.Children.Count);
-            Assert.IsInstanceOfType(mod["bar"].First(), typeof(DMethod));
+            Assert.IsInstanceOf<DMethod>(mod["bar"].First());
 		}
 
-		[TestMethod]
+		[Test]
 		public void Test2_066UCSnytax()
 		{
 			var s = "auto b = creal(3+4i);";
@@ -301,7 +301,7 @@ void bar();");
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void NestedLambdas()
 		{
 			var s = @"module A;
@@ -320,7 +320,7 @@ return false;
 			Assert.AreEqual(1, foo.Children.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void TokenStrings()
 		{
 			var s = @"auto ss = q""[<?xml version=""1.0""?>
@@ -330,7 +330,7 @@ return false;
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void SyntaxError_Issue188()
 		{
 			var s = @"
@@ -341,7 +341,7 @@ ref myclass mufunc () return  { }";
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void SyntaxError_Issue186()
 		{
 			var s = @"
@@ -400,7 +400,7 @@ struct B12146
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void SyntaxError_Issue185()
 		{
 			var s = "alias Dg13832 = ref int delegate();";
@@ -409,7 +409,7 @@ struct B12146
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-        [TestMethod]
+        [Test]
         public void SyntaxError_Issue175()
         {
             var s = @"void test4()
@@ -432,7 +432,7 @@ struct B12146
             Assert.AreEqual(0, mod.ParseErrors.Count);
         }
 
-		[TestMethod]
+		[Test]
 		public void SyntaxError_Issue178()
 		{
 			var s = "static assert(!__traits(compiles, v1 * v2));";
@@ -441,7 +441,7 @@ struct B12146
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void SyntaxError_Issue177()
 		{
 			var s = @"static assert( s1[20..30, 10]           == tuple("" []"", [0, 20, 30], 10));
@@ -457,7 +457,7 @@ static assert((s1[10, 10..$, $-4, $..2]-=""x"") == tuple(""[]-="", ""x"", 10, [1
             Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-        [TestMethod]
+        [Test]
         public void SyntaxError_Issue173()
         {
             var s = @"typeof(s).Foo j;";
@@ -466,7 +466,7 @@ static assert((s1[10, 10..$, $-4, $..2]-=""x"") == tuple(""[]-="", ""x"", 10, [1
             Assert.AreEqual(0, mod.ParseErrors.Count);
         }
 
-        [TestMethod]
+        [Test]
         public void SyntaxError_Issue172()
         {
             var s = @"
@@ -480,7 +480,7 @@ static assert(!__traits(compiles,    shared Nullable1([1,2,3].idup)));
             Assert.AreEqual(0, mod.ParseErrors.Count);
         }
 
-        [TestMethod]
+        [Test]
         public void SyntaxError_Issue171()
         {
             var s = @"
@@ -496,7 +496,7 @@ assert(s == ""{foo}\""}\"""");
             Assert.AreEqual(0, mod.ParseErrors.Count);
         }
 
-		[TestMethod]
+		[Test]
 		public void SyntaxError_Issue169()
 		{
 			var s = @"
@@ -511,7 +511,7 @@ void test52()
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void SyntaxError_Issue168()
 		{
 			var s = @"
@@ -543,7 +543,7 @@ void test7()
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void SyntaxError_Issue166()
 		{
 			var s = "mixin .mix;";
@@ -552,7 +552,7 @@ void test7()
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void SyntaxError_Issue165()
 		{
 			var s = @"void test56()
@@ -570,7 +570,7 @@ void test7()
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void SyntaxError_Issue164()
 		{
 			var s = @"// bug 6584
@@ -581,7 +581,7 @@ debug(9223372036854775807){}";
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void SyntaxError_Issue163()
 		{
 			var s = @"class B2540 : A2540
@@ -600,7 +600,7 @@ debug(9223372036854775807){}";
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void SyntaxError_Issue162()
 		{
 			var s = @"int foo19(alias int a)() { return a; }";
@@ -609,7 +609,7 @@ debug(9223372036854775807){}";
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void SyntaxError_Issue161()
 		{
 			var s = @"
@@ -626,7 +626,7 @@ mixin template node9026()
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void SyntaxError_Issue160()
 		{
 			var s = @"
@@ -661,7 +661,7 @@ static assert(!isBar5832c!(Bar5832!1234));";
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void SyntaxError_Issue159()
 		{
 			var s = @"mixin typeof(b).Def!(int);";
@@ -670,7 +670,7 @@ static assert(!isBar5832c!(Bar5832!1234));";
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void SyntaxError_Issue158()
 		{
 			var s = @"int array1[3] = [1:1,2,0:3];";
@@ -679,7 +679,7 @@ static assert(!isBar5832c!(Bar5832!1234));";
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void SyntaxError_Issue157()
 		{
 			var s = @"module protection.subpkg.explicit;
@@ -691,7 +691,7 @@ package(protection.subpkg) void samePkgFoo();";
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void SyntaxError_Issue156()
 		{
 			var s = @"deprecated(""This module will be removed in future release."")
@@ -701,7 +701,7 @@ module imports.a12567;";
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void SyntaxError_Issue156_()
 		{
 			var s = @"deprecated(""This module will be removed in future release."")
@@ -713,7 +713,7 @@ module asdf;";
 			Assert.AreEqual(mod.ParseErrors.Count, 1);
 		}
 
-		[TestMethod]
+		[Test]
 		public void SyntaxError_Issue155()
 		{
 			var s = @"static assert(cast(bool)set.isSet(fd) == cast(bool)(() @trusted => FD_ISSET(fd, fdset))());
@@ -723,7 +723,7 @@ enum dg7761 = (int a) pure => 2 * a;";
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void SyntaxError_Issue154()
 		{
 			var s = @"
@@ -735,7 +735,7 @@ auto i = a2.get;";
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void SyntaxError_Issue153()
 		{
 			var s = @"alias fnRtlAllocateHeap = extern(Windows) void* function(void* HeapHandle, uint Flags, size_t Size) nothrow;";
@@ -744,7 +744,7 @@ auto i = a2.get;";
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void TestSyntaxError2()
 		{
 			var s = "class Foo( if(is(T==float) {} class someThingElse {}";
@@ -753,7 +753,7 @@ auto i = a2.get;";
 			Assert.IsTrue(mod.ParseErrors.Count >= 1);
 		}
 
-		[TestMethod]
+		[Test]
 		public void LongNumberLiteral()
 		{
 			var mod = DParser.ParseString(@"
@@ -762,7 +762,7 @@ debug(9223372036854775807){}
 ");
 		}
 
-		[TestMethod]
+		[Test]
 		public void ObsoleteArrayNotation()
 		{
 			var mod = DParser.ParseString(@"int arr[]; int[] brr;");
@@ -773,7 +773,7 @@ debug(9223372036854775807){}
 			Assert.AreEqual(brr.Type.ToString(), arr.Type.ToString());
 		}
 
-		[TestMethod]
+		[Test]
 		public void Attributes1()
 		{
 			var n = DParser.ParseString("align(2) align int a;");
@@ -805,7 +805,7 @@ int b;");
 			Assert.AreEqual(DTokens.Private, ((Modifier)a.Attributes[0]).Token);
 		}
 
-		[TestMethod]
+		[Test]
 		public void Attributes2()
 		{
 			var m = DParser.ParseString(@"
@@ -836,10 +836,10 @@ else int C;");
 			Assert.AreEqual(2,B.Attributes.Count);
 			Assert.AreEqual(2, C.Attributes.Count);
 
-			Assert.IsInstanceOfType((m["foo"].First() as DMethod).TemplateConstraint, typeof(IsExpression));
+			Assert.IsInstanceOf<IsExpression>((m["foo"].First() as DMethod).TemplateConstraint);
 		}
 
-		[TestMethod]
+		[Test]
 		public void DeclConditionElseSection()
 		{
 			var m = DParser.ParseString (@"module A;
@@ -854,15 +854,15 @@ int b;
 
 			dn = m ["a"].First () as DNode;
 			Assert.AreEqual(1, dn.Attributes.Count);
-			Assert.IsInstanceOfType(dn.Attributes [0], typeof(VersionCondition));
+			Assert.IsInstanceOf<VersionCondition>(dn.Attributes [0]);
 
 			dn = m ["b"].First () as DNode;
 			Assert.AreEqual(1, dn.Attributes.Count);
-			Assert.IsInstanceOfType(dn.Attributes [0], typeof(NegatedDeclarationCondition));
-			Assert.IsInstanceOfType((dn.Attributes [0] as NegatedDeclarationCondition).FirstCondition, typeof(VersionCondition));
+			Assert.IsInstanceOf<NegatedDeclarationCondition>(dn.Attributes [0]);
+			Assert.IsInstanceOf<VersionCondition>((dn.Attributes [0] as NegatedDeclarationCondition).FirstCondition);
 		}
 
-		[TestMethod]
+		[Test]
 		public void Attributes3()
 		{
 			var m = DParser.ParseString (@"module A;
@@ -930,17 +930,17 @@ int ii;
 			Assert.AreEqual(0, dn.Attributes.Count);
 		}
 		
-		[TestMethod]
+		[Test]
 		public void AccessExpression1()
 		{
 			var e1 = DParser.ParseExpression("a.b!c");
 			var e2 = DParser.ParseExpression("a.b");
 			
-			Assert.IsInstanceOfType(e1, typeof(PostfixExpression_Access));
-			Assert.IsInstanceOfType(e2, typeof(PostfixExpression_Access));
+			Assert.IsInstanceOf<PostfixExpression_Access>(e1);
+			Assert.IsInstanceOf<PostfixExpression_Access>(e2);
 		}
 
-		[TestMethod]
+		[Test]
 		public void Expr1()
 		{
 			var m = DParser.ParseString(@"module A;
@@ -952,7 +952,7 @@ void main() {
 			Assert.AreEqual(0, m.ParseErrors.Count);
 		}
 		
-		//[TestMethod]
+		//[Test]
 		public void LexingPerformance()
 		{
 			var f = File.ReadAllText(Environment.OSVersion.Platform == PlatformID.Win32NT ? @"D:\D\dmd2\src\phobos\std\string.d" : "/usr/include/dlang/std/string.d");
@@ -972,7 +972,7 @@ void main() {
 			Console.WriteLine(sw.ElapsedMilliseconds);
 		}
 
-		//[TestMethod]
+		//[Test]
 		public void TestPhobos()
 		{
 			var pc = ParsePhobos();
@@ -1013,7 +1013,7 @@ void main() {
 			Trace.WriteLine(string.Format("Parsed {0} files in {1}; {2}ms/file", ppd.FileAmount, ppd.Directory, ppd.FileDuration), "ParserTests");
 		}
 
-		[TestMethod]
+		[Test]
 		public void ParsePerformance1()
 		{
 			//var pc = ParsePhobos(false);
@@ -1106,7 +1106,7 @@ void main()
 			
 		}*/
 
-		[TestMethod]
+		[Test]
 		public void DeepBlockSearch()
 		{
 			var m = DParser.ParseString(@"module modA;
@@ -1159,7 +1159,7 @@ class C
 			Assert.AreEqual("main", n.Name);
 		}
 
-		[TestMethod]
+		[Test]
 		public void StaticIf()
 		{
 			var m = DParser.ParseString(@"
@@ -1177,10 +1177,10 @@ void foo()
 			Assert.IsTrue (foo.Attributes.Count == 0);
 
 			Assert.AreEqual(1, m.StaticStatements.Count);
-			Assert.IsInstanceOfType(m.StaticStatements[0], typeof(StaticAssertStatement));
+			Assert.IsInstanceOf<StaticAssertStatement>(m.StaticStatements[0]);
 		}
 		
-		[TestMethod]
+		[Test]
 		public void AliasInitializerList()
 		{
 			var m = DParser.ParseString(@"alias str = immutable(char)[];");
@@ -1188,7 +1188,7 @@ void foo()
 			Assert.AreEqual(0, m.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void EponymousTemplates()
 		{
 			var m = DParser.ParseString(@"
@@ -1215,7 +1215,7 @@ enum
 			Assert.IsTrue(dc.TryGetTemplateParameter("T".GetHashCode(), out tp));
 		}
 
-		[TestMethod]
+		[Test]
 		/// <summary>
 		/// Since 2.064. new Server(args).run(); is allowed
 		/// </summary>
@@ -1223,11 +1223,11 @@ enum
 		{
 			var x = DParser.ParseExpression ("new Server(args).run()") as PostfixExpression;
 
-			Assert.IsInstanceOfType(x, typeof(PostfixExpression_MethodCall));
-			Assert.IsInstanceOfType((x.PostfixForeExpression as PostfixExpression_Access).PostfixForeExpression, typeof(NewExpression));
+			Assert.IsInstanceOf<PostfixExpression_MethodCall>(x);
+			Assert.IsInstanceOf<NewExpression>((x.PostfixForeExpression as PostfixExpression_Access).PostfixForeExpression);
 		}
 
-		[TestMethod]
+		[Test]
 		public void SpecialTokenSequences()
 		{
 			var m = DParser.ParseString(@"module A;
@@ -1237,7 +1237,7 @@ enum
 			Assert.AreEqual(0, m.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void MetaBlocks()
 		{
 			var dn = DParser.ParseString (@"module A;
@@ -1254,14 +1254,14 @@ int dbg;
 			Assert.AreEqual(0, dn.ParseErrors.Count);
 			Assert.AreEqual(2, dn.MetaBlocks.Count);
 
-			Assert.IsInstanceOfType(dn.MetaBlocks[0], typeof(AttributeMetaDeclarationSection));
+			Assert.IsInstanceOf<AttributeMetaDeclarationSection>(dn.MetaBlocks[0]);
 			var attr = (dn.MetaBlocks [0] as AttributeMetaDeclarationSection).AttributeOrCondition [0];
-			Assert.IsInstanceOfType(attr, typeof(Modifier));
+			Assert.IsInstanceOf<Modifier>(attr);
 			Assert.AreEqual(DTokens.Private, (attr as Modifier).Token);
 
-			Assert.IsInstanceOfType(dn.MetaBlocks[1], typeof(AttributeMetaDeclarationBlock));
+			Assert.IsInstanceOf<AttributeMetaDeclarationBlock>(dn.MetaBlocks[1]);
 			var attr2 = (dn.MetaBlocks [1] as AttributeMetaDeclarationBlock).AttributeOrCondition [0];
-			Assert.IsInstanceOfType(attr2, typeof(StaticIfCondition));
+			Assert.IsInstanceOf<StaticIfCondition>(attr2);
 
 			var aa = dn ["aa"].First () as DNode;
 			Assert.IsTrue (aa is DVariable);
@@ -1270,14 +1270,14 @@ int dbg;
 			Assert.IsTrue (aa.Attributes[0] == attr);
 
 			Assert.AreEqual(3, dn.StaticStatements.Count);
-			Assert.IsInstanceOfType(dn.StaticStatements[1], typeof(DebugSpecification));
-			Assert.IsInstanceOfType(dn.StaticStatements[2], typeof(VersionSpecification));
+			Assert.IsInstanceOf<DebugSpecification>(dn.StaticStatements[1]);
+			Assert.IsInstanceOf<VersionSpecification>(dn.StaticStatements[2]);
 			aa = dn["dbg"].First() as DNode;
 			Assert.AreEqual(1, aa.Attributes.Count);
 			Assert.AreSame(attr, aa.Attributes[0]);
 		}
 
-		[TestMethod]
+		[Test]
 		public void RelativeOffsetCalculation()
 		{
 			var code = @"asdfghij";
@@ -1291,7 +1291,7 @@ int dbg;
 			Assert.AreEqual(0, DocumentHelper.GetOffsetByRelativeLocation (code, new CodeLocation (2, 3), code.Length, new CodeLocation (1, 1)));
 		}
 
-		[TestMethod]
+		[Test]
 		public void AnonymousClassDef()
 		{
 			var code = @"{if(node.members.any!((Node n) {
@@ -1344,7 +1344,7 @@ void anonClassFoo()
 			Assert.AreEqual(0, mod.ParseErrors.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void EnumAttributes()
 		{
 			var m = DParser.ParseString(@"enum E { @disable Dis, deprecated Dep, @1234 uda }");
@@ -1374,7 +1374,7 @@ void anonClassFoo()
 			Assert.IsTrue(attr[0] is AtAttribute);
 		}
 
-		[TestMethod]
+		[Test]
 		public void ParameterUDA()
 		{
 			var m = DParser.ParseString(@"void example(@(22) string param) {}");
@@ -1391,7 +1391,7 @@ void anonClassFoo()
 			Assert.IsTrue(attr[0] is AtAttribute);
 		}
 
-		[TestMethod]
+		[Test]
 		public void ParseContracts()
 		{
 			var m = DParser.ParseString(@"module A;
@@ -1418,7 +1418,7 @@ do
 
 		#region DDoc
 
-		[TestMethod]
+		[Test]
 		public void DDocMacros()
 		{
 			var frstParam = "a\"s\"";

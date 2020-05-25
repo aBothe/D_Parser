@@ -4,14 +4,14 @@ using System.Linq;
 using D_Parser.Dom;
 using D_Parser.Misc;
 using D_Parser.Parser;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 
 namespace Tests.Misc
 {
-	[TestClass]
+	[TestFixture]
 	public class GlobalParseCacheTests
 	{
-		[TestMethod]
+		[Test]
 		public void ParseDirectory()
 		{
 			var tempDirectory = Path.Combine(Path.GetTempPath(), "dparser_test");
@@ -43,7 +43,7 @@ namespace Tests.Misc
 			}
 		}
 
-		[TestMethod]
+		[Test]
 		public void ParseDirectory_UpdateManually()
 		{
 			var tempDirectory = Path.Combine(Path.GetTempPath(), "dparser_test");
@@ -74,7 +74,7 @@ namespace Tests.Misc
 			}
 		}
 
-		[TestMethod]
+		[Test]
 		public void ParseEmptyDirectoryList()
 		{
 			int callbackInvokeCount = 0;
@@ -84,7 +84,7 @@ namespace Tests.Misc
 			Assert.AreEqual(1, callbackInvokeCount);
 		}
 
-		[TestMethod]
+		[Test]
 		public void PackageModuleEnumeration()
 		{
 			var tempDirectory = Path.Combine(Path.GetTempPath(), "dparser_test");
@@ -107,7 +107,7 @@ namespace Tests.Misc
 
 				var packages = GlobalParseCache.EnumPackagesRecursively(true, tempDirectory);
 				Assert.AreEqual(2, packages.Count);
-				Assert.IsInstanceOfType(packages[0], typeof(RootPackage));
+				Assert.IsInstanceOf<RootPackage>(packages[0]);
 				Assert.AreEqual("sub", packages[1].Name);
 
 				{

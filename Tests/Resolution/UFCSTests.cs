@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using NUnit.Framework;
 using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Dom.Expressions;
@@ -6,10 +6,10 @@ using D_Parser.Resolver.ExpressionSemantics;
 
 namespace Tests
 {
-	[TestClass]
+	[TestFixture]
 	public class UFCSTests
 	{
-		[TestMethod]
+		[Test]
 		public void BasicResolution()
 		{
 			var ctxt = ResolutionTestHelper.CreateCtxt("modA",@"module modA;
@@ -25,19 +25,19 @@ int globI;
 
 			x = DParser.ParseExpression ("globStr.foo()");
 			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
-			Assert.IsInstanceOfType(t, typeof(ArrayType));
+			Assert.IsInstanceOf<ArrayType>(t);
 
 			x = DParser.ParseExpression ("globI.foo()");
 			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
-			Assert.IsInstanceOfType(t, typeof(PrimitiveType));
+			Assert.IsInstanceOf<PrimitiveType>(t);
 
 			x = DParser.ParseExpression ("globStr.writeln()");
 			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
-			Assert.IsInstanceOfType(t, typeof(PrimitiveType));
+			Assert.IsInstanceOf<PrimitiveType>(t);
 			Assert.AreEqual(DTokens.Void, (t as PrimitiveType).TypeToken);
 		}
 
-		[TestMethod]
+		[Test]
 		public void AccessUFCS()
 		{
 			var ctxt = ResolutionTestHelper.CreateCtxt("A", @"module A;
@@ -54,13 +54,13 @@ int a;
 			AbstractType t;
 
 			x = DParser.ParseExpression("a.to!string()");
-			Assert.IsInstanceOfType(x, typeof(PostfixExpression_MethodCall));
+			Assert.IsInstanceOf<PostfixExpression_MethodCall>(x);
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.IsInstanceOfType(t, typeof(TemplateParameterSymbol));
-			Assert.IsInstanceOfType((t as TemplateParameterSymbol).Base, typeof(ArrayType));
+			Assert.IsInstanceOf<TemplateParameterSymbol>(t);
+			Assert.IsInstanceOf<ArrayType>((t as TemplateParameterSymbol).Base);
 		}
 
-		[TestMethod]
+		[Test]
 		public void NoParenthesesUfcsCall()
 		{
 			var ctxt = ResolutionTestHelper.CreateCtxt("A", @"module A;
@@ -75,7 +75,7 @@ string foo(string s) { return s ~ ""gh""; }
 			x = DParser.ParseExpression("\"asdf\".foo");
 			v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.IsInstanceOfType(v, typeof(ArrayValue));
+			Assert.IsInstanceOf<ArrayValue>(v);
 			av = v as ArrayValue;
 
 			Assert.IsTrue(av.IsString);

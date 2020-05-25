@@ -8,14 +8,14 @@ using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
 using D_Parser.Resolver.TypeResolution;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 
 namespace Tests.Resolution
 {
-	[TestClass]
+	[TestFixture]
 	public class DeclDefScopingTests : ResolutionTestHelper
 	{
-		[TestMethod]
+		[Test]
 		public void BasicResolution0()
 		{
 			var pcl = CreateCache(out DModule modA,
@@ -76,19 +76,19 @@ void asdf(int* ni=23) {
 			ctxt.CurrentContext.Set(N<DMethod>(ctxt, "modE.N.foo"), CodeLocation.Empty);
 			t = R("X", ctxt);
 			Assert.AreEqual(1, t.Count);
-			Assert.IsInstanceOfType(t[0], typeof(ClassType));
+			Assert.IsInstanceOf<ClassType>(t[0]);
 
 			var f = N<DMethod>(ctxt, "modF.asdf");
 			ctxt.CurrentContext.Set(f);
 			t = ExpressionTypeEvaluation.GetOverloads(new IdentifierExpression("ni") { Location = S(f, 0, 0, 1).Location }, ctxt);
-			Assert.IsInstanceOfType((t[0] as MemberSymbol).Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<PrimitiveType>((t[0] as MemberSymbol).Base);
 			Assert.AreEqual(1, t.Count); // Was 2; Has been changed to 1 because it's only important to take the 'nearest' declaration that occured before the resolved expression
 
 			t = ExpressionTypeEvaluation.FilterOutByResultPriority(ctxt, t);
 			Assert.AreEqual(1, t.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void BasicResolution()
 		{
 			var ctxt = CreateCtxt("modA", @"module modA;
@@ -105,7 +105,7 @@ class baseFoo
 }");
 
 			var t = RS("foo", ctxt);
-			Assert.IsInstanceOfType(t, typeof(ClassType));
+			Assert.IsInstanceOf<ClassType>(t);
 			Assert.AreEqual("foo", (t as ClassType).Name);
 
 			t = RS("privConst", ctxt);
@@ -113,10 +113,10 @@ class baseFoo
 
 			ctxt.CurrentContext.Set(N<DClassLike>(ctxt, "modA.foo"));
 			t = RS("heyHo", ctxt);
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
 		}
 
-		[TestMethod]
+		[Test]
 		public void BasicResolution1()
 		{
 			var pcl = CreateCache(out DModule m, @"module A;
@@ -159,24 +159,24 @@ void foo()
 			var subSt = foo.Body.SubStatements as List<IStatement>;
 
 			var t = ExpressionTypeEvaluation.EvaluateType((subSt[1] as ExpressionStatement).Expression, ctxt);
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
-			Assert.IsInstanceOfType((t as MemberSymbol).Base, typeof(PointerType));
+			Assert.IsInstanceOf<MemberSymbol>(t);
+			Assert.IsInstanceOf<PointerType>((t as MemberSymbol).Base);
 
 			t = ExpressionTypeEvaluation.EvaluateType((subSt[2] as ExpressionStatement).Expression, ctxt);
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
 
 			t = ExpressionTypeEvaluation.EvaluateType((subSt[3] as ExpressionStatement).Expression, ctxt);
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
-			Assert.IsInstanceOfType((t as MemberSymbol).Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<MemberSymbol>(t);
+			Assert.IsInstanceOf<PrimitiveType>((t as MemberSymbol).Base);
 
 			t = ExpressionTypeEvaluation.EvaluateType((subSt[4] as ExpressionStatement).Expression, ctxt);
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
 
 			t = ExpressionTypeEvaluation.EvaluateType((subSt[5] as ExpressionStatement).Expression, ctxt);
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
 
 			t = ExpressionTypeEvaluation.EvaluateType((subSt[6] as ExpressionStatement).Expression, ctxt);
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
 
 			t = ExpressionTypeEvaluation.EvaluateType((subSt[7] as ExpressionStatement).Expression, ctxt);
 			Assert.IsNotNull(t);
@@ -202,7 +202,7 @@ void foo()
 
 			ex = DParser.ParseExpression("statVar");
 			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
 
 			ex = DParser.ParseExpression("a");
 			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
@@ -218,7 +218,7 @@ void foo()
 
 			ex = DParser.ParseExpression("statBase");
 			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
 
 			ex = DParser.ParseExpression("baseA");
 			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
@@ -226,18 +226,18 @@ void foo()
 
 			ex = DParser.ParseExpression("otherClass");
 			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
-			Assert.IsInstanceOfType(t, typeof(ClassType));
+			Assert.IsInstanceOf<ClassType>(t);
 
 			ex = DParser.ParseExpression("globalVar");
 			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
 
 			ex = DParser.ParseExpression("enumSym");
 			t = ExpressionTypeEvaluation.EvaluateType(ex, ctxt);
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
 		}
 
-		[TestMethod]
+		[Test]
 		public void AnonymousNestedStructs()
 		{
 			var ctxt = CreateCtxt("A", @"module A;
@@ -250,11 +250,11 @@ MyClass mc;
 
 			x = DParser.ParseExpression("mc.numA");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
-			Assert.IsInstanceOfType((t as MemberSymbol).Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<MemberSymbol>(t);
+			Assert.IsInstanceOf<PrimitiveType>((t as MemberSymbol).Base);
 		}
 
-		[TestMethod]
+		[Test]
 		public void InMethodDeclScopes()
 		{
 			var ctxt = CreateCtxt("A", @"module A;
@@ -325,7 +325,7 @@ void main()
 			AbstractType t;
 
 			t = RS(pixFormat.Type, ctxt);
-			Assert.IsInstanceOfType(t, typeof(StructType));
+			Assert.IsInstanceOf<StructType>(t);
 		}
 
 		/// <summary>
@@ -333,7 +333,7 @@ void main()
 		/// 		Accessing non-static fields used to be allowed in many contexts, but is now limited to only a few:
 		/// 		- offsetof, init, and other built-in properties are allowed:
 		/// </summary>
-		[TestMethod]
+		[Test]
 		public void NonStaticVariableAccessing()
 		{
 			var ctxt = CreateCtxt("a", @"module a;
@@ -357,8 +357,8 @@ struct Foo
 			x = DParser.ParseExpression("S.field.max"); // ok, statically known
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(StaticProperty));
-			Assert.IsInstanceOfType((t as StaticProperty).Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<StaticProperty>(t);
+			Assert.IsInstanceOf<PrimitiveType>((t as StaticProperty).Base);
 
 			x = DParser.ParseExpression("S.field"); // disallowed, no `this` reference
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
@@ -367,15 +367,15 @@ struct Foo
 			x = DParser.ParseExpression("Foo.bar.get()"); // ok, equivalent to `typeof(Foo.bar).get()'
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(PrimitiveType));
+			Assert.IsInstanceOf<PrimitiveType>(t);
 
 			x = DParser.ParseExpression("Foo.get()"); // ok, equivalent to 'typeof(Foo.bar).get()'
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(PrimitiveType));
+			Assert.IsInstanceOf<PrimitiveType>(t);
 		}
 
-		[TestMethod]
+		[Test]
 		public void Imports2()
 		{
 			var pcl = CreateCache(out DModule m, @"module A; import B;", @"module B; import C;", @"module C; public import D;", @"module D; void foo(){}",
@@ -391,7 +391,7 @@ struct Foo
 			Assert.AreEqual(1, t.Count);
 		}
 
-		[TestMethod]
+		[Test]
 		public void ImportAliases()
 		{
 			var ctxt = CreateCtxt("A", @"module A;
@@ -406,11 +406,11 @@ class Class{
 			ctxt.CurrentContext.Set(Class);
 
 			var t = RS("b", ctxt);
-			Assert.IsInstanceOfType(t, typeof(ModuleSymbol));
+			Assert.IsInstanceOf<ModuleSymbol>(t);
 			Assert.AreSame(B, (t as ModuleSymbol).Definition);
 		}
 
-		[TestMethod]
+		[Test]
 		public void SelectiveImports()
 		{
 			var ctxt = CreateCtxt("B", @"module A;
@@ -424,10 +424,10 @@ float* foo(int i) {}",
 			x = DParser.ParseExpression("foo(123)");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(PointerType));
+			Assert.IsInstanceOf<PointerType>(t);
 		}
 
-		[TestMethod]
+		[Test]
 		public void SelectiveImports2()
 		{
 			var ctxt = CreateCtxt("B", @"module A;
@@ -452,10 +452,10 @@ void main()
 
 			t = ExpressionTypeEvaluation.EvaluateType(i_foo_stmt.Expression, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(PointerType));
+			Assert.IsInstanceOf<PointerType>(t);
 		}
 
-		[TestMethod]
+		[Test]
 		public void ExplicitModuleNames()
 		{
 			var ctxt = CreateCtxt("C", @"module A; void aFoo();", @"module std.B; void bFoo();", @"module C;");
@@ -464,10 +464,10 @@ void main()
 			var id = DParser.ParseBasicType("A.aFoo", out tk);
 			var t = RS(id, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
 		}
 
-		[TestMethod]
+		[Test]
 		public void PackageModuleImport()
 		{
 			var ctxt = CreateCtxt("test",
@@ -483,13 +483,13 @@ void main()
 			ch["test"].FileName = Path.Combine("test.d");
 
 			var t = RS("runServer", ctxt);
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
 
 			t = RS("runClient", ctxt);
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
 		}
 
-		[TestMethod]
+		[Test]
 		public void TestMultiModuleResolution1()
 		{
 			var pcl = CreateCache(out DModule modA, @"module modA;
@@ -513,7 +513,7 @@ void main()
 			var bar = A["bar"].First() as DMethod;
 			var call_fooC = bar.Body.SubStatements.First();
 
-			Assert.IsInstanceOfType(call_fooC, typeof(ExpressionStatement));
+			Assert.IsInstanceOf<ExpressionStatement>(call_fooC);
 
 			var ctxt = CreateDefCtxt(pcl, bar, call_fooC);
 
@@ -523,15 +523,15 @@ void main()
 			var res = ExpressionTypeEvaluation.EvaluateType(methodName, ctxt, false);
 
 			Assert.IsTrue(res != null, "Resolve() returned no result!");
-			Assert.IsInstanceOfType(res, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(res);
 
 			var mr = (MemberSymbol)res;
 
-			Assert.IsInstanceOfType(mr.Definition, typeof(DMethod));
+			Assert.IsInstanceOf<DMethod>(mr.Definition);
 			Assert.AreEqual(mr.Name, "fooC");
 		}
 
-		[TestMethod]
+		[Test]
 		public void TestProtectedNestedType()
 		{
 			var pcl = CreateCache(out DModule A, @"module modB;
@@ -553,15 +553,15 @@ void foo(ref B bf) {
 
 			var t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
 			var ms = t as DSymbol;
-			Assert.IsInstanceOfType(ms.Base, typeof(ClassType));
+			Assert.IsInstanceOf<ClassType>(ms.Base);
 			ms = ms.Base as DSymbol;
 			Assert.AreEqual("B", ms.Name);
 			Assert.IsTrue(ms.NonStaticAccess);
 		}
 
-		[TestMethod]
+		[Test]
 		public void SwitchLocals()
 		{
 			var pcl = CreateCache(out DModule A, @"module A;
@@ -585,11 +585,11 @@ void foo()
 			var ctxt = CreateDefCtxt(pcl, foo, foo.Body.Location);
 
 			var t = ExpressionTypeEvaluation.EvaluateType(colStmt.Expression, ctxt);
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
-			Assert.IsInstanceOfType((t as MemberSymbol).Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<MemberSymbol>(t);
+			Assert.IsInstanceOf<PrimitiveType>((t as MemberSymbol).Base);
 		}
 
-		[TestMethod]
+		[Test]
 		public void StaticForeach_UpperAggregate()
 		{
 			var ctxt = CreateDefCtxt(@"module modA;
@@ -603,11 +603,11 @@ static foreach(i; 97 .. 100) {
 				var td = DParser.ParseBasicType("var" + (char)i);
 				var t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
 
-				Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+				Assert.IsInstanceOf<MemberSymbol>(t);
 			}
 		}
 
-		[TestMethod]
+		[Test]
 		public void StaticForeach_UpperAggregate_IteratorAsDefInitializer()
 		{
 			var ctxt = CreateDefCtxt(@"module modA;
@@ -621,12 +621,12 @@ static foreach(i; 97 .. 100) {
 				var x = DParser.ParseExpression("var" + (char)i);
 				var v = Evaluation.EvaluateValue(x, ctxt);
 
-				Assert.IsInstanceOfType(v, typeof(PrimitiveValue), v?.ToString());
+				Assert.IsInstanceOf<PrimitiveValue>(v, v?.ToString());
 				Assert.AreEqual(i, (v as PrimitiveValue).Value);
 			}
 		}
 
-		[TestMethod]
+		[Test]
 		public void StaticForeach_ArrayAggregate()
 		{
 			var ctxt = CreateDefCtxt(@"module modA;
@@ -641,11 +641,11 @@ static foreach(i; staticArray) {
 				var td = DParser.ParseBasicType("var" + i);
 				var t = TypeDeclarationResolver.ResolveSingle(td, ctxt);
 
-				Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+				Assert.IsInstanceOf<MemberSymbol>(t);
 			}
 		}
 
-		[TestMethod]
+		[Test]
 		public void StaticForeach_ArrayAggregate_UsingKeyIterator()
 		{
 			var ctxt = CreateDefCtxt(@"module modA;
@@ -660,17 +660,17 @@ static foreach(index, value; staticArray) {
 			x = DParser.ParseExpression("vara");
 			v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.IsInstanceOfType(v, typeof(PrimitiveValue), v?.ToString());
+			Assert.IsInstanceOf<PrimitiveValue>(v, v?.ToString());
 			Assert.AreEqual(0, (v as PrimitiveValue).Value);
 
 			x = DParser.ParseExpression("varb");
 			v = Evaluation.EvaluateValue(x, ctxt);
 
-			Assert.IsInstanceOfType(v, typeof(PrimitiveValue), v?.ToString());
+			Assert.IsInstanceOf<PrimitiveValue>(v, v?.ToString());
 			Assert.AreEqual(1, (v as PrimitiveValue).Value);
 		}
 
-		[TestMethod]
+		[Test]
 		public void StaticForeach_AssocArrayAggregate()
 		{
 			var ctxt = CreateDefCtxt(@"module modA;
@@ -684,12 +684,12 @@ static foreach(index, value; ['a':'0','b':'1','c':'2','d':'3','e':'4','f':'5']) 
 				var x = DParser.ParseExpression("var" + i);
 				var v = Evaluation.EvaluateValue(x, ctxt);
 
-				Assert.IsInstanceOfType(v, typeof(PrimitiveValue), v?.ToString());
+				Assert.IsInstanceOf<PrimitiveValue>(v, v?.ToString());
 				Assert.AreEqual('a'+i, (v as PrimitiveValue).Value);
 			}
 		}
 
-		[TestMethod]
+		[Test]
 		public void StaticForeach_AliasUsingTupleOf()
 		{
 			var ctxt = CreateDefCtxt(@"module modA;
@@ -711,10 +711,10 @@ S2 s2;
 			var x = DParser.ParseExpression("s2.a");
 			var t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
 		}
 
-		[TestMethod]
+		[Test]
 		public void StaticForeach_AliasSeq()
 		{
 			var ctxt = CreateDefCtxt(@"module A;
@@ -734,7 +734,7 @@ template AliasSeq(TList...)
 }");
 			var x = DParser.ParseExpression("abs");
 			var t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
 		}
 	}
 }

@@ -4,14 +4,14 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 
 namespace Tests.Resolution
 {
-	[TestClass]
+	[TestFixture]
 	public class MethodCallOverloadRelatedTests : ResolutionTestHelper
 	{
-		[TestMethod]
+		[Test]
 		public void ConstAttributedSymbolType ()
 		{
 			AbstractType t;
@@ -26,16 +26,16 @@ namespace Tests.Resolution
 
 			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
 			var baseType = ((MemberSymbol)t).Base;
 
-			Assert.IsInstanceOfType(baseType, typeof(ClassType));
+			Assert.IsInstanceOf<ClassType>(baseType);
 			var objectClass = baseType as ClassType;
 
 			Assert.IsTrue (objectClass.HasModifier (DTokens.Const));
 		}
 
-		[TestMethod]
+		[Test]
 		public void ConstAttributedSymbolType_MemberFunctionAttributeDecl(){
 			AbstractType t;
 			IExpression x;
@@ -49,10 +49,10 @@ namespace Tests.Resolution
 
 			t = ExpressionTypeEvaluation.EvaluateType (x, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
 			var baseType = ((MemberSymbol)t).Base;
 
-			Assert.IsInstanceOfType(baseType, typeof(ClassType));
+			Assert.IsInstanceOf<ClassType>(baseType);
 			var objectClass = baseType as ClassType;
 
 			Assert.IsTrue (objectClass.HasModifier (DTokens.Const));
@@ -74,7 +74,7 @@ Object o,o2;
 const Object co,co2;
 ";
 
-		[TestMethod]
+		[Test]
 		public void ConstNonConstParamDistinguishingSO()
 		{
 			AbstractType t;
@@ -93,13 +93,13 @@ const Object co,co2;
 			x = DParser.ParseExpression("b.opEquals(o,o2)");
 
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt, false);
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
 			Assert.AreSame(opEquals1, (t as MemberSymbol).Definition);
 
-			Assert.IsInstanceOfType((t as MemberSymbol).Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<PrimitiveType>((t as MemberSymbol).Base);
 		}
 
-		[TestMethod]
+		[Test]
 		public void ConstNonConstParamDistinguishingSO2 ()
 		{
 			AbstractType t2;
@@ -118,14 +118,14 @@ const Object co,co2;
 			x2 = DParser.ParseExpression ("b.opEquals(co,co2)");
 
 			t2 = ExpressionTypeEvaluation.EvaluateType (x2, ctxt, false);
-			Assert.IsInstanceOfType(t2, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t2);
 			Assert.AreSame(opEquals2, (t2 as MemberSymbol).Definition);
 
-			Assert.IsInstanceOfType((t2 as MemberSymbol).Base, typeof(PrimitiveType));
+			Assert.IsInstanceOf<PrimitiveType>((t2 as MemberSymbol).Base);
 
 		}
 
-		[TestMethod]
+		[Test]
 		public void ParamArgMatching1()
 		{
 			var ctxt = CreateCtxt("A", @"module A;
@@ -143,18 +143,18 @@ double* foo(string s, string ss);
 
 			x = DParser.ParseExpression("foo(\"derp\",mye.a)");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.IsInstanceOfType(t, typeof(PrimitiveType));
+			Assert.IsInstanceOf<PrimitiveType>(t);
 
 			x = DParser.ParseExpression("foo(\"derp\",\"yeah\")");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
-			Assert.IsInstanceOfType(t, typeof(PointerType));
+			Assert.IsInstanceOf<PointerType>(t);
 
 			x = DParser.ParseExpression("foo(\"derp\",1.2)");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 			Assert.IsNull(t);
 		}
 
-		[TestMethod]
+		[Test]
 		public void TestOverloads1()
 		{
 			var pcl = CreateCache(out DModule m, @"module modA;
@@ -180,14 +180,14 @@ class A
 
 			var t = ExpressionTypeEvaluation.EvaluateType(e, ctxt, false);
 
-			Assert.IsInstanceOfType(t, typeof(MemberSymbol));
+			Assert.IsInstanceOf<MemberSymbol>(t);
 			Assert.AreEqual(pcl.FirstPackage()["modA"]["foo"].First(), ((MemberSymbol)t).Definition);
 		}
 
 		/// <summary>
 		/// Templated and non-template functions can now be overloaded against each other:
 		/// </summary>
-		[TestMethod]
+		[Test]
 		public void TestOverloads2()
 		{
 			var ctxt = CreateCtxt("A", @"module A;
@@ -201,26 +201,26 @@ long longVar = 10L;");
 			x = DParser.ParseExpression("foo(100)");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(PrimitiveType));
+			Assert.IsInstanceOf<PrimitiveType>(t);
 
 			x = DParser.ParseExpression("foo(\"asdf\")");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(PointerType));
+			Assert.IsInstanceOf<PointerType>(t);
 
 			// Integer literal 10L can be converted to int without loss of precisions.
 			// Then the call matches to foo(int n).
 			x = DParser.ParseExpression("foo(10L)");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(PrimitiveType));
+			Assert.IsInstanceOf<PrimitiveType>(t);
 
 			// A runtime variable 'num' typed long is not implicitly convertible to int.
 			// Then the call matches to foo(T)(T t).
 			x = DParser.ParseExpression("foo(longVar)");
 			t = ExpressionTypeEvaluation.EvaluateType(x, ctxt);
 
-			Assert.IsInstanceOfType(t, typeof(PointerType));
+			Assert.IsInstanceOf<PointerType>(t);
 		}
 
 	}
