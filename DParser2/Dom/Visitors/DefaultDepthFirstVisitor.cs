@@ -1,5 +1,5 @@
-﻿using D_Parser.Dom.Statements;
-using D_Parser.Dom.Expressions;
+﻿using D_Parser.Dom.Expressions;
+using D_Parser.Dom.Statements;
 
 namespace D_Parser.Dom
 {
@@ -36,8 +36,7 @@ namespace D_Parser.Dom
 
 		public virtual void Visit(DVariable n)
 		{
-			if (n.Initializer != null)
-				n.Initializer.Accept(this);
+			n.Initializer?.Accept(this);
 			VisitDNode(n);
 		}
 
@@ -53,10 +52,10 @@ namespace D_Parser.Dom
 			foreach (var par in n.Parameters)
 				par.Accept(this);
 
-			for (int c = 0; c < n.Contracts.Count; c++)
-				n.Contracts[c].Accept(this);
-			if (n.Body != null)
-				n.Body.Accept(this);
+			foreach (var t in n.Contracts)
+				t.Accept(this);
+
+			n.Body?.Accept(this);
 		}
 
 		public virtual void Visit(DClassLike n)
@@ -87,9 +86,8 @@ namespace D_Parser.Dom
 		public virtual void Visit(NamedTemplateMixinNode n)
 		{
 			//VisitDNode(n);
-			
-			if(n.Mixin != null)
-				n.Mixin.Accept(this);
+
+			n.Mixin?.Accept(this);
 		}
 
 		public virtual void Visit(ModuleAliasNode n)
@@ -113,15 +111,13 @@ namespace D_Parser.Dom
 				foreach (var tp in n.TemplateParameters)
 					tp.Accept(this);
 
-			if (n.TemplateConstraint != null)
-				n.TemplateConstraint.Accept(this);
+			n.TemplateConstraint?.Accept(this);
 
 			if (n.Attributes != null && n.Attributes.Count != 0)
 				foreach (var attr in n.Attributes)
 					attr.Accept(this);
 
-			if (n.Type != null)
-				n.Type.Accept(this);
+			n.Type?.Accept(this);
 		}
 
 		public virtual void VisitAttribute(Modifier attribute) { }
@@ -157,14 +153,14 @@ namespace D_Parser.Dom
 		{
 			if(a.AttributeExpression != null && a.AttributeExpression.Length != 0)
 				foreach(var x in a.AttributeExpression)
-					if(x != null)
-						x.Accept(this);
+				{
+					x?.Accept(this);
+				}
 		}
 		
 		public virtual void VisitAttribute(StaticIfCondition a)
 		{
-			if(a.Expression!=null)
-				a.Expression.Accept(this);
+			a.Expression?.Accept(this);
 		}
 		
 		public virtual void VisitAttribute(NegatedDeclarationCondition a)
@@ -179,8 +175,9 @@ namespace D_Parser.Dom
 			var ss = stmtContainer.SubStatements;
 			if (ss != null)
 				foreach (IStatement substatement in ss)
-					if(substatement != null)
-						substatement.Accept(this);
+				{
+					substatement?.Accept(this);
+				}
 		}
 
 		/// <summary>
@@ -195,53 +192,49 @@ namespace D_Parser.Dom
 		public virtual void Visit(ModuleStatement s)
 		{
 			VisitAbstractStmt(s);
-			if(s.ModuleName != null)
-				s.ModuleName.Accept(this);
+			s.ModuleName?.Accept(this);
 		}
 
 		public virtual void Visit(ImportStatement s)
 		{
 			if (s.Attributes != null)
 				foreach (var attr in s.Attributes)
-					if(attr != null)
-						attr.Accept (this);
+				{
+					attr?.Accept (this);
+				}
 
 			if (s.Imports != null)
 				foreach (var imp in s.Imports)
-					if(imp != null)
-						imp.Accept (this);
+				{
+					imp?.Accept (this);
+				}
 
-			if (s.ImportBindList != null)
-				s.ImportBindList.Accept (this);
+			s.ImportBindList?.Accept (this);
 
 			VisitAbstractStmt(s);
 		}
 
 		public virtual void VisitImport (ImportStatement.Import i)
 		{
-			if (i.ModuleAlias != null)
-				i.ModuleAlias.Accept (this);
-			if (i.ModuleIdentifier != null)
-				i.ModuleIdentifier.Accept (this);
+			i.ModuleAlias?.Accept (this);
+			i.ModuleIdentifier?.Accept (this);
 		}
 
 		public virtual void VisitImport (ImportStatement.ImportBinding i)
 		{
-			if (i.Alias != null)
-				i.Alias.Accept (this);
-			if (i.Symbol != null)
-				i.Symbol.Accept (this);
+			i.Alias?.Accept (this);
+			i.Symbol?.Accept (this);
 		}
 
 		public virtual void VisitImport (ImportStatement.ImportBindings i)
 		{
-			if(i.Module != null)
-				i.Module.Accept (this);
+			i.Module?.Accept (this);
 
 			if(i.SelectedSymbols != null)
 				foreach (var imp in i.SelectedSymbols)
-					if(imp != null)
-						imp.Accept (this);
+				{
+					imp?.Accept (this);
+				}
 		}
 
 		public virtual void Visit(BlockStatement s)
@@ -258,20 +251,17 @@ namespace D_Parser.Dom
 		{
 			VisitChildren(s);
 
-			if (s.IfCondition != null)
-				s.IfCondition.Accept(this);
+			s.IfCondition?.Accept(this);
 
 			//TODO: Are the declarations also in the statements?
-			if (s.IfVariable != null)
-				s.IfVariable.Accept(this);
+			s.IfVariable?.Accept(this);
 		}
 
 		public virtual void Visit(WhileStatement s)
 		{
 			VisitChildren(s);
 
-			if (s.Condition != null)
-				s.Condition.Accept(this);
+			s.Condition?.Accept(this);
 		}
 
 		public virtual void Visit(ForStatement s)
@@ -279,10 +269,8 @@ namespace D_Parser.Dom
 			// Also visits 'Initialize'
 			VisitChildren(s);
 
-			if (s.Test != null)
-				s.Test.Accept(this);
-			if (s.Increment != null)
-				s.Increment.Accept(this);
+			s.Test?.Accept(this);
+			s.Increment?.Accept(this);
 		}
 
 		public virtual void Visit(ForeachStatement s)
@@ -291,32 +279,28 @@ namespace D_Parser.Dom
 
 			if (s.ForeachTypeList != null)
 				foreach (var t in s.ForeachTypeList)
-					if(t != null)
-						t.Accept(this);
+				{
+					t?.Accept(this);
+				}
 
-			if (s.Aggregate != null)
-				s.Aggregate.Accept(this);
+			s.Aggregate?.Accept(this);
 
-			if (s.UpperAggregate != null)
-				s.UpperAggregate.Accept(this);
+			s.UpperAggregate?.Accept(this);
 		}
 
 		public virtual void Visit(SwitchStatement s)
 		{
 			VisitChildren(s);
 
-			if (s.SwitchExpression != null)
-				s.SwitchExpression.Accept(this);
+			s.SwitchExpression?.Accept(this);
 		}
 
 		public virtual void Visit(SwitchStatement.CaseStatement s)
 		{
 			VisitChildren(s);
 
-			if (s.ArgumentList != null)
-				s.ArgumentList.Accept(this);
-			if (s.LastExpression != null)
-				s.LastExpression.Accept(this);
+			s.ArgumentList?.Accept(this);
+			s.LastExpression?.Accept(this);
 		}
 
 		public virtual void Visit(SwitchStatement.DefaultStatement s)
@@ -337,33 +321,28 @@ namespace D_Parser.Dom
 		public virtual void Visit(ReturnStatement s)
 		{
 			VisitAbstractStmt(s);
-			if (s.ReturnExpression != null)
-				s.ReturnExpression.Accept(this);
+			s.ReturnExpression?.Accept(this);
 		}
 
 		public virtual void Visit(GotoStatement s)
 		{
 			VisitAbstractStmt(s);
-			if (s.CaseExpression != null)
-				s.CaseExpression.Accept(this);
+			s.CaseExpression?.Accept(this);
 		}
 
 		public virtual void Visit(WithStatement s)
 		{
 			VisitChildren(s);
 
-			if (s.WithExpression != null)
-				s.WithExpression.Accept(this);
-			if (s.WithSymbol != null)
-				s.WithSymbol.Accept(this);
+			s.WithExpression?.Accept(this);
+			s.WithSymbol?.Accept(this);
 		}
 
 		public virtual void Visit(SynchronizedStatement s)
 		{
 			VisitChildren(s);
 
-			if (s.SyncExpression != null)
-				s.SyncExpression.Accept(this);
+			s.SyncExpression?.Accept(this);
 		}
 
 		public virtual void Visit(TryStatement s)
@@ -375,8 +354,7 @@ namespace D_Parser.Dom
 		{
 			VisitChildren(s);
 
-			if (s.CatchParameter != null)
-				s.CatchParameter.Accept(this);
+			s.CatchParameter?.Accept(this);
 		}
 
 		public virtual void Visit(Statements.TryStatement.FinallyStatement s)
@@ -388,8 +366,7 @@ namespace D_Parser.Dom
 		{
 			VisitAbstractStmt(s);
 
-			if (s.ThrowExpression != null)
-				s.ThrowExpression.Accept(this);
+			s.ThrowExpression?.Accept(this);
 		}
 
 		public virtual void Visit(Statements.ScopeGuardStatement s)
@@ -412,8 +389,7 @@ namespace D_Parser.Dom
 		{
 			VisitAbstractStmt(s);
 
-			if (s.ValueExpression != null)
-				s.ValueExpression.Accept(this);
+			s.ValueExpression?.Accept(this);
 		}
 
 		public virtual void Visit(Statements.PragmaStatement s)
@@ -427,18 +403,15 @@ namespace D_Parser.Dom
 		{
 			VisitAbstractStmt(s);
 
-			if (s.AssertedExpression != null)
-				s.AssertedExpression.Accept(this);
-            if (s.Message != null)
-                s.Message.Accept(this);
+			s.AssertedExpression?.Accept(this);
+			s.Message?.Accept(this);
 		}
 
 		public virtual void Visit(StatementCondition s)
 		{
 			if(s!=null)
 			{
-				if(s.Condition != null)
-					s.Condition.Accept (this);
+				s.Condition?.Accept (this);
 				VisitChildren(s);
 			}
 		}
@@ -464,15 +437,11 @@ namespace D_Parser.Dom
 		{
 			VisitAbstractStmt(s);
 
-			if (s.Condition != null)
-				s.Condition.Accept(this);
-			if (s.Message != null)
-				s.Message.Accept(this);
-			if (s.ScopedStatement != null)
-				s.ScopedStatement.Accept(this);
+			s.Condition?.Accept(this);
+			s.Message?.Accept(this);
+			s.ScopedStatement?.Accept(this);
 
-			if (s.OutResultVariable != null)
-				s.OutResultVariable.Accept(this);
+			s.OutResultVariable?.Accept(this);
 		}
 
 		public virtual void Visit(Statements.DeclarationStatement s)
@@ -481,16 +450,16 @@ namespace D_Parser.Dom
 
 			if (s.Declarations != null)
 				foreach (var decl in s.Declarations)
-					if(decl != null)
-						decl.Accept(this);
+				{
+					decl?.Accept(this);
+				}
 		}
 
 		public virtual void Visit(Statements.TemplateMixin s)
 		{
 			VisitAbstractStmt(s);
 
-			if (s.Qualifier != null)
-				s.Qualifier.Accept(this);
+			s.Qualifier?.Accept(this);
 		}
 
 		public virtual void Visit(Statements.VersionSpecification s)
@@ -508,11 +477,11 @@ namespace D_Parser.Dom
 			VisitAbstractStmt (s);
 			if(s.Attributes!=null && s.Attributes.Length != 0)
 				foreach(var attr in s.Attributes)
-					if(attr != null)
-						attr.Accept(this);
-			
-			if(s.MixinExpression != null)
-				s.MixinExpression.Accept(this);
+				{
+					attr?.Accept(this);
+				}
+
+			s.MixinExpression?.Accept(this);
 		}
 
 		public virtual void VisitAbstractStmt(AbstractStatement stmt)
@@ -526,8 +495,9 @@ namespace D_Parser.Dom
 		{
 			if(x.SubExpressions != null)
 				foreach (var sx in x.SubExpressions)
-					if(sx != null)
-						sx.Accept(this);
+				{
+					sx?.Accept(this);
+				}
 		}
 
 		public virtual void VisitOpBasedExpression(OperatorBasedExpression ox)
@@ -662,14 +632,13 @@ namespace D_Parser.Dom
 
 		public virtual void Visit(Expressions.UnaryExpression_Type x)
 		{
-			if (x.Type != null)
-				x.Type.Accept(this);
+			x.Type?.Accept(this);
 		}
 
 		public virtual void Visit(Expressions.NewExpression x)
 		{
 			VisitChildren(x);
-			if (x != null && x.Type != null && !(x.Type is IExpression))
+			if (x?.Type != null && !(x.Type is IExpression))
 				x.Type.Accept (this);
 		}
 
@@ -677,8 +646,7 @@ namespace D_Parser.Dom
 		{
 			VisitChildren(x);
 
-			if (x.AnonymousClass != null)
-				x.AnonymousClass.Accept(this);
+			x.AnonymousClass?.Accept(this);
 		}
 
 		public virtual void Visit(Expressions.DeleteExpression x)
@@ -688,25 +656,21 @@ namespace D_Parser.Dom
 
 		public virtual void Visit(Expressions.CastExpression x)
 		{
-			if (x.UnaryExpression != null)
-				x.UnaryExpression.Accept(this);
+			x.UnaryExpression?.Accept(this);
 
-			if (x.Type != null)
-				x.Type.Accept(this);
+			x.Type?.Accept(this);
 		}
 
 		public virtual void VisitPostfixExpression(PostfixExpression x)
 		{
-			if (x.PostfixForeExpression != null)
-				x.PostfixForeExpression.Accept(this);
+			x.PostfixForeExpression?.Accept(this);
 		}
 
 		public virtual void Visit(Expressions.PostfixExpression_Access x)
 		{
 			VisitPostfixExpression(x);
 
-			if (x.AccessExpression != null)
-				x.AccessExpression.Accept(this);
+			x.AccessExpression?.Accept(this);
 		}
 
 		public virtual void Visit(Expressions.PostfixExpression_Increment x)
@@ -725,8 +689,9 @@ namespace D_Parser.Dom
 
 			if (x.ArgumentCount != 0)
 				foreach (var arg in x.Arguments)
-					if (arg != null)
-						arg.Accept (this);
+				{
+					arg?.Accept (this);
+				}
 		}
 
 		public virtual void Visit(Expressions.PostfixExpression_ArrayAccess x)
@@ -737,20 +702,19 @@ namespace D_Parser.Dom
 				foreach (var arg in x.Arguments)
 					if (arg != null) {
 						arg.Expression.Accept (this);
-						if (arg is PostfixExpression_ArrayAccess.SliceArgument)
-							(arg as PostfixExpression_ArrayAccess.SliceArgument).UpperBoundExpression.Accept (this);
+						(arg as PostfixExpression_ArrayAccess.SliceArgument)?.UpperBoundExpression.Accept (this);
 					}
 		}
 
 		public virtual void Visit(TemplateInstanceExpression x)
 		{
-			if (x.Identifier != null)
-				x.Identifier.Accept(this);
+			x.Identifier?.Accept(this);
 
 			if (x.Arguments != null)
 				foreach (var arg in x.Arguments)
-					if(arg != null)
-						arg.Accept(this);
+				{
+					arg?.Accept(this);
+				}
 		}
 
 		public virtual void VisitScalarConstantExpression(Expressions.ScalarConstantExpression x) { }
@@ -760,16 +724,16 @@ namespace D_Parser.Dom
 
 		public virtual void Visit(Expressions.TypeDeclarationExpression x)
 		{
-			if(x.Declaration != null)
-				x.Declaration.Accept(this);
+			x.Declaration?.Accept(this);
 		}
 
 		public virtual void Visit(Expressions.ArrayLiteralExpression x)
 		{
 			if(x.Elements != null)
 				foreach (var e in x.Elements)
-					if(e!=null)
-						e.Accept(this);
+				{
+					e?.Accept(this);
+				}
 		}
 
 		public virtual void Visit(Expressions.AssocArrayExpression x)
@@ -777,10 +741,8 @@ namespace D_Parser.Dom
 			if(x.Elements != null)
 				foreach (var kv in x.Elements)
 				{
-					if(kv.Key != null)
-						kv.Key.Accept(this);
-					if(kv.Value!=null)
-						kv.Value.Accept(this);
+					kv.Key?.Accept(this);
+					kv.Value?.Accept(this);
 				}
 		}
 
@@ -796,38 +758,37 @@ namespace D_Parser.Dom
 
 		public virtual void Visit(Expressions.MixinExpression x)
 		{
-			if (x.AssignExpression != null)
-				x.AssignExpression.Accept(this);
+			x.AssignExpression?.Accept(this);
 		}
 
 		public virtual void Visit(Expressions.ImportExpression x)
 		{
-			if (x.AssignExpression != null)
-				x.AssignExpression.Accept(this);
+			x.AssignExpression?.Accept(this);
 		}
 
 		public virtual void Visit(Expressions.TypeidExpression x)
 		{
 			if (x.Type != null)
 				x.Type.Accept(this);
-			else if (x.Expression != null)
-				x.Expression.Accept(this);
+			else
+			{
+				x.Expression?.Accept(this);
+			}
 		}
 
 		public virtual void Visit(Expressions.IsExpression x)
 		{
-			if (x.TestedType != null)
-				x.TestedType.Accept(this);
+			x.TestedType?.Accept(this);
 
 			// Do not visit the artificial param..it's not existing
 
-			if (x.TypeSpecialization != null)
-				x.TypeSpecialization.Accept(this);
+			x.TypeSpecialization?.Accept(this);
 
 			if (x.TemplateParameterList != null)
 				foreach (var p in x.TemplateParameterList)
-					if(p !=null)
-						p.Accept(this);
+				{
+					p?.Accept(this);
+				}
 		}
 
 		public virtual void Visit(Expressions.TraitsExpression x)
@@ -840,16 +801,13 @@ namespace D_Parser.Dom
 
 		public virtual void Visit(TraitsArgument arg)
 		{
-			if (arg.Type != null)
-				arg.Type.Accept(this);
-			if (arg.AssignExpression != null)
-				arg.AssignExpression.Accept(this);
+			arg.Type?.Accept(this);
+			arg.AssignExpression?.Accept(this);
 		}
 
 		public virtual void Visit(Expressions.SurroundingParenthesesExpression x)
 		{
-			if (x.Expression != null)
-				x.Expression.Accept(this);
+			x.Expression?.Accept(this);
 		}
 
 		public virtual void Visit(Expressions.VoidInitializer x)
@@ -866,14 +824,14 @@ namespace D_Parser.Dom
 		{
 			if (x.MemberInitializers != null)
 				foreach (var i in x.MemberInitializers)
-					if(i != null)
-						i.Accept(this);
+				{
+					i?.Accept(this);
+				}
 		}
 
 		public virtual void Visit(StructMemberInitializer init)
 		{
-			if (init.Value != null)
-				init.Value.Accept(this);
+			init.Value?.Accept(this);
 		}
 
 		public virtual void Visit(AsmRegisterExpression x)
@@ -883,18 +841,15 @@ namespace D_Parser.Dom
 
 		public virtual void Visit(UnaryExpression_SegmentBase x)
 		{
-			if (x.RegisterExpression != null)
-				x.RegisterExpression.Accept(this);
-			if (x.UnaryExpression != null)
-				x.UnaryExpression.Accept(this);
+			x.RegisterExpression?.Accept(this);
+			x.UnaryExpression?.Accept(this);
 		}
 		#endregion
 
 		#region Decls
 		public virtual void VisitInner(ITypeDeclaration td)
 		{
-			if (td.InnerDeclaration != null)
-				td.InnerDeclaration.Accept(this);
+			td.InnerDeclaration?.Accept(this);
 		}
 
 		public virtual void Visit(IdentifierDeclaration td)
@@ -911,11 +866,9 @@ namespace D_Parser.Dom
 		{
 			VisitInner(td);
 
-			if (td.KeyType != null)
-				td.KeyType.Accept(this);
+			td.KeyType?.Accept(this);
 
-			if (td.KeyExpression != null)
-				td.KeyExpression.Accept(this);
+			td.KeyExpression?.Accept(this);
 
 			// ValueType == InnerDeclaration
 		}
@@ -927,12 +880,14 @@ namespace D_Parser.Dom
 
 			if (td.Modifiers != null && td.Modifiers.Length != 0)
 				foreach (var attr in td.Modifiers)
-					if(attr != null)
-						attr.Accept(this);
+				{
+					attr?.Accept(this);
+				}
 
 			foreach (var p in td.Parameters)
-				if(p != null)
-					p.Accept(this);
+			{
+				p?.Accept(this);
+			}
 		}
 
 		public virtual void Visit(PointerDecl td)
@@ -944,34 +899,29 @@ namespace D_Parser.Dom
 		{
 			VisitInner(td);
 
-			if (td.InnerType != null)
-				td.InnerType.Accept(this);
+			td.InnerType?.Accept(this);
 		}
 
 		public virtual void Visit(TypeOfDeclaration td)
 		{
 			VisitInner(td);
 
-			if (td.Expression != null)
-				td.Expression.Accept(this);
+			td.Expression?.Accept(this);
 		}
 
 		public virtual void Visit(TraitsDeclaration td)
 		{
 			VisitInner(td);
 
-			if (td.Expression != null)
-				td.Expression.Accept(this);
+			td.Expression?.Accept(this);
 		}
 
 		public virtual void Visit(VectorDeclaration td)
 		{
 			VisitInner(td);
 
-			if (td.IdDeclaration != null)
-				td.IdDeclaration.Accept(this);
-			if (td.Id != null)
-				td.Id.Accept(this);
+			td.IdDeclaration?.Accept(this);
+			td.Id?.Accept(this);
 		}
 
 		public virtual void Visit(VarArgDecl td)
@@ -1021,11 +971,11 @@ namespace D_Parser.Dom
 		{
 			if (md.AttributeOrCondition != null)
 				foreach (var attr in md.AttributeOrCondition)
-					if(attr != null)
-						attr.Accept(this);
+				{
+					attr?.Accept(this);
+				}
 
-			if (md.OptionalElseBlock != null)
-				md.OptionalElseBlock.Accept(this);
+			md.OptionalElseBlock?.Accept(this);
 		}
 		#endregion
 
@@ -1037,40 +987,32 @@ namespace D_Parser.Dom
 		{
 			VisitTemplateParameter (p);
 
-			if (p.Specialization != null)
-				p.Specialization.Accept(this);
+			p.Specialization?.Accept(this);
 
-			if (p.Default != null)
-				p.Default.Accept(this);
+			p.Default?.Accept(this);
 		}
 
 		public virtual void Visit(TemplateThisParameter p)
 		{
 			VisitTemplateParameter (p);
-			if (p.FollowParameter != null)
-				p.FollowParameter.Accept(this);
+			p.FollowParameter?.Accept(this);
 		}
 
 		public virtual void Visit(TemplateValueParameter p)
 		{
 			VisitTemplateParameter (p);
-			if (p.Type != null)
-				p.Type.Accept(this);
+			p.Type?.Accept(this);
 
-			if (p.SpecializationExpression != null)
-				p.SpecializationExpression.Accept(this);
-			if (p.DefaultExpression != null)
-				p.DefaultExpression.Accept(this);
+			p.SpecializationExpression?.Accept(this);
+			p.DefaultExpression?.Accept(this);
 		}
 
 		public virtual void Visit(TemplateAliasParameter p)
 		{
 			Visit((TemplateValueParameter)p);
 
-			if (p.SpecializationType != null)
-				p.SpecializationType.Accept(this);
-			if (p.DefaultType != null)
-				p.DefaultType.Accept(this);
+			p.SpecializationType?.Accept(this);
+			p.DefaultType?.Accept(this);
 		}
 
 		public virtual void Visit(TemplateTupleParameter p)

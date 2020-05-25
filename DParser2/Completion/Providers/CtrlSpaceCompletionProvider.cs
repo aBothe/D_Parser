@@ -1,11 +1,11 @@
-﻿using D_Parser.Dom;
-using D_Parser.Dom.Statements;
-using D_Parser.Resolver.ASTScanner;
-using D_Parser.Resolver;
-using D_Parser.Parser;
+﻿using System.Collections;
+using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
+using D_Parser.Dom.Statements;
+using D_Parser.Parser;
+using D_Parser.Resolver;
+using D_Parser.Resolver.ASTScanner;
 using D_Parser.Resolver.TypeResolution;
-using System.Collections;
 
 namespace D_Parser.Completion.Providers
 {
@@ -181,7 +181,7 @@ namespace D_Parser.Completion.Providers
 			{
 				var stmt = ASTSearchHelper.SearchStatementDeeplyAt(curBlock, Editor.CaretLocation);
 				bool addedSwitchKWs = false;
-				while(stmt != null && stmt.Parent != null)
+				while(stmt?.Parent != null)
 				{
 					stmt = stmt.Parent;
 					if (!addedSwitchKWs && stmt is SwitchStatement) 
@@ -192,8 +192,7 @@ namespace D_Parser.Completion.Providers
 					}
 				}
 
-				if(stmt != null)
-					stmt.Accept (new LabelVisitor (CompletionDataGenerator));
+				stmt?.Accept (new LabelVisitor (CompletionDataGenerator));
 			}
 
 			if ((visibleMembers & MemberFilter.x86Registers) != 0)

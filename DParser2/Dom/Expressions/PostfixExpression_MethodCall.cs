@@ -1,6 +1,5 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using System.Text;
-using System.Collections.Generic;
 
 namespace D_Parser.Dom.Expressions
 {
@@ -12,10 +11,7 @@ namespace D_Parser.Dom.Expressions
 	{
 		public IExpression[] Arguments;
 
-		public int ArgumentCount
-		{
-			get { return Arguments == null ? 0 : Arguments.Length; }
-		}
+		public int ArgumentCount => Arguments?.Length ?? 0;
 
 		public override string ToString()
 		{

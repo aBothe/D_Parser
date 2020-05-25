@@ -119,8 +119,8 @@ namespace D_Parser.Completion
 			if (currentScope is DMethod dm && (dm.SpecialType & DMethod.MethodType.Lambda) != 0)
 				currentScope = dm.Parent as IBlockNode;
 
-			if (currentScope is DMethod &&
-			    (blockStmt = (currentScope as DMethod).GetSubBlockAt (editor.CaretLocation)) != null) {
+			if (currentScope is DMethod method &&
+			    (blockStmt = method.GetSubBlockAt (editor.CaretLocation)) != null) {
 				var tempBlock = blockStmt.UpdateBlockPartly (editor, out isInsideNonCodeSegment);
 				if (tempBlock == null)
 					return null;
@@ -152,8 +152,8 @@ namespace D_Parser.Completion
 
 			ac();
 
-			if (token.IsCancellationRequested && cdgen != null)
-				cdgen.NotifyTimeout ();
+			if (token.IsCancellationRequested)
+				cdgen?.NotifyTimeout ();
 		}
 
 		/// <param name="cdgen">Can be null.</param>

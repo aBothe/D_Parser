@@ -178,9 +178,8 @@ namespace D_Parser.Resolver.ExpressionSemantics
 		{
 			tix = null;
 
-			if (callForeExpression is PostfixExpression_Access)
+			if (callForeExpression is PostfixExpression_Access pac)
 			{
-				var pac = (PostfixExpression_Access)callForeExpression;
 				tix = pac.AccessExpression as TemplateInstanceExpression;
 
 				baseExpression = Evaluation.EvalPostfixAccessExpression(this, ctxt, pac, null, false, false);
@@ -191,14 +190,14 @@ namespace D_Parser.Resolver.ExpressionSemantics
 				var optBackup = ctxt.CurrentContext.ContextDependentOptions;
 				ctxt.CurrentContext.ContextDependentOptions |= ResolutionOptions.DontResolveBaseTypes;
 
-				if (callForeExpression is TokenExpression)
-					baseExpression = ExpressionTypeEvaluation.GetResolvedConstructorOverloads((TokenExpression)callForeExpression, ctxt);
+				if (callForeExpression is TokenExpression expression)
+					baseExpression = ExpressionTypeEvaluation.GetResolvedConstructorOverloads(expression, ctxt);
 				else 
 				{
 					tix = callForeExpression as TemplateInstanceExpression;
 
-					if (callForeExpression is IntermediateIdType)
-						baseExpression = ExpressionTypeEvaluation.GetOverloads(callForeExpression as IntermediateIdType, ctxt, null, false);
+					if (callForeExpression is IntermediateIdType type)
+						baseExpression = ExpressionTypeEvaluation.GetOverloads(type, ctxt, null, false);
 					else
 						baseExpression = new[] { callForeExpression != null ? AbstractType.Get(callForeExpression.Accept(this)) : null };
 				}
@@ -224,9 +223,11 @@ namespace D_Parser.Resolver.ExpressionSemantics
 			bool staticOnly = true;
 
 			if(overloads != null)
-				foreach (var amb in overloads)
-					foreach(var ov in AmbiguousType.TryDissolve(amb))
-						GetUnfilteredMethodOverloads_Helper(foreExpression, ctxt, supExpression, l, ref staticOnly, ov);
+				foreach (var ov in overloads
+					.SelectMany(AmbiguousType.TryDissolve)
+					.SelectMany(AmbiguousType.TryDissolve)
+					.Where(overload => overload != null))
+					GetUnfilteredMethodOverloads_Helper(foreExpression, ctxt, supExpression, l, ref staticOnly, ov);
 
 			return l.ToArray();
 		}

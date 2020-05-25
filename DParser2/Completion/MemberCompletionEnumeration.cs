@@ -1,9 +1,9 @@
-﻿using D_Parser.Dom;
-using D_Parser.Misc;
-using D_Parser.Resolver.ASTScanner;
-using D_Parser.Resolver;
+﻿using System.Collections.Generic;
 using System.Threading;
-using System.Collections.Generic;
+using D_Parser.Dom;
+using D_Parser.Misc;
+using D_Parser.Resolver;
+using D_Parser.Resolver.ASTScanner;
 
 namespace D_Parser.Completion
 {
@@ -73,8 +73,8 @@ namespace D_Parser.Completion
 		
 		protected override void HandleItem(INode n, AbstractType currentlyResolvedScope)
 		{
-			if(n is DModule)
-				gen.AddModule(n as DModule);
+			if(n is DModule module)
+				gen.AddModule(module);
 			else
 				gen.Add(n);
 		}
