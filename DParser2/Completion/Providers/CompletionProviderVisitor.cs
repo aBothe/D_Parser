@@ -390,7 +390,7 @@ namespace D_Parser.Completion
 
 		public override void Visit(PostfixExpression_MethodCall x)
 		{
-			if (x.ArgumentCount > 0 && IsIncompleteExpression(x.Arguments[^1]))
+			if (x.ArgumentCount > 0 && IsIncompleteExpression(x.Arguments.Last()))
 			{
 				halt = true;
 				if (triggerChar == '(')
@@ -400,7 +400,7 @@ namespace D_Parser.Completion
 				else
 				{
 					TrySuggestPreselection(x);
-					cdgen.TriggerSyntaxRegion = x.Arguments[^1];
+					cdgen.TriggerSyntaxRegion = x.Arguments.Last();
 				}
 			}
 			else

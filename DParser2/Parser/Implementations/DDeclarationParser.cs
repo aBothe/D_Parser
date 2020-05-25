@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 
@@ -315,7 +316,7 @@ namespace D_Parser.Parser.Implementations
 				if (ttd is TemplateInstanceExpression tix)
 				{
 					if (tix.Arguments == null || tix.Arguments.Length == 0 ||
-						(tix.Arguments[^1] is TokenExpression tk && tk.Token == DTokens.INVALID))
+						(tix.Arguments.Last() is TokenExpression tk && tk.Token == DTokens.INVALID))
 					{
 						yield break;
 					}
@@ -1031,7 +1032,7 @@ namespace D_Parser.Parser.Implementations
 
 				if (!HadComma && ret.Count > 0)
 				{
-					var lastParameter = ret[^1];
+					var lastParameter = ret.Last();
 					lastParameter.Type = new VarArgDecl(lastParameter.Type);
 				}
 				else
