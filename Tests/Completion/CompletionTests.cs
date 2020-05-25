@@ -376,21 +376,43 @@ void main() { Class.§ }";
 
 			TestCompletionListContents (ed, wl, bl);
 		}
-
+		
 		[Test]
-		[Ignore("")]
-		public void CompletionSuggestion()
+		public void CompletionSuggestion_WithBasicMethodParameter_SuggestsParamType()
 		{
-			TestsEditorData ed;
-
 			var s = @"module A; enum myE { } void foo(myE e);
 void main() {
 foo(§
 }";
-			ed = GenEditorData (s);
+			var ed = GenEditorData (s);
 
 			var con = TestCompletionListContents (ed, null, null);
 			Assert.That (con.suggestedItem, Is.EqualTo ("myE"));
+		}
+
+		[Test]
+		public void CompletionSuggestion_WithTemplateParameter_SuggestsParamType()
+		{
+			var s = @"module A; enum myE { } void foo(T)(T e);
+void main() {
+foo!myE(§
+}";
+			var ed = GenEditorData (s);
+
+			var con = TestCompletionListContents (ed, null, null);
+			Assert.That (con.suggestedItem, Is.EqualTo ("myE"));
+		}
+		
+		[Test]
+		public void Completion_OnMethodParameterDeclarations_ShowCtrlSpaceCompletion()
+		{
+			var s = @"module A; enum myE { } void foo(T)(T e);
+void main() {
+void subFoo(§) {}
+}";
+			var ed = GenEditorData (s);
+			ResolutionContext ctxt = null;
+			var con = TestCompletionListContents (ed, new[]{ GetNode(ed, "A.myE", ref ctxt) }, null);
 		}
 
 		[Test]

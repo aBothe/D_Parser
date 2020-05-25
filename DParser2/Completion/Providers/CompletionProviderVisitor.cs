@@ -1,4 +1,4 @@
-﻿//
+//
 // CompletionProviderVisitor.cs
 //
 // Author:
@@ -379,13 +379,41 @@ namespace D_Parser.Completion
 
 		public override void Visit(PostfixExpression_MethodCall x)
 		{
-			if (triggerChar == '(' && x.ArgumentCount > 0 && IsIncompleteExpression(x.Arguments[x.ArgumentCount - 1]))
+			if (x.ArgumentCount > 0 && IsIncompleteExpression(x.Arguments[^1]))
 			{
 				halt = true;
-				explicitlyNoCompletion = true;
+				if (triggerChar == '(')
+				{
+					explicitlyNoCompletion = true;
+				}
+				else
+				{
+					TrySuggestPreselection(x);
+					cdgen.TriggerSyntaxRegion = x.Arguments[^1];
+					prv = new CtrlSpaceCompletionProvider(cdgen, scopedBlock, shownKeywords.Count == 0 ? MemberFilter.All | MemberFilter.ExpressionKeywords : shownKeywords.Peek());
+				}
 			}
 			else
 				base.Visit(x);
+		}
+
+		private void TrySuggestPreselection(PostfixExpression_MethodCall x)
+		{
+			var ctxt = ResolutionContext.Create(ed, true);
+			var firstMethodOverload = DResolver.StripAliasedTypes(ExpressionTypeEvaluation.GetUnfilteredMethodOverloads(x.PostfixForeExpression, ctxt, x).FirstOrDefault());
+			if (firstMethodOverload is MemberSymbol ms
+			    && ms.Definition is DMethod dMethod
+			    && dMethod.Parameters.Count > 0)
+			{
+				using var frame = ctxt.Push(ms);
+				var parameterType = DResolver.StripAliasedTypes(TypeDeclarationResolver.ResolveSingle(dMethod.Parameters[0].Type, ctxt));
+				while (parameterType is TemplateParameterSymbol tps)
+					parameterType = tps.Base;
+				if (parameterType is DSymbol ds)
+				{
+					cdgen.SetSuggestedItem(ds.Name);
+				}
+			}
 		}
 
 		public override void Visit (ModuleStatement s)
