@@ -1,12 +1,9 @@
-﻿using System.Collections.Generic;
-using System.Data;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading;
 using D_Parser;
 using D_Parser.Completion;
 using D_Parser.Dom;
 using D_Parser.Dom.Statements;
-using D_Parser.Misc;
 using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
@@ -526,46 +523,17 @@ AClass §
 			return n;
 		}
 
-		private class TestsEditorData : EditorData
-		{
-			public MutableRootPackage MainPackage => (ParseCache as LegacyParseCacheView).FirstPackage();
-		}
-		
 		/// <summary>
 		/// Use § as caret indicator!
 		/// </summary>
 		private static TestsEditorData GenEditorData(string focusedModuleCode, params string[] otherModuleCodes)
 		{
-			int caretOffset = focusedModuleCode.IndexOf('§');
-			Assert.IsTrue(caretOffset != -1);
-			focusedModuleCode = focusedModuleCode.Substring(0, caretOffset) +
-			                    focusedModuleCode.Substring(caretOffset + 1);
-			var caret = DocumentHelper.OffsetToLocation(focusedModuleCode, caretOffset);
-
-			return GenEditorData(caret.Line, caret.Column, focusedModuleCode, otherModuleCodes);
+			return TestUtil.GenEditorData(focusedModuleCode, otherModuleCodes);
 		}
 
 		private static TestsEditorData GenEditorData(int caretLine, int caretPos,string focusedModuleCode,params string[] otherModuleCodes)
 		{
-			var cache = ResolutionTestHelper.CreateCache (out _, otherModuleCodes);
-			var ed = new TestsEditorData { ParseCache = cache };
-			ed.CancelToken = CancellationToken.None;
-
-			UpdateEditorData (ed, caretLine, caretPos, focusedModuleCode);
-
-			return ed;
-		}
-
-		private static void UpdateEditorData(TestsEditorData ed,int caretLine, int caretPos, string focusedModuleCode)
-		{
-			var mod = DParser.ParseString (focusedModuleCode);
-
-			ed.MainPackage.AddModule (mod);
-
-			ed.ModuleCode = focusedModuleCode;
-			ed.SyntaxTree = mod;
-			ed.CaretLocation = new CodeLocation (caretPos, caretLine);
-			ed.CaretOffset = DocumentHelper.LocationToOffset (focusedModuleCode, caretLine, caretPos);
+			return TestUtil.GenEditorData(caretLine, caretPos, focusedModuleCode, otherModuleCodes);
 		}
 
 		private static TestCompletionDataGen TestCompletionListContents(IEditorData ed, INode[] itemWhiteList, INode[] itemBlackList, char trigger = '\0')
