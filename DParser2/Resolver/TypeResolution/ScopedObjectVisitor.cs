@@ -1,5 +1,7 @@
-﻿using D_Parser.Dom;
+using D_Parser.Completion;
+using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
+using D_Parser.Dom.Statements;
 
 namespace D_Parser.Resolver.TypeResolution
 {
@@ -7,8 +9,26 @@ namespace D_Parser.Resolver.TypeResolution
 	{
 		public ISyntaxRegion IdNearCaret;
 		readonly CodeLocation caret;
+		
+		/// <summary>Used for code completion/symbol resolution.</summary>
+		public static ISyntaxRegion GetScopedCodeObject(IEditorData editor)
+		{
+			var block = ASTSearchHelper.SearchBlockAt(editor.SyntaxTree, editor.CaretLocation);
 
-		public ScopedObjectVisitor(CodeLocation caret)
+			IStatement stmt = null;
+			if (block is DMethod dm)
+				stmt = dm.GetSubBlockAt(editor.CaretLocation);
+			
+			var vis = new ScopedObjectVisitor(editor.CaretLocation);
+			if (stmt != null)
+				stmt.Accept(vis);
+			else
+				block.Accept(vis);
+
+			return vis.IdNearCaret;
+		}
+
+		private ScopedObjectVisitor(CodeLocation caret)
 		{
 			this.caret = caret;
 		}

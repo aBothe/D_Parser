@@ -1,7 +1,6 @@
 ﻿using D_Parser.Completion;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
-using D_Parser.Dom.Statements;
 using D_Parser.Resolver.ExpressionSemantics;
 
 namespace D_Parser.Resolver.TypeResolution
@@ -11,28 +10,9 @@ namespace D_Parser.Resolver.TypeResolution
 	/// </summary>
 	public class DResolver
 	{
-		/// <summary>Used for code completion/symbol resolution.</summary>
-		/// <param name="editor">Can be null</param>
-		public static ISyntaxRegion GetScopedCodeObject(IEditorData editor)
-		{
-			var block = ASTSearchHelper.SearchBlockAt(editor.SyntaxTree, editor.CaretLocation);
-
-			IStatement stmt = null;
-			if (block is DMethod)
-				stmt = (block as DMethod).GetSubBlockAt(editor.CaretLocation);
-			
-			var vis = new ScopedObjectVisitor(editor.CaretLocation);
-			if (stmt != null)
-				stmt.Accept(vis);
-			else
-				block.Accept(vis);
-
-			return vis.IdNearCaret;
-		}
-
 		public static AbstractType ResolveType(IEditorData editor, ResolutionContext ctxt = null)
 		{
-			var o = GetScopedCodeObject(editor);
+			var o = ScopedObjectVisitor.GetScopedCodeObject(editor);
 			if (ctxt == null)
 				ctxt = ResolutionContext.Create(editor, false);
 

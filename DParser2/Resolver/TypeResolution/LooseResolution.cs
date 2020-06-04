@@ -1,10 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using D_Parser.Completion;
 using D_Parser.Dom;
-using System.Collections.Generic;
 using D_Parser.Dom.Expressions;
-using D_Parser.Resolver.TypeResolution;
 using D_Parser.Resolver.ExpressionSemantics;
+using D_Parser.Resolver.TypeResolution;
 
 namespace D_Parser.Resolver
 {
@@ -95,7 +95,7 @@ namespace D_Parser.Resolver
 
 		public static AbstractType ResolveTypeLoosely(IEditorData editor, out NodeResolutionAttempt resolutionAttempt, out ISyntaxRegion sr, bool editorFriendly = false)
 		{
-			return ResolveTypeLoosely (editor, sr = DResolver.GetScopedCodeObject(editor), out resolutionAttempt, editorFriendly);
+			return ResolveTypeLoosely (editor, sr = ScopedObjectVisitor.GetScopedCodeObject(editor), out resolutionAttempt, editorFriendly);
 		}
 
 		public static AbstractType SearchNodesByName(ref ISyntaxRegion identifier, IEditorData editor)
