@@ -5,6 +5,7 @@ using D_Parser.Dom.Statements;
 using D_Parser.Parser;
 using D_Parser.Resolver;
 using D_Parser.Resolver.ExpressionSemantics;
+using D_Parser.Resolver.TypeResolution;
 using NUnit.Framework;
 using Tests.Completion;
 

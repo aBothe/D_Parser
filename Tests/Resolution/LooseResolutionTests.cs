@@ -5,6 +5,7 @@ using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
 using D_Parser.Resolver;
 using NUnit.Framework;
+using Tests.Completion;
 
 namespace Tests.Resolution
 {
@@ -113,6 +114,40 @@ private int privInt;
 			Assert.IsInstanceOf<MemberSymbol>(t);
 			Assert.IsInstanceOf<DMethod>(t.Definition);
 			Assert.AreEqual(LooseResolution.NodeResolutionAttempt.RawSymbolLookup, attempt);
+		}
+
+		[Test]
+		public void NewExpression_ReturnsConstructor()
+		{
+			var ed = TestUtil.GenEditorData(@"module A;
+class MyClass(T) {this() {}}
+auto a = new MyCla§ss!int();
+");
+
+			var t = LooseResolution.ResolveTypeLoosely(ed, out LooseResolution.NodeResolutionAttempt attempt,
+				out ISyntaxRegion sr) as DSymbol;
+
+			Assert.IsInstanceOf<MemberSymbol>(t);
+			Assert.IsInstanceOf<DMethod>(t.Definition);
+			Assert.IsInstanceOf<NewExpression>(sr);
+			Assert.AreEqual(LooseResolution.NodeResolutionAttempt.Normal, attempt);
+		}
+
+		[Test]
+		public void NewExpression_OnlyImplicitCtor_ReturnsConstructor()
+		{
+			var ed = TestUtil.GenEditorData(@"module A;
+class MyClass(T) {}
+auto a = new MyCla§ss!int();
+");
+
+			var t = LooseResolution.ResolveTypeLoosely(ed, out LooseResolution.NodeResolutionAttempt attempt,
+				out ISyntaxRegion sr) as DSymbol;
+
+			Assert.IsInstanceOf<MemberSymbol>(t);
+			Assert.IsInstanceOf<DMethod>(t.Definition);
+			Assert.IsInstanceOf<NewExpression>(sr);
+			Assert.AreEqual(LooseResolution.NodeResolutionAttempt.Normal, attempt);
 		}
 	}
 }

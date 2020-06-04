@@ -1,4 +1,4 @@
-using D_Parser.Completion;
+﻿using D_Parser.Completion;
 using D_Parser.Dom;
 using D_Parser.Dom.Expressions;
 using D_Parser.Dom.Statements;
@@ -89,6 +89,16 @@ namespace D_Parser.Resolver.TypeResolution
 				(name = tp.Name) != null &&
 				caret.Column <= nl.Column + name.Length)
 				IdNearCaret = tp.Representation;
+		}
+
+		public override void Visit(NewExpression x)
+		{
+			base.Visit(x);
+			if (IdNearCaret == x.Type)
+				IdNearCaret = x;
+			else if (IdNearCaret == null)
+				if (x.Location <= caret && (x.EndLocation >= caret || x.EndLocation.IsEmpty))
+					IdNearCaret = x; // on parenthesis or within empty argument list
 		}
 
 		public override void VisitDNode(DNode n)
